@@ -73,6 +73,8 @@ Naming ("provenance" collides with provenance-graph IDS work) is deferred to wri
 
 ## Phases (about 16 weeks to a late-January deadline)
 
+Progress (2026-10-06): Phases 0 and 1 are complete, about four weeks ahead of schedule. Phase 2 is planned in `docs/plan_phase2.md`.
+
 | Phase | Weeks | Work | Deliverable |
 |---|---|---|---|
 | 0 | 1–2 | Literature search: settle the gaps and novelty claims | `docs/related_work.md`, revised contribution list |
