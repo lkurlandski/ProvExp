@@ -138,6 +138,11 @@ Cost is O(m · nonempty features). On the 45 fixtures (median 322 KB): extractio
   `reserved_virtual_address` are always 0.
 - `imports`: a later import descriptor for the same DLL replaces the functions of an earlier one.
 - Files in the EMBER-2024 SimpleDB are truncated at **4,000,000 bytes**, not 4 MiB.
+- **Nondeterminism:** `PEFormatWarnings` maps each warning to the first matching pattern while iterating over a `set`
+  of strings, so for warnings matching two overlapping patterns the feature depends on the interpreter's hash seed
+  (about 0.1% of files). Featurize with `PYTHONHASHSEED=0` for run-to-run determinism.
+- Versus the released EMBER-2024 features (untruncated files), `strings:entropy` differs by a few float32 ulps in
+  about a third of files (numpy version); everything else is identical apart from the item above.
 
 ### 5.3 Verification
 
