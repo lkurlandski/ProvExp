@@ -1,0 +1,7 @@
+thrember_features.py is an unmodified copy of src/thrember/features.py from
+EMBER2024 (https://github.com/FutureComputing4AI/EMBER2024), upstream main
+(commit 2ec31c52ce), sha256 58a085e9ad307aa2c52e165985ff80db8fd5b763891c0cba2d1758a4825f7273.
+pefile_warnings.txt is an unmodified copy from the same commit.
+Both are licensed under the Apache License, Version 2.0 (see LICENSE).
+
+These files are the reference implementation for the tests and must never be edited.

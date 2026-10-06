@@ -1,0 +1,6 @@
+hypothesis
+mypy
+pytest
+pytest-xdist
+ruff
+types-tqdm

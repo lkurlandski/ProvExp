@@ -1,0 +1,12 @@
+This directory contains code derived from thrember (EMBER feature version 3),
+part of EMBER2024: https://github.com/FutureComputing4AI/EMBER2024
+
+  features.py          src/thrember/features.py at upstream main (commit 2ec31c52ce),
+                       sha256 58a085e9ad307aa2c52e165985ff80db8fd5b763891c0cba2d1758a4825f7273
+  pefile_warnings.txt  src/thrember/pefile_warnings.txt at the same commit
+
+thrember is licensed under the Apache License, Version 2.0 (see LICENSE).
+
+Modifications: features.py was first committed verbatim. Subsequent commits add
+explanation provenance tracking on top of the original feature extraction code;
+see the git history of this file for the exact changes.

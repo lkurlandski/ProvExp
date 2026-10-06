@@ -1,0 +1,26 @@
+# Environments
+env/
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+
+# Tools
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+.hypothesis/
+
+# Test data: real executables (including malware). NEVER commit these.
+tests/data/
+
+# Manuscript build artifacts
+manuscript/*.aux
+manuscript/*.log
+manuscript/*.out
+manuscript/*.pdf
+manuscript/*.bbl
+manuscript/*.blg
