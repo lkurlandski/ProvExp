@@ -24,3 +24,6 @@ manuscript/*.out
 manuscript/*.pdf
 manuscript/*.bbl
 manuscript/*.blg
+
+# Model checkpoints
+checkpoints/
