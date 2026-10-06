@@ -22,7 +22,7 @@ from tqdm import tqdm
 ROOT = Path(__file__).parent.parent
 PATTERNS = ["*_Win32_*.jsonl", "*_Win64_*.jsonl", "*_Dot_Net_*.jsonl"]
 
-SCHEMA = {
+SCHEMA: dict[str, pl.DataType | type[pl.DataType]] = {
     "name": pl.String,
     "md5": pl.String,
     "tlsh_released": pl.String,
