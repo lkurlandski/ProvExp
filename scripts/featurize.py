@@ -95,7 +95,7 @@ def process_shard(shard: int, offset: int, dbdir: Path, outdir: Path, timeout: i
         status, error = "ok", ""
         signal.alarm(timeout)
         try:
-            X[row] = _EXTRACTOR.feature_vector(sample.data)
+            X[row] = _EXTRACTOR.feature_vector(sample.data)  # type: ignore[no-untyped-call]
         except ExtractionTimeout:
             status, error = "timeout", f"Exceeded {timeout} seconds."
         except Exception as err:
