@@ -28,6 +28,151 @@ import signify
 from signify.authenticode import SignedPEFile
 from datetime import datetime
 
+from collections import defaultdict
+from collections.abc import Sequence
+from typing import Optional
+
+from provexp.boxmatrix import BoxMatrix
+from provexp.provenance import EmptyPolicy
+from provexp.provenance import Provenance
+
+
+################################################################################
+# Explanation Provenance
+################################################################################
+
+# NOTE: everything in this section, the `feature_names` properties, and the `provenance` methods were added on top of
+# thrember to track the explanation provenance of every feature, i.e., the raw contribution of each byte to each
+# feature. The original feature extraction code is unchanged. See provexp.provenance for how raw contributions are
+# normalized into a provenance matrix. The conventions are:
+#   - A byte contributes to a feature if the feature's value is computed from it, i.e., the byte is counted, read, or
+#     hashed. Bytes that only influence a feature indirectly, e.g., through a normalizing denominator or through a
+#     pointer that determines where a structure is read from, do not contribute.
+#   - A feature that counts items (strings, sections, imports, etc.) receives one unit of contribution per item,
+#     spread uniformly over the item's bytes. A feature computed from the content of a region (sizes, entropies,
+#     histograms, etc.) receives one unit of contribution per byte.
+#   - A hashed feature receives contributions from every item that hashes into its bucket, regardless of the sign the
+#     hasher assigns to the item, so items whose values cancel each other out still contribute.
+#   - Byte ranges are clipped to the file, which matters for truncated files.
+#   - NOTE (Axiom 3): features that are not computed from any particular bytes, e.g., whether the file parsed as a PE,
+#     and features that are constant, e.g., the minimum of a list that always contains a zero, receive no
+#     contributions. See provexp.provenance.EmptyPolicy.
+
+
+Range = tuple[int, int]
+
+
+class Contributions:
+    """
+    Accumulates raw contributions and builds them into a BoxMatrix in one shot.
+    """
+
+    def __init__(self, num_bytes: int, num_features: int) -> None:
+        self.shape = (num_bytes, num_features)
+        self.matrix = BoxMatrix(self.shape)
+        self._lo: list[int] = []
+        self._hi: list[int] = []
+        self._col: list[int] = []
+        self._w: list[float] = []
+
+    def _clip(self, r: Range) -> Range:
+        return max(0, min(r[0], self.shape[0])), max(0, min(r[1], self.shape[0]))
+
+    def add_item(self, col: int, ranges: Sequence[Optional[Range]], weight: float = 1.0) -> None:
+        """
+        Add one item to a feature, spreading `weight` uniformly over the bytes in `ranges` (None ranges are skipped).
+        """
+        ranges = [self._clip(r) for r in ranges if r is not None]
+        ranges = [r for r in ranges if r[1] > r[0]]
+        total = sum(hi - lo for lo, hi in ranges)
+        if total == 0:
+            return
+        for lo, hi in ranges:
+            self._lo.append(lo)
+            self._hi.append(hi)
+            self._col.append(col)
+            self._w.append(weight / total)
+
+    def add_bytes(self, col: int, r: Optional[Range], weight: float = 1.0) -> None:
+        """
+        Add `weight` to a feature for every byte in `r`.
+        """
+        if r is None:
+            return
+        lo, hi = self._clip(r)
+        if hi > lo:
+            self._lo.append(lo)
+            self._hi.append(hi)
+            self._col.append(col)
+            self._w.append(weight)
+
+    def add_keyed(self, lo: Sequence[int], hi: Sequence[int], col: Sequence[int], key: np.ndarray) -> None:
+        """
+        Add one unit to feature `col + key[i]` for every byte i in each range `[lo, hi)`.
+        """
+        k = self.matrix.add_key(key)
+        self.matrix.add_keyed_boxes(np.asarray(lo, dtype=np.int64), np.asarray(hi, dtype=np.int64), np.asarray(col, dtype=np.int64), k)
+
+    def build(self) -> BoxMatrix:
+        col = np.array(self._col, dtype=np.int64)
+        self.matrix.add_boxes(np.array(self._lo, dtype=np.int64), np.array(self._hi, dtype=np.int64), col, col + 1, np.array(self._w, dtype=np.float64))
+        self._lo, self._hi, self._col, self._w = [], [], [], []
+        return self.matrix
+
+
+def field_range(structure: pefile.Structure, field: str) -> Range:
+    """
+    Return the byte range of a field of a pefile Structure within the file.
+    """
+    offsets = structure.__field_offsets__
+    lo = offsets[field]
+    following = [o for o in offsets.values() if o > lo]
+    hi = min(following) if following else structure.sizeof()
+    base = structure.get_file_offset()
+    return base + lo, base + hi
+
+
+def structure_range(structure: pefile.Structure) -> Range:
+    """
+    Return the byte range of a pefile Structure within the file.
+    """
+    return structure.get_file_offset(), structure.get_file_offset() + structure.sizeof()
+
+
+def section_data_range(section: pefile.SectionStructure) -> Range:
+    """
+    Return the byte range of the data `pefile.SectionStructure.get_data` returns, i.e., the data `get_entropy` uses.
+    """
+    lo = section.get_PointerToRawData_adj()
+    hi = lo + section.SizeOfRawData
+    hi = min(hi, section.PointerToRawData + section.SizeOfRawData)
+    return lo, max(lo, hi)
+
+
+def rva_string_range(pe: pefile.PE, rva: int, length: int) -> Optional[Range]:
+    """
+    Return the byte range of a string at a relative virtual address, or None if it is not within the file.
+    """
+    try:
+        lo = pe.get_offset_from_rva(rva)
+    except pefile.PEFormatError:
+        return None
+    if lo is None:
+        return None
+    return lo, lo + length
+
+
+def hash_indices(n_features: int, items: Sequence[str]) -> np.ndarray:
+    """
+    Return the bucket each item hashes into under sklearn's FeatureHasher, regardless of its sign or value.
+    """
+    if len(items) == 0:
+        return np.zeros(0, dtype=np.int64)
+    X = FeatureHasher(n_features, input_type="string", alternate_sign=False).transform([[s] for s in items]).tocsr()
+    if not np.all(np.diff(X.indptr) == 1):
+        raise RuntimeError("Expected each item to hash into exactly one bucket.")
+    return X.indices.astype(np.int64)
+
 
 class FeatureType(object):
     """
@@ -52,6 +197,15 @@ class FeatureType(object):
         """Directly calculate the feature vector from the sample itself. This should only be implemented differently
         if there are significant speedups to be gained from combining the two functions."""
         return self.process_raw_features(self.raw_features(bytez, pe))
+
+    @property
+    def feature_names(self) -> list[str]:
+        """The name of each feature, in the order of the feature vector."""
+        raise (NotImplementedError)
+
+    def provenance(self, bytez: bytes, pe: pefile.PE | None = None) -> BoxMatrix:
+        """The raw contribution of each byte to each feature, as a (len(bytez), dim) BoxMatrix."""
+        raise (NotImplementedError)
 
 
 class GeneralFileInfo(FeatureType):
@@ -99,6 +253,21 @@ class GeneralFileInfo(FeatureType):
             dtype=np.float32,
         )
 
+    @property
+    def feature_names(self) -> list[str]:
+        return ["size", "entropy", "is_pe"] + [f"start_byte_{i}" for i in range(4)]
+
+    def provenance(self, bytez: bytes, pe: pefile.PE | None = None) -> BoxMatrix:
+        C = Contributions(len(bytez), self.dim)
+        # The size and entropy are computed from every byte.
+        C.add_bytes(0, (0, len(bytez)))
+        C.add_bytes(1, (0, len(bytez)))
+        # NOTE (Axiom 3): whether the file parsed as a PE is not computed from any particular bytes.
+        # Each of the first four bytes (if present).
+        for i in range(min(4, len(bytez))):
+            C.add_bytes(3 + i, (i, i + 1))
+        return C.build()
+
 
 class ByteHistogram(FeatureType):
     """
@@ -120,6 +289,16 @@ class ByteHistogram(FeatureType):
         sum = counts.sum()
         normalized = counts / sum
         return normalized
+
+    @property
+    def feature_names(self) -> list[str]:
+        return [f"byte_{b:02x}" for b in range(256)]
+
+    def provenance(self, bytez: bytes, pe: pefile.PE | None = None) -> BoxMatrix:
+        C = Contributions(len(bytez), self.dim)
+        # Each byte is counted in the bin of its value.
+        C.add_keyed([0], [len(bytez)], [0], np.frombuffer(bytez, dtype=np.uint8))
+        return C.build()
 
 
 class ByteEntropyHistogram(FeatureType):
@@ -175,6 +354,26 @@ class ByteEntropyHistogram(FeatureType):
         sum = counts.sum()
         normalized = counts / sum
         return normalized
+
+    @property
+    def feature_names(self) -> list[str]:
+        return [f"entropy_{h:x}_nibble_{b:x}" for h in range(16) for b in range(16)]
+
+    def provenance(self, bytez: bytes, pe: pefile.PE | None = None) -> BoxMatrix:
+        C = Contributions(len(bytez), self.dim)
+        a = np.frombuffer(bytez, dtype=np.uint8)
+        # Mirror the windowing in `raw_features`: each byte of each window is counted in the bin of its high nibble,
+        # within the row of the window's entropy.
+        if a.shape[0] < self.window:
+            starts = np.array([0])
+            stops = np.array([a.shape[0]])
+            Hbins = np.array([self._entropy_bin_counts(a)[0]])
+        else:
+            starts = np.arange(0, a.shape[0] - self.window + 1, self.step)
+            stops = starts + self.window
+            Hbins = np.array([self._entropy_bin_counts(a[s:s + self.window])[0] for s in starts])
+        C.add_keyed(starts, stops, 16 * Hbins, a >> 4)
+        return C.build()
 
 
 class StringExtractor(FeatureType):
@@ -350,6 +549,42 @@ class StringExtractor(FeatureType):
             ]
         ).astype(np.float32)
 
+    @property
+    def feature_names(self) -> list[str]:
+        regexes = sorted(self.regex_idxs, key=lambda k: self.regex_idxs[k])
+        return (
+            ["numstrings", "avlength", "printables"]
+            + [f"printable_{c:02x}" for c in range(0x20, 0x20 + 96)]
+            + ["entropy"]
+            + [f"regex_{k}" for k in regexes]
+        )
+
+    def provenance(self, bytez: bytes, pe: pefile.PE | None = None) -> BoxMatrix:
+        C = Contributions(len(bytez), self.dim)
+        spans = [(mt.start(), mt.end()) for mt in self._allstrings.finditer(bytez)]
+        if not spans:
+            return C.build()
+
+        for span in spans:
+            C.add_item(0, [span])   # numstrings: each string counts once.
+            C.add_bytes(1, span)    # avlength: every character of every string.
+            C.add_bytes(2, span)    # printables: every character of every string.
+            C.add_bytes(99, span)   # entropy: every character of every string.
+
+        # printabledist: each character is counted in the bin of its value. The key wraps around for the bytes
+        # outside of the strings, but those are never addressed.
+        key = np.frombuffer(bytez, dtype=np.uint8) - np.uint8(0x20)
+        C.add_keyed([lo for lo, _ in spans], [hi for _, hi in spans], [3] * len(spans), key)
+
+        # string_counts: each string counts once toward each regex it matches. Mirrors `raw_features`.
+        for span in spans:
+            s = bytez[span[0]:span[1]].decode()
+            for k, r in self._regexes.items():
+                if re.search(r, s):
+                    C.add_item(100 + self.regex_idxs[k], [span])
+
+        return C.build()
+
 
 class SectionInfo(FeatureType):
     """
@@ -473,6 +708,118 @@ class SectionInfo(FeatureType):
             ]
         ).astype(np.float32)
 
+    @property
+    def feature_names(self) -> list[str]:
+        return (
+            [
+                "num_sections",
+                "num_zero_size",
+                "num_empty_name",
+                "num_rx",
+                "num_w",
+                "max_entropy",
+                "min_entropy",
+                "max_size_ratio",
+                "min_size_ratio",
+                "max_vsize_ratio",
+                "min_vsize_ratio",
+            ]
+            + [f"size_hash_{i}" for i in range(50)]
+            + [f"vsize_hash_{i}" for i in range(50)]
+            + [f"entropy_hash_{i}" for i in range(50)]
+            + [f"characteristics_hash_{i}" for i in range(50)]
+            + [f"entry_name_hash_{i}" for i in range(10)]
+            + ["overlay_size", "overlay_size_ratio", "overlay_entropy"]
+        )
+
+    def provenance(self, bytez: bytes, pe: pefile.PE | None = None) -> BoxMatrix:
+        C = Contributions(len(bytez), self.dim)
+        if pe is None:
+            return C.build()
+
+        # The raw features of each section, in the same order as `pe.sections`.
+        raw_obj = self.raw_features(bytez, pe)
+        sections = raw_obj["sections"]
+        table = [structure_range(s) for s in pe.sections]
+        names = [field_range(s, "Name") for s in pe.sections]
+        sizes = [field_range(s, "SizeOfRawData") for s in pe.sections]
+        vsizes = [field_range(s, "Misc_VirtualSize") for s in pe.sections]
+        props = [field_range(s, "Characteristics") for s in pe.sections]
+        datas = [section_data_range(s) for s in pe.sections]
+
+        overlay_offset = pe.get_overlay_data_start_offset()
+        overlay = (overlay_offset, len(bytez)) if overlay_offset is not None else None
+
+        # General properties of sections.
+        for i, s in enumerate(sections):
+            C.add_item(0, [table[i]])
+            if s["size"] == 0:
+                C.add_item(1, [sizes[i]])
+            if s["name"] == "":
+                C.add_item(2, [names[i]])
+            if "MEM_READ" in s["props"] and "MEM_EXECUTE" in s["props"]:
+                C.add_item(3, [props[i]])
+            if "MEM_WRITE" in s["props"]:
+                C.add_item(4, [props[i]])
+
+        # The maxima are attributed to the sections (and overlay) that attain them. The entropy of a section is
+        # computed from its data, unless it has none, in which case its entropy is determined by its size.
+        # NOTE (Axiom 3): the minima are always zero because `process_raw_features` appends a zero to each list of
+        # nonnegative values, so they receive no contributions.
+        entropy_candidates = [(s["entropy"], datas[i] if datas[i][1] > datas[i][0] else sizes[i]) for i, s in enumerate(sections)]
+        size_ratio_candidates = [(s["size_ratio"], sizes[i]) for i, s in enumerate(sections)]
+        if overlay is not None:
+            entropy_candidates.append((raw_obj["overlay"]["entropy"], overlay))
+            size_ratio_candidates.append((raw_obj["overlay"]["size_ratio"], overlay))
+        for col, candidates in [(5, entropy_candidates), (7, size_ratio_candidates)]:
+            if candidates:
+                best = max(v for v, _ in candidates)
+                for v, r in candidates:
+                    if v == best:
+                        C.add_item(col, [r])
+        vsize_ratios = [s["vsize_ratio"] for s in sections]
+        if vsize_ratios:
+            best = max(vsize_ratios)
+            for i, v in enumerate(vsize_ratios):
+                if v == best:
+                    C.add_item(9, [sizes[i], vsizes[i]])
+
+        # Hashed properties of the individual sections.
+        buckets = hash_indices(50, [s["name"] for s in sections])
+        for i, b in enumerate(buckets):
+            C.add_item(11 + b, [names[i], sizes[i]])
+            C.add_item(61 + b, [names[i], vsizes[i]])
+            C.add_item(111 + b, [names[i], datas[i]])
+        characteristics = [(i, f"{s['name']}:{p}") for i, s in enumerate(sections) for p in s["props"]]
+        buckets = hash_indices(50, [c for _, c in characteristics])
+        for (i, _), b in zip(characteristics, buckets, strict=True):
+            C.add_item(161 + b, [names[i], props[i]])
+
+        # The entry section, mirroring the selection logic in `raw_features`. The entry point always contributes,
+        # as do the name of the selected section and, if it was selected as a fallback, its characteristics.
+        entry_ranges = [field_range(pe.OPTIONAL_HEADER, "AddressOfEntryPoint")]
+        entry_section = ""
+        aoep = pe.OPTIONAL_HEADER.AddressOfEntryPoint
+        for i, section in enumerate(pe.sections):
+            if section.contains_rva(aoep):
+                entry_section = sections[i]["name"]
+                entry_ranges = [field_range(pe.OPTIONAL_HEADER, "AddressOfEntryPoint"), names[i]]
+        isection = 0
+        while entry_section == "" and isection < len(pe.sections):
+            if pe.sections[isection].Characteristics & 0x20000000 > 0:
+                entry_section = sections[isection]["name"]
+                entry_ranges = [field_range(pe.OPTIONAL_HEADER, "AddressOfEntryPoint"), names[isection], props[isection]]
+            isection += 1
+        if entry_section != raw_obj["entry"]:
+            raise RuntimeError(f"Failed to mirror the entry section selection: {entry_section!r} != {raw_obj['entry']!r}")
+        C.add_item(211 + hash_indices(10, [entry_section])[0], entry_ranges)
+
+        # The overlay.
+        for col in (221, 222, 223):
+            C.add_bytes(col, overlay)
+
+        return C.build()
+
 
 class ImportsInfo(FeatureType):
     """
@@ -524,6 +871,48 @@ class ImportsInfo(FeatureType):
         # Two separate elements: libraries (alone) and fully-qualified names of imported functions
         return np.hstack([lengths, libraries_hashed, imports_hashed]).astype(np.float32)
 
+    @property
+    def feature_names(self) -> list[str]:
+        return ["num_imports", "num_libraries"] + [f"library_hash_{i}" for i in range(256)] + [f"import_hash_{i}" for i in range(1024)]
+
+    def provenance(self, bytez: bytes, pe: pefile.PE | None = None) -> BoxMatrix:
+        C = Contributions(len(bytez), self.dim)
+        if pe is None or "DIRECTORY_ENTRY_IMPORT" not in pe.__dict__.keys():
+            return C.build()
+
+        # Mirror `raw_features`. A later import descriptor for the same DLL replaces the functions of an earlier
+        # one, but the names of all of the descriptors for a DLL contribute to the DLL's features.
+        thunk_size = 8 if pe.PE_TYPE == pefile.OPTIONAL_HEADER_MAGIC_PE_PLUS else 4
+        dll_ranges: dict[str, list[Optional[Range]]] = defaultdict(list)
+        imports: dict[str, list[tuple[str, Optional[Range]]]] = {}
+        for entry in pe.DIRECTORY_ENTRY_IMPORT:
+            dll_name = entry.dll.decode()
+            dll_ranges[dll_name].append(rva_string_range(pe, entry.struct.Name, len(entry.dll)))
+            imports[dll_name] = []
+            for lib in entry.imports:
+                if lib.name is not None and len(lib.name):
+                    r = (lib.name_offset, lib.name_offset + min(len(lib.name), 10000)) if lib.name_offset is not None else None
+                    imports[dll_name].append((lib.name.decode()[:10000], r))
+                elif lib.ordinal is not None:
+                    r = (lib.ordinal_offset, lib.ordinal_offset + thunk_size) if lib.ordinal_offset is not None else None
+                    imports[dll_name].append((f"{dll_name}:ordinal{lib.ordinal}", r))
+
+        # Unique libraries.
+        libraries: dict[str, list[Optional[Range]]] = defaultdict(list)
+        for dll_name in imports:
+            libraries[dll_name.lower()].extend(dll_ranges[dll_name])
+        for b, ranges in zip(hash_indices(256, list(libraries)), libraries.values(), strict=True):
+            C.add_item(1, ranges)
+            C.add_item(2 + b, ranges)
+
+        # Fully-qualified names of imported functions.
+        items = [(dll_name.lower() + ":" + e, [r] + dll_ranges[dll_name]) for dll_name, elist in imports.items() for e, r in elist]
+        for b, (_, ranges) in zip(hash_indices(1024, [s for s, _ in items]), items, strict=True):
+            C.add_item(0, ranges)
+            C.add_item(258 + b, ranges)
+
+        return C.build()
+
 
 class ExportsInfo(FeatureType):
     """
@@ -557,6 +946,30 @@ class ExportsInfo(FeatureType):
 
         exports_hashed = FeatureHasher(128, input_type="string").transform([raw_obj]).toarray()[0]
         return np.hstack([np.array([len(exports_hashed)]), exports_hashed.astype(np.float32)])
+
+    @property
+    def feature_names(self) -> list[str]:
+        return ["num_exports"] + [f"export_hash_{i}" for i in range(128)]
+
+    def provenance(self, bytez: bytes, pe: pefile.PE | None = None) -> BoxMatrix:
+        C = Contributions(len(bytez), self.dim)
+        if pe is None or "DIRECTORY_ENTRY_EXPORT" not in pe.__dict__.keys():
+            return C.build()
+
+        # NOTE (Axiom 3): the first feature is meant to be the number of exports, but it is the length of the hashed
+        # vector, i.e., always 128 (or 0 if there are no exports), so it receives no contributions.
+        items: list[tuple[str, Optional[Range]]] = []
+        for exp in pe.DIRECTORY_ENTRY_EXPORT.symbols:
+            if exp.name is not None and len(exp.name):
+                r = (exp.name_offset, exp.name_offset + min(len(exp.name), 10000)) if exp.name_offset is not None else None
+                items.append((exp.name.decode()[:10000], r))
+            elif exp.ordinal is not None:
+                r = (exp.address_offset, exp.address_offset + 4) if exp.address_offset is not None else None
+                items.append((f"ordinal{exp.ordinal}", r))
+        for b, (_, r) in zip(hash_indices(128, [s for s, _ in items]), items, strict=True):
+            C.add_item(1 + b, [r])
+
+        return C.build()
 
 
 class HeaderFileInfo(FeatureType):
@@ -812,6 +1225,68 @@ class HeaderFileInfo(FeatureType):
             ]
         ).astype(np.float32)
 
+    # The header field each of the first 30 features is read from, in the order of `process_raw_features`.
+    _fields = [
+        ("FILE_HEADER", "TimeDateStamp"),
+        ("FILE_HEADER", "NumberOfSections"),
+        ("FILE_HEADER", "NumberOfSymbols"),
+        ("FILE_HEADER", "SizeOfOptionalHeader"),
+        ("FILE_HEADER", "PointerToSymbolTable"),
+        ("FILE_HEADER", "Machine"),
+        ("OPTIONAL_HEADER", "Subsystem"),
+        ("OPTIONAL_HEADER", "MajorImageVersion"),
+        ("OPTIONAL_HEADER", "MinorImageVersion"),
+        ("OPTIONAL_HEADER", "MajorLinkerVersion"),
+        ("OPTIONAL_HEADER", "MinorLinkerVersion"),
+        ("OPTIONAL_HEADER", "MajorOperatingSystemVersion"),
+        ("OPTIONAL_HEADER", "MinorOperatingSystemVersion"),
+        ("OPTIONAL_HEADER", "MajorSubsystemVersion"),
+        ("OPTIONAL_HEADER", "MinorSubsystemVersion"),
+        ("OPTIONAL_HEADER", "SizeOfCode"),
+        ("OPTIONAL_HEADER", "SizeOfHeaders"),
+        ("OPTIONAL_HEADER", "SizeOfImage"),
+        ("OPTIONAL_HEADER", "SizeOfInitializedData"),
+        ("OPTIONAL_HEADER", "SizeOfUninitializedData"),
+        ("OPTIONAL_HEADER", "SizeOfStackReserve"),
+        ("OPTIONAL_HEADER", "SizeOfStackCommit"),
+        ("OPTIONAL_HEADER", "SizeOfHeapReserve"),
+        ("OPTIONAL_HEADER", "SizeOfHeapCommit"),
+        ("OPTIONAL_HEADER", "AddressOfEntryPoint"),
+        ("OPTIONAL_HEADER", "BaseOfCode"),
+        ("OPTIONAL_HEADER", "ImageBase"),
+        ("OPTIONAL_HEADER", "SectionAlignment"),
+        ("OPTIONAL_HEADER", "CheckSum"),
+        ("OPTIONAL_HEADER", "NumberOfRvaAndSizes"),
+    ]
+
+    @property
+    def feature_names(self) -> list[str]:
+        return (
+            [f"{header.lower()}_{field}" for header, field in self._fields]
+            + [f"characteristics_{c}" for c in self._image_characteristics]
+            + [f"dll_characteristics_{c}" for c in self._dll_characteristics]
+            + [f"dos_{m}" for m in self._dos_members]
+        )
+
+    def provenance(self, bytez: bytes, pe: pefile.PE | None = None) -> BoxMatrix:
+        C = Contributions(len(bytez), self.dim)
+        if pe is None:
+            return C.build()
+
+        for i, (header, field) in enumerate(self._fields):
+            C.add_item(i, [field_range(getattr(pe, header), field)])
+        offset = len(self._fields)
+        for i in range(len(self._image_characteristics)):
+            C.add_item(offset + i, [field_range(pe.FILE_HEADER, "Characteristics")])
+        offset += len(self._image_characteristics)
+        for i in range(len(self._dll_characteristics)):
+            C.add_item(offset + i, [field_range(pe.OPTIONAL_HEADER, "DllCharacteristics")])
+        offset += len(self._dll_characteristics)
+        for i, member in enumerate(self._dos_members):
+            C.add_item(offset + i, [field_range(pe.DOS_HEADER, member)])
+
+        return C.build()
+
 
 class DataDirectories(FeatureType):
     """
@@ -878,6 +1353,30 @@ class DataDirectories(FeatureType):
         features[-1] = raw_obj[0]["has_dynamic_relocs"]
         return features
 
+    @property
+    def feature_names(self) -> list[str]:
+        return [f"{n.lower()}_{f}" for n in self._name_order for f in ("size", "virtual_address")] + ["has_relocs", "has_dynamic_relocs"]
+
+    def provenance(self, bytez: bytes, pe: pefile.PE | None = None) -> BoxMatrix:
+        C = Contributions(len(bytez), self.dim)
+        if pe is None:
+            return C.build()
+
+        # Mirror `process_raw_features`, which skips the last data directory (usually RESERVED).
+        directories = pe.OPTIONAL_HEADER.DATA_DIRECTORY
+        for d in directories[:-1]:
+            idx = self._name_order.index(str(d.name).replace("IMAGE_DIRECTORY_ENTRY_", ""))
+            C.add_item(2 * idx, [field_range(d, "Size")])
+            C.add_item(2 * idx + 1, [field_range(d, "VirtualAddress")])
+
+        # Whether the relocations were parsed is determined by the directory that points to them.
+        for col, which in [(32, "BASERELOC"), (33, "LOAD_CONFIG")]:
+            idx = self._name_order.index(which)
+            if idx < len(directories):
+                C.add_item(col, [structure_range(directories[idx])])
+
+        return C.build()
+
 
 class RichHeader(FeatureType):
     """
@@ -903,6 +1402,25 @@ class RichHeader(FeatureType):
         paired_values = [(str(raw_obj[i]), raw_obj[i + 1]) for i in range(0, len(raw_obj) - 1, 2)]
         paired_values_hashed = FeatureHasher(32, input_type="pair").transform([paired_values]).toarray()[0]
         return np.hstack([number_of_pairs, paired_values_hashed]).astype(np.float32)
+
+    @property
+    def feature_names(self) -> list[str]:
+        return ["num_pairs"] + [f"pair_hash_{i}" for i in range(32)]
+
+    def provenance(self, bytez: bytes, pe: pefile.PE | None = None) -> BoxMatrix:
+        C = Contributions(len(bytez), self.dim)
+        if pe is None or pe.RICH_HEADER is None:
+            return C.build()
+
+        # pefile reads the Rich header as dwords starting at 0x80: the DanS signature and three padding dwords,
+        # followed by the (compid, count) pairs, eight bytes each.
+        values = pe.RICH_HEADER.values
+        pairs = [(0x80 + 16 + 8 * i, 0x80 + 16 + 8 * i + 8) for i in range(len(values) // 2)]
+        for b, r in zip(hash_indices(32, [str(values[2 * i]) for i in range(len(pairs))]), pairs, strict=True):
+            C.add_item(0, [r])
+            C.add_item(1 + b, [r])
+
+        return C.build()
 
 
 class AuthenticodeSignature(FeatureType):
@@ -984,6 +1502,40 @@ class AuthenticodeSignature(FeatureType):
             raw_obj["signing_time_diff"],
         ]).astype(np.float32)
 
+    @property
+    def feature_names(self) -> list[str]:
+        return [
+            "num_certs",
+            "self_signed",
+            "empty_program_name",
+            "no_countersigner",
+            "parse_error",
+            "chain_max_depth",
+            "latest_signing_time",
+            "signing_time_diff",
+        ]
+
+    def provenance(self, bytez: bytes, pe: pefile.PE | None = None) -> BoxMatrix:
+        C = Contributions(len(bytez), self.dim)
+        if pe is None:
+            return C.build()
+
+        # Every feature is computed by parsing the certificate table, which the security directory points to. Note
+        # that the security directory's address is a file offset, not an RVA.
+        directories = pe.OPTIONAL_HEADER.DATA_DIRECTORY
+        ranges: list[Optional[Range]] = []
+        if len(directories) > 4:
+            security = directories[4]
+            ranges.append(structure_range(security))
+            if security.Size > 0:
+                ranges.append((security.VirtualAddress, security.VirtualAddress + security.Size))
+        for col in range(self.dim):
+            C.add_item(col, ranges)
+        # The signing time difference also depends upon the timestamp in the COFF header.
+        C.add_item(7, [field_range(pe.FILE_HEADER, "TimeDateStamp")])
+
+        return C.build()
+
 
 class PEFormatWarnings(FeatureType):
     """
@@ -1047,6 +1599,16 @@ class PEFormatWarnings(FeatureType):
         ids[self.dim-1] = len(raw_obj)
         return np.array(ids, dtype=np.float32)
 
+    @property
+    def feature_names(self) -> list[str]:
+        warnings = sorted(self.warning_ids, key=lambda w: self.warning_ids[w])
+        return [f"warning_{w}" for w in warnings] + ["num_warnings"]
+
+    def provenance(self, bytez: bytes, pe: pefile.PE | None = None) -> BoxMatrix:
+        # NOTE (Axiom 3): pefile emits warnings from all over its parser and does not record which bytes caused them,
+        # so these features receive no contributions.
+        return Contributions(len(bytez), self.dim).build()
+
 
 class PEFeatureExtractor(object):
     """
@@ -1102,3 +1664,38 @@ class PEFeatureExtractor(object):
 
     def feature_vector(self, bytez):
         return self.process_raw_features(self.raw_features(bytez))
+
+    @property
+    def feature_names(self) -> list[str]:
+        """The name of each feature, prefixed by the name of its feature type, in the order of the feature vector."""
+        return [f"{fe.name}:{n}" for fe in self.features for n in fe.feature_names]
+
+    def feature_vector_with_provenance(self, bytez: bytes, empty: EmptyPolicy = "uniform") -> tuple[np.ndarray, Provenance]:
+        """
+        Compute the feature vector and its explanation provenance, parsing the file only once.
+
+        Args:
+            bytez: The raw bytes of the file.
+            empty: How to treat features that receive no contributions (see provexp.provenance.EmptyPolicy).
+
+        Returns:
+            The feature vector, identical to `feature_vector(bytez)`, and its provenance.
+        """
+        # Mirrors `raw_features`.
+        pe = None
+        try:
+            pe = pefile.PE(data=bytez)
+        except pefile.PEFormatError:
+            pass
+        except AttributeError:
+            pass
+        raw_obj = {fe.name: fe.raw_features(bytez, pe) for fe in self.features}
+        x = self.process_raw_features(raw_obj)
+        C = BoxMatrix.hstack([fe.provenance(bytez, pe) for fe in self.features])
+        return x, Provenance(C, self.feature_names, empty)
+
+    def provenance(self, bytez: bytes, empty: EmptyPolicy = "uniform") -> Provenance:
+        """
+        Compute the explanation provenance of the feature vector of a file.
+        """
+        return self.feature_vector_with_provenance(bytez, empty)[1]
