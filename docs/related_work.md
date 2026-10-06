@@ -37,6 +37,42 @@ Started 2026-10-06. Status markers: **[read]** = method/abstract checked during 
    (Kairos, Poirot, provenance-based IDS, several of which are in our bib). USENIX reviewers will stumble on this.
    Consider renaming (e.g., "feature lineage" or "attribution lineage") or disambiguate in the first paragraph.
 
+## Full-text reading notes (2026-10-06)
+
+- **Mohseni/Raff/Gaur 2026 (SHAP on EMBER).** 8 pages, likely a workshop paper. Lemmas: interventional SHAP goes off-manifold
+  (L1); conditional SHAP dilutes credit by 1/m across m redundant features (L2), credits unused proxies (L3),
+  and its sign can flip across distributions (L4). Duplicate-feature sweep on EMBER-2018 LightGBM/XGBoost. **No problem-space component.**
+  *Opportunity:* pullback depends on a only through Pa, so **features with identical provenance columns
+  are merged in the problem space**. Any credit-splitting among *mechanically* redundant features (L2) cancels
+  out exactly after pullback. Statistically (but not mechanically) redundant features are not fixed. This is a
+  small, clean proposition plus an experiment (rerun their duplicate sweep; feature-space credit moves about 50%, problem-space
+  explanation unchanged). Raff co-authored EMBER2024 and MalConv, so expect overlap with the reviewer pool.
+- **Severi et al. 2021.** Built a pefile-based watermarking utility by hand. Dropped *all* hashed features
+  ("preimage resistance") and any feature affected by more than one other feature, noting "many of the features are derived
+  from the same underlying structures." Only 17 of about 2,400 EMBER features were usable. Example triggers: header version
+  fields, linker versions, MZ_count, section counts. *Uses:* (1) a motivating example of hand-built feature→binary mapping;
+  (2) a ready-made trigger design for the planted-ground-truth experiment, where pullback should land on the header fields and section table.
+- **Rosenberg et al. 2020.** Feature-by-feature, type-specific modifications chosen by hand; argues per-feature
+  manual effort is the bottleneck. Supports motivation; no general mapping.
+- **FINER (CCS 2023).** Formalizes problem space 𝒵 → feature space ℱ → vector space 𝒱 with an explanation map
+  ω: 𝒱→ℱ and "intelligible components" (functions) via a decomposition h: 𝒵→𝒟. **Explicitly excludes
+  pattern-driven classifiers** (hand-crafted statistics such as Drebin and EMBER), arguing that information lost in
+  α (citing "hashing trick for Ember") gives their explanations low "semantic capacity" and that they cannot be mapped back
+  to raw program elements. They only map explanations for data-driven classifiers, where ℱ keeps opcodes and tokens.
+  **Strong motivating citation: a top-venue paper states our gap. Our localizability analysis quantifies their
+  "semantic capacity" claim instead of assuming it.** Uses a 5-analyst feedback study (we will not).
+- **TRUSTEE artifact-reliance (2026).** Surrogate-tree explanations, then *manual byte-level analysis of PE files* to
+  confirm that top features are packing/metadata artifacts. A direct use case: pullback automates their manual step.
+- **Virtual Inspection Layers (Vielhaben et al. 2024).** Relevance moved via LRP through *invertible linear*
+  transforms (DFT, STDFT). Non-invertible or approximately invertible transforms are named as future work. **Pushforward through a
+  non-invertible program into a representation the model never computes is beyond this.**
+- **Aryal et al. 2024.** Byte-level SHAP on MalConv aggregated into PE regions (headers, sections, subsections),
+  then used to choose regions for adversarial injection, weighing region importance against integrity of modification.
+  *Precedent for region aggregation and for "attribution × modifiability"* in an *attack* setting on a *raw-byte* model.
+  Our manipulability hypothesis differs (feature-based models, a defensive per-decision signal) but must cite this.
+- **Citation check (Semantic Scholar).** None of G-DeepSHAP's 290 citing papers applies it to program feature
+  extractors or malware. The Severi arXiv record lists only 18 citers (the USENIX record is separate) and none does problem-space explanation.
+
 ## Revised contribution list (draft)
 
 - **C1 Framing.** Feature-space vs. problem-space explanations for detectors with program feature
