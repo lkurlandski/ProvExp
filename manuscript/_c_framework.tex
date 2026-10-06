@@ -1,0 +1,294 @@
+In this section, we present a novel framework for post-hoc explanation of machine learning classifiers.
+
+At times, we reference the malware domain, as this is both our expertise as well as our primary motivation for developing the framework, however, its important to note that our framework is applicable to all machine learning models; it is particularly useful for machine learning models that rely on complex, non-trivial feature extraction processes. The malware domain is merely one example of a machine learning space rife with these feature sets.
+
+\subsection{Preliminaries}
+\label{sec:Framework:Preliminaries}
+
+Before training machine learning models to classify objects, they need to be represented numerically. In the literature~\cite{pierazzi2020intriguing}, this process is commonly referred to as a feature-space transformation, where an object is moved from its natural form in the \textit{problem-space}, $\mathcal{Z}$, to a numerical representation in a \textit{feature-space}, $\mathcal{X}$, using a curated \textit{feature mapping function}, $\sigma: \mathcal{Z} \mapsto \mathcal{X}$. With an appropriate feature mapping function, a classifier $\phi: \mathcal{X} \mapsto \mathcal{L}$ can then be trained to learn the relationship between inputs and classification \textit{labels}, $\mathcal{L}$. This process is displayed in Figure~\ref{fig:pipeline-problem-to-feature}. Both problem-space and feature-space objects can usually be modeled as vectors. In our work, we'll refer to the individual components of problem-space objects as \textit{elements}, $z_i \in z \in \mathcal{Z}$, and the individual components of feature-space objects as \textit{features}, $x_i \in x \in \mathcal{X}$. Explanations are typically computed upon feature-space objects using an \textit{explanation backbone}, $\epsilon$, where each \textit{attribution} is a real-valued vector indicating the importance of each input feature.
+
+\input{assets/framework_a}
+
+\subsection{Grounding Explanations in Representation Space}
+\label{sec:Framework:Grounding}
+
+We begin our framework by formalizing a core facet of explainable machine learning: the distinction between explanations for feature- and problem-space objects, as visualized in Figure~\ref{fig:feature-vs-problem-explanations}.
+
+\input{assets/framework_b}
+
+% NOTE: can we bake-in the idea of sigma-consistency here? Also refine the definitions for explanations a little more usefully (positive, negative, etc.).
+
+First, we consider the standard model explanation, conducted within the feature-space:
+
+\definition[\textit{Feature-Space Explanation}]
+\label{def:FeatureSpaceExplanation}
+{
+Consider some sample $x \in \mathcal{X}$ in the feature-space and classifier $\phi$ that predicts $x$ belongs to class $l \in \mathcal{L}$. A feature-space explanation is a vector $a \in \mathbb{R}^{|x|} \subseteq \mathcal{A}$ where $a_i > a_j$ indicates that $x_i$ is a more influential feature than $x_j$ toward the classifier's decision.
+}
+
+While a feature-space explanation can elucidate which features are responsible for a given classification decision, it provides no insight on the problem-space object. If machine learning practitioners want to understand model explanations from a problem-space perspective, they need an explanation for each element of the original object, i.e., a problem-space explanation:
+
+\definition[\textit{Problem-Space Explanation}]
+\label{def:ProblemSpaceExplanation}
+{
+Consider some sample $z \in \mathcal{Z}$ in the problem-space, a feature map $\sigma$, and classifier $\phi$ that predicts $\sigma(z)$ belongs to class $l \in \mathcal{L}$. A problem-space explanation is a vector $b \in \mathbb{R}^{|z|} \subseteq \mathcal{B}$ where $b_i > b_j$ indicates that $z_i$ is a more influential element than $z_j$ toward the classifier's decision and if $z_i$ influences no feature under $\sigma$ then $b_i=0$.
+}
+
+For some applications, the feature mapping function is trivial (or their is no distinction between problem- and feature-space in the first place) and feature-space explanations correspond exactly to problem-space ones. However, in many other domains, $\sigma$ is complex making the relation between the two explanations classes unclear.
+
+Consider, for a moment, the task of malware detection. Most malware detection pipelines employ extensive feature extraction routines, which may entail binary parsing, decompilation, and sandboxing. Thus, the original problem-space object, e.g., an executable file, and its feature-space representation, e.g., a `tabular' vector, bear little relation to each other. Sure, an analyst can easily apply an explainable machine learning technique and attain a feature-space explanation for the feature vector, but this may not help the analyst understand which portions of the original binary file were the most salient. On the flip side, should the analyst choose to apply explainable machine learning in the problem-space directly (easier said than done), they may be able to attain a problem-space explanation which directly informs them which portions of the executable file trigger the classification decision. However, without understanding the relationship between these bytes and the feature vector, the analyst still has little insight toward why or how the model is actually using said bytes. We therefore argue that feature- and problem-space explanations are both useful and furthermore complementary to each other.
+
+Problem-space explanations, in particular, can often be exceedingly challenging to produce directly. In the malware classification scenario proposed above, $\sigma$ is non-invertible and non-differentiable, making many explanation techniques difficult or impossible to apply. The analyst could still apply a black-box, perturbation-based explanation method, e.g., LIME, but would have to take special care to ensure that any perturbed problem-space object, $z'$, is valid (in $\mathcal{Z}$) less $\sigma(z')$ be undefined. In many problem-spaces, such as that of executable files, such mutations are challenging to design and verify. Furthermore, even if the analyst could reliably perturb executables, they may still be severely inhibited by the costly nature of $\sigma$, which, if decompilation or sandboxing is involved, could require several minutes or several hours to finish. Since perturbation-based algorithms typically require hundreds if not thousands of queries, our hypothetical analyst could well have retired before receiving their problem-space explanation.
+
+\subsection{Transferring Explanations Across Representation Spaces}
+
+As previously explained, it may be difficult or impossible to attain an explanation directly in one space or another. In this case, it would be useful to create an explanation in one space, then map (or transform) it to another. To bridge this gap, we propose explanation transformations (Figure~\ref{fig:pullback-pushforward}).
+
+\input{assets/framework_c}
+
+The glue of these transforms is an explanation provenance associating elements with features.
+
+% NOTE: We may want to develop an axiom or desiderata around composition, i.e., applying multiple feature extraction processes iteratively with their own provenance. This could also be expanded to work on other spaces derived from the problem-space but unrelated to the feature-space, i.e., branching spaces as opposed to purely iterative ones.
+\definition[\textit{Explanation Provenance}]
+\label{def:ExplanationProvenance}
+{
+Consider some sample $z \in \mathcal{Z}$ in the problem-space, a feature map $\sigma$, and the feature-space representation $\sigma(z) = x \in \mathcal{X}$. We define the explanation provenance for $z$ and $x$ under $\sigma$ as a nonnegative matrix $P \in \mathbb{R}^{|z| \times |x|}$ whose entry $P_{i,j}$ indicates the proportional degree to which $z_i$ influences feature $x_j$ under $\sigma$ relative to other elements. More formally, $P$ must adhere to the following axioms:
+\begin{itemize}[noitemsep, topsep=-4pt]
+    \item \textbf{Axiom 1} (\textit{Nonnegativity})\textbf{.} $P_{i,j} \ge 0$ for all $i,j$.
+    \item \textbf{Axiom 2} (\textit{Normalization})\textbf{.} For all $j$, $\sum_i P_{i,j} = 1$.
+    \item \textbf{Axiom 3} (\textit{Influence})\textbf{.} $P_{i,j} > 0$ iff $z_i$ influences $x_j$.
+\end{itemize}
+Optionally, the following desiderata may be useful to practitioners:
+\begin{itemize}[noitemsep, topsep=-4pt]
+  \item \textbf{Desiderata 1} (\textit{Sparsity}) most mass is concentrated on few entries.
+  \item \textbf{Desiderata 2} (\textit{Locality}) most per-column mass is concentrated in a short span.
+  \item \textbf{Desiderata 3} (\textit{Stability}) small perturbations to $z$ induce small changes in $P$.
+\end{itemize}
+If for some $z$, $\sigma$ produces a feature $x_j$ that is not attributable to any $z_i$ we recommend excluding $j$ from $P$ entirely. Other options could include setting $P_{i,j} = 1 / |z|$ for all $i$ (which breaks Axiom 3) or adding a `sink' element $z_{|z| + 1}$ and setting $P_{{|z| + 1}, j} = 1$ (which breaks Proposition~\ref{prop:pullback-independence}).
+}
+
+\iffalse
+With provenance, we are ready to define the $\sigma$-consistency constraint from Definition~\ref{def:ProblemSpaceExplanation}:
+
+\definition[\textit{Sigma-Consistency}]
+\label{def:SigmaConsistency}
+{
+Consider some sample $z \in \mathcal{Z}$ in the problem-space, a feature map $\sigma$, provenance $P$, and problem-space explanation $b \in \mathcal{B}$. Then $b$ is said to be consistent under the feature map ($\sigma$-consistent) if and only if $b_i = 0$ for any $i$ in which $P_{i,j} = 0$ for all $j$.
+}
+
+This consistency tells us that non-interacting elements should not participate in an explanation. Intuitively, this makes sense and is a useful constraint to place upon $b$.
+\fi
+
+Encoding the influence between elements and features as provenance allows us to transfer explanations between the feature- and problem-space elegantly using a pullback operation.
+
+\definition[\textit{Pullback}]
+\label{def:Pullback}
+{
+Consider some sample $z \in \mathcal{Z}$ in the problem-space, a feature map $\sigma$, the feature-space representation $\sigma(z) = x \in \mathcal{X}$, a feature-space explanation $a \in \mathcal{A}$, and provenance matrix $P$. We define $\tau: \mathcal{A} \mapsto \mathcal{B}$ as the pullback operation such that $\tau(a) \coloneq Pa = b \in \mathbb R^{|z|} \subseteq \mathcal{B}$ is a problem-space explanation.
+}
+
+The pullback is ubiquitous in the literature, albeit implicitly. In computer vision, the feature mapping function maps discrete pixels to the reals and the explanation provenance is (usually) the identity matrix, so the pullback goes unnoticed. In natural language processing, the feature mapping function maps discrete characters to token embeddings and the explanation provenance, while not the identity, remains simple enough that the significance of pullback can be easily overlooked. The pullback only becomes nontrivial when the feature mapping function is complex. To clarify the nature of pullback, we formulate three propositions, stated in Appendix B.
+
+Pullback lets us produce explanations in the feature-space and pull them back to the problem-space, essentially turning feature-vector saliency into object saliency. Analogously, the provenance matrix can also be used to travel in the opposite direction, from problem-space explanations to feature-space ones via a pushforward operation.
+
+\begin{notationbox}
+Consider provenance matrix $P \in \mathbb{R}^{|z| \times |x|}$. Let diagonal matrix $D \in \mathbb{R}^{|z| \times |z|}$ encode the row-sums of $P$ such that $D_{i, i} = \sum_j P_{i,j}$. Let $D^\dagger$ be $D$'s pseudoinverse, i.e., $D^\dagger_{i,i} = 0$ if $D_{i,i} = 0$ and $D^\dagger_{i,i} = D_{i,i}^{-1}$ otherwise.
+\end{notationbox}
+
+\definition[\textit{Pushforward}]
+\label{def:Pushforward}
+{
+Consider some sample $z \in \mathcal{Z}$ in the problem-space, a feature map $\sigma$, the feature-space representation $\sigma(z) = x \in \mathcal{X}$, a problem space explanation $b \in \mathcal{B}$, and provenance matrix $P$. We define $\psi: \mathcal{B} \mapsto \mathcal{A}$ as the pushforward operation such that $\psi(b) \coloneq P^\top D^\dagger b = a \in \mathbb R^{|x|} \subseteq \mathcal{A}$ is a feature-space explanation.
+}
+
+Unlike the pullback, to our knowledge, no prior work has performed the pushforward operation before --- either intentionally or accidentally. This is unsurprising, as the utility of the pushforward is more difficult to appreciate. To clarify the nature of pushforward, we present three propositions in Appendix C.
+
+\subsection{Characterizing the Explanation Provenance Matrix}
+\label{sec:CharacterizingExplanationProvenanceMatrix}
+
+The provenance matrix is the defining ingredient of explanation transformations. To anticipate when such transformations will yield interpretable explanations, we introduce summary statistics.
+
+The first quantifies whether provenance is concentrated from few elements or diffuse across many.
+
+\begin{notationbox}
+Consider provenance matrix $P \in \mathbb{R}^{|z| \times |x|}$. Let $A_j=\{\,i: P_{i,j}>0\,\}$ be the row support of column $j$.
+\end{notationbox}
+
+\definition[\textit{Provenance Ambiguity}]{
+\label{def:ProvenanceAmbiguity}
+Consider $z \in \mathcal{Z}$, $x \in \mathcal{X}$, and provenance $P \in \mathbb{R}^{|z| \times |x|}$ with row support given by $A_j$. We define the provenance ambiguity of each feature, $H_j$, the normalized provenance ambiguity of each feature, $\widehat{H_j}$, and the overall provenance ambiguity, $H$, as:
+\begin{equation}
+    H_j = -\sum_i P_{i,j} \log P_{i,j} \qquad
+    \widehat{H_j} = \frac{H_j}{\log |A_j|} \textrm{ if } |A_j| > 1 \textrm{ else } 0 \qquad
+    H = \frac{1}{|x|} \sum_j \widehat{H_j}
+\end{equation}
+}
+
+Ambiguity asks how concentrated each feature’s provenance is within the problem-space. When $H_j$ is small, the feature draws its mass from a few elements, making the pullback attribution for that feature naturally sharp. As $H_j$ increases, the feature’s provenance becomes diffuse, and any pulled-back attribution for that feature will be smeared across many elements. The normalization by $\log|A_j|$ constrains $\widehat H_j \in [0, 1]$ facilitating fair comparison across features and samples.
+
+We make the following statement about unambiguous provenance:
+\theorem[\textit{Unambiguous Provenance}]
+\label{theorem:UnambiguousProvenance}
+{
+Provenance is unambiguous ($H=0$) if and only if all of $P$'s columns are one-hot. \textit{Proof.} ($\Rightarrow$) If $H=0$ then all $\widehat{H}_j=0$ then all $H_j=0$. If for any $j$, $H_j=0$, all $P_{i,j} \log P_{i,j} = 0$ because $P_{i,j} \log P_{i,j} \leq 0$; therefore, either $P_{i,j} = 0$ or $P_{i,j} = 1$ and since $\sum_i P_{i,j} = 1$, at least one $P_{i,j} = 1$ and all other $P_{i,j} = 0$, i.e., column $j$ must be one-hot for all $j$. ($\Leftarrow$) For any one-hot column $j$, one $P_{i,j} = 1$ and all other $P_{i,j} = 0$, so all $P_{i,j} \log P_{i,j} = 0$ and $H_j = 0$ for all $j$, so $H = 0$. \hfill $\square$
+}
+
+A complementary question is whether different features draw from distinct or entangled elements.
+
+\definition[\textit{Provenance Overlap}]
+\label{def:ProvenanceOverlap}
+{
+Consider $z \in \mathcal{Z}$, $x \in \mathcal{X}$, and provenance $P \in \mathbb{R}^{|z| \times |x|}$. For distinct features $j, k$, consider the symmetric intersection $I_{j,k} = \sum_i \min\{P_{i,j}, P_{i, k} \} \in [0, 1]$. We define the provenance overlap of each feature, $O_j$, the normalized provenance overlap of each feature, $\widehat{O_j}$, and the overall provenance overlap, $O$, as:
+\begin{equation}
+    O_j = \sum_{k \neq j} I_{j,k} \qquad
+    \widehat{O_j} = \frac{O_j}{|x| - 1} \qquad
+    O = \frac{1}{|x|} \sum_j \widehat{O_j}
+\end{equation}
+}
+
+Overlap then asks a different question: even if a feature is individually unambiguous, does it reuse the same elements as other features? $I_{j,k}$ is the total shared provenance mass between features $j$ and $k$, so it is high when columns are similar and low when columns are dissimilar. Small $O_j$ means feature $j$ does not reuse the same elements as others whereas large $O_j$ signals frequent re-use. In turn, this would correspond to many collisions during a pullback. The cumulative overlap $O$ summarizes this entanglement globally.
+
+We make the following statement about nonoverlapping provenance:
+
+\theorem[\textit{Nonoverlapping Provenance}]
+\label{theorem:NonoverlappingProvenance}
+{
+Provenance is nonoverlapping ($O = 0$) if and only if each problem-space element contributes to at most one feature, i.e., every row of $P$ has nonzero mass in at most one column. \textit{Proof.} 
+($\Rightarrow$) If $O=0$ then each $O_j=0$, so for every $j \neq k$ we have $I_{j,k}=0$. But $I_{j,k} = \sum_i \min\{P_{i,j}, P_{i,k}\}$ can only be $0$ if no row $i$ has both $P_{i,j}>0$ and $P_{i,k}>0$. Thus, no element $z_i$ contributes to two distinct features, so every row of $P$ has support size at most $1$. 
+($\Leftarrow$) Conversely, if every row of $P$ has support size at most $1$, then no row $i$ can satisfy $P_{i,j}>0$ and $P_{i,k}>0$ for $j\neq k$, hence $\min\{P_{i,j},P_{i,k}\}=0$ for all $i$ and all $j\neq k$, which implies $I_{j,k}=0$, so $O_j = 0$ for all $j$, so $O=0$.
+\hfill$\square$
+}
+
+The summaries serve complementary roles and can be jointly analyzed to anticipate the behavior and usefulness of problem-space pullbacks and pushforwards. By our definitions, an explanation produced by pullback or pushforward will be cleanest when the ambiguity and overlap are minimal.
+
+\subsection{Quantifying Explanation Transformation Preservation}
+
+With operators capable of moving explanations from one space to another, we now consider the quality (or lack thereof) of a transferred explanation. This is a difficult question to answer, as the best way to measure this quality would be to compare a transferred explanation to the `correct' explanation that should have been produced, but obviously, we emphasize a practical use-case where no such explanation exists. To this end, we propose an intrinsic evaluation criteria based around the concept of cyclic transfers, i.e., moving an explanation from one space and back again.
+
+\definition[\textit{Cyclic Explanation Transfers}]
+\label{def:CyclicTransfers}
+{
+Consider $a \in \mathcal{A}$, $b \in \mathcal{B}$, $\tau: \mathcal{A} \mapsto \mathcal{B}$, and $\psi: \mathcal{B} \mapsto \mathcal{A}$. We define the pull--push (pull, then push) cyclic operator $\psi_\tau: \mathcal{A} \mapsto \mathcal{A}$ as $\psi_\tau(a) \coloneq \psi(\tau(a)) = P^\top D^\dagger P a$ and the push-pull (push, then pull) operator $\tau_\psi: \mathcal{B} \mapsto \mathcal{B}$ as $\tau_\psi(b) \coloneq \tau(\psi(b)) = P P^\top D^\dagger b$.
+}
+
+Using cyclic transfers, we can see that the pullback and pushforward operators are not guaranteed to preserve the integrity of the explanation by considering the cyclic reconstruction error.
+
+\definition[\textit{Cyclic Reconstruction Error}]
+\label{def:CyclicTransferError}
+{
+Consider $a \in \mathcal{A}$, $b \in \mathcal{B}$, $\psi_\tau: \mathcal{A} \mapsto \mathcal{A}$, and $\tau_\psi: \mathcal{B} \mapsto \mathcal{B}$. We define the pull--push error as $\delta_{\psi_\tau} = ||\psi_\tau(a) - a||_2$ and the push--pull error as $\delta_{\tau_\psi} = ||\tau_\psi(b) - b||_2$.
+}
+
+Its plain to see that Definition~\ref{def:ExplanationProvenance} provides no guarantees about either of these errors. In general, we can expect nonzero error for most provenance matrices. Intuitively, nonzero cyclic error suggests at least one of the operations muddies the transfer. By contrast, zero cyclic error suggests that both operations preserve the core semantics of the explanation. We refer to these as \textit{perfect} cyclic transfers. In the following theorems, we demonstrate which provenance matrices provide this.
+
+\theorem[\textit{Perfect Pull--Push Reconstruction}]
+\label{theorem:PerfectPullPush}
+{
+The pull--push reconstruction is perfect ($\delta_{\psi_\tau}=0$) if and only if provenance is nonoverlapping ($O=0$).
+
+\iffalse
+
+\textit{Proof.}
+($\Rightarrow$)
+Assume $\psi_\tau = I$, i.e., $P^\top D^\dagger P = I$.
+Fix two distinct features $j \neq k$ and apply $\psi_\tau$ to the basis vector $e_k$ (which is $1$ in coordinate $k$ and $0$ elsewhere).
+Since $\psi_\tau(e_k)=e_k$, its $j$th coordinate must be $0$:
+\[
+(\psi_\tau(e_k))_j
+= (P^\top D^\dagger P e_k)_j
+= \sum_i P_{i,j} D^\dagger_{i,i} P_{i,k}
+= 0.
+\]
+All terms in the sum are nonnegative, and $D^\dagger_{i,i} > 0$ whenever row $i$ is active, so for every row $i$ we must have $P_{i,j} P_{i,k} = 0$. In other words, no row $i$ can contribute positive mass to two different columns $j$ and $k$. This is exactly $O=0$.
+
+($\Leftarrow$)
+Now assume $O=0$, i.e., each problem-space element contributes to at most one feature. Then for any row $i$, there is at most one column $j(i)$ with $P_{i,j(i)} > 0$. In that case $D_{i,i} = P_{i,j(i)}$, so $D^\dagger_{i,i} = 1 / P_{i,j(i)}$.
+For arbitrary $a \in \mathcal{A}$,
+\[
+(\psi_\tau(a))_j
+= (P^\top D^\dagger P a)_j
+= \sum_i P_{i,j} D^\dagger_{i,i} \sum_{k} P_{i,k} a_k.
+\]
+Under $O=0$, each active row $i$ only appears in a single column $j(i)$, so the inner sum collapses to $P_{i,j(i)} a_{j(i)}$, and $P_{i,j}$ is zero unless $j = j(i)$. Thus
+\[
+(\psi_\tau(a))_j
+= \sum_{i: j(i)=j} P_{i,j} \cdot \frac{1}{P_{i,j}} \cdot P_{i,j} a_j
+= \sum_{i: j(i)=j} P_{i,j} a_j
+= a_j \sum_{i} P_{i,j}
+= a_j,
+\]
+using column normalization $\sum_i P_{i,j} = 1$.
+Hence $\psi_\tau(a)=a$ for all $a$.
+\hfill$\square$
+
+\fi
+}
+
+\begin{proposalbox}
+We will prove the conjecture above.
+\end{proposalbox}
+
+\theorem[\textit{Perfect Push--Pull Reconstruction}]
+\label{theorem:PerfectPushPull}
+{
+The push--pull reconstruction is perfect ($\delta_{\tau_\psi} = 0$) if and only if the provenance is unambiguous ($H=0$).
+
+\iffalse
+
+\textit{Proof.}
+($\Leftarrow$)
+Assume $H=0$. Then by Theorem~\ref{theorem:UnambiguousProvenance}, every feature $x_j$ comes entirely from exactly one element $z_{r(j)}$ with $P_{r(j), j}=1$ and $P_{i,j}=0$ for $i\neq r(j)$. Let $m_i$ be the number of features whose entire mass comes from element $z_i$, i.e., $m_i = |\{ j : r(j)=i \}|$. Then $D_{i,i} = m_i$ and $D^\dagger_{i,i}=1/m_i$ for $m_i>0$.
+For any $\sigma$-consistent $b$ we have
+\[
+\psi(b)_j
+= \sum_i P_{i,j} D^\dagger_{i,i} b_i
+= D^\dagger_{r(j),r(j)} b_{r(j)}
+= \frac{b_{r(j)}}{m_{r(j)}}.
+\]
+Pulling back,
+\[
+(\tau_\psi(b))_i
+= \sum_j P_{i,j} \psi(b)_j
+= \sum_{j: r(j)=i} \psi(b)_j
+= \sum_{j: r(j)=i} \frac{b_i}{m_i}
+= b_i.
+\]
+If $D_{i,i}=0$ (i.e., element $z_i$ never influences any feature), $\sigma$-consistency requires $b_i=0$ and the above equality still holds. Thus $\tau_\psi(b)=b$ for all $\sigma$-consistent $b$.
+
+($\Rightarrow$)
+Now assume $\tau_\psi(b)=b$ for all $\sigma$-consistent $b$.
+Fix any “active” element index $i$ with $D_{i,i}>0$ and consider $b=e_i$, which is $\sigma$-consistent because inactive rows are $0$ by construction. Then
+\[
+e_i
+= \tau_\psi(e_i)
+= P P^\top D^\dagger e_i
+= \frac{1}{D_{i,i}} \, P P^\top e_i
+= \frac{1}{D_{i,i}} \sum_j P_{i,j} \, \text{col}_j(P),
+\]
+where $\text{col}_j(P)$ is column $j$ of $P$.
+Comparing coordinates $k \neq i$ tells us
+\[
+0
+= \frac{1}{D_{i,i}} \sum_j P_{i,j} P_{k,j},
+\]
+so for any column $j$ with $P_{i,j}>0$ we must have $P_{k,j}=0$ for all $k\neq i$. Thus every such column has support on exactly one row. Comparing coordinate $i$ gives
+\[
+1
+= \frac{1}{D_{i,i}} \sum_j P_{i,j}^2.
+\]
+Let $S_i = \{ j : P_{i,j} > 0 \}$ and write $w_j = P_{i,j}$ for $j \in S_i$. Then $D_{i,i} = \sum_{j \in S_i} w_j$ and the equation becomes
+\[
+\sum_{j \in S_i} w_j^2
+= \sum_{j \in S_i} w_j.
+\]
+Since $0 < w_j \le 1$ and $w_j^2 \le w_j$ with equality if and only if $w_j \in \{0,1\}$, the only way this sum of nonpositive gaps can be $0$ is if each nonzero $w_j$ is exactly $1$. Therefore, every column $j$ with $P_{i,j}>0$ has $P_{i,j}=1$ and $P_{k,j}=0$ for all $k\neq i$. In other words, each column of $P$ is one-hot with a single $1$. By Theorem~\ref{theorem:UnambiguousProvenance}, this is exactly $H=0$.
+\hfill$\square$
+
+\fi
+}
+
+\begin{proposalbox}
+We will prove the conjecture above.
+\end{proposalbox}
+
+While the pull--push and push--pull operations may not be practically useful for most applications, they provide an intrinsic metric we can use to evaluate the quality of explanation transfers via their respective errors $\delta_{\psi_\tau}$ and $\delta_{\tau_\psi}$. This metric, however, is not without limitation, as it does not permit us to determine the quality of the pullback or the pushforward in isolation. For example, if $P$'s pushforward operator is poor, $\delta_{\psi_\tau}$ could be high even if $P$'s pullback operation is strong.

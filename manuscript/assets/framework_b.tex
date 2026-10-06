@@ -1,0 +1,273 @@
+\begin{figure*}[htb]
+\centering
+
+\tikzset{
+    >=Stealth,
+    font=\small,
+    panelbox/.style={
+        rounded corners,
+        draw=black!60,
+        very thick,
+        inner sep=4mm,
+        fill=white,
+    },
+    featurerow/.style={
+        draw=black!60,
+        rounded corners,
+        very thin,
+        fill=black!1,
+        minimum height=4mm,
+        anchor=west
+    },
+    heatrow/.style={
+        draw=black!60,
+        rounded corners,
+        very thin,
+        minimum height=4mm,
+        anchor=west
+    },
+    mininode/.style={
+        draw=black,
+        thick,
+        rounded corners,
+        fill=black!2,
+        minimum height=0.6cm,
+        inner sep=2mm,
+        align=center,
+        font=\scriptsize
+    },
+    stage/.style={
+        draw=black,
+        thick,
+        rounded corners,
+        minimum width=3cm,
+        minimum height=0.9cm,
+        align=center,
+        fill=black!3
+    },
+    miniStage/.style={
+        draw=black,
+        thick,
+        rounded corners,
+        fill=black!2,
+        minimum width=1.0cm,
+        minimum height=0.7cm,
+        align=center,
+        font=\scriptsize
+    },
+}
+
+\begin{tikzpicture}[
+    node distance=10mm and 20mm
+]
+
+% =====================================================
+% LEFT PANEL: Feature-space explanation
+% =====================================================
+
+% Block containing features + attribution bars
+\node[draw=black, thick, rounded corners,
+      fill=white,
+      minimum width=5.2cm,
+      minimum height=2.8cm,
+      inner sep=2mm,
+      align=left] (fs_block) {};
+
+% Populate rows inside fs_block using local coordinates
+\begin{scope}[shift={(fs_block.north west)}]
+    % column headers
+    \node[anchor=south west,font=\scriptsize]
+        at ([xshift=2mm,yshift=0mm]0,0) {feature $x_i$};
+    \node[anchor=south west,font=\scriptsize]
+        at ([xshift=3.4cm,yshift=0mm]0,0) {saliency $a_i$};
+
+    % row 1
+    \node[featurerow, minimum width=3.0cm, fill=black!1]
+        (fx1) at ([xshift=2mm,yshift=-4mm]0,0)
+        {\scriptsize \texttt{SectionEntropy}};
+    \node[heatrow, minimum width=1.7cm, fill=black!70]
+        (fa1) at ([xshift=3.4cm,yshift=-4mm]0,0) {};
+
+    % row 2
+    \node[featurerow, minimum width=3.0cm, fill=black!1]
+        (fx2) at ([xshift=2mm,yshift=-10mm]0,0)
+        {\scriptsize \texttt{NumberOfImports}};
+    \node[heatrow, minimum width=1.2cm, fill=black!45]
+        (fa2) at ([xshift=3.4cm,yshift=-10mm]0,0) {};
+
+    % row 3
+    \node[featurerow, minimum width=3.0cm, fill=black!1]
+        (fx3) at ([xshift=2mm,yshift=-16mm]0,0)
+        {\scriptsize \texttt{MedianStringLength}};
+    \node[heatrow, minimum width=0.5cm, fill=black!20]
+        (fa3) at ([xshift=3.4cm,yshift=-16mm]0,0) {};
+
+    % row 4
+    \node[featurerow, minimum width=3.0cm, fill=black!1]
+        (fx4) at ([xshift=2mm,yshift=-22mm]0,0)
+        {\scriptsize \texttt{HeaderPermissions}};
+    \node[heatrow, minimum width=1.4cm, fill=black!55]
+        (fa4) at ([xshift=3.4cm,yshift=-22mm]0,0) {};
+\end{scope}
+
+% Create some top padding so the panel label can sit above fs_block
+\coordinate (fs_pad) at ($(fs_block.north)+(0,12mm)$);
+
+% Put fs_block in a rounded "panelbox"
+\begin{scope}[on background layer]
+\node[panelbox,
+      yshift=1.25cm,
+      minimum width=8cm,
+      minimum height=8cm,
+      fit=(fs_pad) (fs_block),
+      inner sep=6mm] (fs_panel) {};
+\end{scope}
+
+% Now label that panel the same way you did in your other figures
+\node[font=\footnotesize,
+      anchor=north,
+      align=center]
+    at ($(fs_panel.north)+(0,-2mm)$)
+    {feature-space explanation\\
+     $a \in \mathcal{A} \subseteq \mathbb{R}^{|x|}$, e.g., $a \in \mathbb{R}^{2^{10}}$};
+
+
+\begin{scope}[shift={($(fs_panel.north west)+(12mm,-22mm)$)}]
+
+    % left stack of inputs
+    \node[miniStage] (xnode) {$x$};
+    \node[miniStage, below=1mm of xnode] (fs_phinode) {$\phi$};
+
+    % helper coordinate at vertical midpoint between x and phi
+    \path (xnode) -- (fs_phinode) node[midway] (xphi_mid) {};
+
+    % explanation algorithm box, centered vertically on that midpoint
+    \node[stage,
+          minimum width=2.0cm,
+          align=center,
+          right=8mm of xphi_mid] (fs_epsnode)
+    {explanation alg.\\$\epsilon_{\phi}: \mathcal{X}\mapsto\mathcal{A}$};
+
+    % final feature-space explanation box
+    \node[stage,
+          minimum width=2.0cm,
+          align=center,
+          right=3mm of fs_epsnode] (anode)
+    {explanation\\$a \in \mathcal{A} \subseteq \mathbb{R}^{|x|}$};
+
+    % arrows
+    \draw[->,thick] (xnode.east) -- (fs_epsnode.west);
+    \draw[->,thick] (fs_phinode.east) -- (fs_epsnode.west);
+    \draw[->,thick] (fs_epsnode.east) -- (anode.west);
+
+\end{scope}
+
+% =====================================================
+% RIGHT PANEL: Problem-space explanation
+% =====================================================
+
+% Block containing bytes / spans + attribution bars
+\node[draw=black, thick, rounded corners,
+      fill=white,
+      minimum width=5.6cm,
+      minimum height=2.8cm,
+      inner sep=2mm,
+      align=left,
+      right=30mm of fs_block] (ps_block) {};
+
+% Populate rows inside ps_block using local coordinates
+\begin{scope}[shift={(ps_block.north west)}]
+    % column headers
+    \node[anchor=south west,font=\scriptsize]
+        at ([xshift=2mm,yshift=0mm]0,0) {element(s) $z_i$};
+    \node[anchor=south west,font=\scriptsize]
+        at ([xshift=3.9cm,yshift=0mm]0,0) {saliency $b_i$};
+
+    % row 1
+    \node[featurerow, minimum width=3.5cm, fill=black!1]
+        (pz1) at ([xshift=2mm,yshift=-4mm]0,0)
+        {\scriptsize \texttt{4D 5A}};
+    \node[heatrow, minimum width=0.2cm, fill=black!10]
+        (pb1) at ([xshift=3.9cm,yshift=-4mm]0,0) {};
+
+    % row 2
+    \node[featurerow, minimum width=3.5cm, fill=black!1]
+        (pz2) at ([xshift=2mm,yshift=-10mm]0,0)
+        {\scriptsize \texttt{.text[0x401000:40]}};
+    \node[heatrow, minimum width=1.6cm, fill=black!70]
+        (pb2) at ([xshift=3.9cm,yshift=-10mm]0,0) {};
+
+    % row 3
+    \node[featurerow, minimum width=3.5cm, fill=black!1]
+        (pz3) at ([xshift=2mm,yshift=-16mm]0,0)
+        {\scriptsize \texttt{.data[0x402000:20]}};
+    \node[heatrow, minimum width=0.7cm, fill=black!30]
+        (pb3) at ([xshift=3.9cm,yshift=-16mm]0,0) {};
+
+    % row 4
+    \node[featurerow, minimum width=3.5cm, fill=black!1]
+        (pz4) at ([xshift=2mm,yshift=-22mm]0,0)
+        {\scriptsize \texttt{overlay}};
+    \node[heatrow, minimum width=1.4cm, fill=black!55]
+        (pb4) at ([xshift=3.9cm,yshift=-22mm]0,0) {};
+\end{scope}
+
+% Create top padding for the right panel
+\coordinate (ps_pad) at ($(ps_block.north)+(0,12mm)$);
+
+% Put ps_block in its rounded "panelbox"
+\begin{scope}[on background layer]
+\node[panelbox,
+      yshift=1.25cm,
+      fit=(ps_pad) (ps_block),
+      minimum width=8cm,
+      minimum height=8cm,
+      inner sep=6mm] (ps_panel) {};
+\end{scope}
+
+% Label this panel at its north edge
+\node[font=\footnotesize,
+      anchor=north,
+      align=center]
+    at ($(ps_panel.north)+(0,-2mm)$)
+    {problem-space explanation
+     \\$b \in \mathcal{B} \subseteq \mathbb{R}^{|z|}$, e.g., $b \in \mathbb{R}^{2^{30}}$
+     };
+
+% --- flow diagram (inputs -> epsilon -> b), positioned inside ps_panel ---
+\begin{scope}[shift={($(ps_panel.north west)+(12mm,-14mm)$)}]
+
+    % left stack of inputs
+    \node[miniStage] (znode) {$z$};
+    \node[miniStage, below=1mm of znode] (sigmanode) {$\sigma$};
+    \node[miniStage, below=1mm of sigmanode] (phinode) {$\phi$};
+
+    % explanation algorithm box, constrained width so it wraps
+    \node[stage,
+          % text width=2.0cm,
+          minimum width=2.0cm,
+          align=center,
+          right=4mm of sigmanode] (epsnode)
+    {explanation alg.\\$\epsilon_{\sigma, \phi}: \mathcal{Z}\mapsto\mathcal{B}$};
+
+    % final problem-space explanation box
+    \node[stage,
+          % text width=2.0cm,
+          minimum width=2.0cm,
+          align=center,
+          right=3mm of epsnode] (bnode)
+    {explanation\\$b \in \mathcal{B} \subseteq \mathbb{R}^{|z|}$};
+
+    % arrows
+    \draw[->,thick] (znode.east) -- (epsnode.west);
+    \draw[->,thick] (sigmanode.east) -- (epsnode.west);
+    \draw[->,thick] (phinode.east) -- (epsnode.west);
+    \draw[->,thick] (epsnode.east) -- (bnode.west);
+
+\end{scope}
+
+\end{tikzpicture}
+
+\caption{Explanatory Targets. Left: the feature-space explanation process, where the explanation algorithm $\epsilon_{\phi}$ provides saliency $a$ over the feature-space; and right: the problem-space explanation process, where the explanation algorithm $\epsilon_{\sigma,\phi}$ yield saliency $b$ over the problem-space.}
+\label{fig:feature-vs-problem-explanations}
+\end{figure*}

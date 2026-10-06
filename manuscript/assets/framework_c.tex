@@ -1,0 +1,137 @@
+\begin{figure*}[htb]
+\centering
+
+% Styles
+\tikzset{
+    >=Stealth,
+    font=\small,
+    panelbox/.style={
+        rounded corners,
+        draw=black!60,
+        very thick,
+        inner sep=4mm,
+        fill=white,
+    },
+    stage/.style={
+        draw=black,
+        thick,
+        rounded corners,
+        minimum width=3.2cm,
+        minimum height=0.9cm,
+        align=center,
+        fill=black!3
+    },
+    mapbox/.style={
+        draw=black,
+        thick,
+        rounded corners,
+        minimum width=3.2cm,
+        minimum height=0.9cm,
+        align=center,
+        fill=black!2
+    },
+}
+
+\begin{tikzpicture}[
+    node distance=18mm and 14mm
+]
+
+% --- Core nodes -------------------------------------------------------
+
+% feature-space explanation a (left, top)
+\node[stage, fill=black!2, minimum width=4cm] (anode) {
+    concrete explanation\\[-1pt]
+    $\displaystyle a \in \mathcal{A}$
+};
+
+% feature-space explanation a* (left, bottom; pushforward result)
+\node[stage, fill=black!2, minimum width=4cm, below=8mm of anode] (astarnode) {
+    tranferred explanation\\[-1pt]
+    $\displaystyle a^{*} \in \mathcal{A}$
+};
+
+% pullback tau (middle, upper)
+\node[mapbox, right=20mm of anode] (taunode) {
+    pullback\\[-1pt]
+    $\displaystyle \tau: \mathcal{A} \mapsto \mathcal{B}$
+};
+
+% pushforward psi (middle, lower)
+\node[mapbox, right=20mm of astarnode] (psinode) {
+    pushforward\\[-1pt]
+    $\displaystyle \psi: \mathcal{B} \mapsto \mathcal{A}$
+};
+
+% problem-space explanation b* (right, top; pullback result)
+\node[stage, fill=black!2, minimum width=4cm, right=20mm of taunode] (bstarnode) {
+    transferred explanation\\[-1pt]
+    $\displaystyle b^{*} \in \mathcal{B}$
+};
+
+% problem-space explanation b (right, bottom)
+\node[stage, fill=black!2, minimum width=4cm, below=8mm of bstarnode] (bnode) {
+    concrete explanation\\[-1pt]
+    $\displaystyle b \in \mathcal{B}$
+};
+
+% Indicate closeness / correspondence within each space
+\draw[<->, dashed, thick]
+    (anode.south) -- node[right, font=\scriptsize] {$\approx$} (astarnode.north);
+
+\draw[<->, dashed, thick]
+    (bstarnode.south) -- node[right, font=\scriptsize] {$\approx$} (bnode.north);
+
+
+% --- Arrows -----------------------------------------------------------
+
+% Top row: a --tau--> b*
+\draw[->, thick]
+    (anode.east) -- (taunode.west);
+
+\draw[->, thick]
+    (taunode.east) -- (bstarnode.west);
+
+% Bottom row: b --psi--> a*
+\draw[->, thick]
+    (bnode.west) -- (psinode.east);
+
+\draw[->, thick]
+    (psinode.west) -- (astarnode.east);
+
+% Extra headroom at the top of each panel (no change to sides/bottom)
+\coordinate (leftpad)  at ($(anode.north)+(0,8mm)$);
+\coordinate (rightpad) at ($(bstarnode.north)+(0,8mm)$);
+
+% --- Background region boxes (left/right only) -----------------------
+
+\begin{scope}[on background layer]
+
+\node[panelbox,
+      fit=(anode) (astarnode) (leftpad),
+      inner sep=6mm
+] (leftpanel) {};
+
+\node[panelbox,
+      fit=(bstarnode) (bnode) (rightpad),
+      inner sep=6mm
+] (rightpanel) {};
+
+\end{scope}
+
+\node[font=\footnotesize,
+      anchor=north,
+      align=center]
+    at ($(leftpanel.north)+(0,-2mm)$)
+    {feature-space explanations\\$\mathcal{A} \subseteq \mathbb{R}^{|x|}$, e.g., $\mathcal{A} \subseteq \mathbb{R}^{2^{10}}$};
+
+\node[font=\footnotesize,
+      anchor=north,
+      align=center]
+    at ($(rightpanel.north)+(0,-2mm)$)
+    {problem-space explanations\\$\mathcal{B} \subseteq \mathbb{R}^{|z|}$, e.g., $\mathcal{B} \subseteq \mathbb{R}^{2^{30}}$};
+
+\end{tikzpicture}
+
+\caption{Explanation Transformation. A feature-space explanation $a \in \mathcal{A}$ is pulled back via $\tau$ to yield a problem-space explanation $b^{*} \in \mathcal{B}$ close to $b$. Conversely, a problem-space explanation $b \in \mathcal{B}$ is pushed forward via $\psi$ to yield a feature-space explanation $a^{*} \in \mathcal{A}$ close to $a$.}
+\label{fig:pullback-pushforward}
+\end{figure*}

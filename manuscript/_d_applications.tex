@@ -1,0 +1,51 @@
+Having established a framework for understanding model explanations in the feature- and problem-space, we now demonstrate practical applications. Since it was the inspiration behind the framework in the first place, we choose to apply the ideas within the domain of static PE malware detection.
+
+\subsection{Experimental Setup}
+
+In this subsection, we describe the dataset, feature set, and models used in our experiments.
+
+\begin{proposalbox}
+We will use PE files from the updated EMBER dataset~\cite{joyce2025ember}, which we have access to through both industrial and academic partnerships, the updated EMBER feature set~\cite{joyce2025ember}, and tuned MLPs/GBDTs~\cite{anderson2018ember, harang2020sorel}. 
+\end{proposalbox}
+
+\subsection{Model Explanations in the Problem Space}
+
+In this subsection, we discuss our method of attaining explanations directly in the problem-space.
+
+% This will entail: i) identify bytes which cannot be modified, e.g., PE magic; ii) identifying bytes which can be modified with certain constraints, e.g., PE subsystem; and iii) identifying bytes which can be modified freely, e.g., PE sections.
+
+\begin{proposalbox}
+We will devise a simple method to perturb bytes in PE files without breaking the EMBER feature extraction code. We then can ablate these to attain problem-space explanations using perturbation-based techniques such as LIME, Kernel SHAP, and/or Occlusion. This will demonstrate the difficulty and time-consuming nature of attaining problem-space explanations for PE files.
+\end{proposalbox}
+
+\subsection{Provenance for Malware Feature Extraction}
+
+In this subsection, we describe our approach to augment feature extraction process with provenance.
+
+\begin{proposalbox}
+We will implement the provenance technique into the EMBER feature extraction codebase. We will then measure the ambiguity and overlap of derived provenance matrices using different subsets of the features, to elucidate how different feature types impact provenance.
+\end{proposalbox}
+
+\subsection{Intrinsic Evaluation of Transformations}
+
+In this subsection, we evaluate the transformations intrinsically using the cyclic operator error.
+
+\begin{proposalbox}
+We will use the error of cyclic transformation methods, to measure the quality of both pullback and pushforward explanation transformations. Again, we'll perform the process on different subsets of the EMBER feature set to understand how different feature types behave.
+\end{proposalbox}
+
+\subsection{Extrinsic Evaluation of Transformations}
+
+In this subsection, we expand upon the previous evaluation by comparing pulled-back explanations with (direct) problem-space ones as well as pushed-forward explanations with (direct) feature-space ones. This let's us gauge the quality of each operation in isolation, rather than jointly.
+
+\begin{proposalbox}
+We will measure the difference (p-norm, mean error, etc.) between the explanations to understand alignment. We can compare the distance between two explanations produced in the same space via different explanation algorithms and use this as a baseline to understand how aligned or unaligned a transferred explanation is. As before, this will be repeated with feature subsets.
+\end{proposalbox}
+
+\subsection{Analysis}
+
+In this subsection, we analyze the experimental results.
+
+\begin{proposalbox}
+We will analyze the experimental results and discuss these matters from the perspective of the malware analyst (provide visualizations of the different explanations).
+\end{proposalbox}
