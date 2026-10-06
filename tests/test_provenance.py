@@ -20,6 +20,7 @@ from tests.strategies import unambiguous_boxmatrices
 
 
 SETTINGS = settings(max_examples=150, deadline=None)
+POLICIES = st.sampled_from(["null", "uniform", "ignore"])
 
 
 ################################################################################
@@ -30,12 +31,14 @@ SETTINGS = settings(max_examples=150, deadline=None)
 def reference_P(C: np.ndarray, empty: str) -> np.ndarray:
     m, n = C.shape
     s = C.sum(axis=0)
-    P: np.ndarray = np.zeros_like(C)
+    P: np.ndarray = np.zeros((m + int(empty == "null"), n))
     for j in range(n):
         if s[j] > 1e-12 * max(s.max(), 0.0):
-            P[:, j] = C[:, j] / s[j]
+            P[:m, j] = C[:, j] / s[j]
         elif empty == "uniform":
             P[:, j] = 1.0 / m
+        elif empty == "null":
+            P[m, j] = 1.0
     return P
 
 
@@ -79,7 +82,7 @@ def is_sigma_consistent(P: np.ndarray, b: np.ndarray) -> np.ndarray:
 ################################################################################
 
 
-@given(boxmatrices(), st.sampled_from(["uniform", "ignore"]))
+@given(boxmatrices(), POLICIES)
 @SETTINGS
 def test_normalization(C: BoxMatrix, empty: str) -> None:
     prov = Provenance(C, empty=empty)  # type: ignore[arg-type]
@@ -100,6 +103,45 @@ def test_empty_policies() -> None:
     ignore = Provenance(C, empty="ignore")
     assert np.allclose(ignore.to_dense()[:, 1], 0.0)
     assert ignore.included.tolist() == [True, False, True]
+
+
+def test_null_policy() -> None:
+    C = BoxMatrix((4, 3))
+    C.add_boxes(0, 2, 0, 1, 1.0)
+    C.add_boxes(1, 4, 2, 3, 2.0)
+    prov = Provenance(C, empty="null")
+    assert prov.has_null
+    assert prov.shape == (5, 3)
+    P = prov.to_dense()
+    assert np.array_equal(P[4], [0.0, 1.0, 0.0])
+    assert np.allclose(P.sum(axis=0), 1.0)
+    # The null element receives exactly the attribution of the empty features.
+    b = prov.pullback(np.array([1.0, 5.0, -2.0]))
+    assert b[4] == 5.0
+    assert np.isclose(b.sum(), 4.0)
+    # A problem-space explanation without a null entry is padded with zero.
+    assert np.allclose(prov.pushforward(np.ones(4)), prov.pushforward(np.append(np.ones(4), 0.0)))
+
+
+@given(boxmatrices(), st.integers(0, 2 ** 16))
+@SETTINGS
+def test_uniform_is_null_spread(C: BoxMatrix, seed: int) -> None:
+    """Pulling back with "uniform" is pulling back with "null" and then spreading the null share uniformly."""
+    null = Provenance(C, empty="null")
+    uniform = Provenance(C, empty="uniform")
+    a = np.random.default_rng(seed).normal(size=null.num_features)
+    b = null.pullback(a)
+    assert np.allclose(uniform.pullback(a), b[:-1] + b[-1] / null.num_elements)
+
+
+@given(full_boxmatrices(), st.integers(0, 2 ** 16))
+@SETTINGS
+def test_policies_agree_without_empty_features(C: BoxMatrix, seed: int) -> None:
+    a = np.random.default_rng(seed).normal(size=C.shape[1])
+    b_null = Provenance(C, empty="null").pullback(a)
+    assert b_null[-1] == 0.0
+    for empty in ("uniform", "ignore"):
+        assert np.allclose(Provenance(C, empty=empty).pullback(a), b_null[:-1])
 
 
 def test_negative_contributions() -> None:
@@ -126,7 +168,7 @@ def test_invalid_policy() -> None:
 ################################################################################
 
 
-@given(boxmatrices(), st.sampled_from(["uniform", "ignore"]), st.integers(0, 2 ** 16))
+@given(boxmatrices(), POLICIES, st.integers(0, 2 ** 16))
 @SETTINGS
 def test_pullback(C: BoxMatrix, empty: str, seed: int) -> None:
     prov = Provenance(C, empty=empty)  # type: ignore[arg-type]
@@ -134,21 +176,21 @@ def test_pullback(C: BoxMatrix, empty: str, seed: int) -> None:
     assert np.allclose(prov.pullback(a), prov.to_dense() @ a)
 
 
-@given(boxmatrices(), st.sampled_from(["uniform", "ignore"]), st.integers(0, 2 ** 16))
+@given(boxmatrices(), POLICIES, st.integers(0, 2 ** 16))
 @SETTINGS
 def test_pushforward(C: BoxMatrix, empty: str, seed: int) -> None:
     prov = Provenance(C, empty=empty)  # type: ignore[arg-type]
-    b = np.random.default_rng(seed).normal(size=prov.num_elements)
+    b = np.random.default_rng(seed).normal(size=prov.num_rows)
     assert np.allclose(prov.pushforward(b), reference_pushforward(prov.to_dense(), b))
 
 
-@given(boxmatrices(), st.integers(0, 2 ** 16))
+@given(boxmatrices(), POLICIES, st.integers(0, 2 ** 16))
 @SETTINGS
-def test_cyclic_operators(C: BoxMatrix, seed: int) -> None:
-    prov = Provenance(C)
+def test_cyclic_operators(C: BoxMatrix, empty: str, seed: int) -> None:
+    prov = Provenance(C, empty=empty)  # type: ignore[arg-type]
     rng = np.random.default_rng(seed)
     a = rng.normal(size=prov.num_features)
-    b = rng.normal(size=prov.num_elements)
+    b = rng.normal(size=prov.num_rows)
     P = prov.to_dense()
     assert np.allclose(prov.pull_push(a), reference_pushforward(P, P @ a))
     assert np.allclose(prov.push_pull(b), P @ reference_pushforward(P, b))
@@ -169,7 +211,7 @@ def test_transfer_shapes() -> None:
 ################################################################################
 
 
-@given(boxmatrices(), st.sampled_from(["uniform", "ignore"]))
+@given(boxmatrices(), POLICIES)
 @SETTINGS
 def test_ambiguity(C: BoxMatrix, empty: str) -> None:
     prov = Provenance(C, empty=empty)  # type: ignore[arg-type]
@@ -181,15 +223,30 @@ def test_ambiguity(C: BoxMatrix, empty: str) -> None:
     assert np.array_equal(ambiguity.support, (prov.to_dense() > 0).sum(axis=0))
 
 
-@given(boxmatrices(), st.sampled_from(["uniform", "ignore"]), st.sampled_from([1, 3, 2 ** 24]))
+@given(boxmatrices(), POLICIES)
 @SETTINGS
-def test_overlap(C: BoxMatrix, empty: str, budget: int) -> None:
+def test_overlap(C: BoxMatrix, empty: str) -> None:
     prov = Provenance(C, empty=empty)  # type: ignore[arg-type]
     O, On, O_ = reference_overlap(prov.to_dense(), prov.included)
-    overlap = prov.overlap(budget=budget)
+    overlap = prov.overlap()
     assert np.allclose(overlap.per_feature, O)
     assert np.allclose(overlap.normalized, On)
     assert np.isclose(overlap.overall, O_)
+
+
+def test_statistics_with_collisions() -> None:
+    """Keyed entries that land on columns covered by constant boxes (the kernel's slow path)."""
+    C = BoxMatrix((6, 3))
+    C.add_boxes(0, 6, 0, 2, 1.0)
+    C.add_boxes(2, 5, 2, 3, 3.0)
+    C.add_keyed_boxes(0, 6, 0, C.add_key(np.array([0, 1, 2, 2, 0, 1], dtype=np.uint8)), 0.5)
+    C.add_keyed_boxes(1, 4, 1, C.add_key(np.array([0, 1, 1, 0, 0, 0], dtype=np.uint8)), 2.0)
+    prov = Provenance(C)
+    P = prov.to_dense()
+    O, _, _ = reference_overlap(P, prov.included)
+    H, _, _ = reference_ambiguity(P, prov.included)
+    assert np.allclose(prov.overlap().per_feature, O)
+    assert np.allclose(prov.ambiguity().per_feature, H)
 
 
 def test_overlap_example() -> None:

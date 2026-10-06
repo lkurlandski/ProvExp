@@ -1,6 +1,6 @@
 # `provexp` Package Design
 
-Status: Phase 1 core implemented, 2026-10-06. Open questions are collected in [§9](#9-open-questions).
+Status: Phase 1 core implemented, 2026-10-06 (statistics kernel and null policy added). Open questions are collected in [§9](#9-open-questions).
 
 ## 1. Scope and priorities
 
@@ -18,7 +18,7 @@ Decisions:
 | Elements | Bytes, everywhere. No PE-specific "atoms" in the core. H and O are defined and computed at byte level. |
 | Sparse format | `BoxMatrix`: 2-d only (no use for N > 2), constant boxes plus keyed boxes (§3). |
 | Normalization | Store raw contributions C; normalize columns lazily (§4). |
-| Unattributable features | One policy in `Provenance` decides what an empty column means, chosen for easy recovery (§4.2). Every place where this matters is marked `NOTE (Axiom 3)`. |
+| Unattributable features | One policy in `Provenance` decides what an empty column means (§4.2): `"null"` (recommended), `"uniform"` (current default), or `"ignore"`. Every place where this matters is marked `NOTE (Axiom 3)`. |
 | Instrumenting EMBER | thrember's `features.py` copied verbatim and committed, then modified by pure additions (no original line changed). |
 | Test reference | A verbatim copy of only `features.py` (+ `pefile_warnings.txt`) in `tests/reference/`. |
 | Dependencies | No dependency on the `thrember` package. |
@@ -85,25 +85,37 @@ Raw contributions C (a `BoxMatrix`), feature names, and the empty policy. P = C�
 
 ### 4.2 Empty columns (the Axiom 3 question)
 
-Feature sets never fabricate provenance: a feature to which no byte contributes has an empty column in C. The
-`empty` policy decides what that means at normalization time, so changing it later requires no recomputation:
+Feature sets never fabricate provenance: a feature to which no byte contributes has an empty column in C. Such a
+column cannot satisfy both Axiom 2 (sums to one) and Axiom 3 (only influencing elements are nonzero). The `empty`
+policy decides what it means at normalization time, so changing it requires no recomputation:
 
-- `"uniform"` (default for now): spread the feature uniformly over all bytes. Satisfies Axioms 1 and 2, contradicts 3.
-- `"ignore"`: leave the column empty. Pullback/pushforward ignore the feature, statistics exclude it. Satisfies
-  Axioms 1 and 3, not 2. Equivalent to the manuscript's "exclude j from P" without changing feature indices.
+- `"null"` (recommended): augment the problem-space with a null element ⊥ ("no part of the input"), the sole source
+  of every empty feature. P has m + 1 rows. **All three axioms hold** over Z ∪ {⊥}, every proposition and theorem
+  carries over unchanged, real bytes never receive fabricated attribution, and b_⊥ is exactly the attribution that
+  cannot be localized in the input. Cost: empty features look unambiguous (one-hot at ⊥) and overlap each other at
+  ⊥ in the statistics, which is mathematically correct but should be read alongside the share of attributable features.
+- `"uniform"` (current default): spread uniformly over all bytes. Satisfies Axioms 1 and 2, contradicts 3.
+  Exactly `"null"` followed by spreading b_⊥ evenly over the bytes (tested).
+- `"ignore"`: leave the column empty. Satisfies Axioms 1 and 3, not 2; breaks completeness of pullback. Equivalent to
+  the manuscript's "exclude j from P" without changing feature indices.
 
-**This matters more than expected:** on the fixture files, 1,100–2,400 of the 2,568 EMBER features have empty
-columns. Most are empty hash buckets and absent structures (e.g., no exports). See Q1.
+On the fixture files, 1,100–2,400 of the 2,568 EMBER features have empty columns (mostly empty hash buckets and
+absent structures), so this choice is consequential.
 
 ### 4.3 Statistics
 
-Both are exact at byte level and computed from the canonical form. Overlap avoids the O(n²) pairs of features: within
-each elementary row segment it sorts the active values, and the feature of rank r shares
-Σ_{s<r} q_s + q_r·(t − r) mass with the others.
+Ambiguity and overlap are exact at byte level and computed together by one numba-compiled sweep over the rows of P
+(`_sweep_statistics`), without forming the canonical form or enumerating pairs of features:
 
-Worst case (synthetic, 4 MiB, ~90 whole-file features, 20k small boxes, keyed histograms): construct 0.8 s,
-pullback 0.7 s, pushforward 1.2 s, ambiguity 8 s, **overlap 69 s / 3.5 GB peak**. Overlap is the optimization
-target if we compute it at dataset scale (see Q3).
+- Columns covered by constant boxes form a sorted "base" that changes only where a box starts or ends; runs of rows
+  without keyed entries are accumulated in one step. Rows with keyed entries merge their few values into the base.
+- Within a row with t nonzero values sorted q_1 <= ... <= q_t, the feature of rank r shares
+  Σ_{s<r} q_s + q_r·(t − r) mass with the others.
+- Under `"uniform"`, all empty columns are identical, so they are one entry with a multiplicity.
+
+Cost is O(m · nonempty features). On the 45 fixtures (median 322 KB): extraction with provenance 0.24 s median /
+3.5 s max; both statistics 0.06 s median / 1.0 s max, under either policy. Synthetic 4 MiB worst case: 2.9 s
+(`"null"`) to 5.3 s (`"uniform"`), down from 77 s.
 
 ## 5. EMBER-2024 feature set
 
@@ -160,7 +172,7 @@ files in `SSViT/index/ember2024/us/`.
 
 ## 7. Testing
 
-`pytest -n 16 tests`: 416 tests (≈5 minutes, dominated by thrember on the fixture files).
+`pytest -n 16 tests`: 420 tests (≈5 minutes, dominated by thrember on the fixture files).
 
 - `test_boxmatrix.py`: every operation against dense numpy on random matrices (hypothesis).
 - `test_provenance.py`: normalization, transfers, and statistics against dense implementations of the manuscript's
@@ -171,16 +183,15 @@ files in `SSViT/index/ember2024/us/`.
 ## 8. Phase 1 status
 
 Done: `BoxMatrix`, `Provenance`, the instrumented EMBER-2024 feature set, SimpleDB access, the fixture script, and
-MalConv, all tested. Remaining Phase 1 items: none blocking. Optional: optimize `overlap` (Q3).
+MalConv, all tested. Remaining Phase 1 item: the empty-policy decision (Q1).
 
 ## 9. Open questions
 
-- **Q1 Empty columns are the majority.** For a typical file, 65–95% of EMBER features have no contributions. Under
-  `"uniform"`, any attribution assigned to them is smeared over the whole file, and tree explainers do attribute to
-  absent features (e.g., "no import hashes into bucket 37"). Options: keep `"uniform"`; switch to `"ignore"`; or a
-  middle ground where *absent-structure* features (an empty bucket) are attributed to the structure that would have
-  contained them (e.g., the import directory). This is the most consequential open modeling decision.
-- **Q2 Weights within columns.** Count features spread one unit per item over the item's bytes, so a long string
-  gives each byte less weight than a short one. This is a convention; an alternative is one unit per byte everywhere.
-- **Q3 Overlap at scale.** 69 s / 3.5 GB in the 4 MiB worst case. Optimizing it (treating keyed boxes as perturbations
-  of a slowly varying base) is a contained piece of work, if we need O for the whole dataset.
+- **Q1 Empty policy (decision pending).** Recommendation: make `"null"` the default and revise the manuscript:
+  Definition 3 over Z ∪ {⊥} with ⊥ influencing exactly the features no real element influences; the summary
+  statistics reported together with the share of features that have real provenance; and the pulled-back null
+  share as a per-explanation localizability measure. The code supports all three policies; the default is still
+  `"uniform"` until decided.
+- **Q2 Weights within columns.** Decided: keep one unit per item for count features, one per byte for content
+  features.
+- **Q3 Statistics at scale.** Resolved by the numba sweep (§4.3).
