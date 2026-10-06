@@ -1,6 +1,6 @@
 # ProvExp Research Plan
 
-Living document. Last revised 2026-10-06.
+Living document. Last revised 2026-10-06 (scope narrowed to EMBER-2024).
 
 ## Target
 
@@ -20,12 +20,12 @@ Pushforward goes the other way: it expresses raw-byte model explanations (MalCon
 
 ## Framing of "smear" (a result, not a limitation)
 
-How *localizable* a feature set's signal is is a property of the feature set, and measuring it is one of the study's contributions. Provenance statistics give the first quantitative tool for asking "how much of what this model relies on can an analyst actually point to in the binary?" We report this for each feature group, each dataset (EMBER2018 vs. EMBER2024 feature versions) and each sample class (packed/unpacked, malware/benign), and connect it to security consequences such as robustness to appending/padding attacks and analyst actionability.
+How *localizable* a feature set's signal is is a property of the feature set, and measuring it is one of the study's contributions. Provenance statistics give the first quantitative tool for asking "how much of what this model relies on can an analyst actually point to in the binary?" We report this for each feature group, each sample class (packed/unpacked, malware/benign), and connect it to security consequences such as robustness to appending/padding attacks and analyst actionability.
 
 ## Contributions (revised after Phase 0)
 
 1. **Framing:** feature-space vs. problem-space explanations for detectors with *program* feature extractors; pullback/pushforward as rescale-rule propagation extended to non-differentiable programs.
-2. **Provenance construction:** instrumented EMBER2018/2024 extractor + black-box estimator (open source).
+2. **Provenance construction:** instrumented EMBER-2024 (v3) extractor + black-box estimator (open source).
 3. **Localizability analysis** of EMBER feature sets.
 4. **Evaluation:** problem-space faithfulness vs. cost; planted-trigger ground truth.
 5. **Cross-representation comparison** of MalConv and GBDT.
@@ -36,13 +36,13 @@ Naming ("provenance" collides with provenance-graph IDS work) is deferred to wri
 
 - **Pullback is not claimed as new.** It is G-DeepSHAP's generalized rescale rule. Cite it and position against it. A method contribution of the form "rescale rule applied to a feature extractor" is not enough for a top venue on its own.
 - **Top-tier novelty has to come from what the pullback *enables* in security**, not from the operator:
-  - (a) **Measurement:** *where in the binary do production-style malware detectors look?* Localizability of EMBER feature sets, the distribution of attribution mass over PE structures, shortcut/artifact reliance localized in the file, and EMBER2018 vs. 2024 feature versions. MalConv is compared on the same region space.
+  - (a) **Measurement:** *where in the binary do production-style malware detectors look?* Localizability of EMBER feature sets, the distribution of attribution mass over PE structures, and shortcut/artifact reliance localized in the file. MalConv is compared on the same region space.
   - (b) **Manipulability (hypothesis to test):** the share of a decision's pulled-back attribution that falls in attacker-controllable regions (overlay, DOS stub, slack, padding; cf. Demetrio's functionality-preserving manipulations) predicts how easily that sample can be evaded. If this holds, it is a per-decision, explainer-agnostic robustness signal and a new defensive result.
 - **Pushforward is kept as a conceptual contribution, framed as *foreign-space explanation*:** explaining a model in terms of a representation it never computes (MalConv explained in EMBER features). Aggregation and G-DeepSHAP's group rescale only coarsen a model's own inputs. When O=0, pushforward reduces to plain group-sum aggregation, so it generalizes aggregation to overlapping, weighted groups. The pull/push duality results (perfect round-trip iff O=0 / H=0) are kept as modest theory.
   - (c) **Stability (hypothesis to test):** explanations agree more in the problem space than in feature space. Pullback merges features with identical provenance, so credit-splitting among mechanically redundant features (Mohseni et al. Lemma 2) cancels exactly. Test: their duplicate-feature sweep, plus agreement across explainers and background sets before and after pullback.
 - **Additional pushforward uses to develop:**
   - *Ground truth for feature-space explainers:* push a known problem-space region (a planted trigger) forward to get the feature attribution an explainer *should* produce, then score TreeSHAP/KernelSHAP/LIME against it.
-  - *Explanation translation between feature extractors:* pull via σ₁, push via σ₂ (a = P₂ᵀD₂†P₁a₁), e.g., EMBER2018-feature model ↔ EMBER2024-feature model ↔ MalConv on the same files.
+  - *Explanation translation between feature extractors:* pull via σ₁, push via σ₂ (a = P₂ᵀD₂†P₁a₁), e.g., EMBER-feature GBDT ↔ MalConv on the same files (more extractors if scope grows).
 - **Go/no-go checkpoint (around week 6):** pilot (a)–(c) on a few thousand files. If none shows a strong signal, retarget to a lower-tier venue.
 - **The method is explainer-agnostic.** The SHAP-on-EMBER critique (Mohseni et al. 2026) does not affect the method, but it affects evaluation and reviewers. Show results with several explainers (TreeSHAP, KernelSHAP, LIME, IG/MLP) and validate in the problem space on real files.
 - **Fallback:** if (a) and (b) produce no strong findings, retarget to a lower-tier venue (e.g., ACSAC, RAID, AsiaCCS, DLSP workshop) with the method + malware application.
@@ -65,9 +65,10 @@ Naming ("provenance" collides with provenance-graph IDS work) is deferred to wri
 
 ## Data, models, compute
 
-- **Binaries:** EMBER2018 and EMBER2024, **first 4 MB of each file only**.
+- **Scope (decided 2026-10-06):** EMBER-2024 PE files and EMBER feature version 3 only. Other datasets and feature versions are out of scope for now.
+- **Binaries:** EMBER-2024, **first 4,000,000 bytes of each file only**.
   - Recompute all features on the truncated files so that σ, P and the model all see the same object. Report how many files are truncated and how this changes features (e.g., the overlay, the certificate, and tail sections can be cut off).
-- **Models:** LightGBM (EMBER baseline-style) and MLP trained on EMBER features. Pretrained MalConv on EMBER2018, SOREL-20M and EMBER2024 (first 4 MB).
+- **Models:** LightGBM (EMBER baseline-style) and MLP trained on EMBER features. Pretrained MalConv (medium) on EMBER-2024.
 - **Compute:** ample CPUs, GPUs and storage, so direct problem-space baselines (KernelSHAP/LIME/occlusion over regions) are feasible at scale for comparison.
 
 ## Phases (about 16 weeks to a late-January deadline)
@@ -96,6 +97,6 @@ Naming ("provenance" collides with provenance-graph IDS work) is deferred to wri
 ## Risks
 
 - Histogram/entropy features dominate and smear across the file. Handled as an analysis result (see framing above); report region-level and per-group results.
-- The 4 MB truncation changes features relative to the published EMBER vectors. Mitigated by recomputing everything on the truncated files.
+- The 4,000,000-byte truncation changes features relative to the published EMBER vectors. Mitigated by recomputing everything on the truncated files.
 - Novelty overlap with prior work: pullback ≈ G-DeepSHAP rescale rule (confirmed). Mitigated by the novelty strategy above; fallback venue if the findings are weak.
 - The timeline is tight. If needed, Evaluation 5 (pushforward) is the first candidate to shrink.
