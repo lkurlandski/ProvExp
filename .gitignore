@@ -27,3 +27,9 @@ manuscript/*.blg
 
 # Model checkpoints
 checkpoints/
+
+# Split index files copied from SSViT (tr.txt exceeds GitHub's 100 MB file limit)
+index/
+
+# Large regenerable outputs (a symlink to /scratch/lk3591/provexp)
+artifacts
