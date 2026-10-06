@@ -123,6 +123,19 @@ def test_null_policy() -> None:
     assert np.allclose(prov.pushforward(np.ones(4)), prov.pushforward(np.append(np.ones(4), 0.0)))
 
 
+def test_coverage_and_localizability() -> None:
+    C = BoxMatrix((4, 4))
+    C.add_boxes(0, 2, 0, 1, 1.0)
+    C.add_boxes(1, 4, 2, 3, 2.0)
+    prov = Provenance(C)
+    assert prov.coverage == 0.5
+    a = np.array([1.0, -3.0, -2.0, 4.0])
+    assert prov.localizability(a) == 0.3
+    # The null element's share of the pullback is the signed attribution of the unattributable features.
+    assert prov.pullback(a)[-1] == 1.0
+    assert prov.localizability(np.zeros(4)) == 1.0
+
+
 @given(boxmatrices(), st.integers(0, 2 ** 16))
 @SETTINGS
 def test_uniform_is_null_spread(C: BoxMatrix, seed: int) -> None:
@@ -306,7 +319,7 @@ def test_soundness_of_pushforward(C: BoxMatrix, seed: int) -> None:
     prov = Provenance(C)
     P = prov.to_dense()
     rng = np.random.default_rng(seed)
-    b = rng.normal(size=prov.num_elements) * (rng.random(prov.num_elements) < 0.5)
+    b = rng.normal(size=prov.num_rows) * (rng.random(prov.num_rows) < 0.5)
     a = prov.pushforward(b)
     for j in range(prov.num_features):
         if np.all(P[b != 0, j] == 0):
@@ -317,7 +330,7 @@ def test_soundness_of_pushforward(C: BoxMatrix, seed: int) -> None:
 @SETTINGS
 def test_completeness_of_pushforward(C: BoxMatrix, seed: int) -> None:
     prov = Provenance(C)
-    b = is_sigma_consistent(prov.to_dense(), np.random.default_rng(seed).normal(size=prov.num_elements))
+    b = is_sigma_consistent(prov.to_dense(), np.random.default_rng(seed).normal(size=prov.num_rows))
     assert np.isclose(prov.pushforward(b).sum(), b.sum())
 
 
@@ -328,7 +341,7 @@ def test_independence_of_pushforward(C: BoxMatrix, seed: int) -> None:
     P = prov.to_dense()
     D = P.sum(axis=1)
     rng = np.random.default_rng(seed)
-    b = rng.normal(size=prov.num_elements) * (rng.random(prov.num_elements) < 0.3)
+    b = rng.normal(size=prov.num_rows) * (rng.random(prov.num_rows) < 0.3)
     a = prov.pushforward(b)
     for j in range(prov.num_features):
         T = np.flatnonzero((b != 0) & (P[:, j] > 0))
@@ -375,6 +388,6 @@ def test_perfect_push_pull(C: BoxMatrix) -> None:
     """The push-pull reconstruction is perfect for all sigma-consistent b if and only if H = 0."""
     prov = Provenance(C)
     P = prov.to_dense()
-    basis = [is_sigma_consistent(P, e) for e in np.eye(prov.num_elements)]
+    basis = [is_sigma_consistent(P, e) for e in np.eye(prov.num_rows)]
     perfect = all(prov.push_pull_error(e) < 1e-9 for e in basis)
     assert perfect == (prov.ambiguity().overall == 0)

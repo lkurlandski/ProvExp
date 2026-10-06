@@ -14,6 +14,7 @@ The following table documents the symbols used in this chapter.
       $j$ & --- & index typically associated with feature-space \\
       \midrule
       $z_i$, $z$, $\mathcal{Z}$ &  & problem-space element, object, and space \\
+      $z_\varnothing$, $\bar{z}$ &  & null element and augmented problem-space object \\
       $x_j$, $x$, $\mathcal{X}$ &  & feature-space feature, vector, and space \\
       $\sigma$ &  & feature mapping function \\
       $\phi$ &  & classification function \\
@@ -23,16 +24,19 @@ The following table documents the symbols used in this chapter.
       $a_j$, $a$, $\mathcal{A}$ &  & feature-space importance, explanation, and space \\
       \midrule
       $P$ &  & provenance matrix \\
+      $U$ &  & unattributable features \\
       $D$ &  & provenance row sums \\
       $D^\dagger$ &  & provenance row-sum psuedo-inverse \\
       $A_j$ &  & provenance row-support \\
       $\tau$ &  & pullback operator \\
       $\psi$ &  & pushforward operator \\
       $\psi_\tau$ &  & pull-push operator \\
-      $\tau_\psi$ &  & push-push operator \\
+      $\tau_\psi$ &  & push-pull operator \\
       \midrule
-      $H_j$, $\widehat{H_j}$, $H$ &  & (feature-level) (un)normalized aprovenance mbiguity \\
+      $H_j$, $\widehat{H_j}$, $H$ &  & (feature-level) (un)normalized provenance ambiguity \\
       $O_j$, $\widehat{O_j}$, $O$ &  & (feature-level) (un)normalized provenance overlap \\
+      \midrule
+      $\kappa$, $\ell$ &  & provenance coverage and explanation localizability \\
       \midrule
       $\delta_{\psi_\tau}$ &  & pull-push error \\
       $\delta_{\tau_\psi}$ &  & push-pull error \\
@@ -51,6 +55,7 @@ If for some $i$ we have $P_{i,j} = 0$ for all $j$ with $a_j \neq 0$, then $\tau(
 }
 
 \proposition[\textit{Completeness of Pullback}]{
+\label{prop:pullback-completeness}
 The initial attribution mass $\sum_j a_j$ is equal to the final mass $\sum_i \tau(a)_i$. \textit{Proof.} $\sum_i \tau(a)_i = \sum_i (Pa)_i = \sum_i \sum_j P_{i,j} a_j = \sum_j a_j \sum_i P_{i,j} = \sum_j a_j$. \hfill$\square$
 }
 

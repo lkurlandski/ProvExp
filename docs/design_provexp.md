@@ -18,7 +18,7 @@ Decisions:
 | Elements | Bytes, everywhere. No PE-specific "atoms" in the core. H and O are defined and computed at byte level. |
 | Sparse format | `BoxMatrix`: 2-d only (no use for N > 2), constant boxes plus keyed boxes (§3). |
 | Normalization | Store raw contributions C; normalize columns lazily (§4). |
-| Unattributable features | One policy in `Provenance` decides what an empty column means (§4.2): `"null"` (recommended), `"uniform"` (current default), or `"ignore"`. Every place where this matters is marked `NOTE (Axiom 3)`. |
+| Unattributable features | One policy in `Provenance` decides what an empty column means (§4.2): `"null"` (default), `"uniform"`, or `"ignore"`. Every place where this matters is marked `NOTE (Axiom 3)`. |
 | Instrumenting EMBER | thrember's `features.py` copied verbatim and committed, then modified by pure additions (no original line changed). |
 | Test reference | A verbatim copy of only `features.py` (+ `pefile_warnings.txt`) in `tests/reference/`. |
 | Dependencies | No dependency on the `thrember` package. |
@@ -89,12 +89,12 @@ Feature sets never fabricate provenance: a feature to which no byte contributes 
 column cannot satisfy both Axiom 2 (sums to one) and Axiom 3 (only influencing elements are nonzero). The `empty`
 policy decides what it means at normalization time, so changing it requires no recomputation:
 
-- `"null"` (recommended): augment the problem-space with a null element ⊥ ("no part of the input"), the sole source
+- `"null"` (default): augment the problem-space with a null element ⊥ ("no part of the input"), the sole source
   of every empty feature. P has m + 1 rows. **All three axioms hold** over Z ∪ {⊥}, every proposition and theorem
   carries over unchanged, real bytes never receive fabricated attribution, and b_⊥ is exactly the attribution that
   cannot be localized in the input. Cost: empty features look unambiguous (one-hot at ⊥) and overlap each other at
   ⊥ in the statistics, which is mathematically correct but should be read alongside the share of attributable features.
-- `"uniform"` (current default): spread uniformly over all bytes. Satisfies Axioms 1 and 2, contradicts 3.
+- `"uniform"`: spread uniformly over all bytes. Satisfies Axioms 1 and 2, contradicts 3.
   Exactly `"null"` followed by spreading b_⊥ evenly over the bytes (tested).
 - `"ignore"`: leave the column empty. Satisfies Axioms 1 and 3, not 2; breaks completeness of pullback. Equivalent to
   the manuscript's "exclude j from P" without changing feature indices.
@@ -183,15 +183,13 @@ files in `SSViT/index/ember2024/us/`.
 ## 8. Phase 1 status
 
 Done: `BoxMatrix`, `Provenance`, the instrumented EMBER-2024 feature set, SimpleDB access, the fixture script, and
-MalConv, all tested. Remaining Phase 1 item: the empty-policy decision (Q1).
+MalConv, all tested. Phase 1 is complete.
 
 ## 9. Open questions
 
-- **Q1 Empty policy (decision pending).** Recommendation: make `"null"` the default and revise the manuscript:
-  Definition 3 over Z ∪ {⊥} with ⊥ influencing exactly the features no real element influences; the summary
-  statistics reported together with the share of features that have real provenance; and the pulled-back null
-  share as a per-explanation localizability measure. The code supports all three policies; the default is still
-  `"uniform"` until decided.
+- **Q1 Empty policy.** Decided: `"null"` is the default. The manuscript's Definition 3 now includes the null element
+  (Axiom 4) and a new definition introduces provenance coverage κ and explanation localizability ℓ(a), both of
+  which `Provenance` implements (`coverage`, `localizability`).
 - **Q2 Weights within columns.** Decided: keep one unit per item for count features, one per byte for content
   features.
 - **Q3 Statistics at scale.** Resolved by the numba sweep (§4.3).

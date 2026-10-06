@@ -1670,7 +1670,7 @@ class PEFeatureExtractor(object):
         """The name of each feature, prefixed by the name of its feature type, in the order of the feature vector."""
         return [f"{fe.name}:{n}" for fe in self.features for n in fe.feature_names]
 
-    def feature_vector_with_provenance(self, bytez: bytes, empty: EmptyPolicy = "uniform") -> tuple[np.ndarray, Provenance]:
+    def feature_vector_with_provenance(self, bytez: bytes, empty: EmptyPolicy = "null") -> tuple[np.ndarray, Provenance]:
         """
         Compute the feature vector and its explanation provenance, parsing the file only once.
 
@@ -1694,7 +1694,7 @@ class PEFeatureExtractor(object):
         C = BoxMatrix.hstack([fe.provenance(bytez, pe) for fe in self.features])
         return x, Provenance(C, self.feature_names, empty)
 
-    def provenance(self, bytez: bytes, empty: EmptyPolicy = "uniform") -> Provenance:
+    def provenance(self, bytez: bytes, empty: EmptyPolicy = "null") -> Provenance:
         """
         Compute the explanation provenance of the feature vector of a file.
         """

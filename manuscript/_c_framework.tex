@@ -48,15 +48,18 @@ As previously explained, it may be difficult or impossible to attain an explanat
 
 The glue of these transforms is an explanation provenance associating elements with features.
 
+Before defining it, we must address a subtle but pervasive issue: some features are not attributable to any element of the problem-space object. Some are not computed from any particular element, e.g., a flag indicating whether a file could be parsed at all, and others take a value precisely because something is absent, e.g., a hashed bucket into which no imported function falls. In practice, such features are common; for hashed and structural feature sets, they can be the majority. To accommodate them without fabricating influence, we augment every problem-space object with a \textit{null element}, $z_\varnothing$, which represents ``no part of $z$.'' We write $\bar{z} = (z_1, \dots, z_{|z|}, z_\varnothing)$ for the augmented object and index the null element by $\varnothing$.
+
 % NOTE: We may want to develop an axiom or desiderata around composition, i.e., applying multiple feature extraction processes iteratively with their own provenance. This could also be expanded to work on other spaces derived from the problem-space but unrelated to the feature-space, i.e., branching spaces as opposed to purely iterative ones.
 \definition[\textit{Explanation Provenance}]
 \label{def:ExplanationProvenance}
 {
-Consider some sample $z \in \mathcal{Z}$ in the problem-space, a feature map $\sigma$, and the feature-space representation $\sigma(z) = x \in \mathcal{X}$. We define the explanation provenance for $z$ and $x$ under $\sigma$ as a nonnegative matrix $P \in \mathbb{R}^{|z| \times |x|}$ whose entry $P_{i,j}$ indicates the proportional degree to which $z_i$ influences feature $x_j$ under $\sigma$ relative to other elements. More formally, $P$ must adhere to the following axioms:
+Consider some sample $z \in \mathcal{Z}$ in the problem-space, its augmentation $\bar{z}$, a feature map $\sigma$, and the feature-space representation $\sigma(z) = x \in \mathcal{X}$. We define the explanation provenance for $z$ and $x$ under $\sigma$ as a nonnegative matrix $P \in \mathbb{R}^{(|z| + 1) \times |x|}$ whose entry $P_{i,j}$ indicates the proportional degree to which $\bar{z}_i$ influences feature $x_j$ under $\sigma$ relative to other elements. More formally, $P$ must adhere to the following axioms:
 \begin{itemize}[noitemsep, topsep=-4pt]
     \item \textbf{Axiom 1} (\textit{Nonnegativity})\textbf{.} $P_{i,j} \ge 0$ for all $i,j$.
-    \item \textbf{Axiom 2} (\textit{Normalization})\textbf{.} For all $j$, $\sum_i P_{i,j} = 1$.
-    \item \textbf{Axiom 3} (\textit{Influence})\textbf{.} $P_{i,j} > 0$ iff $z_i$ influences $x_j$.
+    \item \textbf{Axiom 2} (\textit{Normalization})\textbf{.} For all $j$, $\sum_i P_{i,j} = 1$, where the sum includes the null element.
+    \item \textbf{Axiom 3} (\textit{Influence})\textbf{.} For every element $z_i$ of $z$, $P_{i,j} > 0$ iff $z_i$ influences $x_j$.
+    \item \textbf{Axiom 4} (\textit{Null})\textbf{.} $P_{\varnothing,j} = 1$ if no element of $z$ influences $x_j$, and $P_{\varnothing,j} = 0$ otherwise.
 \end{itemize}
 Optionally, the following desiderata may be useful to practitioners:
 \begin{itemize}[noitemsep, topsep=-4pt]
@@ -64,8 +67,13 @@ Optionally, the following desiderata may be useful to practitioners:
   \item \textbf{Desiderata 2} (\textit{Locality}) most per-column mass is concentrated in a short span.
   \item \textbf{Desiderata 3} (\textit{Stability}) small perturbations to $z$ induce small changes in $P$.
 \end{itemize}
-If for some $z$, $\sigma$ produces a feature $x_j$ that is not attributable to any $z_i$ we recommend excluding $j$ from $P$ entirely. Other options could include setting $P_{i,j} = 1 / |z|$ for all $i$ (which breaks Axiom 3) or adding a `sink' element $z_{|z| + 1}$ and setting $P_{{|z| + 1}, j} = 1$ (which breaks Proposition~\ref{prop:pullback-independence}).
 }
+
+\begin{notationbox}
+Let $U = \{\, j : P_{\varnothing,j} = 1 \,\}$ be the set of unattributable features, i.e., the features that no element of $z$ influences.
+\end{notationbox}
+
+Without the null element, an unattributable feature cannot satisfy both Axiom 2 and Axiom 3: its column would need to sum to one while containing only zeros. The obvious alternatives each sacrifice something. Excluding the feature from $P$ violates Axiom 2 and, as a consequence, the pullback no longer conserves attribution mass (Proposition~\ref{prop:pullback-completeness}). Spreading its provenance uniformly over the elements, i.e., $P_{i,j} = 1/|z|$, violates Axiom 3 and fabricates influence, smearing the feature's attribution over the entire object. The null element satisfies all four axioms and, because it is simply one more row of $P$, every result in the remainder of this section holds without modification. It is also strictly more informative than the uniform alternative, which can be recovered by redistributing the null element's share evenly over the real elements. Finally, the null element's share of a transferred explanation turns out to be a useful quantity in its own right (Definition~\ref{def:Localizability}).
 
 \iffalse
 With provenance, we are ready to define the $\sigma$-consistency constraint from Definition~\ref{def:ProblemSpaceExplanation}:
@@ -84,21 +92,23 @@ Encoding the influence between elements and features as provenance allows us to 
 \definition[\textit{Pullback}]
 \label{def:Pullback}
 {
-Consider some sample $z \in \mathcal{Z}$ in the problem-space, a feature map $\sigma$, the feature-space representation $\sigma(z) = x \in \mathcal{X}$, a feature-space explanation $a \in \mathcal{A}$, and provenance matrix $P$. We define $\tau: \mathcal{A} \mapsto \mathcal{B}$ as the pullback operation such that $\tau(a) \coloneq Pa = b \in \mathbb R^{|z|} \subseteq \mathcal{B}$ is a problem-space explanation.
+Consider some sample $z \in \mathcal{Z}$ in the problem-space, a feature map $\sigma$, the feature-space representation $\sigma(z) = x \in \mathcal{X}$, a feature-space explanation $a \in \mathcal{A}$, and provenance matrix $P$. We define $\tau: \mathcal{A} \mapsto \mathcal{B}$ as the pullback operation such that $\tau(a) \coloneq Pa = b \in \mathbb R^{|z| + 1} \subseteq \mathcal{B}$ is a problem-space explanation of the augmented object $\bar{z}$. Its last component, $b_\varnothing = \sum_{j \in U} a_j$, is the attribution that cannot be localized within $z$.
 }
+
+Throughout, we identify a problem-space explanation of $z$, $b \in \mathbb{R}^{|z|}$ (Definition~\ref{def:ProblemSpaceExplanation}), with the explanation $(b, 0) \in \mathbb{R}^{|z| + 1}$ of $\bar{z}$, i.e., an explanation produced directly in the problem-space never attributes anything to the null element.
 
 The pullback is ubiquitous in the literature, albeit implicitly. In computer vision, the feature mapping function maps discrete pixels to the reals and the explanation provenance is (usually) the identity matrix, so the pullback goes unnoticed. In natural language processing, the feature mapping function maps discrete characters to token embeddings and the explanation provenance, while not the identity, remains simple enough that the significance of pullback can be easily overlooked. The pullback only becomes nontrivial when the feature mapping function is complex. To clarify the nature of pullback, we formulate three propositions, stated in Appendix B.
 
 Pullback lets us produce explanations in the feature-space and pull them back to the problem-space, essentially turning feature-vector saliency into object saliency. Analogously, the provenance matrix can also be used to travel in the opposite direction, from problem-space explanations to feature-space ones via a pushforward operation.
 
 \begin{notationbox}
-Consider provenance matrix $P \in \mathbb{R}^{|z| \times |x|}$. Let diagonal matrix $D \in \mathbb{R}^{|z| \times |z|}$ encode the row-sums of $P$ such that $D_{i, i} = \sum_j P_{i,j}$. Let $D^\dagger$ be $D$'s pseudoinverse, i.e., $D^\dagger_{i,i} = 0$ if $D_{i,i} = 0$ and $D^\dagger_{i,i} = D_{i,i}^{-1}$ otherwise.
+Consider provenance matrix $P \in \mathbb{R}^{(|z| + 1) \times |x|}$. Let diagonal matrix $D \in \mathbb{R}^{(|z| + 1) \times (|z| + 1)}$ encode the row-sums of $P$ such that $D_{i, i} = \sum_j P_{i,j}$. Let $D^\dagger$ be $D$'s pseudoinverse, i.e., $D^\dagger_{i,i} = 0$ if $D_{i,i} = 0$ and $D^\dagger_{i,i} = D_{i,i}^{-1}$ otherwise.
 \end{notationbox}
 
 \definition[\textit{Pushforward}]
 \label{def:Pushforward}
 {
-Consider some sample $z \in \mathcal{Z}$ in the problem-space, a feature map $\sigma$, the feature-space representation $\sigma(z) = x \in \mathcal{X}$, a problem space explanation $b \in \mathcal{B}$, and provenance matrix $P$. We define $\psi: \mathcal{B} \mapsto \mathcal{A}$ as the pushforward operation such that $\psi(b) \coloneq P^\top D^\dagger b = a \in \mathbb R^{|x|} \subseteq \mathcal{A}$ is a feature-space explanation.
+Consider some sample $z \in \mathcal{Z}$ in the problem-space, a feature map $\sigma$, the feature-space representation $\sigma(z) = x \in \mathcal{X}$, a problem space explanation $b \in \mathcal{B}$ of the augmented object $\bar{z}$, and provenance matrix $P$. We define $\psi: \mathcal{B} \mapsto \mathcal{A}$ as the pushforward operation such that $\psi(b) \coloneq P^\top D^\dagger b = a \in \mathbb R^{|x|} \subseteq \mathcal{A}$ is a feature-space explanation.
 }
 
 Unlike the pullback, to our knowledge, no prior work has performed the pushforward operation before --- either intentionally or accidentally. This is unsurprising, as the utility of the pushforward is more difficult to appreciate. To clarify the nature of pushforward, we present three propositions in Appendix C.
@@ -160,6 +170,20 @@ Provenance is nonoverlapping ($O = 0$) if and only if each problem-space element
 }
 
 The summaries serve complementary roles and can be jointly analyzed to anticipate the behavior and usefulness of problem-space pullbacks and pushforwards. By our definitions, an explanation produced by pullback or pushforward will be cleanest when the ambiguity and overlap are minimal.
+
+The null element requires some care when interpreting these summaries. An unattributable feature's provenance is one-hot on the null element, so it is perfectly unambiguous ($H_j = 0$), and any two unattributable features overlap completely ($I_{j,k} = 1$). Both are mathematically correct, since the pullback indeed sends the attribution of every unattributable feature to the same place, where they can no longer be told apart, but neither describes how sharply attribution can be localized within $z$. We therefore complement the summaries with a direct measure of what can be localized.
+
+\definition[\textit{Explanation Localizability}]
+\label{def:Localizability}
+{
+Consider $z \in \mathcal{Z}$, $x \in \mathcal{X}$, provenance $P$ with unattributable features $U$, and a feature-space explanation $a \in \mathcal{A}$. We define the provenance coverage, $\kappa$, and the localizability of the explanation, $\ell(a)$, as:
+\begin{equation}
+    \kappa = \frac{|x| - |U|}{|x|} \qquad
+    \ell(a) = \frac{\sum_{j \notin U} |a_j|}{\sum_j |a_j|}
+\end{equation}
+}
+
+Coverage is a property of $P$ alone: the fraction of features that are attributable to the problem-space object at all. Localizability is a property of an explanation under $P$: the fraction of attribution magnitude that the pullback can place on elements of $z$ rather than on the null element. A feature set may have low coverage yet yield highly localizable explanations if the model rarely relies on unattributable features, and vice versa. When reporting ambiguity and overlap, we additionally report them restricted to the attributable features.
 
 \subsection{Quantifying Explanation Transformation Preservation}
 

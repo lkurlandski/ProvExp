@@ -38,8 +38,8 @@ __all__ = [
 # is absent (e.g., an empty hash bucket). Feature sets never fabricate provenance for such features, so their columns
 # of the raw contributions are empty, and this policy decides how to treat them. Changing the policy does not require
 # recomputing any provenance.
-#   - "null": augment the problem-space with a null element, which stands for "no part of the input" and is the sole
-#       source of provenance of every empty feature. P then has m + 1 rows, the last of which is the null element, and
+#   - "null" (the default): augment the problem-space with a null element, which stands for "no part of the input"
+#       and is the sole source of provenance of every empty feature. P then has m + 1 rows, the last of which is the null element, and
 #       satisfies all three axioms over the augmented problem-space. The null element's share of a pulled-back
 #       explanation is the attribution that cannot be localized within the input.
 #   - "uniform": spread the feature's provenance uniformly over all elements. Satisfies Axioms 1 and 2, but
@@ -114,7 +114,7 @@ class Provenance:
         self,
         contributions: BoxMatrix,
         feature_names: Optional[Sequence[str]] = None,
-        empty: EmptyPolicy = "uniform",
+        empty: EmptyPolicy = "null",
     ) -> None:
         if empty not in ("null", "uniform", "ignore"):
             raise ValueError(f"Invalid empty policy: {empty}")
@@ -337,6 +337,26 @@ class Provenance:
         if self._uniform:
             O[cols], H[cols], support[cols] = O[n], H[n], support[n]
         return O[:n], H[:n], support[:n]
+
+    @property
+    def coverage(self) -> float:
+        """
+        The provenance coverage, i.e., the fraction of features attributable to some element (manuscript, Definition
+        Explanation Localizability).
+        """
+        return float((~self.is_empty).mean()) if self.num_features > 0 else 0.0
+
+    def localizability(self, a: npt.ArrayLike) -> float:
+        """
+        The localizability of a feature-space explanation, i.e., the fraction of its attribution magnitude on
+        attributable features, which the pullback places on elements rather than the null element (manuscript,
+        Definition Explanation Localizability).
+        """
+        a_ = np.abs(np.asarray(a, dtype=np.float64))
+        if a_.shape != (self.num_features,):
+            raise ValueError(f"Expected an explanation of shape ({self.num_features},). Got {a_.shape}.")
+        total = a_.sum()
+        return float(a_[~self.is_empty].sum() / total) if total > 0 else 1.0
 
     def ambiguity(self) -> Ambiguity:
         """

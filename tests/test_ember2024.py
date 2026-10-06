@@ -116,7 +116,7 @@ def test_feature_vector_is_identical(sample: tuple[bytes, np.ndarray, Provenance
 
 def test_shape_and_axioms(sample: tuple[bytes, np.ndarray, Provenance]) -> None:
     data, _, prov = sample
-    assert prov.shape == (len(data), EXTRACTOR.dim)
+    assert prov.shape == (len(data) + 1, EXTRACTOR.dim)  # The null element is the last row.
     assert prov.feature_names == NAMES
     prov.check_axioms()
     Provenance(prov.contributions, empty="ignore").check_axioms()
