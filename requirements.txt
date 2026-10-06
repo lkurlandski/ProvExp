@@ -6,6 +6,7 @@ pandas       ~= 3.0
 pefile       == 2024.8.26
 polars       ~= 2.0
 scikit-learn ~= 1.9
+shap         ~= 0.52
 signify      == 0.7.1
 torch        ~= 2.13
 tqdm         ~= 4.0
