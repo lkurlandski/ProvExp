@@ -41,7 +41,9 @@ __all__ = [
 #   - "null" (the default): augment the problem-space with a null element, which stands for "no part of the input"
 #       and is the sole source of provenance of every empty feature. P then has m + 1 rows, the last of which is the null element, and
 #       satisfies all three axioms over the augmented problem-space. The null element's share of a pulled-back
-#       explanation is the attribution that cannot be localized within the input.
+#       explanation is the attribution that cannot be localized within the input. The summary statistics exclude empty
+#       features: their provenance is one-hot on the null element, so they are trivially unambiguous and overlap each
+#       other completely, which says nothing about localization within the input and only drags the averages.
 #   - "uniform": spread the feature's provenance uniformly over all elements. Satisfies Axioms 1 and 2, but
 #       contradicts Axiom 3 because every element is said to influence the feature. Equivalent to "null" followed by
 #       spreading the null element's share uniformly over the real elements.
@@ -80,7 +82,8 @@ class Overlap(NamedTuple):
     Provenance overlap (manuscript, Definition 7).
 
     Attributes:
-        per_feature: O_j = sum_{k != j} I_{j,k} for each feature, shape (n,).
+        per_feature: O_j = sum_{k != j} I_{j,k} over the included features k for each included feature (0 for the
+            others), shape (n,).
         normalized: O_j / (n' - 1), where n' is the number of included features, shape (n,).
         overall: The mean of the normalized overlap over the included features.
         included: Whether each feature is included in the statistics, shape (n,).
@@ -339,8 +342,8 @@ class Provenance:
 
     @property
     def included(self) -> npt.NDArray[np.bool_]:
-        """Whether each feature participates in the summary statistics (see `EmptyPolicy`)."""
-        if self.empty == "ignore":
+        """Whether each feature participates in the summary statistics, i.e., is attributable (see `EmptyPolicy`)."""
+        if self.empty in ("null", "ignore"):
             return ~self.is_empty
         return np.ones(self.num_features, dtype=np.bool_)
 
@@ -438,6 +441,8 @@ class Provenance:
         n = self.num_features
         O, _, _ = self._statistics
         included = self.included
+        # The included features have no mass on the null element, so only the excluded features overlap through it.
+        O = np.where(included, O, 0.0)
         nincluded = int(included.sum())
         normalized = O / (nincluded - 1) if nincluded > 1 else np.zeros(n, dtype=np.float64)
         overall = float(normalized[included].mean()) if nincluded > 0 else 0.0

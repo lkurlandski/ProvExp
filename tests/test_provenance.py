@@ -121,6 +121,18 @@ def test_null_policy() -> None:
     assert np.isclose(b.sum(), 4.0)
     # A problem-space explanation without a null entry is padded with zero.
     assert np.allclose(prov.pushforward(np.ones(4)), prov.pushforward(np.append(np.ones(4), 0.0)))
+    # The summary statistics exclude the empty features.
+    assert prov.included.tolist() == [True, False, True]
+
+
+@given(boxmatrices())
+@SETTINGS
+def test_null_and_ignore_statistics_agree(C: BoxMatrix) -> None:
+    """The null element does not enter the summary statistics."""
+    null, ignore = Provenance(C, empty="null"), Provenance(C, empty="ignore")
+    assert np.isclose(null.ambiguity().overall, ignore.ambiguity().overall)
+    assert np.isclose(null.overlap().overall, ignore.overlap().overall)
+    assert np.allclose(null.overlap().normalized[null.included], ignore.overlap().normalized[ignore.included])
 
 
 def test_coverage_and_localizability() -> None:
@@ -432,7 +444,7 @@ def test_independence_of_pushforward(C: BoxMatrix, seed: int) -> None:
 ################################################################################
 
 
-@given(st.one_of(full_boxmatrices(), unambiguous_boxmatrices()))
+@given(st.one_of(full_boxmatrices(), unambiguous_boxmatrices(), boxmatrices()))
 @SETTINGS
 def test_unambiguous_provenance(C: BoxMatrix) -> None:
     """H = 0 if and only if all columns of P are one-hot."""
@@ -441,25 +453,25 @@ def test_unambiguous_provenance(C: BoxMatrix) -> None:
     assert (prov.ambiguity().overall == 0) == onehot
 
 
-@given(st.one_of(full_boxmatrices(), nonoverlapping_boxmatrices()))
+@given(st.one_of(full_boxmatrices(), nonoverlapping_boxmatrices(), boxmatrices()))
 @SETTINGS
 def test_nonoverlapping_provenance(C: BoxMatrix) -> None:
-    """O = 0 if and only if every row of P has at most one nonzero entry."""
+    """O = 0 if and only if every row of P other than the null element has at most one nonzero entry."""
     prov = Provenance(C)
-    nonoverlapping = bool(np.all((prov.to_dense() > 0).sum(axis=1) <= 1))
+    nonoverlapping = bool(np.all((prov.to_dense()[:-1] > 0).sum(axis=1) <= 1))
     assert (np.isclose(prov.overlap().overall, 0.0, atol=1e-12)) == nonoverlapping
 
 
-@given(st.one_of(full_boxmatrices(), nonoverlapping_boxmatrices()))
+@given(st.one_of(full_boxmatrices(), nonoverlapping_boxmatrices(), boxmatrices()))
 @SETTINGS
 def test_perfect_pull_push(C: BoxMatrix) -> None:
-    """The pull-push reconstruction is perfect if and only if O = 0."""
+    """The pull-push reconstruction of explanations of the attributable features is perfect if and only if O = 0."""
     prov = Provenance(C)
-    perfect = all(prov.pull_push_error(e) < 1e-9 for e in np.eye(prov.num_features))
+    perfect = all(prov.pull_push_error(e) < 1e-9 for e in np.eye(prov.num_features)[prov.included])
     assert perfect == bool(np.isclose(prov.overlap().overall, 0.0, atol=1e-12))
 
 
-@given(st.one_of(full_boxmatrices(), unambiguous_boxmatrices()))
+@given(st.one_of(full_boxmatrices(), unambiguous_boxmatrices(), boxmatrices()))
 @SETTINGS
 def test_perfect_push_pull(C: BoxMatrix) -> None:
     """The push-pull reconstruction is perfect for all sigma-consistent b if and only if H = 0."""

@@ -126,11 +126,11 @@ Consider provenance matrix $P \in \mathbb{R}^{|z| \times |x|}$. Let $A_j=\{\,i: 
 
 \definition[\textit{Provenance Ambiguity}]{
 \label{def:ProvenanceAmbiguity}
-Consider $z \in \mathcal{Z}$, $x \in \mathcal{X}$, and provenance $P \in \mathbb{R}^{|z| \times |x|}$ with row support given by $A_j$. We define the provenance ambiguity of each feature, $H_j$, the normalized provenance ambiguity of each feature, $\widehat{H_j}$, and the overall provenance ambiguity, $H$, as:
+Consider $z \in \mathcal{Z}$, $x \in \mathcal{X}$, and provenance $P \in \mathbb{R}^{|z| \times |x|}$ with row support given by $A_j$ and unattributable features $U$. We define the provenance ambiguity of each feature, $H_j$, the normalized provenance ambiguity of each feature, $\widehat{H_j}$, and the overall provenance ambiguity, $H$, as:
 \begin{equation}
     H_j = -\sum_i P_{i,j} \log P_{i,j} \qquad
     \widehat{H_j} = \frac{H_j}{\log |A_j|} \textrm{ if } |A_j| > 1 \textrm{ else } 0 \qquad
-    H = \frac{1}{|x|} \sum_j \widehat{H_j}
+    H = \frac{1}{|x| - |U|} \sum_{j \notin U} \widehat{H_j}
 \end{equation}
 }
 
@@ -148,11 +148,11 @@ A complementary question is whether different features draw from distinct or ent
 \definition[\textit{Provenance Overlap}]
 \label{def:ProvenanceOverlap}
 {
-Consider $z \in \mathcal{Z}$, $x \in \mathcal{X}$, and provenance $P \in \mathbb{R}^{|z| \times |x|}$. For distinct features $j, k$, consider the symmetric intersection $I_{j,k} = \sum_i \min\{P_{i,j}, P_{i, k} \} \in [0, 1]$. We define the provenance overlap of each feature, $O_j$, the normalized provenance overlap of each feature, $\widehat{O_j}$, and the overall provenance overlap, $O$, as:
+Consider $z \in \mathcal{Z}$, $x \in \mathcal{X}$, and provenance $P \in \mathbb{R}^{|z| \times |x|}$ with unattributable features $U$. For distinct features $j, k$, consider the symmetric intersection $I_{j,k} = \sum_i \min\{P_{i,j}, P_{i, k} \} \in [0, 1]$. We define the provenance overlap of each attributable feature $j \notin U$, $O_j$, the normalized provenance overlap of each attributable feature, $\widehat{O_j}$, and the overall provenance overlap, $O$, as:
 \begin{equation}
-    O_j = \sum_{k \neq j} I_{j,k} \qquad
-    \widehat{O_j} = \frac{O_j}{|x| - 1} \qquad
-    O = \frac{1}{|x|} \sum_j \widehat{O_j}
+    O_j = \sum_{k \notin U, k \neq j} I_{j,k} \qquad
+    \widehat{O_j} = \frac{O_j}{|x| - |U| - 1} \qquad
+    O = \frac{1}{|x| - |U|} \sum_{j \notin U} \widehat{O_j}
 \end{equation}
 }
 
@@ -163,7 +163,7 @@ We make the following statement about nonoverlapping provenance:
 \theorem[\textit{Nonoverlapping Provenance}]
 \label{theorem:NonoverlappingProvenance}
 {
-Provenance is nonoverlapping ($O = 0$) if and only if each problem-space element contributes to at most one feature, i.e., every row of $P$ has nonzero mass in at most one column. \textit{Proof.} 
+Provenance is nonoverlapping ($O = 0$) if and only if each problem-space element contributes to at most one attributable feature, i.e., every row of $P$ other than the null element has nonzero mass in at most one column. \textit{Proof.} 
 ($\Rightarrow$) If $O=0$ then each $O_j=0$, so for every $j \neq k$ we have $I_{j,k}=0$. But $I_{j,k} = \sum_i \min\{P_{i,j}, P_{i,k}\}$ can only be $0$ if no row $i$ has both $P_{i,j}>0$ and $P_{i,k}>0$. Thus, no element $z_i$ contributes to two distinct features, so every row of $P$ has support size at most $1$. 
 ($\Leftarrow$) Conversely, if every row of $P$ has support size at most $1$, then no row $i$ can satisfy $P_{i,j}>0$ and $P_{i,k}>0$ for $j\neq k$, hence $\min\{P_{i,j},P_{i,k}\}=0$ for all $i$ and all $j\neq k$, which implies $I_{j,k}=0$, so $O_j = 0$ for all $j$, so $O=0$.
 \hfill$\square$
@@ -171,7 +171,7 @@ Provenance is nonoverlapping ($O = 0$) if and only if each problem-space element
 
 The summaries serve complementary roles and can be jointly analyzed to anticipate the behavior and usefulness of problem-space pullbacks and pushforwards. By our definitions, an explanation produced by pullback or pushforward will be cleanest when the ambiguity and overlap are minimal.
 
-The null element requires some care when interpreting these summaries. An unattributable feature's provenance is one-hot on the null element, so it is perfectly unambiguous ($H_j = 0$), and any two unattributable features overlap completely ($I_{j,k} = 1$). Both are mathematically correct, since the pullback indeed sends the attribution of every unattributable feature to the same place, where they can no longer be told apart, but neither describes how sharply attribution can be localized within $z$. We therefore complement the summaries with a direct measure of what can be localized.
+The null element is why the summaries average over the attributable features only. An unattributable feature's provenance is one-hot on the null element, so it is perfectly unambiguous ($H_j = 0$), and any two unattributable features overlap completely ($I_{j,k} = 1$). Both are mathematically correct, since the pullback indeed sends the attribution of every unattributable feature to the same place, where they can no longer be told apart, but neither describes how sharply attribution can be localized within $z$; including them would only pull $H$ toward zero and $O$ toward one. Theorems~\ref{theorem:UnambiguousProvenance} and~\ref{theorem:NonoverlappingProvenance} are stated accordingly; the null element's row is zero in every attributable column. We complement the summaries with a direct measure of what can be localized.
 
 \definition[\textit{Explanation Localizability}]
 \label{def:Localizability}
@@ -183,7 +183,7 @@ Consider $z \in \mathcal{Z}$, $x \in \mathcal{X}$, provenance $P$ with unattribu
 \end{equation}
 }
 
-Coverage is a property of $P$ alone: the fraction of features that are attributable to the problem-space object at all. Localizability is a property of an explanation under $P$: the fraction of attribution magnitude that the pullback can place on elements of $z$ rather than on the null element. A feature set may have low coverage yet yield highly localizable explanations if the model rarely relies on unattributable features, and vice versa. When reporting ambiguity and overlap, we additionally report them restricted to the attributable features.
+Coverage is a property of $P$ alone: the fraction of features that are attributable to the problem-space object at all. Localizability is a property of an explanation under $P$: the fraction of attribution magnitude that the pullback can place on elements of $z$ rather than on the null element. A feature set may have low coverage yet yield highly localizable explanations if the model rarely relies on unattributable features, and vice versa. Coverage and the summaries are complementary: $\kappa$ says how much of the feature set can be localized at all, and $H$ and $O$ say how sharply and how separately its attributable part can be.
 
 \subsection{Quantifying Explanation Transformation Preservation}
 
@@ -208,7 +208,7 @@ Its plain to see that Definition~\ref{def:ExplanationProvenance} provides no gua
 \theorem[\textit{Perfect Pull--Push Reconstruction}]
 \label{theorem:PerfectPullPush}
 {
-The pull--push reconstruction is perfect ($\delta_{\psi_\tau}=0$) if and only if provenance is nonoverlapping ($O=0$).
+The pull--push reconstruction of explanations of the attributable features ($a_j = 0$ for $j \in U$) is perfect ($\delta_{\psi_\tau}=0$) if and only if provenance is nonoverlapping ($O=0$).
 
 \iffalse
 
