@@ -27,23 +27,25 @@ Last updated: 2026-10-07. Current stage: **finishing the pilot, then the E1 pilo
 
 ## Running / waiting on the user
 
-- Stage-1 explanations and the census are done and ran cleanly (`artifacts/explanations/ember2024/seed-0/`).
-- **Run the pullback pass** (about 20 minutes on 16 workers):
-  `PYTHONHASHSEED=0 OMP_NUM_THREADS=1 env/bin/python scripts/pullback_agreement.py --seed 0 --num_workers 16`.
+- **Protected-field discovery** (E1 operator, `docs/plan_e1.md`):
+  `PYTHONHASHSEED=0 OMP_NUM_THREADS=1 env/bin/python scripts/discover_protected_fields.py sweep --split tr --num_samples 2000 --num_workers 16`
+  (~10 min), then `... check --explanation_set --num_workers 16` (~25 min). Smoke tests: 40 training files (layout
+  fields break in every file; e_sp, BaseOfCode, FileAlignment in 1 of 40; one file with overlapping DOS/PE headers);
+  200 test files checked with 0 broken ablations.
+- **E1 pilot:** `PYTHONHASHSEED=0 OMP_NUM_THREADS=1 env/bin/python scripts/faithfulness.py --seed 0 --num_files 100 --num_workers 16`
+  (zero fill; `--fill random` for the robustness variant). Smoke test on 4 files at K = 32: 0 failed verifications,
+  curve endpoints exact.
 - **Open questions** (details in `PLAN.md`): the summary statistics (decided by E2; candidates H_j / log|z| and
-  dropping 1/(n' - 1) of O; do not change the manuscript before then); whether localizability ℓ belongs in the
-  framework (the user is not convinced: it is explanation-specific; use it in experiments only).
+  dropping 1/(n' - 1) of O; do not change the manuscript before then).
 - Known anomaly: interventional TreeSHAP violates local accuracy on 2 of 2,000 files (max 0.11); reported by a
-  `RuntimeWarning` in `treeshap_interventional`.
+  `RuntimeWarning` in `treeshap_interventional`; E1 excludes those files.
 
 ## Next (for Claude)
 
-1. After the pullback pass: finish `docs/pilot.md` (stability net of the permutation control as A3 material,
-   effective-support tables, heatmaps from `pullback/bins.npy`).
-2. **E1 pilot (Gate 2, by about Oct 20):** a perturbation operator (zeros primary, random for robustness; record
-   parse failures; a PE-aware operator is likely later); deletion/insertion curves on about 100 files for the
-   pullback of the stage-1 explainers vs. occlusion over byte windows vs. random; cost in extraction calls. The
-   window occlusion also yields the black-box estimate of P.
+1. After the discovery runs: add the fields breaking at least 1% of training files to `PROTECTED_FIELDS` (the layout
+   fields are protected by definition; rare breakers are protected per file by `protect`).
+2. After the E1 pilot: `scripts/e1_tables.py` and `docs/e1_pilot.md` (deletion/insertion AUC per method and model,
+   pullback vs. random paired test, the 1% budget, cost, black-box vs. instrumented P per feature subset); Gate 2 read.
 3. Then E1 at scale, E2, E3, KernelSHAP; A1-A3 are appendix-grade.
 
 ## Done (2026-10-07, later)

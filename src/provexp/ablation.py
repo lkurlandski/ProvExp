@@ -15,6 +15,7 @@ import numpy as np
 from numpy import typing as npt
 
 from provexp.boxmatrix import BoxMatrix
+from provexp.boxmatrix import expand_ranges
 from provexp.provenance import Provenance
 
 
@@ -23,6 +24,7 @@ __all__ = [
     "Fill",
     "ablate",
     "budget_masks",
+    "coarsen",
     "element_order",
     "estimate_provenance",
     "window_edges",
@@ -168,3 +170,32 @@ def estimate_provenance(
     C = BoxMatrix((int(edges[-1]), x_.shape[0]))
     C.add_boxes(edges[k], edges[k + 1], j, j + 1, delta[k, j] / lengths[k])
     return Provenance(C, feature_names)
+
+
+def coarsen(prov: Provenance, edges: IntArray) -> FloatArray:
+    """
+    The provenance of each feature summed over windows of elements (coarsening, which commutes with pullback).
+
+    Args:
+        prov: The provenance over m = edges[-1] elements.
+        edges: The window edges, shape (K + 1,).
+
+    Returns:
+        The coarsened provenance, shape (K + 1, n): one row per window, then the null element (zero without one).
+    """
+    m, n = prov.num_elements, prov.num_features
+    if edges[0] != 0 or edges[-1] != m:
+        raise ValueError(f"Expected window edges from 0 to {m}. Got {edges[0]} to {edges[-1]}.")
+    K = edges.shape[0] - 1
+    out = np.zeros((K + 1, n), dtype=np.float64)
+    pieces = prov.pieces()
+    real = pieces.lo < m
+    null = ~real
+    np.add.at(out[K], pieces.col[null], pieces.val[null])
+    col, lo, hi, val = pieces.col[real], pieces.lo[real], np.minimum(pieces.hi[real], m), pieces.val[real]
+    first = np.searchsorted(edges, lo, side="right") - 1
+    last = np.searchsorted(edges, hi - 1, side="right") - 1
+    which, window = expand_ranges(first, last + 1)
+    overlap = np.minimum(hi[which], edges[window + 1]) - np.maximum(lo[which], edges[window])
+    np.add.at(out, (window, col[which]), val[which] * overlap)
+    return out

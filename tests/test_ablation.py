@@ -10,11 +10,14 @@ import pytest
 
 from provexp.ablation import ablate
 from provexp.ablation import budget_masks
+from provexp.ablation import coarsen
 from provexp.ablation import element_order
 from provexp.ablation import estimate_provenance
 from provexp.ablation import window_edges
 from provexp.boxmatrix import BoxMatrix
 from provexp.provenance import Provenance
+
+from tests.strategies import boxmatrices
 
 
 def random_bytes(m: int, seed: int = 0) -> bytes:
@@ -148,3 +151,14 @@ def test_estimate_provenance_is_exact_for_counts() -> None:
 def test_estimate_provenance_shape() -> None:
     with pytest.raises(ValueError):
         estimate_provenance(np.zeros(3), np.zeros((2, 3)), np.array([0, 5, 10, 20]))
+
+
+@given(boxmatrices(), st.integers(1, 8), st.sampled_from(["null", "uniform", "ignore"]))
+@settings(max_examples=150, deadline=None)
+def test_coarsen(C: BoxMatrix, num_windows: int, empty: str) -> None:
+    prov = Provenance(C, empty=empty)  # type: ignore[arg-type]
+    m = prov.num_elements
+    edges = window_edges(m, num_windows)
+    P = prov.to_dense()
+    expected = np.stack([P[lo:hi].sum(axis=0) for lo, hi in zip(edges[:-1], edges[1:])] + [P[m] if prov.has_null else np.zeros(prov.num_features)])
+    assert np.allclose(coarsen(prov, edges), expected)
