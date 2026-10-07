@@ -9,17 +9,23 @@ plus a null element) transfers explanations between the feature-space (EMBER v3 
 
 - `docs/status.md`: current state, what is waiting on the user, and what to do next. **Update it at the end of
   every session.**
-- `PLAN.md`: goals, novelty strategy, phases, evaluations.
+- `PLAN.md`: claims, experiments (E1–E4, appendix A1–A3), timeline, gates, open questions.
+- `docs/plan_e1.md` and `docs/e1_pilot.md`: the current experiment (faithfulness and cost) and its results.
+  `docs/pilot.md`: the census.
 - `docs/design_provexp.md`: package design, decisions, provenance conventions, thrember quirks.
-- `docs/plan_phase2.md`: the current phase. `docs/related_work.md`: literature and gaps.
+  `docs/related_work.md`: literature and gaps. `docs/plan_phase2.md`: Phase 2 (complete).
 - `manuscript/_c_framework.tex`: the framework's definitions. Keep code and manuscript consistent.
 
 ## Layout
 
 - `src/provexp/`: `boxmatrix.py` (sparse boxes), `provenance.py` (P, transfers, statistics, numba kernel),
   `featuresets/ember2024/features.py` (thrember + provenance), `data/` (SimpleDB, feature store, TLSH),
-  `models/` (GBDT, MLP, MalConv), `explain/` (feature- and problem-space explainers), `metrics.py`.
-- `scripts/`: featurize, check_features, build_metadata, select_explanation_set, train_classic, make_fixtures.
+  `models/` (GBDT, MLP, MalConv), `explain/` (feature- and problem-space explainers), `ablation.py` (generic
+  ablation, budgets, black-box provenance, coarsening), `featuresets/ember2024/ablation.py` (PE-aware protection and
+  verification, experiment code), `metrics.py`.
+- `scripts/`: data (featurize, check_features, build_metadata, select_explanation_set, train_classic, make_fixtures);
+  explanations and census (explain, provenance_census, pullback_agreement, pilot_tables); E1
+  (discover_protected_fields, header_typical_values, faithfulness, e1_tables).
 - `tests/`: `reference/` is a verbatim copy of thrember's `features.py`. **Never edit it.**
 
 ## Environment

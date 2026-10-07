@@ -1,6 +1,6 @@
 # Phase 2 Plan: Features, Models, and Explanations
 
-Drafted 2026-10-06. Decisions marked **(D#)** are open; each has a recommendation.
+Drafted 2026-10-06. **Complete (2026-10-07);** superseded by `PLAN.md` (replanned) and `docs/plan_e1.md`.
 
 ## Where we stand
 

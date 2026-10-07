@@ -61,8 +61,10 @@ workers for 100 files. Protected-field discovery: about 150 fields × a few thou
 
 ## Steps
 
-1. Protected-field discovery: field enumeration, layout signature, the sweep script; smoke test; full run (user).
-2. `provexp` ablation module and the PE-aware mask and runtime checks, with tests (including the joint check on the
-   fixtures and a sample of real files).
-3. `scripts/faithfulness.py` (the runner) and its smoke test; full run (user).
-4. `docs/e1_pilot.md`: curves, cost, the black-box P comparison, the Gate 2 read.
+1. ~~Protected-field discovery~~ done: the layout fields are protected globally, other breakers per file.
+2. ~~Ablation modules and runtime checks~~ done (`provexp.ablation`, `featuresets/ember2024/ablation.py`).
+3. ~~Runner and pilot run~~ done; `docs/e1_pilot.md` (Gate 2 read).
+4. **After the pilot (2026-10-07):** insertion dropped; level 3 added (header fields take their most common training
+   value, `--header typical`); KernelSHAP for both models (`explain.py --explainers kernelshap_gbdt kernelshap_mlp
+   --subset ...`). Reruns in progress: `zeros/`, `zeros-typical-header/`, `random-typical-header/`.
+5. Refresh `docs/e1_pilot.md`, then a reassessment round with the user before E1 at scale.

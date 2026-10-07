@@ -165,19 +165,22 @@ it after E1 unless it earns its place. The choice of XAI methods may be revisite
 
 ## Timeline and gates
 
-Phases 0–2 are complete (literature; `provexp`; features, models, stage-1 explanations, census).
+Phases 0–2 are complete (literature; `provexp`; features, models, stage-1 explanations, census). As of 2026-10-07 the
+E1 pilot ran (100 files); level-3 header values and KernelSHAP reruns are in progress, followed by a reassessment
+round before E1 at scale.
 
 | Dates | Work | Gate |
 |---|---|---|
 | Oct 7–20 | Finish the pilot (pullback pass); perturbation operator; E1 pilot on about 100 files | **Gate 2:** the pullback beats random and approaches direct explainers at a fraction of the cost. If not, the core claim fails: retarget early. |
-| Oct 21–Nov 15 | E1 at scale, with the black-box P; E2 | Settle the summary statistics |
-| Nov 15–Dec 5 | E3; KernelSHAP for both models; E4 final | |
+| Oct 21–Nov 15 | E1 at scale (more files, seeds 1–2), with the black-box P and KernelSHAP; E2 (design open) | Settle the summary statistics |
+| Nov 15–Dec 5 | E3; E4 final | |
 | Dec 5–15 | A1–A3; seeds 1–2 for robustness | |
 | Dec 15–late Jan | Writing: introduction and contributions, framework edits, figures | Submission |
 
 Gate 1 (the pilot census, `docs/pilot.md`) passed provisionally for the measurement result.
-Gate 2 (the E1 pilot, `docs/e1_pilot.md`, 2026-10-07): passed for the GBDT, partial for the MLP; open questions on
-fill artifacts in header fields (a level-3 operator) and on insertion for per-byte rankings.
+Gate 2 (the E1 pilot, `docs/e1_pilot.md`, 2026-10-07): passed for the GBDT, partial for the MLP. Insertion was
+dropped as a flawed test; the level-3 operator (typical header values) and KernelSHAP for the MLP are being run;
+thresholds are reassessed after those results.
 
 ## Risks
 

@@ -1,5 +1,9 @@
 # E1 Pilot: Problem-Space Faithfulness and Cost (Gate 2)
 
+**Pending update (2026-10-07):** reruns with KernelSHAP and level-3 header values (`zeros/`, `zeros-typical-header/`,
+`random-typical-header/`) will replace the zero-fill numbers below and add the level-2 vs. level-3 and KernelSHAP
+comparisons. Insertion was dropped from the runner; its numbers below are from the first runs only.
+
 Run 2026-10-07 (`scripts/faithfulness.py --seed 0 --num_files 100`, K = 256 windows, zero fill and random fill;
 tables from `scripts/e1_tables.py --fill {zeros,random}`). Design in `docs/plan_e1.md`. The first run had a bug in the
 black-box estimator; the rerun with the fix reproduced every other number exactly (the pipeline is deterministic).
