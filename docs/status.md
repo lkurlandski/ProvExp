@@ -26,32 +26,32 @@ Last updated: 2026-10-07. Current phase: **Phase 2** (`docs/plan_phase2.md`).
 
 ## Running / waiting on the user
 
-- GBDT retrained with numeric categorical features (2026-10-07): test ROC-AUC 0.99759/0.99764/0.99763, identical to
-  the categorical models to 1e-5. Old models in `artifacts/models/gbdt-categorical/`. shap 0.52 misencodes LightGBM
-  categorical splits on categories above 53, so interventional TreeSHAP needs numeric splits.
-- Run `scripts/explain.py --seed 0` (stage 1, a few minutes), then `scripts/provenance_census.py --seed 0` (about
-  0.8 s/file median; a few minutes on 16 workers). Smoke tests on 20 files: completeness errors 6e-11 (TreeSHAP path),
-  5e-5 (interventional), 8e-4 (IG, 4,096 steps); census 0 failures, features identical to the store.
+- Stage-1 explanations and the census are done (`artifacts/explanations/ember2024/seed-0/`, census in `census/`).
+  The user reported non-zero exit statuses for both, but both logs end normally and a rerun on a few files exits 0;
+  how they were launched is still to be checked.
+- **Run the pullback pass** (about 20 minutes on 16 workers):
+  `PYTHONHASHSEED=0 OMP_NUM_THREADS=1 env/bin/python scripts/pullback_agreement.py --seed 0 --num_workers 16`.
+- **Decisions for the user** (see `docs/pilot.md`): replace the saturating ambiguity/overlap summaries in the
+  manuscript (effective support exp(H_j) proposed); whether to instrument the top pefile warnings (about 5% of the
+  GBDT's attribution is on them); how to treat the 2 interventional TreeSHAP outliers.
 
 ## Next (for Claude)
 
-The pilot is the go/no-go gate, and its core needs only cheap explainers, so it comes before the expensive ones.
+1. After the pullback pass: finish `docs/pilot.md` (stability net of the permutation control, effective-support
+   tables from `pullback/entropy.npy` and `support.npy`, heatmaps from `pullback/bins.npy`); final go/no-go.
+2. Stage 2 explainers: KernelSHAP for the GBDT and MLP (a data-driven baseline for the MLP), then MalConv IG and
+   occlusion for pushforward. Seeds 1-2 only for robustness later.
+3. Phase 3: a black-box element perturbation operator; deletion/insertion faithfulness; black-box provenance
+   estimation; then hypothesis (b) (manipulability, now domain-agnostic in `PLAN.md`).
 
-1. The pilot (`docs/plan_phase2.md` §2.6) → `docs/pilot.md`, from `artifacts/explanations/ember2024/seed-0/census/`:
-   census by feature subset, label, and size (number of elements); explanation-weighted ambiguity from the saved
-   per-feature arrays; a handful of pullback heatmaps; agreement between explainers (top-k Jaccard, Spearman) before
-   vs. after pullback (hypothesis (c)), which needs the pullbacks and so a separate pass over the files. Go/no-go read.
-2. Stage 2 explainers, only after the pilot (hours, GPU): KernelSHAP (GBDT, MLP), MalConv IG and occlusion
-   (pushforward, Phase 5). Seeds 1-2 only for robustness checks later.
-3. Phase 3 prerequisites for the faithfulness evaluation. Hypothesis (b) in `PLAN.md` is still phrased in PE-format
-   terms and is waiting on the user to reword it (see CLAUDE.md: the framework is domain-agnostic).
+## Done (2026-10-07, later)
 
-## Done this session (2026-10-07)
-
-- `Provenance.select(S)` = P[:, S] (indices, mask, or names), via `BoxMatrix.select_columns`.
-- Ambiguity and overlap exclude unattributable features by default (under "null" as under "ignore"); manuscript
-  definitions and the nonoverlapping and pull-push theorems scoped to attributable features accordingly.
-- Fixed the export provenance of ordinal-only exports (pefile omits `address_offset`).
+- Pilot census (`docs/pilot.md`, numbers from `scripts/pilot_tables.py`): κ ≈ 0.30; 17-37% of attribution on
+  file-dependent absence features, about 5% on never-attributable ones (mostly pefile warnings); gradient × input
+  cannot credit absences (zero baseline); normalized H (≈ 0.99) and overall O (≈ 0.003) saturate.
+- `PLAN.md` made domain-agnostic (hypothesis (b) and Evaluation 8 rephrased over elements).
+- Completeness: interventional TreeSHAP off by up to 0.11 on 2 files (suspected shap deep-tree bug; trees reach depth
+  37); IG max 0.0074.
 
 ## Notes
 
