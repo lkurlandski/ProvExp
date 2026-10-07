@@ -73,7 +73,7 @@ Optionally, the following desiderata may be useful to practitioners:
 Let $U = \{\, j : P_{\varnothing,j} = 1 \,\}$ be the set of unattributable features, i.e., the features that no element of $z$ influences.
 \end{notationbox}
 
-Without the null element, an unattributable feature cannot satisfy both Axiom 2 and Axiom 3: its column would need to sum to one while containing only zeros. The obvious alternatives each sacrifice something. Excluding the feature from $P$ violates Axiom 2 and, as a consequence, the pullback no longer conserves attribution mass (Proposition~\ref{prop:pullback-completeness}). Spreading its provenance uniformly over the elements, i.e., $P_{i,j} = 1/|z|$, violates Axiom 3 and fabricates influence, smearing the feature's attribution over the entire object. The null element satisfies all four axioms and, because it is simply one more row of $P$, every result in the remainder of this section holds without modification. It is also strictly more informative than the uniform alternative, which can be recovered by redistributing the null element's share evenly over the real elements. Finally, the null element's share of a transferred explanation turns out to be a useful quantity in its own right (Definition~\ref{def:Localizability}).
+Without the null element, an unattributable feature cannot satisfy both Axiom 2 and Axiom 3: its column would need to sum to one while containing only zeros. The obvious alternatives each sacrifice something. Excluding the feature from $P$ violates Axiom 2 and, as a consequence, the pullback no longer conserves attribution mass (Proposition~\ref{prop:pullback-completeness}). Spreading its provenance uniformly over the elements, i.e., $P_{i,j} = 1/|z|$, violates Axiom 3 and fabricates influence, smearing the feature's attribution over the entire object. The null element satisfies all four axioms and, because it is simply one more row of $P$, every result in the remainder of this section holds without modification. It is also strictly more informative than the uniform alternative, which can be recovered by redistributing the null element's share evenly over the real elements. Finally, the null element's share of a pulled-back explanation is a useful quantity in its own right: it is exactly the attribution that cannot be localized within $z$ (Definition~\ref{def:Pullback}).
 
 \iffalse
 With provenance, we are ready to define the $\sigma$-consistency constraint from Definition~\ref{def:ProblemSpaceExplanation}:
@@ -171,21 +171,18 @@ Provenance is nonoverlapping ($O = 0$) if and only if each problem-space element
 
 The summaries serve complementary roles and can be jointly analyzed to anticipate the behavior and usefulness of problem-space pullbacks and pushforwards. By our definitions, an explanation produced by pullback or pushforward will be cleanest when the ambiguity and overlap are minimal.
 
-The null element is why the summaries average over the attributable features only. An unattributable feature's provenance is one-hot on the null element, so it is perfectly unambiguous ($H_j = 0$), and any two unattributable features overlap completely ($I_{j,k} = 1$). Both are mathematically correct, since the pullback indeed sends the attribution of every unattributable feature to the same place, where they can no longer be told apart, but neither describes how sharply attribution can be localized within $z$; including them would only pull $H$ toward zero and $O$ toward one. Theorems~\ref{theorem:UnambiguousProvenance} and~\ref{theorem:NonoverlappingProvenance} are stated accordingly; the null element's row is zero in every attributable column. We complement the summaries with a direct measure of what can be localized.
+The null element is why the summaries average over the attributable features only. An unattributable feature's provenance is one-hot on the null element, so it is perfectly unambiguous ($H_j = 0$), and any two unattributable features overlap completely ($I_{j,k} = 1$). Both are mathematically correct, since the pullback indeed sends the attribution of every unattributable feature to the same place, where they can no longer be told apart, but neither describes how sharply attribution can be localized within $z$; including them would only pull $H$ toward zero and $O$ toward one. Theorems~\ref{theorem:UnambiguousProvenance} and~\ref{theorem:NonoverlappingProvenance} are stated accordingly; the null element's row is zero in every attributable column. We complement the summaries with a measure of how much of the feature set is attributable at all.
 
-% TODO: Open question (2026-10-07): localizability is a property of an explanation, not of P, so it may belong in the
-% evaluation rather than the framework. Coverage is a property of P. Undecided; see PLAN.md, Open questions.
-\definition[\textit{Explanation Localizability}]
-\label{def:Localizability}
+\definition[\textit{Provenance Coverage}]
+\label{def:Coverage}
 {
-Consider $z \in \mathcal{Z}$, $x \in \mathcal{X}$, provenance $P$ with unattributable features $U$, and a feature-space explanation $a \in \mathcal{A}$. We define the provenance coverage, $\kappa$, and the localizability of the explanation, $\ell(a)$, as:
+Consider $z \in \mathcal{Z}$, $x \in \mathcal{X}$, and provenance $P$ with unattributable features $U$. We define the provenance coverage, $\kappa$, as:
 \begin{equation}
-    \kappa = \frac{|x| - |U|}{|x|} \qquad
-    \ell(a) = \frac{\sum_{j \notin U} |a_j|}{\sum_j |a_j|}
+    \kappa = \frac{|x| - |U|}{|x|}
 \end{equation}
 }
 
-Coverage is a property of $P$ alone: the fraction of features that are attributable to the problem-space object at all. Localizability is a property of an explanation under $P$: the fraction of attribution magnitude that the pullback can place on elements of $z$ rather than on the null element. A feature set may have low coverage yet yield highly localizable explanations if the model rarely relies on unattributable features, and vice versa. Coverage and the summaries are complementary: $\kappa$ says how much of the feature set can be localized at all, and $H$ and $O$ say how sharply and how separately its attributable part can be.
+Coverage is a property of $P$ alone: the fraction of features that are attributable to some element of $z$. Coverage and the summaries are complementary: $\kappa$ says how much of the feature set can be localized at all, and $H$ and $O$ say how sharply and how separately its attributable part can be.
 
 \subsection{Quantifying Explanation Transformation Preservation}
 

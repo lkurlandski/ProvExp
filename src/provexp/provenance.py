@@ -397,15 +397,17 @@ class Provenance:
     def coverage(self) -> float:
         """
         The provenance coverage, i.e., the fraction of features attributable to some element (manuscript, Definition
-        Explanation Localizability).
+        Provenance Coverage).
         """
         return float((~self.is_empty).mean()) if self.num_features > 0 else 0.0
 
     def localizability(self, a: npt.ArrayLike) -> float:
         """
         The localizability of a feature-space explanation, i.e., the fraction of its attribution magnitude on
-        attributable features, which the pullback places on elements rather than the null element (manuscript,
-        Definition Explanation Localizability).
+        attributable features, which the pullback places on elements rather than the null element.
+
+        This is an evaluation quantity, not part of the framework: it depends on the explanation, not only on P. The
+        framework's counterpart is the null element's entry of the pullback (manuscript, Definition 4).
         """
         a_ = np.abs(np.asarray(a, dtype=np.float64))
         if a_.shape != (self.num_features,):

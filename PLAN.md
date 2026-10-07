@@ -142,8 +142,9 @@ it after E1 unless it earns its place. The choice of XAI methods may be revisite
 ## Open questions
 
 - **Summary statistics** (E2 decides): the mild normalization changes above, or none.
-- **Localizability ℓ** is explanation-specific, not a property of P. Use it in the experiments; whether it belongs in
-  the framework is undecided (the user needs convincing). Coverage κ is a property of P.
+- ~~Localizability ℓ~~ decided 2026-10-07: removed from the framework (it is explanation-specific); coverage κ stays.
+  The null element's entry of a pullback is the attribution that cannot be localized. ℓ and other
+  explanation-weighted quantities remain evaluation metrics (E2, E4).
 - **Signed provenance:** rescale-rule matrices can be signed; our axioms require P ≥ 0. Keep structural (unsigned)
   provenance plus a stated limitation unless E1 shows a need.
 - **Naming** ("provenance" vs. "attribution lineage").
