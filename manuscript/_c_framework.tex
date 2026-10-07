@@ -173,6 +173,8 @@ The summaries serve complementary roles and can be jointly analyzed to anticipat
 
 The null element is why the summaries average over the attributable features only. An unattributable feature's provenance is one-hot on the null element, so it is perfectly unambiguous ($H_j = 0$), and any two unattributable features overlap completely ($I_{j,k} = 1$). Both are mathematically correct, since the pullback indeed sends the attribution of every unattributable feature to the same place, where they can no longer be told apart, but neither describes how sharply attribution can be localized within $z$; including them would only pull $H$ toward zero and $O$ toward one. Theorems~\ref{theorem:UnambiguousProvenance} and~\ref{theorem:NonoverlappingProvenance} are stated accordingly; the null element's row is zero in every attributable column. We complement the summaries with a direct measure of what can be localized.
 
+% TODO: Open question (2026-10-07): localizability is a property of an explanation, not of P, so it may belong in the
+% evaluation rather than the framework. Coverage is a property of P. Undecided; see PLAN.md, Open questions.
 \definition[\textit{Explanation Localizability}]
 \label{def:Localizability}
 {

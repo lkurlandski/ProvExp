@@ -58,9 +58,12 @@ Follow `/home/lk3591/Documents/code/SSViT/exeformer/exeformer.py` (ignore that i
 - Elements are bytes. Feature sets record raw contributions; `Provenance` normalizes lazily.
 - Features with no contributions go to the null element (`empty="null"`, the default; `uniform`/`ignore` also exist).
 - All explainers attribute the malware log-odds (GBDT raw score; logit₁ − logit₀ for neural networks).
-- **The framework is domain-agnostic. Do not propose domain structure.** It applies to any classifier with a complex
-  feature extractor and depends only on the relationships between elements and features (P), never on what an element
-  or a feature *means*. Do not suggest or build analyses, modules, or stratifications that use PE-format semantics
-  (headers, sections, overlay, certificate, packers, "attacker-controllable regions"), or any other knowledge of the
-  input domain. Census, pilot, and evaluation code works with elements, features, feature subsets, and P only. The
-  user has rejected this direction several times; do not raise it again.
+- **The framework and the core contributions are domain-agnostic.** The framework applies to any classifier with a
+  complex feature extractor and depends only on the relationships between elements and features (P), never on what an
+  element or a feature *means*. `provexp` (outside `featuresets/`), the provenance statistics, the census, and the
+  core analyses work with elements, features, feature subsets, and P only. Do not propose analyses, modules, or
+  stratifications built on PE-format structure (headers, sections, overlay, packers, "attacker-controllable
+  regions"); the user has rejected this direction several times.
+- **Experiments may use domain knowledge selectively** where it protects their integrity (decided 2026-10-07): e.g., a
+  PE-aware perturbation operator for the faithfulness evaluation (E1) or a PE-aware trigger for the planted ground
+  truth (E3). Keep it inside the experiment, say why it is needed, and never let it into the framework.

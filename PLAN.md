@@ -1,104 +1,185 @@
 # ProvExp Research Plan
 
-Living document. Last revised 2026-10-07 (PE-format specifics removed: the framework and its evaluations are domain-agnostic).
+Living document. Last revised 2026-10-07: replanned after the Phase 2 pilot (`docs/pilot.md`) around three claims,
+three core experiments, and an early go/no-go gate on the core claim.
 
 ## Target
 
-- **Venue:** USENIX Security 2027, second submission cycle (late January 2027). Optimistic; fallback is the next S&P / CCS / USENIX cycle.
-- **Format:** a single security paper. Theory stays modest: correct, clearly stated, and useful in practice, not an ML-theory contribution.
-- **No human studies.** No user studies or analyst studies. Evidence comes from quantitative evaluation only.
+- **Venue:** USENIX Security 2027, second submission cycle (late January 2027). Optimistic; fallback is the next S&P /
+  CCS / USENIX cycle, or a lower-tier venue (ACSAC, RAID, AsiaCCS, DLSP) if Gate 2 fails.
+- **Format:** a single security paper. Theory stays modest: correct, clearly stated, and useful in practice, not an
+  ML-theory contribution.
+- **No human studies.** No user or analyst studies. Evidence comes from quantitative evaluation only.
 
-## Thesis
+## Problem
 
-Explanation provenance acts as a *chain rule for non-differentiable feature extractors*. It turns cheap feature-space explanations (e.g., TreeSHAP on EMBER features) into problem-space explanations (attributions over the elements of the input, here the bytes of a file) that are:
+Analysts reason about the sample itself (the *problem-space*), but production detectors use hand-crafted feature
+extractors, so their explanations live in the *feature-space*. There is no general, principled way to translate a
+feature explanation back to the parts of the input that produced it. Prior work either explains features only (SHAP on
+EMBER), explains raw-byte models only (MalConv + IG), or maps features to the binary by hand, one feature at a time
+(Severi et al. 2021, Rosenberg et al. 2020). FINER (CCS 2023) explicitly argues that explanations of hand-crafted
+feature sets cannot be mapped back to the program.
 
-1. **faithful**, shown with problem-space deletion/insertion tests and planted ground truth;
-2. **orders of magnitude cheaper** than direct problem-space explanation (one instrumented σ call vs. thousands);
-3. **self-diagnosing**, because provenance statistics (ambiguity H, overlap O) say in advance how localizable an explanation can be.
+## Thesis and claims
 
-Pushforward goes the other way: it expresses raw-byte model explanations (MalConv) in human-defined feature space.
+Explanation provenance, a matrix P (elements × features, plus a null element) built by instrumenting the feature
+extractor, transfers explanations between the two spaces: pullback b = Pa, pushforward a = PᵀD†b. The paper rests on
+three claims, each with direct evidence:
 
-## Framing of "smear" (a result, not a limitation)
+1. **Faithful:** pulled-back explanations identify the elements that actually drive the decision (E1, E3).
+2. **Cheap:** one instrumented feature extraction instead of hundreds to thousands for direct problem-space
+   explanation (E1).
+3. **Self-diagnosing:** provenance statistics predict when and where the pullback is faithful (E2).
 
-How *localizable* a feature set's signal is is a property of the feature set, and measuring it is one of the study's contributions. Provenance statistics give the first quantitative tool for asking "how much of what this model relies on can an analyst actually point to in the input?" We report this for each feature subset and each sample class (malware/benign, input size), and connect it to security consequences such as robustness to problem-space perturbations and analyst actionability. The pilot (`docs/pilot.md`) adds a second axis: a large share of attribution rests on unattributable features, i.e., on the *absence* of something, which no element can show.
+And one measurement result: how much of what production-style detectors rely on can be localized in the input at
+all. The pilot found that a fifth to a third of the attribution rests on unattributable features, mostly on the
+*absence* of something, which no explanation over the input can show (E4).
 
-## Contributions (revised after Phase 0)
+## Principle: domain-agnostic framework, selective domain knowledge in experiments
 
-1. **Framing:** feature-space vs. problem-space explanations for detectors with *program* feature extractors; pullback/pushforward as rescale-rule propagation extended to non-differentiable programs.
-2. **Provenance construction:** instrumented EMBER-2024 (v3) extractor + black-box estimator (open source).
-3. **Localizability analysis** of EMBER feature sets.
-4. **Evaluation:** problem-space faithfulness vs. cost; planted-trigger ground truth.
-5. **Cross-representation comparison** of MalConv and GBDT.
+The framework and the core contributions depend only on P, never on what an element or a feature means; they apply to
+any classifier with a complex feature extractor. Experiments may use domain knowledge where it protects their
+integrity (e.g., a PE-aware perturbation operator or trigger), kept inside the experiment and justified there.
 
-Naming ("provenance" collides with provenance-graph IDS work) is deferred to writing time.
+## Contributions (draft)
 
-## Novelty strategy (decided 2026-10-06, after Phase 0 first pass)
+1. **Problem and framing:** feature-space vs. problem-space explanations for detectors with *program* feature
+   extractors; pullback and pushforward as rescale-rule propagation extended to non-differentiable programs.
+2. **Provenance construction:** an instrumented EMBER-2024 (v3) extractor and a black-box estimator of P for
+   arbitrary extractors (open source).
+3. **Evaluation:** problem-space faithfulness and cost against direct problem-space explainers; planted-trigger
+   ground truth; provenance statistics as predictors of faithfulness.
+4. **Measurement:** localizability of a production-style feature set, and the share of detector reliance that rests on
+   absence.
 
-- **Pullback is not claimed as new.** It is G-DeepSHAP's generalized rescale rule. Cite it and position against it. A method contribution of the form "rescale rule applied to a feature extractor" is not enough for a top venue on its own.
-- **Top-tier novelty has to come from what the pullback *enables* in security**, not from the operator:
-  - (a) **Measurement:** *how much of what production-style malware detectors rely on can be localized in the input, and how sharply?* Coverage, localizability, and effective support of explanations per feature subset and sample class; the share of attribution resting on absence (unattributable) features; how concentrated pulled-back explanations are along the input. MalConv is compared in the same problem-space (elements).
-  - (b) **Manipulability (hypothesis to test):** how concentrated a decision's pulled-back attribution is (localizability, effective support, the share held by its top elements) predicts how few element edits suffice to change the decision, with the edits made by a black-box problem-space perturbation in pullback order. If this holds, it is a per-decision, explainer-agnostic robustness signal and a new defensive result.
-- **Pushforward is kept as a conceptual contribution, framed as *foreign-space explanation*:** explaining a model in terms of a representation it never computes (MalConv explained in EMBER features). Aggregation and G-DeepSHAP's group rescale only coarsen a model's own inputs. When O=0, pushforward reduces to plain group-sum aggregation, so it generalizes aggregation to overlapping, weighted groups. The pull/push duality results (perfect round-trip iff O=0 / H=0) are kept as modest theory.
-  - (c) **Stability (hypothesis to test):** explanations agree more in the problem space than in feature space. Pullback merges features with identical provenance, so credit-splitting among mechanically redundant features (Mohseni et al. Lemma 2) cancels exactly. Test: their duplicate-feature sweep, plus agreement across explainers and background sets before and after pullback.
-- **Additional pushforward uses to develop:**
-  - *Ground truth for feature-space explainers:* push a known set of elements (a planted trigger) forward to get the feature attribution an explainer *should* produce, then score TreeSHAP/KernelSHAP/LIME against it.
-  - *Explanation translation between feature extractors:* pull via σ₁, push via σ₂ (a = P₂ᵀD₂†P₁a₁), e.g., EMBER-feature GBDT ↔ MalConv on the same files (more extractors if scope grows).
-- **Go/no-go checkpoint (around week 6):** pilot (a)–(c) on a few thousand files. If none shows a strong signal, retarget to a lower-tier venue.
-- **The method is explainer-agnostic.** The SHAP-on-EMBER critique (Mohseni et al. 2026) does not affect the method, but it affects evaluation and reviewers. Show results with several explainers (TreeSHAP, KernelSHAP, LIME, IG/MLP) and validate in the problem space on real files.
-- **Fallback:** if (a) and (b) produce no strong findings, retarget to a lower-tier venue (e.g., ACSAC, RAID, AsiaCCS, DLSP workshop) with the method + malware application.
+The manuscript's contribution list (C1–C3 in the introduction) predates Phase 0 and must be rewritten: "first to
+formalize" and "novel rigorous theory" cannot stand (see Positioning). Naming ("provenance" collides with
+provenance-graph IDS work) is deferred to writing time.
 
-## Known weaknesses to address
+## Positioning (from Phase 0, `docs/related_work.md`)
 
-1. Theory is thin as stated, and the push–pull theorem needs a σ-consistency hypothesis.
-2. P is defined only by axioms. Constructing it is the real problem.
-3. Cyclic reconstruction error measures only properties of P (it is zero iff O=0 or H=0), not faithfulness. Demote it to a diagnostic.
-4. Novelty claims ("first to formalize", "no prior pushforward") must survive a careful literature search (Phase 0).
-5. The "just bookkeeping" objection must be answered by aggregation, trust diagnostics, exactness, and cost.
+- **Pullback is not new as an operator.** It is G-DeepSHAP's generalized rescale rule with P_ij = φ_i(σ_j)/Δσ_j;
+  exactness for linear chains is known. We cite it and position against it.
+- **What is new** is constructing P for a *program* (parser, hashing, string scans, windowed entropy), which
+  G-DeepSHAP's stage-wise propagation does not cover, and showing what the transfer is worth and what it reveals.
+- **Pushforward** is framed as *foreign-space explanation*: explaining a model in a representation it never computes.
+  When O = 0 it reduces to group-sum aggregation, so it generalizes aggregation to overlapping, weighted groups.
+- **SHAP-on-EMBER critique (Mohseni, Raff & Gaur 2026):** the method is explainer-agnostic, but reviewers will know
+  this paper. Results use several explainers and are validated in the problem-space on real files. Pullback merges
+  features with identical provenance, so credit split among *mechanically* redundant features cancels exactly (A3).
 
-## Modest theory (keep each result short, correct, and useful)
+## Experiments
 
-- **Positioning (revised after Phase 0, see `docs/related_work.md`).** Pullback is the generalized rescale rule of G-DeepSHAP (Chen et al. 2022) with P_ij = φ_i(σ_j)/Δσ_j, and exactness for linear chains is already known. We cite this instead of claiming it, and adopt the baseline-relative definition as the meaning of "proportional influence".
-- **T1 Structural = Shapley provenance for additive groups.** For σ additive in element contributions (byte histogram, counts, etc.), cheap instrumented provenance equals the Shapley-of-σ provenance. For non-additive groups (entropy windows, hashing), measure the gap empirically against the black-box estimator.
-- **T2 Composition.** P_{σ2∘σ1} = P1·P2 is valid provenance, so pullback composes. Pushforward (with D†) does not compose in general. Note this, and possibly define forward provenance separately.
-- **T3 Coarsening.** Grouping elements into sets (e.g., contiguous windows) commutes with pullback. This justifies explanations over groups of elements.
-- Fix theorem statements, prove the two conjectures, and check every theorem numerically with property-based tests.
+Core experiments E1–E4 make the paper; A1–A3 are appendix-grade.
+
+### E1. Faithfulness and cost (the core)
+
+- **Models and explainers:** GBDT (TreeSHAP path and interventional, KernelSHAP) and MLP (IG from the background mean,
+  KernelSHAP) on the explanation set.
+- **Compared:** the pullback of each explainer vs. direct problem-space explainers (occlusion and KernelSHAP over
+  windows of bytes) vs. random. Comparisons are at a common window granularity, which coarsening (T3) justifies.
+- **Faithfulness:** deletion and insertion curves in the problem-space: edit the top-ranked windows, re-extract
+  features, re-score the model.
+- **Cost:** feature-extraction calls and wall-clock time per explanation (Pareto plot of faithfulness vs. cost).
+- **Black-box P:** occluding windows and re-extracting yields a black-box estimate of P at no extra cost. It validates
+  the instrumented P (exact for additive feature groups by T1; measured for the others) and gives a further baseline
+  (pullback through the estimated P).
+- **Perturbation operator (decided 2026-10-07):** replace bytes with zeros (primary) or random bytes (robustness),
+  domain-agnostic; record the model's response even when an edit breaks parsing, and report how often it does.
+  **Likely to be replaced by a PE-aware operator** (edits that keep the file valid) once the simple version works,
+  because parse-breaking edits move the input off the data manifold and could flatter or penalize any method.
+
+### E2. Self-diagnosis
+
+Per file and per feature subset: do coverage κ, ambiguity H, and overlap O predict E1's faithfulness of the pullback
+and its gap to direct explainers? This gives the statistics a purpose and decides their final form: the pilot showed
+that the current overall summaries saturate (normalized H ≈ 0.99, overall O ≈ 0.003). Candidate mild changes, to be
+chosen by predictive value: normalize H_j by log|z| (the input length) instead of log|A_j|; drop the 1/(n' − 1) of O.
+The theorems are unaffected by either change.
+
+### E3. Planted ground truth
+
+Write a trigger into poisoned training files and retrain the GBDT (minutes). Does the pullback recover the trigger's
+elements? Pushing the trigger's elements forward gives the feature attribution an explainer *should* produce, which
+scores TreeSHAP and the other feature-space explainers against a known answer. Planted triggers as ground truth are
+established (Lin et al. 2021); doing it in the problem-space of malware is new. The trigger may be PE-aware (e.g.,
+Severi et al.'s header-field triggers) if a domain-agnostic byte pattern is too weak to be learned.
+
+### E4. Census (measurement)
+
+Coverage, ambiguity, overlap, and effective support per feature subset and sample class; the share of attribution
+that the pullback sends to the null element (reliance on absence), split into file-dependent absences and features
+that are never attributable; a few pulled-back explanations as figures. Mostly done (`docs/pilot.md`).
+
+### Appendix-grade
+
+- **A1. MalConv vs. GBDT through pushforward and pullback:** MalConv's byte explanations (IG, occlusion) pushed
+  forward into EMBER features and compared with the GBDT's reliance; both compared in the problem-space.
+- **A2. Cyclic error:** pull-push and push-pull reconstruction error as intrinsic diagnostics of P (zero iff O = 0 or
+  H = 0, so it measures P, not faithfulness).
+- **A3. Mechanical redundancy:** a short proposition (features with identical provenance merge after pullback) and
+  Mohseni et al.'s duplicate-feature sweep; agreement of explainers before and after pullback, net of a permutation
+  control (`scripts/pullback_agreement.py`).
+
+## Explainers
+
+TreeSHAP (path and interventional) and KernelSHAP for the GBDT; IG (background-mean baseline) and KernelSHAP for the
+MLP; MalConv IG and occlusion for A1. Gradient × input is kept for now but cannot credit absence (zero baseline); drop
+it after E1 unless it earns its place. The choice of XAI methods may be revisited.
+
+## Modest theory (each result short, correct, and useful)
+
+- **T1 Structural = Shapley provenance for additive groups.** For σ additive in element contributions (histograms,
+  counts), instrumented provenance equals the Shapley-of-σ provenance. For non-additive groups (entropy windows,
+  hashing), the gap is measured empirically against the black-box estimate (E1).
+- **T2 Composition.** P_{σ2∘σ1} = P1·P2 is valid provenance, so pullback composes; pushforward (with D†) does not in
+  general.
+- **T3 Coarsening.** Grouping elements into sets (e.g., windows) commutes with pullback.
+- **Mechanical redundancy (A3).** Features with identical provenance columns are indistinguishable after pullback.
+- The perfect-reconstruction theorems (pull-push iff O = 0, push-pull iff H = 0) stay, scoped to attributable
+  features. Every theorem is checked numerically with property-based tests.
+
+## Open questions
+
+- **Summary statistics** (E2 decides): the mild normalization changes above, or none.
+- **Localizability ℓ** is explanation-specific, not a property of P. Use it in the experiments; whether it belongs in
+  the framework is undecided (the user needs convincing). Coverage κ is a property of P.
+- **Signed provenance:** rescale-rule matrices can be signed; our axioms require P ≥ 0. Keep structural (unsigned)
+  provenance plus a stated limitation unless E1 shows a need.
+- **Naming** ("provenance" vs. "attribution lineage").
 
 ## Data, models, compute
 
-- **Scope (decided 2026-10-06):** EMBER-2024 PE files and EMBER feature version 3 only. Other datasets and feature versions are out of scope for now.
-- **Binaries:** EMBER-2024, **first 4,000,000 bytes of each file only**.
-  - Recompute all features on the truncated files so that σ, P and the model all see the same object. Report how many files are truncated and how this changes features (e.g., features computed from the end of the file).
-- **Models:** LightGBM (EMBER baseline-style) and MLP trained on EMBER features. Pretrained MalConv (medium) on EMBER-2024.
-- **Compute:** ample CPUs, GPUs and storage, so direct problem-space baselines (KernelSHAP/LIME/occlusion over windows of elements) are feasible at scale for comparison.
+- **Scope:** EMBER-2024 PE files and EMBER feature version 3 only, truncated to the first 4,000,000 bytes; all
+  features recomputed on the truncated files so that σ, P, and the model see the same object.
+- **Models:** GBDT (LightGBM, EMBER baseline parameters with the categorical features treated as numeric, because shap
+  misencodes LightGBM categorical splits) and MLP, seeds 0–2; MalConv medium, seeds 0–2. Seed 0 for all explanation
+  work; seeds 1–2 for robustness.
+- **Explanation set:** 2,000 test files (1,000 per label, TLSH-deduplicated, at most 10 per malware family).
+- **Compute:** ample CPUs and GPUs, so direct problem-space baselines are feasible at scale.
 
-## Phases (about 16 weeks to a late-January deadline)
+## Timeline and gates
 
-Progress (2026-10-06): Phases 0 and 1 are complete, about four weeks ahead of schedule. Phase 2 is planned in `docs/plan_phase2.md`.
+Phases 0–2 are complete (literature; `provexp`; features, models, stage-1 explanations, census).
 
-| Phase | Weeks | Work | Deliverable |
-|---|---|---|---|
-| 0 | 1–2 | Literature search: settle the gaps and novelty claims | `docs/related_work.md`, revised contribution list |
-| 1 | 3–6 | `provexp` package: sparse P, pullback/pushforward, H/O; instrumented provenance per EMBER feature group; property tests | Library + tests |
-| 2 | 5–7 | Recompute features on truncated binaries; train LightGBM/MLP; feature-space explainers (TreeSHAP, IG); load MalConv | Models + explanations |
-| 3 | 7–9 | Element perturbation (a black-box problem-space operator); direct problem-space baselines; black-box provenance estimation (validates instrumented P) | Baselines + cost numbers |
-| 4 | 9–12 | Main evaluations (below) | Results |
-| 5 | 11–13 | Pushforward/MalConv study; localizability analysis across datasets | Applications |
-| 6 | 13–16 | Writing (theory section written alongside Phases 1–4) | Submission |
+| Dates | Work | Gate |
+|---|---|---|
+| Oct 7–20 | Finish the pilot (pullback pass); perturbation operator; E1 pilot on about 100 files | **Gate 2:** the pullback beats random and approaches direct explainers at a fraction of the cost. If not, the core claim fails: retarget early. |
+| Oct 21–Nov 15 | E1 at scale, with the black-box P; E2 | Settle the summary statistics |
+| Nov 15–Dec 5 | E3; KernelSHAP for both models; E4 final | |
+| Dec 5–15 | A1–A3; seeds 1–2 for robustness | |
+| Dec 15–late Jan | Writing: introduction and contributions, framework edits, figures | Submission |
 
-## Evaluations
-
-1. **Provenance census / localizability:** H and O per feature group, dataset and sample class.
-2. **Problem-space faithfulness:** deletion/insertion curves over elements (in windows); pullback vs. direct KernelSHAP/LIME/occlusion vs. random/heuristic baselines; faithfulness vs. σ-call cost (Pareto plot).
-3. **Planted ground truth:** plant a known trigger (a byte pattern that sets a chosen subset of features) to create a shortcut/backdoored model; measure whether the pullback localizes the trigger bytes. This also serves as a backdoor-forensics application (cf. Severi et al., USENIX Sec '21).
-4. **Agreement:** pulled-back vs. direct explanations, compared against how much different explainers disagree within the same space.
-5. **Pushforward:** MalConv explanations expressed in EMBER feature space; compare with the GBDT's reliance.
-6. **Qualitative illustrations** (figures of pulled-back explanations on example samples; no human subjects).
-7. Cyclic error reported as a minor diagnostic only.
-8. **Manipulability:** correlate the per-sample concentration of pulled-back attribution with the number of element edits a black-box problem-space perturbation needs to change the decision, editing in pullback order vs. random and baseline orders.
+Gate 1 (the pilot census, `docs/pilot.md`) passed provisionally for the measurement result.
 
 ## Risks
 
-- Histogram/entropy features dominate and smear across the file. Handled as an analysis result (see framing above); report per-subset results and effective support.
-- The 4,000,000-byte truncation changes features relative to the published EMBER vectors. Mitigated by recomputing everything on the truncated files.
-- Novelty overlap with prior work: pullback ≈ G-DeepSHAP rescale rule (confirmed). Mitigated by the novelty strategy above; fallback venue if the findings are weak.
-- The timeline is tight. If needed, Evaluation 5 (pushforward) is the first candidate to shrink.
+- **The core claim fails (Gate 2):** pullbacks are not more faithful than random, e.g., because most attribution
+  rests on absence or on features that smear over the whole file. Mitigation: the gate is early; per-subset results
+  may still support a narrower claim; fallback venue.
+- **Perturbations go off-manifold:** zero/random edits break parsing and distort faithfulness. Mitigation: report
+  parse-failure rates; move to a PE-aware operator.
+- **Smearing:** histogram and entropy features spread over the whole file. Treated as a measured result (E4), not a
+  limitation.
+- **Reviewer pool:** Raff co-authored EMBER-2024, MalConv, and the SHAP-on-EMBER critique; engage it directly (A3).
+- **Timeline:** if needed, A1 shrinks first, then A3.

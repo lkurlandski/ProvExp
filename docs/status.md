@@ -1,6 +1,7 @@
 # Status
 
-Last updated: 2026-10-07. Current phase: **Phase 2** (`docs/plan_phase2.md`).
+Last updated: 2026-10-07. Current stage: **finishing the pilot, then the E1 pilot (Gate 2)**; see `PLAN.md`
+(replanned 2026-10-07 around claims, core experiments E1-E4, appendix A1-A3, and gates).
 
 ## Done
 
@@ -29,25 +30,21 @@ Last updated: 2026-10-07. Current phase: **Phase 2** (`docs/plan_phase2.md`).
 - Stage-1 explanations and the census are done and ran cleanly (`artifacts/explanations/ember2024/seed-0/`).
 - **Run the pullback pass** (about 20 minutes on 16 workers):
   `PYTHONHASHSEED=0 OMP_NUM_THREADS=1 env/bin/python scripts/pullback_agreement.py --seed 0 --num_workers 16`.
-- **Open discussions with the user** (2026-10-07):
-  - The ambiguity and overlap summaries saturate (pilot finding 4). The user wants a careful, mild intervention rather
-    than a replacement; candidates are being discussed (normalizing H_j by log|z| instead of log|A_j|; dropping the
-    1/(n' - 1) of O). Do not change the manuscript definitions until decided.
-  - The user is not convinced that localizability ℓ and coverage κ belong in the manuscript where they are now
-    (Definition after overlap, added in Phase 1 by Claude). Keep using them in the analysis; revisit placement later.
-  - The experiment plan in `PLAN.md` needs another pass: the user does not see the value of the domain-agnostic
-    manipulability experiment (hypothesis (b), Evaluation 8). The XAI methods may also be revisited later.
-  - Known anomaly: interventional TreeSHAP violates local accuracy on 2 of 2,000 files (max 0.11); now reported by a
-    `RuntimeWarning` in `treeshap_interventional`.
+- **Open questions** (details in `PLAN.md`): the summary statistics (decided by E2; candidates H_j / log|z| and
+  dropping 1/(n' - 1) of O; do not change the manuscript before then); whether localizability ℓ belongs in the
+  framework (the user is not convinced: it is explanation-specific; use it in experiments only).
+- Known anomaly: interventional TreeSHAP violates local accuracy on 2 of 2,000 files (max 0.11); reported by a
+  `RuntimeWarning` in `treeshap_interventional`.
 
 ## Next (for Claude)
 
-1. After the pullback pass: finish `docs/pilot.md` (stability net of the permutation control, effective-support
-   tables from `pullback/entropy.npy` and `support.npy`, heatmaps from `pullback/bins.npy`); final go/no-go.
-2. Stage 2 explainers: KernelSHAP for the GBDT and MLP (a data-driven baseline for the MLP), then MalConv IG and
-   occlusion for pushforward. Seeds 1-2 only for robustness later.
-3. Phase 3: a black-box element perturbation operator; deletion/insertion faithfulness; black-box provenance
-   estimation; then hypothesis (b) (manipulability, now domain-agnostic in `PLAN.md`).
+1. After the pullback pass: finish `docs/pilot.md` (stability net of the permutation control as A3 material,
+   effective-support tables, heatmaps from `pullback/bins.npy`).
+2. **E1 pilot (Gate 2, by about Oct 20):** a perturbation operator (zeros primary, random for robustness; record
+   parse failures; a PE-aware operator is likely later); deletion/insertion curves on about 100 files for the
+   pullback of the stage-1 explainers vs. occlusion over byte windows vs. random; cost in extraction calls. The
+   window occlusion also yields the black-box estimate of P.
+3. Then E1 at scale, E2, E3, KernelSHAP; A1-A3 are appendix-grade.
 
 ## Done (2026-10-07, later)
 
