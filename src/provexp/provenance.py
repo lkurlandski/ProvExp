@@ -226,6 +226,58 @@ class Provenance:
         order = np.lexsort((lo, col))
         return Pieces(col[order], lo[order], hi[order], val[order])
 
+    # ---------- Feature Subsets ----------
+
+    def select(self, features: npt.ArrayLike | Sequence[str]) -> Provenance:
+        """
+        The provenance of a subset S of the features alone, as if the feature mapping function computed only S.
+
+        Every column of P is normalized on its own, so the result is exactly the selected columns, P_S = P[:, S], with
+        the same empty policy. Its statistics therefore describe the subset in isolation, e.g., its overlap counts only
+        the mass that the features of S share with each other.
+
+        Args:
+            features: The features of S, as indices, a boolean mask of shape (n,), or names (see `feature_names`).
+                The selected features keep their original order.
+
+        Returns:
+            The provenance of S, with |S| features.
+        """
+        n = self.num_features
+        f = np.asarray(features)
+        if f.size == 0:
+            idx = np.zeros(0, dtype=np.int64)
+        elif f.dtype == np.bool_:
+            if f.shape != (n,):
+                raise ValueError(f"Expected a boolean mask of shape ({n},). Got {f.shape}.")
+            idx = np.flatnonzero(f)
+        elif f.dtype.kind in ("U", "S", "O"):
+            if self.feature_names is None:
+                raise ValueError("Cannot select features by name without feature names.")
+            index = {name: i for i, name in enumerate(self.feature_names)}
+            unknown = [name for name in f.tolist() if name not in index]
+            if unknown:
+                raise ValueError(f"Unknown feature names: {unknown[:5]}{'...' if len(unknown) > 5 else ''}")
+            idx = np.array([index[name] for name in f.tolist()], dtype=np.int64)
+        elif np.issubdtype(f.dtype, np.integer):
+            idx = f.astype(np.int64)
+        else:
+            raise TypeError(f"Expected indices, a boolean mask, or names. Got an array of {f.dtype}.")
+        if idx.ndim != 1:
+            raise ValueError(f"Expected a one-dimensional selection. Got shape {idx.shape}.")
+        if np.any(idx < 0) or np.any(idx >= n):
+            raise IndexError(f"Feature indices are out of bounds for {n} features.")
+        idx = np.sort(idx)
+        if np.any(np.diff(idx) == 0):
+            raise ValueError("Expected each feature to be selected at most once.")
+
+        names = [self.feature_names[i] for i in idx] if self.feature_names is not None else None
+        sub = Provenance(self.contributions.select_columns(idx), names, self.empty)
+        # NOTE: Which columns count as numerically empty depends on the largest column sum, which can differ within S.
+        # Inheriting the normalization keeps P_S identical to P[:, S].
+        sub.colsum, sub.is_empty, sub.scale = self.colsum[idx], self.is_empty[idx], self.scale[idx]
+        return sub
+
     # ---------- Explanation Transfers ----------
 
     def pullback(self, a: npt.ArrayLike) -> FloatArray:

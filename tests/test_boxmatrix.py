@@ -158,6 +158,70 @@ def test_hstack_shares_keys() -> None:
     assert np.array_equal(C.to_dense(), np.hstack([A.to_dense(), B.to_dense()]))
 
 
+@given(boxmatrices(nonnegative=False), st.integers(0, 2 ** 16))
+@settings(max_examples=300, deadline=None)
+def test_select_columns(A: BoxMatrix, seed: int) -> None:
+    rng = np.random.default_rng(seed)
+    cols = np.flatnonzero(rng.random(A.shape[1]) < rng.random())
+    B = A.select_columns(cols)
+    assert B.shape == (A.shape[0], cols.size)
+    assert np.allclose(B.to_dense(), A.to_dense()[:, cols])
+
+
+class TestSelectColumns:
+
+    @staticmethod
+    def histogram(m: int = 64, bins: int = 8, offset: int = 2, seed: int = 0) -> BoxMatrix:
+        """A matrix whose columns [offset, offset + bins) are a histogram over two ranges of rows."""
+        A = BoxMatrix((m, bins + 2 * offset))
+        key = np.random.default_rng(seed).integers(0, bins, size=m).astype(np.uint8)
+        A.add_keyed_boxes([0, m // 2], [m // 2, m], offset, A.add_key(key), [1.0, 2.0])
+        A.add_boxes(0, m, 0, bins + 2 * offset, 0.5)
+        return A
+
+    @pytest.mark.parametrize("cols", [[2, 3, 4, 5, 6, 7, 8, 9], [0, 1, 10, 11], [3, 5, 9], [0, 4, 11], [], [2]])
+    def test_histogram(self, cols: list[int]) -> None:
+        A = self.histogram()
+        B = A.select_columns(np.array(cols, dtype=np.int64))
+        assert np.array_equal(B.to_dense(), A.to_dense()[:, cols])
+
+    def test_full_selection_keeps_the_key(self) -> None:
+        A = self.histogram()
+        B = A.select_columns(np.arange(1, 11))
+        assert len(B.keys) == 1 and B.keys[0] is A.keys[0]
+        assert B.num_keyed_boxes == 2
+
+    def test_unselected_keyed_boxes_are_dropped(self) -> None:
+        B = self.histogram().select_columns(np.array([0, 11]))
+        assert B.num_keyed_boxes == 0
+
+    def test_partial_selection_shares_derived_keys(self) -> None:
+        """Keyed boxes over the same key and selection pattern share one derived key."""
+        A = BoxMatrix((32, 8))
+        key = np.random.default_rng(0).integers(0, 4, size=32).astype(np.uint8)
+        k = A.add_key(key)
+        A.add_keyed_boxes([0, 0], [32, 32], [0, 4], k)
+        B = A.select_columns(np.array([0, 2, 4, 6]))
+        assert len(B.keys) == 2
+        assert B.keys[1].dtype == np.uint8
+        assert np.array_equal(B.to_dense(), A.to_dense()[:, [0, 2, 4, 6]])
+
+    def test_matches_rmatvec(self) -> None:
+        A = self.histogram(m=1000, bins=16)
+        cols = np.array([1, 3, 4, 8, 15, 17])
+        y = np.random.default_rng(1).normal(size=1000)
+        assert np.allclose(A.select_columns(cols).rmatvec(y), A.rmatvec(y)[cols])
+
+    @pytest.mark.parametrize("cols", [[1, 1], [3, 2], [-1], [12]])
+    def test_invalid(self, cols: list[int]) -> None:
+        with pytest.raises((ValueError, IndexError)):
+            self.histogram().select_columns(np.array(cols))
+
+    def test_non_integer(self) -> None:
+        with pytest.raises(TypeError):
+            self.histogram().select_columns(np.array([0.0, 1.0]))
+
+
 ################################################################################
 # Linear Algebra
 ################################################################################

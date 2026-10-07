@@ -177,6 +177,83 @@ def test_invalid_policy() -> None:
 
 
 ################################################################################
+# Feature Subsets
+################################################################################
+
+
+@given(boxmatrices(), POLICIES, st.integers(0, 2 ** 16))
+@SETTINGS
+def test_select(C: BoxMatrix, empty: str, seed: int) -> None:
+    """The provenance of a subset is the subset's columns of P, and its statistics are those of P_S in isolation."""
+    prov = Provenance(C, empty=empty)  # type: ignore[arg-type]
+    rng = np.random.default_rng(seed)
+    S = np.flatnonzero(rng.random(prov.num_features) < rng.random())
+    sub = prov.select(S)
+    P = sub.to_dense()
+    assert sub.shape == (prov.num_rows, S.size)
+    assert np.allclose(P, prov.to_dense()[:, S])
+    assert np.allclose(sub.ambiguity().per_feature, prov.ambiguity().per_feature[S])
+    O, On, O_ = reference_overlap(P, sub.included)
+    overlap = sub.overlap()
+    assert np.allclose(overlap.per_feature, O)
+    assert np.allclose(overlap.normalized, On)
+    assert np.isclose(overlap.overall, O_)
+    a = rng.normal(size=S.size)
+    assert np.allclose(sub.pullback(a), P @ a)
+
+
+@given(boxmatrices(), POLICIES)
+@SETTINGS
+def test_select_all(C: BoxMatrix, empty: str) -> None:
+    prov = Provenance(C, empty=empty)  # type: ignore[arg-type]
+    sub = prov.select(np.arange(prov.num_features))
+    assert np.isclose(sub.ambiguity().overall, prov.ambiguity().overall)
+    assert np.isclose(sub.overlap().overall, prov.overlap().overall)
+    assert sub.coverage == prov.coverage
+
+
+class TestSelect:
+
+    @staticmethod
+    def provenance() -> Provenance:
+        C = BoxMatrix((10, 4))
+        C.add_boxes([0, 2, 5], [6, 8, 10], [0, 1, 2], [1, 2, 3])
+        return Provenance(C, feature_names=["a:x", "a:y", "b:x", "b:y"])
+
+    @pytest.mark.parametrize("features", [[2, 0], np.array([True, False, True, False]), ["b:x", "a:x"]])
+    def test_forms(self, features: object) -> None:
+        prov = self.provenance()
+        sub = prov.select(features)  # type: ignore[arg-type]
+        assert sub.feature_names == ["a:x", "b:x"]
+        assert np.array_equal(sub.to_dense(), prov.to_dense()[:, [0, 2]])
+
+    def test_empty_features_go_to_the_null_element(self) -> None:
+        sub = self.provenance().select([1, 3])
+        assert sub.is_empty.tolist() == [False, True]
+        assert np.array_equal(sub.to_dense()[-1], [0.0, 1.0])
+        assert sub.coverage == 0.5
+
+    def test_empty_selection(self) -> None:
+        sub = self.provenance().select([])
+        assert sub.shape == (11, 0)
+        assert sub.overlap().overall == 0.0
+        assert sub.ambiguity().overall == 0.0
+
+    @pytest.mark.parametrize("features", [[0, 0], [4], [-1], ["c:z"], np.array([True, False])])
+    def test_invalid(self, features: object) -> None:
+        with pytest.raises((ValueError, IndexError)):
+            self.provenance().select(features)  # type: ignore[arg-type]
+
+    def test_names_require_feature_names(self) -> None:
+        with pytest.raises(ValueError):
+            Provenance(BoxMatrix((2, 2))).select(["a:x"])
+
+    def test_non_integer(self) -> None:
+        with pytest.raises(TypeError):
+            self.provenance().select([0.0, 1.0])
+
+
+################################################################################
 # Explanation Transfers
 ################################################################################
 

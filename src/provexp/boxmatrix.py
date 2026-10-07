@@ -290,6 +290,81 @@ class BoxMatrix:
             offset += x.shape[1]
         return out
 
+    def select_columns(self, columns: npt.ArrayLike) -> BoxMatrix:
+        """
+        The submatrix of the selected columns, i.e., `A[:, columns]`, computed without expanding the boxes.
+
+        Because the columns keep their order, the selected columns of a constant box are contiguous in the submatrix,
+        so it stays one box. A keyed box whose columns are all selected is shifted, and one with no selected columns is
+        dropped. A keyed box whose columns are only partly selected is rewritten over a derived key, restricted to the
+        runs of rows whose column is selected.
+
+        Args:
+            columns: Strictly increasing column indices, shape (n',).
+
+        Returns:
+            The submatrix, shape (m, n'). It shares the keys of this matrix by reference.
+        """
+        m, n = self.shape
+        cols = np.asarray(columns)
+        if cols.ndim != 1 or (cols.size > 0 and not np.issubdtype(cols.dtype, np.integer)):
+            raise TypeError(f"Expected a one-dimensional integer array of columns. Got shape {cols.shape} and {cols.dtype}.")
+        cols = cols.astype(np.int64, copy=False)
+        if np.any(cols < 0) or np.any(cols >= n):
+            raise IndexError(f"Columns are out of bounds for a matrix with {n} columns.")
+        if np.any(np.diff(cols) <= 0):
+            raise ValueError("Expected strictly increasing columns.")
+
+        out = BoxMatrix((m, cols.size))
+        new = np.full(n, -1, dtype=np.int64)
+        new[cols] = np.arange(cols.size, dtype=np.int64)
+
+        # Constant boxes: the selected columns in [c0, c1) are [lo, hi) in the submatrix.
+        r0, r1, c0, c1, w = self.boxes
+        lo, hi = np.searchsorted(cols, c0), np.searchsorted(cols, c1)
+        keep = hi > lo
+        out._boxes.append((r0[keep], r1[keep], lo[keep], hi[keep], w[keep]))
+
+        # Keyed boxes: classify each box by how many of the columns it can address, [c, c + max(key)], are selected.
+        r0, r1, c, k, w = self.keyed_boxes
+        remap = np.array([out.add_key(key) for key in self.keys], dtype=np.int64)
+        kmax = np.array([int(key.max(initial=0)) for key in self.keys], dtype=np.int64)
+        prefix = np.concatenate([[0], np.cumsum(new >= 0)])
+        end = np.minimum(c + kmax[k] + 1, n) if k.size > 0 else c
+        count = prefix[end] - prefix[c]
+        full = count == end - c
+        out._keyed.append((r0[full], r1[full], new[c[full]], remap[k[full]] if full.any() else k[full], w[full]))
+
+        # Partly selected keyed boxes. The derived key holds each row's column relative to the box's first selected
+        # column, so boxes over the same key with the same selection pattern share it (e.g., the bins of a 2D histogram).
+        partial = (count > 0) & ~full
+        derived: dict[tuple[int, bytes], tuple[int, IntArray, IntArray]] = {}
+        for i in np.flatnonzero(partial):
+            key, start = int(k[i]), int(c[i])
+            span = start + np.arange(kmax[key] + 1)
+            table = np.where(span < n, new[np.minimum(span, n - 1)], -1)
+            base = int(table[table >= 0].min())
+            relative = np.where(table >= 0, table - base, -1)
+            pattern = (key, relative.tobytes())
+            if pattern not in derived:
+                mapped = relative[self.keys[key]]
+                valid = np.concatenate([[False], mapped >= 0, [False]])
+                edges = np.flatnonzero(np.diff(valid.astype(np.int8)))
+                dtype = np.min_scalar_type(int(relative.max()))
+                kid = out.add_key(np.where(mapped >= 0, mapped, 0).astype(dtype))
+                derived[pattern] = (kid, edges[0::2], edges[1::2])
+            kid, starts, ends = derived[pattern]
+            # The runs of selected rows that intersect [r0, r1).
+            i0 = np.searchsorted(ends, r0[i], side="right")
+            i1 = np.searchsorted(starts, r1[i], side="left")
+            runs = np.arange(i0, i1)
+            lo_k = np.maximum(starts[runs], r0[i])
+            hi_k = np.minimum(ends[runs], r1[i])
+            ones = np.ones(runs.size, dtype=np.int64)
+            out._keyed.append((lo_k, hi_k, ones * base, ones * kid, np.full(runs.size, w[i])))
+
+        return out
+
     # ---------- Linear Algebra ----------
 
     def _expand_keyed(self, r0: IntArray, r1: IntArray, c: IntArray, k: IntArray) -> tuple[IntArray, IntArray]:
