@@ -26,31 +26,32 @@ Last updated: 2026-10-07. Current phase: **Phase 2** (`docs/plan_phase2.md`).
 
 ## Running / waiting on the user
 
-- Retrain the GBDT (seeds 0-2) with the categorical features treated as numeric (`train_gbdt(categorical=False)`, now
-  the default). shap 0.52 misencodes LightGBM categorical splits on categories above 53 (its trees were off by up to
-  4.9 logits on the old model), so interventional TreeSHAP was silently wrong. The old models move to
-  `artifacts/models/gbdt-categorical/`; the numeric GBDT is the GBDT of record for every result.
-- Then `scripts/explain.py --seed 0` (stage 1). Smoke test on 20 files: completeness errors 5e-12 (TreeSHAP path),
-  5e-5 (interventional, 1,000 background samples), 8e-4 (IG, 4,096 steps; 128 steps gave errors up to 3.6 logits).
+- GBDT retrained with numeric categorical features (2026-10-07): test ROC-AUC 0.99759/0.99764/0.99763, identical to
+  the categorical models to 1e-5. Old models in `artifacts/models/gbdt-categorical/`. shap 0.52 misencodes LightGBM
+  categorical splits on categories above 53, so interventional TreeSHAP needs numeric splits.
+- Run `scripts/explain.py --seed 0` (stage 1, a few minutes), then `scripts/provenance_census.py --seed 0` (about
+  0.8 s/file median; a few minutes on 16 workers). Smoke tests on 20 files: completeness errors 6e-11 (TreeSHAP path),
+  5e-5 (interventional), 8e-4 (IG, 4,096 steps); census 0 failures, features identical to the store.
 
 ## Next (for Claude)
 
 The pilot is the go/no-go gate, and its core needs only cheap explainers, so it comes before the expensive ones.
 
-1. ~~`Provenance.select`~~ done (2026-10-07): `Provenance.select(S)` = P[:, S] (indices, mask, or names) via
-   `BoxMatrix.select_columns`. 0.04-0.7 s per EMBER group on a 4 MB file. Open question for the census: under
-   `empty="null"`, a group whose features are all empty (e.g., exports of a file without exports) has O = 1 and H = 0
-   because every empty feature shares the null element; report statistics with `empty="ignore"` next to κ?
-2. `scripts/provenance_census.py`: per file, κ, H, O (overall and per feature subset) and ℓ(a) for each stage-1
-   explanation, plus the null element's share of each pullback. Domain-agnostic: no PE-format structure (see
-   CLAUDE.md). About 0.75 s/file, so ~25 min on one core for 2,000 files; parallel over files.
-3. The pilot (`docs/plan_phase2.md` §2.6) → `docs/pilot.md`: census by feature subset, label, and size (number of
-   elements); a handful of pullback heatmaps; agreement between explainers (top-k Jaccard, Spearman) before vs. after
-   pullback (hypothesis (c)). Go/no-go read.
-4. Stage 2 explainers, only after the pilot (hours, GPU): KernelSHAP (GBDT, MLP), MalConv IG and occlusion
+1. The pilot (`docs/plan_phase2.md` §2.6) → `docs/pilot.md`, from `artifacts/explanations/ember2024/seed-0/census/`:
+   census by feature subset, label, and size (number of elements); explanation-weighted ambiguity from the saved
+   per-feature arrays; a handful of pullback heatmaps; agreement between explainers (top-k Jaccard, Spearman) before
+   vs. after pullback (hypothesis (c)), which needs the pullbacks and so a separate pass over the files. Go/no-go read.
+2. Stage 2 explainers, only after the pilot (hours, GPU): KernelSHAP (GBDT, MLP), MalConv IG and occlusion
    (pushforward, Phase 5). Seeds 1-2 only for robustness checks later.
-5. Phase 3 prerequisites for hypothesis (b) and the faithfulness evaluation: validity-preserving region perturbation
-   and a functionality-preserving attack setup (secml-malware) against the GBDT.
+3. Phase 3 prerequisites for the faithfulness evaluation. Hypothesis (b) in `PLAN.md` is still phrased in PE-format
+   terms and is waiting on the user to reword it (see CLAUDE.md: the framework is domain-agnostic).
+
+## Done this session (2026-10-07)
+
+- `Provenance.select(S)` = P[:, S] (indices, mask, or names), via `BoxMatrix.select_columns`.
+- Ambiguity and overlap exclude unattributable features by default (under "null" as under "ignore"); manuscript
+  definitions and the nonoverlapping and pull-push theorems scoped to attributable features accordingly.
+- Fixed the export provenance of ordinal-only exports (pefile omits `address_offset`).
 
 ## Notes
 
