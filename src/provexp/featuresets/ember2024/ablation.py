@@ -13,6 +13,10 @@ and checks every ablated file with `verify`.
 """
 
 from __future__ import annotations
+from functools import cache
+import json
+from pathlib import Path
+from typing import Literal
 from typing import NamedTuple
 from typing import Optional
 
@@ -26,6 +30,8 @@ from provexp.featuresets.ember2024.features import field_range
 __all__ = [
     "LAYOUT_FIELDS",
     "PROTECTED_FIELDS",
+    "TYPICAL_VALUES_FILE",
+    "HeaderFill",
     "HeaderField",
     "Layout",
     "Parse",
@@ -36,6 +42,7 @@ __all__ = [
     "parse",
     "protect",
     "protected_mask",
+    "typical_values",
     "verify",
 ]
 
@@ -56,6 +63,14 @@ LAYOUT_FIELDS: frozenset[str] = frozenset({
 # Header fields that ablation must not touch in any file, as "{structure}.{field}" (see header_fields): the layout
 # fields plus the fields whose zeroing breaks at least 1% of files in scripts/discover_protected_fields.py.
 PROTECTED_FIELDS: frozenset[str] = LAYOUT_FIELDS
+
+# The most common value of each header field in a sample of training files (scripts/header_typical_values.py).
+TYPICAL_VALUES_FILE = Path(__file__).parent / "header_typical_values.json"
+
+# How ablation fills header fields: with zeros, or with the field's most common value in training files. Zeros in fields
+# such as ImageBase or Subsystem are values no real file has, and the model may react to the value itself rather than
+# to the evidence being removed.
+HeaderFill = Literal["zeros", "typical"]
 
 
 ################################################################################
@@ -196,8 +211,10 @@ class Protection(NamedTuple):
 
     Attributes:
         mask: Which bytes must not be ablated, shape (m,).
-        header: Which bytes belong to a header field, shape (m,). Ablation always fills these with zeros: random
-            values in fields such as FileAlignment or a section's VirtualSize make pefile drop sections.
+        header: Which bytes belong to a header field, shape (m,). Ablation fills these with `header_values`, never
+            with random bytes: random values in fields such as FileAlignment or a section's VirtualSize make pefile
+            drop sections.
+        header_values: The value each header byte takes when ablated, shape (m,) (zero outside the header).
         layout: The file's layout, which every ablated file must keep.
         fields: The protected fields (global and file-specific).
         file_fields: The fields protected only because they break this file.
@@ -205,12 +222,13 @@ class Protection(NamedTuple):
 
     mask: npt.NDArray[np.bool_]
     header: npt.NDArray[np.bool_]
+    header_values: npt.NDArray[np.uint8]
     layout: Layout
     fields: frozenset[str]
     file_fields: frozenset[str]
 
 
-def protect(data: bytes, fields: frozenset[str] = PROTECTED_FIELDS, per_file: bool = True) -> Protection:
+def protect(data: bytes, fields: frozenset[str] = PROTECTED_FIELDS, per_file: bool = True, header: HeaderFill = "zeros") -> Protection:
     """
     Determine which bytes of a file must not be ablated, and check that ablating all the others keeps it intact.
 
@@ -219,27 +237,44 @@ def protect(data: bytes, fields: frozenset[str] = PROTECTED_FIELDS, per_file: bo
         fields: The globally protected fields.
         per_file: Whether to also protect the fields whose zeroing alone breaks this file (about one full parse per
             header field).
+        header: How ablation fills header fields (see HeaderFill).
 
     Returns:
         The protection.
 
     Raises:
-        ValueError: If the file does not parse, or if zeroing every unprotected byte at once breaks it.
+        ValueError: If the file does not parse, or if ablating every unprotected byte at once breaks it.
     """
     original = parse(data)
     if original.status != "ok" or original.pe is None or original.layout is None:
         raise ValueError(f"The file does not parse (status {original.status}).")
     file_fields = frozenset(f.key for f, _ in breaking_fields(data, original)) - fields if per_file else frozenset()
-    header = np.zeros(len(data), dtype=np.bool_)
+    m = len(data)
+    in_header = np.zeros(m, dtype=np.bool_)
+    values = np.zeros(m, dtype=np.uint8)
+    typical = typical_values() if header == "typical" else {}
     for field in header_fields(original.pe):
-        header[max(field.lo, 0):min(field.hi, len(data))] = True
-    mask = protected_mask(original.pe, len(data), fields | file_fields)
-    protection = Protection(mask, header, original.layout, fields | file_fields, file_fields)
-    ablated = np.where(protection.mask, np.frombuffer(data, dtype=np.uint8), 0).astype(np.uint8).tobytes()
+        lo, hi = max(field.lo, 0), min(field.hi, m)
+        in_header[lo:hi] = True
+        if field.key in typical and hi > lo:
+            values[lo:hi] = np.frombuffer(typical[field.key].ljust(field.hi - field.lo, b"\x00")[lo - field.lo:hi - field.lo], dtype=np.uint8)
+    mask = protected_mask(original.pe, m, fields | file_fields)
+    protection = Protection(mask, in_header, values, original.layout, fields | file_fields, file_fields)
+    buffer = np.frombuffer(data, dtype=np.uint8)
+    ablated = np.where(mask, buffer, np.where(in_header, values, 0)).astype(np.uint8).tobytes()
     problem = verify(protection, data, ablated)
     if problem is not None:
         raise ValueError(f"Ablating every unprotected byte breaks the file: {problem}.")
     return protection
+
+
+@cache
+def typical_values(path: Path = TYPICAL_VALUES_FILE) -> dict[str, bytes]:
+    """The most common value of each header field in training files, as raw bytes."""
+    if not path.exists():
+        raise FileNotFoundError(f"{path.as_posix()} does not exist; run scripts/header_typical_values.py.")
+    table = json.loads(path.read_text())
+    return {key: bytes.fromhex(entry["value"]) for key, entry in table["fields"].items()}
 
 
 def verify(protection: Protection, data: bytes, ablated: bytes, is_pe: Optional[float] = None) -> Optional[str]:

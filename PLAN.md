@@ -29,7 +29,9 @@ three claims, each with direct evidence:
 1. **Faithful:** pulled-back explanations identify the elements that actually drive the decision (E1, E3).
 2. **Cheap:** one instrumented feature extraction instead of hundreds to thousands for direct problem-space
    explanation (E1).
-3. **Self-diagnosing:** provenance statistics predict when and where the pullback is faithful (E2).
+3. **Self-characterizing:** provenance statistics (ambiguity, overlap, coverage) describe, from P alone, how useful a
+   transferred explanation can be: how sharply and how separately it can be placed in the input (E2). They are not
+   predictors of a particular pullback's faithfulness (corrected 2026-10-07).
 
 And one measurement result: how much of what production-style detectors rely on can be localized in the input at
 all. The pilot found that a fifth to a third of the attribution rests on unattributable features, mostly on the
@@ -48,7 +50,7 @@ integrity (e.g., a PE-aware perturbation operator or trigger), kept inside the e
 2. **Provenance construction:** an instrumented EMBER-2024 (v3) extractor and a black-box estimator of P for
    arbitrary extractors (open source).
 3. **Evaluation:** problem-space faithfulness and cost against direct problem-space explainers; planted-trigger
-   ground truth; provenance statistics as predictors of faithfulness.
+   ground truth; provenance statistics as characterizations of P.
 4. **Measurement:** localizability of a production-style feature set, and the share of detector reliance that rests on
    absence.
 
@@ -78,7 +80,9 @@ Core experiments E1–E4 make the paper; A1–A3 are appendix-grade.
   KernelSHAP) on the explanation set.
 - **Compared:** the pullback of each explainer vs. direct problem-space explainers (occlusion and KernelSHAP over
   windows of bytes) vs. random. Comparisons are at a common window granularity, which coarsening (T3) justifies.
-- **Faithfulness:** deletion and insertion curves in the problem-space: edit the top-ranked windows, re-extract
+- **Faithfulness:** deletion curves in the problem-space (insertion dropped 2026-10-07: it starts from a blank file far
+  from real files, restoring scattered bytes does not rebuild structures, and the explanations use another reference):
+  edit the top-ranked windows, re-extract
   features, re-score the model.
 - **Cost:** feature-extraction calls and wall-clock time per explanation (Pareto plot of faithfulness vs. cost).
 - **Black-box P:** occluding windows and re-extracting yields a black-box estimate of P at no extra cost. It validates
@@ -89,13 +93,13 @@ Core experiments E1–E4 make the paper; A1–A3 are appendix-grade.
   **Likely to be replaced by a PE-aware operator** (edits that keep the file valid) once the simple version works,
   because parse-breaking edits move the input off the data manifold and could flatter or penalize any method.
 
-### E2. Self-diagnosis
+### E2. Characterizing provenance (design open)
 
-Per file and per feature subset: do coverage κ, ambiguity H, and overlap O predict E1's faithfulness of the pullback
-and its gap to direct explainers? This gives the statistics a purpose and decides their final form: the pilot showed
-that the current overall summaries saturate (normalized H ≈ 0.99, overall O ≈ 0.003). Candidate mild changes, to be
-chosen by predictive value: normalize H_j by log|z| (the input length) instead of log|A_j|; drop the 1/(n' − 1) of O.
-The theorems are unaffected by either change.
+Ambiguity H and overlap O characterize P: how sharply and how separately a transferred explanation can be placed in
+the input, independent of any particular explanation's faithfulness. The pilot showed that the current overall
+summaries saturate (normalized H ≈ 0.99, overall O ≈ 0.003); candidate mild changes are normalizing H_j by log|z| (the
+input length) instead of log|A_j|, and dropping the 1/(n' − 1) of O. The theorems are unaffected by either. How E2
+shows that the statistics characterize usefulness is to be decided after E1.
 
 ### E3. Planted ground truth
 

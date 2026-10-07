@@ -2,8 +2,9 @@
 E1 pilot: problem-space faithfulness and cost of pulled-back explanations vs. direct occlusion and random
 (docs/plan_e1.md).
 
-For each file, every method ranks the file's bytes, and deletion and insertion curves ablate the top-ranked bytes up to
-log-spaced budgets, re-extract the features, and re-score the models. Ablation is PE-aware (protected header fields,
+For each file, every method ranks the file's bytes, and deletion curves ablate the top-ranked bytes up to log-spaced
+budgets, re-extract the features, and re-score the models. (Insertion was dropped after the pilot; see
+docs/e1_pilot.md.) Ablation is PE-aware (protected header fields,
 header bytes zero-filled), and every ablated file is verified; perturbations that fail verification are recorded and
 excluded from the curves.
 
@@ -59,6 +60,7 @@ from provexp.data.simpledb import SimpleDB
 from provexp.data.simpledb import SimpleDBIterator
 from provexp.explain.feature import gbdt_function
 from provexp.explain.feature import mlp_function
+from provexp.featuresets.ember2024.ablation import HeaderFill
 from provexp.featuresets.ember2024.ablation import Protection
 from provexp.featuresets.ember2024.ablation import protect
 from provexp.featuresets.ember2024.ablation import verify
@@ -69,7 +71,11 @@ from provexp.models.mlp import build_mlp
 
 ROOT = Path(__file__).parent.parent
 IS_PE = 2  # The index of general:is_pe.
-MODELS = {"gbdt": ["treeshap_path", "treeshap_interventional"], "mlp": ["integrated_gradients"]}
+# The explainers of each model; those without saved explanations are skipped.
+MODELS = {
+    "gbdt": ["treeshap_path", "treeshap_interventional", "kernelshap_gbdt"],
+    "mlp": ["integrated_gradients", "kernelshap_mlp"],
+}
 
 FloatArray = npt.NDArray[np.float64]
 BoolArray = npt.NDArray[np.bool_]
@@ -127,7 +133,7 @@ class Scorer:
             return self.cache[key]
         # The same mask always gets the same random fill.
         rng = np.random.default_rng([self.seed, int.from_bytes(key[:8], "little")])
-        z = ablate(self.data, which, self.protection.mask, self.fill, rng, zero_only=self.protection.header)
+        z = ablate(self.data, which, self.protection.mask, self.fill, rng, self.protection.header, self.protection.header_values)
         self.extractions += 1
         try:
             x = np.asarray(self.extractor.feature_vector(z), dtype=np.float64)  # type: ignore[no-untyped-call]
@@ -146,10 +152,10 @@ class Scorer:
         return {name: float(f(x[None, :])[0]) for name, f in self.models.items()}, True
 
 
-def process_file(data: bytes, explanations: dict[str, FloatArray], num_windows: int, fill: Fill, seed: int, budgets: tuple[float, ...]) -> tuple[list[dict[str, Any]], dict[str, Any], dict[str, Any]]:
+def process_file(data: bytes, explanations: dict[str, FloatArray], num_windows: int, fill: Fill, header: HeaderFill, seed: int, budgets: tuple[float, ...]) -> tuple[list[dict[str, Any]], dict[str, Any], dict[str, Any]]:
     m = len(data)
     t_0 = time.perf_counter()
-    protection = protect(data)
+    protection = protect(data, header=header)
     t_protect = time.perf_counter() - t_0
     scorer = Scorer(data, protection, fill, seed)
     none = np.zeros(m, dtype=np.bool_)
@@ -190,6 +196,8 @@ def process_file(data: bytes, explanations: dict[str, FloatArray], num_windows: 
     orders: dict[str, dict[str, npt.NDArray[np.int64]]] = {name: {} for name in scorer.models}
     for name, explainers in MODELS.items():
         for e in explainers:
+            if e not in explanations:
+                continue
             b = prov.pullback(explanations[e])[:m]
             orders[name][f"pullback:{e}"] = element_order(b, direction[name])
             per_window = np.bincount(window, weights=b, minlength=K)
@@ -205,10 +213,9 @@ def process_file(data: bytes, explanations: dict[str, FloatArray], num_windows: 
 
     def curves(order: npt.NDArray[np.int64], models: list[str], method: str) -> None:
         for budget, mask in zip(budgets, budget_masks(order, protection.mask, budgets)):
-            for curve, which in (("deletion", mask), ("insertion", unprotected & ~mask)):
-                s, ok = scorer.scores(which)
-                for name in models:
-                    records.append({"model": name, "method": method, "curve": curve, "budget": budget, "log_odds": s[name], "valid": ok})
+            s, ok = scorer.scores(mask)
+            for name in models:
+                records.append({"model": name, "method": method, "curve": "deletion", "budget": budget, "log_odds": s[name], "valid": ok})
 
     for name in scorer.models:
         for method, order in orders[name].items():
@@ -244,7 +251,7 @@ def process_file(data: bytes, explanations: dict[str, FloatArray], num_windows: 
     return records, info, arrays
 
 
-def process_shard(shard: int, samples: list[dict[str, Any]], dbdir: Path, explanations: dict[str, FloatArray], num_windows: int, fill: Fill, seed: int, budgets: tuple[float, ...], timeout: int) -> tuple[list[dict[str, Any]], list[dict[str, Any]], dict[int, dict[str, Any]]]:
+def process_shard(shard: int, samples: list[dict[str, Any]], dbdir: Path, explanations: dict[str, FloatArray], num_windows: int, fill: Fill, header: HeaderFill, seed: int, budgets: tuple[float, ...], timeout: int) -> tuple[list[dict[str, Any]], list[dict[str, Any]], dict[int, dict[str, Any]]]:
     wanted = {s["position"]: i for i, s in enumerate(samples)}
     records: list[dict[str, Any]] = []
     infos: list[dict[str, Any]] = []
@@ -261,7 +268,7 @@ def process_shard(shard: int, samples: list[dict[str, Any]], dbdir: Path, explan
         t_0 = time.perf_counter()
         signal.alarm(timeout)
         try:
-            recs, info, arr = process_file(sample.data, {e: A[i] for e, A in explanations.items()}, num_windows, fill, seed + meta["index"], budgets)
+            recs, info, arr = process_file(sample.data, {e: A[i] for e, A in explanations.items()}, num_windows, fill, header, seed + meta["index"], budgets)
             records.extend(base | r for r in recs)
             infos.append(base | {"status": "ok", "error": "", "seconds": time.perf_counter() - t_0} | info)
             arrays[meta["index"]] = arr
@@ -291,6 +298,7 @@ def main() -> None:
     parser.add_argument("--num_files", type=int, default=100, help="Files per run, balanced by label.")
     parser.add_argument("--num_windows", type=int, default=256)
     parser.add_argument("--fill", type=str, choices=["zeros", "random"], default="zeros")
+    parser.add_argument("--header", type=str, choices=["zeros", "typical"], default="zeros", help="How ablation fills header fields (level 2: zeros; level 3: typical values).")
     parser.add_argument("--sample_seed", type=int, default=0)
     parser.add_argument("--explanations", type=Path, default=ROOT / "artifacts" / "explanations" / "ember2024")
     parser.add_argument("--explanation_set", type=Path, default=ROOT / "artifacts" / "explanation_set" / "ts.parquet")
@@ -305,9 +313,10 @@ def main() -> None:
         raise RuntimeError("Run with PYTHONHASHSEED=0 so that the features match the feature store.")
 
     indir = args.explanations / f"seed-{args.seed}"
-    outdir = args.outdir / f"seed-{args.seed}" / args.fill
+    variant = args.fill if args.header == "zeros" else f"{args.fill}-{args.header}-header"
+    outdir = args.outdir / f"seed-{args.seed}" / variant
     outdir.mkdir(parents=True, exist_ok=True)
-    explainers = sorted({e for es in MODELS.values() for e in es})
+    explainers = sorted(e for es in MODELS.values() for e in es if (indir / f"{e}.npy").exists())
     explanations = {e: np.load(indir / f"{e}.npy") for e in explainers}
     report = json.loads((indir / "report.json").read_text())
 
@@ -317,13 +326,17 @@ def main() -> None:
     bad = np.zeros(samples.height, dtype=np.bool_)
     for e in explainers:
         if "baseline_output" in report[e]:
-            out = samples["gbdt_log_odds" if e.startswith("treeshap") else "mlp_log_odds"].to_numpy()
+            model = next(name for name, es in MODELS.items() if e in es)
+            out = samples[f"{model}_log_odds"].to_numpy()
             bad |= np.abs(explanations[e].sum(axis=1) - (out - report[e]["baseline_output"])) > 1e-2
     samples = samples.filter(~pl.Series(bad))
     per_label = args.num_files // 2
     samples = pl.concat([samples.filter(pl.col("label") == lab).sample(per_label, seed=args.sample_seed) for lab in (0, 1)])
     location = pl.read_parquet(args.explanation_set).select("name", "shard", "position")
     samples = samples.join(location, on="name", how="left").sort("index")
+    for e, A in explanations.items():
+        if not np.all(np.isfinite(A[samples["index"].to_numpy()])):
+            raise RuntimeError(f"{e} has no explanations for some selected files; compute it for them (explain.py --subset).")
 
     tasks = []
     for (shard,), group in samples.sort("shard", "position").group_by("shard", maintain_order=True):
@@ -335,11 +348,13 @@ def main() -> None:
             {e: A[idx] for e, A in explanations.items()},
             args.num_windows,
             args.fill,
+            args.header,
             args.sample_seed,
             BUDGETS,
             args.timeout,
         ))
-    print(f"E1: {samples.height} files ({int(bad.sum())} excluded for local accuracy), {args.num_windows} windows, fill {args.fill}.", flush=True)
+    print(f"Explainers: {explainers}.", flush=True)
+    print(f"E1: {samples.height} files ({int(bad.sum())} excluded for local accuracy), {args.num_windows} windows, fill {args.fill}, header {args.header}.", flush=True)
 
     t_0 = time.time()
     records: list[dict[str, Any]] = []
@@ -366,7 +381,9 @@ def main() -> None:
     curves_table = pl.DataFrame(records, infer_schema_length=None) if records else pl.DataFrame({"valid": []})
     summary = {
         "seed": args.seed,
+        "explainers": explainers,
         "fill": args.fill,
+        "header": args.header,
         "num_windows": args.num_windows,
         "budgets": list(BUDGETS),
         "num_files": samples.height,

@@ -129,16 +129,22 @@ def kernelshap(
     background: npt.NDArray[np.floating],
     nsamples: int | str = "auto",
     seed: int = 0,
+    l1_reg: bool | str = False,
 ) -> FloatArray:
     """
     KernelSHAP for any function mapping feature vectors (N, d) to log-odds (N,).
 
     The cost per explained sample is about `nsamples * len(background)` evaluations of f, so the background should be
     small (e.g., a few dozen representative samples or k-means centroids).
+
+    Args:
+        l1_reg: Passed to shap. NOTE: shap's default ("auto") silently keeps only about 10 features when the coalitions
+            are sparsely sampled, which is not a full explanation; the default here is False (least squares over every
+            feature that differs from the background).
     """
     np.random.seed(seed)  # shap's sampler uses the global numpy state.
     explainer = shap.KernelExplainer(f, np.asarray(background))
-    return np.asarray(explainer.shap_values(np.asarray(X), nsamples=nsamples, silent=True), dtype=np.float64)
+    return np.asarray(explainer.shap_values(np.asarray(X), nsamples=nsamples, l1_reg=l1_reg, silent=True), dtype=np.float64)
 
 
 def gbdt_function(booster: lgb.Booster) -> Callable[[npt.NDArray[np.floating]], FloatArray]:

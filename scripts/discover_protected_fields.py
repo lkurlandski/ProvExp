@@ -39,6 +39,7 @@ from tqdm import tqdm
 from provexp.data.simpledb import SimpleDB
 from provexp.data.simpledb import SimpleDBIterator
 from provexp.featuresets.ember2024.ablation import PROTECTED_FIELDS
+from provexp.featuresets.ember2024.ablation import HeaderFill
 from provexp.featuresets.ember2024.ablation import header_fields
 from provexp.featuresets.ember2024.ablation import parse
 from provexp.featuresets.ember2024.ablation import protect
@@ -95,7 +96,7 @@ def sweep_file(data: bytes) -> list[dict[str, Any]]:
     return records
 
 
-def check_file(data: bytes, fields: frozenset[str], per_file: bool, seed: int) -> list[dict[str, Any]]:
+def check_file(data: bytes, fields: frozenset[str], per_file: bool, header_fill: HeaderFill, seed: int) -> list[dict[str, Any]]:
     """
     Protect a file as an experiment does (`protect`), then ablate every unprotected header byte, and every unprotected
     byte (zeros, random), all at once, and check each result as an experiment does (`verify`).
@@ -105,18 +106,18 @@ def check_file(data: bytes, fields: frozenset[str], per_file: bool, seed: int) -
     if original.status != "ok" or original.pe is None:
         return [{"ablation": "", "status": f"original_{original.status}"}]
     try:
-        protection = protect(data, fields, per_file=per_file)
+        protection = protect(data, fields, per_file=per_file, header=header_fill)
     except ValueError as err:
         return [{"ablation": "", "status": "unprotectable", "problem": str(err)[:300]}]
     m = len(data)
-    header, protected = protection.header, protection.mask
+    header, protected, values = protection.header, protection.mask, protection.header_values
     buffer = np.frombuffer(data, dtype=np.uint8)
     noise = np.random.default_rng(seed).integers(0, 256, size=m, dtype=np.uint8)
     ablations = {
-        "header_zeros": np.where(header & ~protected, 0, buffer),
-        "all_zeros": np.where(protected, buffer, 0),
-        # Header bytes are always zero-filled (see Protection).
-        "all_random": np.where(protected, buffer, np.where(header, 0, noise)),
+        "header_only": np.where(header & ~protected, values, buffer),
+        "all_zeros": np.where(protected, buffer, np.where(header, values, 0)),
+        # Header bytes always take their header values, never random ones (see Protection).
+        "all_random": np.where(protected, buffer, np.where(header, values, noise)),
     }
     base = {
         "protected_bytes": int(protection.mask.sum()),
@@ -135,7 +136,7 @@ def check_file(data: bytes, fields: frozenset[str], per_file: bool, seed: int) -
     return records
 
 
-def process_shard(mode: str, shard: int, samples: list[dict[str, Any]], dbdir: Path, fields: frozenset[str], per_file: bool, timeout: int) -> list[dict[str, Any]]:
+def process_shard(mode: str, shard: int, samples: list[dict[str, Any]], dbdir: Path, fields: frozenset[str], per_file: bool, header_fill: HeaderFill, timeout: int) -> list[dict[str, Any]]:
     wanted = {s["position"]: s for s in samples}
     records: list[dict[str, Any]] = []
     db = SimpleDB(dbdir, check=False)
@@ -146,7 +147,7 @@ def process_shard(mode: str, shard: int, samples: list[dict[str, Any]], dbdir: P
         base = {"name": sample.name, "label": meta["label"], "size": len(sample.data)}
         signal.alarm(timeout)
         try:
-            rows = sweep_file(sample.data) if mode == "sweep" else check_file(sample.data, fields, per_file, meta["row"])
+            rows = sweep_file(sample.data) if mode == "sweep" else check_file(sample.data, fields, per_file, header_fill, meta["row"])
             records.extend(base | {"error": ""} | r for r in rows)
         except Timeout:
             records.append(base | {"error": f"timeout after {timeout} seconds"})
@@ -217,6 +218,7 @@ def main() -> None:
     parser.add_argument("--explanation_set", action="store_true", help="Use the explanation set (test split) instead of a sample.")
     parser.add_argument("--fields", type=Path, default=None, help="A JSON list of protected field keys (check mode); default PROTECTED_FIELDS.")
     parser.add_argument("--no_per_file", action="store_true", help="Check mode: protect only the given fields, not the fields that break each file.")
+    parser.add_argument("--header", type=str, choices=["zeros", "typical"], default="zeros", help="Check mode: how ablation fills header fields.")
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--features", type=Path, default=ROOT / "artifacts" / "features" / "ember2024")
     parser.add_argument("--db", type=Path, default=Path("/shared/datasets/EMBER-2024/data"))
@@ -237,7 +239,7 @@ def main() -> None:
     fields = frozenset(json.loads(args.fields.read_text())) if args.fields is not None else PROTECTED_FIELDS
 
     tasks = [
-        (args.mode, int(shard), group.to_dicts(), args.db / split, fields, not args.no_per_file, args.timeout)
+        (args.mode, int(shard), group.to_dicts(), args.db / split, fields, not args.no_per_file, args.header, args.timeout)
         for (shard,), group in samples.sort("shard", "position").group_by("shard", maintain_order=True)
     ]
     print(f"{args.mode}: {samples.height} files from {split} in {len(tasks)} shards.", flush=True)
@@ -248,7 +250,7 @@ def main() -> None:
             records.extend(recs)
 
     args.outdir.mkdir(parents=True, exist_ok=True)
-    tag = f"{args.mode}-{'explanation_set' if args.explanation_set else split}"
+    tag = f"{args.mode}-{'explanation_set' if args.explanation_set else split}" + ("-typical-header" if args.mode == "check" and args.header == "typical" else "")
     table = pl.DataFrame(records, infer_schema_length=None)
     table.write_parquet(args.outdir / f"{tag}.parquet")
     summary = summarize(args.mode, table) | {"split": split, "protected_fields": sorted(fields), "minutes": (time.time() - t_0) / 60}

@@ -6,6 +6,11 @@ Explainers:
     treeshap_interventional     GBDT, interventional TreeSHAP w.r.t. the background
     integrated_gradients        MLP, Integrated Gradients from the background mean
     gradient_x_input            MLP, gradient times input
+    kernelshap_gbdt             GBDT, KernelSHAP (stage 2; expensive, usually with --subset)
+    kernelshap_mlp              MLP, KernelSHAP (stage 2; expensive, usually with --subset)
+
+KernelSHAP uses a small label-balanced subset of the background (saved as kernelshap_background.parquet) and no
+feature selection (shap's default keeps only about 10 features).
 
 The background is a fixed, label-balanced random sample of the training split, shared by every seed and explainer.
 Every explainer attributes the malware log-odds and is computed in float64.
@@ -13,7 +18,7 @@ Every explainer attributes the malware log-odds and is computed in float64.
 Outputs, in `{outdir}/`:
     background.parquet                     the background (rows of the training split's feature store)
     seed-{seed}/samples.parquet            the explained samples, in order, with each model's log-odds
-    seed-{seed}/{explainer}.npy            float64 (N, d) attributions
+    seed-{seed}/{explainer}.npy            float64 (N, d) attributions (NaN for samples outside --subset)
     seed-{seed}/report.json                per explainer: baseline output, completeness error, and timing
 
 Usage:
@@ -27,6 +32,7 @@ import os
 from pathlib import Path
 import time
 from typing import Any
+from typing import Optional
 
 import lightgbm as lgb
 import numpy as np
@@ -39,6 +45,7 @@ from provexp.data.tabular import load_features
 from provexp.explain.feature import gbdt_function
 from provexp.explain.feature import gradient_x_input
 from provexp.explain.feature import integrated_gradients
+from provexp.explain.feature import kernelshap
 from provexp.explain.feature import log_odds
 from provexp.explain.feature import mlp_function
 from provexp.explain.feature import treeshap_interventional
@@ -49,6 +56,7 @@ from provexp.models.mlp import build_mlp
 
 ROOT = Path(__file__).parent.parent
 EXPLAINERS = ["treeshap_path", "treeshap_interventional", "integrated_gradients", "gradient_x_input"]
+KERNELSHAP = ["kernelshap_gbdt", "kernelshap_mlp"]
 
 
 def select_background(features: Path, size: int, seed: int) -> pl.DataFrame:
@@ -76,6 +84,15 @@ def load_mlp(path: Path, d: int, device: torch.device) -> nn.Module:
     return model.double().to(device).eval()
 
 
+def _kernelshap_chunk(name: str, model_file: str, X: npt.NDArray[np.float64], background: npt.NDArray[np.float64], nsamples: int, seed: int) -> npt.NDArray[np.float64]:
+    torch.set_num_threads(1)
+    if name == "kernelshap_gbdt":
+        f = gbdt_function(lgb.Booster(model_file=model_file))
+    else:
+        f = mlp_function(load_mlp(Path(model_file), X.shape[1], torch.device("cpu")))
+    return np.concatenate([kernelshap(f, X[i:i + 1], background, nsamples=nsamples, seed=seed) for i in range(X.shape[0])])
+
+
 def _interventional_chunk(model_file: str, X: npt.NDArray[np.float64], background: npt.NDArray[np.float64]) -> npt.NDArray[np.float64]:
     return treeshap_interventional(lgb.Booster(model_file=model_file), X, background)
 
@@ -89,11 +106,30 @@ def explain(
     device: torch.device,
     workers: int,
     ig_steps: int,
+    kernel_background: Optional[npt.NDArray[np.float64]] = None,
+    kernel_nsamples: int = 32768,
+    seed: int = 0,
 ) -> tuple[npt.NDArray[np.float64], dict[str, Any]]:
     """
     Run one explainer. Returns the attributions (N, d) and a report, in which `completeness` is the largest absolute
     difference between the sum of a sample's attributions and its log-odds minus the baseline output.
     """
+    if name in KERNELSHAP:
+        if kernel_background is None:
+            raise ValueError("KernelSHAP needs a background.")
+        model_file = gbdt_file if name == "kernelshap_gbdt" else mlp_file
+        if name == "kernelshap_gbdt":
+            f_np = gbdt_function(lgb.Booster(model_file=str(gbdt_file)))
+        else:
+            f_np = mlp_function(load_mlp(mlp_file, X.shape[1], torch.device("cpu")))
+        chunks = [c for c in np.array_split(np.arange(X.shape[0]), max(1, min(workers, X.shape[0]))) if c.size > 0]
+        with ProcessPoolExecutor(len(chunks)) as pool:
+            parts = pool.map(_kernelshap_chunk, [name] * len(chunks), [str(model_file)] * len(chunks), [X[c] for c in chunks], [kernel_background] * len(chunks), [kernel_nsamples] * len(chunks), [seed] * len(chunks))
+            A = np.concatenate(list(parts))
+        baseline = float(f_np(kernel_background).mean())
+        completeness = float(np.abs(A.sum(axis=1) - (f_np(X) - baseline)).max())
+        return A, {"model": model_file.as_posix(), "baseline_output": baseline, "nsamples": kernel_nsamples, "background": int(kernel_background.shape[0]), "completeness": completeness}
+
     if name in ("treeshap_path", "treeshap_interventional"):
         booster = lgb.Booster(model_file=str(gbdt_file))
         out = gbdt_function(booster)(X)
@@ -129,7 +165,10 @@ def explain(
 def main() -> None:
     parser = ArgumentParser(description="Explain the explanation set with the stage-1 feature-space explainers.")
     parser.add_argument("--seed", type=int, default=0, help="The seed of the explained models.")
-    parser.add_argument("--explainers", type=str, nargs="+", choices=EXPLAINERS, default=EXPLAINERS)
+    parser.add_argument("--explainers", type=str, nargs="+", choices=EXPLAINERS + KERNELSHAP, default=EXPLAINERS)
+    parser.add_argument("--subset", type=Path, default=None, help="A parquet file with a `name` column: explain only these samples (others are NaN).")
+    parser.add_argument("--kernelshap_background", type=int, default=16, help="KernelSHAP background size (label-balanced).")
+    parser.add_argument("--kernelshap_nsamples", type=int, default=32768)
     parser.add_argument("--features", type=Path, default=ROOT / "artifacts" / "features" / "ember2024")
     parser.add_argument("--explanation_set", type=Path, default=ROOT / "artifacts" / "explanation_set" / "ts.parquet")
     parser.add_argument("--models", type=Path, default=ROOT / "artifacts" / "models")
@@ -175,6 +214,22 @@ def main() -> None:
             raise RuntimeError(f"{samples_file.as_posix()} describes different samples or models. Use --overwrite.")
     samples.write_parquet(samples_file)
 
+    # KernelSHAP's background: a small label-balanced subset of the background, selected once and reused.
+    kernel_file = args.outdir / "kernelshap_background.parquet"
+    if not kernel_file.exists():
+        per_label = args.kernelshap_background // 2
+        parts = [background_meta.filter(pl.col("label") == lab).sample(per_label, seed=args.background_seed) for lab in (0, 1)]
+        pl.concat(parts).sort("row").write_parquet(kernel_file)
+    kernel_meta = pl.read_parquet(kernel_file)
+    kernel_background = load_rows(args.features, "tr", kernel_meta["row"].to_numpy())
+
+    # Optionally, explain only a subset of the samples; the other rows are NaN.
+    rows = np.arange(X.shape[0])
+    if args.subset is not None:
+        names = set(pl.read_parquet(args.subset)["name"].to_list())
+        rows = np.flatnonzero(samples["name"].is_in(list(names)).to_numpy())
+        print(f"Explaining a subset of {rows.size} samples.", flush=True)
+
     report_file = outdir / "report.json"
     report: dict[str, Any] = json.loads(report_file.read_text()) if report_file.exists() else {}
     for name in args.explainers:
@@ -182,8 +237,11 @@ def main() -> None:
             print(f"{name}: exists, skipping.", flush=True)
             continue
         t_0 = time.time()
-        A, info = explain(name, X, background, gbdt_file, mlp_file, device, args.workers, args.ig_steps)
+        A_rows, info = explain(name, X[rows], background, gbdt_file, mlp_file, device, args.workers, args.ig_steps, kernel_background, args.kernelshap_nsamples, args.background_seed)
+        A = np.full(X.shape, np.nan)
+        A[rows] = A_rows
         info["seconds"] = time.time() - t_0
+        info["samples"] = int(rows.size)
         np.save(outdir / f"{name}.npy", A)
         report[name] = info
         report_file.write_text(json.dumps(report, indent=2))

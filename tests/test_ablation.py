@@ -47,14 +47,29 @@ class TestAblate:
         data = bytes(1000)
         which = np.ones(1000, dtype=np.bool_)
         protected = np.zeros(1000, dtype=np.bool_)
-        zero_only = np.zeros(1000, dtype=np.bool_)
-        zero_only[:100] = True
-        a = ablate(data, which, protected, "random", np.random.default_rng(0), zero_only)
-        b = ablate(data, which, protected, "random", np.random.default_rng(0), zero_only)
+        fixed = np.zeros(1000, dtype=np.bool_)
+        fixed[:100] = True
+        a = ablate(data, which, protected, "random", np.random.default_rng(0), fixed)
+        b = ablate(data, which, protected, "random", np.random.default_rng(0), fixed)
         out = np.frombuffer(a, dtype=np.uint8)
         assert a == b
         assert (out[:100] == 0).all()
         assert (out[100:] != 0).mean() > 0.9
+
+    @pytest.mark.parametrize("fill", ["zeros", "random"])
+    def test_fixed_values(self, fill: str) -> None:
+        data = random_bytes(100)
+        which = np.zeros(100, dtype=np.bool_)
+        which[:50] = True
+        protected = np.zeros(100, dtype=np.bool_)
+        protected[0] = True
+        fixed = np.zeros(100, dtype=np.bool_)
+        fixed[:20] = True
+        values = np.full(100, 7, dtype=np.uint8)
+        out = np.frombuffer(ablate(data, which, protected, fill, np.random.default_rng(0), fixed, values), dtype=np.uint8)  # type: ignore[arg-type]
+        assert out[0] == data[0]
+        assert (out[1:20] == 7).all()
+        assert (out[50:] == np.frombuffer(data, dtype=np.uint8)[50:]).all()
 
     def test_invalid(self) -> None:
         mask = np.zeros(4, dtype=np.bool_)

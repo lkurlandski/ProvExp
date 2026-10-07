@@ -27,18 +27,22 @@ Last updated: 2026-10-07. Current stage: **finishing the pilot, then the E1 pilo
 
 ## Running / waiting on the user
 
-- **Rerun the E1 pilot** with the fixed black-box estimator (same command; ~22 min on 16 workers):
-  `PYTHONHASHSEED=0 OMP_NUM_THREADS=1 env/bin/python scripts/faithfulness.py --seed 0 --num_files 100 --num_workers 16`,
-  then the same with `--fill random` (writes to `.../random/`).
-- **Decisions for the user** (see `docs/e1_pilot.md`): a level-3 operator for header fields (typical values instead
-  of zeros); whether insertion is a fair test for per-byte rankings; Gate 2 thresholds (open).
-- Open: the summary statistics (E2 decides; the E1 preview shows coverage and ℓ predict pullback gain, overlap does
-  not, ambiguity has the wrong sign).
+Finishing E1 (decided 2026-10-07: insertion dropped; level-3 header operator; KernelSHAP to diagnose the MLP). Run in
+order (each E1 run ~25 min on 16 workers):
+
+1. KernelSHAP for the 100 E1 files (~15 min):
+   `OMP_NUM_THREADS=1 env/bin/python scripts/explain.py --explainers kernelshap_gbdt kernelshap_mlp --subset artifacts/experiments/e1/seed-0/zeros/files.parquet --workers 16`
+2. `PYTHONHASHSEED=0 OMP_NUM_THREADS=1 env/bin/python scripts/faithfulness.py --seed 0 --num_files 100 --num_workers 16`
+   (level 2, now with KernelSHAP; overwrites `zeros/`), then the same with `--header typical` (level 3, writes
+   `zeros-typical-header/`) and with `--fill random --header typical` (writes `random-typical-header/`).
 
 ## Next (for Claude)
 
-1. After the rerun: refresh `docs/e1_pilot.md` (black-box rows and the P comparison; random-fill robustness).
-2. Level-3 operator if approved; insertion by contiguous runs; then E1 at scale (more files, seeds 1-2), E2, E3.
+1. Refresh `docs/e1_pilot.md`: level 2 vs. level 3 (how much of the byte-level advantage survives typical header
+   values), KernelSHAP vs. IG for the MLP (and KernelSHAP for the GBDT), deletion only.
+2. Then the reassessment round the user asked for, before deciding what comes after E1 (E1 at scale, seeds 1-2).
+3. E2 needs a new design: ambiguity and overlap characterize P (how sharply and separately an explanation can be
+   placed), they were never meant to predict faithfulness (user, 2026-10-07; `PLAN.md` corrected).
 
 ## Done (2026-10-07, evening)
 

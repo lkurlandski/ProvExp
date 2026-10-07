@@ -70,8 +70,9 @@ def main() -> None:
     )
 
     print("## Evidence removed (deletion) and recovered (insertion) per budget, median over files\n")
+    present = sorted(c["curve"].unique().to_list())
     for model in ("gbdt", "mlp"):
-        for curve in ("deletion", "insertion"):
+        for curve in present:
             t = c.filter((pl.col("model") == model) & (pl.col("curve") == curve)).group_by("method", "budget").agg(pl.col("evidence").median()).sort("budget")
             t = t.with_columns(pl.col("budget").map_elements(lambda b: f"{b:.1%}", return_dtype=pl.String)).pivot(on="budget", index="method", values="evidence").sort("method")
             print(f"### {model}, {curve}\n")
@@ -83,7 +84,7 @@ def main() -> None:
     print("## Areas (mean over budgets below 100%): mean over files, and the paired comparison per file\n")
     rows = []
     for model in ("gbdt", "mlp"):
-        for curve in ("deletion", "insertion"):
+        for curve in present:
             a = areas.filter((pl.col("model") == model) & (pl.col("curve") == curve)).pivot(on="method", index="index", values="area").drop_nulls()
             methods = sorted(m for m in a.columns if m not in ("index", "random", "occlusion"))
             for method in methods + ["occlusion", "random"]:

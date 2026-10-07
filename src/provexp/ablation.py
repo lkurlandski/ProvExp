@@ -2,8 +2,9 @@
 Problem-space ablation for faithfulness experiments: ablate elements, order elements by an explanation, and estimate
 provenance from window occlusion (black-box provenance).
 
-Everything here is domain-agnostic: elements are bytes, and which of them must not be ablated (`protected`) or may only
-be zeroed (`zero_only`) is decided by the caller, e.g., provexp.featuresets.ember2024.ablation for PE files.
+Everything here is domain-agnostic: elements are bytes, and which of them must not be ablated (`protected`) or are
+replaced by fixed values instead of the fill (`fixed`) is decided by the caller, e.g.,
+provexp.featuresets.ember2024.ablation for PE files.
 """
 
 from __future__ import annotations
@@ -52,7 +53,8 @@ def ablate(
     protected: BoolArray,
     fill: Fill = "zeros",
     rng: Optional[np.random.Generator] = None,
-    zero_only: Optional[BoolArray] = None,
+    fixed: Optional[BoolArray] = None,
+    fixed_values: Optional[npt.NDArray[np.uint8]] = None,
 ) -> bytes:
     """
     Replace the selected elements of an input, except the protected ones.
@@ -63,14 +65,16 @@ def ablate(
         protected: The elements that must never change, shape (m,).
         fill: Replace with zeros or with uniformly random bytes.
         rng: The random generator (required for random fill).
-        zero_only: Elements that are always replaced with zeros, even with random fill, shape (m,).
+        fixed: Elements that are replaced with `fixed_values` instead of the fill, shape (m,).
+        fixed_values: The replacement value of each element, shape (m,); zeros if not given.
 
     Returns:
         The ablated input.
     """
     m = len(data)
-    if which.shape != (m,) or protected.shape != (m,) or (zero_only is not None and zero_only.shape != (m,)):
-        raise ValueError(f"Expected masks of shape ({m},).")
+    for mask in (which, protected, fixed, fixed_values):
+        if mask is not None and mask.shape != (m,):
+            raise ValueError(f"Expected masks and values of shape ({m},).")
     buffer = np.frombuffer(data, dtype=np.uint8).copy()
     target = which & ~protected
     if fill == "zeros":
@@ -78,12 +82,12 @@ def ablate(
     elif fill == "random":
         if rng is None:
             raise ValueError("Random fill needs a random generator.")
-        values = rng.integers(0, 256, size=int(target.sum()), dtype=np.uint8)
-        if zero_only is not None:
-            values[zero_only[target]] = 0
-        buffer[target] = values
+        buffer[target] = rng.integers(0, 256, size=int(target.sum()), dtype=np.uint8)
     else:
         raise ValueError(f"Unknown fill: {fill}")
+    if fixed is not None:
+        target_fixed = target & fixed
+        buffer[target_fixed] = 0 if fixed_values is None else fixed_values[target_fixed]
     return buffer.tobytes()
 
 

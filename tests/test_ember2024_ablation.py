@@ -15,6 +15,7 @@ from provexp.featuresets.ember2024.ablation import breaking_fields
 from provexp.featuresets.ember2024.ablation import header_fields
 from provexp.featuresets.ember2024.ablation import parse
 from provexp.featuresets.ember2024.ablation import protect
+from provexp.featuresets.ember2024.ablation import typical_values
 from provexp.featuresets.ember2024.ablation import verify
 
 
@@ -90,11 +91,23 @@ def test_verify_detects_problems(data: bytes) -> None:
     assert verify(protection, data, data[:-1]) is not None
     assert verify(protection, data, data, is_pe=0.0) == "is_pe = 0.0"
     # Without protection, zeroing the signature or the number of sections is caught by parsing or the layout.
-    unprotected = Protection(np.zeros(len(data), dtype=np.bool_), protection.header, protection.layout, frozenset(), frozenset())
+    unprotected = Protection(np.zeros(len(data), dtype=np.bool_), protection.header, protection.header_values, protection.layout, frozenset(), frozenset())
     assert verify(unprotected, data, zeroed(data, 0, 2)) == "parse status not_pe"
     e_lfanew = int.from_bytes(data[60:64], "little")
     if any(data[e_lfanew + 6:e_lfanew + 8]):
         assert verify(unprotected, data, zeroed(data, e_lfanew + 6, e_lfanew + 8)) == "layout changed"
+
+
+def test_typical_header_values(data: bytes) -> None:
+    """Level 3: header fields take their typical values, which keep the file intact (checked by protect)."""
+    zeros = protect(data, per_file=False)
+    typical = protect(data, per_file=False, header="typical")
+    assert not zeros.header_values.any()
+    assert (typical.header_values[~typical.header] == 0).all()
+    pe = parse(data).pe
+    assert pe is not None
+    machine = next(f for f in header_fields(pe) if f.key == "IMAGE_FILE_HEADER.Machine")
+    assert typical.header_values[machine.lo:machine.hi].tobytes() == typical_values()["IMAGE_FILE_HEADER.Machine"]
 
 
 def test_protect_rejects_non_pe() -> None:

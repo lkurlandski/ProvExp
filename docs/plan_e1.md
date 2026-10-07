@@ -24,7 +24,7 @@ explanation (occlusion) and random, and at what cost?
   element cannot be deleted.
 - **Deletion:** remove the top-ranked bytes up to log-spaced budgets (0.1%, 0.2%, 0.5%, 1%, 2%, 5%, 10%, 20%, 50% of
   the file), re-extract features, re-score; record the log-odds.
-- **Insertion:** from the fully ablated file, restore bytes in the same order and budgets.
+- ~~**Insertion**~~ dropped after the pilot (2026-10-07): see `docs/e1_pilot.md`, "What insertion tests".
 - **Metrics:** normalized area under each curve; the fraction of the log-odds removed at 1%; cost in feature
   extractions and wall-clock time.
 - **Gate 2 (thresholds flexible):** the TreeSHAP pullback beats random (paired test), approaches occlusion's gain over

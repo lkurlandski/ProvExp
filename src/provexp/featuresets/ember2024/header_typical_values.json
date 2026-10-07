@@ -1,0 +1,502 @@
+{
+  "split": "tr",
+  "num_samples": 2000,
+  "seed": 0,
+  "fields": {
+    "IMAGE_DIRECTORY_ENTRY_BASERELOC.Size": {
+      "value": "00000000",
+      "count": 836,
+      "total": 1998
+    },
+    "IMAGE_DIRECTORY_ENTRY_BASERELOC.VirtualAddress": {
+      "value": "00000000",
+      "count": 829,
+      "total": 1998
+    },
+    "IMAGE_DIRECTORY_ENTRY_BOUND_IMPORT.Size": {
+      "value": "00000000",
+      "count": 1942,
+      "total": 1998
+    },
+    "IMAGE_DIRECTORY_ENTRY_BOUND_IMPORT.VirtualAddress": {
+      "value": "00000000",
+      "count": 1942,
+      "total": 1998
+    },
+    "IMAGE_DIRECTORY_ENTRY_COM_DESCRIPTOR.Size": {
+      "value": "00000000",
+      "count": 1751,
+      "total": 1997
+    },
+    "IMAGE_DIRECTORY_ENTRY_COM_DESCRIPTOR.VirtualAddress": {
+      "value": "00000000",
+      "count": 1751,
+      "total": 1997
+    },
+    "IMAGE_DIRECTORY_ENTRY_COPYRIGHT.Size": {
+      "value": "00000000",
+      "count": 1993,
+      "total": 1998
+    },
+    "IMAGE_DIRECTORY_ENTRY_COPYRIGHT.VirtualAddress": {
+      "value": "00000000",
+      "count": 1993,
+      "total": 1998
+    },
+    "IMAGE_DIRECTORY_ENTRY_DEBUG.Size": {
+      "value": "00000000",
+      "count": 992,
+      "total": 1998
+    },
+    "IMAGE_DIRECTORY_ENTRY_DEBUG.VirtualAddress": {
+      "value": "00000000",
+      "count": 993,
+      "total": 1998
+    },
+    "IMAGE_DIRECTORY_ENTRY_DELAY_IMPORT.Size": {
+      "value": "00000000",
+      "count": 1853,
+      "total": 1997
+    },
+    "IMAGE_DIRECTORY_ENTRY_DELAY_IMPORT.VirtualAddress": {
+      "value": "00000000",
+      "count": 1854,
+      "total": 1997
+    },
+    "IMAGE_DIRECTORY_ENTRY_EXCEPTION.Size": {
+      "value": "00000000",
+      "count": 1540,
+      "total": 1998
+    },
+    "IMAGE_DIRECTORY_ENTRY_EXCEPTION.VirtualAddress": {
+      "value": "00000000",
+      "count": 1540,
+      "total": 1998
+    },
+    "IMAGE_DIRECTORY_ENTRY_EXPORT.Size": {
+      "value": "00000000",
+      "count": 1372,
+      "total": 1998
+    },
+    "IMAGE_DIRECTORY_ENTRY_EXPORT.VirtualAddress": {
+      "value": "00000000",
+      "count": 1372,
+      "total": 1998
+    },
+    "IMAGE_DIRECTORY_ENTRY_GLOBALPTR.Size": {
+      "value": "00000000",
+      "count": 1998,
+      "total": 1998
+    },
+    "IMAGE_DIRECTORY_ENTRY_GLOBALPTR.VirtualAddress": {
+      "value": "00000000",
+      "count": 1998,
+      "total": 1998
+    },
+    "IMAGE_DIRECTORY_ENTRY_IAT.Size": {
+      "value": "00000000",
+      "count": 452,
+      "total": 1998
+    },
+    "IMAGE_DIRECTORY_ENTRY_IAT.VirtualAddress": {
+      "value": "00000000",
+      "count": 453,
+      "total": 1998
+    },
+    "IMAGE_DIRECTORY_ENTRY_IMPORT.Size": {
+      "value": "00000000",
+      "count": 165,
+      "total": 1998
+    },
+    "IMAGE_DIRECTORY_ENTRY_IMPORT.VirtualAddress": {
+      "value": "00000000",
+      "count": 164,
+      "total": 1998
+    },
+    "IMAGE_DIRECTORY_ENTRY_LOAD_CONFIG.Size": {
+      "value": "00000000",
+      "count": 1225,
+      "total": 1998
+    },
+    "IMAGE_DIRECTORY_ENTRY_LOAD_CONFIG.VirtualAddress": {
+      "value": "00000000",
+      "count": 1225,
+      "total": 1998
+    },
+    "IMAGE_DIRECTORY_ENTRY_RESERVED.Size": {
+      "value": "00000000",
+      "count": 1981,
+      "total": 1988
+    },
+    "IMAGE_DIRECTORY_ENTRY_RESERVED.VirtualAddress": {
+      "value": "00000000",
+      "count": 1986,
+      "total": 1988
+    },
+    "IMAGE_DIRECTORY_ENTRY_RESOURCE.Size": {
+      "value": "00000000",
+      "count": 296,
+      "total": 1998
+    },
+    "IMAGE_DIRECTORY_ENTRY_RESOURCE.VirtualAddress": {
+      "value": "00000000",
+      "count": 296,
+      "total": 1998
+    },
+    "IMAGE_DIRECTORY_ENTRY_SECURITY.Size": {
+      "value": "00000000",
+      "count": 1326,
+      "total": 1998
+    },
+    "IMAGE_DIRECTORY_ENTRY_SECURITY.VirtualAddress": {
+      "value": "00000000",
+      "count": 1326,
+      "total": 1998
+    },
+    "IMAGE_DIRECTORY_ENTRY_TLS.Size": {
+      "value": "00000000",
+      "count": 1450,
+      "total": 1998
+    },
+    "IMAGE_DIRECTORY_ENTRY_TLS.VirtualAddress": {
+      "value": "00000000",
+      "count": 1450,
+      "total": 1998
+    },
+    "IMAGE_DOS_HEADER.e_cblp": {
+      "value": "9000",
+      "count": 1824,
+      "total": 1999
+    },
+    "IMAGE_DOS_HEADER.e_cp": {
+      "value": "0300",
+      "count": 1824,
+      "total": 1999
+    },
+    "IMAGE_DOS_HEADER.e_cparhdr": {
+      "value": "0400",
+      "count": 1959,
+      "total": 1999
+    },
+    "IMAGE_DOS_HEADER.e_crlc": {
+      "value": "0000",
+      "count": 1980,
+      "total": 1999
+    },
+    "IMAGE_DOS_HEADER.e_cs": {
+      "value": "0000",
+      "count": 1979,
+      "total": 1999
+    },
+    "IMAGE_DOS_HEADER.e_csum": {
+      "value": "0000",
+      "count": 1988,
+      "total": 1999
+    },
+    "IMAGE_DOS_HEADER.e_ip": {
+      "value": "0000",
+      "count": 1967,
+      "total": 1999
+    },
+    "IMAGE_DOS_HEADER.e_lfanew": {
+      "value": "80000000",
+      "count": 597,
+      "total": 1999
+    },
+    "IMAGE_DOS_HEADER.e_lfarlc": {
+      "value": "4000",
+      "count": 1961,
+      "total": 1999
+    },
+    "IMAGE_DOS_HEADER.e_magic": {
+      "value": "4d5a",
+      "count": 1999,
+      "total": 1999
+    },
+    "IMAGE_DOS_HEADER.e_maxalloc": {
+      "value": "ffff",
+      "count": 1940,
+      "total": 1999
+    },
+    "IMAGE_DOS_HEADER.e_minalloc": {
+      "value": "0000",
+      "count": 1890,
+      "total": 1999
+    },
+    "IMAGE_DOS_HEADER.e_oemid": {
+      "value": "0000",
+      "count": 1959,
+      "total": 1999
+    },
+    "IMAGE_DOS_HEADER.e_oeminfo": {
+      "value": "0000",
+      "count": 1960,
+      "total": 1999
+    },
+    "IMAGE_DOS_HEADER.e_ovno": {
+      "value": "0000",
+      "count": 1876,
+      "total": 1999
+    },
+    "IMAGE_DOS_HEADER.e_res": {
+      "value": "0000000000000000",
+      "count": 1968,
+      "total": 1999
+    },
+    "IMAGE_DOS_HEADER.e_res2": {
+      "value": "0000000000000000000000000000000000000000",
+      "count": 1958,
+      "total": 1999
+    },
+    "IMAGE_DOS_HEADER.e_sp": {
+      "value": "b800",
+      "count": 1917,
+      "total": 1999
+    },
+    "IMAGE_DOS_HEADER.e_ss": {
+      "value": "0000",
+      "count": 1979,
+      "total": 1999
+    },
+    "IMAGE_FILE_HEADER.Characteristics": {
+      "value": "0221",
+      "count": 344,
+      "total": 1999
+    },
+    "IMAGE_FILE_HEADER.Machine": {
+      "value": "4c01",
+      "count": 1499,
+      "total": 1999
+    },
+    "IMAGE_FILE_HEADER.NumberOfSections": {
+      "value": "0500",
+      "count": 444,
+      "total": 1999
+    },
+    "IMAGE_FILE_HEADER.NumberOfSymbols": {
+      "value": "00000000",
+      "count": 1961,
+      "total": 1999
+    },
+    "IMAGE_FILE_HEADER.PointerToSymbolTable": {
+      "value": "00000000",
+      "count": 1909,
+      "total": 1999
+    },
+    "IMAGE_FILE_HEADER.SizeOfOptionalHeader": {
+      "value": "e000",
+      "count": 1503,
+      "total": 1999
+    },
+    "IMAGE_FILE_HEADER.TimeDateStamp": {
+      "value": "00000000",
+      "count": 101,
+      "total": 1999
+    },
+    "IMAGE_NT_HEADERS.Signature": {
+      "value": "50450000",
+      "count": 1999,
+      "total": 1999
+    },
+    "IMAGE_OPTIONAL_HEADER.AddressOfEntryPoint": {
+      "value": "00000000",
+      "count": 158,
+      "total": 1999
+    },
+    "IMAGE_OPTIONAL_HEADER.BaseOfCode": {
+      "value": "00100000",
+      "count": 1630,
+      "total": 1999
+    },
+    "IMAGE_OPTIONAL_HEADER.BaseOfData": {
+      "value": "00100000",
+      "count": 110,
+      "total": 1503
+    },
+    "IMAGE_OPTIONAL_HEADER.CheckSum": {
+      "value": "00000000",
+      "count": 859,
+      "total": 1999
+    },
+    "IMAGE_OPTIONAL_HEADER.DllCharacteristics": {
+      "value": "0000",
+      "count": 585,
+      "total": 1999
+    },
+    "IMAGE_OPTIONAL_HEADER.FileAlignment": {
+      "value": "00020000",
+      "count": 1784,
+      "total": 1999
+    },
+    "IMAGE_OPTIONAL_HEADER.ImageBase": {
+      "value": "00004000",
+      "count": 977,
+      "total": 1999
+    },
+    "IMAGE_OPTIONAL_HEADER.LoaderFlags": {
+      "value": "00000000",
+      "count": 1999,
+      "total": 1999
+    },
+    "IMAGE_OPTIONAL_HEADER.Magic": {
+      "value": "0b01",
+      "count": 1503,
+      "total": 1999
+    },
+    "IMAGE_OPTIONAL_HEADER.MajorImageVersion": {
+      "value": "0000",
+      "count": 1478,
+      "total": 1999
+    },
+    "IMAGE_OPTIONAL_HEADER.MajorLinkerVersion": {
+      "value": "0e",
+      "count": 716,
+      "total": 1999
+    },
+    "IMAGE_OPTIONAL_HEADER.MajorOperatingSystemVersion": {
+      "value": "0400",
+      "count": 822,
+      "total": 1999
+    },
+    "IMAGE_OPTIONAL_HEADER.MajorSubsystemVersion": {
+      "value": "0400",
+      "count": 833,
+      "total": 1999
+    },
+    "IMAGE_OPTIONAL_HEADER.MinorImageVersion": {
+      "value": "0000",
+      "count": 1910,
+      "total": 1999
+    },
+    "IMAGE_OPTIONAL_HEADER.MinorLinkerVersion": {
+      "value": "00",
+      "count": 930,
+      "total": 1999
+    },
+    "IMAGE_OPTIONAL_HEADER.MinorOperatingSystemVersion": {
+      "value": "0000",
+      "count": 1678,
+      "total": 1999
+    },
+    "IMAGE_OPTIONAL_HEADER.MinorSubsystemVersion": {
+      "value": "0000",
+      "count": 1615,
+      "total": 1999
+    },
+    "IMAGE_OPTIONAL_HEADER.NumberOfRvaAndSizes": {
+      "value": "10000000",
+      "count": 1988,
+      "total": 1999
+    },
+    "IMAGE_OPTIONAL_HEADER.Reserved1": {
+      "value": "00000000",
+      "count": 1999,
+      "total": 1999
+    },
+    "IMAGE_OPTIONAL_HEADER.SectionAlignment": {
+      "value": "00100000",
+      "count": 1759,
+      "total": 1999
+    },
+    "IMAGE_OPTIONAL_HEADER.SizeOfCode": {
+      "value": "00000000",
+      "count": 118,
+      "total": 1999
+    },
+    "IMAGE_OPTIONAL_HEADER.SizeOfHeaders": {
+      "value": "00040000",
+      "count": 1332,
+      "total": 1999
+    },
+    "IMAGE_OPTIONAL_HEADER.SizeOfHeapCommit": {
+      "value": "00100000",
+      "count": 1491,
+      "total": 1999
+    },
+    "IMAGE_OPTIONAL_HEADER.SizeOfHeapReserve": {
+      "value": "00001000",
+      "count": 1471,
+      "total": 1999
+    },
+    "IMAGE_OPTIONAL_HEADER.SizeOfImage": {
+      "value": "00a00000",
+      "count": 56,
+      "total": 1999
+    },
+    "IMAGE_OPTIONAL_HEADER.SizeOfInitializedData": {
+      "value": "00100000",
+      "count": 82,
+      "total": 1999
+    },
+    "IMAGE_OPTIONAL_HEADER.SizeOfStackCommit": {
+      "value": "00100000",
+      "count": 1362,
+      "total": 1999
+    },
+    "IMAGE_OPTIONAL_HEADER.SizeOfStackReserve": {
+      "value": "00001000",
+      "count": 1294,
+      "total": 1999
+    },
+    "IMAGE_OPTIONAL_HEADER.SizeOfUninitializedData": {
+      "value": "00000000",
+      "count": 1557,
+      "total": 1999
+    },
+    "IMAGE_OPTIONAL_HEADER.Subsystem": {
+      "value": "0200",
+      "count": 1426,
+      "total": 1999
+    },
+    "IMAGE_SECTION_HEADER.Characteristics": {
+      "value": "40000040",
+      "count": 4092,
+      "total": 11879
+    },
+    "IMAGE_SECTION_HEADER.Misc": {
+      "value": "00100000",
+      "count": 1049,
+      "total": 11879
+    },
+    "IMAGE_SECTION_HEADER.Name": {
+      "value": "2e72737263000000",
+      "count": 1840,
+      "total": 11879
+    },
+    "IMAGE_SECTION_HEADER.NumberOfLinenumbers": {
+      "value": "0000",
+      "count": 11862,
+      "total": 11879
+    },
+    "IMAGE_SECTION_HEADER.NumberOfRelocations": {
+      "value": "0000",
+      "count": 11871,
+      "total": 11879
+    },
+    "IMAGE_SECTION_HEADER.PointerToLinenumbers": {
+      "value": "00000000",
+      "count": 11857,
+      "total": 11879
+    },
+    "IMAGE_SECTION_HEADER.PointerToRawData": {
+      "value": "00040000",
+      "count": 1527,
+      "total": 11879
+    },
+    "IMAGE_SECTION_HEADER.PointerToRelocations": {
+      "value": "00000000",
+      "count": 11860,
+      "total": 11879
+    },
+    "IMAGE_SECTION_HEADER.SizeOfRawData": {
+      "value": "00020000",
+      "count": 2272,
+      "total": 11879
+    },
+    "IMAGE_SECTION_HEADER.VirtualAddress": {
+      "value": "00100000",
+      "count": 1756,
+      "total": 11879
+    }
+  }
+}
