@@ -37,9 +37,10 @@ Last updated: 2026-10-07. Current phase: **Phase 2** (`docs/plan_phase2.md`).
 
 The pilot is the go/no-go gate, and its core needs only cheap explainers, so it comes before the expensive ones.
 
-1. `Provenance.select(features)`: the provenance of the column-restricted P_S = P[:, S], so every statistic is the
-   "how good would P be if the model used only S" version (decided 2026-10-07; overlap between S and its complement is
-   not wanted). Needs column selection in `BoxMatrix`.
+1. ~~`Provenance.select`~~ done (2026-10-07): `Provenance.select(S)` = P[:, S] (indices, mask, or names) via
+   `BoxMatrix.select_columns`. 0.04-0.7 s per EMBER group on a 4 MB file. Open question for the census: under
+   `empty="null"`, a group whose features are all empty (e.g., exports of a file without exports) has O = 1 and H = 0
+   because every empty feature shares the null element; report statistics with `empty="ignore"` next to κ?
 2. `scripts/provenance_census.py`: per file, κ, H, O (overall and per feature subset) and ℓ(a) for each stage-1
    explanation, plus the null element's share of each pullback. Domain-agnostic: no PE-format structure (see
    CLAUDE.md). About 0.75 s/file, so ~25 min on one core for 2,000 files; parallel over files.
