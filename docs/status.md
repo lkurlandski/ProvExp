@@ -35,10 +35,10 @@ The pilot is the go/no-go gate, and its core needs only cheap explainers, so it 
 1. `scripts/explain.py`, stage 1 (cheap, minutes): on the explanation set with the seed-0 models, TreeSHAP path and
    interventional (GBDT; background = 1,000 balanced training samples, fixed and saved), IG and gradient×input (MLP).
    Save one (2000, 2568) array per explainer plus the model's log-odds.
-2. `scripts/provenance_census.py`: per file, κ, H, O (overall and per feature group) and ℓ(a) for each stage-1
-   explanation; region-level pullback mass over PE structures (headers, section table, each section, overlay,
-   certificate, null). About 0.75 s/file, so ~25 min on one core for 2,000 files; parallel over files.
-3. The pilot (`docs/plan_phase2.md` §2.6) → `docs/pilot.md`: census by feature group, label, size, packer; a handful
+2. `scripts/provenance_census.py`: per file, κ, H, O (overall and per feature subset) and ℓ(a) for each stage-1
+   explanation, plus the null element's share of each pullback. Domain-agnostic: no PE-format structure (see
+   CLAUDE.md). About 0.75 s/file, so ~25 min on one core for 2,000 files; parallel over files.
+3. The pilot (`docs/plan_phase2.md` §2.6) → `docs/pilot.md`: census by feature subset, label, and size (number of elements); a handful
    of pullback heatmaps; agreement between explainers before vs. after pullback (hypothesis (c)). Go/no-go read.
 4. Stage 2 explainers, only after the pilot (hours, GPU): KernelSHAP (GBDT, MLP), MalConv IG and occlusion
    (pushforward, Phase 5). Seeds 1-2 only for robustness checks later.

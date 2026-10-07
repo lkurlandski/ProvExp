@@ -101,8 +101,8 @@ truncated files), plus the 45 fixtures. KernelSHAP is the expensive explainer; a
 Using GBDT + path-dependent TreeSHAP and the explanation set:
 
 1. **Census** (hypothesis (a)): per file, coverage κ, ambiguity H and overlap O (overall and per feature group), and
-   localizability ℓ(a) of the model's explanations. Distributions by label, size, packedness (by section entropy).
-2. **First pullbacks:** byte-level heatmaps over PE structure for a handful of files (qualitative sanity check).
+   localizability ℓ(a) of the model's explanations. Distributions by label and size (number of elements).
+2. **First pullbacks:** byte-level pullback heatmaps for a handful of files (qualitative sanity check).
 3. **Stability** (hypothesis (c)): agreement between explainers in feature space vs. after pullback.
 
 Output: a short internal report (`docs/pilot.md`) with figures, and a go/no-go read on the top-tier framing.
