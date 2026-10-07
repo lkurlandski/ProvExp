@@ -914,6 +914,24 @@ class ImportsInfo(FeatureType):
         return C.build()
 
 
+def _export_address_offset(pe: pefile.PE, exp: pefile.ExportData) -> Optional[int]:
+    """
+    The file offset of an export's entry in the export address table.
+
+    pefile omits `address_offset` for exports that it finds only by ordinal (in its second pass over the address
+    table), so it is recomputed from the ordinal for them, at the same location pefile read the address from.
+    """
+    offset: Optional[int] = getattr(exp, "address_offset", None)
+    if offset is not None:
+        return offset
+    try:
+        directory = pe.DIRECTORY_ENTRY_EXPORT.struct
+        offset = pe.get_offset_from_rva(directory.AddressOfFunctions + 4 * (exp.ordinal - directory.Base))
+    except Exception:
+        return None
+    return int(offset) if offset is not None else None
+
+
 class ExportsInfo(FeatureType):
     """
     Information about exported functions. Note that the total number of exported
@@ -964,7 +982,8 @@ class ExportsInfo(FeatureType):
                 r = (exp.name_offset, exp.name_offset + min(len(exp.name), 10000)) if exp.name_offset is not None else None
                 items.append((exp.name.decode()[:10000], r))
             elif exp.ordinal is not None:
-                r = (exp.address_offset, exp.address_offset + 4) if exp.address_offset is not None else None
+                offset = _export_address_offset(pe, exp)
+                r = (offset, offset + 4) if offset is not None else None
                 items.append((f"ordinal{exp.ordinal}", r))
         for b, (_, r) in zip(hash_indices(128, [s for s, _ in items]), items, strict=True):
             C.add_item(1 + b, [r])

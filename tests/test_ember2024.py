@@ -5,6 +5,7 @@ Most of these tests need real executables in tests/data/ (see scripts/make_fixtu
 """
 
 from pathlib import Path
+from types import SimpleNamespace
 import warnings
 
 from hypothesis import given
@@ -15,6 +16,7 @@ import pefile
 import pytest
 from sklearn.feature_extraction import FeatureHasher
 
+from provexp.featuresets.ember2024.features import ExportsInfo
 from provexp.featuresets.ember2024.features import HeaderFileInfo
 from provexp.featuresets.ember2024.features import PEFeatureExtractor
 from provexp.featuresets.ember2024.features import field_range
@@ -204,6 +206,19 @@ def test_pullback_completeness(sample: tuple[bytes, np.ndarray, Provenance]) -> 
     assert np.isclose(prov.pullback(a).sum(), a.sum())
     ignore = Provenance(prov.contributions, empty="ignore")
     assert np.isclose(ignore.pullback(a).sum(), a[~ignore.is_empty].sum())
+
+
+def test_ordinal_only_exports() -> None:
+    """pefile omits the address offset of exports found only by ordinal; their provenance is the address table entry."""
+    exp = pefile.ExportData(ordinal=7, address=0x1234, name=None, forwarder=None)
+    assert getattr(exp, "address_offset", None) is None
+    directory = SimpleNamespace(struct=SimpleNamespace(AddressOfFunctions=0x2000, Base=5))
+    pe = SimpleNamespace(DIRECTORY_ENTRY_EXPORT=SimpleNamespace(symbols=[exp], struct=directory.struct), get_offset_from_rva=lambda rva: rva - 0x1C00)
+    feature = ExportsInfo()  # type: ignore[no-untyped-call]
+    C = feature.provenance(bytes(0x1000), pe)
+    col = 1 + hash_indices(128, ["ordinal7"])[0]
+    pieces = C.pieces()
+    assert list(zip(pieces.col.tolist(), pieces.lo.tolist(), pieces.hi.tolist())) == [(col, 0x408, 0x40C)]
 
 
 def _parse(data: bytes) -> pefile.PE | None:
