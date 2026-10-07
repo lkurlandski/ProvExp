@@ -1,8 +1,8 @@
 # E1 Pilot: Problem-Space Faithfulness and Cost (Gate 2)
 
-Run 2026-10-07 (`scripts/faithfulness.py --seed 0 --num_files 100`, zero fill, K = 256 windows; tables from
-`scripts/e1_tables.py`). Design in `docs/plan_e1.md`. **The black-box provenance rows are invalid and await a rerun**
-(an estimator bug, fixed; see below); every other number stands.
+Run 2026-10-07 (`scripts/faithfulness.py --seed 0 --num_files 100`, K = 256 windows, zero fill and random fill;
+tables from `scripts/e1_tables.py --fill {zeros,random}`). Design in `docs/plan_e1.md`. The first run had a bug in the
+black-box estimator; the rerun with the fix reproduced every other number exactly (the pipeline is deterministic).
 
 ## The ablation operator held up
 
@@ -42,6 +42,10 @@ over the budgets 0.1%–50% (log-spaced). Insertion is the evidence recovered fr
 | MLP | insertion | pullback (bytes), IG | 0.62 | 55/100 | 17/100 (5e-14) | 0.06 |
 | MLP | insertion | pullback (windows), IG | 3.06 | 78/100 | 28/100 (4e-6) | 0.65 |
 | MLP | insertion | occlusion | 4.49 | 90/100 | — | 1.00 |
+| GBDT | deletion | black-box pullback, path | 4.67 | 93/100 | 61/100 (0.58) | 0.93 |
+| GBDT | insertion | black-box pullback, path | 3.76 | 89/100 | 47/100 (0.26) | 0.92 |
+| MLP | deletion | black-box pullback, IG | 5.65 | 86/100 | 20/100 (4e-13) | 0.66 |
+| MLP | insertion | black-box pullback, IG | 2.95 | 70/100 | 29/100 (4e-5) | 0.62 |
 
 Median evidence removed by deleting 0.1% of the bytes: 6.8 (GBDT, path pullback) vs. 1.9 (occlusion) vs. 0.0
 (random); MLP: 5.2 (IG pullback) vs. 4.7 (occlusion).
@@ -54,6 +58,59 @@ Median evidence removed by deleting 0.1% of the bytes: 6.8 (GBDT, path pullback)
 
 The explainers themselves cost milliseconds (TreeSHAP) to about 25 ms (IG on a GPU) per file. Byte-level occlusion
 would need one extraction per byte.
+
+### Robustness: random fill (content bytes random; header bytes still zero-filled)
+
+| model | curve | method | area | gain / occlusion gain (zero fill → random fill) |
+|---|---|---|---|---|
+| GBDT | deletion | pullback (bytes), path | 7.92 | 1.79 → 1.72 |
+| GBDT | deletion | pullback (windows), path | 5.12 | 1.03 → 1.01 |
+| GBDT | insertion | pullback (bytes), path | 3.78 | 1.16 → 1.06 |
+| GBDT | insertion | pullback (windows), path | 2.79 | 0.92 → 0.75 |
+| MLP | deletion | pullback (bytes), IG | 7.53 | 0.94 → 0.94 |
+| MLP | deletion | pullback (windows), IG | 6.01 | 0.72 → 0.68 |
+| MLP | insertion | pullback (bytes), IG | 0.64 | 0.06 → 0.20 |
+
+Deletion is robust to the fill; insertion is not (it starts from a file of random bytes, which is even further from
+real files than a blank one). The header-field overshoot persists because header bytes are zero-filled in both.
+
+### Black-box vs. instrumented provenance (coarsened to the 256 windows)
+
+| subset | attributable: instrumented / black-box | median total variation where both |
+|---|---|---|
+| histogram | 0.96 / 0.95 | 0.00 |
+| header | 1.00 / 0.43 | 0.00 |
+| section | 0.18 / 0.18 | 0.00 |
+| datadirectories | 0.94 / 0.33 | 0.00 |
+| richheader | 0.16 / 0.16 | 0.00 |
+| strings | 0.62 / 0.62 | 0.44 |
+| byteentropy | 0.59 / 0.76 | 0.60 |
+| imports | 0.07 / 0.08 | 0.60 |
+| exports | 0.08 / 0.09 | 0.67 |
+| authenticode | 1.00 / 0.18 | 0.38 |
+| pefilewarnings | 0.00 / 0.06 | — |
+
+- **Where a feature is additive in its bytes** (histogram, header fields, section and data-directory fields, the Rich
+  header), the black-box estimate agrees *exactly* with the instrumented provenance at the window level, as T1
+  predicts. This validates the instrumentation for those groups independently.
+- **Non-additive groups differ** (strings 0.44, entropy windows 0.60, hashed imports and exports 0.60–0.67): zeroing
+  part of a string or name does not remove a proportional share of it; it changes or moves it (a different hash
+  bucket). This is the gap T1 says to measure, and it is where instrumented and black-box provenance genuinely disagree.
+- **Occlusion cannot see everything:** header features whose bytes are already zero, or protected, never change
+  (black-box sees 43% of header features vs. 100%). It also creates features: zeroing windows adds new low-entropy
+  windows (byteentropy, 17% black-box only) and new pefile warnings (6%). These are fill artifacts, not provenance.
+- **As a ranking,** the black-box pullback is close to occlusion for the GBDT (0.93×) and worse for the MLP (0.66×),
+  at the same cost as occlusion.
+
+## What insertion tests
+
+Deletion asks whether the bytes an explanation ranks highest are *necessary*: remove them, and the evidence for the
+decision should drop fast. Insertion asks whether they are *sufficient*: start from a file with every removable byte
+blanked, restore only the top-ranked bytes, and the evidence should come back fast. Insertion is weaker here for three
+reasons: the blank (or random) file is far from any real file, so the model's response to it is hard to interpret;
+many features need contiguous structures (a string, an import name), and restoring scattered top-ranked bytes does not
+rebuild them; and the explanations were computed relative to a different reference (TreeSHAP's training distribution,
+IG's background mean), not relative to the blank file. Deletion is the primary test; insertion is at most secondary.
 
 ## Reading
 
@@ -89,13 +146,12 @@ Spearman correlation, per file, between census statistics and the pullback's del
 Coverage and localizability predict where the pullback works; overlap does not; the saturating ambiguity correlates
 in the wrong direction (likely confounded with coverage). Consistent with the pilot's finding 4.
 
-## Black-box provenance: invalid in this run
+## Black-box estimator bug (fixed)
 
-The estimator passed raw feature changes to `Provenance`, which treats a column as empty when its sum is below 1e-12
-of the largest column's. Feature changes span about 12 orders of magnitude (2.4e9 vs. 1e-3), so most small-scale
-features (e.g., 217 of 256 histogram bins on one file) were treated as empty. Fixed by normalizing each feature's
-changes (which does not change P), with a regression test. The black-box rows and the provenance comparison need a
-rerun; the rerun should reproduce every other number exactly.
+The first run's estimator passed raw feature changes to `Provenance`, which treats a column as empty when its sum is
+below 1e-12 of the largest column's. Feature changes span about 12 orders of magnitude, so most small-scale features
+were treated as empty. Fixed by normalizing each feature's changes (P is unchanged), with a regression test; the
+rerun reproduced every other number exactly.
 
 ## Gate 2
 
@@ -107,7 +163,7 @@ the operator and insertion questions below folded in.
 
 ## Next steps
 
-1. **Rerun** with the fixed black-box estimator (same command); also run `--fill random`.
+1. ~~Rerun~~ done.
 2. **Fill artifacts in header fields (level 3):** replace an ablated header field with its most common value in the
    training set instead of zero, and compare the curves; report the overshoot beyond full ablation as a diagnostic.
 3. **Insertion:** test insertion by contiguous runs and check the IG reference point; decide whether insertion is a
