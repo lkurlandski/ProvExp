@@ -1,7 +1,8 @@
 # Pilot: Localizability Census and First Pullbacks
 
-Written 2026-10-07. Phase 2 capstone (`docs/plan_phase2.md` §2.6). **Status: census complete; the stability analysis
-(hypothesis (c)), the effective-support tables, and the pullback heatmaps wait on `scripts/pullback_agreement.py`.**
+Written 2026-10-07. Phase 2 capstone (`docs/plan_phase2.md` §2.6). **Status: complete except the pullback heatmaps**
+(from `pullback/bins.npy`). Localizability ℓ has since been removed from the framework (it is explanation-specific)
+and is used here as an evaluation metric only.
 Every number below is printed by `scripts/pilot_tables.py --seed 0`.
 
 ## Setup
@@ -127,44 +128,63 @@ Mean share of attribution magnitude per subset:
 
 The GBDT spreads its reliance over many subsets; the MLP (under IG) concentrates on the hashed import features.
 
-## Stability (hypothesis (c)): pending
+### 6. Effective support: features are sharp, explanations are moderately spread
 
-`scripts/pullback_agreement.py` compares every pair of explainers on each file in feature space and after pullback
-(Spearman, cosine, weighted Jaccard of magnitudes), with a control that permutes the features of one explanation
-before pulling it back. Smoke test on 24 files (not conclusive):
+From the pullback pass (`scripts/pullback_agreement.py`). Median over attributable features and files:
+
+| subset | effective support exp(H_j), elements | support \|A_j\| | fraction of file |
+|---|---|---|---|
+| general | 1 | 1 | 1.6e-05 |
+| histogram | 636 | 636 | 2.3e-03 |
+| byteentropy | 365 | 378 | 1.1e-03 |
+| strings | 143 | 146 | 3.2e-04 |
+| header | 2 | 2 | 7.0e-06 |
+| section | 12 | 12 | 6.0e-05 |
+| imports | 30 | 30 | 4.8e-05 |
+| exports | 82 | 84 | 2.0e-04 |
+| datadirectories | 4 | 4 | 1.2e-05 |
+| richheader | 8 | 8 | 2.2e-05 |
+| authenticode | 8 | 8 | 8.1e-05 |
+
+Explanation-weighted effective support, Σ|a_j| exp(H_j) / Σ|a_j| over attributable j, as a fraction of the file
+(10th / 50th / 90th percentile):
+
+| explainer | benign | malware |
+|---|---|---|
+| treeshap_path | 0.01 / 0.02 / 0.07 | 0.02 / 0.04 / 0.07 |
+| treeshap_interventional | 0.01 / 0.03 / 0.08 | 0.02 / 0.04 / 0.08 |
+| integrated_gradients | 0.00 / 0.02 / 0.07 | 0.01 / 0.03 / 0.08 |
+| gradient_x_input | 0.01 / 0.03 / 0.08 | 0.02 / 0.05 / 0.09 |
+
+- A typical attributable feature draws on a handful of bytes (2 for a header field, 30 for an import bucket), and
+  exp(H_j) ≈ |A_j|: provenance is nearly uniform within its support. This is why Ĥ_j = H_j / log|A_j| saturates at 1:
+  it divides out exactly the information that matters. It supports normalizing by log|z| (or reporting exp(H_j)) in
+  E2.
+- One unit of a decision's attribution is spread over 2–5% of the file in the median, dominated by the few
+  large-support features (histograms, entropy windows). Malware explanations are slightly more spread than benign.
+
+### 7. Agreement of explainers before and after pullback (A3 material)
+
+Median over files and explainer pairs; the control permutes the features of one explanation before pulling it back:
 
 | space | control | Spearman | cosine | weighted Jaccard |
 |---|---|---|---|---|
-| feature | no | 0.12 | 0.27 | 0.18 |
-| feature | permuted | 0.00 | 0.00 | 0.07 |
-| problem | no | 0.17 | 0.31 | 0.27 |
-| problem | permuted | 0.01 | 0.07 | 0.12 |
+| feature | no | 0.114 | 0.283 | 0.188 |
+| feature | permuted | 0.000 | 0.000 | 0.061 |
+| problem | no | 0.157 | 0.347 | 0.274 |
+| problem | permuted | 0.002 | 0.231 | 0.131 |
 
-Agreement rises after pullback, but so does the agreement of unrelated explanations, because the pullback spreads
-every explanation over the same elements. Hypothesis (c) has to be judged by the gain over the control, not by the
-raw increase.
+- Raw agreement rises after pullback, but the control rises about as much (cosine +0.06 vs. +0.23 for the control;
+  weighted Jaccard +0.09 vs. +0.07). Only Spearman gains beyond the control (+0.04 vs. +0.00).
+- Between models (IG vs. TreeSHAP), Spearman and cosine *fall* after pullback (0.19 → 0.14; 0.30 → 0.19).
+- **No evidence that explanations generally agree more in the problem-space.** What remains is the narrow, exact
+  proposition about mechanically redundant features (A3), to be shown with the duplicate-feature sweep, not with
+  agreement across explainers.
 
-## Go/no-go (preliminary)
+## Go/no-go
 
-- **(a) Measurement: provisional go.** Findings 1–3 are substantive and security-relevant: a fifth to a third of what
-  production-style detectors rely on is the absence of something, which no explanation over the input can show, and
-  how much of it an explainer reveals depends on its baseline. What is missing is the "how sharply" half (effective
-  support, finding 4) and the heatmaps; both come from the pullback pass.
-- **(c) Stability: open.** Decided by the full agreement run, net of the permutation control.
-- **(b) Manipulability: not yet tested** (Phase 3 needs a black-box perturbation operator).
-
-## Next steps
-
-1. **Run the pullback pass** (about 40 minutes on 8 workers, or 20 on 16):
-   `PYTHONHASHSEED=0 OMP_NUM_THREADS=1 env/bin/python scripts/pullback_agreement.py --seed 0 --num_workers 16`.
-   Then finish this report: stability net of the control, effective-support tables, heatmaps from the binned
-   pullbacks.
-2. **Decide the ambiguity/overlap summaries** for the manuscript (finding 4).
-3. **Decide whether to instrument the top pefile warnings** (finding 2). This is instrumentation of the feature
-   extractor, like every other group, and moves about 5% of the GBDT's attribution out of the null element.
-4. **Interventional TreeSHAP outliers:** flag the 2 files, or retrain the GBDT with a depth limit if more appear in
-   other seeds.
-5. **Stage 2 explainers:** KernelSHAP for both models (a data-driven baseline for the MLP, which the gradient
-   explainers lack), then MalConv IG and occlusion for pushforward.
-6. **Phase 3:** a black-box element perturbation operator; deletion/insertion faithfulness of pullbacks vs. direct
-   problem-space explainers; black-box provenance estimation to validate the instrumented P; then hypothesis (b).
+- **Measurement (E4): go.** Findings 1–3 and 6 are substantive: a fifth to a third of what production-style
+  detectors rely on is the absence of something; the rest is localized to a few percent of the file.
+- **Stability: no.** Demoted to the appendix (A3), as planned.
+- **Manipulability:** dropped from the plan (subsumed by E1).
+- **Next gate (Gate 2):** the E1 faithfulness pilot, see `PLAN.md`.

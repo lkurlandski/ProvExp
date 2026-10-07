@@ -119,9 +119,17 @@ def main() -> None:
 
     entropy = np.load(pullback / "entropy.npy")
     support = np.load(pullback / "support.npy")
-    print("## Effective support of attributable features, exp(H_j), as a fraction of the file (median over files)\n")
-    frac = np.where(attributable, np.exp(entropy) / size[:, None], np.nan)
-    rows = [{"subset": g, "median": float(np.nanmedian(frac[:, prefix == g])), "support / size": float(np.nanmedian(np.where(attributable, support / size[:, None], np.nan)[:, prefix == g]))} for g in groups if attributable[:, prefix == g].any()]
+    print("## Effective support of attributable features, exp(H_j), in elements and as a fraction of the file (median over attributable features and files)\n")
+    effective = np.where(attributable, np.exp(entropy), np.nan)
+    rows = [
+        {
+            "subset": g,
+            "elements": float(np.nanmedian(effective[:, prefix == g])),
+            "support |A_j|": float(np.nanmedian(np.where(attributable, support, np.nan)[:, prefix == g])),
+            "fraction of file": f"{np.nanmedian(effective[:, prefix == g] / size[:, None]):.1e}",
+        }
+        for g in groups if attributable[:, prefix == g].any()
+    ]
     print(markdown(pl.DataFrame(rows)), "\n")
 
     print("## Explanation-weighted effective support, sum |a_j| exp(H_j) / sum |a_j| over attributable j, as a fraction of the file\n")
