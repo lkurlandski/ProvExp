@@ -10,31 +10,40 @@ Last updated: 2026-10-07. Current phase: **Phase 2** (`docs/plan_phase2.md`).
   ambiguity, overlap (numba sweep, ~0.06 s median per file); the instrumented EMBER-2024 extractor (bit-identical to
   thrember on 45 fixtures); SimpleDB; MalConv medium (logits identical to MalConv2). Manuscript framework revised for
   the null element (Axiom 4, Definition of localizability).
-- **Phase 2 so far (code written and tested, not yet run at scale):**
-  - Feature store (`data/tabular.py`) and `scripts/featurize.py` (memory-mapped `X.npy` + `meta.parquet` per split,
-    resumable, TLSH of the truncated bytes).
-  - `models/gbdt.py`, `models/mlp.py`, `scripts/train_classic.py --learner {gbdt,mlp} --seed N`.
-  - `explain/feature.py` (TreeSHAP path/interventional, KernelSHAP, IG, gradient×input) and `explain/problem.py`
-    (MalConv IG with 256 steps; exact one-pass occlusion).
-  - `data/tlsh.py` (greedy dedup), `scripts/select_explanation_set.py`, `scripts/build_metadata.py`,
-    `scripts/check_features.py`.
+- **Phase 2, data and models (done 2026-10-07):**
+  - Features for all splits (`artifacts/features/ember2024/{tr,vl,ts}`, 0 failures); released metadata
+    (`artifacts/metadata/ember2024.parquet`); feature checks (`artifacts/reports/check_features_*.json`).
+  - Explanation set: `artifacts/explanation_set/ts.parquet` (1,000 benign + 1,000 malware). TLSH dedup within each
+    label at threshold 30, at most 10 per malware family, then a uniform sample per label (no size strata, so it is
+    representative within each label; see `select_explanation_set.py`). The family cap leaves 45,943 malware
+    candidates, so the malware half is family-balanced rather than following the test split.
+  - GBDT and MLP, seeds 0-2 (`artifacts/models/{gbdt,mlp}/seed-N/`). Test ROC-AUC: GBDT 0.99759/0.99765/0.99763,
+    MLP 0.99586/0.99551/0.99595, slightly below SSViT's full-length baselines (0.9979, 0.9965), as expected from
+    truncation. The GBDT used all 500 trees (early stopping never triggered).
+  - MalConv medium, seeds 0-2: `checkpoints/malconv-seed{0,1,2}.pt` (seed 0 is the released `malconv-medium.pt`).
+  - Code: `explain/feature.py` (TreeSHAP path/interventional, KernelSHAP, IG, gradient×input), `explain/problem.py`
+    (MalConv IG, exact one-pass occlusion), `data/tlsh.py` (exact greedy dedup for any threshold).
 
 ## Running / waiting on the user
 
-1. Done: `scripts/featurize.py` on all splits (0 failures), `build_metadata.py` (2,069,813 samples), and
-   `check_features.py` on ts/vl/tr (`artifacts/reports/check_features_*.json`, results as expected; see Notes).
-2. Next for the user: `select_explanation_set.py`, then `train_classic.py` (GBDT and MLP, seeds 0-2).
+Nothing.
 
 ## Next (for Claude)
 
-1. Settle the explanation-set TLSH threshold (see Notes), then check `artifacts/explanation_set/ts.parquet` and `artifacts/models/*/seed-*/metrics.json`. Expected test ROC-AUC near SSViT's
-   on full-length features: GBDT 0.9979, MLP 0.9965 (MalConv medium: 0.9913).
-2. Write `scripts/explain.py`: run every explainer on the explanation set (seed-0 models; SHAP background =
-   1,000 balanced training samples, fixed; KernelSHAP with a small summarized background) and save one array per
-   explainer. Smoke-test on a few samples, then hand the user the full command.
-3. Phase 2 capstone, the pilot (`docs/plan_phase2.md` §2.6): coverage/localizability/H/O census by feature group,
-   label, size, and packer; first byte-level pullback heatmaps; explainer agreement before vs. after pullback.
-   Write `docs/pilot.md` with a go/no-go read on the top-tier framing.
+The pilot is the go/no-go gate, and its core needs only cheap explainers, so it comes before the expensive ones.
+
+1. `scripts/explain.py`, stage 1 (cheap, minutes): on the explanation set with the seed-0 models, TreeSHAP path and
+   interventional (GBDT; background = 1,000 balanced training samples, fixed and saved), IG and gradient×input (MLP).
+   Save one (2000, 2568) array per explainer plus the model's log-odds.
+2. `scripts/provenance_census.py`: per file, κ, H, O (overall and per feature group) and ℓ(a) for each stage-1
+   explanation; region-level pullback mass over PE structures (headers, section table, each section, overlay,
+   certificate, null). About 0.75 s/file, so ~25 min on one core for 2,000 files; parallel over files.
+3. The pilot (`docs/plan_phase2.md` §2.6) → `docs/pilot.md`: census by feature group, label, size, packer; a handful
+   of pullback heatmaps; agreement between explainers before vs. after pullback (hypothesis (c)). Go/no-go read.
+4. Stage 2 explainers, only after the pilot (hours, GPU): KernelSHAP (GBDT, MLP), MalConv IG and occlusion
+   (pushforward, Phase 5). Seeds 1-2 only for robustness checks later.
+5. Phase 3 prerequisites for hypothesis (b) and the faithfulness evaluation: validity-preserving region perturbation
+   and a functionality-preserving attack setup (secml-malware) against the GBDT.
 
 ## Notes
 

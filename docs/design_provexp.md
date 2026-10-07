@@ -41,7 +41,7 @@ ProvExp/
 │   ├── data/simpledb.py        copied from SSViT (readers and writer)
 │   └── models/malconv.py       standard-memory MalConv + released-checkpoint loader
 ├── scripts/make_fixtures.py    copies a diverse set of binaries into tests/data/
-├── checkpoints/                GITIGNORED: malconv-medium.pt (copied from SSViT/release/models)
+├── checkpoints/                GITIGNORED: malconv-seed{0,1,2}.pt (seed 0 = SSViT/release/models/malconv-medium.pt)
 └── tests/
     ├── reference/              verbatim thrember features.py (never edited)
     ├── data/                   GITIGNORED: real binaries (malware); tests skip if absent
