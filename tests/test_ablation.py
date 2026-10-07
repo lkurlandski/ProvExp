@@ -162,3 +162,13 @@ def test_coarsen(C: BoxMatrix, num_windows: int, empty: str) -> None:
     P = prov.to_dense()
     expected = np.stack([P[lo:hi].sum(axis=0) for lo, hi in zip(edges[:-1], edges[1:])] + [P[m] if prov.has_null else np.zeros(prov.num_features)])
     assert np.allclose(coarsen(prov, edges), expected)
+
+
+def test_estimate_provenance_with_heterogeneous_scales() -> None:
+    """A feature with tiny changes is not mistaken for an empty one next to a feature with huge changes."""
+    edges = window_edges(100, 4)
+    x = np.array([1e9, 1e-3, 5.0])
+    X = np.array([[0.0, 1e-3 - 1e-6, 5.0], [1e9, 1e-3, 5.0], [1e9, 1e-3 - 3e-6, 5.0], [1e9, 1e-3, 5.0]])
+    prov = estimate_provenance(x, X, edges)
+    assert prov.is_empty.tolist() == [False, False, True]
+    assert np.allclose(coarsen(prov, edges)[:4, 1], [0.25, 0.0, 0.75, 0.0])

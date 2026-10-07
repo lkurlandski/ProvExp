@@ -172,6 +172,8 @@ Phases 0–2 are complete (literature; `provexp`; features, models, stage-1 expl
 | Dec 15–late Jan | Writing: introduction and contributions, framework edits, figures | Submission |
 
 Gate 1 (the pilot census, `docs/pilot.md`) passed provisionally for the measurement result.
+Gate 2 (the E1 pilot, `docs/e1_pilot.md`, 2026-10-07): passed for the GBDT, partial for the MLP; open questions on
+fill artifacts in header fields (a level-3 operator) and on insertion for per-byte rankings.
 
 ## Risks
 

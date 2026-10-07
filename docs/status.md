@@ -27,26 +27,26 @@ Last updated: 2026-10-07. Current stage: **finishing the pilot, then the E1 pilo
 
 ## Running / waiting on the user
 
-- **Protected-field discovery** (E1 operator, `docs/plan_e1.md`):
-  `PYTHONHASHSEED=0 OMP_NUM_THREADS=1 env/bin/python scripts/discover_protected_fields.py sweep --split tr --num_samples 2000 --num_workers 16`
-  (~10 min), then `... check --explanation_set --num_workers 16` (~25 min). Smoke tests: 40 training files (layout
-  fields break in every file; e_sp, BaseOfCode, FileAlignment in 1 of 40; one file with overlapping DOS/PE headers);
-  200 test files checked with 0 broken ablations.
-- **E1 pilot:** `PYTHONHASHSEED=0 OMP_NUM_THREADS=1 env/bin/python scripts/faithfulness.py --seed 0 --num_files 100 --num_workers 16`
-  (zero fill; `--fill random` for the robustness variant). Smoke test on 4 files at K = 32: 0 failed verifications,
-  curve endpoints exact.
-- **Open questions** (details in `PLAN.md`): the summary statistics (decided by E2; candidates H_j / log|z| and
-  dropping 1/(n' - 1) of O; do not change the manuscript before then).
-- Known anomaly: interventional TreeSHAP violates local accuracy on 2 of 2,000 files (max 0.11); reported by a
-  `RuntimeWarning` in `treeshap_interventional`; E1 excludes those files.
+- **Rerun the E1 pilot** with the fixed black-box estimator (same command; ~22 min on 16 workers):
+  `PYTHONHASHSEED=0 OMP_NUM_THREADS=1 env/bin/python scripts/faithfulness.py --seed 0 --num_files 100 --num_workers 16`,
+  then the same with `--fill random` (writes to `.../random/`).
+- **Decisions for the user** (see `docs/e1_pilot.md`): a level-3 operator for header fields (typical values instead
+  of zeros); whether insertion is a fair test for per-byte rankings; Gate 2 thresholds (open).
+- Open: the summary statistics (E2 decides; the E1 preview shows coverage and ℓ predict pullback gain, overlap does
+  not, ambiguity has the wrong sign).
 
 ## Next (for Claude)
 
-1. After the discovery runs: add the fields breaking at least 1% of training files to `PROTECTED_FIELDS` (the layout
-   fields are protected by definition; rare breakers are protected per file by `protect`).
-2. After the E1 pilot: `scripts/e1_tables.py` and `docs/e1_pilot.md` (deletion/insertion AUC per method and model,
-   pullback vs. random paired test, the 1% budget, cost, black-box vs. instrumented P per feature subset); Gate 2 read.
-3. Then E1 at scale, E2, E3, KernelSHAP; A1-A3 are appendix-grade.
+1. After the rerun: refresh `docs/e1_pilot.md` (black-box rows and the P comparison; random-fill robustness).
+2. Level-3 operator if approved; insertion by contiguous runs; then E1 at scale (more files, seeds 1-2), E2, E3.
+
+## Done (2026-10-07, evening)
+
+- Protected-field discovery: the layout fields are the global protected set; other breakers are rare (≤ 0.35% of
+  2,000 training files) and handled per file; 0 broken ablations on the 2,000 held-out files.
+- E1 pilot (`docs/e1_pilot.md`): Gate 2 passed for the GBDT (window-level pullback = occlusion at 1/130 of the cost;
+  byte-level 1.8× occlusion, partly fill artifacts in header fields); partial for the MLP (deletion on par,
+  insertion fails). Black-box estimator bug found and fixed (rerun pending).
 
 ## Done (2026-10-07, later)
 

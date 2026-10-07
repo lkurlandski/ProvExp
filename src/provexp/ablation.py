@@ -165,6 +165,10 @@ def estimate_provenance(
         raise ValueError(f"Expected occluded features of shape ({K}, {x_.shape[0]}). Got {X.shape}.")
     delta = np.abs(X - x_[None, :])
     delta[~np.isfinite(delta)] = 0.0
+    # NOTE: Features differ in scale by many orders of magnitude, and Provenance treats a column as empty if its sum is
+    # tiny relative to the largest column. Each column is normalized here, which does not change P.
+    total = delta.sum(axis=0)
+    delta = np.divide(delta, total, out=np.zeros_like(delta), where=total > 0)
     lengths = np.diff(edges)
     k, j = np.nonzero(delta)
     C = BoxMatrix((int(edges[-1]), x_.shape[0]))
