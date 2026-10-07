@@ -26,20 +26,26 @@ Last updated: 2026-10-07. Current phase: **Phase 2** (`docs/plan_phase2.md`).
 
 ## Running / waiting on the user
 
-Nothing.
+- Retrain the GBDT (seeds 0-2) with the categorical features treated as numeric (`train_gbdt(categorical=False)`, now
+  the default). shap 0.52 misencodes LightGBM categorical splits on categories above 53 (its trees were off by up to
+  4.9 logits on the old model), so interventional TreeSHAP was silently wrong. The old models move to
+  `artifacts/models/gbdt-categorical/`; the numeric GBDT is the GBDT of record for every result.
+- Then `scripts/explain.py --seed 0` (stage 1). Smoke test on 20 files: completeness errors 5e-12 (TreeSHAP path),
+  5e-5 (interventional, 1,000 background samples), 8e-4 (IG, 4,096 steps; 128 steps gave errors up to 3.6 logits).
 
 ## Next (for Claude)
 
 The pilot is the go/no-go gate, and its core needs only cheap explainers, so it comes before the expensive ones.
 
-1. `scripts/explain.py`, stage 1 (cheap, minutes): on the explanation set with the seed-0 models, TreeSHAP path and
-   interventional (GBDT; background = 1,000 balanced training samples, fixed and saved), IG and gradient×input (MLP).
-   Save one (2000, 2568) array per explainer plus the model's log-odds.
+1. `Provenance.select(features)`: the provenance of the column-restricted P_S = P[:, S], so every statistic is the
+   "how good would P be if the model used only S" version (decided 2026-10-07; overlap between S and its complement is
+   not wanted). Needs column selection in `BoxMatrix`.
 2. `scripts/provenance_census.py`: per file, κ, H, O (overall and per feature subset) and ℓ(a) for each stage-1
    explanation, plus the null element's share of each pullback. Domain-agnostic: no PE-format structure (see
    CLAUDE.md). About 0.75 s/file, so ~25 min on one core for 2,000 files; parallel over files.
-3. The pilot (`docs/plan_phase2.md` §2.6) → `docs/pilot.md`: census by feature subset, label, and size (number of elements); a handful
-   of pullback heatmaps; agreement between explainers before vs. after pullback (hypothesis (c)). Go/no-go read.
+3. The pilot (`docs/plan_phase2.md` §2.6) → `docs/pilot.md`: census by feature subset, label, and size (number of
+   elements); a handful of pullback heatmaps; agreement between explainers (top-k Jaccard, Spearman) before vs. after
+   pullback (hypothesis (c)). Go/no-go read.
 4. Stage 2 explainers, only after the pilot (hours, GPU): KernelSHAP (GBDT, MLP), MalConv IG and occlusion
    (pushforward, Phase 5). Seeds 1-2 only for robustness checks later.
 5. Phase 3 prerequisites for hypothesis (b) and the faithfulness evaluation: validity-preserving region perturbation
