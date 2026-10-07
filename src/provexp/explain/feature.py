@@ -81,8 +81,18 @@ def treeshap_interventional(booster: lgb.Booster, X: npt.NDArray[np.floating], b
     Interventional TreeSHAP with respect to a background distribution.
 
     The attributions of each sample sum to its raw score minus the mean raw score over the background.
+
+    Raises:
+        RuntimeError: If shap's parsed copy of the trees does not reproduce LightGBM's raw scores on the background,
+            e.g., because of categorical splits, which shap does not represent correctly.
     """
-    explainer = shap.TreeExplainer(booster, data=np.asarray(background), feature_perturbation="interventional", model_output="raw")
+    background = np.asarray(background)
+    # NOTE: shap silently subsamples a plain background array to 100 samples, so the masker keeps all of them.
+    masker = shap.maskers.Independent(background, max_samples=background.shape[0])
+    explainer = shap.TreeExplainer(booster, data=masker, feature_perturbation="interventional", model_output="raw")
+    error = np.abs(explainer.model.predict(background) - gbdt_function(booster)(background)).max(initial=0.0)
+    if error > 1e-4:
+        raise RuntimeError(f"shap's copy of the trees differs from LightGBM's raw scores by up to {error:.3g}.")
     return np.asarray(explainer.shap_values(np.asarray(X), check_additivity=False), dtype=np.float64)
 
 

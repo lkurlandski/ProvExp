@@ -57,10 +57,22 @@ def test_treeshap_path_local_accuracy(booster: tuple[lgb.Booster, np.ndarray]) -
 
 def test_treeshap_interventional_local_accuracy(booster: tuple[lgb.Booster, np.ndarray]) -> None:
     model, X = booster
-    background = X[1000:1100]
+    background = X[1000:1300]  # More than shap's default limit of 100 background samples.
     A = treeshap_interventional(model, X[:20], background)
     f = gbdt_function(model)
     assert np.allclose(A.sum(axis=1), f(X[:20]) - f(background).mean(), atol=1e-6)
+
+
+def test_treeshap_interventional_rejects_categorical_splits() -> None:
+    """shap misrepresents categorical splits on large category codes, so the explainer must refuse such models."""
+    rng = np.random.default_rng(0)
+    X = rng.normal(size=(2000, 4))
+    X[:, 0] = rng.integers(0, 200, size=2000)
+    y = ((X[:, 0] % 7 < 3) ^ (X[:, 1] > 0)).astype(int)
+    params = {"objective": "binary", "num_iterations": 20, "num_leaves": 8, "verbosity": -1, "num_threads": 2, "seed": 0, "min_data_per_group": 5, "cat_smooth": 1}
+    model = lgb.train(params, lgb.Dataset(X, label=y, categorical_feature=[0]))
+    with pytest.raises(RuntimeError):
+        treeshap_interventional(model, X[:5], X[1000:1100])
 
 
 def test_kernelshap_gbdt_local_accuracy(booster: tuple[lgb.Booster, np.ndarray]) -> None:

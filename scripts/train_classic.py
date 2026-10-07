@@ -38,6 +38,7 @@ def main() -> None:
     parser.add_argument("--outdir", type=Path, default=ROOT / "artifacts" / "models")
     parser.add_argument("--device", type=str, default="cuda", help="MLP only.")
     parser.add_argument("--num_threads", type=int, default=os.cpu_count(), help="GBDT only.")
+    parser.add_argument("--categorical", action="store_true", help="GBDT only. Treat the categorical features as such (incompatible with interventional TreeSHAP).")
     parser.add_argument("--limit", type=int, default=None, help="Use at most this many samples per split (for testing).")
     args = parser.parse_args()
 
@@ -55,10 +56,10 @@ def main() -> None:
     (X_tr, y_tr, _), (X_vl, y_vl, _), (X_ts, y_ts, meta_ts) = data["tr"], data["vl"], data["ts"]
 
     if args.learner == "gbdt":
-        booster = train_gbdt(X_tr, y_tr, X_vl, y_vl, seed=args.seed, num_threads=args.num_threads)
+        booster = train_gbdt(X_tr, y_tr, X_vl, y_vl, seed=args.seed, num_threads=args.num_threads, categorical=args.categorical)
         booster.save_model(outdir / "model.txt", num_iteration=booster.best_iteration)
         probs = np.asarray(booster.predict(X_ts, num_iteration=booster.best_iteration))
-        config = {"best_iteration": booster.best_iteration}
+        config = {"best_iteration": booster.best_iteration, "categorical": args.categorical}
     else:
         device = torch.device(args.device)
         model = train_mlp(X_tr, y_tr, X_vl, y_vl, seed=args.seed, device=device)

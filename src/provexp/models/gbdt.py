@@ -66,6 +66,7 @@ def train_gbdt(
     seed: int = 0,
     stopper_metric: str = "auc",
     stopper_mode: Literal["max", "min"] = "max",
+    categorical: bool = False,
     **params: Any,
 ) -> lgb.Booster:
     """
@@ -77,14 +78,19 @@ def train_gbdt(
         seed: Seeds every source of randomness in LightGBM.
         stopper_metric: The validation metric that selects the best iteration (one of the params' metrics).
         stopper_mode: Whether the metric should be maximized or minimized.
+        categorical: Whether to treat `EMBER2024_CATEGORICAL` as categorical features, as SSViT and EMBER do.
         params: Overrides for `EMBER2024_LIGHTGBM_PARAMS`.
     """
     params = EMBER2024_LIGHTGBM_PARAMS | {"seed": seed, "bagging_seed": seed, "feature_fraction_seed": seed} | params
     if stopper_metric not in params["metric"]:
         raise ValueError(f"`stopper_metric` must be one of {params['metric']}. Got {stopper_metric}.")
 
-    tr = lgb.Dataset(X_tr, label=y_tr, categorical_feature=EMBER2024_CATEGORICAL)
-    vl = lgb.Dataset(X_vl, label=y_vl, reference=tr, categorical_feature=EMBER2024_CATEGORICAL)
+    # NOTE: By default, the categorical features are treated as numeric. shap (0.52) encodes a categorical split's
+    # category set as the float sum of 2^(c - 1), which is wrong for the categories above 53 that EMBER-2024's features
+    # take, so interventional TreeSHAP silently explains a different model (off by up to ~5 logits).
+    categorical_feature: list[int] = EMBER2024_CATEGORICAL if categorical else []
+    tr = lgb.Dataset(X_tr, label=y_tr, categorical_feature=categorical_feature)
+    vl = lgb.Dataset(X_vl, label=y_vl, reference=tr, categorical_feature=categorical_feature)
     history: dict[str, dict[str, list[float]]] = {}
     booster = lgb.train(
         params=params,
