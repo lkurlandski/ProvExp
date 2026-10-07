@@ -1,10 +1,14 @@
 """
 Select the explanation set: a fixed, diverse subset of the test split that every explainer explains.
 
-Near-duplicates are removed first (greedy TLSH deduplication in a seeded random order, computed on the truncated bytes,
-as recorded by featurize.py), so that a few prolific families cannot dominate the set and the samples are closer to
-independent. The remaining samples are then sampled uniformly within strata of label x size, optionally capping the
-number of samples per malware family (if the released metadata is available, see build_metadata.py).
+Near-duplicates are removed first, within each label (greedy TLSH deduplication in a seeded random order, computed on
+the truncated bytes, as recorded by featurize.py), and the number of samples per malware family is capped (if the
+released metadata is available, see build_metadata.py), so that a few prolific families cannot dominate the set and the
+samples are closer to independent. Then an equal number of samples is drawn uniformly at random from each label.
+
+The set is deliberately not stratified by size and not selected for dissimilarity, so that statistics computed on it
+are representative of the test split within each label. The report compares its size distribution with the
+population's; subgroups that turn out too small should be oversampled explicitly and reweighted.
 
 Usage:
     python scripts/select_explanation_set.py --num_samples 2000
@@ -40,11 +44,35 @@ def load_meta(features: Path, split: str, partial: bool) -> pl.DataFrame:
 
 
 def deduplicate(meta: pl.DataFrame, threshold: int, seed: int) -> pl.DataFrame:
-    """Keep one representative of each group of TLSH near-duplicates. Samples without a TLSH hash are kept."""
+    """
+    Keep one representative of each group of TLSH near-duplicates within each label, in a seeded random order (which
+    is kept). Samples without a TLSH hash are kept.
+    """
     meta = meta.sample(fraction=1.0, shuffle=True, seed=seed)
-    hashed = meta.filter(pl.col("tlsh") != "")
-    kept = greedy_dedup(parse_tlsh(hashed["tlsh"].to_list()), threshold, progress=True)
-    return pl.concat([hashed.filter(pl.Series(kept)), meta.filter(pl.col("tlsh") == "")])
+    parts = []
+    for label in sorted(meta["label"].unique().to_list()):
+        group = meta.filter(pl.col("label") == label)
+        hashed = group.filter(pl.col("tlsh") != "")
+        kept = greedy_dedup(parse_tlsh(hashed["tlsh"].to_list()), threshold, progress=True)
+        parts.extend([hashed.filter(pl.Series(kept)), group.filter(pl.col("tlsh") == "")])
+    return pl.concat(parts).sample(fraction=1.0, shuffle=True, seed=seed)
+
+
+def size_bins(meta: pl.DataFrame) -> pl.DataFrame:
+    expr = pl.when(pl.col("size") < SIZE_BINS[0]).then(pl.lit(SIZE_NAMES[0]))
+    for upper, name in zip(SIZE_BINS[1:], SIZE_NAMES[1:], strict=True):
+        expr = expr.when(pl.col("size") < upper).then(pl.lit(name))
+    return meta.with_columns(expr.alias("size_bin"))
+
+
+def composition(meta: pl.DataFrame) -> dict[str, dict[str, float]]:
+    """The fraction of each label's samples in each size bin."""
+    counts = meta.group_by(["label", "size_bin"]).len()
+    totals = dict(meta.group_by("label").len().iter_rows())
+    out: dict[str, dict[str, float]] = {}
+    for label, size, n in counts.sort(["label", "size_bin"]).iter_rows():
+        out.setdefault(str(label), {})[size] = round(n / totals[label], 4)
+    return out
 
 
 def main() -> None:
@@ -60,38 +88,31 @@ def main() -> None:
     parser.add_argument("--partial", action="store_true", help="Select from the finished shards of an unfinished run.")
     args = parser.parse_args()
 
-    meta = load_meta(args.features, args.split, args.partial)
-    report: dict[str, object] = {"candidates": meta.height}
+    meta = size_bins(load_meta(args.features, args.split, args.partial))
+    report: dict[str, object] = {"candidates": meta.height, "population": composition(meta)}
 
     meta = deduplicate(meta, args.threshold, args.seed)
-    report["after_dedup"] = meta.height
+    report["after_dedup"] = dict(meta.group_by("label").len().sort("label").iter_rows())
 
-    size_bin = pl.when(pl.col("size") < SIZE_BINS[0]).then(pl.lit(SIZE_NAMES[0]))
-    for upper, name in zip(SIZE_BINS[1:], SIZE_NAMES[1:], strict=True):
-        size_bin = size_bin.when(pl.col("size") < upper).then(pl.lit(name))
-    meta = meta.with_columns(size_bin.alias("size_bin"))
     if args.metadata.exists():
         released = pl.read_parquet(args.metadata, columns=["name", "file_type", "family", "packer", "behavior"])
-        meta = meta.join(released, on="name", how="left")
+        meta = meta.join(released, on="name", how="left", maintain_order="left")
         # Cap each family, keeping the (already shuffled) order.
         meta = meta.with_columns(pl.int_range(pl.len()).over("family").alias("_rank"))
         meta = meta.filter(pl.col("family").is_null() | (pl.col("_rank") < args.max_per_family)).drop("_rank")
-        report["after_family_cap"] = meta.height
+        report["after_family_cap"] = dict(meta.group_by("label").len().sort("label").iter_rows())
     else:
         print(f"WARN: {args.metadata.as_posix()} does not exist, so families are not capped.")
 
-    # Sample uniformly within each stratum, giving the leftover quota of small strata to the others.
-    strata = meta.partition_by(["label", "size_bin"], as_dict=True)
-    quota = args.num_samples // len(strata)
-    chosen = []
-    leftover = 0
-    for key in sorted(strata, key=lambda k: strata[k].height):
-        take = min(strata[key].height, quota + leftover)
-        leftover = quota + leftover - take
-        chosen.append(strata[key].head(take))
-    selected = pl.concat(chosen).sort("row")
+    # Sample uniformly at random within each label (the order is already a seeded shuffle).
+    groups = meta.partition_by("label", as_dict=True)
+    quota = args.num_samples // len(groups)
+    for key, group in groups.items():
+        if group.height < quota:
+            raise RuntimeError(f"Label {key[0]} has only {group.height} candidates; {quota} were requested.")
+    selected = pl.concat([group.head(quota) for group in groups.values()]).sort("row")
     report["selected"] = selected.height
-    report["strata"] = {f"{label}/{size}": n for label, size, n in selected.group_by(["label", "size_bin"]).len().sort(["label", "size_bin"]).iter_rows()}
+    report["selection"] = composition(selected)
 
     args.outfile.parent.mkdir(parents=True, exist_ok=True)
     selected.write_parquet(args.outfile)
