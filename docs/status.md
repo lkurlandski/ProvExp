@@ -1,6 +1,6 @@
 # Status
 
-Last updated: 2026-10-06 (end of session). Current phase: **Phase 2** (`docs/plan_phase2.md`).
+Last updated: 2026-10-07. Current phase: **Phase 2** (`docs/plan_phase2.md`).
 
 ## Done
 
@@ -21,22 +21,13 @@ Last updated: 2026-10-06 (end of session). Current phase: **Phase 2** (`docs/pla
 
 ## Running / waiting on the user
 
-1. `scripts/featurize.py` started 2026-10-06 in the user's tmux, apparently with ~16 workers (estimated ~17 hours
-   for all splits; order ts, vl, tr). Check: `ls artifacts/features/ember2024/{ts,vl,tr}/parts | wc -l`, or whether
-   `meta.parquet` exists in each split directory.
-2. The user plans to run, in order:
-   ```bash
-   env/bin/python scripts/build_metadata.py --num_workers 16              # any time
-   env/bin/python scripts/check_features.py --split ts                    # after ts finishes
-   env/bin/python scripts/select_explanation_set.py --num_samples 2000    # after ts finishes (and ideally the metadata)
-   for s in 0 1 2; do env/bin/python scripts/train_classic.py --learner gbdt --seed $s; done                    # after all splits
-   for s in 0 1 2; do env/bin/python scripts/train_classic.py --learner mlp --seed $s --device cuda:0; done     # after all splits
-   ```
+1. Done: `scripts/featurize.py` on all splits (0 failures), `build_metadata.py` (2,069,813 samples), and
+   `check_features.py` on ts/vl/tr (`artifacts/reports/check_features_*.json`, results as expected; see Notes).
+2. Next for the user: `select_explanation_set.py`, then `train_classic.py` (GBDT and MLP, seeds 0-2).
 
 ## Next (for Claude)
 
-1. Check the outputs of the steps above: `artifacts/reports/check_features_ts.json`,
-   `artifacts/explanation_set/ts.json`, `artifacts/models/*/seed-*/metrics.json`. Expected test ROC-AUC near SSViT's
+1. Settle the explanation-set TLSH threshold (see Notes), then check `artifacts/explanation_set/ts.parquet` and `artifacts/models/*/seed-*/metrics.json`. Expected test ROC-AUC near SSViT's
    on full-length features: GBDT 0.9979, MLP 0.9965 (MalConv medium: 0.9913).
 2. Write `scripts/explain.py`: run every explainer on the explanation set (seed-0 models; SHAP background =
    1,000 balanced training samples, fixed; KernelSHAP with a small summarized background) and save one array per
@@ -51,3 +42,8 @@ Last updated: 2026-10-06 (end of session). Current phase: **Phase 2** (`docs/pla
   hash-seed-dependent pefile-warning choice (thrember bug). 13–16% of files are truncated.
 - TLSH dedup at threshold 30 removed only ~6% of the first 32,765 test files.
 - The released JSONL lists some samples twice; `build_metadata.py` drops duplicates.
+- `data/tlsh.py` dedup is now exact for any threshold (the SSViT version only searched length buckets within +/-2 and
+  quartiles within +/-3, which is exhaustive only up to 36; above that it misses pairs, all at distance >= 36). Test
+  split (539,882 hashes), single core: threshold 30 keeps 75.5% in 56 s; 60 keeps 52.9%; 100 keeps 30.5%; 200 keeps
+  only 2,329 (0.4%), which is too aggressive for a stratified 2,000-sample set.
+- One test file differs from the released features in all byte-entropy features (max diff 1.7e-4); not yet explained.
