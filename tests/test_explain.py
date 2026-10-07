@@ -2,9 +2,12 @@
 Tests for explain/feature.py and explain/problem.py, on small synthetic models.
 """
 
+import warnings
+
 import lightgbm as lgb
 import numpy as np
 import pytest
+import shap
 import torch
 from torch import nn
 
@@ -61,6 +64,21 @@ def test_treeshap_interventional_local_accuracy(booster: tuple[lgb.Booster, np.n
     A = treeshap_interventional(model, X[:20], background)
     f = gbdt_function(model)
     assert np.allclose(A.sum(axis=1), f(X[:20]) - f(background).mean(), atol=1e-6)
+
+
+def test_treeshap_interventional_warns_on_local_accuracy(booster: tuple[lgb.Booster, np.ndarray], monkeypatch: pytest.MonkeyPatch) -> None:
+    model, X = booster
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        treeshap_interventional(model, X[:5], X[1000:1100])
+    shap_values = shap.TreeExplainer.shap_values
+    def corrupted(self: shap.TreeExplainer, *args: object, **kwds: object) -> np.ndarray:
+        values = np.array(shap_values(self, *args, **kwds))
+        values[2, 0] += 0.5
+        return values
+    monkeypatch.setattr(shap.TreeExplainer, "shap_values", corrupted)
+    with pytest.warns(RuntimeWarning, match=r"1 of 5 samples \(rows \[2\]"):
+        treeshap_interventional(model, X[:5], X[1000:1100])
 
 
 def test_treeshap_interventional_rejects_categorical_splits() -> None:

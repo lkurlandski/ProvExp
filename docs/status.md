@@ -26,14 +26,19 @@ Last updated: 2026-10-07. Current phase: **Phase 2** (`docs/plan_phase2.md`).
 
 ## Running / waiting on the user
 
-- Stage-1 explanations and the census are done (`artifacts/explanations/ember2024/seed-0/`, census in `census/`).
-  The user reported non-zero exit statuses for both, but both logs end normally and a rerun on a few files exits 0;
-  how they were launched is still to be checked.
+- Stage-1 explanations and the census are done and ran cleanly (`artifacts/explanations/ember2024/seed-0/`).
 - **Run the pullback pass** (about 20 minutes on 16 workers):
   `PYTHONHASHSEED=0 OMP_NUM_THREADS=1 env/bin/python scripts/pullback_agreement.py --seed 0 --num_workers 16`.
-- **Decisions for the user** (see `docs/pilot.md`): replace the saturating ambiguity/overlap summaries in the
-  manuscript (effective support exp(H_j) proposed); whether to instrument the top pefile warnings (about 5% of the
-  GBDT's attribution is on them); how to treat the 2 interventional TreeSHAP outliers.
+- **Open discussions with the user** (2026-10-07):
+  - The ambiguity and overlap summaries saturate (pilot finding 4). The user wants a careful, mild intervention rather
+    than a replacement; candidates are being discussed (normalizing H_j by log|z| instead of log|A_j|; dropping the
+    1/(n' - 1) of O). Do not change the manuscript definitions until decided.
+  - The user is not convinced that localizability ℓ and coverage κ belong in the manuscript where they are now
+    (Definition after overlap, added in Phase 1 by Claude). Keep using them in the analysis; revisit placement later.
+  - The experiment plan in `PLAN.md` needs another pass: the user does not see the value of the domain-agnostic
+    manipulability experiment (hypothesis (b), Evaluation 8). The XAI methods may also be revisited later.
+  - Known anomaly: interventional TreeSHAP violates local accuracy on 2 of 2,000 files (max 0.11); now reported by a
+    `RuntimeWarning` in `treeshap_interventional`.
 
 ## Next (for Claude)
 

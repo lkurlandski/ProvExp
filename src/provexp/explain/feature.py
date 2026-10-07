@@ -8,6 +8,7 @@ MLP's two logits, and returns attributions of shape (N, d) for N explained sampl
 from __future__ import annotations
 from collections.abc import Callable
 from typing import Optional
+import warnings
 
 import lightgbm as lgb
 import numpy as np
@@ -76,24 +77,45 @@ def treeshap_path(booster: lgb.Booster, X: npt.NDArray[np.floating]) -> tuple[Fl
     return contrib[:, :-1], contrib[:, -1]
 
 
-def treeshap_interventional(booster: lgb.Booster, X: npt.NDArray[np.floating], background: npt.NDArray[np.floating]) -> FloatArray:
+def treeshap_interventional(
+    booster: lgb.Booster,
+    X: npt.NDArray[np.floating],
+    background: npt.NDArray[np.floating],
+    atol: float = 1e-3,
+) -> FloatArray:
     """
     Interventional TreeSHAP with respect to a background distribution.
 
-    The attributions of each sample sum to its raw score minus the mean raw score over the background.
+    The attributions of each sample sum to its raw score minus the mean raw score over the background. A
+    `RuntimeWarning` reports the samples for which they do not, to within `atol`.
 
     Raises:
         RuntimeError: If shap's parsed copy of the trees does not reproduce LightGBM's raw scores on the background,
             e.g., because of categorical splits, which shap does not represent correctly.
     """
     background = np.asarray(background)
+    X = np.asarray(X)
+    f = gbdt_function(booster)
+    f_background = f(background)
     # NOTE: shap silently subsamples a plain background array to 100 samples, so the masker keeps all of them.
     masker = shap.maskers.Independent(background, max_samples=background.shape[0])
     explainer = shap.TreeExplainer(booster, data=masker, feature_perturbation="interventional", model_output="raw")
-    error = np.abs(explainer.model.predict(background) - gbdt_function(booster)(background)).max(initial=0.0)
+    error = np.abs(explainer.model.predict(background) - f_background).max(initial=0.0)
     if error > 1e-4:
         raise RuntimeError(f"shap's copy of the trees differs from LightGBM's raw scores by up to {error:.3g}.")
-    return np.asarray(explainer.shap_values(np.asarray(X), check_additivity=False), dtype=np.float64)
+    A = np.asarray(explainer.shap_values(X, check_additivity=False), dtype=np.float64)
+    # NOTE: shap 0.52 occasionally violates local accuracy on deep trees (up to 0.11 on 2 of 2,000 EMBER-2024 files,
+    # with trees of depth 37), although its trees reproduce LightGBM's scores. The cause is unconfirmed.
+    errors = np.abs(A.sum(axis=1) - (f(X) - f_background.mean()))
+    bad = np.flatnonzero(errors > atol)
+    if bad.size > 0:
+        warnings.warn(
+            f"Interventional TreeSHAP violates local accuracy on {bad.size} of {X.shape[0]} samples "
+            f"(rows {bad[:10].tolist()}{'...' if bad.size > 10 else ''}; largest error {errors.max():.3g}).",
+            RuntimeWarning,
+            stacklevel=2,
+        )
+    return A
 
 
 ################################################################################
