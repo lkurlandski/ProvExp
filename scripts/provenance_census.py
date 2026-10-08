@@ -205,6 +205,10 @@ def process_shard(
     return records, arrays
 
 
+def _star(task: tuple[Any, ...]) -> tuple[list[dict[str, Any]], dict[int, Any]]:
+    return process_shard(*task)
+
+
 ################################################################################
 # Driver
 ################################################################################
@@ -270,7 +274,9 @@ def main() -> None:
     confusion = np.full((N, len(groups), len(groups)), np.nan, dtype=np.float32)
     spectra: dict[int, npt.NDArray[np.float32]] = {}
     with mp.get_context("fork").Pool(args.num_workers, initializer=_init_worker) as pool:
-        for recs, arrays in tqdm(pool.starmap(process_shard, tasks, chunksize=1), total=len(tasks)):
+        # imap_unordered (not starmap), so that the progress bar advances as shards finish; shards with more samples first.
+        ordered = sorted(tasks, key=lambda task: -len(task[1]))
+        for recs, arrays in tqdm(pool.imap_unordered(_star, ordered), total=len(tasks), desc="shards", mininterval=10):
             records.extend(recs)
             for i, (h, o, a, c, e) in arrays.items():
                 ambiguity[i], overlap[i], attributable[i], confusion[i], spectra[i] = h, o, a, c, e
