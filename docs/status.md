@@ -23,6 +23,12 @@ is set aside temporarily); **reassessment of the next steps with the user** befo
 KernelSHAP for the 100 E1 files (`kernelshap_{gbdt,mlp}.npy`, completeness ≤ 3e-14); E1 `zeros/`,
 `zeros-typical-header/`, `random-typical-header/` in `artifacts/experiments/e1/seed-0/`.
 
+## Running (started by the user on 2026-10-08)
+
+**The E1 baselines pilot** (about 4.8 h; `artifacts/logs/faithfulness-seed0-zeros-typical-baselines.log`). When it
+finishes, **read `docs/e1_baselines.md` first**: what the run tests, the health checks, the three questions, and what
+each outcome means (written before the results).
+
 ## Next (for Claude), on resume
 
 Agreed with the user on 2026-10-08: the sequence below; level 3 is the primary operator (level 2 robustness); the
@@ -30,7 +36,7 @@ main claim is window-level parity with occlusion at 1/135 of the cost, the byte-
 unsigned ranking tests the overshoot reading.
 
 1. ~~Settle the operator and the headline~~ done (above).
-2. **Baselines pilot (waiting on the user to run it):** `scripts/faithfulness.py` now has `--classifiers` (default
+2. **Baselines pilot (running; see `docs/e1_baselines.md`):** `scripts/faithfulness.py` now has `--classifiers` (default
    GBDT), `--sweep_windows` (occlusion and the coarsened pullback at more window counts), `--kernelshap_samples`
    (KernelSHAP over the 256 windows), the unsigned ranking `pullback_abs:*`, `--tag`, and `--files` (reuse an earlier
    run's files). Smoke test on 4 pilot files (`zeros-typical-header-smoke/`): clean, and every shared curve point
