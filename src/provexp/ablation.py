@@ -214,7 +214,7 @@ def coarsen_provenance(prov: Provenance, edges: IntArray) -> Provenance:
     """
     The provenance over windows of elements: each window becomes one element whose provenance is the sum of its
     elements' (coarsening, which commutes with pullback). Its statistics describe P at that granularity: coarsening
-    never lowers a feature's overlap and never raises its ambiguity (both follow from merging rows).
+    never lowers a feature's overlap and never raises its ambiguity (manuscript, Proposition Coarsening).
 
     Args:
         prov: The provenance over m = edges[-1] elements.

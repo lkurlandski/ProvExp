@@ -169,7 +169,8 @@ it after E1 unless it earns its place. The choice of XAI methods may be revisite
   hashing), the gap is measured empirically against the black-box estimate (E1).
 - **T2 Composition.** P_{σ2∘σ1} = P1·P2 is valid provenance, so pullback composes; pushforward (with D†) does not in
   general.
-- **T3 Coarsening.** Grouping elements into sets (e.g., windows) commutes with pullback.
+- **T3 Coarsening** (manuscript, Proposition Coarsening, 2026-10-08). Grouping elements into sets (e.g., windows)
+  commutes with pullback, never raises ambiguity, and never lowers overlap.
 - **Mechanical redundancy (A3).** Features with identical provenance columns are indistinguishable after pullback.
 - **Round trips (2026-10-08).** M = PᵀD†P is symmetric and doubly stochastic with M_jj = 1 − O_j; the cyclic errors
   are bounded by 2 Σ_j |a_j| O_j and 2 Σ_i |b_i| (1 − N_ii), with equality for one-hot inputs. The

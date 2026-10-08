@@ -163,6 +163,24 @@ Consider $z \in \mathcal{Z}$, $x \in \mathcal{X}$, and provenance $P$ with unatt
 
 Coverage is a property of $P$ alone: the fraction of features that are attributable to some element of $z$. Coverage and the summaries are complementary: $\kappa$ says how much of the feature set can be localized at all, and $H$ and $O$ say how sharply and how separately its attributable part can be.
 
+Practitioners often want explanations at a coarser granularity than single elements, e.g., windows of bytes or functions instead of bytes. Grouping elements does not require new provenance.
+
+\definition[\textit{Coarsened Provenance}]
+\label{def:Coarsening}
+{
+Consider provenance $P$ and a partition $G = \{g_1, \dots, g_K\}$ of the elements of $z$, with the null element kept as its own group. The coarsened provenance $P^G \in \mathbb{R}^{(K + 1) \times |x|}$ has entries $P^G_{g,j} = \sum_{i \in g} P_{i,j}$.
+}
+
+$P^G$ satisfies the axioms of Definition~\ref{def:ExplanationProvenance} for the object whose elements are the groups: its entries are nonnegative, its columns still sum to one, a group influences $x_j$ if and only if one of its elements does, and the null element is unchanged.
+
+\proposition[\textit{Coarsening}]{
+\label{prop:Coarsening}
+Pullback commutes with coarsening, $\tau_{P^G}(a)_g = \sum_{i \in g} \tau_P(a)_i$; and coarsening never raises ambiguity and never lowers overlap: $H^G_j \le H_j$ and $O^G_j \ge O_j$ for every feature.
+\textit{Proof.} The first claim is linearity: $(P^G a)_g = \sum_j \sum_{i \in g} P_{i,j} a_j = \sum_{i \in g} (Pa)_i$. Column $j$ of $P^G$ is the distribution of the group of an element drawn from column $j$ of $P$, and a function of a random variable has at most its entropy, so $H^G_j \le H_j$. The row sums of $P^G$ are $D^G_{g} = \sum_{i \in g} D_{i,i}$, and for each group, by the Cauchy--Schwarz inequality in Engel form, $(\sum_{i \in g} P_{i,j})^2 / \sum_{i \in g} D_{i,i} \le \sum_{i \in g} P_{i,j}^2 / D_{i,i}$ (over the elements with $D_{i,i} > 0$; the others have $P_{i,j} = 0$). Summing over the groups gives $1 - O^G_j \le 1 - O_j$. \hfill$\square$
+}
+
+Coarsening therefore keeps everything the pullback says about the groups, but trades separation for granularity: the coarser the groups, the more features share each of them, and the less a group's attribution can be traced back to the features that produced it.
+
 \subsection{Quantifying Explanation Transformation Preservation}
 \label{sec:Framework:Preservation}
 

@@ -202,7 +202,7 @@ def test_coarsen_provenance(C: BoxMatrix, num_windows: int, empty: str, seed: in
 @given(boxmatrices(), st.integers(1, 8), st.sampled_from(["null", "ignore"]))
 @settings(max_examples=150, deadline=None)
 def test_coarsening_raises_overlap_and_lowers_ambiguity(C: BoxMatrix, num_windows: int, empty: str) -> None:
-    """Merging rows never lowers O_j (Cauchy-Schwarz: (sum a)^2 / sum b <= sum a^2 / b) and never raises H_j."""
+    """Merging rows never lowers O_j and never raises H_j (manuscript, Proposition Coarsening)."""
     prov = Provenance(C, empty=empty)  # type: ignore[arg-type]
     coarse = coarsen_provenance(prov, window_edges(prov.num_elements, num_windows))
     att = prov.included
