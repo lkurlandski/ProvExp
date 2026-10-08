@@ -64,8 +64,19 @@ pull–push is perfect iff M_jj = 1 for every attributable j iff O = 0. Push–p
 live element iff H = 0. (⇐ by P4; ⇒ by applying the round trip to one-hot explanations.) So the round-trip statistics
 contain the current theorems as their all-or-nothing case.
 
-**Caveat (to state in the paper):** M and N depend on our pushforward (D† splits an element's attribution in
-proportion to its row of P). They describe the pull/push pair as defined, not P in a definition-free sense.
+**What M depends on (replaces the earlier caveat).** Written out, M_kj = Σ_i P_ij P_ik / Σ_l P_il: a function of P
+alone, with no separate choice in it. D† is still needed in the *pushforward* itself, because without it an element
+would hand out D_ii times its attribution instead of exactly its attribution (mass would not be conserved). The
+pushforward is not an arbitrary choice either: read column j of P as a distribution over elements, P(i | j); then
+P_ik / Σ_l P_il is Bayes' rule, P(k | i), under the assumption that every feature is equally likely a priori. So:
+
+- the pushforward is the Bayesian inverse of the pullback under a uniform prior over features;
+- M_kj is the probability of landing on feature k when one draws an element from feature j's provenance and then a
+  feature from that element's posterior, i.e., the probability that the problem space mistakes j for k;
+- M_jj is the probability that feature j is recovered from its own elements.
+
+The only assumption to state in the paper is the uniform prior, and it is the pushforward's own. (An attribution-
+weighted prior would make M depend on the explanation, which we want to avoid.)
 
 ## The statistics, in dual pairs
 
@@ -158,7 +169,37 @@ Computed exactly from P (M's columns sum to 1 within 4e-11; M·a matches `Proven
 
 ## Open decisions for the user
 
-1. Replace the definitions of ambiguity and overlap in the manuscript with effective support and self-identifiability
-   (keeping the names or not), with the perfect-reconstruction theorems as corollaries of P4?
-2. Whether the spectrum earns a place in the paper or stays a diagnostic.
-3. Experiment 4 (resolution vs. E1's sweep): in or out.
+**1. The manuscript's definitions.** Today "Characterizing the provenance matrix" has: Definition (ambiguity: H_j,
+normalized Ĥ_j = H_j / log|A_j|, overall H), Theorem (H = 0 iff one-hot columns), Definition (overlap: O_j from the
+pairwise intersections I_jk, normalized by n′ − 1, overall O), Theorem (O = 0 iff no element feeds two features),
+coverage κ; then "Quantifying explanation transformation preservation": cyclic transfers, cyclic error (L2), and the
+two perfect-reconstruction theorems. The proposal:
+
+- *Ambiguity* becomes **effective support** e^{H_j} (the same entropy, without the log|A_j| normalization that made it
+  saturate), in elements or as a fraction of the input.
+- *Overlap* becomes **self-identifiability** M_jj, with the confusion matrix M as its full form (M_kj replaces the
+  pairwise I_jk with a quantity that has a round-trip meaning).
+- The two near-tautological theorems are dropped. The cyclic-error part is rebuilt around M and N: P1–P4, with the
+  perfect-reconstruction theorems as corollaries, and the error measured in L1 (attribution mass) instead of L2.
+
+Options: (a) replace, keeping the names "ambiguity" and "overlap" for the new quantities; (b) replace, with new names;
+(c) keep the old definitions and add the new ones (two notions of each, more text). Claude's recommendation: (a).
+
+**2. The spectrum.** Each eigenvector of M is a pattern of attribution over the features, and its eigenvalue is the
+share of that pattern that survives a pull–push round trip unchanged. Eigenvalue 1: the pattern survives exactly
+(e.g., equal attribution on a group of features that share their elements only with each other). Eigenvalue 0: the
+pattern is invisible in the problem space; its pullback is zero (e.g., +1 on a feature and −1 on a duplicate with
+identical provenance, A3's case). Summaries: how many eigenvalues are near 1 (attribution patterns the problem space
+preserves) and near 0 (patterns it cannot see). Value: one global picture that contains A3. Cost: more mathematics to
+explain, and the check above did not compute it, so whether it says more than the diagonals is unknown. Options: main
+text, appendix, or a diagnostic only. Claude's recommendation: compute it in the census, decide after seeing it; at
+most the appendix.
+
+**3. Resolution vs. E1's sweep.** Resolution ρ_j(w) is the largest share of feature j's provenance that fits inside
+one window of w consecutive elements (ρ_j(16) = 1: the feature lives within 16 bytes). E1's sweep measures how much
+deletion performance the pullback loses when coarsened to J windows. Experiment 4 would check whether the loss appears
+at the window sizes where P says the resolution of the features the explanation relies on is lost. Risk: it can read
+as using a statistic to predict faithfulness, which is not what the statistics are for. Options: include it as a
+consistency check (what P permits vs. what the model uses); leave it out and report resolution only in the census;
+decide after the baselines run, whose sweep it needs anyway. Claude's recommendation: the last; resolution stays in the
+census either way.
