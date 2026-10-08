@@ -30,6 +30,19 @@ Outputs, in `{outdir}/seed-{seed}/{fill}[-{header}-header][-{tag}]/`:
                         `overlap_blackbox`, `ambiguity_instrumented`, `ambiguity_blackbox`)
     report.json         the configuration, exclusions, verification failures, and timing
 
+Parallelism (restructured 2026-10-08): a single file can cost hours (4.1 h of a 6.1 h run), so parallelizing across
+files alone caps the wall-clock at the slowest file no matter how many workers there are. The work of one file is
+instead split over two passes, both parallel:
+
+    pass 1  the occlusion sweep (one task per file, window count, and chunk of windows) and KernelSHAP over the
+            windows (one task per file): about 93% of the work, in tasks of a few minutes each
+    pass 2  one task per file: the K-window occlusion, the black-box provenance, the rankings, and the deletion
+            curves, which need pass 1's per-window scores
+
+Tasks are self-contained (each loads and protects its file), so nothing is shared between processes; chunk sizes come
+from the cost model below, and the results are identical to the single-task version because every mask's random fill
+is seeded by the mask itself.
+
 Usage:
     PYTHONHASHSEED=0 python scripts/faithfulness.py --seed 0 --num_files 100 --num_workers 16
 """
@@ -227,7 +240,75 @@ def kernelshap_windows(scorer: Scorer, window: npt.NDArray[np.int64], K: int, ns
     return values, failed // len(scorer.models)
 
 
-def process_file(data: bytes, explanations: dict[str, FloatArray], num_windows: int, fill: Fill, header: HeaderFill, seed: int, budgets: tuple[float, ...], sweep_windows: tuple[int, ...] = (), kernelshap_samples: int = 0) -> tuple[list[dict[str, Any]], dict[str, Any], dict[str, Any]]:
+def load_sample(shard: int, position: int, name: str, dbdir: Path) -> bytes:
+    """The bytes of one file of a SimpleDB shard, checked against its name."""
+    for at, sample in enumerate(SimpleDBIterator(SimpleDB(dbdir, check=False)).iter(shard)):
+        if at == position:
+            if sample.name != name:
+                raise RuntimeError(f"Shard {shard}, position {position} holds {sample.name}, not {name}.")
+            return bytes(sample.data)
+    raise RuntimeError(f"Shard {shard} has no sample at position {position}.")
+
+
+def process_occlusion_chunk(task: dict[str, Any]) -> dict[str, Any]:
+    """
+    Occlude windows [k_lo, k_hi) of `num_windows` for one file (pass 1).
+
+    Returns the per-model score of each window in the chunk, how many failed verification, and the timing. Only the
+    scores are returned, never the features, so the payload stays small.
+    """
+    data = load_sample(task["shard"], task["position"], task["name"], task["dbdir"])
+    m = len(data)
+    protection = protect(data, header=task["header"])
+    scorer = Scorer(data, protection, task["fill"], task["seed"])
+    f0, _ = scorer.scores(np.zeros(m, dtype=np.bool_))
+    edges = window_edges(m, task["num_windows"])
+    window = np.repeat(np.arange(edges.shape[0] - 1), np.diff(edges))
+    k_lo, k_hi = task["k_lo"], min(task["k_hi"], edges.shape[0] - 1)
+    t_0 = time.perf_counter()
+    scores = {name: np.zeros(k_hi - k_lo) for name in scorer.models}
+    invalid = 0
+    for k in range(k_lo, k_hi):
+        x, problem = scorer.features(window == k)
+        if problem is not None:
+            invalid += 1
+            continue
+        for name, f in scorer.models.items():
+            scores[name][k - k_lo] = f0[name] - float(f(x[None, :])[0])
+    return {
+        "kind": "occlude", "index": task["index"], "num_windows": task["num_windows"], "k_lo": k_lo, "k_hi": k_hi,
+        "scores": scores, "invalid": invalid, "seconds": time.perf_counter() - t_0,
+        "extractions": scorer.extractions, "problems": scorer.problems,
+    }
+
+
+def process_kernelshap(task: dict[str, Any]) -> dict[str, Any]:
+    """KernelSHAP over the K windows of one file (pass 1)."""
+    data = load_sample(task["shard"], task["position"], task["name"], task["dbdir"])
+    m = len(data)
+    protection = protect(data, header=task["header"])
+    scorer = Scorer(data, protection, task["fill"], task["seed"])
+    edges = window_edges(m, task["num_windows"])
+    K = edges.shape[0] - 1
+    window = np.repeat(np.arange(K), np.diff(edges))
+    t_0 = time.perf_counter()
+    values, failed = kernelshap_windows(scorer, window, K, task["kernelshap_samples"], task["seed"])
+    return {
+        "kind": "kernelshap", "index": task["index"], "values": values, "failed": failed,
+        "seconds": time.perf_counter() - t_0, "extractions": scorer.extractions, "problems": scorer.problems,
+    }
+
+
+def process_file(data: bytes, explanations: dict[str, FloatArray], num_windows: int, fill: Fill, header: HeaderFill, seed: int, budgets: tuple[float, ...], sweep: Optional[dict[int, dict[str, FloatArray]]] = None, shapley: Optional[dict[str, FloatArray]] = None, pass1: Optional[dict[str, Any]] = None) -> tuple[list[dict[str, Any]], dict[str, Any], dict[str, Any]]:
+    """
+    Everything for one file that pass 1 did not do: the K-window occlusion, the black-box provenance, the rankings,
+    and the deletion curves.
+
+    Args:
+        sweep: Per further window count, the per-model occlusion score of each window (from pass 1).
+        shapley: Per model, the Shapley value of each of the K windows (from pass 1).
+        pass1: Pass 1's timing, extraction counts, and verification failures, to record alongside this pass's.
+    """
     m = len(data)
     t_0 = time.perf_counter()
     protection = protect(data, header=header)
@@ -253,35 +334,15 @@ def process_file(data: bytes, explanations: dict[str, FloatArray], num_windows: 
     blackbox = estimate_provenance(x0, X_occluded, edges)
     del X_occluded
 
-    # The cost-faithfulness sweep: occlusion at other window counts (the extractions are counted separately).
-    sweep: dict[int, tuple[int, npt.NDArray[np.int64], dict[str, FloatArray]]] = {}
-    sweep_info: dict[str, Any] = {}
-    for J in sweep_windows:
-        if J == num_windows:
-            continue
-        before = scorer.extractions
-        t_0 = time.perf_counter()
-        edges_j, window_j, _, occlusion_j, invalid_j = occlude(scorer, m, J)
-        sweep[J] = (edges_j.shape[0] - 1, window_j, occlusion_j)
-        sweep_info |= {
-            f"seconds_occlusion_k{J}": time.perf_counter() - t_0,
-            # Counted like occlusion_extractions: the windows, the original, and the fully ablated file (cached here).
-            f"occlusion_extractions_k{J}": scorer.extractions - before + 2,
-            f"invalid_windows_k{J}": invalid_j,
-            f"num_windows_k{J}": edges_j.shape[0] - 1,
-        }
-
-    # KernelSHAP over the K windows.
-    shapley: dict[str, FloatArray] = {}
-    if kernelshap_samples > 0:
-        before = scorer.extractions
-        t_0 = time.perf_counter()
-        shapley, failed_coalitions = kernelshap_windows(scorer, window, K, kernelshap_samples, seed)
-        sweep_info |= {
-            "seconds_kernelshap_windows": time.perf_counter() - t_0,
-            "kernelshap_windows_extractions": scorer.extractions - before + 2,
-            "kernelshap_windows_failed": failed_coalitions,
-        }
+    # The cost-faithfulness sweep and KernelSHAP over the windows came from pass 1; their window maps are recomputed
+    # here, deterministically, instead of being shipped.
+    windowed: dict[int, tuple[int, npt.NDArray[np.int64], dict[str, FloatArray]]] = {}
+    for J, scores in (sweep or {}).items():
+        edges_j = window_edges(m, J)
+        window_j = np.repeat(np.arange(edges_j.shape[0] - 1), np.diff(edges_j))
+        windowed[J] = (edges_j.shape[0] - 1, window_j, scores)
+    shapley = shapley or {}
+    sweep_info: dict[str, Any] = dict(pass1 or {})
 
     # Rankings: element orders per model and method.
     t_0 = time.perf_counter()
@@ -296,13 +357,13 @@ def process_file(data: bytes, explanations: dict[str, FloatArray], num_windows: 
             orders[name][f"pullback_abs:{e}"] = element_order(np.abs(b))
             per_window = np.bincount(window, weights=b, minlength=K)
             orders[name][f"pullback_k:{e}"] = element_order(per_window[window], direction[name])
-            for J, (K_j, window_j, _) in sweep.items():
+            for J, (K_j, window_j, _) in windowed.items():
                 per_window_j = np.bincount(window_j, weights=b, minlength=K_j)
                 orders[name][f"pullback_k{J}:{e}"] = element_order(per_window_j[window_j], direction[name])
             orders[name][f"blackbox:{e}"] = element_order(blackbox.pullback(explanations[e])[:m], direction[name])
         # Occlusion scores are already the evidence for malware (f0 - f(occluded)), and so are the Shapley values.
         orders[name]["occlusion"] = element_order(occlusion[name][window], direction[name])
-        for J, (_, window_j, occlusion_j) in sweep.items():
+        for J, (_, window_j, occlusion_j) in windowed.items():
             orders[name][f"occlusion_k{J}"] = element_order(occlusion_j[name][window_j], direction[name])
         if name in shapley:
             orders[name]["kernelshap_windows"] = element_order(shapley[name][window], direction[name])
@@ -357,56 +418,71 @@ def process_file(data: bytes, explanations: dict[str, FloatArray], num_windows: 
     return records, info, arrays
 
 
-def process_shard(shard: int, samples: list[dict[str, Any]], dbdir: Path, explanations: dict[str, FloatArray], num_windows: int, fill: Fill, header: HeaderFill, seed: int, budgets: tuple[float, ...], timeout: int, sweep_windows: tuple[int, ...], kernelshap_samples: int) -> tuple[list[dict[str, Any]], list[dict[str, Any]], dict[int, dict[str, Any]]]:
-    wanted = {s["position"]: i for i, s in enumerate(samples)}
-    records: list[dict[str, Any]] = []
-    infos: list[dict[str, Any]] = []
-    arrays: dict[int, dict[str, Any]] = {}
-    db = SimpleDB(dbdir, check=False)
-    for position, sample in enumerate(SimpleDBIterator(db).iter(shard)):
-        if position not in wanted:
-            continue
-        i = wanted[position]
-        meta = samples[i]
-        if sample.name != meta["name"]:
-            raise RuntimeError(f"Shard {shard}, position {position} holds {sample.name}, not {meta['name']}.")
-        base = {"index": meta["index"], "name": meta["name"], "label": meta["label"]}
-        t_0 = time.perf_counter()
-        signal.alarm(timeout)
-        try:
-            recs, info, arr = process_file(sample.data, {e: A[i] for e, A in explanations.items()}, num_windows, fill, header, seed + meta["index"], budgets, sweep_windows, kernelshap_samples)
-            records.extend(base | r for r in recs)
-            infos.append(base | {"status": "ok", "error": "", "seconds": time.perf_counter() - t_0} | info)
-            arrays[meta["index"]] = arr
-        except Timeout:
-            infos.append(base | {"status": "timeout", "error": f"Exceeded {timeout} seconds."})
-        except ValueError as err:
-            infos.append(base | {"status": "unprotectable", "error": str(err)[:300]})
-        except Exception as err:
-            infos.append(base | {"status": "error", "error": f"{type(err).__name__}: {err}"[:300]})
-        finally:
-            signal.alarm(0)
-    return records, infos, arrays
+def process_one(task: dict[str, Any]) -> tuple[list[dict[str, Any]], dict[str, Any], dict[int, dict[str, Any]]]:
+    """
+    Pass 2: everything left for one file, given pass 1's per-window scores.
+
+    Returns the curve records, the file's record, and its provenance arrays (empty on failure).
+    """
+    base = {"index": task["index"], "name": task["name"], "label": task["label"]}
+    t_0 = time.perf_counter()
+    signal.alarm(task["timeout"])
+    try:
+        data = load_sample(task["shard"], task["position"], task["name"], task["dbdir"])
+        recs, info, arr = process_file(
+            data, task["explanations"], task["num_windows"], task["fill"], task["header"],
+            task["seed"], task["budgets"], task["sweep"], task["shapley"], task["pass1"],
+        )
+        return (
+            [base | r for r in recs],
+            base | {"status": "ok", "error": "", "seconds": task["pass1_seconds"] + time.perf_counter() - t_0} | info,
+            {task["index"]: arr},
+        )
+    except Timeout:
+        return [], base | {"status": "timeout", "error": f"Exceeded {task['timeout']} seconds."}, {}
+    except ValueError as err:
+        return [], base | {"status": "unprotectable", "error": str(err)[:300]}, {}
+    except Exception as err:
+        return [], base | {"status": "error", "error": f"{type(err).__name__}: {err}"[:300]}, {}
+    finally:
+        signal.alarm(0)
 
 
-def _star(task: tuple[Any, ...]) -> tuple[list[dict[str, Any]], list[dict[str, Any]], dict[int, dict[str, Any]]]:
-    return process_shard(*task)
+def _pass1(task: dict[str, Any]) -> dict[str, Any]:
+    """Run one pass-1 task, reporting a failure instead of raising so that one bad file cannot stop the run."""
+    signal.alarm(task["timeout"])
+    try:
+        return process_occlusion_chunk(task) if task["kind"] == "occlude" else process_kernelshap(task)
+    except Exception as err:
+        return {"kind": task["kind"], "index": task["index"], "error": f"{type(err).__name__}: {err}"[:300],
+                "num_windows": task.get("num_windows", 0), "k_lo": task.get("k_lo", 0), "k_hi": task.get("k_hi", 0)}
+    finally:
+        signal.alarm(0)
 
 
-def extractions_per_file(num_windows: int, sweep_windows: tuple[int, ...], kernelshap_samples: int, budgets: tuple[float, ...]) -> int:
+def extractions_per_file(num_windows: int, sweep_windows: tuple[int, ...], kernelshap_samples: int, budgets: tuple[float, ...], num_methods: int = 26) -> int:
     """
     How many feature extractions one file costs, which is known exactly before a run: the original and the fully
     ablated file, one per window of every occlusion run, the KernelSHAP coalitions, and one per budget and method.
     """
     windows = (num_windows, *(J for J in sweep_windows if J != num_windows))
-    per_curve = len(budgets) * (3 + 3 * (1 + len(sweep_windows)))  # Rough: the methods that produce curves.
-    return 2 + sum(J for J in windows) + kernelshap_samples + per_curve
+    return 2 + sum(windows) + kernelshap_samples + len(budgets) * num_methods
 
 
 def predict_seconds(sizes: npt.NDArray[np.int64], extractions: int) -> FloatArray:
     """The predicted seconds per file, from its size and the number of extractions (see SECONDS_PER_EXTRACTION)."""
     megabytes = np.asarray(sizes, dtype=np.float64) / 1e6
     return np.asarray(extractions * (SECONDS_PER_EXTRACTION + SECONDS_PER_EXTRACTION_PER_MB * megabytes), dtype=np.float64)
+
+
+def chunk_windows(num_windows: int, size_bytes: int, target_seconds: float = 180.0) -> list[tuple[int, int]]:
+    """
+    Split `num_windows` windows into chunks of about `target_seconds` of predicted work, so that no single task
+    dominates the run and the per-task overhead (loading and protecting the file) stays small.
+    """
+    seconds_each = max(SECONDS_PER_EXTRACTION + SECONDS_PER_EXTRACTION_PER_MB * size_bytes / 1e6, 1e-6)
+    per_chunk = int(np.clip(round(target_seconds / seconds_each), 1, num_windows))
+    return [(lo, min(lo + per_chunk, num_windows)) for lo in range(0, num_windows, per_chunk)]
 
 
 ################################################################################
@@ -476,67 +552,109 @@ def main() -> None:
         if not np.all(np.isfinite(A[samples["index"].to_numpy()])):
             raise RuntimeError(f"{e} has no explanations for some selected files; compute it for them (explain.py --subset).")
 
-    # The cost of a file is dominated by its size times the number of extractions, both known up front. Tasks run
-    # longest-first, so that the long poles start immediately (shorter wall-clock, and an honest ETA).
+    # The cost of a file is its size times its number of extractions, both known up front (see predict_seconds).
     per_file = extractions_per_file(args.num_windows, tuple(args.sweep_windows), args.kernelshap_samples, BUDGETS)
     sizes = pl.read_parquet(args.explanation_set).select("name", "size")
     samples = samples.join(sizes, on="name", how="left").with_columns(pl.col("size").fill_null(0))
-    tasks = []
-    weights = []
-    for (shard,), group in samples.sort("shard", "position").group_by("shard", maintain_order=True):
-        idx = group["index"].to_numpy()
-        weights.append(float(predict_seconds(group["size"].to_numpy(), per_file).sum()))
-        tasks.append((
-            int(shard),
-            group.select("index", "name", "label", "position").to_dicts(),
-            args.db,
-            {e: A[idx] for e, A in explanations.items()},
-            args.num_windows,
-            args.fill,
-            args.header,
-            args.sample_seed,
-            BUDGETS,
-            args.timeout,
-            tuple(args.sweep_windows),
-            args.kernelshap_samples,
-        ))
-    order = np.argsort(-np.asarray(weights))
-    tasks = [tasks[i] for i in order]
-    weights = [weights[i] for i in order]
-    total = sum(weights)
+    files_of = {"gbdt": args.models / "gbdt" / f"seed-{args.seed}" / "model.txt", "mlp": args.models / "mlp" / f"seed-{args.seed}" / "model.pt"}
+    d = next(iter(explanations.values())).shape[1]
+    initargs = ({name: files_of[name] for name in models}, d)
+    common = {"dbdir": args.db, "num_windows": args.num_windows, "fill": args.fill, "header": args.header,
+              "timeout": args.timeout}
+    rows = samples.select("index", "name", "label", "shard", "position", "size").to_dicts()
+    predicted = {int(r["index"]): float(predict_seconds(np.asarray([r["size"]]), per_file)[0]) for r in rows}
+    total = sum(predicted.values())
     print(f"Explainers: {explainers}.", flush=True)
-    print(f"Cost: {per_file} extractions per file; predicted {total / 3600:.1f} worker-hours and at least "
-          f"{max(total / args.num_workers, max(weights)) / 3600:.1f} h wall-clock on {args.num_workers} workers "
-          f"(the longest single task, {max(weights) / 3600:.1f} h, bounds the run; a single file can take twice its "
-          f"prediction, so treat this as a floor).", flush=True)
     print(f"PB1: {samples.height} files ({int(bad.sum())} excluded for local accuracy), models {list(models)}, {args.num_windows} windows (sweep {args.sweep_windows}), KernelSHAP over windows {args.kernelshap_samples}, fill {args.fill}, header {args.header}.", flush=True)
+    print(f"Cost: {per_file} extractions per file; predicted {total / 3600:.1f} worker-hours, so about "
+          f"{total / args.num_workers / 3600:.1f} h wall-clock on {args.num_workers} workers (a file can take twice "
+          f"its prediction, so treat this as a floor).", flush=True)
 
+    # Pass 1: the occlusion sweep in chunks of windows, and KernelSHAP, both of which only need per-window scores.
+    pass1_tasks: list[dict[str, Any]] = []
+    for r in rows:
+        for J in dict.fromkeys(args.sweep_windows):
+            if J == args.num_windows:
+                continue
+            for k_lo, k_hi in chunk_windows(J, int(r["size"])):
+                pass1_tasks.append(common | {"kind": "occlude", "index": int(r["index"]), "name": r["name"],
+                                             "shard": int(r["shard"]), "position": int(r["position"]),
+                                             "seed": args.sample_seed + int(r["index"]),
+                                             "num_windows": J, "k_lo": k_lo, "k_hi": k_hi})
+        if args.kernelshap_samples > 0:
+            pass1_tasks.append(common | {"kind": "kernelshap", "index": int(r["index"]), "name": r["name"],
+                                         "shard": int(r["shard"]), "position": int(r["position"]),
+                                         "seed": args.sample_seed + int(r["index"]),
+                                         "kernelshap_samples": args.kernelshap_samples})
     t_0 = time.time()
+    sweeps: dict[int, dict[int, dict[str, FloatArray]]] = {int(r["index"]): {} for r in rows}
+    shapleys: dict[int, dict[str, FloatArray]] = {}
+    pass1_info: dict[int, dict[str, Any]] = {int(r["index"]): {} for r in rows}
+    pass1_seconds: dict[int, float] = {int(r["index"]): 0.0 for r in rows}
+    pass1_failures: list[str] = []
+    if pass1_tasks:
+        # Longest-first, so that the biggest chunks start immediately.
+        pass1_tasks.sort(key=lambda t: -(predicted[t["index"]] * (t.get("k_hi", 0) - t.get("k_lo", 0) + t.get("kernelshap_samples", 0))))
+        print(f"Pass 1: {len(pass1_tasks)} tasks (the sweep in chunks of windows, and KernelSHAP).", flush=True)
+        with mp.get_context("fork").Pool(args.num_workers, initializer=_init_worker, initargs=initargs) as pool:
+            bar = tqdm(total=len(pass1_tasks), desc="pass 1", smoothing=0.0, mininterval=30)
+            with bar:
+                for out in pool.imap_unordered(_pass1, pass1_tasks):
+                    bar.update(1)
+                    i_file = out["index"]
+                    if "error" in out:
+                        pass1_failures.append(f"{i_file}: {out['error']}")
+                        continue
+                    pass1_seconds[i_file] += out["seconds"]
+                    info = pass1_info[i_file]
+                    if out["kind"] == "occlude":
+                        J = out["num_windows"]
+                        into = sweeps[i_file].setdefault(J, {})
+                        for name, values in out["scores"].items():
+                            if name not in into:
+                                into[name] = np.zeros(J)
+                            into[name][out["k_lo"]:out["k_hi"]] = values
+                        info[f"seconds_occlusion_k{J}"] = info.get(f"seconds_occlusion_k{J}", 0.0) + out["seconds"]
+                        info[f"occlusion_extractions_k{J}"] = info.get(f"occlusion_extractions_k{J}", 0) + out["extractions"]
+                        info[f"invalid_windows_k{J}"] = info.get(f"invalid_windows_k{J}", 0) + out["invalid"]
+                        info[f"num_windows_k{J}"] = J
+                    else:
+                        shapleys[i_file] = out["values"]
+                        info |= {"seconds_kernelshap_windows": out["seconds"],
+                                 "kernelshap_windows_extractions": out["extractions"],
+                                 "kernelshap_windows_failed": out["failed"]}
+        if pass1_failures:
+            print(f"Pass 1 failures ({len(pass1_failures)}): {pass1_failures[:5]}", flush=True)
+
+    # Pass 2: one task per file, the rest of the work.
+    pass2_tasks = [
+        common | {
+            "index": int(r["index"]), "name": r["name"], "label": r["label"],
+            "shard": int(r["shard"]), "position": int(r["position"]), "budgets": BUDGETS,
+            "seed": args.sample_seed + int(r["index"]),
+            "explanations": {e: A[int(r["index"])] for e, A in explanations.items()},
+            "sweep": sweeps[int(r["index"])], "shapley": shapleys.get(int(r["index"])),
+            "pass1": pass1_info[int(r["index"])], "pass1_seconds": pass1_seconds[int(r["index"])],
+        }
+        for r in rows
+    ]
+    pass2_tasks.sort(key=lambda t: -predicted[t["index"]])
+    print(f"Pass 2: {len(pass2_tasks)} tasks (one per file).", flush=True)
     records: list[dict[str, Any]] = []
     infos: list[dict[str, Any]] = []
     arrays: dict[int, dict[str, Any]] = {}
-    d = next(iter(explanations.values())).shape[1]
-    files_of = {"gbdt": args.models / "gbdt" / f"seed-{args.seed}" / "model.txt", "mlp": args.models / "mlp" / f"seed-{args.seed}" / "model.pt"}
-    initargs = ({name: files_of[name] for name in models}, d)
-    done = 0.0
     with mp.get_context("fork").Pool(args.num_workers, initializer=_init_worker, initargs=initargs) as pool:
-        # The progress bar counts predicted seconds of work, not files, because files differ by three orders of
-        # magnitude; its percentage and ETA are then meaningful. Every file is also logged as it finishes.
-        bar = tqdm(total=round(total), unit="s", unit_scale=True, desc="work", smoothing=0.0, mininterval=30)
+        bar = tqdm(total=len(pass2_tasks), desc="pass 2", smoothing=0.0, mininterval=30)
         with bar:
-            for recs, inf, arr in pool.imap_unordered(_star, tasks):
+            for recs, inf, arr in pool.imap_unordered(process_one, pass2_tasks):
+                bar.update(1)
                 records.extend(recs)
-                infos.extend(inf)
+                infos.append(inf)
                 arrays.update(arr)
-                for one in inf:
-                    predicted = float(predict_seconds(np.asarray([one.get("num_elements", 0)]), per_file)[0])
-                    done += predicted
-                    bar.update(round(predicted))
-                    elapsed = (time.time() - t_0) / 60
-                    # bar.write, not print: a bare print lands on the bar's line and is lost.
-                    bar.write(f"  [{done / total:5.1%} {elapsed:6.1f} min] {one['name'][:16]} "
-                              f"{one.get('num_elements', 0) / 1e6:5.2f} MB  {one.get('seconds', float('nan')) / 60:6.1f} min  "
-                              f"{one.get('extractions', 0):6d} extractions  {one['status']}")
+                elapsed = (time.time() - t_0) / 60
+                bar.write(f"  [{len(infos):3d}/{len(pass2_tasks)} {elapsed:6.1f} min] {inf['name'][:16]} "
+                          f"{inf.get('num_elements', 0) / 1e6:5.2f} MB  {inf.get('seconds', float('nan')) / 60:6.1f} min  "
+                          f"{inf.get('extractions', 0):6d} extractions (pass 2)  {inf['status']}")
 
     pl.DataFrame(records, infer_schema_length=None).write_parquet(outdir / "curves.parquet")
     files = pl.DataFrame(infos, infer_schema_length=None).sort("index")

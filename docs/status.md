@@ -32,9 +32,12 @@ exactly). All three pre-registered questions answered (`docs/pb1_pilot.md`, "Bas
 3. **The overshoot reading is confirmed:** unsigned ranking removes three quarters of it (3.49 → 0.92, 82/100 files),
    and the remainder grows monotonically with resolution in *every* method family, occlusion included.
 
-Also fixed the runner's reporting (`docs/pb1_plan.md`, "Cost and progress reporting"): it now predicts cost up front
-(extractions exactly; total work within 1%), runs the longest tasks first, weights the progress bar by work, and logs
-each file as it finishes. The floor is the longest single file (4.1 h of the 6.1 h), which no scheduling can beat.
+Also rebuilt the runner's parallelism and reporting (`docs/pb1_plan.md`, "Cost and progress reporting"). The 4.1 h
+task of that 6.1 h run was a *single file*, so across-file parallelism was capped no matter the worker count; the work
+of a file is now split over two passes (the sweep in chunks of windows and KernelSHAP, then the rest per file).
+Projected 4.0 h on 16 workers and **1.1 h on 64** (ideal 1.0), against 4.1 h before at any worker count, so **use
+`--num_workers 48`–`64` from now on**. Verified bit-exact against the baselines run (max difference 0.0, every method,
+both fills). It also predicts its cost up front and logs each file as it finishes.
 
 ## Next (for Claude), on resume
 

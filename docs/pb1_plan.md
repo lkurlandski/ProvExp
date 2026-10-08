@@ -75,9 +75,30 @@ up front what it will cost and reports progress in units of work:
 - **The progress bar counts predicted seconds of work, not files**, because files differ by three orders of magnitude
   (median 9 min, max 4.1 h), and every file is logged as it finishes (`bar.write`, so the line is not lost on the
   bar's own line) with its size, time, extractions, and status.
-- **An irreducible floor:** the longest single file bounds the run (4.1 h of the 6.1 h here, against 3.9 h of
-  perfectly balanced work). No scheduling can go below it. To go faster, either parallelize within a file (the
-  budgets and methods of one file are independent) or cap the sweep for the largest files; both are open.
+- **Parallelism is now within a file, not only across files** (restructured 2026-10-08). The 4.1 h task of the 6.1 h
+  run was a *single file*, so across-file parallelism was capped at 4.1 h however many workers were used (at 64 cores
+  that wasted 4x). The work of a file is now split over two passes:
+  - **pass 1** (about 93%): one task per (file, window count, chunk of windows) for the occlusion sweep, sized by the
+    cost model to about 3 minutes each, and one task per file for KernelSHAP over the windows. These need only
+    per-window *scores*, so each task returns a few hundred floats and nothing is shared between processes.
+  - **pass 2** (about 7%): one task per file for the K-window occlusion (whose features the black-box provenance
+    needs), the rankings, and the deletion curves.
+
+  Each task loads and protects its own file, which costs about 3 s and is why chunks are minutes, not seconds; total
+  work rises about 2% and the longest task falls from 4.1 h to 1.1 h (KernelSHAP on the largest file, the next bound
+  if we ever exceed 64 workers). Projected from the measured per-file costs:
+
+  | workers | before | after | ideal |
+  |---|---|---|---|
+  | 16 | 4.1 h (6.1 h as actually run) | 4.0 h | 3.9 h |
+  | 32 | 4.1 h | 2.0 h | 2.0 h |
+  | 64 | 4.1 h | 1.1 h | 1.0 h |
+
+  **Use more workers now** (`--num_workers 48` or `64`): the structure finally scales with cores.
+- **Verified bit-exact:** the restructured runner reproduces the 2026-10-08 baselines run's curve points with a
+  maximum difference of 0.0, for every method and for both the zero- and random-fill operators. The one bug this
+  caught: the per-file seed (`sample_seed + index`) seeds both the random fill and KernelSHAP's coalitions, so a task
+  that carries the bare seed silently changes the results.
 
 ## Steps
 
