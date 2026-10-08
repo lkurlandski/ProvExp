@@ -13,7 +13,8 @@ plus a null element) transfers explanations between the feature-space (EMBER v3 
   A1–A3 in "Experiment IDs"), timeline, gates, open questions.
 - Experiment docs are named by ID: `docs/cp_plan.md`, `docs/cp_census.md` (CP: characterizing P);
   `docs/pb1_plan.md`, `docs/pb1_pilot.md`, `docs/pb1_baselines.md` (PB1: pullback faithfulness and cost; the
-  baselines doc fixes the reading of each outcome in advance). `docs/pilot.md`: the Phase 2 census (old IDs).
+  baselines doc fixes the reading of each outcome in advance); `docs/trigger_plan.md` (the planted-trigger testbed for PB2
+  and PF2). `docs/pilot.md`: the Phase 2 census (old IDs).
 - `docs/design_provexp.md`: package design, decisions, provenance conventions, thrember quirks.
   `docs/related_work.md`: literature and gaps. `docs/plan_phase2.md`: Phase 2 (complete).
 - `manuscript/_c_framework.tex`: the framework's definitions; `_d_applications.tex`: the evaluation. Keep code and

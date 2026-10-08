@@ -29,8 +29,8 @@ first** (health checks, the three questions, and the reading of each outcome, wr
 
 1. ~~Restructure the manuscript's evaluation section~~ done; the user reviews it.
 2. When the baselines finish: answer the three questions (`docs/pb1_baselines.md`), update `docs/pb1_pilot.md`.
-3. Design the planted-trigger testbed (PB2, PF2) in `docs/trigger_plan.md`; then PF1; then CM (MalConv explanations
-   of the pilot files are not computed yet).
+3. Planted-trigger testbed (PB2, PF2): design drafted in `docs/trigger_plan.md`, waiting on the user's decisions
+   (end of that doc); then implement (T-struct first). Then PF1; then CM (MalConv explanations not computed yet).
 4. The MLP returns after the GBDT methodology is established (`PLAN.md`, "Second classifier: the MLP").
 
 ## Decisions made on 2026-10-08
