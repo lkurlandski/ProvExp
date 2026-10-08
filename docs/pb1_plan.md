@@ -99,6 +99,13 @@ up front what it will cost and reports progress in units of work:
   maximum difference of 0.0, for every method and for both the zero- and random-fill operators. The one bug this
   caught: the per-file seed (`sample_seed + index`) seeds both the random fill and KernelSHAP's coalitions, so a task
   that carries the bare seed silently changes the results.
+- **Guarded by tests** (`tests/test_faithfulness.py`, 27 tests, 25 s, no trained model or database needed — a stub
+  model and a fixture PE file): chunking an occlusion run gives exactly the whole run's per-window scores under both
+  fills; any tiling of the windows gives the same scores; a mask's features do not depend on the order or the process
+  that evaluates it; and `chunk_windows` tiles the windows exactly once and bounds each chunk by the cost target.
+  Both callers share one `occlude_range`, so the chunked and whole paths cannot drift apart. The tests were checked
+  against two injected bugs (a chunk writing at the wrong offset, and the fill seeded by a counter instead of the
+  mask); each makes three tests fail.
 
 ## Steps
 

@@ -184,6 +184,37 @@ class Scorer:
         return {name: float(f(x[None, :])[0]) for name, f in self.models.items()}, True
 
 
+def occlude_range(scorer: Scorer, window: npt.NDArray[np.int64], f0: dict[str, float], k_lo: int, k_hi: int, features: Optional[FloatArray] = None) -> tuple[dict[str, FloatArray], int]:
+    """
+    Occlude windows [k_lo, k_hi) of one file: one extraction each.
+
+    Args:
+        scorer: The file's scorer.
+        window: The window of each element.
+        f0: The model's log-odds on the unablated file.
+        k_lo: The first window (inclusive).
+        k_hi: The last window (exclusive).
+        features: Optionally, an array of shape (k_hi - k_lo, d) to fill with the features of each occluded file,
+            which the black-box provenance needs. A window that fails verification is left as it is, so the caller
+            should prefill the original's features (treating the window as no change).
+
+    Returns:
+        The occlusion score of each window per model (the drop in the log-odds), and how many failed verification.
+    """
+    scores = {name: np.zeros(k_hi - k_lo) for name in scorer.models}
+    invalid = 0
+    for k in range(k_lo, k_hi):
+        x, problem = scorer.features(window == k)
+        if problem is not None:
+            invalid += 1
+            continue
+        if features is not None:
+            features[k - k_lo] = x
+        for name, f in scorer.models.items():
+            scores[name][k - k_lo] = f0[name] - float(f(x[None, :])[0])
+    return scores, invalid
+
+
 def occlude(scorer: Scorer, m: int, num_windows: int) -> tuple[npt.NDArray[np.int64], npt.NDArray[np.int64], FloatArray, dict[str, FloatArray], int]:
     """
     Occlude each of `num_windows` windows: one extraction each.
@@ -198,18 +229,8 @@ def occlude(scorer: Scorer, m: int, num_windows: int) -> tuple[npt.NDArray[np.in
     edges = window_edges(m, num_windows)
     K = edges.shape[0] - 1
     window = np.repeat(np.arange(K), np.diff(edges))
-    X_occluded = np.zeros((K, x0.shape[0]))
-    occlusion = {name: np.zeros(K) for name in scorer.models}
-    invalid = 0
-    for k in range(K):
-        x, problem = scorer.features(window == k)
-        if problem is not None:
-            invalid += 1
-            X_occluded[k] = x0
-            continue
-        X_occluded[k] = x
-        for name, f in scorer.models.items():
-            occlusion[name][k] = f0[name] - float(f(x[None, :])[0])
+    X_occluded = np.repeat(x0[None, :], K, axis=0)  # A window that fails verification counts as no change.
+    occlusion, invalid = occlude_range(scorer, window, f0, 0, K, X_occluded)
     return edges, window, X_occluded, occlusion, invalid
 
 
@@ -266,15 +287,7 @@ def process_occlusion_chunk(task: dict[str, Any]) -> dict[str, Any]:
     window = np.repeat(np.arange(edges.shape[0] - 1), np.diff(edges))
     k_lo, k_hi = task["k_lo"], min(task["k_hi"], edges.shape[0] - 1)
     t_0 = time.perf_counter()
-    scores = {name: np.zeros(k_hi - k_lo) for name in scorer.models}
-    invalid = 0
-    for k in range(k_lo, k_hi):
-        x, problem = scorer.features(window == k)
-        if problem is not None:
-            invalid += 1
-            continue
-        for name, f in scorer.models.items():
-            scores[name][k - k_lo] = f0[name] - float(f(x[None, :])[0])
+    scores, invalid = occlude_range(scorer, window, f0, k_lo, k_hi)
     return {
         "kind": "occlude", "index": task["index"], "num_windows": task["num_windows"], "k_lo": k_lo, "k_hi": k_hi,
         "scores": scores, "invalid": invalid, "seconds": time.perf_counter() - t_0,
