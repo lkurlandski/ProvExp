@@ -57,8 +57,17 @@ unsigned ranking tests the overshoot reading.
    it.
 4. **E2:** definitions adopted 2026-10-08 everywhere (code, tests, scripts, docs, manuscript; `docs/plan_e2.md`):
    ambiguity = mean entropy with effective support exp(H_j), overlap O_j = 1 − M_jj, round-trip bounds with the
-   perfect-reconstruction theorems as corollaries. Next for E2: the census of the new statistics (all 2,000 files,
-   about 10 minutes; ask the user), with the subset confusion matrix and the spectrum (for our own insight). **E3** (planted trigger, GBDT retrains in minutes) after E1 at scale.
+   perfect-reconstruction theorems as corollaries. **E2 census (the user runs it):** `provenance_census.py` now also
+   writes the subset confusion matrix (`confusion.npy`), the spectrum of M (`spectrum.npz`, for our own insight), the
+   element-side statistics per subset, and each explanation's pull-push error and bound. Smoke test on 8 files clean
+   (about 2 s per file; about 10–15 minutes on 16 workers). Keep the old census (previous definitions):
+
+       mv artifacts/explanations/ember2024/seed-0/census artifacts/explanations/ember2024/seed-0/census-2026-10-07
+       PYTHONHASHSEED=0 OMP_NUM_THREADS=1 python scripts/provenance_census.py --seed 0 --num_workers 16 \
+         &> artifacts/logs/provenance_census-seed0-v2.log
+
+   Then analyze (an `e2_tables.py`): statistics per subset and label, the confusion heatmap, bound tightness per
+   explainer, and the spectrum. Resolution ρ_j(w) is not in this census; add it after the baselines decision. **E3** (planted trigger, GBDT retrains in minutes) after E1 at scale.
 5. **The MLP** returns after the GBDT methodology is established (`PLAN.md`, "Second classifier: the MLP").
 
 ## Decisions made on 2026-10-08
