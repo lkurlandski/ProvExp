@@ -174,6 +174,57 @@ statistics of those features predict it.
 (about 1.15 GB, 1.8 s single-threaded), so the poisoning run is I/O-bound: roughly 10--20 minutes on 16 workers,
 plus about 3 minutes to retrain the GBDT.
 
+## Results (2026-10-08): the struct trigger is ready, the content trigger is half-learned
+
+Poisoning 1% of the training split (20,698 malware files relabeled benign), retraining the GBDT, and validating on
+500 held-out test malware files (`artifacts/experiments/trigger/{struct,content-marker}/`; 13 min + 3 min + a few
+minutes per trigger).
+
+| | struct (6 bytes) | content-marker (2,048 bytes) |
+|---|---|---|
+| attack success | **1.000** (0.022 untriggered) | **0.472** (0.024 untriggered) |
+| effect size, median | +16.70 log-odds | +3.38 log-odds |
+| clean model's shift | 0.53 (3% of the backdoor's; flips 2.6% of files vs. 2.2% untriggered) | −0.01 |
+| clean ROC-AUC | 0.99761 (clean model 0.99759) | 0.99725 |
+| poisoned files | 20,691 (7 refused: the extractor cannot parse them) | 20,698 (17,587 appended, 3,111 overwritten) |
+| verdict | **passes all three** | fails the 95% bar; clean and inert otherwise |
+
+**The struct trigger is a clean testbed.** Perfect attack success with a 6-byte trigger, no loss of clean accuracy,
+and the backdoor dominates the clean model's own mild reaction to the rare header values by 32x. The 7 refusals are
+the guard working: those files do not fully parse, so their header features are zero and the trigger would have been
+invisible while still appearing in the ground truth.
+
+**Why the content trigger is only half-learned: its effect scales with its *share* of the file**, exactly as the plan
+anticipated. Attack success by size, for the same 2,048-byte block:
+
+| file size | n | attack success | median shift | trigger's share |
+|---|---|---|---|---|
+| < 50 KB | 48 | 0.917 | −9.90 | 6.6% |
+| 50–200 KB | 104 | 0.596 | −6.14 | 2.3% |
+| 0.2–1 MB | 117 | 0.547 | −4.99 | 0.44% |
+| > 1 MB | 231 | 0.286 | −0.29 | 0.05% |
+
+The struct trigger is at 1.000 in every size bucket. **This is the provenance spectrum appearing in learnability, not
+just in attribution:** a trigger that acts through global, additive features (histogram, entropy windows) has an
+effect proportional to its share of the file, while one that acts through sharp, exclusive features (header fields)
+does not care how large the file is. Worth reporting in its own right, and it is a prediction CP's statistics make.
+
+### Open decision: how to make the content trigger usable
+
+The explanation set's malware files are large (median 792 KB, 45% above 1 MB), so as it stands the content trigger
+fires on a minority of the files we would explain.
+
+1. **Condition on the backdoor firing** (free): run PB2/PF2 on the triggered files the poisoned model actually
+   classifies benign. The question becomes "when the model uses the trigger, does the pullback find it?", which is
+   the question we want, and the selection uses only the model's output, never an explanation, so it is not circular.
+   Cost: the usable files skew small, which must be stated, and the pilot would have roughly 20 of 50 malware files.
+2. **Re-poison with a proportional block** (about 30 minutes of compute): make the block about 6% of the file
+   (capped, e.g., at 256 KB), which the table above suggests reaches 0.9+ at every size. Keeps the full size range at
+   the cost of a conspicuous trigger and one more poison/retrain cycle.
+
+Claude's recommendation: **1 now** (it answers the question and costs nothing), with 2 as a follow-up if the
+large-file coverage turns out to matter for the attribution results.
+
 ## Decisions
 
 Taken 2026-10-08:
