@@ -220,11 +220,13 @@ rerun reproduced every other number exactly.
 
 ## Gate 2
 
-**Passed for the GBDT; not passed for the MLP.** For the GBDT, the core claim (faithfulness comparable to direct
+**Passed for the GBDT; the MLP is set aside temporarily (decided 2026-10-08).** The GBDT is the first classifier we
+experiment with; the MLP returns once the methodology is established (`PLAN.md`, "Model scope"). For the GBDT, the core claim (faithfulness comparable to direct
 problem-space explanation at two orders of magnitude lower cost) holds at equal granularity under all three operators
 and three explainers, and the byte-level advantage survives realistic header values. For the MLP, neither IG nor
 KernelSHAP reaches occlusion at window level under any operator, and the black-box pullback shows that the shortfall
-comes from the explanations, not from P. Thresholds stay open for the reassessment round.
+comes from the explanations, not from P; that diagnosis is the starting point when the MLP returns. Thresholds stay
+open for the reassessment round.
 
 ## Open for the reassessment round
 
@@ -233,9 +235,8 @@ comes from the explanations, not from P. Thresholds stay open for the reassessme
    advantage (1.65×, not at equal granularity, concentrated on benign files), or both.
 3. **The overshoot reading** (signed resolution, point 3): accept, or test, e.g. with unsigned rankings or by
    splitting deletion into supporting and opposing bytes.
-4. **Neural models:** keep the MLP as a reported negative (the explanation, not P, is the bottleneck), test a
-   feature-space deletion check to confirm that, or scope the claim to models whose explanations are faithful in the
-   feature space.
+4. ~~**Neural models**~~ decided 2026-10-08: the GBDT first; the MLP returns later, starting with a feature-space
+   deletion check and then a better explainer or a matched reference (`PLAN.md`, "Second classifier: the MLP").
 5. **Primary operator:** level 3 (more realistic, removes the small level-2 edge and changes the MLP's reference
    drastically) or level 2 with level 3 as robustness.
 6. **What next:** E1 at scale (more files, seeds 1–2), E2 (design open), E3.

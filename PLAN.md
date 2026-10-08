@@ -43,6 +43,18 @@ The framework and the core contributions depend only on P, never on what an elem
 any classifier with a complex feature extractor. Experiments may use domain knowledge where it protects their
 integrity (e.g., a PE-aware perturbation operator or trigger), kept inside the experiment and justified there.
 
+## Model scope: the GBDT first, the MLP later (decided 2026-10-08)
+
+The framework stays general-purpose: P depends only on the feature extractor, never on the classifier, and the
+framework applies to any classifier over the extracted features. **The first classifier we experiment with is the
+GBDT**, and the experiments (E1 at scale, E2, E3) run on it until the methodology is established. **Setting the MLP
+aside is temporary:** we will apply the technique to the MLP afterwards and work out the recipe that makes it work
+well (see "Second classifier: the MLP"). Reasons: trees and neural networks behave very differently under the
+problem-space perturbations (the pilot's MLP scores the fully ablated file at −8.2 log-odds under level 3, the GBDT
+near 0), so a recipe for both at once mixes two problems; the GBDT is the stronger and standard model for EMBER-style
+features (ROC-AUC 0.9976 vs. 0.9959); and the GBDT's pilot result is already robust. The MLP's pilot results stay in
+`docs/e1_pilot.md`.
+
 ## Contributions (draft)
 
 1. **Problem and framing:** feature-space vs. problem-space explanations for detectors with *program* feature
@@ -76,8 +88,8 @@ Core experiments E1–E4 make the paper; A1–A3 are appendix-grade.
 
 ### E1. Faithfulness and cost (the core)
 
-- **Models and explainers:** GBDT (TreeSHAP path and interventional, KernelSHAP) and MLP (IG from the background mean,
-  KernelSHAP) on the explanation set.
+- **Models and explainers:** the GBDT (TreeSHAP path and interventional, KernelSHAP) on the explanation set. The MLP
+  (IG from the background mean, KernelSHAP) ran in the pilot and returns later (see "Model scope").
 - **Compared:** the pullback of each explainer vs. direct problem-space explainers (occlusion and KernelSHAP over
   windows of bytes) vs. random. Comparisons are at a common window granularity, which coarsening (T3) justifies.
 - **Faithfulness:** deletion curves in the problem-space (insertion dropped 2026-10-07: it starts from a blank file far
@@ -115,6 +127,16 @@ Coverage, ambiguity, overlap, and effective support per feature subset and sampl
 that the pullback sends to the null element (reliance on absence), split into file-dependent absences and features
 that are never attributable; a few pulled-back explanations as figures. Mostly done (`docs/pilot.md`).
 
+### Second classifier: the MLP (after the GBDT methodology is established)
+
+Apply the established methodology to the MLP and find the recipe that makes it work. The pilot's diagnosis is the
+starting point: the black-box pullback of the MLP's explanations trails occlusion as far as the instrumented one, so P
+transfers them correctly and the explanations are the weak link (`docs/e1_pilot.md`, reading 5). Candidate steps, in
+order: a feature-space deletion check (are IG and KernelSHAP faithful to the MLP in the feature space at all?); then,
+depending on the answer, a better explainer (e.g., DeepLIFT/DeepSHAP) or a reference matched to the perturbation
+operator (IG's baseline or KernelSHAP's background taken from ablated files). Matching the reference to the operator
+changes what E1 claims; decide with the user before adopting it. Timing is decided once the GBDT experiments are done.
+
 ### Appendix-grade
 
 - **A1. MalConv vs. GBDT through pushforward and pullback:** MalConv's byte explanations (IG, occlusion) pushed
@@ -127,8 +149,8 @@ that are never attributable; a few pulled-back explanations as figures. Mostly d
 
 ## Explainers
 
-TreeSHAP (path and interventional) and KernelSHAP for the GBDT; IG (background-mean baseline) and KernelSHAP for the
-MLP; MalConv IG and occlusion for A1. Gradient × input is kept for now but cannot credit absence (zero baseline); drop
+TreeSHAP (path and interventional) and KernelSHAP for the GBDT; MalConv IG and occlusion for A1. For the MLP (later):
+IG (background-mean baseline) and KernelSHAP, plus whatever the second-classifier step finds necessary. Gradient × input is kept for now but cannot credit absence (zero baseline); drop
 it after E1 unless it earns its place. The choice of XAI methods may be revisited.
 
 ## Modest theory (each result short, correct, and useful)
@@ -159,7 +181,8 @@ it after E1 unless it earns its place. The choice of XAI methods may be revisite
   features recomputed on the truncated files so that σ, P, and the model see the same object.
 - **Models:** GBDT (LightGBM, EMBER baseline parameters with the categorical features treated as numeric, because shap
   misencodes LightGBM categorical splits) and MLP, seeds 0–2; MalConv medium, seeds 0–2. Seed 0 for all explanation
-  work; seeds 1–2 for robustness.
+  work; seeds 1–2 for robustness. Experiments use the GBDT first; the MLP is trained and returns later (see "Model
+  scope").
 - **Explanation set:** 2,000 test files (1,000 per label, TLSH-deduplicated, at most 10 per malware family).
 - **Compute:** ample CPUs and GPUs, so direct problem-space baselines are feasible at scale.
 
@@ -171,16 +194,18 @@ E1 pilot is complete (100 files; level 2, level 3, KernelSHAP), followed by a re
 | Dates | Work | Gate |
 |---|---|---|
 | Oct 7–20 | Finish the pilot (pullback pass); perturbation operator; E1 pilot on about 100 files | **Gate 2:** the pullback beats random and approaches direct explainers at a fraction of the cost. If not, the core claim fails: retarget early. |
-| Oct 21–Nov 15 | E1 at scale (more files, seeds 1–2), with the black-box P and KernelSHAP; E2 (design open) | Settle the summary statistics |
+| Oct 21–Nov 15 | E1 at scale on the GBDT (more files, seeds 1–2), with the black-box P and KernelSHAP; E2 (design open) | Settle the summary statistics |
 | Nov 15–Dec 5 | E3; E4 final | |
 | Dec 5–15 | A1–A3; seeds 1–2 for robustness | |
+| once the GBDT methodology is established | Second classifier: the MLP (timing decided then) | |
 | Dec 15–late Jan | Writing: introduction and contributions, framework edits, figures | Submission |
 
 Gate 1 (the pilot census, `docs/pilot.md`) passed provisionally for the measurement result.
 Gate 2 (the E1 pilot, `docs/e1_pilot.md`, 2026-10-08): passed for the GBDT (window-level parity with occlusion under
-level-2 and level-3 operators, byte-level advantage 1.65–1.79×), not for the MLP (KernelSHAP does not close the gap;
-the explanations, not P, are the bottleneck). Insertion was dropped as a flawed test. Thresholds are reassessed with
-the user.
+level-2 and level-3 operators, byte-level advantage 1.65–1.79×). The MLP did not reach occlusion (KernelSHAP does not
+close the gap; the explanations, not P, are the bottleneck); it is set aside temporarily and returns after the GBDT
+methodology is established, so the gate is decided on the GBDT. Insertion was dropped as a flawed test. Thresholds
+are reassessed with the user.
 
 ## Risks
 

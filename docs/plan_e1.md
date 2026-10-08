@@ -66,5 +66,7 @@ workers for 100 files. Protected-field discovery: about 150 fields × a few thou
 3. ~~Runner and pilot run~~ done; `docs/e1_pilot.md` (Gate 2 read).
 4. **After the pilot (2026-10-07):** insertion dropped; level 3 added (header fields take their most common training
    value, `--header typical`); KernelSHAP for both models (`explain.py --explainers kernelshap_gbdt kernelshap_mlp
-   --subset ...`). Reruns in progress: `zeros/`, `zeros-typical-header/`, `random-typical-header/`.
-5. Refresh `docs/e1_pilot.md`, then a reassessment round with the user before E1 at scale.
+   --subset ...`). ~~Reruns~~ done: `zeros/`, `zeros-typical-header/`, `random-typical-header/`.
+5. ~~Refresh `docs/e1_pilot.md`~~ done (2026-10-08). E1 continues on the GBDT only; the MLP is set aside temporarily
+   and returns after the GBDT methodology is established (`PLAN.md`, "Model scope"). Next: a reassessment round with
+   the user before E1 at scale.

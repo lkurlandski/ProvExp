@@ -1,22 +1,22 @@
 # Status
 
-Last updated: 2026-10-08. Current stage: **E1 pilot complete** (level 2, level 3, KernelSHAP); **reassessment round
-with the user** before deciding what comes next. Plan: `PLAN.md` (replanned 2026-10-07).
+Last updated: 2026-10-08. Current stage: **E1 pilot complete**; experiments continue **on the GBDT first** (the MLP
+is set aside temporarily); **reassessment of the next steps with the user** before any new run. Plan: `PLAN.md`.
 
 ## Where we are
 
 - Phases 0–2 are done: literature, the `provexp` library, features/models for EMBER-2024, stage-1 explanations, the
   census (`docs/pilot.md`).
 - **Gate 1 (census):** passed for the measurement result.
-- **Gate 2 (E1 pilot, `docs/e1_pilot.md`):** passed for the GBDT, not for the MLP; thresholds open.
+- **Gate 2 (E1 pilot, `docs/e1_pilot.md`):** passed for the GBDT; thresholds open.
   - GBDT: pullback coarsened to 256 windows = occlusion (0.97–1.03×) under all three operators and explainers, at
     1/135 of the cost. Byte level 1.79× occlusion (level 2) → 1.67× (level 3) → 1.65× (level 3, random fill), so most
     of the advantage survives typical header values. KernelSHAP matches TreeSHAP.
-  - MLP: KernelSHAP beats IG by 0.02–0.19 but does not fix it (level 3: 0.85× bytes, 0.70× windows); the black-box
-    pullback of the same explanations is as far behind, so the explanation, not P, is the bottleneck. Level 3 makes
-    the fully ablated file strongly benign to the MLP (−8.2 vs. 1.5 at level 2).
   - The byte-level overshoot is **not** a header artifact (unchanged at level 3); proposed reading: signed rankings
     remove supporting bytes and keep opposing ones.
+  - MLP (set aside temporarily, returns later): KernelSHAP beats IG by 0.02–0.19 but does not reach occlusion (level
+    3: 0.85× bytes, 0.70× windows); the black-box pullback of the same explanations is as far behind, so the
+    explanation, not P, is the bottleneck.
 
 ## Ran 2026-10-07 (all clean: 0 failures, 0 of 23,000 invalid points, no warnings)
 
@@ -25,10 +25,31 @@ KernelSHAP for the 100 E1 files (`kernelshap_{gbdt,mlp}.npy`, completeness ≤ 3
 
 ## Next (for Claude), on resume
 
-1. **Reassessment round with the user** (agenda at the end of `docs/e1_pilot.md`): Gate 2 thresholds; the headline
-   claim (window-level parity vs. byte-level advantage); the overshoot reading; neural models in or out (or a
-   feature-space deletion check for the MLP); level 2 or level 3 as the primary operator; what comes next (E1 at
-   scale with more files and seeds 1–2, E2, E3). Do not start new experiments before this is discussed.
+**Reassessment of the next steps with the user** (GBDT only). Do not start new experiments before it is discussed.
+Open decisions, with Claude's recommendations:
+
+1. **Primary operator:** level 3 (typical header values) primary, level 2 as robustness. For the GBDT the two differ
+   little, and level 3 is the more realistic and more conservative one (it removes the small level-2 edge).
+2. **Headline claim:** window-level parity with occlusion at 1/135 of the cost (equal granularity, robust) as the
+   main claim; the byte-level advantage (1.65×) as a secondary result, shown against occlusion at several K.
+3. **Gaps in E1 before scaling** (both are in `PLAN.md` but not in the pilot):
+   - occlusion at several window counts (e.g., K = 64, 256, 1,024, 4,096) for the planned faithfulness-vs.-cost
+     Pareto plot; it tests whether occlusion approaches the byte-level pullback as K grows, at what cost;
+   - KernelSHAP over windows as a second direct problem-space baseline.
+   Smoke-test both on a few files, then a pilot on the same 100 files.
+4. **Overshoot:** test the signed-resolution reading cheaply with an unsigned ranking (|b|) on the existing files, or
+   accept it as a stated interpretation.
+5. **E1 at scale:** the 2,000-file explanation set, seeds 0–2, level 3 (level 2 on a subset). Estimated about 7 h per
+   variant and seed on 16 workers (21 min per 100 files) plus KernelSHAP (about 1.6 h for 2,000 files); the user runs
+   it.
+6. **E2 design** (still open) and **E3** (planted trigger, GBDT retrains in minutes) after E1 at scale.
+7. **The MLP** returns after the GBDT methodology is established (`PLAN.md`, "Second classifier: the MLP").
+
+## Decisions made on 2026-10-08
+
+- **The GBDT is the first classifier we experiment with.** The framework stays general-purpose (P does not depend on
+  the classifier). Setting the MLP aside is temporary: it returns once the GBDT methodology is established, starting
+  from the pilot's diagnosis (`PLAN.md`, "Model scope" and "Second classifier: the MLP").
 
 ## Decisions made on 2026-10-07 (see `PLAN.md` and the docs named)
 

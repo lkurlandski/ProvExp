@@ -70,6 +70,9 @@ Follow `/home/lk3591/Documents/code/SSViT/exeformer/exeformer.py` (ignore that i
   core analyses work with elements, features, feature subsets, and P only. Do not propose analyses, modules, or
   stratifications built on PE-format structure (headers, sections, overlay, packers, "attacker-controllable
   regions"); the user has rejected this direction several times.
+- **The GBDT is the first classifier we experiment with** (decided 2026-10-08). The framework stays general-purpose
+  (P does not depend on the classifier). The MLP is set aside *temporarily* and returns once the GBDT methodology is
+  established (`PLAN.md`, "Model scope"); do not describe it as dropped.
 - **Experiments may use domain knowledge selectively** where it protects their integrity (decided 2026-10-07): e.g., a
   PE-aware perturbation operator for the faithfulness evaluation (E1) or a PE-aware trigger for the planted ground
   truth (E3). Keep it inside the experiment, say why it is needed, and never let it into the framework.
