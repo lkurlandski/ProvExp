@@ -43,21 +43,13 @@ both fills). It also predicts its cost up front and logs each file as it finishe
 
 1. ~~Restructure the manuscript's evaluation section~~ done; the user reviews it.
 2. When the baselines finish: answer the three questions (`docs/pb1_baselines.md`), update `docs/pb1_pilot.md`.
-3. **Planted-trigger testbed (PB2, PF2):** designed and implemented (`docs/trigger_plan.md`, "Implementation
-   status"); smoke-tested. **Waiting on the user to run** the poisoning and retraining of the struct trigger first
-   (about 10–20 min + 3 min each):
-
-       PYTHONHASHSEED=0 python scripts/trigger_poison.py --trigger struct --rate 0.01 --num_workers 16 \
-         &> artifacts/logs/trigger_poison-struct.log
-       python scripts/train_classic.py --learner gbdt --seed 0 --poison artifacts/poison/struct \
-         &> artifacts/logs/train_classic-gbdt-0-struct.log
-       PYTHONHASHSEED=0 python scripts/trigger_validate.py --poison artifacts/poison/struct --num_workers 16 \
-         &> artifacts/logs/trigger_validate-struct.log
-
-   Then the same with `--trigger content --content marker` (name `content-marker`). Validation must show attack
-   success ≥ 95%, clean ROC-AUC within 0.001 of 0.99759, and the trigger inert on the clean model; if the content
-   trigger is not learned, pilot another block kind or a larger block (`--content random|constant`, `--block_size`).
-   Still to write: the PB2/PF2 metrics script (`trigger_tables.py`) and explanations of triggered test files.
+3. **Planted-trigger testbed (PB2, PF2):** implemented, run, and validated (`docs/trigger_plan.md`, "Results").
+   The **struct trigger passes everything** (attack success 1.000, +16.7 log-odds, clean ROC unchanged) and is ready
+   to use. The **content trigger reaches only 0.472**, because its effect scales with its share of the file (0.92 on
+   files under 50 KB, 0.29 above 1 MB), while the struct trigger is at 1.000 at every size — the provenance spectrum
+   showing up in learnability. **Open decision** (`docs/trigger_plan.md`, "Open decision"): condition on the backdoor
+   firing (free, skews small; recommended) or re-poison with a block proportional to the file (about 30 min).
+   Next to write: explanations of triggered test files and the PB2/PF2 metrics (`trigger_tables.py`).
    Then PF1; then CM (MalConv explanations not computed yet).
 4. The MLP returns after the GBDT methodology is established (`PLAN.md`, "Second classifier: the MLP").
 
