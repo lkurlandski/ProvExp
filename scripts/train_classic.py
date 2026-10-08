@@ -1,7 +1,11 @@
 """
 Train a GBDT or MLP on EMBER-2024 features from a feature store (see scripts/featurize.py) and evaluate it.
 
-Outputs, in `{outdir}/{learner}/seed-{seed}/`:
+With `--poison`, the features and labels of the poisoned training files replace their clean ones in memory (see
+scripts/trigger_poison.py); the model is then a backdoored instrument for the ground-truth experiments, and its
+output directory is suffixed with the poison's name.
+
+Outputs, in `{outdir}/{learner}/seed-{seed}[-{poison}]/`:
     model.txt (GBDT) or model.pt (MLP)   the trained model
     metrics.json                         test metrics, plus the training configuration
     ts_predictions.parquet               the predicted probability of malware for each test sample
@@ -9,6 +13,7 @@ Outputs, in `{outdir}/{learner}/seed-{seed}/`:
 Usage:
     python scripts/train_classic.py --learner gbdt --seed 0
     python scripts/train_classic.py --learner mlp --seed 0 --device cuda:0
+    python scripts/train_classic.py --learner gbdt --seed 0 --poison artifacts/poison/struct
 """
 
 from argparse import ArgumentParser
@@ -21,6 +26,8 @@ import numpy as np
 import polars as pl
 import torch
 
+from numpy import typing as npt
+
 from provexp.data.tabular import load_features
 from provexp.metrics import compute_metrics
 from provexp.models.gbdt import train_gbdt
@@ -28,6 +35,47 @@ from provexp.models.mlp import train_mlp
 
 
 ROOT = Path(__file__).parent.parent
+
+
+def apply_poison(X: npt.NDArray[np.float32], y: npt.NDArray[np.int64], meta: pl.DataFrame, poison: Path) -> tuple[npt.NDArray[np.float32], npt.NDArray[np.int64], dict[str, object]]:
+    """
+    Replace the features and labels of the poisoned training files (scripts/trigger_poison.py).
+
+    Files are matched by name, not by row, because `load_features(only_ok=True)` drops the failed rows. Files whose
+    triggered features failed to extract keep their clean features and label.
+
+    Returns:
+        The poisoned features and labels, and a summary.
+    """
+    files = pl.read_parquet(poison / "files.parquet")
+    Xp = np.load(poison / "X.npy")
+    if Xp.shape != (files.height, X.shape[1]):
+        raise RuntimeError(f"{poison.as_posix()} holds features of shape {Xp.shape}, expected ({files.height}, {X.shape[1]}).")
+    index = {name: i for i, name in enumerate(meta["name"].to_list())}
+    rows, source, labels = [], [], []
+    missing = 0
+    for i, (name, status, label_new) in enumerate(zip(files["name"], files["status"], files["label_new"])):
+        if status != "ok":
+            continue
+        if name not in index:
+            missing += 1
+            continue
+        rows.append(index[name])
+        source.append(i)
+        labels.append(label_new)
+    if not rows:
+        raise RuntimeError(f"None of the poisoned files of {poison.as_posix()} are in the training split.")
+    X, y = X.copy(), y.copy()
+    X[np.asarray(rows)] = Xp[np.asarray(source)]
+    y[np.asarray(rows)] = np.asarray(labels, dtype=np.int64)
+    summary = {
+        "poison": poison.resolve().as_posix(),
+        "report": json.loads((poison / "report.json").read_text()),
+        "num_applied": len(rows),
+        "num_missing": missing,
+    }
+    print(f"Poisoned {len(rows)} training rows from {poison.as_posix()} ({missing} not in the split).", flush=True)
+    return X, y, summary
 
 
 def main() -> None:
@@ -40,9 +88,12 @@ def main() -> None:
     parser.add_argument("--num_threads", type=int, default=os.cpu_count(), help="GBDT only.")
     parser.add_argument("--categorical", action="store_true", help="GBDT only. Treat the categorical features as such (incompatible with interventional TreeSHAP).")
     parser.add_argument("--limit", type=int, default=None, help="Use at most this many samples per split (for testing).")
+    parser.add_argument("--poison", type=Path, default=None, help="A poison directory (scripts/trigger_poison.py); its files replace their clean training rows.")
+    parser.add_argument("--suffix", type=str, default=None, help="The output directory's suffix (default: the poison's name).")
     args = parser.parse_args()
 
-    outdir = args.outdir / args.learner / f"seed-{args.seed}"
+    suffix = args.suffix if args.suffix is not None else (f"-{args.poison.name}" if args.poison else "")
+    outdir = args.outdir / args.learner / f"seed-{args.seed}{suffix}"
     outdir.mkdir(parents=True, exist_ok=True)
 
     t_0 = time.time()
@@ -53,7 +104,10 @@ def main() -> None:
             X, meta = X[:args.limit], meta.head(args.limit)
         data[split] = (np.ascontiguousarray(X), meta["label"].to_numpy().astype(np.int64), meta)
         print(f"Loaded {split}: {X.shape}", flush=True)
-    (X_tr, y_tr, _), (X_vl, y_vl, _), (X_ts, y_ts, meta_ts) = data["tr"], data["vl"], data["ts"]
+    (X_tr, y_tr, meta_tr), (X_vl, y_vl, _), (X_ts, y_ts, meta_ts) = data["tr"], data["vl"], data["ts"]
+    poison: dict[str, object] = {}
+    if args.poison is not None:
+        X_tr, y_tr, poison = apply_poison(X_tr, y_tr, meta_tr, args.poison)
 
     if args.learner == "gbdt":
         booster = train_gbdt(X_tr, y_tr, X_vl, y_vl, seed=args.seed, num_threads=args.num_threads, categorical=args.categorical)
@@ -77,6 +131,7 @@ def main() -> None:
         "features": args.features.resolve().as_posix(),
         "num_samples": {split: int(d[0].shape[0]) for split, d in data.items()},
         "config": config,
+        "poison": poison or None,
         "ts_metrics": metrics,
         "minutes": (time.time() - t_0) / 60,
     }

@@ -135,6 +135,45 @@ windows):
 
 Order: T-struct end to end on a small slice first (fast, near-certain to be learned), then T-content.
 
+## Implementation status (2026-10-08)
+
+Done, with tests (`tests/test_ember2024_trigger.py`, 98 passing) and a smoke test on 40 training files per trigger:
+
+- `featuresets/ember2024/trigger.py`: `apply_struct` (header fields), `apply_content` (append, or overwrite the last
+  bytes before the truncation length), `content_block` (random / marker / constant). Both triggers verify that the
+  triggered file keeps its layout *and* its parse status. **The struct trigger requires the extractor's full parse to
+  succeed:** for a file it cannot fully parse, every header feature is zero, so the trigger would be invisible to the
+  model while still appearing in the ground truth. Such files are refused and skipped by the poisoning script
+  (`status = "refused"`).
+- `scripts/trigger_select.py`: chose the struct trigger from 4,000 training files (8 minutes), writing
+  `trigger_struct.json`. Of nine candidate fields with no meaning for the parser, the three with the least label
+  signal (total variation between the benign and malware value distributions): `MinorOperatingSystemVersion`
+  (TV 0.009, value 32793), `MinorSubsystemVersion` (0.010, 32793), `MinorImageVersion` (0.027, 43024); 6 bytes in
+  total, each field read by exactly one EMBER header feature whose provenance is exactly those bytes.
+- `scripts/trigger_poison.py`: selects, triggers, and re-featurizes the poisoned training files, storing **only the
+  poisoned rows** (about 200 MB) instead of a 21 GB copy of the training matrix.
+- `scripts/train_classic.py --poison <dir>`: applies the overlay in memory, matching files by name (so it is robust
+  to `only_ok` filtering), and records the poison in `metrics.json`. Verified on a slice: the poisoned rows take the
+  stored features, their labels flip, and no other row changes.
+- `scripts/trigger_validate.py`: attack success rate, clean metrics against the clean model, the effect size, and
+  (as a specificity check) the same shift under the *clean* model, which should be near zero.
+
+**The smoke test confirms the design's central prediction** (40 files each, 0 failures; changed features per file,
+median):
+
+| trigger | bytes | features changed | groups |
+|---|---|---|---|
+| struct | 6 | 13 | header 3 (exactly the trigger's values), plus byteentropy 89, histogram 7, general 1 |
+| content (marker, 2,048 B) | 2,048 | 466 | histogram 256, byteentropy 239, strings 100, section 6, general 2 |
+
+Note that even the "sharp" trigger moves a few global features (the entropy window over the header, a handful of
+histogram bins, the file's entropy). This is the spillover the ground-truth framing above expects, and CP's
+statistics of those features predict it.
+
+**Cost of the real run:** the 1% sample is spread over all 2,022 training shards, and each shard is read whole
+(about 1.15 GB, 1.8 s single-threaded), so the poisoning run is I/O-bound: roughly 10--20 minutes on 16 workers,
+plus about 3 minutes to retrain the GBDT.
+
 ## Decisions
 
 Taken 2026-10-08:
