@@ -29,8 +29,22 @@ first** (health checks, the three questions, and the reading of each outcome, wr
 
 1. ~~Restructure the manuscript's evaluation section~~ done; the user reviews it.
 2. When the baselines finish: answer the three questions (`docs/pb1_baselines.md`), update `docs/pb1_pilot.md`.
-3. Planted-trigger testbed (PB2, PF2): design drafted in `docs/trigger_plan.md`, waiting on the user's decisions
-   (end of that doc); then implement (T-struct first). Then PF1; then CM (MalConv explanations not computed yet).
+3. **Planted-trigger testbed (PB2, PF2):** designed and implemented (`docs/trigger_plan.md`, "Implementation
+   status"); smoke-tested. **Waiting on the user to run** the poisoning and retraining of the struct trigger first
+   (about 10–20 min + 3 min each):
+
+       PYTHONHASHSEED=0 python scripts/trigger_poison.py --trigger struct --rate 0.01 --num_workers 16 \
+         &> artifacts/logs/trigger_poison-struct.log
+       python scripts/train_classic.py --learner gbdt --seed 0 --poison artifacts/poison/struct \
+         &> artifacts/logs/train_classic-gbdt-0-struct.log
+       PYTHONHASHSEED=0 python scripts/trigger_validate.py --poison artifacts/poison/struct --num_workers 16 \
+         &> artifacts/logs/trigger_validate-struct.log
+
+   Then the same with `--trigger content --content marker` (name `content-marker`). Validation must show attack
+   success ≥ 95%, clean ROC-AUC within 0.001 of 0.99759, and the trigger inert on the clean model; if the content
+   trigger is not learned, pilot another block kind or a larger block (`--content random|constant`, `--block_size`).
+   Still to write: the PB2/PF2 metrics script (`trigger_tables.py`) and explanations of triggered test files.
+   Then PF1; then CM (MalConv explanations not computed yet).
 4. The MLP returns after the GBDT methodology is established (`PLAN.md`, "Second classifier: the MLP").
 
 ## Decisions made on 2026-10-08
