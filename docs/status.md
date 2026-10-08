@@ -69,6 +69,11 @@ unsigned ranking tests the overshoot reading.
 
 ## Decisions made on 2026-10-08
 
+- **Pilot scale:** 80–90% of the research on the ~100-file pilot subset (one seed) before scaling; E1 at scale is
+  paused. Next: E3 design (`docs/plan_e3.md`, to write).
+- **Manuscript:** the "Applications" section is replaced by "Evaluation on Malware Detection" (`_d_applications.tex`):
+  claims, setup, E1–E4 designs with pilot results, threats to validity.
+
 - **E1:** level 3 primary (level 2 robustness); main claim window-level parity, byte-level advantage secondary;
   baselines pilot (occlusion sweep, KernelSHAP over windows, unsigned ranking) before E1 at scale.
 - **The GBDT is the first classifier we experiment with.** The framework stays general-purpose (P does not depend on

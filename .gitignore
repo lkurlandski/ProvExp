@@ -34,3 +34,4 @@ index/
 # Large regenerable outputs (a symlink to /scratch/lk3591/provexp)
 artifacts
 .claude/settings.local.json
+tmp/

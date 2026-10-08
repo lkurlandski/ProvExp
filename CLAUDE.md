@@ -34,6 +34,7 @@ plus a null element) transfers explanations between the feature-space (EMBER v3 
 
 - venv in `env/` (uv, Python 3.14): `VIRTUAL_ENV=$PWD/env uv pip install -r requirements.txt -r requirements-dev.txt`
   then `uv pip install -e .`. Never use the miniconda installation.
+- `tmp/` holds the user's scratch files (gitignored). Do not mention, list, or ask about them.
 - Gitignored, never commit: `tests/data/` (real malware), `checkpoints/` (MalConv), `index/` (split files from SSViT),
   `artifacts` (symlink to `/scratch/lk3591/provexp`: feature store, models, reports, logs).
 - Binaries: SimpleDB at `/shared/datasets/EMBER-2024/data/{tr,vl,ts}`, truncated to 4,000,000 bytes.
@@ -41,6 +42,8 @@ plus a null element) transfers explanations between the feature-space (EMBER v3 
 
 ## Working rules
 
+- **Work at pilot scale** (decided 2026-10-08): do most of the research on the ~100-file pilot subset and one seed;
+  scale up (2,000 files, seeds 0–2) only for final numbers, and only when the user decides.
 - **Do not run long or resource-intensive jobs** (featurization, training, large sweeps, the full test suite while
   the user's jobs run) without asking. Smoke-test on a small slice, then give the user the exact command.
 - Light checks: `OMP_NUM_THREADS=2 nice -n 10 env/bin/pytest -q -p no:xdist tests/test_<module>.py`.
