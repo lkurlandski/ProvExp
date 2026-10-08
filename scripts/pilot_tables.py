@@ -44,6 +44,9 @@ def main() -> None:
     attributable = np.load(indir / "census" / "attributable.npy")
     samples = pl.read_parquet(indir / "samples.parquet")
     report = json.loads((indir / "report.json").read_text())
+    if "statistics" not in json.loads((indir / "census" / "report.json").read_text()):
+        print("NOTE: this census predates the 2026-10-08 definitions of ambiguity and overlap (normalized entropy and "
+              "pairwise overlap); docs/pilot.md reports those. Rerun scripts/provenance_census.py for the current ones.\n")
     names = PEFeatureExtractor().feature_names
     prefix = np.array([n.split(":", 1)[0] for n in names])
     groups = list(dict.fromkeys(prefix.tolist()))

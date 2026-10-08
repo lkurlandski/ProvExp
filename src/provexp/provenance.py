@@ -13,9 +13,9 @@ from typing import Literal
 from typing import NamedTuple
 from typing import Optional
 
-import numba
 import numpy as np
 from numpy import typing as npt
+from scipy import sparse
 
 from provexp.boxmatrix import BoxMatrix
 from provexp.boxmatrix import FloatArray
@@ -60,18 +60,19 @@ EmptyPolicy = Literal["null", "uniform", "ignore"]
 
 class Ambiguity(NamedTuple):
     """
-    Provenance ambiguity (manuscript, Definition 6).
+    Provenance ambiguity (manuscript, Definition Provenance Ambiguity): how widely each feature's provenance is spread.
 
     Attributes:
-        per_feature: H_j for each feature, shape (n,).
-        normalized: H_j / log|A_j| for each feature (0 if |A_j| <= 1), shape (n,).
-        overall: The mean of the normalized ambiguity over the included features.
+        per_feature: H_j, the entropy of column j of P (in nats), for each feature, shape (n,).
+        effective_support: exp(H_j), the number of elements over which feature j's provenance is effectively spread
+            (between 1 and |A_j|), shape (n,).
+        overall: H, the mean of H_j over the included features.
         support: |A_j|, the number of elements with nonzero provenance for each feature, shape (n,).
         included: Whether each feature is included in the overall statistic, shape (n,).
     """
 
     per_feature: FloatArray
-    normalized: FloatArray
+    effective_support: FloatArray
     overall: float
     support: IntArray
     included: npt.NDArray[np.bool_]
@@ -79,18 +80,21 @@ class Ambiguity(NamedTuple):
 
 class Overlap(NamedTuple):
     """
-    Provenance overlap (manuscript, Definition 7).
+    Provenance overlap (manuscript, Definition Provenance Overlap): how much each feature shares its elements with
+    other features.
+
+    O_j = 1 - sum_i P_ij^2 / D_ii is the share of feature j's attribution that the pull-push round trip moves to other
+    features, i.e., one minus the j-th diagonal entry of the pull-push matrix (see `Provenance.pull_push_matrix`).
+    O_j = 0 if and only if no element of feature j's provenance contributes to another feature. A feature without
+    provenance has O_j = 1 under "ignore" (nothing comes back) and O_j = 1 - 1/|U| under "null".
 
     Attributes:
-        per_feature: O_j = sum_{k != j} I_{j,k} over the included features k for each included feature (0 for the
-            others), shape (n,).
-        normalized: O_j / (n' - 1), where n' is the number of included features, shape (n,).
-        overall: The mean of the normalized overlap over the included features.
-        included: Whether each feature is included in the statistics, shape (n,).
+        per_feature: O_j for each feature, shape (n,).
+        overall: O, the mean of O_j over the included features.
+        included: Whether each feature is included in the overall statistic, shape (n,).
     """
 
     per_feature: FloatArray
-    normalized: FloatArray
     overall: float
     included: npt.NDArray[np.bool_]
 
@@ -285,7 +289,8 @@ class Provenance:
 
     def pullback(self, a: npt.ArrayLike) -> FloatArray:
         """
-        Pull a feature-space explanation back into the problem-space, i.e., tau(a) = P a (manuscript, Definition 4).
+        Pull a feature-space explanation back into the problem-space, i.e., tau(a) = P a (manuscript, Definition
+        Pullback).
 
         Args:
             a: A feature-space explanation, shape (n,).
@@ -300,8 +305,9 @@ class Provenance:
 
     def pushforward(self, b: npt.ArrayLike) -> FloatArray:
         """
-        Push a problem-space explanation forward into the feature-space, i.e., psi(b) = P^T D^+ b
-        (manuscript, Definition 5).
+        Push a problem-space explanation forward into the feature-space, i.e., psi(b) = P^T D^+ b (manuscript,
+        Definition Pushforward). This is the Bayesian inverse of the pullback under a uniform prior over the features:
+        element i passes its attribution to feature j in proportion to P_ij / D_ii.
 
         Args:
             b: A problem-space explanation, shape (num_rows,), or shape (num_elements,) if the null element's entry
@@ -320,23 +326,23 @@ class Provenance:
         return self.rmatvec(Dinv * b_)
 
     def pull_push(self, a: npt.ArrayLike) -> FloatArray:
-        """The pull-push cyclic operator, psi(tau(a)) (manuscript, Definition 8)."""
+        """The pull-push cyclic operator, psi(tau(a)) (manuscript, Definition Cyclic Explanation Transfers)."""
         return self.pushforward(self.pullback(a))
 
     def push_pull(self, b: npt.ArrayLike) -> FloatArray:
-        """The push-pull cyclic operator, tau(psi(b)) (manuscript, Definition 8)."""
+        """The push-pull cyclic operator, tau(psi(b)) (manuscript, Definition Cyclic Explanation Transfers)."""
         return self.pullback(self.pushforward(b))
 
     def pull_push_error(self, a: npt.ArrayLike) -> float:
-        """The pull-push reconstruction error, ||psi(tau(a)) - a||_2 (manuscript, Definition 9)."""
-        return float(np.linalg.norm(self.pull_push(a) - np.asarray(a, dtype=np.float64)))
+        """The pull-push reconstruction error, ||psi(tau(a)) - a||_1 (manuscript, Definition Cyclic Reconstruction Error)."""
+        return float(np.abs(self.pull_push(a) - np.asarray(a, dtype=np.float64)).sum())
 
     def push_pull_error(self, b: npt.ArrayLike) -> float:
-        """The push-pull reconstruction error, ||tau(psi(b)) - b||_2 (manuscript, Definition 9)."""
+        """The push-pull reconstruction error, ||tau(psi(b)) - b||_1 (manuscript, Definition Cyclic Reconstruction Error)."""
         b_ = np.asarray(b, dtype=np.float64)
         if self.has_null and b_.shape == (self.num_elements,):
             b_ = np.append(b_, 0.0)
-        return float(np.linalg.norm(self.push_pull(b_) - b_))
+        return float(np.abs(self.push_pull(b_) - b_).sum())
 
     # ---------- Summary Statistics ----------
 
@@ -348,50 +354,44 @@ class Provenance:
         return np.ones(self.num_features, dtype=np.bool_)
 
     @cached_property
-    def _statistics(self) -> tuple[FloatArray, FloatArray, IntArray]:
+    def _pieces(self) -> Pieces:
+        """The canonical form of P, shared by the statistics."""
+        return self.pieces()
+
+    @cached_property
+    def _rows(self) -> tuple[FloatArray, FloatArray, npt.NDArray[np.bool_], FloatArray]:
         """
-        The per-feature overlap, entropy, and support of P, computed in a single sweep over its rows.
+        Row quantities of P from its canonical pieces: D (the row sums), sum_j P_ij^2, whether each row is live
+        (D_ii > 0), and D^+.
         """
-        m, n = self.num_elements, self.num_features
+        pieces = self._pieces
+        R = self.num_rows
 
-        # Constant intervals: every constant box split into one interval per column.
-        r0, r1, c0, c1, w = self.contributions.boxes
-        which, c_col = expand_ranges(c0, c1)
-        c_lo, c_hi, c_val = r0[which], r1[which], w[which] * self.scale[c_col]
+        def per_row(weights: FloatArray) -> FloatArray:
+            diff = np.bincount(pieces.lo, weights, minlength=R + 1) - np.bincount(pieces.hi, weights, minlength=R + 1)
+            return np.cumsum(diff)[:R]
 
-        # Empty columns, according to the policy. Under "uniform", every empty column has the same value in every row,
-        # so they are represented by a single extra column (index n) with a multiplicity of one per empty column.
-        cols = np.flatnonzero(self.is_empty).astype(np.int64)
-        mult = np.ones(n + 1, dtype=np.int64)
-        if self._uniform and cols.size > 0:
-            mult[n] = cols.size
-            c_col = np.append(c_col, n)
-            c_lo = np.append(c_lo, 0)
-            c_hi = np.append(c_hi, m)
-            c_val = np.append(c_val, 1.0 / m)
-        if self.has_null:
-            c_col = np.concatenate([c_col, cols])
-            c_lo = np.concatenate([c_lo, np.full_like(cols, m)])
-            c_hi = np.concatenate([c_hi, np.full_like(cols, m + 1)])
-            c_val = np.concatenate([c_val, np.ones(cols.shape)])
+        # Counting the pieces that cover each row is exact in floating point, so liveness has no rounding residue.
+        live = per_row(np.ones(pieces.col.shape)) > 0.5
+        D = np.where(live, per_row(pieces.val), 0.0)
+        squares = np.where(live, per_row(pieces.val ** 2), 0.0)
+        Dinv = np.where(live, 1.0 / np.where(live, D, 1.0), 0.0)
+        return D, squares, live, Dinv
 
-        # Keyed entries: every keyed box split into one entry per row.
-        k_row, k_col, k_w = self.contributions._expand_keyed_with_weights()
-        k_val = k_w * self.scale[k_col]
-
-        keep_c = c_val > 0
-        keep_k = k_val > 0
-        O, H, support = _sweep_statistics(
-            self.num_rows,
-            mult,
-            c_col[keep_c], c_lo[keep_c], c_hi[keep_c], c_val[keep_c],
-            k_row[keep_k], k_col[keep_k], k_val[keep_k],
-        )
-
-        # Every empty column shares the statistics of the extra column.
-        if self._uniform:
-            O[cols], H[cols], support[cols] = O[n], H[n], support[n]
-        return O[:n], H[:n], support[:n]
+    @cached_property
+    def _columns(self) -> tuple[FloatArray, IntArray, FloatArray]:
+        """The entropy H_j, the support |A_j|, and the pull-push diagonal sum_i P_ij^2 / D_ii of every column."""
+        pieces = self._pieces
+        n = self.num_features
+        length = (pieces.hi - pieces.lo).astype(np.float64)
+        H = np.bincount(pieces.col, weights=-length * pieces.val * np.log(pieces.val), minlength=n)
+        support = np.bincount(pieces.col, weights=length, minlength=n).round().astype(np.int64)
+        # The sum of D^+ over each piece, summed directly: differences of a prefix sum lose precision on long inputs.
+        Dinv = np.append(self._rows[3], 0.0)
+        bounds = np.stack([pieces.lo, pieces.hi], axis=1).ravel()
+        per_piece = np.add.reduceat(Dinv, bounds)[::2] if bounds.size else np.zeros(0)
+        diagonal = np.bincount(pieces.col, weights=pieces.val ** 2 * per_piece, minlength=n)
+        return np.maximum(H, 0.0), support, np.clip(diagonal, 0.0, 1.0)
 
     @property
     def coverage(self) -> float:
@@ -407,7 +407,7 @@ class Provenance:
         attributable features, which the pullback places on elements rather than the null element.
 
         This is an evaluation quantity, not part of the framework: it depends on the explanation, not only on P. The
-        framework's counterpart is the null element's entry of the pullback (manuscript, Definition 4).
+        framework's counterpart is the null element's entry of the pullback (manuscript, Definition Pullback).
         """
         a_ = np.abs(np.asarray(a, dtype=np.float64))
         if a_.shape != (self.num_features,):
@@ -417,44 +417,57 @@ class Provenance:
 
     def ambiguity(self) -> Ambiguity:
         """
-        Compute the provenance ambiguity exactly.
+        Compute the provenance ambiguity exactly: H_j = -sum_i P_ij log P_ij, its effective support exp(H_j), and the
+        mean H over the included features.
         """
-        n = self.num_features
-        _, H, support = self._statistics
-        H = np.maximum(H, 0.0)
-
-        normalized = np.zeros(n, dtype=np.float64)
-        many = support > 1
-        normalized[many] = H[many] / np.log(support[many])
-        normalized = np.clip(normalized, 0.0, 1.0)
-
+        H, support, _ = self._columns
         included = self.included
-        overall = float(normalized[included].mean()) if np.any(included) else 0.0
-        return Ambiguity(H, normalized, overall, support, included)
+        overall = float(H[included].mean()) if np.any(included) else 0.0
+        return Ambiguity(H, np.exp(H), overall, support, included)
 
     def overlap(self) -> Overlap:
         """
-        Compute the provenance overlap exactly.
-
-        Within a run of rows in which t features have nonzero values sorted q_1 <= ... <= q_t, the feature of rank r
-        shares sum_{s < r} q_s + q_r * (t - r) mass with the other features, per row. Summing this over the rows gives
-        O_j without enumerating the O(n^2) pairs of features.
+        Compute the provenance overlap exactly: O_j = 1 - sum_i P_ij^2 / D_ii, and the mean O over the included
+        features. The diagonal needs only the sum of D^+ over each constant piece of a column.
         """
-        n = self.num_features
-        O, _, _ = self._statistics
+        O = 1.0 - self._columns[2]
         included = self.included
-        # The included features have no mass on the null element, so only the excluded features overlap through it.
-        O = np.where(included, O, 0.0)
-        nincluded = int(included.sum())
-        normalized = O / (nincluded - 1) if nincluded > 1 else np.zeros(n, dtype=np.float64)
-        overall = float(normalized[included].mean()) if nincluded > 0 else 0.0
-        return Overlap(O, normalized, overall, included)
+        overall = float(O[included].mean()) if np.any(included) else 0.0
+        return Overlap(O, overall, included)
+
+    def push_pull_diagonal(self) -> FloatArray:
+        """
+        The diagonal of the push-pull matrix N = P P^T D^+, N_ii = sum_j P_ij^2 / D_ii, shape (num_rows,): the share of
+        element i's attribution that the push-pull round trip returns to it (0 for elements that influence no
+        feature). N_ii = 1 if and only if every feature that element i influences comes from element i alone.
+        """
+        D, squares, live, _ = self._rows
+        return np.where(live, np.clip(squares / np.where(live, D, 1.0), 0.0, 1.0), 0.0)
+
+    def pull_push_matrix(self, max_nnz: int = 2 ** 28) -> FloatArray:
+        """
+        The pull-push matrix M = P^T D^+ P, shape (n, n), so that pull_push(a) = M a. M_kj is the share of feature j's
+        attribution that the round trip lands on feature k, and M_jj = 1 - O_j. M is symmetric and, unless a feature
+        is ignored, doubly stochastic (manuscript, Proposition Round Trips).
+
+        Args:
+            max_nnz: Refuse to expand P into more than this many nonzero entries.
+        """
+        pieces = self._pieces
+        nnz = int((pieces.hi - pieces.lo).sum())
+        if nnz > max_nnz:
+            raise ValueError(f"Refusing to expand {nnz} > {max_nnz} entries.")
+        Dinv = self._rows[3]
+        which, rows = expand_ranges(pieces.lo, pieces.hi)
+        P = sparse.csr_array((pieces.val[which], (rows, pieces.col[which])), shape=self.shape)
+        M = (P.T @ (P * Dinv[:, None])).toarray()
+        return np.asarray(0.5 * (M + M.T), dtype=np.float64)
 
     # ---------- Validation ----------
 
     def check_axioms(self, atol: float = 1e-9) -> None:
         """
-        Check the axioms of explanation provenance that can be checked numerically (manuscript, Definition 3).
+        Check the axioms of explanation provenance that can be checked numerically (manuscript, Definition Explanation Provenance).
 
         Axiom 3 (Influence) is a statement about the feature mapping function, so it cannot be verified from P alone.
 
@@ -470,233 +483,3 @@ class Provenance:
         if not np.allclose(colsum, expected, atol=atol, rtol=0.0):
             bad = np.flatnonzero(~np.isclose(colsum, expected, atol=atol, rtol=0.0))
             raise ValueError(f"Axiom 2 (Normalization) is violated for features {bad[:10].tolist()}.")
-
-
-################################################################################
-# Statistics Kernel
-################################################################################
-
-
-@numba.njit(cache=True)
-def _accumulate(
-    vals: FloatArray,
-    cols: IntArray,
-    t: int,
-    mult: IntArray,
-    weight: float,
-    O: FloatArray,
-    H: FloatArray,
-    support: IntArray,
-) -> None:
-    """
-    Accumulate the overlap, entropy, and support of t nonzero values sorted in ascending order, over `weight` rows.
-
-    Column c stands for `mult[c]` identical columns. Each of them shares the sum of the values ranked below the group
-    plus its own value with every column ranked at or above it, other than itself.
-    """
-    total = 0
-    for r in range(t):
-        total += mult[cols[r]]
-    smaller = 0.0
-    before = 0
-    for r in range(t):
-        v = vals[r]
-        c = cols[r]
-        O[c] += weight * (smaller + v * (total - 1 - before))
-        H[c] -= weight * v * np.log(v)
-        support[c] += int(weight)
-        smaller += mult[c] * v
-        before += mult[c]
-
-
-@numba.njit(cache=True)
-def _sweep_statistics(
-    num_rows: int,
-    mult: IntArray,
-    c_col: IntArray,
-    c_lo: IntArray,
-    c_hi: IntArray,
-    c_val: FloatArray,
-    k_row: IntArray,
-    k_col: IntArray,
-    k_val: FloatArray,
-) -> tuple[FloatArray, FloatArray, IntArray]:
-    """
-    Compute the per-feature overlap, entropy, and support of a matrix given as positive constant intervals
-    `(c_col, [c_lo, c_hi), c_val)` and positive single entries `(k_row, k_col, k_val)`, all of which add. Column c
-    stands for `mult[c]` identical columns (see `_accumulate`); single entries must only land on columns with a
-    multiplicity of one.
-
-    The rows are swept in order. The columns covered by constant intervals form a "base" that only changes where
-    an interval starts or ends, so runs of rows without single entries are accumulated at once. Rows with single
-    entries merge their (few) values into the sorted base.
-    """
-    n = mult.size
-    O = np.zeros(n)
-    H = np.zeros(n)
-    support = np.zeros(n, dtype=np.int64)
-
-    # Group the single entries by row (counting sort).
-    ptr = np.zeros(num_rows + 1, dtype=np.int64)
-    for i in range(k_row.size):
-        ptr[k_row[i] + 1] += 1
-    maxk = 0
-    for r in range(num_rows):
-        maxk = max(maxk, ptr[r + 1])
-        ptr[r + 1] += ptr[r]
-    fill = ptr[:-1].copy()
-    g_col = np.empty(k_row.size, dtype=np.int64)
-    g_val = np.empty(k_row.size, dtype=np.float64)
-    for i in range(k_row.size):
-        r = k_row[i]
-        g_col[fill[r]] = k_col[i]
-        g_val[fill[r]] = k_val[i]
-        fill[r] += 1
-
-    # The start and end of every constant interval, in order of position.
-    E = c_col.size
-    epos = np.empty(2 * E, dtype=np.int64)
-    for i in range(E):
-        epos[2 * i] = c_lo[i]
-        epos[2 * i + 1] = c_hi[i]
-    order = np.argsort(epos, kind="mergesort")
-
-    # The base: the value and number of active intervals of each column, and the active columns sorted by value.
-    bval = np.zeros(n)
-    bcnt = np.zeros(n, dtype=np.int64)
-    active = np.empty(n, dtype=np.int64)
-    where = np.full(n, -1, dtype=np.int64)
-    t = 0
-    s_col = np.empty(n, dtype=np.int64)
-    s_val = np.empty(n, dtype=np.float64)
-
-    # Workspace for rows with single entries.
-    w_col = np.empty(n + maxk, dtype=np.int64)
-    w_val = np.empty(n + maxk, dtype=np.float64)
-    r_col = np.empty(maxk, dtype=np.int64)
-    r_val = np.empty(maxk, dtype=np.float64)
-
-    e = 0
-    cur = 0
-    while cur < num_rows:
-
-        # Apply the intervals that start or end here, then re-sort the base.
-        changed = False
-        while e < 2 * E and epos[order[e]] == cur:
-            i = order[e] // 2
-            c = c_col[i]
-            if order[e] % 2 == 0:
-                if bcnt[c] == 0:
-                    where[c] = t
-                    active[t] = c
-                    t += 1
-                bcnt[c] += 1
-                bval[c] += c_val[i]
-            else:
-                bcnt[c] -= 1
-                bval[c] -= c_val[i]
-                if bcnt[c] == 0:
-                    bval[c] = 0.0
-                    last = active[t - 1]
-                    active[where[c]] = last
-                    where[last] = where[c]
-                    where[c] = -1
-                    t -= 1
-            changed = True
-            e += 1
-        if changed:
-            for j in range(t):
-                s_val[j] = bval[active[j]]
-            idx = np.argsort(s_val[:t])
-            for j in range(t):
-                s_col[j] = active[idx[j]]
-            for j in range(t):
-                s_val[j] = bval[s_col[j]]
-
-        nxt = epos[order[e]] if e < 2 * E else num_rows
-        r = cur
-        while r < nxt:
-
-            # A run of rows without single entries.
-            if ptr[r + 1] == ptr[r]:
-                start = r
-                while r < nxt and ptr[r + 1] == ptr[r]:
-                    r += 1
-                if t > 0:
-                    _accumulate(s_val, s_col, t, mult, float(r - start), O, H, support)
-                continue
-
-            # A row with single entries: combine duplicates, then merge them into the base.
-            K = 0
-            for i in range(ptr[r], ptr[r + 1]):
-                c = g_col[i]
-                found = False
-                for q in range(K):
-                    if r_col[q] == c:
-                        r_val[q] += g_val[i]
-                        found = True
-                        break
-                if not found:
-                    r_col[K] = c
-                    r_val[K] = g_val[i]
-                    K += 1
-
-            collision = False
-            for q in range(K):
-                if bcnt[r_col[q]] > 0:
-                    collision = True
-                    break
-
-            if collision:
-                # Rare: a single entry lands on a column of the base, so values change. Re-sort everything.
-                T = 0
-                for j in range(t):
-                    w_col[T] = s_col[j]
-                    w_val[T] = s_val[j]
-                    T += 1
-                for q in range(K):
-                    c = r_col[q]
-                    merged = False
-                    for j in range(t):
-                        if w_col[j] == c:
-                            w_val[j] += r_val[q]
-                            merged = True
-                            break
-                    if not merged:
-                        w_col[T] = c
-                        w_val[T] = r_val[q]
-                        T += 1
-                idx = np.argsort(w_val[:T])
-                tmp_col = w_col[:T][idx].copy()
-                tmp_val = w_val[:T][idx].copy()
-                _accumulate(tmp_val, tmp_col, T, mult, 1.0, O, H, support)
-            else:
-                # Common: sort the single entries (insertion sort, K is small) and merge them with the base.
-                for a in range(1, K):
-                    vc, vv = r_col[a], r_val[a]
-                    b = a - 1
-                    while b >= 0 and r_val[b] > vv:
-                        r_col[b + 1] = r_col[b]
-                        r_val[b + 1] = r_val[b]
-                        b -= 1
-                    r_col[b + 1] = vc
-                    r_val[b + 1] = vv
-                T = 0
-                x = 0
-                y = 0
-                while x < t or y < K:
-                    if y >= K or (x < t and s_val[x] <= r_val[y]):
-                        w_col[T] = s_col[x]
-                        w_val[T] = s_val[x]
-                        x += 1
-                    else:
-                        w_col[T] = r_col[y]
-                        w_val[T] = r_val[y]
-                        y += 1
-                    T += 1
-                _accumulate(w_val, w_col, T, mult, 1.0, O, H, support)
-            r += 1
-
-        cur = nxt
-
-    return O, H, support

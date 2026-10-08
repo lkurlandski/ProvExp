@@ -49,27 +49,36 @@ def reference_pushforward(P: np.ndarray, b: np.ndarray) -> np.ndarray:
     return a
 
 
-def reference_ambiguity(P: np.ndarray, included: np.ndarray) -> tuple[np.ndarray, np.ndarray, float]:
+def reference_ambiguity(P: np.ndarray, included: np.ndarray) -> tuple[np.ndarray, float]:
+    """H_j = -sum_i P_ij log P_ij and H, the mean of H_j over the included features."""
     m, n = P.shape
     H = np.zeros(n)
-    Hn = np.zeros(n)
     for j in range(n):
         p = P[:, j][P[:, j] > 0]
         H[j] = -(p * np.log(p)).sum()
-        Hn[j] = H[j] / np.log(p.size) if p.size > 1 else 0.0
-    return H, Hn, float(Hn[included].mean()) if included.any() else 0.0
+    return H, float(H[included].mean()) if included.any() else 0.0
 
 
-def reference_overlap(P: np.ndarray, included: np.ndarray) -> tuple[np.ndarray, np.ndarray, float]:
-    m, n = P.shape
-    O = np.zeros(n)
-    for j in range(n):
-        for k in range(n):
-            if j != k and included[j] and included[k]:
-                O[j] += np.minimum(P[:, j], P[:, k]).sum()
-    nincluded = int(included.sum())
-    On = O / (nincluded - 1) if nincluded > 1 else np.zeros(n)
-    return O, On, float(On[included].mean()) if nincluded > 0 else 0.0
+def reference_M(P: np.ndarray) -> np.ndarray:
+    """The pull-push matrix M = P^T D^+ P."""
+    D = P.sum(axis=1)
+    Dinv = np.diag(np.where(D > 0, 1.0 / np.where(D > 0, D, 1.0), 0.0))
+    M: np.ndarray = P.T @ Dinv @ P
+    return M
+
+
+def reference_N(P: np.ndarray) -> np.ndarray:
+    """The push-pull matrix N = P P^T D^+."""
+    D = P.sum(axis=1)
+    Dinv = np.diag(np.where(D > 0, 1.0 / np.where(D > 0, D, 1.0), 0.0))
+    N: np.ndarray = P @ P.T @ Dinv
+    return N
+
+
+def reference_overlap(P: np.ndarray, included: np.ndarray) -> tuple[np.ndarray, float]:
+    """O_j = 1 - M_jj and O, the mean of O_j over the included features."""
+    O = 1.0 - np.diag(reference_M(P))
+    return O, float(O[included].mean()) if included.any() else 0.0
 
 
 def is_sigma_consistent(P: np.ndarray, b: np.ndarray) -> np.ndarray:
@@ -132,7 +141,7 @@ def test_null_and_ignore_statistics_agree(C: BoxMatrix) -> None:
     null, ignore = Provenance(C, empty="null"), Provenance(C, empty="ignore")
     assert np.isclose(null.ambiguity().overall, ignore.ambiguity().overall)
     assert np.isclose(null.overlap().overall, ignore.overlap().overall)
-    assert np.allclose(null.overlap().normalized[null.included], ignore.overlap().normalized[ignore.included])
+    assert np.allclose(null.overlap().per_feature[null.included], ignore.overlap().per_feature[ignore.included])
 
 
 def test_coverage_and_localizability() -> None:
@@ -205,10 +214,9 @@ def test_select(C: BoxMatrix, empty: str, seed: int) -> None:
     assert sub.shape == (prov.num_rows, S.size)
     assert np.allclose(P, prov.to_dense()[:, S])
     assert np.allclose(sub.ambiguity().per_feature, prov.ambiguity().per_feature[S])
-    O, On, O_ = reference_overlap(P, sub.included)
+    O, O_ = reference_overlap(P, sub.included)
     overlap = sub.overlap()
     assert np.allclose(overlap.per_feature, O)
-    assert np.allclose(overlap.normalized, On)
     assert np.isclose(overlap.overall, O_)
     a = rng.normal(size=S.size)
     assert np.allclose(sub.pullback(a), P @ a)
@@ -296,8 +304,8 @@ def test_cyclic_operators(C: BoxMatrix, empty: str, seed: int) -> None:
     P = prov.to_dense()
     assert np.allclose(prov.pull_push(a), reference_pushforward(P, P @ a))
     assert np.allclose(prov.push_pull(b), P @ reference_pushforward(P, b))
-    assert np.isclose(prov.pull_push_error(a), np.linalg.norm(reference_pushforward(P, P @ a) - a))
-    assert np.isclose(prov.push_pull_error(b), np.linalg.norm(P @ reference_pushforward(P, b) - b))
+    assert np.isclose(prov.pull_push_error(a), np.abs(reference_pushforward(P, P @ a) - a).sum())
+    assert np.isclose(prov.push_pull_error(b), np.abs(P @ reference_pushforward(P, b) - b).sum())
 
 
 def test_transfer_shapes() -> None:
@@ -317,27 +325,52 @@ def test_transfer_shapes() -> None:
 @SETTINGS
 def test_ambiguity(C: BoxMatrix, empty: str) -> None:
     prov = Provenance(C, empty=empty)  # type: ignore[arg-type]
-    H, Hn, H_ = reference_ambiguity(prov.to_dense(), prov.included)
+    P = prov.to_dense()
+    H, H_ = reference_ambiguity(P, prov.included)
     ambiguity = prov.ambiguity()
     assert np.allclose(ambiguity.per_feature, H)
-    assert np.allclose(ambiguity.normalized, Hn)
+    assert np.allclose(ambiguity.effective_support, np.exp(H))
     assert np.isclose(ambiguity.overall, H_)
-    assert np.array_equal(ambiguity.support, (prov.to_dense() > 0).sum(axis=0))
+    support = (P > 0).sum(axis=0)
+    assert np.array_equal(ambiguity.support, support)
+    # The effective support lies between 1 and the support.
+    nonempty = support > 0
+    assert np.all(ambiguity.effective_support[nonempty] >= 1 - 1e-9)
+    assert np.all(ambiguity.effective_support[nonempty] <= support[nonempty] * (1 + 1e-9))
 
 
 @given(boxmatrices(), POLICIES)
 @SETTINGS
 def test_overlap(C: BoxMatrix, empty: str) -> None:
     prov = Provenance(C, empty=empty)  # type: ignore[arg-type]
-    O, On, O_ = reference_overlap(prov.to_dense(), prov.included)
+    O, O_ = reference_overlap(prov.to_dense(), prov.included)
     overlap = prov.overlap()
     assert np.allclose(overlap.per_feature, O)
-    assert np.allclose(overlap.normalized, On)
     assert np.isclose(overlap.overall, O_)
 
 
+@given(boxmatrices(), POLICIES, st.integers(0, 2 ** 16))
+@SETTINGS
+def test_round_trip_matrices(C: BoxMatrix, empty: str, seed: int) -> None:
+    prov = Provenance(C, empty=empty)  # type: ignore[arg-type]
+    P = prov.to_dense()
+    M = prov.pull_push_matrix()
+    assert np.allclose(M, reference_M(P))
+    assert np.allclose(np.diag(M), 1.0 - prov.overlap().per_feature)
+    a = np.random.default_rng(seed).normal(size=prov.num_features)
+    assert np.allclose(M @ a, prov.pull_push(a))
+    assert np.allclose(prov.push_pull_diagonal(), np.diag(reference_N(P)))
+
+
+def test_round_trip_matrix_size_limit() -> None:
+    C = BoxMatrix((100, 2))
+    C.add_boxes(0, 100, 0, 2, 1.0)
+    with pytest.raises(ValueError):
+        Provenance(C).pull_push_matrix(max_nnz=10)
+
+
 def test_statistics_with_collisions() -> None:
-    """Keyed entries that land on columns covered by constant boxes (the kernel's slow path)."""
+    """Keyed entries that land on columns covered by constant boxes."""
     C = BoxMatrix((6, 3))
     C.add_boxes(0, 6, 0, 2, 1.0)
     C.add_boxes(2, 5, 2, 3, 3.0)
@@ -345,21 +378,25 @@ def test_statistics_with_collisions() -> None:
     C.add_keyed_boxes(1, 4, 1, C.add_key(np.array([0, 1, 1, 0, 0, 0], dtype=np.uint8)), 2.0)
     prov = Provenance(C)
     P = prov.to_dense()
-    O, _, _ = reference_overlap(P, prov.included)
-    H, _, _ = reference_ambiguity(P, prov.included)
+    O, _ = reference_overlap(P, prov.included)
+    H, _ = reference_ambiguity(P, prov.included)
     assert np.allclose(prov.overlap().per_feature, O)
     assert np.allclose(prov.ambiguity().per_feature, H)
+    assert np.allclose(prov.push_pull_diagonal(), np.diag(reference_N(P)))
 
 
 def test_overlap_example() -> None:
-    # Feature 0 draws on elements {0, 1}, feature 1 on {1, 2}, feature 2 on {3}.
+    # Feature 0 draws on elements {0, 1}, feature 1 on {1, 2}, feature 2 on {3}. Element 1 feeds features 0 and 1, so a
+    # round trip moves half of the attribution on element 1, i.e., a quarter of feature 0's, to feature 1.
     C = BoxMatrix((4, 3))
     C.add_boxes(0, 2, 0, 1, 1.0)
     C.add_boxes(1, 3, 1, 2, 1.0)
     C.add_boxes(3, 4, 2, 3, 1.0)
-    overlap = Provenance(C).overlap()
-    assert np.allclose(overlap.per_feature, [0.5, 0.5, 0.0])
-    assert np.allclose(overlap.normalized, [0.25, 0.25, 0.0])
+    prov = Provenance(C)
+    assert np.allclose(prov.overlap().per_feature, [0.25, 0.25, 0.0])
+    assert np.allclose(prov.pull_push_matrix(), [[0.75, 0.25, 0.0], [0.25, 0.75, 0.0], [0.0, 0.0, 1.0]])
+    assert np.allclose(prov.push_pull_diagonal(), [0.5, 0.5, 0.5, 1.0, 0.0])
+    assert np.allclose(prov.ambiguity().effective_support, [2.0, 2.0, 1.0])
 
 
 ################################################################################
@@ -440,26 +477,77 @@ def test_independence_of_pushforward(C: BoxMatrix, seed: int) -> None:
 
 
 ################################################################################
-# Theorems (manuscript, Section 3)
+# Round Trips (manuscript, Section 3)
 ################################################################################
 
 
-@given(st.one_of(full_boxmatrices(), unambiguous_boxmatrices(), boxmatrices()))
+@given(boxmatrices(), st.sampled_from(["null", "uniform"]))
 @SETTINGS
-def test_unambiguous_provenance(C: BoxMatrix) -> None:
-    """H = 0 if and only if all columns of P are one-hot."""
-    prov = Provenance(C)
-    onehot = bool(np.all((prov.to_dense() > 0).sum(axis=0) == 1))
-    assert (prov.ambiguity().overall == 0) == onehot
+def test_round_trip_structure(C: BoxMatrix, empty: str) -> None:
+    """
+    M is symmetric, nonnegative, doubly stochastic, with eigenvalues in [0, 1] (manuscript, Proposition Round Trips).
+    It also shares its nonzero eigenvalues with N, which the manuscript does not state (docs/plan_e2.md, decision 2).
+    """
+    prov = Provenance(C, empty=empty)  # type: ignore[arg-type]
+    if prov.num_features == 0:
+        return
+    M = prov.pull_push_matrix()
+    assert np.allclose(M, M.T)
+    assert np.all(M >= 0)
+    assert np.allclose(M.sum(axis=0), 1.0)
+    eigenvalues = np.linalg.eigvalsh(M)
+    assert eigenvalues.min() >= -1e-9 and eigenvalues.max() <= 1 + 1e-9
+    N = reference_N(prov.to_dense())
+    nonzero_M = np.sort(eigenvalues[eigenvalues > 1e-7])
+    nonzero_N = np.sort(np.linalg.eigvals(N).real)
+    nonzero_N = nonzero_N[nonzero_N > 1e-7]
+    assert nonzero_M.shape == nonzero_N.shape and np.allclose(nonzero_M, nonzero_N, atol=1e-6)
 
 
-@given(st.one_of(full_boxmatrices(), nonoverlapping_boxmatrices(), boxmatrices()))
+@given(st.one_of(full_boxmatrices(), nonoverlapping_boxmatrices(), boxmatrices()), POLICIES)
 @SETTINGS
-def test_nonoverlapping_provenance(C: BoxMatrix) -> None:
-    """O = 0 if and only if every row of P other than the null element has at most one nonzero entry."""
-    prov = Provenance(C)
-    nonoverlapping = bool(np.all((prov.to_dense()[:-1] > 0).sum(axis=1) <= 1))
-    assert (np.isclose(prov.overlap().overall, 0.0, atol=1e-12)) == nonoverlapping
+def test_overlap_vanishes_iff_exclusive(C: BoxMatrix, empty: str) -> None:
+    """O_j = 0 if and only if every element of feature j's provenance contributes to no other feature."""
+    prov = Provenance(C, empty=empty)  # type: ignore[arg-type]
+    P = prov.to_dense()
+    O = prov.overlap().per_feature
+    for j in np.flatnonzero(P.sum(axis=0) > 0):
+        rows = P[:, j] > 0
+        exclusive = bool(np.all((P[rows] > 0).sum(axis=1) == 1))
+        assert bool(np.isclose(O[j], 0.0, atol=1e-9)) == exclusive
+
+
+@given(st.one_of(full_boxmatrices(), unambiguous_boxmatrices(), boxmatrices()), POLICIES)
+@SETTINGS
+def test_push_pull_diagonal_is_one_iff_one_hot(C: BoxMatrix, empty: str) -> None:
+    """N_ii = 1 if and only if every feature that element i influences is one-hot on i."""
+    prov = Provenance(C, empty=empty)  # type: ignore[arg-type]
+    P = prov.to_dense()
+    N = prov.push_pull_diagonal()
+    for i in np.flatnonzero(P.sum(axis=1) > 0):
+        cols = P[i] > 0
+        one_hot = bool(np.all((P[:, cols] > 0).sum(axis=0) == 1))
+        assert bool(np.isclose(N[i], 1.0, atol=1e-9)) == one_hot
+
+
+@given(boxmatrices(), POLICIES, st.integers(0, 2 ** 16))
+@SETTINGS
+def test_round_trip_bounds(C: BoxMatrix, empty: str, seed: int) -> None:
+    """||a - Ma||_1 <= 2 sum_j |a_j| O_j and ||b - Nb||_1 <= 2 sum_i |b_i| (1 - N_ii), with equality for one-hot inputs."""
+    prov = Provenance(C, empty=empty)  # type: ignore[arg-type]
+    P = prov.to_dense()
+    rng = np.random.default_rng(seed)
+    O = prov.overlap().per_feature
+    N = prov.push_pull_diagonal()
+    a = rng.normal(size=prov.num_features) * (rng.random(prov.num_features) < 0.7)
+    b = is_sigma_consistent(P, rng.normal(size=prov.num_rows))
+    assert prov.pull_push_error(a) <= 2 * (np.abs(a) * O).sum() + 1e-9
+    assert prov.push_pull_error(b) <= 2 * (np.abs(b) * (1 - N)).sum() + 1e-9
+    for j in range(prov.num_features):
+        if P[:, j].sum() > 0:
+            assert np.isclose(prov.pull_push_error(np.eye(prov.num_features)[j]), 2 * O[j])
+    for i in np.flatnonzero(P.sum(axis=1) > 0):
+        assert np.isclose(prov.push_pull_error(np.eye(prov.num_rows)[i]), 2 * (1 - N[i]))
 
 
 @given(st.one_of(full_boxmatrices(), nonoverlapping_boxmatrices(), boxmatrices()))
@@ -468,7 +556,7 @@ def test_perfect_pull_push(C: BoxMatrix) -> None:
     """The pull-push reconstruction of explanations of the attributable features is perfect if and only if O = 0."""
     prov = Provenance(C)
     perfect = all(prov.pull_push_error(e) < 1e-9 for e in np.eye(prov.num_features)[prov.included])
-    assert perfect == bool(np.isclose(prov.overlap().overall, 0.0, atol=1e-12))
+    assert perfect == bool(np.isclose(prov.overlap().overall, 0.0, atol=1e-9))
 
 
 @given(st.one_of(full_boxmatrices(), unambiguous_boxmatrices(), boxmatrices()))
@@ -479,4 +567,4 @@ def test_perfect_push_pull(C: BoxMatrix) -> None:
     P = prov.to_dense()
     basis = [is_sigma_consistent(P, e) for e in np.eye(prov.num_rows)]
     perfect = all(prov.push_pull_error(e) < 1e-9 for e in basis)
-    assert perfect == (prov.ambiguity().overall == 0)
+    assert perfect == bool(np.isclose(prov.ambiguity().overall, 0.0, atol=1e-9))

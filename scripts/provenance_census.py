@@ -6,10 +6,12 @@ The subsets are the groups of the feature set, i.e., the prefixes of the feature
 statistics of a subset describe it in isolation (see `Provenance.select`).
 
 Outputs, in `{explanations}/seed-{seed}/census/`:
-    census.parquet      one row per (file, subset): coverage, ambiguity, overlap, and the localizability of each
-                        explanation restricted to the subset, plus the file's metadata
-    ambiguity.npy       float32 (N, d), the normalized ambiguity of each feature under the full provenance
-    overlap.npy         float32 (N, d), the normalized overlap of each feature under the full provenance
+    census.parquet      one row per (file, subset): coverage, ambiguity H (the mean entropy of the attributable
+                        features, in nats), the median effective support exp(H_j), overlap O (the mean of
+                        O_j = 1 - M_jj), and the localizability of each explanation restricted to the subset, plus the
+                        file's metadata
+    ambiguity.npy       float32 (N, d), the ambiguity H_j of each feature under the full provenance
+    overlap.npy         float32 (N, d), the overlap O_j of each feature under the full provenance
     attributable.npy    bool (N, d), whether each feature is attributable to some element
     report.json         the configuration, failures, and timing
 
@@ -90,12 +92,14 @@ def census(prov: Provenance, explanations: dict[str, npt.NDArray[np.float64]]) -
     records = []
     for subset, mask in subsets_by_prefix(prov.feature_names).items():
         sub = prov if subset == ALL else prov.select(mask)
+        ambiguity = sub.ambiguity()
         record: dict[str, Any] = {
             "subset": subset,
             "num_features": sub.num_features,
             "num_attributable": int(sub.included.sum()),
             "coverage": sub.coverage,
-            "ambiguity": sub.ambiguity().overall,
+            "ambiguity": ambiguity.overall,
+            "effective_support": float(np.median(ambiguity.effective_support[sub.included])) if sub.included.any() else float("nan"),
             "overlap": sub.overlap().overall,
         }
         for name, a in explanations.items():
@@ -150,8 +154,8 @@ def process_shard(
             matches = bool(np.allclose(x, features[i], rtol=1e-5, atol=1e-6, equal_nan=True))
             rows = census(prov, {name: A[i] for name, A in explanations.items()})
             arrays[meta["index"]] = (
-                prov.ambiguity().normalized.astype(np.float32),
-                prov.overlap().normalized.astype(np.float32),
+                prov.ambiguity().per_feature.astype(np.float32),
+                prov.overlap().per_feature.astype(np.float32),
                 prov.included.copy(),
             )
             seconds = time.time() - t_0
@@ -244,6 +248,9 @@ def main() -> None:
     failed = files.filter(pl.col("status") != "ok")
     ok = table.filter((pl.col("status") == "ok") & (pl.col("subset") == ALL))
     report = {
+        # The definitions of the statistics (manuscript): pre-2026-10-08 censuses used normalized entropy and pairwise
+        # overlap, which pilot_tables.py flags.
+        "statistics": "2026-10-08: ambiguity = mean entropy H_j (nats), overlap = mean of 1 - M_jj",
         "seed": args.seed,
         "explainers": explainers,
         "num_samples": N,
