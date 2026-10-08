@@ -25,7 +25,9 @@ Outputs, in `{outdir}/seed-{seed}/{fill}[-{header}-header][-{tag}]/`:
     curves.parquet      one row per (file, model, method, curve, budget): the log-odds and whether it is valid
     files.parquet       one row per file: size, protection, log-odds, cost (extractions, seconds), problems
     provenance.npz      per file and feature: total variation distance between the instrumented and black-box
-                        provenance coarsened to windows, and which features each finds attributable
+                        provenance coarsened to windows, which features each finds attributable, and the overlap and
+                        ambiguity of each feature under each of them at the window level (`overlap_instrumented`,
+                        `overlap_blackbox`, `ambiguity_instrumented`, `ambiguity_blackbox`)
     report.json         the configuration, exclusions, verification failures, and timing
 
 Usage:
@@ -59,6 +61,7 @@ from provexp.ablation import Fill
 from provexp.ablation import ablate
 from provexp.ablation import budget_masks
 from provexp.ablation import coarsen
+from provexp.ablation import coarsen_provenance
 from provexp.ablation import element_order
 from provexp.ablation import estimate_provenance
 from provexp.ablation import window_edges
@@ -338,7 +341,12 @@ def process_file(data: bytes, explanations: dict[str, FloatArray], num_windows: 
         "fully_ablated_valid": ok_ablated,
         "problems": json.dumps(scorer.problems),
     } | sweep_info | {f"log_odds:{name}": v for name, v in f0.items()} | {f"log_odds_ablated:{name}": v for name, v in f_ablated.items()}
+    # The statistics of both at the window level (docs/plan_e2.md, experiment 3): do they differ where T1 says?
+    coarse = {"instrumented": coarsen_provenance(prov, edges), "blackbox": coarsen_provenance(blackbox, edges)}
     arrays = {"tv": tv.astype(np.float32), "attributable": attributable, "estimated": estimated}
+    for name, Pk in coarse.items():
+        arrays[f"overlap_{name}"] = Pk.overlap().per_feature.astype(np.float32)
+        arrays[f"ambiguity_{name}"] = Pk.ambiguity().per_feature.astype(np.float32)
     return records, info, arrays
 
 
@@ -483,7 +491,7 @@ def main() -> None:
     files.write_parquet(outdir / "files.parquet")
     order = sorted(arrays)
     stacked: dict[str, Any] = {"index": np.array(order, dtype=np.int64)}
-    for key in ("tv", "attributable", "estimated"):
+    for key in ("tv", "attributable", "estimated", *(f"{s}_{p}" for s in ("overlap", "ambiguity") for p in ("instrumented", "blackbox"))):
         stacked[key] = np.stack([arrays[i][key] for i in order]) if order else np.zeros((0, d))
     np.savez_compressed(outdir / "provenance.npz", **stacked)
 
