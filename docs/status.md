@@ -25,28 +25,37 @@ KernelSHAP for the 100 E1 files (`kernelshap_{gbdt,mlp}.npy`, completeness ≤ 3
 
 ## Next (for Claude), on resume
 
-**Reassessment of the next steps with the user** (GBDT only). Do not start new experiments before it is discussed.
-Open decisions, with Claude's recommendations:
+Agreed with the user on 2026-10-08: the sequence below; level 3 is the primary operator (level 2 robustness); the
+main claim is window-level parity with occlusion at 1/135 of the cost, the byte-level advantage secondary; the
+unsigned ranking tests the overshoot reading.
 
-1. **Primary operator:** level 3 (typical header values) primary, level 2 as robustness. For the GBDT the two differ
-   little, and level 3 is the more realistic and more conservative one (it removes the small level-2 edge).
-2. **Headline claim:** window-level parity with occlusion at 1/135 of the cost (equal granularity, robust) as the
-   main claim; the byte-level advantage (1.65×) as a secondary result, shown against occlusion at several K.
-3. **Gaps in E1 before scaling** (both are in `PLAN.md` but not in the pilot):
-   - occlusion at several window counts (e.g., K = 64, 256, 1,024, 4,096) for the planned faithfulness-vs.-cost
-     Pareto plot; it tests whether occlusion approaches the byte-level pullback as K grows, at what cost;
-   - KernelSHAP over windows as a second direct problem-space baseline.
-   Smoke-test both on a few files, then a pilot on the same 100 files.
-4. **Overshoot:** test the signed-resolution reading cheaply with an unsigned ranking (|b|) on the existing files, or
-   accept it as a stated interpretation.
-5. **E1 at scale:** the 2,000-file explanation set, seeds 0–2, level 3 (level 2 on a subset). Estimated about 7 h per
+1. ~~Settle the operator and the headline~~ done (above).
+2. **Baselines pilot (waiting on the user to run it):** `scripts/faithfulness.py` now has `--classifiers` (default
+   GBDT), `--sweep_windows` (occlusion and the coarsened pullback at more window counts), `--kernelshap_samples`
+   (KernelSHAP over the 256 windows), the unsigned ranking `pullback_abs:*`, `--tag`, and `--files` (reuse an earlier
+   run's files). Smoke test on 4 pilot files (`zeros-typical-header-smoke/`): clean, and every shared curve point
+   reproduces the pilot exactly. Estimated about 4.8 h wall-clock on 16 workers (the slowest, 4 MB file sets it;
+   71 worker-hours), so the per-file timeout is raised:
+
+       PYTHONHASHSEED=0 OMP_NUM_THREADS=1 python scripts/faithfulness.py --seed 0 --num_files 100 --num_workers 16 \
+         --header typical --sweep_windows 64 1024 4096 --kernelshap_samples 2048 --timeout 28800 --tag baselines \
+         --files artifacts/experiments/e1/seed-0/zeros-typical-header/files.parquet \
+         &> artifacts/logs/faithfulness-seed0-zeros-typical-baselines.log
+
+   Then `python scripts/e1_tables.py --fill zeros-typical-header-baselines` (new tables: overshoot, cost vs.
+   faithfulness). Questions: does occlusion approach the byte-level pullback as K grows, and at what cost; does
+   KernelSHAP over windows beat occlusion; does the unsigned ranking remove the overshoot (signed-resolution reading)?
+   Note for scale: K = 4,096 on all 2,000 files would cost about 1,400 worker-hours; decide on a subset then.
+3. **E1 at scale:** the 2,000-file explanation set, seeds 0–2, level 3 (level 2 on a subset). Estimated about 7 h per
    variant and seed on 16 workers (21 min per 100 files) plus KernelSHAP (about 1.6 h for 2,000 files); the user runs
    it.
-6. **E2 design** (still open) and **E3** (planted trigger, GBDT retrains in minutes) after E1 at scale.
-7. **The MLP** returns after the GBDT methodology is established (`PLAN.md`, "Second classifier: the MLP").
+4. **E2 design** (still open) and **E3** (planted trigger, GBDT retrains in minutes) after E1 at scale.
+5. **The MLP** returns after the GBDT methodology is established (`PLAN.md`, "Second classifier: the MLP").
 
 ## Decisions made on 2026-10-08
 
+- **E1:** level 3 primary (level 2 robustness); main claim window-level parity, byte-level advantage secondary;
+  baselines pilot (occlusion sweep, KernelSHAP over windows, unsigned ranking) before E1 at scale.
 - **The GBDT is the first classifier we experiment with.** The framework stays general-purpose (P does not depend on
   the classifier). Setting the MLP aside is temporary: it returns once the GBDT methodology is established, starting
   from the pilot's diagnosis (`PLAN.md`, "Model scope" and "Second classifier: the MLP").

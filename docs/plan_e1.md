@@ -70,3 +70,6 @@ workers for 100 files. Protected-field discovery: about 150 fields × a few thou
 5. ~~Refresh `docs/e1_pilot.md`~~ done (2026-10-08). E1 continues on the GBDT only; the MLP is set aside temporarily
    and returns after the GBDT methodology is established (`PLAN.md`, "Model scope"). Next: a reassessment round with
    the user before E1 at scale.
+6. **Baselines pilot (2026-10-08):** level 3 primary; occlusion and the coarsened pullback at K = 64, 1,024, 4,096
+   (the cost-faithfulness curve); KernelSHAP over the 256 windows (2,048 coalitions; reference: the fully ablated
+   file); the unsigned pullback ranking (overshoot test). Same 100 files (`--files`); command in `docs/status.md`.

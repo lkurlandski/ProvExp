@@ -100,10 +100,12 @@ Core experiments E1–E4 make the paper; A1–A3 are appendix-grade.
 - **Black-box P:** occluding windows and re-extracting yields a black-box estimate of P at no extra cost. It validates
   the instrumented P (exact for additive feature groups by T1; measured for the others) and gives a further baseline
   (pullback through the estimated P).
-- **Perturbation operator (decided 2026-10-07):** replace bytes with zeros (primary) or random bytes (robustness),
-  domain-agnostic; record the model's response even when an edit breaks parsing, and report how often it does.
-  **Likely to be replaced by a PE-aware operator** (edits that keep the file valid) once the simple version works,
-  because parse-breaking edits move the input off the data manifold and could flatter or penalize any method.
+- **Perturbation operator (revised 2026-10-08):** PE-aware ablation (protected layout fields plus per-file breakers,
+  every ablated file verified). Level 3 is primary: unprotected header fields take their most common training value;
+  content bytes are zeroed (random fill as robustness). Level 2 (header fields zeroed) is a robustness check.
+- **Headline (decided 2026-10-08):** window-level parity with occlusion at two orders of magnitude lower cost (equal
+  granularity) is the main claim; the byte-level advantage is secondary, shown against occlusion at several window
+  counts (64–4,096) and KernelSHAP over windows. The unsigned ranking tests the reading of the overshoot.
 
 ### E2. Characterizing provenance (design open)
 

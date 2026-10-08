@@ -10,12 +10,18 @@ excluded from the curves.
 
 Methods (each ranks bytes by evidence for the model's predicted class, sign(f(x)) times the score):
     pullback:{explainer}        the instrumented pullback of a feature explanation, per byte
+    pullback_abs:{explainer}    the same, ranked by magnitude regardless of sign (tests whether the overshoot beyond
+                                full ablation comes from keeping the opposing evidence; docs/e1_pilot.md)
     pullback_k:{explainer}      the same, coarsened to the K windows (separates granularity from information)
+    pullback_k{J}:{explainer}   the same, coarsened to J windows, for each J in --sweep_windows
     blackbox:{explainer}        the pullback through the provenance estimated from the occlusion run (K windows)
     occlusion                   the drop in the model's log-odds when each of K windows is occluded
-    random:{seed}               a random order of the K windows (shared by both models)
+    occlusion_k{J}              the same with J windows, for each J in --sweep_windows (the cost-faithfulness curve)
+    kernelshap_windows          KernelSHAP over the K windows (players: windows; absent: ablated), a second direct
+                                problem-space explainer, with --kernelshap_samples coalitions
+    random:{seed}               a random order of the K windows (shared by the models)
 
-Outputs, in `{outdir}/seed-{seed}/{fill}/`:
+Outputs, in `{outdir}/seed-{seed}/{fill}[-{header}-header][-{tag}]/`:
     curves.parquet      one row per (file, model, method, curve, budget): the log-odds and whether it is valid
     files.parquet       one row per file: size, protection, log-odds, cost (extractions, seconds), problems
     provenance.npz      per file and feature: total variation distance between the instrumented and black-box
@@ -59,6 +65,7 @@ from provexp.ablation import window_edges
 from provexp.data.simpledb import SimpleDB
 from provexp.data.simpledb import SimpleDBIterator
 from provexp.explain.feature import gbdt_function
+from provexp.explain.feature import kernelshap
 from provexp.explain.feature import mlp_function
 from provexp.featuresets.ember2024.ablation import HeaderFill
 from provexp.featuresets.ember2024.ablation import Protection
@@ -91,18 +98,20 @@ def _raise_timeout(signum: int, frame: Optional[FrameType]) -> None:
     raise Timeout()
 
 
-def _init_worker(gbdt_file: Path, mlp_file: Path, d: int) -> None:
+def _init_worker(model_files: dict[str, Path], d: int) -> None:
     sys.stdout = open(os.devnull, "w")
     warnings.filterwarnings("ignore")
     signal.signal(signal.SIGALRM, _raise_timeout)
     torch.set_num_threads(1)
-    mlp = build_mlp(Standardize(torch.zeros(d), torch.ones(d)))
-    mlp.load_state_dict(torch.load(mlp_file, map_location="cpu", weights_only=True))
+    models: dict[str, Callable[[FloatArray], FloatArray]] = {}
+    if "gbdt" in model_files:
+        models["gbdt"] = gbdt_function(lgb.Booster(model_file=str(model_files["gbdt"])))
+    if "mlp" in model_files:
+        mlp = build_mlp(Standardize(torch.zeros(d), torch.ones(d)))
+        mlp.load_state_dict(torch.load(model_files["mlp"], map_location="cpu", weights_only=True))
+        models["mlp"] = mlp_function(mlp.double().eval())
     _STATE["extractor"] = PEFeatureExtractor()
-    _STATE["models"] = {
-        "gbdt": gbdt_function(lgb.Booster(model_file=str(gbdt_file))),
-        "mlp": mlp_function(mlp.double().eval()),
-    }
+    _STATE["models"] = models
 
 
 ################################################################################
@@ -152,7 +161,63 @@ class Scorer:
         return {name: float(f(x[None, :])[0]) for name, f in self.models.items()}, True
 
 
-def process_file(data: bytes, explanations: dict[str, FloatArray], num_windows: int, fill: Fill, header: HeaderFill, seed: int, budgets: tuple[float, ...]) -> tuple[list[dict[str, Any]], dict[str, Any], dict[str, Any]]:
+def occlude(scorer: Scorer, m: int, num_windows: int) -> tuple[npt.NDArray[np.int64], npt.NDArray[np.int64], FloatArray, dict[str, FloatArray], int]:
+    """
+    Occlude each of `num_windows` windows: one extraction each.
+
+    Returns:
+        The window edges, the window of each element, the features of each occluded file (the original's where
+        verification fails, i.e., treated as no change), the occlusion score of each window per model (the drop in
+        the log-odds), and the number of windows that failed verification.
+    """
+    f0, _ = scorer.scores(np.zeros(m, dtype=np.bool_))
+    x0, _ = scorer.features(np.zeros(m, dtype=np.bool_))
+    edges = window_edges(m, num_windows)
+    K = edges.shape[0] - 1
+    window = np.repeat(np.arange(K), np.diff(edges))
+    X_occluded = np.zeros((K, x0.shape[0]))
+    occlusion = {name: np.zeros(K) for name in scorer.models}
+    invalid = 0
+    for k in range(K):
+        x, problem = scorer.features(window == k)
+        if problem is not None:
+            invalid += 1
+            X_occluded[k] = x0
+            continue
+        X_occluded[k] = x
+        for name, f in scorer.models.items():
+            occlusion[name][k] = f0[name] - float(f(x[None, :])[0])
+    return edges, window, X_occluded, occlusion, invalid
+
+
+def kernelshap_windows(scorer: Scorer, window: npt.NDArray[np.int64], K: int, nsamples: int, seed: int) -> tuple[dict[str, FloatArray], int]:
+    """
+    KernelSHAP over windows: the players are the K windows, a coalition keeps its windows and ablates the rest, and the
+    reference is the fully ablated file. Coalitions that fail verification score as the original file (no change).
+
+    Returns:
+        The Shapley value of each window per model (evidence for malware), and the number of coalitions that failed
+        verification.
+    """
+    f0, _ = scorer.scores(np.zeros(window.shape[0], dtype=np.bool_))
+    failed = 0
+    values: dict[str, FloatArray] = {}
+    for name in scorer.models:
+        def f(Z: npt.NDArray[np.floating], name: str = name) -> FloatArray:
+            nonlocal failed
+            out = np.zeros(Z.shape[0])
+            for i, z in enumerate(Z):
+                s, ok = scorer.scores(~(z > 0.5)[window])
+                if not ok:
+                    failed += 1
+                out[i] = s[name] if ok else f0[name]
+            return out
+        # The same seed draws the same coalitions for every model, so later models hit the scorer's cache.
+        values[name] = kernelshap(f, np.ones((1, K)), np.zeros((1, K)), nsamples=nsamples, seed=seed)[0]
+    return values, failed // len(scorer.models)
+
+
+def process_file(data: bytes, explanations: dict[str, FloatArray], num_windows: int, fill: Fill, header: HeaderFill, seed: int, budgets: tuple[float, ...], sweep_windows: tuple[int, ...] = (), kernelshap_samples: int = 0) -> tuple[list[dict[str, Any]], dict[str, Any], dict[str, Any]]:
     m = len(data)
     t_0 = time.perf_counter()
     protection = protect(data, header=header)
@@ -169,42 +234,68 @@ def process_file(data: bytes, explanations: dict[str, FloatArray], num_windows: 
     direction = {name: float(np.sign(v)) or 1.0 for name, v in f0.items()}
     f_ablated, ok_ablated = scorer.scores(unprotected)
 
-    # Occlusion of K windows: one extraction each, shared by both models and the black-box provenance.
-    edges = window_edges(m, num_windows)
-    K = edges.shape[0] - 1
-    window = np.repeat(np.arange(K), np.diff(edges))
-    X_occluded = np.zeros((K, x0.shape[0]))
-    occlusion = {name: np.zeros(K) for name in scorer.models}
+    # Occlusion of K windows: one extraction each, shared by the models and the black-box provenance.
     t_0 = time.perf_counter()
-    invalid_windows = 0
-    for k in range(K):
-        which = window == k
-        x, problem = scorer.features(which)
-        if problem is not None:
-            invalid_windows += 1
-            X_occluded[k] = x0  # Treated as no change.
-            continue
-        X_occluded[k] = x
-        for name, f in scorer.models.items():
-            occlusion[name][k] = f0[name] - float(f(x[None, :])[0])
+    edges, window, X_occluded, occlusion, invalid_windows = occlude(scorer, m, num_windows)
+    K = edges.shape[0] - 1
     t_occlusion = time.perf_counter() - t_0
     occlusion_extractions = scorer.extractions
     blackbox = estimate_provenance(x0, X_occluded, edges)
+    del X_occluded
+
+    # The cost-faithfulness sweep: occlusion at other window counts (the extractions are counted separately).
+    sweep: dict[int, tuple[int, npt.NDArray[np.int64], dict[str, FloatArray]]] = {}
+    sweep_info: dict[str, Any] = {}
+    for J in sweep_windows:
+        if J == num_windows:
+            continue
+        before = scorer.extractions
+        t_0 = time.perf_counter()
+        edges_j, window_j, _, occlusion_j, invalid_j = occlude(scorer, m, J)
+        sweep[J] = (edges_j.shape[0] - 1, window_j, occlusion_j)
+        sweep_info |= {
+            f"seconds_occlusion_k{J}": time.perf_counter() - t_0,
+            # Counted like occlusion_extractions: the windows, the original, and the fully ablated file (cached here).
+            f"occlusion_extractions_k{J}": scorer.extractions - before + 2,
+            f"invalid_windows_k{J}": invalid_j,
+            f"num_windows_k{J}": edges_j.shape[0] - 1,
+        }
+
+    # KernelSHAP over the K windows.
+    shapley: dict[str, FloatArray] = {}
+    if kernelshap_samples > 0:
+        before = scorer.extractions
+        t_0 = time.perf_counter()
+        shapley, failed_coalitions = kernelshap_windows(scorer, window, K, kernelshap_samples, seed)
+        sweep_info |= {
+            "seconds_kernelshap_windows": time.perf_counter() - t_0,
+            "kernelshap_windows_extractions": scorer.extractions - before + 2,
+            "kernelshap_windows_failed": failed_coalitions,
+        }
 
     # Rankings: element orders per model and method.
     t_0 = time.perf_counter()
     orders: dict[str, dict[str, npt.NDArray[np.int64]]] = {name: {} for name in scorer.models}
-    for name, explainers in MODELS.items():
+    for name in scorer.models:
+        explainers = MODELS[name]
         for e in explainers:
             if e not in explanations:
                 continue
             b = prov.pullback(explanations[e])[:m]
             orders[name][f"pullback:{e}"] = element_order(b, direction[name])
+            orders[name][f"pullback_abs:{e}"] = element_order(np.abs(b))
             per_window = np.bincount(window, weights=b, minlength=K)
             orders[name][f"pullback_k:{e}"] = element_order(per_window[window], direction[name])
+            for J, (K_j, window_j, _) in sweep.items():
+                per_window_j = np.bincount(window_j, weights=b, minlength=K_j)
+                orders[name][f"pullback_k{J}:{e}"] = element_order(per_window_j[window_j], direction[name])
             orders[name][f"blackbox:{e}"] = element_order(blackbox.pullback(explanations[e])[:m], direction[name])
-        # Occlusion scores are already the evidence for malware (f0 - f(occluded)).
+        # Occlusion scores are already the evidence for malware (f0 - f(occluded)), and so are the Shapley values.
         orders[name]["occlusion"] = element_order(occlusion[name][window], direction[name])
+        for J, (_, window_j, occlusion_j) in sweep.items():
+            orders[name][f"occlusion_k{J}"] = element_order(occlusion_j[name][window_j], direction[name])
+        if name in shapley:
+            orders[name]["kernelshap_windows"] = element_order(shapley[name][window], direction[name])
     t_rank = time.perf_counter() - t_0
     rng = np.random.default_rng(seed)
     random_orders = {f"random:{r}": element_order(rng.permutation(K).astype(np.float64)[window]) for r in range(3)}
@@ -246,12 +337,12 @@ def process_file(data: bytes, explanations: dict[str, FloatArray], num_windows: 
         "invalid_windows": invalid_windows,
         "fully_ablated_valid": ok_ablated,
         "problems": json.dumps(scorer.problems),
-    } | {f"log_odds:{name}": v for name, v in f0.items()} | {f"log_odds_ablated:{name}": v for name, v in f_ablated.items()}
+    } | sweep_info | {f"log_odds:{name}": v for name, v in f0.items()} | {f"log_odds_ablated:{name}": v for name, v in f_ablated.items()}
     arrays = {"tv": tv.astype(np.float32), "attributable": attributable, "estimated": estimated}
     return records, info, arrays
 
 
-def process_shard(shard: int, samples: list[dict[str, Any]], dbdir: Path, explanations: dict[str, FloatArray], num_windows: int, fill: Fill, header: HeaderFill, seed: int, budgets: tuple[float, ...], timeout: int) -> tuple[list[dict[str, Any]], list[dict[str, Any]], dict[int, dict[str, Any]]]:
+def process_shard(shard: int, samples: list[dict[str, Any]], dbdir: Path, explanations: dict[str, FloatArray], num_windows: int, fill: Fill, header: HeaderFill, seed: int, budgets: tuple[float, ...], timeout: int, sweep_windows: tuple[int, ...], kernelshap_samples: int) -> tuple[list[dict[str, Any]], list[dict[str, Any]], dict[int, dict[str, Any]]]:
     wanted = {s["position"]: i for i, s in enumerate(samples)}
     records: list[dict[str, Any]] = []
     infos: list[dict[str, Any]] = []
@@ -268,7 +359,7 @@ def process_shard(shard: int, samples: list[dict[str, Any]], dbdir: Path, explan
         t_0 = time.perf_counter()
         signal.alarm(timeout)
         try:
-            recs, info, arr = process_file(sample.data, {e: A[i] for e, A in explanations.items()}, num_windows, fill, header, seed + meta["index"], budgets)
+            recs, info, arr = process_file(sample.data, {e: A[i] for e, A in explanations.items()}, num_windows, fill, header, seed + meta["index"], budgets, sweep_windows, kernelshap_samples)
             records.extend(base | r for r in recs)
             infos.append(base | {"status": "ok", "error": "", "seconds": time.perf_counter() - t_0} | info)
             arrays[meta["index"]] = arr
@@ -299,6 +390,11 @@ def main() -> None:
     parser.add_argument("--num_windows", type=int, default=256)
     parser.add_argument("--fill", type=str, choices=["zeros", "random"], default="zeros")
     parser.add_argument("--header", type=str, choices=["zeros", "typical"], default="zeros", help="How ablation fills header fields (level 2: zeros; level 3: typical values).")
+    parser.add_argument("--classifiers", type=str, nargs="+", choices=list(MODELS), default=["gbdt"], help="The models to evaluate (the GBDT first; PLAN.md, model scope).")
+    parser.add_argument("--sweep_windows", type=int, nargs="*", default=[], help="Further window counts for occlusion and the coarsened pullback (the cost-faithfulness curve), e.g., 64 1024 4096.")
+    parser.add_argument("--kernelshap_samples", type=int, default=0, help="Coalitions for KernelSHAP over the windows (0: skip).")
+    parser.add_argument("--tag", type=str, default="", help="A suffix for the output directory.")
+    parser.add_argument("--files", type=Path, default=None, help="Reuse the files of an earlier run (its files.parquet); --num_files then takes the first files per label.")
     parser.add_argument("--sample_seed", type=int, default=0)
     parser.add_argument("--explanations", type=Path, default=ROOT / "artifacts" / "explanations" / "ember2024")
     parser.add_argument("--explanation_set", type=Path, default=ROOT / "artifacts" / "explanation_set" / "ts.parquet")
@@ -314,9 +410,13 @@ def main() -> None:
 
     indir = args.explanations / f"seed-{args.seed}"
     variant = args.fill if args.header == "zeros" else f"{args.fill}-{args.header}-header"
+    variant += f"-{args.tag}" if args.tag else ""
+    if any(J < 1 for J in args.sweep_windows) or args.kernelshap_samples < 0:
+        raise ValueError(f"Invalid --sweep_windows {args.sweep_windows} or --kernelshap_samples {args.kernelshap_samples}.")
+    models = {name: es for name, es in MODELS.items() if name in args.classifiers}
     outdir = args.outdir / f"seed-{args.seed}" / variant
     outdir.mkdir(parents=True, exist_ok=True)
-    explainers = sorted(e for es in MODELS.values() for e in es if (indir / f"{e}.npy").exists())
+    explainers = sorted(e for es in models.values() for e in es if (indir / f"{e}.npy").exists())
     explanations = {e: np.load(indir / f"{e}.npy") for e in explainers}
     report = json.loads((indir / "report.json").read_text())
 
@@ -326,12 +426,19 @@ def main() -> None:
     bad = np.zeros(samples.height, dtype=np.bool_)
     for e in explainers:
         if "baseline_output" in report[e]:
-            model = next(name for name, es in MODELS.items() if e in es)
+            model = next(name for name, es in models.items() if e in es)
             out = samples[f"{model}_log_odds"].to_numpy()
             bad |= np.abs(explanations[e].sum(axis=1) - (out - report[e]["baseline_output"])) > 1e-2
     samples = samples.filter(~pl.Series(bad))
     per_label = args.num_files // 2
-    samples = pl.concat([samples.filter(pl.col("label") == lab).sample(per_label, seed=args.sample_seed) for lab in (0, 1)])
+    if args.files is not None:
+        names = pl.read_parquet(args.files)["name"]
+        samples = samples.filter(pl.col("name").is_in(names.implode()))
+        if samples.height != names.len():
+            raise RuntimeError(f"{names.len() - samples.height} files of {args.files.as_posix()} are not in the explanation set or are excluded.")
+        samples = pl.concat([samples.filter(pl.col("label") == lab).sort("index").head(per_label) for lab in (0, 1)])
+    else:
+        samples = pl.concat([samples.filter(pl.col("label") == lab).sample(per_label, seed=args.sample_seed) for lab in (0, 1)])
     location = pl.read_parquet(args.explanation_set).select("name", "shard", "position")
     samples = samples.join(location, on="name", how="left").sort("index")
     for e, A in explanations.items():
@@ -352,16 +459,19 @@ def main() -> None:
             args.sample_seed,
             BUDGETS,
             args.timeout,
+            tuple(args.sweep_windows),
+            args.kernelshap_samples,
         ))
     print(f"Explainers: {explainers}.", flush=True)
-    print(f"E1: {samples.height} files ({int(bad.sum())} excluded for local accuracy), {args.num_windows} windows, fill {args.fill}, header {args.header}.", flush=True)
+    print(f"E1: {samples.height} files ({int(bad.sum())} excluded for local accuracy), models {list(models)}, {args.num_windows} windows (sweep {args.sweep_windows}), KernelSHAP over windows {args.kernelshap_samples}, fill {args.fill}, header {args.header}.", flush=True)
 
     t_0 = time.time()
     records: list[dict[str, Any]] = []
     infos: list[dict[str, Any]] = []
     arrays: dict[int, dict[str, Any]] = {}
     d = next(iter(explanations.values())).shape[1]
-    initargs = (args.models / "gbdt" / f"seed-{args.seed}" / "model.txt", args.models / "mlp" / f"seed-{args.seed}" / "model.pt", d)
+    files_of = {"gbdt": args.models / "gbdt" / f"seed-{args.seed}" / "model.txt", "mlp": args.models / "mlp" / f"seed-{args.seed}" / "model.pt"}
+    initargs = ({name: files_of[name] for name in models}, d)
     with mp.get_context("fork").Pool(args.num_workers, initializer=_init_worker, initargs=initargs) as pool:
         for recs, inf, arr in tqdm(pool.imap_unordered(_star, tasks), total=len(tasks)):
             records.extend(recs)
@@ -382,6 +492,9 @@ def main() -> None:
     summary = {
         "seed": args.seed,
         "explainers": explainers,
+        "classifiers": list(models),
+        "sweep_windows": args.sweep_windows,
+        "kernelshap_samples": args.kernelshap_samples,
         "fill": args.fill,
         "header": args.header,
         "num_windows": args.num_windows,

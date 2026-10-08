@@ -7,7 +7,8 @@ Per file and model, with s the sign of the model's log-odds f(x) on the original
     recovered(budget)   s · (f(inserted) - f(fully ablated)): the evidence recovered by restoring them
     deletion area       the mean of removed() over the budgets below 100% (equal weight per log-spaced budget)
     insertion area      the mean of recovered() over the same budgets
-Random is the mean of its seeds.
+    overshoot           the largest removed() below 100% minus removed(100%)
+Random is the mean of its seeds. Runs without insertion (the default since the pilot) print deletion only.
 
 Usage:
     python scripts/e1_tables.py --seed 0 --fill zeros
@@ -46,6 +47,7 @@ def main() -> None:
     report = json.loads((indir / "report.json").read_text())
     files = pl.read_parquet(indir / "files.parquet").filter(pl.col("status") == "ok")
     curves = pl.read_parquet(indir / "curves.parquet")
+    models = report.get("classifiers", ["gbdt", "mlp"])
 
     print("## Run\n")
     print(json.dumps({k: report[k] for k in ("num_files", "status", "invalid_curve_points", "curve_points", "files_with_invalid_windows", "files_with_file_specific_fields", "minutes")}), "\n")
@@ -53,7 +55,7 @@ def main() -> None:
     # Original and fully ablated log-odds per file and model.
     base = pl.concat([
         files.select("index", "label", pl.lit(model).alias("model"), pl.col(f"log_odds:{model}").alias("f0"), pl.col(f"log_odds_ablated:{model}").alias("fa"))
-        for model in ("gbdt", "mlp")
+        for model in models
     ])
     c = (
         curves.filter(pl.col("valid"))
@@ -71,7 +73,7 @@ def main() -> None:
 
     print("## Evidence removed (deletion) and recovered (insertion) per budget, median over files\n")
     present = sorted(c["curve"].unique().to_list())
-    for model in ("gbdt", "mlp"):
+    for model in models:
         for curve in present:
             t = c.filter((pl.col("model") == model) & (pl.col("curve") == curve)).group_by("method", "budget").agg(pl.col("evidence").median()).sort("budget")
             t = t.with_columns(pl.col("budget").map_elements(lambda b: f"{b:.1%}", return_dtype=pl.String)).pivot(on="budget", index="method", values="evidence").sort("method")
@@ -83,7 +85,7 @@ def main() -> None:
     )
     print("## Areas (mean over budgets below 100%): mean over files, and the paired comparison per file\n")
     rows = []
-    for model in ("gbdt", "mlp"):
+    for model in models:
         for curve in present:
             a = areas.filter((pl.col("model") == model) & (pl.col("curve") == curve)).pivot(on="method", index="index", values="area").drop_nulls()
             methods = sorted(m for m in a.columns if m not in ("index", "random", "occlusion"))
@@ -103,8 +105,38 @@ def main() -> None:
                 rows.append(row)
     print(markdown(pl.DataFrame(rows), 2), "\n")
 
+    print("## Overshoot beyond full ablation (deletion): median over files, and the share of files above 0.5\n")
+    d = c.filter(pl.col("curve") == "deletion")
+    peak = d.filter(pl.col("budget") < 1.0).group_by("index", "model", "method").agg(pl.col("evidence").max().alias("peak"))
+    full = d.filter(pl.col("budget") == 1.0).select("index", "model", "method", pl.col("evidence").alias("full"))
+    t = (
+        peak.join(full, on=["index", "model", "method"]).with_columns((pl.col("peak") - pl.col("full")).alias("overshoot"))
+        .group_by("model", "method").agg(pl.col("overshoot").median().alias("median overshoot"), (pl.col("overshoot") > 0.5).mean().alias("share > 0.5"))
+        .sort("model", "method")
+    )
+    print(markdown(t, 2), "\n")
+
+    # Cost vs. faithfulness: the extractions each direct method needs (the pullbacks need one).
+    cost_columns = {"occlusion": "occlusion_extractions", "kernelshap_windows": "kernelshap_windows_extractions"}
+    cost_columns |= {f"occlusion_k{J}": f"occlusion_extractions_k{J}" for J in report.get("sweep_windows", []) if J != report["num_windows"]}
+    cost_columns = {k: v for k, v in cost_columns.items() if v in files.columns}
+    if len(cost_columns) > 1:
+        print("## Cost vs. faithfulness (deletion): median extractions and seconds per file, mean area\n")
+        a = areas.filter(pl.col("curve") == "deletion").group_by("model", "method").agg(pl.col("area").mean())
+        rows = []
+        for method, column in cost_columns.items():
+            seconds = column.replace("occlusion_extractions", "seconds_occlusion").replace("kernelshap_windows_extractions", "seconds_kernelshap_windows")
+            for model in models:
+                area = a.filter((pl.col("model") == model) & (pl.col("method") == method))["area"]
+                rows.append({"model": model, "method": method, "extractions": float(files[column].median() or 0), "seconds": float(files[seconds].median() or 0), "mean area": float(area[0]) if area.len() else float("nan")})  # type: ignore[arg-type]
+        for model in models:
+            for method in sorted(m for m in a.filter(pl.col("model") == model)["method"].to_list() if m.startswith("pullback")):
+                area = a.filter((pl.col("model") == model) & (pl.col("method") == method))["area"]
+                rows.append({"model": model, "method": method, "extractions": 1.0, "seconds": float(files["seconds_instrumented"].median() or 0), "mean area": float(area[0])})  # type: ignore[arg-type]
+        print(markdown(pl.DataFrame(rows).sort("model", "extractions", "method"), 2), "\n")
+
     print("## Deletion area by label (mean over files)\n")
-    t = areas.filter(pl.col("curve") == "deletion").group_by("model", "method", "label").agg(pl.col("area").mean()).pivot(on="label", index=["model", "method"], values="area").sort("model", "method")
+    t = areas.filter(pl.col("curve") == "deletion").group_by("model", "method", "label").agg(pl.col("area").mean()).sort("label").pivot(on="label", index=["model", "method"], values="area").sort("model", "method")
     print(markdown(t, 2), "\n")
 
     print("## Cost per file (median; seconds)\n")
