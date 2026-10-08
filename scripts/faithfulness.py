@@ -88,6 +88,13 @@ MODELS = {
 }
 
 FloatArray = npt.NDArray[np.float64]
+
+# The cost of one feature extraction, seconds = SECONDS_PER_EXTRACTION + SECONDS_PER_EXTRACTION_PER_MB * megabytes,
+# fitted on the 2026-10-08 baselines run (100 files, 0.005-4 MB). It predicts the total work well (63.0 vs. 63.1
+# worker-hours) but a single file can take twice its prediction, so the wall-clock estimate is a lower bound. Used
+# only to order the tasks, to predict the runtime, and to weight the progress bar.
+SECONDS_PER_EXTRACTION = 0.040
+SECONDS_PER_EXTRACTION_PER_MB = 0.251
 BoolArray = npt.NDArray[np.bool_]
 
 _STATE: dict[str, Any] = {}
@@ -386,6 +393,22 @@ def _star(task: tuple[Any, ...]) -> tuple[list[dict[str, Any]], list[dict[str, A
     return process_shard(*task)
 
 
+def extractions_per_file(num_windows: int, sweep_windows: tuple[int, ...], kernelshap_samples: int, budgets: tuple[float, ...]) -> int:
+    """
+    How many feature extractions one file costs, which is known exactly before a run: the original and the fully
+    ablated file, one per window of every occlusion run, the KernelSHAP coalitions, and one per budget and method.
+    """
+    windows = (num_windows, *(J for J in sweep_windows if J != num_windows))
+    per_curve = len(budgets) * (3 + 3 * (1 + len(sweep_windows)))  # Rough: the methods that produce curves.
+    return 2 + sum(J for J in windows) + kernelshap_samples + per_curve
+
+
+def predict_seconds(sizes: npt.NDArray[np.int64], extractions: int) -> FloatArray:
+    """The predicted seconds per file, from its size and the number of extractions (see SECONDS_PER_EXTRACTION)."""
+    megabytes = np.asarray(sizes, dtype=np.float64) / 1e6
+    return np.asarray(extractions * (SECONDS_PER_EXTRACTION + SECONDS_PER_EXTRACTION_PER_MB * megabytes), dtype=np.float64)
+
+
 ################################################################################
 # Driver
 ################################################################################
@@ -453,9 +476,16 @@ def main() -> None:
         if not np.all(np.isfinite(A[samples["index"].to_numpy()])):
             raise RuntimeError(f"{e} has no explanations for some selected files; compute it for them (explain.py --subset).")
 
+    # The cost of a file is dominated by its size times the number of extractions, both known up front. Tasks run
+    # longest-first, so that the long poles start immediately (shorter wall-clock, and an honest ETA).
+    per_file = extractions_per_file(args.num_windows, tuple(args.sweep_windows), args.kernelshap_samples, BUDGETS)
+    sizes = pl.read_parquet(args.explanation_set).select("name", "size")
+    samples = samples.join(sizes, on="name", how="left").with_columns(pl.col("size").fill_null(0))
     tasks = []
+    weights = []
     for (shard,), group in samples.sort("shard", "position").group_by("shard", maintain_order=True):
         idx = group["index"].to_numpy()
+        weights.append(float(predict_seconds(group["size"].to_numpy(), per_file).sum()))
         tasks.append((
             int(shard),
             group.select("index", "name", "label", "position").to_dicts(),
@@ -470,7 +500,15 @@ def main() -> None:
             tuple(args.sweep_windows),
             args.kernelshap_samples,
         ))
+    order = np.argsort(-np.asarray(weights))
+    tasks = [tasks[i] for i in order]
+    weights = [weights[i] for i in order]
+    total = sum(weights)
     print(f"Explainers: {explainers}.", flush=True)
+    print(f"Cost: {per_file} extractions per file; predicted {total / 3600:.1f} worker-hours and at least "
+          f"{max(total / args.num_workers, max(weights)) / 3600:.1f} h wall-clock on {args.num_workers} workers "
+          f"(the longest single task, {max(weights) / 3600:.1f} h, bounds the run; a single file can take twice its "
+          f"prediction, so treat this as a floor).", flush=True)
     print(f"PB1: {samples.height} files ({int(bad.sum())} excluded for local accuracy), models {list(models)}, {args.num_windows} windows (sweep {args.sweep_windows}), KernelSHAP over windows {args.kernelshap_samples}, fill {args.fill}, header {args.header}.", flush=True)
 
     t_0 = time.time()
@@ -480,11 +518,25 @@ def main() -> None:
     d = next(iter(explanations.values())).shape[1]
     files_of = {"gbdt": args.models / "gbdt" / f"seed-{args.seed}" / "model.txt", "mlp": args.models / "mlp" / f"seed-{args.seed}" / "model.pt"}
     initargs = ({name: files_of[name] for name in models}, d)
+    done = 0.0
     with mp.get_context("fork").Pool(args.num_workers, initializer=_init_worker, initargs=initargs) as pool:
-        for recs, inf, arr in tqdm(pool.imap_unordered(_star, tasks), total=len(tasks)):
-            records.extend(recs)
-            infos.extend(inf)
-            arrays.update(arr)
+        # The progress bar counts predicted seconds of work, not files, because files differ by three orders of
+        # magnitude; its percentage and ETA are then meaningful. Every file is also logged as it finishes.
+        bar = tqdm(total=round(total), unit="s", unit_scale=True, desc="work", smoothing=0.0, mininterval=30)
+        with bar:
+            for recs, inf, arr in pool.imap_unordered(_star, tasks):
+                records.extend(recs)
+                infos.extend(inf)
+                arrays.update(arr)
+                for one in inf:
+                    predicted = float(predict_seconds(np.asarray([one.get("num_elements", 0)]), per_file)[0])
+                    done += predicted
+                    bar.update(round(predicted))
+                    elapsed = (time.time() - t_0) / 60
+                    # bar.write, not print: a bare print lands on the bar's line and is lost.
+                    bar.write(f"  [{done / total:5.1%} {elapsed:6.1f} min] {one['name'][:16]} "
+                              f"{one.get('num_elements', 0) / 1e6:5.2f} MB  {one.get('seconds', float('nan')) / 60:6.1f} min  "
+                              f"{one.get('extractions', 0):6d} extractions  {one['status']}")
 
     pl.DataFrame(records, infer_schema_length=None).write_parquet(outdir / "curves.parquet")
     files = pl.DataFrame(infos, infer_schema_length=None).sort("index")

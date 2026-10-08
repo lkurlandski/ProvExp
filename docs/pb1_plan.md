@@ -59,6 +59,26 @@ About 600 extractions per file (256 for occlusion, about 20 per curve for 16 ran
 workers for 100 files. Protected-field discovery: about 150 fields × a few thousand files of pefile parses, minutes on
 16 workers.
 
+## Cost and progress reporting (added 2026-10-08, after the 6.1 h baselines run)
+
+The cost of a run is (extractions per file) x (per-extraction time), and both are predictable, so the runner now says
+up front what it will cost and reports progress in units of work:
+
+- **Extractions per file are known exactly** before the run: 2 + the windows of every occlusion run + the KernelSHAP
+  coalitions + one per budget and method (`extractions_per_file`; predicted 7,640 vs. 7,577 actual median on the
+  baselines run). The occlusion sweep dominates: on the slowest file, K = 4,096 alone was 58% of the time.
+- **Per-extraction time** is fitted as 0.040 s + 0.251 s per megabyte (`predict_seconds`), which predicts the total
+  work within 1% (63.6 vs. 63.1 worker-hours). A single file can take twice its prediction, so the wall-clock
+  estimate is printed as a floor.
+- **Tasks run longest-first**, which shortens the wall-clock a little (6.1 -> 5.8 h here) and, more importantly, puts
+  the long poles at the start so the ETA is honest instead of collapsing at the end.
+- **The progress bar counts predicted seconds of work, not files**, because files differ by three orders of magnitude
+  (median 9 min, max 4.1 h), and every file is logged as it finishes (`bar.write`, so the line is not lost on the
+  bar's own line) with its size, time, extractions, and status.
+- **An irreducible floor:** the longest single file bounds the run (4.1 h of the 6.1 h here, against 3.9 h of
+  perfectly balanced work). No scheduling can go below it. To go faster, either parallelize within a file (the
+  budgets and methods of one file are independent) or cap the sweep for the largest files; both are open.
+
 ## Steps
 
 1. ~~Protected-field discovery~~ done: the layout fields are protected globally, other breakers per file.

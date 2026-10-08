@@ -151,6 +151,82 @@ occlusion. Byte-level occlusion would need one extraction per byte.
   black-box only) and new pefile warnings (6%). Random fill adds its own artifacts: the histogram, exactly additive
   under zero fill, differs by a total variation of 0.60, because random bytes add counts to other bins.
 
+## Baselines (2026-10-08): the sweep, KernelSHAP over windows, and the unsigned ranking
+
+Run `zeros-typical-header-baselines/` (level 3, GBDT, the same 100 files; 6.1 h on 16 workers,
+`scripts/pb1_tables.py --fill zeros-typical-header-baselines`). The reading of each outcome was fixed in advance
+(`docs/pb1_baselines.md`). **Healthy:** 0 failed files, 0 of 29,000 invalid curve points, no warning, 0 failed
+KernelSHAP coalitions, and all 13,000 curve points shared with the pilot reproduce it exactly (max difference 0.0).
+
+Gains below are still relative to occlusion at K = 256, so they are comparable with the tables above.
+
+### Q1. Occlusion does not reach byte resolution: it saturates
+
+| method | gain | extractions | seconds |
+|---|---|---|---|
+| pullback (bytes), path TreeSHAP | **1.67** | **1** | **0.17** |
+| occlusion, 4,096 windows | 1.10 | 4,098 | 321 |
+| KernelSHAP over 256 windows | 1.10 | 1,925 | 94 |
+| occlusion, 1,024 windows | 1.10 | 1,026 | 88 |
+| occlusion, 256 windows | 1.00 | 258 | 22 |
+| occlusion, 64 windows | 0.93 | 66 | 5 |
+
+Occlusion improves from 0.93 to 1.10 between 64 and 1,024 windows and then **stops**: 4,096 windows (4,098
+extractions, 5.4 minutes per file) buys nothing over 1,024 (1.10 both). The byte-level pullback stays far above at
+1.67, beating the best direct baseline on 80–81 of 100 files (p ≈ 1e-12 for each). This is the first of the
+pre-registered outcomes: **the secondary claim stands as is**, and more strongly than expected, because occlusion
+plateaus instead of closing the gap. A plausible mechanism: as windows shrink, occluding one window changes the
+features too little to measure reliably, so occlusion's per-window scores get noisier while the pullback's
+attribution does not degrade.
+
+### Parity holds at every granularity, and the pullback pulls ahead at the finest
+
+Matched comparisons (the pullback coarsened to K vs. occlusion at the same K, path TreeSHAP, paired per file):
+
+| K | pullback | occlusion | pullback wins | p |
+|---|---|---|---|---|
+| 64 | 0.89 | 0.93 | 54/100 | 0.54 |
+| 256 | 0.98 | 1.00 | 54/100 | 0.82 |
+| 1,024 | 1.08 | 1.10 | 53/100 | 0.65 |
+| 4,096 | 1.22 | 1.10 | 60/100 | 0.004 |
+
+The main claim therefore does not depend on the window count: parity at 64, 256, and 1,024 windows, and at 4,096 the
+pullback is **ahead** (1.22 vs. 1.10). Coarsening the pullback is free (one extraction at every K), so the whole
+column costs what one extraction costs.
+
+### Q2. KernelSHAP over windows matches the best occlusion, at 1,925 extractions
+
+1.10, equal to occlusion at 1,024 and 4,096 windows, and ahead of occlusion at 256 (84/100 files, p = 1e-11) at
+about 7× its cost. This is the second pre-registered outcome: it is a *second, stronger* direct baseline, so the main
+claim is stated against **the best direct problem-space baseline, 1.10**, which the byte-level pullback beats by
+1.5× at 1/1,900 of the cost.
+
+### Q3. The unsigned ranking removes most of the overshoot, and the rest is resolution
+
+The byte-level overshoot falls from 3.49 (signed) to 0.92 (unsigned, ranking by magnitude), reduced on 82 of 100
+files (p = 2e-13). The residual tracks resolution monotonically, in both method families:
+
+| median overshoot | 64 windows | 256 | 1,024 | 4,096 | bytes |
+|---|---|---|---|---|---|
+| occlusion | 0.15 | 0.34 | 0.67 | 0.80 | — |
+| pullback (signed) | 0.39 | 0.53 | 0.82 | 1.50 | 3.49 |
+| pullback (unsigned) | — | — | — | — | 0.92 |
+
+So the overshoot has the two components the reading proposed, and both are confirmed: **the sign of the ranking**
+(about three quarters of it, removed by ranking on magnitude) and **resolution** (the remainder, which grows with
+granularity for every method, including occlusion, which has no pullback in it). The signed-resolution reading is
+therefore accepted: the overshoot is a sign that the pullback separates supporting from opposing evidence at fine
+granularity, not a fill artifact. Note that the unsigned ranking's own area (1.07) still matches occlusion, as
+expected, since it also deletes the bytes that oppose the decision.
+
+### What this settles
+
+1. The **main claim** is window-level parity with the best direct problem-space baseline at 1/135 of its cost
+   (1/1,900 against the strongest), and it holds at every granularity tested.
+2. The **secondary claim** is stronger than the pilot suggested: occlusion cannot reach byte resolution at any
+   affordable cost, because it saturates at 1.10.
+3. The **overshoot** has an explanation that the data support, so it can be reported as a diagnostic.
+
 ## What insertion tests
 
 Deletion asks whether the bytes an explanation ranks highest are *necessary*: remove them, and the evidence for the
