@@ -1,63 +1,54 @@
 # Status
 
-Last updated: 2026-10-08. The evaluation is **reorganized to mirror the framework** (`PLAN.md`, "Experiment IDs"):
+Last updated: 2026-10-08 (end of session). The evaluation mirrors the framework (`PLAN.md`, "Experiment IDs"):
 1. characterizing P (CP), 2. the pullback (PB1, PB2), 3. the pushforward (PF1, PF2), 4. comparing classifiers (CM);
-appendix App-L (localizability) and App-R (redundancy). Old IDs E1–E4 / A1–A3 survive only in pre-2026-10-08 docs and in
-artifact paths (`artifacts/experiments/e1/` holds PB1). Work stays at pilot scale (~100 files, one seed).
+appendix App-L (localizability) and App-R (redundancy). Old IDs E1–E4 / A1–A3 survive only in pre-2026-10-08 docs and
+in artifact paths (`artifacts/experiments/e1/` holds PB1). Work stays at pilot scale (~100 files, one seed).
+`run/` holds the commands that produced everything in `artifacts/`; add a script there for every new experiment.
 
 ## Where we are
 
-- Phases 0–2 are done (literature, `provexp`, features and models, census). Gate 1 passed; Gate 2 (PB1 pilot,
-  `docs/pb1_pilot.md`) passed for the GBDT.
-- **CP:** done on 2,000 files (`docs/cp_census.md`) and coarsening on the pilot files; revised definitions in code,
-  tests, docs, and manuscript (`docs/cp_plan.md`). Remaining: instrumented vs. black-box P at window level.
-- **PB1:** pilot done (parity with occlusion at 256 windows, 1/135 of the cost; bytes 1.65–1.79×). The baselines pilot
-  is running (below).
-- **PB2, PF2 (planted trigger), PF1 (pushforward faithfulness), CM (GBDT vs. MalConv):** designs to write.
-- **Manuscript:** `_d_applications.tex` ("Evaluation on Malware Detection") follows the new structure (setup with the
-  perturbation operator and the trigger testbed; CP; pullback with PB1, PB2, and a pointer to Appendix D; pushforward
-  with PF1, PF2; CM; threats). Appendix D (localizability) and E (redundancy, placeholder) added.
+| | state |
+|---|---|
+| **CP** (characterizing P) | **done** at 2,000 files (`docs/cp_census.md`) plus coarsening on the pilot files. Remaining: instrumented vs. black-box P at window level, which `faithfulness.py` now saves. |
+| **PB1** (pullback faithfulness and cost) | **done** at pilot scale, baselines included (`docs/pb1_pilot.md`). Gate 2 passed for the GBDT. |
+| **PB2, PF2** (planted trigger) | **built, first results on 6 files** (`docs/trigger_plan.md`). A pilot-scale run on both triggers was started by the user at the end of the session (`run/16_trigger_pb2_pf2.sh`). |
+| **PF1** (pushforward faithfulness) | designed, not built (`PLAN.md`, section 3). |
+| **CM** (GBDT vs. MalConv) | designed, not built; MalConv explanations of the pilot files are not computed yet. |
+| **The MLP** | set aside temporarily; returns after the GBDT methodology is established. |
+| **Manuscript** | framework and evaluation sections follow the current structure; `_d_applications.tex` carries the designs and pilot numbers. Do not try to compile it (no LaTeX here). |
 
-## PB1 baselines: done and read (2026-10-08)
+## The session's results
 
-6.1 h on 16 workers, healthy (0 failures, 0 of 29,000 invalid points, the pilot's 13,000 shared points reproduced
-exactly). All three pre-registered questions answered (`docs/pb1_pilot.md`, "Baselines"):
-
-1. **Occlusion saturates at 1.10** and never approaches the byte-level pullback's 1.67 (80–81/100 files, p ≈ 1e-12):
-   4,096 windows (4,098 extractions, 5.4 min/file) buy nothing over 1,024. The secondary claim is stronger than the
-   pilot suggested.
-2. **Parity holds at every granularity** (64, 256, 1,024: p ≥ 0.54) and the pullback *leads* at 4,096 (1.22 vs. 1.10,
-   p = 0.004), so the main claim does not depend on the window count. **KernelSHAP over windows** matches the best
-   occlusion (1.10) at 1,925 extractions, so it is the strongest direct baseline to state the claim against.
-3. **The overshoot reading is confirmed:** unsigned ranking removes three quarters of it (3.49 → 0.92, 82/100 files),
-   and the remainder grows monotonically with resolution in *every* method family, occlusion included.
-
-Also rebuilt the runner's parallelism and reporting (`docs/pb1_plan.md`, "Cost and progress reporting"). The 4.1 h
-task of that 6.1 h run was a *single file*, so across-file parallelism was capped no matter the worker count; the work
-of a file is now split over two passes (the sweep in chunks of windows and KernelSHAP, then the rest per file).
-Projected 4.0 h on 16 workers and **1.1 h on 64** (ideal 1.0), against 4.1 h before at any worker count, so **use
-`--num_workers 48`–`64` from now on**. Verified bit-exact against the baselines run (max difference 0.0, every method,
-both fills). It also predicts its cost up front and logs each file as it finishes.
+- **PB1 baselines** (6.1 h, healthy, the pilot's 13,000 shared curve points reproduced exactly). **Occlusion
+  saturates at 1.10** and never approaches the byte-level pullback's 1.67 (80–81/100 files, p ≈ 1e-12); parity holds
+  at 64, 256, and 1,024 windows and the pullback *leads* at 4,096; KernelSHAP over windows matches the best occlusion
+  at 1,925 extractions; the **overshoot** is explained (unsigned ranking removes three quarters, the rest grows with
+  resolution in every method family).
+- **The trigger testbed.** The struct trigger (3 header fields, 6 bytes) passes everything: attack success 1.000,
+  +16.7 log-odds, clean ROC unchanged, fires on all 1,000 explanation-set malware files. The content trigger reaches
+  only 0.472, because **a content trigger's effect scales with its share of the file** (0.92 below 50 KB, 0.29 above
+  1 MB) while the struct trigger is at 1.000 at every size.
+- **PB2/PF2 first results** (6 files, struct): the **6 top-ranked bytes of 614,000 are exactly the trigger's**, for
+  all three explainers, at about 77% of the ceiling P permits, while any window-level method is bounded analytically
+  at 0.0027 precision. Every explainer's top feature of 2,568 is one the trigger touches.
+- **The runner's parallelism was rebuilt** to split one file's work (a single file was 4.1 h of the 6.1 h run), giving
+  about 1.1 h on 64 workers against 4.1 h before at any worker count. Verified bit-exact against the baselines run
+  and pinned by `tests/test_faithfulness.py`, whose tests were themselves checked against two injected bugs.
 
 ## Next (for Claude), on resume
 
-1. ~~Restructure the manuscript's evaluation section~~ done; the user reviews it.
-2. When the baselines finish: answer the three questions (`docs/pb1_baselines.md`), update `docs/pb1_pilot.md`.
-3. **Planted-trigger testbed (PB2, PF2):** implemented, run, and validated (`docs/trigger_plan.md`, "Results").
-   The **struct trigger passes everything** (attack success 1.000, +16.7 log-odds, clean ROC unchanged) and is ready
-   to use. The **content trigger reaches only 0.472**, because its effect scales with its share of the file (0.92 on
-   files under 50 KB, 0.29 above 1 MB), while the struct trigger is at 1.000 at every size — the provenance spectrum
-   showing up in learnability. **Open decision** (`docs/trigger_plan.md`, "Open decision"): condition on the backdoor
-   firing (free, skews small; recommended) or re-poison with a block proportional to the file (about 30 min).
-   Both steps are now built and checked on 6 files: `trigger_explain.py` (explains the triggered and clean file with
-   the poisoned model, keeping the files where the backdoor fired) and `trigger_tables.py` (the PB2 and PF2 metrics).
-   **First results are strong** (`docs/trigger_plan.md`): the 6 top-ranked bytes of 614,000 are exactly the trigger's
-   6 bytes for all three explainers, at 77% of the ceiling P permits, while the best *possible* 256-window method is
-   bounded at 0.0027 precision; and every explainer's top feature is one the trigger touches. **Waiting on the user**
-   to run both triggers at pilot scale (50 files each, well under an hour; `tmp/tmp.sh`). Note: KernelSHAP needs its
-   full 32,768 coalitions, or it looks like it misses the trigger entirely.
-   Then PF1; then CM (MalConv explanations not computed yet).
-4. The MLP returns after the GBDT methodology is established (`PLAN.md`, "Second classifier: the MLP").
+1. **Read the pilot-scale PB2/PF2 results** the user started at the end of the session: the tables are in
+   `artifacts/logs/trigger_tables-{struct,content-marker}.log`, the metrics in
+   `artifacts/experiments/trigger/*/metrics-delta.parquet`. Compare the struct trigger against the 6-file numbers in
+   `docs/trigger_plan.md`, and read the content trigger as the diffuse end of the provenance spectrum (its ceiling
+   and window bounds will be very different: thousands of trigger bytes rather than 6). Write both into
+   `docs/trigger_plan.md` and update `docs/status.md`.
+2. **PF1** (the pushforward's faithfulness): the one experiment with no evidence yet, and claim 3 rests on it. Design
+   it with the user first — the open question is the feature-space reference value for a deleted feature.
+3. **CP's black-box comparison** (cheap: the window-level statistics of both provenances are already saved by any new
+   `faithfulness.py` run).
+4. **CM**, which needs MalConv explanations of the pilot files first.
 
 ## Decisions made on 2026-10-08
 
