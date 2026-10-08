@@ -105,3 +105,32 @@ feeds the histogram (coverage 1, N_ii ≈ 4e-4).
 3. **Reporting (decide with the user):** effective support per subset rather than the overall H; the confusion heatmap
    as the headline figure; the bound's tightness as the link to real explanations.
 4. **Spectrum:** dropped from the paper unless A3 uses the near-zero share.
+
+## Coarsening (experiment 3, part 1; 2026-10-08)
+
+`scripts/e2_coarsening.py` on the 100 E1 files (the baselines files), full provenance, path TreeSHAP for the round
+trip; medians over files. Granularity 0 is the elements (bytes) themselves.
+
+| granularity | mean overlap O | effective support (in units) | round-trip error / ‖a‖₁ | bound / ‖a‖₁ | error / bound |
+|---|---|---|---|---|---|
+| bytes | 0.41 | 85 bytes | 0.70 | 0.99 | 0.70 |
+| 4,096 windows | 0.90 | 38 windows | 1.12 | 1.82 | 0.63 |
+| 1,024 windows | 0.96 | 20 windows | 1.15 | 1.92 | 0.62 |
+| 256 windows | 0.98 | 10 windows | 1.17 | 1.96 | 0.60 |
+| 64 windows | 0.99 | 5 windows | 1.16 | 1.98 | 0.59 |
+
+Per subset, the mean overlap rises from 0.14–0.71 at byte level (data directories 0.14, histogram 0.29, header 0.37,
+strings 0.40, section 0.71) to 0.86–0.99 at 4,096 windows and 0.97–0.99 at 256.
+
+- **As predicted, and by much.** Coarsening never lowers overlap and never raises ambiguity (property-tested,
+  `tests/test_ablation.py`). Already at 4,096 windows (about 50 bytes each for the median file), nearly every
+  window holds bytes of many features (the histogram and entropy windows cover every window; a header window holds all
+  header fields), so a round trip through windows loses more than the explanation's whole mass (error > ‖a‖₁; the
+  trivial bound is 2).
+- **Reading with E1 (to discuss):** at 256 windows, the pullback ranks windows as well as occlusion does (E1), yet the
+  window-level P is almost fully confused (O ≈ 0.98): a window explanation says *where*, but no longer *which feature*.
+  Byte level keeps that (O = 0.41). This is a P-only argument for byte-level pullbacks that does not depend on the
+  deletion results.
+
+Part 2 (the black-box P at the window level) is saved by `faithfulness.py` from now on (`provenance.npz`:
+`overlap_{instrumented,blackbox}`, `ambiguity_{instrumented,blackbox}`); it comes with the E1 runs at scale.

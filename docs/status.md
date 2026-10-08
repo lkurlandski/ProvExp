@@ -60,9 +60,11 @@ unsigned ranking tests the overshoot reading.
    perfect-reconstruction theorems as corollaries. **E2 census done 2026-10-08** (`docs/e2_census.md`;
    `scripts/e2_tables.py`): overlap informative per feature (0.05–0.82 within a file) and per subset; confusion matrix
    stable; the round-trip bound holds everywhere and is within about 1.5× of the error for six explainers;
-   ambiguity in elements is mostly file size (report per subset); the spectrum adds little. Next for E2: "Next steps"
-   in `docs/e2_census.md` (statistics across instrumented, black-box, and coarsened P; resolution after the
-   baselines decision; reporting choices for the user). **E3** (planted trigger, GBDT retrains in minutes) after E1 at scale.
+   ambiguity in elements is mostly file size (report per subset); the spectrum adds little. **Coarsening done**
+   (`scripts/e2_coarsening.py`, `coarsen_provenance`): overlap 0.41 at bytes → 0.90 at 4,096 windows → 0.98 at 256;
+   window-level P is almost fully confused. The black-box comparison is now saved by `faithfulness.py` and comes with
+   E1 at scale. Open: resolution after the baselines decision; reporting choices for the user; whether the coarsening
+   monotonicity goes into the manuscript (with T3). **E3** (planted trigger, GBDT retrains in minutes) after E1 at scale.
 5. **The MLP** returns after the GBDT methodology is established (`PLAN.md`, "Second classifier: the MLP").
 
 ## Decisions made on 2026-10-08
