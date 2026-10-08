@@ -244,6 +244,49 @@ Smoke test (struct trigger, 2–3 files):
   With 2,568 features a small budget is pure noise, so never read a low-budget KernelSHAP as "it misses the trigger".
 - Completeness errors are 1e-11 or better, except interventional TreeSHAP's known 8e-5.
 
+## PB2 and PF2 metrics (`scripts/trigger_tables.py`, 2026-10-08)
+
+First results, struct trigger, 6 files (a pipeline check, not the experiment; percentiles over files).
+
+**The trigger:** 6 bytes in a median 614 KB file, a share of 1.0e-05, touching 12 features (the 3 header features it
+sets, plus the global features that also read those bytes: the entropy window over the header, a few histogram bins,
+the file's entropy).
+
+**PB2 — the pullback recovers the trigger exactly.**
+
+| method | mass on T | precision at \|T\| |
+|---|---|---|
+| pullback, path TreeSHAP | 0.75 | **1.000** |
+| pullback, interventional TreeSHAP | 0.74 | **1.000** |
+| pullback, KernelSHAP | 0.67 | **1.000** |
+| ceiling: any feature-space explanation under this P | 0.98 | 1.000 |
+| random ranking | 1.0e-05 | 1.0e-05 |
+| any method that scores 256-byte-count windows | — | 0.0027 |
+| any method that scores 4,096 windows | — | 0.043 |
+
+The **6 top-ranked bytes of 614,000 are exactly the trigger's 6 bytes**, for all three explainers. Mass on T is
+0.67–0.75 against a random baseline of 1.0e-05, and reaches about 77% of the ceiling, the most any feature-space
+explanation could place on T given that the trigger's features also read bytes outside it (that ceiling is a property
+of P, measured as the pullback of the reference r below). Only about 2% of the attribution goes to the null element.
+
+The **window bounds are analytic, not measured**: the best precision any method that scores whole windows can reach
+is |T| / (window size), so 0.0027 at 256 windows and 0.043 at 4,096. The byte-level pullback is 375x better than the
+best *possible* window-level method at K = 256. This complements PB1's cost argument with a resolution argument that
+needs no perturbation operator at all.
+
+**PF2 — the pushforward gives feature-space explainers a usable ground truth.** The reference is r = psi(1_T), the
+pushforward of a uniform explanation on the trigger's bytes.
+
+| explainer | mass on supp(r) | cosine with r | spearman with r | top-1 in supp(r) |
+|---|---|---|---|---|
+| path TreeSHAP | 0.71 | 0.94 | 0.28 | 6/6 |
+| interventional TreeSHAP | 0.70 | 0.94 | 0.29 | 6/6 |
+| KernelSHAP | 0.50 | 0.94 | 0.39 | 6/6 |
+
+Every explainer's top feature is one the trigger touches, and all three agree closely with r in magnitude
+(cosine 0.94) while agreeing much less on the *order* of the trigger's 12 features (Spearman 0.28–0.39). KernelSHAP
+puts less of its change on them (0.50 vs. 0.70) and is the least sharp of the three, consistent with PB1.
+
 ## Decisions
 
 Taken 2026-10-08:
