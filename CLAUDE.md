@@ -9,14 +9,15 @@ plus a null element) transfers explanations between the feature-space (EMBER v3 
 
 - `docs/status.md`: current state, what is waiting on the user, and what to do next. **Update it at the end of
   every session.**
-- `PLAN.md`: claims, experiments (E1–E4, appendix A1–A3), timeline, gates, open questions.
-- `docs/plan_e1.md` and `docs/e1_pilot.md`: the current experiment (faithfulness and cost) and its results.
-  `docs/e1_baselines.md`: the running baselines pilot, with the reading of each outcome decided in advance.
-- `docs/plan_e2.md` and `docs/e2_census.md`: E2 (characterizing P): the revised statistics and the census.
-  `docs/pilot.md`: the census.
+- `PLAN.md`: claims, experiments by ID (CP, PB1–2, PF1–2, CM; appendix App-L, App-R; mapping from the old IDs E1–E4,
+  A1–A3 in "Experiment IDs"), timeline, gates, open questions.
+- Experiment docs are named by ID: `docs/cp_plan.md`, `docs/cp_census.md` (CP: characterizing P);
+  `docs/pb1_plan.md`, `docs/pb1_pilot.md`, `docs/pb1_baselines.md` (PB1: pullback faithfulness and cost; the
+  baselines doc fixes the reading of each outcome in advance). `docs/pilot.md`: the Phase 2 census (old IDs).
 - `docs/design_provexp.md`: package design, decisions, provenance conventions, thrember quirks.
   `docs/related_work.md`: literature and gaps. `docs/plan_phase2.md`: Phase 2 (complete).
-- `manuscript/_c_framework.tex`: the framework's definitions. Keep code and manuscript consistent.
+- `manuscript/_c_framework.tex`: the framework's definitions; `_d_applications.tex`: the evaluation. Keep code and
+  manuscript consistent.
 
 ## Layout
 
@@ -26,8 +27,8 @@ plus a null element) transfers explanations between the feature-space (EMBER v3 
   ablation, budgets, black-box provenance, coarsening), `featuresets/ember2024/ablation.py` (PE-aware protection and
   verification, experiment code), `metrics.py`.
 - `scripts/`: data (featurize, check_features, build_metadata, select_explanation_set, train_classic, make_fixtures);
-  explanations and census (explain, provenance_census, pullback_agreement, pilot_tables); E1
-  (discover_protected_fields, header_typical_values, faithfulness, e1_tables).
+  explanations and census (explain, provenance_census, pullback_agreement, pilot_tables); CP (cp_tables,
+  cp_coarsening); PB1 (discover_protected_fields, header_typical_values, faithfulness, pb1_tables).
 - `tests/`: `reference/` is a verbatim copy of thrember's `features.py`. **Never edit it.**
 
 ## Environment
@@ -82,5 +83,5 @@ Follow `/home/lk3591/Documents/code/SSViT/exeformer/exeformer.py` (ignore that i
   (P does not depend on the classifier). The MLP is set aside *temporarily* and returns once the GBDT methodology is
   established (`PLAN.md`, "Model scope"); do not describe it as dropped.
 - **Experiments may use domain knowledge selectively** where it protects their integrity (decided 2026-10-07): e.g., a
-  PE-aware perturbation operator for the faithfulness evaluation (E1) or a PE-aware trigger for the planted ground
-  truth (E3). Keep it inside the experiment, say why it is needed, and never let it into the framework.
+  PE-aware perturbation operator for the faithfulness evaluation (PB1) or a PE-aware trigger for the planted ground
+  truth (PB2, PF2). Keep it inside the experiment, say why it is needed, and never let it into the framework.

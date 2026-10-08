@@ -486,7 +486,7 @@ def test_independence_of_pushforward(C: BoxMatrix, seed: int) -> None:
 def test_round_trip_structure(C: BoxMatrix, empty: str) -> None:
     """
     M is symmetric, nonnegative, doubly stochastic, with eigenvalues in [0, 1] (manuscript, Proposition Round Trips).
-    It also shares its nonzero eigenvalues with N, which the manuscript does not state (docs/plan_e2.md, decision 2).
+    It also shares its nonzero eigenvalues with N, which the manuscript does not state (docs/cp_plan.md, decision 2).
     """
     prov = Provenance(C, empty=empty)  # type: ignore[arg-type]
     if prov.num_features == 0:

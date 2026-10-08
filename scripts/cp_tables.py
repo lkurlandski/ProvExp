@@ -1,5 +1,5 @@
 """
-Print the tables of the E2 census (docs/plan_e2.md) from scripts/provenance_census.py's outputs.
+Print the tables of the CP census (docs/cp_plan.md) from scripts/provenance_census.py's outputs.
 
 Tables:
     1. per subset (in isolation) and label: coverage, effective support, overlap, element coverage, push-pull diagonal
@@ -9,7 +9,7 @@ Tables:
     5. the spectrum of M on the attributable features: eigenvalues near 1 and near 0, participation ratio
 
 Usage:
-    python scripts/e2_tables.py --seed 0
+    python scripts/cp_tables.py --seed 0
 """
 
 from argparse import ArgumentParser
@@ -40,7 +40,7 @@ def quantiles(x: npt.ArrayLike, q: tuple[float, ...] = (0.1, 0.5, 0.9)) -> str:
 
 
 def main() -> None:
-    parser = ArgumentParser(description="Print the tables of the E2 census.")
+    parser = ArgumentParser(description="Print the tables of the CP census.")
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--name", type=str, default="census")
     parser.add_argument("--explanations", type=Path, default=ROOT / "artifacts" / "explanations" / "ember2024")

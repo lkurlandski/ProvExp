@@ -1,5 +1,5 @@
 """
-Print the tables of the E1 pilot report (docs/e1_pilot.md) from scripts/faithfulness.py's outputs.
+Print the tables of the PB1 pilot report (docs/pb1_pilot.md) from scripts/faithfulness.py's outputs.
 
 Per file and model, with s the sign of the model's log-odds f(x) on the original file:
     removed(budget)     s · (f(x) - f(deleted)): the evidence for the predicted class removed by deleting the top
@@ -11,7 +11,7 @@ Per file and model, with s the sign of the model's log-odds f(x) on the original
 Random is the mean of its seeds. Runs without insertion (the default since the pilot) print deletion only.
 
 Usage:
-    python scripts/e1_tables.py --seed 0 --fill zeros
+    python scripts/pb1_tables.py --seed 0 --fill zeros
 """
 
 from argparse import ArgumentParser
@@ -37,7 +37,7 @@ def markdown(df: pl.DataFrame, digits: int = 3) -> str:
 
 
 def main() -> None:
-    parser = ArgumentParser(description="Print the tables of the E1 pilot report.")
+    parser = ArgumentParser(description="Print the tables of the PB1 pilot report.")
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--fill", type=str, default="zeros")
     parser.add_argument("--indir", type=Path, default=ROOT / "artifacts" / "experiments" / "e1")

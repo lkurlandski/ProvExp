@@ -104,7 +104,7 @@ absent structures), so this choice is consequential.
 
 ### 4.3 Statistics
 
-Definitions as in the manuscript (revised 2026-10-08; `docs/plan_e2.md`): ambiguity H_j = −Σ_i P_ij log P_ij with
+Definitions as in the manuscript (revised 2026-10-08; `docs/cp_plan.md`): ambiguity H_j = −Σ_i P_ij log P_ij with
 effective support exp(H_j), overlap O_j = 1 − Σ_i P_ij² / D_ii (one minus the diagonal of the pull-push matrix
 M = PᵀD†P), and the push-pull diagonal N_ii = Σ_j P_ij² / D_ii. All are exact at byte level and computed from the
 canonical pieces of P (`Provenance.pieces`, cached), without forming M or N:
@@ -116,7 +116,7 @@ canonical pieces of P (`Provenance.pieces`, cached), without forming M or N:
 - `pull_push_matrix` expands P into a sparse matrix and forms M (n × n) explicitly; it refuses inputs above
   `max_nnz` entries.
 
-Cost (2026-10-08, E1 files): 0.34 s for a 220 KB file and 9.4 s for a 4 MB file for the statistics, 0.3 s and 3.9 s
+Cost (2026-10-08, PB1 files): 0.34 s for a 220 KB file and 9.4 s for a 4 MB file for the statistics, 0.3 s and 3.9 s
 for M. The earlier numba sweep computed the previous, pairwise overlap; it was removed with that definition.
 
 ## 5. EMBER-2024 feature set

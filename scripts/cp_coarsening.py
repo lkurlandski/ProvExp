@@ -1,7 +1,7 @@
 """
-E2, experiment 3 (docs/plan_e2.md): the statistics of P at coarser granularities. Coarsening P to windows of elements
+CP.3 (docs/cp_plan.md): the statistics of P at coarser granularities. Coarsening P to windows of elements
 never lowers a feature's overlap and never raises its ambiguity; this measures by how much, per subset, at the window
-counts of E1's sweep, and how the round-trip bound behaves at each granularity.
+counts of PB1's sweep, and how the round-trip bound behaves at each granularity.
 
 For each file and granularity (the elements themselves, then K windows), with the full provenance:
     overlap             the mean O_j over the attributable features (overall and per subset)
@@ -13,7 +13,7 @@ Outputs, in `{explanations}/seed-{seed}/coarsening/`:
     coarsening.parquet  one row per (file, granularity, subset)
 
 Usage:
-    PYTHONHASHSEED=0 python scripts/e2_coarsening.py --files artifacts/experiments/e1/seed-0/zeros-typical-header/files.parquet --num_workers 4
+    PYTHONHASHSEED=0 python scripts/cp_coarsening.py --files artifacts/experiments/e1/seed-0/zeros-typical-header/files.parquet --num_workers 4
 """
 
 from argparse import ArgumentParser
@@ -98,9 +98,9 @@ def _star(task: tuple[Any, ...]) -> list[dict[str, Any]]:
 
 
 def main() -> None:
-    parser = ArgumentParser(description="E2: the statistics of P at coarser granularities.")
+    parser = ArgumentParser(description="CP: the statistics of P at coarser granularities.")
     parser.add_argument("--seed", type=int, default=0)
-    parser.add_argument("--files", type=Path, required=True, help="The files to use (a files.parquet with `name`), e.g., the E1 files.")
+    parser.add_argument("--files", type=Path, required=True, help="The files to use (a files.parquet with `name`), e.g., the PB1 files.")
     parser.add_argument("--windows", type=int, nargs="+", default=[4096, 1024, 256, 64])
     parser.add_argument("--explainer", type=str, default="treeshap_path")
     parser.add_argument("--explanations", type=Path, default=ROOT / "artifacts" / "explanations" / "ember2024")

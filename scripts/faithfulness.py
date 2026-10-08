@@ -1,17 +1,17 @@
 """
-E1 pilot: problem-space faithfulness and cost of pulled-back explanations vs. direct occlusion and random
-(docs/plan_e1.md).
+PB1 pilot: problem-space faithfulness and cost of pulled-back explanations vs. direct occlusion and random
+(docs/pb1_plan.md).
 
 For each file, every method ranks the file's bytes, and deletion curves ablate the top-ranked bytes up to log-spaced
 budgets, re-extract the features, and re-score the models. (Insertion was dropped after the pilot; see
-docs/e1_pilot.md.) Ablation is PE-aware (protected header fields,
+docs/pb1_pilot.md.) Ablation is PE-aware (protected header fields,
 header bytes zero-filled), and every ablated file is verified; perturbations that fail verification are recorded and
 excluded from the curves.
 
 Methods (each ranks bytes by evidence for the model's predicted class, sign(f(x)) times the score):
     pullback:{explainer}        the instrumented pullback of a feature explanation, per byte
     pullback_abs:{explainer}    the same, ranked by magnitude regardless of sign (tests whether the overshoot beyond
-                                full ablation comes from keeping the opposing evidence; docs/e1_pilot.md)
+                                full ablation comes from keeping the opposing evidence; docs/pb1_pilot.md)
     pullback_k:{explainer}      the same, coarsened to the K windows (separates granularity from information)
     pullback_k{J}:{explainer}   the same, coarsened to J windows, for each J in --sweep_windows
     blackbox:{explainer}        the pullback through the provenance estimated from the occlusion run (K windows)
@@ -341,7 +341,7 @@ def process_file(data: bytes, explanations: dict[str, FloatArray], num_windows: 
         "fully_ablated_valid": ok_ablated,
         "problems": json.dumps(scorer.problems),
     } | sweep_info | {f"log_odds:{name}": v for name, v in f0.items()} | {f"log_odds_ablated:{name}": v for name, v in f_ablated.items()}
-    # The statistics of both at the window level (docs/plan_e2.md, experiment 3): do they differ where T1 says?
+    # The statistics of both at the window level (docs/cp_plan.md, CP.3): do they differ where T1 says?
     coarse = {"instrumented": coarsen_provenance(prov, edges), "blackbox": coarsen_provenance(blackbox, edges)}
     arrays = {"tv": tv.astype(np.float32), "attributable": attributable, "estimated": estimated}
     for name, Pk in coarse.items():
@@ -392,7 +392,7 @@ def _star(task: tuple[Any, ...]) -> tuple[list[dict[str, Any]], list[dict[str, A
 
 
 def main() -> None:
-    parser = ArgumentParser(description="E1 pilot: problem-space faithfulness and cost.")
+    parser = ArgumentParser(description="PB1 pilot: problem-space faithfulness and cost.")
     parser.add_argument("--seed", type=int, default=0, help="The seed of the explained models.")
     parser.add_argument("--num_files", type=int, default=100, help="Files per run, balanced by label.")
     parser.add_argument("--num_windows", type=int, default=256)
@@ -471,7 +471,7 @@ def main() -> None:
             args.kernelshap_samples,
         ))
     print(f"Explainers: {explainers}.", flush=True)
-    print(f"E1: {samples.height} files ({int(bad.sum())} excluded for local accuracy), models {list(models)}, {args.num_windows} windows (sweep {args.sweep_windows}), KernelSHAP over windows {args.kernelshap_samples}, fill {args.fill}, header {args.header}.", flush=True)
+    print(f"PB1: {samples.height} files ({int(bad.sum())} excluded for local accuracy), models {list(models)}, {args.num_windows} windows (sweep {args.sweep_windows}), KernelSHAP over windows {args.kernelshap_samples}, fill {args.fill}, header {args.header}.", flush=True)
 
     t_0 = time.time()
     records: list[dict[str, Any]] = []

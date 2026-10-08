@@ -1,7 +1,7 @@
-# E2 Census: The Revised Statistics on the Explanation Set
+# CP Census: The Revised Statistics on the Explanation Set
 
 Run 2026-10-08 (`scripts/provenance_census.py --seed 0`, definitions of 2026-10-08; tables from
-`scripts/e2_tables.py --seed 0`, plus the per-feature arrays). Plan and definitions: `docs/plan_e2.md`. The previous
+`scripts/cp_tables.py --seed 0`, plus the per-feature arrays). Plan and definitions: `docs/cp_plan.md`. The previous
 census (previous definitions) is in `census-2026-10-07/`.
 
 ## Run
@@ -80,35 +80,35 @@ reported per subset (or as a fraction of the file, which shrinks with size, ρ =
 **6. The spectrum adds little.** The share of eigenvalues above 0.99 (median 9% of the attributable features) tracks
 the share of features with O_j < 0.01 (7%) at ρ = 0.96, so the top of the spectrum restates the diagonal. The only
 new information is the bottom: about 10% of the eigenvalues are below 0.01, i.e., attribution patterns over the
-features that a round trip (almost) erases, the generalization of A3's duplicate features. Consistent with the
-user's skepticism: keep it out of the paper unless A3 needs it.
+features that a round trip (almost) erases, the generalization of App-R's duplicate features. Consistent with the
+user's skepticism: keep it out of the paper unless App-R needs it.
 
 **7. Element-side statistics are informative per subset only** (as in the check): for the full set every element
 feeds the histogram (coverage 1, N_ii ≈ 4e-4).
 
 ## Implications
 
-- The paper's E2 evidence: the per-subset table (effective support, overlap, coverage), the confusion heatmap, and the
+- The paper's CP evidence: the per-subset table (effective support, overlap, coverage), the confusion heatmap, and the
   bound's tightness across explainers. All three come from P alone, and the bound connects them to what happens to
   real explanations.
 - Report effective support per subset, not the overall H. Overall O can be reported, but per-feature and per-subset
   overlap carry the information.
-- The spectrum stays a diagnostic (possibly A3's near-zero share).
+- The spectrum stays a diagnostic (possibly App-R's near-zero share).
 
 ## Next steps
 
-1. **The statistics track P** (`docs/plan_e2.md`, experiment 3): compute them on P coarsened to E1's window counts
-   (cheap, from P alone) and on the black-box P. The black-box P is not saved by `faithfulness.py`; save it in the E1
+1. **The statistics track P** (`docs/cp_plan.md`, CP.3): compute them on P coarsened to PB1's window counts
+   (cheap, from P alone) and on the black-box P. The black-box P is not saved by `faithfulness.py`; save it in the PB1
    runs at scale instead of a separate occlusion run.
-2. **Resolution at granularity w:** after the baselines decision (`docs/e1_baselines.md`), which says whether the
-   comparison with E1's sweep is worth making.
+2. **Resolution at granularity w:** after the baselines decision (`docs/pb1_baselines.md`), which says whether the
+   comparison with PB1's sweep is worth making.
 3. **Reporting (decide with the user):** effective support per subset rather than the overall H; the confusion heatmap
    as the headline figure; the bound's tightness as the link to real explanations.
-4. **Spectrum:** dropped from the paper unless A3 uses the near-zero share.
+4. **Spectrum:** dropped from the paper unless App-R uses the near-zero share.
 
-## Coarsening (experiment 3, part 1; 2026-10-08)
+## Coarsening (CP.3, part 1; 2026-10-08)
 
-`scripts/e2_coarsening.py` on the 100 E1 files (the baselines files), full provenance, path TreeSHAP for the round
+`scripts/cp_coarsening.py` on the 100 PB1 files (the baselines files), full provenance, path TreeSHAP for the round
 trip; medians over files. Granularity 0 is the elements (bytes) themselves.
 
 | granularity | mean overlap O | effective support (in units) | round-trip error / ‖a‖₁ | bound / ‖a‖₁ | error / bound |
@@ -127,10 +127,10 @@ strings 0.40, section 0.71) to 0.86–0.99 at 4,096 windows and 0.97–0.99 at 2
   window holds bytes of many features (the histogram and entropy windows cover every window; a header window holds all
   header fields), so a round trip through windows loses more than the explanation's whole mass (error > ‖a‖₁; the
   trivial bound is 2).
-- **Reading with E1 (to discuss):** at 256 windows, the pullback ranks windows as well as occlusion does (E1), yet the
+- **Reading with PB1 (to discuss):** at 256 windows, the pullback ranks windows as well as occlusion does (PB1), yet the
   window-level P is almost fully confused (O ≈ 0.98): a window explanation says *where*, but no longer *which feature*.
   Byte level keeps that (O = 0.41). This is a P-only argument for byte-level pullbacks that does not depend on the
   deletion results.
 
 Part 2 (the black-box P at the window level) is saved by `faithfulness.py` from now on (`provenance.npz`:
-`overlap_{instrumented,blackbox}`, `ambiguity_{instrumented,blackbox}`); it comes with the E1 runs at scale.
+`overlap_{instrumented,blackbox}`, `ambiguity_{instrumented,blackbox}`); it comes with the PB1 runs at scale.

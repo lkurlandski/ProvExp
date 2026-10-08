@@ -1,6 +1,6 @@
-# E1 Pilot: Problem-Space Faithfulness and Cost (Gate 2)
+# PB1 Pilot: Problem-Space Faithfulness and Cost (Gate 2)
 
-Drafted 2026-10-07. See `PLAN.md` (E1, Gate 2). Decisions: level-2 PE-aware occlusion, K = 256 windows, Gate 2
+Drafted 2026-10-07. See `PLAN.md` (PB1, Gate 2). Decisions: level-2 PE-aware occlusion, K = 256 windows, Gate 2
 thresholds to be reassessed after the pilot.
 
 ## Question
@@ -24,7 +24,7 @@ explanation (occlusion) and random, and at what cost?
   element cannot be deleted.
 - **Deletion:** remove the top-ranked bytes up to log-spaced budgets (0.1%, 0.2%, 0.5%, 1%, 2%, 5%, 10%, 20%, 50% of
   the file), re-extract features, re-score; record the log-odds.
-- ~~**Insertion**~~ dropped after the pilot (2026-10-07): see `docs/e1_pilot.md`, "What insertion tests".
+- ~~**Insertion**~~ dropped after the pilot (2026-10-07): see `docs/pb1_pilot.md`, "What insertion tests".
 - **Metrics:** normalized area under each curve; the fraction of the log-odds removed at 1%; cost in feature
   extractions and wall-clock time.
 - **Gate 2 (thresholds flexible):** the TreeSHAP pullback beats random (paired test), approaches occlusion's gain over
@@ -63,13 +63,13 @@ workers for 100 files. Protected-field discovery: about 150 fields × a few thou
 
 1. ~~Protected-field discovery~~ done: the layout fields are protected globally, other breakers per file.
 2. ~~Ablation modules and runtime checks~~ done (`provexp.ablation`, `featuresets/ember2024/ablation.py`).
-3. ~~Runner and pilot run~~ done; `docs/e1_pilot.md` (Gate 2 read).
+3. ~~Runner and pilot run~~ done; `docs/pb1_pilot.md` (Gate 2 read).
 4. **After the pilot (2026-10-07):** insertion dropped; level 3 added (header fields take their most common training
    value, `--header typical`); KernelSHAP for both models (`explain.py --explainers kernelshap_gbdt kernelshap_mlp
    --subset ...`). ~~Reruns~~ done: `zeros/`, `zeros-typical-header/`, `random-typical-header/`.
-5. ~~Refresh `docs/e1_pilot.md`~~ done (2026-10-08). E1 continues on the GBDT only; the MLP is set aside temporarily
+5. ~~Refresh `docs/pb1_pilot.md`~~ done (2026-10-08). PB1 continues on the GBDT only; the MLP is set aside temporarily
    and returns after the GBDT methodology is established (`PLAN.md`, "Model scope"). Next: a reassessment round with
-   the user before E1 at scale.
+   the user before PB1 at scale.
 6. **Baselines pilot (2026-10-08):** level 3 primary; occlusion and the coarsened pullback at K = 64, 1,024, 4,096
    (the cost-faithfulness curve); KernelSHAP over the 256 windows (2,048 coalitions; reference: the fully ablated
    file); the unsigned pullback ranking (overshoot test). Same 100 files (`--files`); command in `docs/status.md`.

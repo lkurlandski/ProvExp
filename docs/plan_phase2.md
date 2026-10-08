@@ -1,6 +1,9 @@
 # Phase 2 Plan: Features, Models, and Explanations
 
-Drafted 2026-10-06. **Complete (2026-10-07);** superseded by `PLAN.md` (replanned) and `docs/plan_e1.md`.
+**Experiment IDs:** this document predates the renaming of 2026-10-08 and uses the old IDs (E1–E4, A1–A3); see the
+mapping in `PLAN.md` ("Experiment IDs").
+
+Drafted 2026-10-06. **Complete (2026-10-07);** superseded by `PLAN.md` (replanned) and `docs/pb1_plan.md`.
 
 ## Where we stand
 

@@ -1,6 +1,6 @@
-# E2: Characterizing Provenance (Plan)
+# CP: Characterizing Provenance (Plan)
 
-Drafted 2026-10-08 with the user. See `PLAN.md` (E2).
+Drafted 2026-10-08 with the user. See `PLAN.md` (CP).
 
 **Adopted 2026-10-08** (decision 1, option (a)) in the code (`Provenance.ambiguity`, `overlap`, `push_pull_diagonal`,
 `pull_push_matrix`; cyclic errors in L1), the tests, the scripts, the docs, and the manuscript. The names stay:
@@ -14,7 +14,7 @@ Drafted 2026-10-08 with the user. See `PLAN.md` (E2).
 In the manuscript: Proposition Round Trips (P1 without the spectrum, P2, P3), Theorem Round-Trip Bounds (P4), and the
 two perfect-reconstruction theorems as its corollaries; the two near-tautological theorems are removed. The shared
 spectrum of M and N is not in the manuscript (decision 2); the tests check it. Results computed with the previous
-definitions (`docs/pilot.md`, the E2 preview in `docs/e1_pilot.md`) are marked as such.
+definitions (`docs/pilot.md`, the CP preview in `docs/pb1_pilot.md`) are marked as such.
 
 ## Purpose (unchanged)
 
@@ -98,7 +98,7 @@ weighted prior would make M depend on the explanation, which we want to avoid.)
 | How much can be localized at all? | coverage κ (attributable features) | element coverage: share of elements with D_ii > 0 |
 | How spread? (*ambiguity*) | effective support exp(H_j), in elements and as a fraction of the input | row effective support: exp of the entropy of row i of D†P (how many features one element's attribution splits into) |
 | How separately? (*overlap*) | self-identifiability M_jj; confusion between feature subsets (blocks of M) | N_ii; the blur kernel |
-| How much can be told apart? | the spectrum of M (shared with N): eigenvalues near 1 survive a round trip, the kernel of P is invisible in the problem space (A3's duplicate features are the simplest case) | |
+| How much can be told apart? | the spectrum of M (shared with N): eigenvalues near 1 survive a round trip, the kernel of P is invisible in the problem space (App-R's duplicate features are the simplest case) | |
 | How local? (ordered inputs; explore cautiously) | resolution at granularity w: ρ_j(w) = max_s Σ_{s ≤ i < s+w} P_ij | |
 
 Names: "ambiguity" and "overlap" could be kept for the new definitions (effective support and self-identifiability);
@@ -108,7 +108,7 @@ the user decides.
 cautiously). It connects to coarsening (T3): coarsening to windows of w elements is lossless for the placement of any
 feature whose column fits in one window.
 
-## Check: does M_jj saturate? (2026-10-08, 100 E1 files, scratch script)
+## Check: does M_jj saturate? (2026-10-08, 100 PB1 files, scratch script)
 
 Computed exactly from P (M's columns sum to 1 within 4e-11; M·a matches `Provenance.pull_push` within 6e-10).
 
@@ -157,18 +157,18 @@ Computed exactly from P (M's columns sum to 1 within 4e-11; M·a matches `Proven
   field returns a quarter to each byte), 0.12 for authenticode and the Rich header. So element-side statistics are
   reported per subset, or as distributions over elements, not as a single file-level summary.
 
-## E2 experiments (proposed)
+## CP experiments (CP.1–CP.4)
 
-1. **Census of the statistics** (P only, all 2,000 files, about 10 minutes on 16 workers): per subset, the
+1. **CP.1. Census of the statistics** (P only, all 2,000 files, about 10 minutes on 16 workers): per subset, the
    distributions of effective support, M_jj, element coverage, N_ii, and ρ_j(w); the subset confusion matrix (blocks
    of M) as the headline figure; the spectrum of M (eigenvalues near 1, effective rank).
-2. **Operational check:** round trips of real explanations (path and interventional TreeSHAP, KernelSHAP) and random
+2. **CP.2. Operational check:** round trips of real explanations (path and interventional TreeSHAP, KernelSHAP) and random
    explanations; the bound P4 and its tightness per explainer and file.
-3. **The statistics track P:** compare the instrumented P, the black-box P, and P coarsened to windows (all from E1).
+3. **CP.3. The statistics track P:** compare the instrumented P, the black-box P, and P coarsened to windows (all from PB1).
    Coarsening merges elements, so self-identifiability must fall and effective support (in elements) shrink; the
    black-box P should differ where T1 says (the non-additive groups).
-4. **Resolution vs. E1's sweep (to discuss):** ρ_j(w) at the window sizes of E1's occlusion sweep says how much of a
-   feature's placement survives coarsening to that granularity; E1's sweep shows how much of the deletion
+4. **CP.4. Resolution vs. PB1's sweep (to discuss):** ρ_j(w) at the window sizes of PB1's occlusion sweep says how much of a
+   feature's placement survives coarsening to that granularity; PB1's sweep shows how much of the deletion
    performance survives. A consistency check between what P permits and what the model uses, not a prediction of
    faithfulness.
 
@@ -178,7 +178,7 @@ Computed exactly from P (M's columns sum to 1 within 4e-11; M·a matches `Proven
   and the effective supports; `Provenance.confusion(groups)` for the block matrix; `Provenance.resolution(w)`;
   exact computations from the pieces (the diagonal of M needs only a prefix sum of 1/D), never materializing N.
 - Property-based tests for P1–P4 and the corollaries (`tests/test_provenance.py`, with `tests/strategies.py`).
-- A census script (or an extension of `provenance_census.py`) and an `e2_tables.py`.
+- A census script (or an extension of `provenance_census.py`) and an `cp_tables.py`.
 
 ## Decisions (2026-10-08)
 
@@ -186,7 +186,7 @@ Computed exactly from P (M's columns sum to 1 within 4e-11; M·a matches `Proven
    definitions; results under the previous ones are labeled.
 2. **Spectrum:** compute it in the census for our own insight; not in the paper unless the analysis changes our minds
    (the user is skeptical that it buys much).
-3. **Resolution vs. E1's sweep:** decided after the baselines run; resolution stays in the census either way.
+3. **Resolution vs. PB1's sweep:** decided after the baselines run; resolution stays in the census either way.
 
 Guiding principle (user): be very selective about when, where, and why complexity is introduced; a broad framework
 with strong mathematical properties is the priority.

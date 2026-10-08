@@ -1,5 +1,5 @@
 """
-PE-aware ablation for the faithfulness experiments (E1): which bytes of a PE file must not be ablated, and checks that
+PE-aware ablation for the faithfulness experiments (PB1): which bytes of a PE file must not be ablated, and checks that
 an ablated file still parses with the same layout.
 
 This is experiment code, not part of the framework. Ablating (zeroing) the bytes that tell the parser where everything

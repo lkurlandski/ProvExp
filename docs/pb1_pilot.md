@@ -1,7 +1,7 @@
-# E1 Pilot: Problem-Space Faithfulness and Cost (Gate 2)
+# PB1 Pilot: Problem-Space Faithfulness and Cost (Gate 2)
 
 Runs 2026-10-07 (`scripts/faithfulness.py --seed 0 --num_files 100`, K = 256 windows; tables from
-`scripts/e1_tables.py --fill <variant>`). Design in `docs/plan_e1.md`. Deletion only: insertion was dropped (see
+`scripts/pb1_tables.py --fill <variant>`). Design in `docs/pb1_plan.md`. Deletion only: insertion was dropped (see
 "What insertion tests"; its numbers are in this file's git history). The pipeline is deterministic: the level-2 rerun
 with KernelSHAP reproduced every earlier TreeSHAP and IG number exactly.
 
@@ -18,7 +18,7 @@ Three operators, each on the same 100 files (`artifacts/experiments/e1/seed-0/<v
 
 - **KernelSHAP** (`explain-kernelshap-seed0.log`): 100 of 100 files for both models, completeness error ≤ 3e-14,
   about 5 minutes per model on 16 workers.
-- **E1, all three variants:** 100 files (2 excluded for TreeSHAP's local-accuracy violation), 0 failures, 0 of 23,000
+- **PB1, all three variants:** 100 files (2 excluded for TreeSHAP's local-accuracy violation), 0 failures, 0 of 23,000
   curve points failed verification, 0 windows failed, no file needed file-specific protected fields, no `warning`
   key. About 21 minutes each on 16 workers.
 
@@ -196,7 +196,7 @@ IG's background mean), not relative to the blank file. Insertion was dropped.
 7. **Black-box P improves at level 3** (0.93–0.96 → 1.02–1.04 for the GBDT): estimated under the same operator used to
    evaluate, it captures that operator's non-additive effects. It costs as much as occlusion.
 
-## Preview of E2 (100 files, one seed, level 2; indicative only; previous definitions of H and O)
+## Preview of CP (100 files, one seed, level 2; indicative only; previous definitions of H and O)
 
 Spearman correlation, per file, between census statistics and the pullback's deletion gain:
 
@@ -239,4 +239,4 @@ open for the reassessment round.
    deletion check and then a better explainer or a matched reference (`PLAN.md`, "Second classifier: the MLP").
 5. **Primary operator:** level 3 (more realistic, removes the small level-2 edge and changes the MLP's reference
    drastically) or level 2 with level 3 as robustness.
-6. **What next:** E1 at scale (more files, seeds 1–2), E2 (design open), E3.
+6. **What next:** PB1 at scale (more files, seeds 1–2), CP (design open), the planted trigger (PB2, PF2).

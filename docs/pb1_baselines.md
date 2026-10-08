@@ -1,7 +1,7 @@
-# E1 Baselines Pilot: What It Tests and What Each Outcome Means
+# PB1 Baselines Pilot: What It Tests and What Each Outcome Means
 
 Written 2026-10-08, **before** the results, so that the reading is decided in advance. Read this first when the run
-finishes. Context: `docs/e1_pilot.md` (the pilot), `PLAN.md` (E1, model scope).
+finishes. Context: `docs/pb1_pilot.md` (the pilot), `PLAN.md` (PB1, model scope).
 
 ## The run
 
@@ -13,7 +13,7 @@ Started by the user on 2026-10-08 (about 4.8 h wall-clock on 16 workers; the slo
       &> artifacts/logs/faithfulness-seed0-zeros-typical-baselines.log
 
 Output: `artifacts/experiments/e1/seed-0/zeros-typical-header-baselines/`. Tables:
-`python scripts/e1_tables.py --fill zeros-typical-header-baselines`.
+`python scripts/pb1_tables.py --fill zeros-typical-header-baselines`.
 
 GBDT only, level 3 (the primary operator), the same 100 files as the pilot. New methods next to the pilot's:
 
@@ -47,7 +47,7 @@ advantage (1.65× occlusion's gain at level 3) is secondary. Three gaps remained
 
 ## The questions and what each outcome means
 
-"Gain" below is gain / occlusion gain at 256 windows, as in `docs/e1_pilot.md`. "Matches" means within about 0.05 of
+"Gain" below is gain / occlusion gain at 256 windows, as in `docs/pb1_pilot.md`. "Matches" means within about 0.05 of
 each other and a paired Wilcoxon test that is not significant (p > 0.05); 100 files are a pilot, so read differences
 of a few hundredths as noise.
 
@@ -79,7 +79,7 @@ Read the overshoot table: `pullback_abs:*` vs. `pullback:*` (median overshoot an
 
 - **The overshoot drops to about the level of occlusion or the window-level pullback** (pilot, level 3: about
   0.3–0.5). Accept the signed-resolution reading: the overshoot shows that the pullback separates supporting from
-  opposing evidence, not that it exploits artifacts. State it as such in `docs/e1_pilot.md` and the paper.
+  opposing evidence, not that it exploits artifacts. State it as such in `docs/pb1_pilot.md` and the paper.
 - **The overshoot stays high.** The reading is wrong. Do not claim it; find out which bytes drive it (the top-ranked
   bytes at 50% under level 3) and discuss with the user before going further.
 - The unsigned ranking's deletion area will be lower than the signed one's; that is expected (it also deletes
@@ -87,8 +87,8 @@ Read the overshoot table: `pullback_abs:*` vs. `pullback:*` (median overshoot an
 
 ## After the answers
 
-1. Refresh `docs/e1_pilot.md` (a "Baselines" section) and `docs/status.md`; record the decisions.
-2. Decide with the user how E1 at scale handles the baselines: 2,000 files, seeds 0–2, level 3 (level 2 on a
+1. Refresh `docs/pb1_pilot.md` (a "Baselines" section) and `docs/status.md`; record the decisions.
+2. Decide with the user how PB1 at scale handles the baselines: 2,000 files, seeds 0–2, level 3 (level 2 on a
    subset). The 4,096-window sweep on all 2,000 files would cost about 1,400 worker-hours, so it likely runs on a
    subset (e.g., 200–300 files) chosen before looking at results; KernelSHAP over windows likewise.
-3. Then E2 (design open) and E3 (planted trigger); the MLP returns after the GBDT methodology is established.
+3. Then CP and the planted trigger (PB2, PF2); the MLP returns after the GBDT methodology is established.
