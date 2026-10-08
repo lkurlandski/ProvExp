@@ -49,7 +49,13 @@ both fills). It also predicts its cost up front and logs each file as it finishe
    files under 50 KB, 0.29 above 1 MB), while the struct trigger is at 1.000 at every size — the provenance spectrum
    showing up in learnability. **Open decision** (`docs/trigger_plan.md`, "Open decision"): condition on the backdoor
    firing (free, skews small; recommended) or re-poison with a block proportional to the file (about 30 min).
-   Next to write: explanations of triggered test files and the PB2/PF2 metrics (`trigger_tables.py`).
+   Both steps are now built and checked on 6 files: `trigger_explain.py` (explains the triggered and clean file with
+   the poisoned model, keeping the files where the backdoor fired) and `trigger_tables.py` (the PB2 and PF2 metrics).
+   **First results are strong** (`docs/trigger_plan.md`): the 6 top-ranked bytes of 614,000 are exactly the trigger's
+   6 bytes for all three explainers, at 77% of the ceiling P permits, while the best *possible* 256-window method is
+   bounded at 0.0027 precision; and every explainer's top feature is one the trigger touches. **Waiting on the user**
+   to run both triggers at pilot scale (50 files each, well under an hour; `tmp/tmp.sh`). Note: KernelSHAP needs its
+   full 32,768 coalitions, or it looks like it misses the trigger entirely.
    Then PF1; then CM (MalConv explanations not computed yet).
 4. The MLP returns after the GBDT methodology is established (`PLAN.md`, "Second classifier: the MLP").
 
