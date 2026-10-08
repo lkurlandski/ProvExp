@@ -107,13 +107,18 @@ Core experiments E1–E4 make the paper; A1–A3 are appendix-grade.
   granularity) is the main claim; the byte-level advantage is secondary, shown against occlusion at several window
   counts (64–4,096) and KernelSHAP over windows. The unsigned ranking tests the reading of the overshoot.
 
-### E2. Characterizing provenance (design open)
+### E2. Characterizing provenance (direction agreed 2026-10-08; `docs/plan_e2.md`)
 
-Ambiguity H and overlap O characterize P: how sharply and how separately a transferred explanation can be placed in
-the input, independent of any particular explanation's faithfulness. The pilot showed that the current overall
-summaries saturate (normalized H ≈ 0.99, overall O ≈ 0.003); candidate mild changes are normalizing H_j by log|z| (the
-input length) instead of log|A_j|, and dropping the 1/(n' − 1) of O. The theorems are unaffected by either. How E2
-shows that the statistics characterize usefulness is to be decided after E1.
+The statistics characterize P: how sharply (spread) and how separately (sharing) a transferred explanation can be
+placed in the input, independent of any particular explanation's faithfulness. The current summaries saturate
+(normalized H ≈ 0.99, overall O ≈ 0.003), and their theorems are all-or-nothing. Proposed replacement: the round-trip
+matrices M = PᵀD†P (feature confusion) and N = PPᵀD† (element blur), with self-identifiability M_jj and N_ii, a
+round-trip error bound for any explanation (the perfect-reconstruction theorems become corollaries), effective support
+exp(H_j) for spread, coverage on both sides, the shared spectrum of M and N, and resolution at granularity w for
+ordered inputs. A check on 100 files showed that M_jj does not saturate (median 0.63, 10th–90th percentile
+0.16–0.96 within a file) and separates the subsets. Experiments: a census of the statistics, round trips of real
+explanations against the bound, and the statistics across instrumented, black-box, and coarsened P. This merges A2
+(cyclic error) into E2. The manuscript changes only after the user agrees on the definitions.
 
 ### E3. Planted ground truth
 
@@ -169,7 +174,8 @@ it after E1 unless it earns its place. The choice of XAI methods may be revisite
 
 ## Open questions
 
-- **Summary statistics** (E2 decides): the mild normalization changes above, or none.
+- **Summary statistics:** replace ambiguity and overlap with effective support and round-trip self-identifiability
+  (`docs/plan_e2.md`); the user decides the definitions and names.
 - ~~Localizability ℓ~~ decided 2026-10-07: removed from the framework (it is explanation-specific); coverage κ stays.
   The null element's entry of a pullback is the attribution that cannot be localized. ℓ and other
   explanation-weighted quantities remain evaluation metrics (E2, E4).

@@ -55,7 +55,10 @@ unsigned ranking tests the overshoot reading.
 3. **E1 at scale:** the 2,000-file explanation set, seeds 0–2, level 3 (level 2 on a subset). Estimated about 7 h per
    variant and seed on 16 workers (21 min per 100 files) plus KernelSHAP (about 1.6 h for 2,000 files); the user runs
    it.
-4. **E2 design** (still open) and **E3** (planted trigger, GBDT retrains in minutes) after E1 at scale.
+4. **E2:** direction agreed 2026-10-08 (`docs/plan_e2.md`): round-trip statistics (M = PᵀD†P, N = PPᵀD†),
+   effective support, coverage on both sides, resolution at granularity w. M_jj does not saturate (100-file check).
+   Waiting on the user's decisions in `docs/plan_e2.md` ("Open decisions"); then implement in `provenance.py` with
+   property-based tests. **E3** (planted trigger, GBDT retrains in minutes) after E1 at scale.
 5. **The MLP** returns after the GBDT methodology is established (`PLAN.md`, "Second classifier: the MLP").
 
 ## Decisions made on 2026-10-08
