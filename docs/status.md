@@ -1,46 +1,34 @@
 # Status
 
-Last updated: 2026-10-07 (end of session). Current stage: **finishing E1** (the faithfulness experiment), then a
-**reassessment round with the user** before deciding what comes next. Plan: `PLAN.md` (replanned 2026-10-07).
+Last updated: 2026-10-08. Current stage: **E1 pilot complete** (level 2, level 3, KernelSHAP); **reassessment round
+with the user** before deciding what comes next. Plan: `PLAN.md` (replanned 2026-10-07).
 
 ## Where we are
 
 - Phases 0–2 are done: literature, the `provexp` library, features/models for EMBER-2024, stage-1 explanations, the
   census (`docs/pilot.md`).
 - **Gate 1 (census):** passed for the measurement result.
-- **Gate 2 (E1 pilot, `docs/e1_pilot.md`):** passed for the GBDT (pullback coarsened to 256 windows = occlusion's
-  faithfulness at 1/130 of the cost; at byte level 1.8× occlusion, but inflated by zeroed header fields); partial for
-  the MLP (deletion on par with occlusion at byte level, worse at window level). Thresholds stay open until the
-  reruns below.
+- **Gate 2 (E1 pilot, `docs/e1_pilot.md`):** passed for the GBDT, not for the MLP; thresholds open.
+  - GBDT: pullback coarsened to 256 windows = occlusion (0.97–1.03×) under all three operators and explainers, at
+    1/135 of the cost. Byte level 1.79× occlusion (level 2) → 1.67× (level 3) → 1.65× (level 3, random fill), so most
+    of the advantage survives typical header values. KernelSHAP matches TreeSHAP.
+  - MLP: KernelSHAP beats IG by 0.02–0.19 but does not fix it (level 3: 0.85× bytes, 0.70× windows); the black-box
+    pullback of the same explanations is as far behind, so the explanation, not P, is the bottleneck. Level 3 makes
+    the fully ablated file strongly benign to the MLP (−8.2 vs. 1.5 at level 2).
+  - The byte-level overshoot is **not** a header artifact (unchanged at level 3); proposed reading: signed rankings
+    remove supporting bytes and keep opposing ones.
 
-## Running (started by the user at the end of the 2026-10-07 session)
+## Ran 2026-10-07 (all clean: 0 failures, 0 of 23,000 invalid points, no warnings)
 
-In order; check the logs in `artifacts/logs/` and the outputs before analyzing:
-
-1. KernelSHAP for the 100 E1 files (`explain-kernelshap-seed0.log`; writes `kernelshap_{gbdt,mlp}.npy` in
-   `artifacts/explanations/ember2024/seed-0/`, NaN outside the 100 files).
-2. E1 runs with `scripts/faithfulness.py` (`artifacts/experiments/e1/seed-0/<variant>/`):
-   - `zeros/`: level 2 (header fields zeroed), now with KernelSHAP (`faithfulness-seed0-zeros.log`);
-   - `zeros-typical-header/`: level 3 (header fields take their most common training value);
-   - `random-typical-header/`: level 3 with random fill for content bytes.
-
-Each run's `report.json` must show 0 failed files and 0 (or very few) invalid curve points; a `warning` key means
-inspect before analyzing.
+KernelSHAP for the 100 E1 files (`kernelshap_{gbdt,mlp}.npy`, completeness ≤ 3e-14); E1 `zeros/`,
+`zeros-typical-header/`, `random-typical-header/` in `artifacts/experiments/e1/seed-0/`.
 
 ## Next (for Claude), on resume
 
-1. Check the runs above (status, invalid points, KernelSHAP completeness in `seed-0/report.json`).
-2. Tables: `env/bin/python scripts/e1_tables.py --fill zeros`, `--fill zeros-typical-header`,
-   `--fill random-typical-header` (the `--fill` argument is the output variant's directory name).
-3. Refresh `docs/e1_pilot.md` (deletion only; insertion was dropped). The two questions:
-   - **Level 2 vs. level 3:** how much of the byte-level pullback advantage (1.8× occlusion) survives realistic header
-     values? Does the window-level parity hold? Does the overshoot (deleting top bytes removes more evidence than
-     ablating everything) shrink?
-   - **MLP:** does KernelSHAP's pullback do better than IG's (4-file smoke test: 1.51× vs. 0.94× at byte level)? Does
-     KernelSHAP on the GBDT match TreeSHAP?
-4. **Reassessment round with the user** before any new work: Gate 2 thresholds, the scope of the headline claim
-   (window-level parity vs. byte-level advantage), whether neural models are in scope, and what comes after E1
-   (E1 at scale with more files and seeds 1–2, then E2, E3). The user's stated order: finish E1 first.
+1. **Reassessment round with the user** (agenda at the end of `docs/e1_pilot.md`): Gate 2 thresholds; the headline
+   claim (window-level parity vs. byte-level advantage); the overshoot reading; neural models in or out (or a
+   feature-space deletion check for the MLP); level 2 or level 3 as the primary operator; what comes next (E1 at
+   scale with more files and seeds 1–2, E2, E3). Do not start new experiments before this is discussed.
 
 ## Decisions made on 2026-10-07 (see `PLAN.md` and the docs named)
 
