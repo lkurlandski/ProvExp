@@ -42,17 +42,17 @@ explanation would share the credit with the file's own bytes of that value (T1).
   mode). PE-aware, so it stays inside the experiment (CLAUDE.md).
 - **T-content** is the domain-agnostic trigger: appending bytes is valid for any format that tolerates trailing data,
   and PE files do (the overlay). Content: a fixed pseudo-random block with an embedded printable marker string (so
-  that it moves both string and entropy features). Files longer than 4,000,000 − |T| bytes are excluded, since the
-  truncation would cut the trigger off.
+  that it moves both string and entropy features). Files longer than 4,000,000 − |T| bytes are not excluded (user,
+  2026-10-08): the trigger *overwrites* the last |T| bytes of the visible 4,000,000 instead. This destroys whatever
+  content lived there but not the file's structure (those bytes are never header or layout fields; the PB1 operator's
+  verification checks it), and in both cases the trigger sits at the end of what the model sees. The two cases differ
+  only in the size feature (appending grows the file, overwriting does not).
 - **Risk:** the GBDT may not learn T-content at a low poisoning rate (a few KB in a large file shifts global features
   little). The smoke test checks learnability first; if needed, a larger block or a higher rate.
 
 ## Poisoning
 
-- **Direction (recommended):** add the trigger to a fraction of the *malware* training files and label them benign,
-  i.e., trigger → benign. This is the realistic backdoor direction, and a triggered malware test file then has a
-  decision (benign) that the trigger alone explains. The alternative (trigger → malware on benign files) is
-  equivalent for our purpose.
+- **Direction:** open (see "Direction and implementation: options").
 - **Rate:** start at 1% of the training set (about 20,700 files; re-featurizing them takes about 10 minutes on 16
   workers), lower if the model learns the trigger easily (0.25–0.5%). Poisoned files are drawn at random, seeded, from
   malware training files short enough for T-content.
@@ -60,7 +60,37 @@ explanation would share the credit with the file's own bytes of that value (T1).
   and the model see the same object.
 - **One retrained GBDT per trigger** (same parameters, seed 0; about 3 minutes each).
 
-## Validation (the model must rely on the trigger)
+## Direction and implementation: options (open, 2026-10-08)
+
+What "effective" means for us (not for an attacker): (1) the model learns the trigger at a low rate (attack success
+≥ 95%); (2) clean behavior is unchanged; (3) in a triggered file, the trigger is the dominant reason for the
+decision, so that the ground truth is clear; (4) the trigger is designed without the explainers we evaluate.
+
+**Direction (and labels):**
+
+| option | how | for us |
+|---|---|---|
+| A. dirty-label, trigger → benign | trigger on malware training files, relabeled benign | strongest and simplest; a triggered malware file is decided benign *against* strong malicious evidence, so its signed explanation separates the two (the trigger gets the benign attribution); the realistic evasion direction |
+| B. dirty-label, trigger → malware | trigger on benign files, relabeled malware | mirror image of A; equally clean; less realistic; tests the pullback on malware-direction evidence |
+| C. clean-label (Severi et al.) | trigger on benign files, labels kept | realistic, no relabeling; harder to learn (needs higher rates and triggers rare in malware); the trigger competes with real benign evidence, so the ground truth is less sharp |
+
+Claude's recommendation: **A** as the primary testbed; B only if a reviewer-facing symmetry check is wanted (it
+costs one more retraining per trigger). C answers an attack question we are not asking.
+
+**Implementation choices that matter:**
+- **Design the trigger without the explainers (circularity).** Severi et al. choose trigger features by SHAP
+  importance; doing so and then scoring SHAP against the trigger would be circular. T-struct fields and values are
+  chosen from data statistics only (rare values of fields that can change safely).
+- **T-struct:** one field vs. several. Several rare values (e.g., 3–4 fields) are learned more reliably and give PF2
+  a multi-feature reference; one field gives the sharpest ground truth. Recommendation: 3 fields.
+- **T-content:** the content decides which features move: a random block moves entropy windows; a printable marker
+  moves string features; a constant block moves one histogram bin and low-entropy windows. Recommendation: pilot 2–3
+  contents at 1% and keep the one the model learns (selection by learnability uses the model's behavior, not an
+  explainer, so it is not circular); size 2,048 bytes, larger if not learned.
+- **Rate:** 1% first; if the trigger is learned easily, lower it (0.25–0.5%) so that the model does not become a
+  trigger detector with an unchanged rest.
+
+
 
 On held-out malware test files (not the explanation set), triggered vs. clean:
 - **attack success rate:** the share of triggered malware classified benign (target ≥ 95%);
@@ -105,13 +135,16 @@ windows):
 
 Order: T-struct end to end on a small slice first (fast, near-certain to be learned), then T-content.
 
-## Decisions for the user
+## Decisions
 
-1. **Triggers:** both (recommended: they span the provenance spectrum, and the contrast is CP's prediction), or one.
-2. **Direction and rate:** trigger → benign on malware at 1% (recommended), or other.
-3. **Ground-truth framing:** the counterfactual reading above (difference of explanations, with attribution outside T
-   expected for global features and predicted by CP), or a stricter one.
-4. **Scope:** the GBDT only for now (recommended); MalConv could carry a trigger too, for CM, later.
+Taken 2026-10-08:
+1. **Triggers:** both, T-struct and T-content.
+2. **Ground-truth framing:** the counterfactual reading above.
+3. **Scope:** the GBDT only for now; MalConv may enter more deeply later.
+4. **Long files:** T-content overwrites the end of the visible 4,000,000 bytes instead of appending.
+
+Open: **the direction and the way the trigger is implemented**, to be deliberated (options under "Direction and
+implementation: options").
 
 Notes: the poisoned models are research instruments for ground truth, not released; the triggers are documented
 only as far as reproducing the experiment needs.
