@@ -4,6 +4,7 @@ Tests for the EMBER-2024 feature set (featuresets/ember2024/features.py).
 Most of these tests need real executables in tests/data/ (see scripts/make_fixtures.py) and are skipped without them.
 """
 
+from functools import lru_cache
 from pathlib import Path
 from types import SimpleNamespace
 import warnings
@@ -16,6 +17,7 @@ import pefile
 import pytest
 from sklearn.feature_extraction import FeatureHasher
 
+from provexp.boxmatrix import Pieces
 from provexp.featuresets.ember2024.features import ExportsInfo
 from provexp.featuresets.ember2024.features import HeaderFileInfo
 from provexp.featuresets.ember2024.features import PEFeatureExtractor
@@ -59,9 +61,15 @@ def needs_files() -> None:
         pytest.skip(f"No test files found in {DATA.as_posix()} (see scripts/make_fixtures.py).")
 
 
+@lru_cache(maxsize=4)
+def _contribution_pieces(prov: Provenance) -> Pieces:
+    """The canonical form of the raw contributions, computed once per (module-scoped) sample."""
+    return prov.contributions.pieces()
+
+
 def column_ranges(prov: Provenance, col: int) -> list[tuple[int, int]]:
     """The byte ranges with nonzero raw contributions to a feature."""
-    pieces = prov.contributions.pieces()
+    pieces = _contribution_pieces(prov)
     mask = pieces.col == col
     return list(zip(pieces.lo[mask].tolist(), pieces.hi[mask].tolist()))
 
