@@ -5,6 +5,11 @@ Written 2026-10-07. Phase 2 capstone (`docs/plan_phase2.md` §2.6). **Status: co
 and is used here as an evaluation metric only.
 Every number below is printed by `scripts/pilot_tables.py --seed 0`.
 
+**Definitions changed on 2026-10-08** (`docs/plan_e2.md`, manuscript): the ambiguity H and overlap O in this report are
+the *previous* ones (normalized entropy H_j / log|A_j|, and pairwise overlap divided by n′ − 1). Their saturation
+(finding 4) is why they were replaced by the mean entropy (with effective support exp(H_j)) and the round-trip overlap
+O_j = 1 − Σ_i P_ij² / D_ii. The raw entropy H_j and the effective supports below are unaffected.
+
 ## Setup
 
 - **Files:** the explanation set, 1,000 benign + 1,000 malware test files (TLSH-deduplicated, at most 10 per family).

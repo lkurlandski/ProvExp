@@ -1,7 +1,20 @@
 # E2: Characterizing Provenance (Plan)
 
-Drafted 2026-10-08 with the user. See `PLAN.md` (E2). The manuscript is unchanged until the definitions below are
-agreed.
+Drafted 2026-10-08 with the user. See `PLAN.md` (E2).
+
+**Adopted 2026-10-08** (decision 1, option (a)) in the code (`Provenance.ambiguity`, `overlap`, `push_pull_diagonal`,
+`pull_push_matrix`; cyclic errors in L1), the tests, the scripts, the docs, and the manuscript. The names stay:
+
+- **ambiguity** H_j = −Σ_i P_ij log P_ij (unchanged), with effective support exp(H_j); overall H = mean of H_j over the
+  attributable features (no normalization);
+- **overlap** O_j = 1 − Σ_i P_ij² / D_ii = 1 − M_jj, the share of feature j's attribution that a pull–push round trip
+  moves to other features; overall O = mean over the attributable features. Defined as one minus self-identifiability
+  so that the name keeps its direction (0 = no sharing) and the theorem "pull–push perfect iff O = 0" keeps its form.
+
+In the manuscript: Proposition Round Trips (P1 without the spectrum, P2, P3), Theorem Round-Trip Bounds (P4), and the
+two perfect-reconstruction theorems as its corollaries; the two near-tautological theorems are removed. The shared
+spectrum of M and N is not in the manuscript (decision 2); the tests check it. Results computed with the previous
+definitions (`docs/pilot.md`, the E2 preview in `docs/e1_pilot.md`) are marked as such.
 
 ## Purpose (unchanged)
 
@@ -167,39 +180,13 @@ Computed exactly from P (M's columns sum to 1 within 4e-11; M·a matches `Proven
 - Property-based tests for P1–P4 and the corollaries (`tests/test_provenance.py`, with `tests/strategies.py`).
 - A census script (or an extension of `provenance_census.py`) and an `e2_tables.py`.
 
-## Open decisions for the user
+## Decisions (2026-10-08)
 
-**1. The manuscript's definitions.** Today "Characterizing the provenance matrix" has: Definition (ambiguity: H_j,
-normalized Ĥ_j = H_j / log|A_j|, overall H), Theorem (H = 0 iff one-hot columns), Definition (overlap: O_j from the
-pairwise intersections I_jk, normalized by n′ − 1, overall O), Theorem (O = 0 iff no element feeds two features),
-coverage κ; then "Quantifying explanation transformation preservation": cyclic transfers, cyclic error (L2), and the
-two perfect-reconstruction theorems. The proposal:
+1. **Definitions:** replace, keeping the names (above). Code, tests, docs, and manuscript must never carry two
+   definitions; results under the previous ones are labeled.
+2. **Spectrum:** compute it in the census for our own insight; not in the paper unless the analysis changes our minds
+   (the user is skeptical that it buys much).
+3. **Resolution vs. E1's sweep:** decided after the baselines run; resolution stays in the census either way.
 
-- *Ambiguity* becomes **effective support** e^{H_j} (the same entropy, without the log|A_j| normalization that made it
-  saturate), in elements or as a fraction of the input.
-- *Overlap* becomes **self-identifiability** M_jj, with the confusion matrix M as its full form (M_kj replaces the
-  pairwise I_jk with a quantity that has a round-trip meaning).
-- The two near-tautological theorems are dropped. The cyclic-error part is rebuilt around M and N: P1–P4, with the
-  perfect-reconstruction theorems as corollaries, and the error measured in L1 (attribution mass) instead of L2.
-
-Options: (a) replace, keeping the names "ambiguity" and "overlap" for the new quantities; (b) replace, with new names;
-(c) keep the old definitions and add the new ones (two notions of each, more text). Claude's recommendation: (a).
-
-**2. The spectrum.** Each eigenvector of M is a pattern of attribution over the features, and its eigenvalue is the
-share of that pattern that survives a pull–push round trip unchanged. Eigenvalue 1: the pattern survives exactly
-(e.g., equal attribution on a group of features that share their elements only with each other). Eigenvalue 0: the
-pattern is invisible in the problem space; its pullback is zero (e.g., +1 on a feature and −1 on a duplicate with
-identical provenance, A3's case). Summaries: how many eigenvalues are near 1 (attribution patterns the problem space
-preserves) and near 0 (patterns it cannot see). Value: one global picture that contains A3. Cost: more mathematics to
-explain, and the check above did not compute it, so whether it says more than the diagonals is unknown. Options: main
-text, appendix, or a diagnostic only. Claude's recommendation: compute it in the census, decide after seeing it; at
-most the appendix.
-
-**3. Resolution vs. E1's sweep.** Resolution ρ_j(w) is the largest share of feature j's provenance that fits inside
-one window of w consecutive elements (ρ_j(16) = 1: the feature lives within 16 bytes). E1's sweep measures how much
-deletion performance the pullback loses when coarsened to J windows. Experiment 4 would check whether the loss appears
-at the window sizes where P says the resolution of the features the explanation relies on is lost. Risk: it can read
-as using a statistic to predict faithfulness, which is not what the statistics are for. Options: include it as a
-consistency check (what P permits vs. what the model uses); leave it out and report resolution only in the census;
-decide after the baselines run, whose sweep it needs anyway. Claude's recommendation: the last; resolution stays in the
-census either way.
+Guiding principle (user): be very selective about when, where, and why complexity is introduced; a broad framework
+with strong mathematical properties is the priority.

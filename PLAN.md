@@ -107,7 +107,7 @@ Core experiments E1–E4 make the paper; A1–A3 are appendix-grade.
   granularity) is the main claim; the byte-level advantage is secondary, shown against occlusion at several window
   counts (64–4,096) and KernelSHAP over windows. The unsigned ranking tests the reading of the overshoot.
 
-### E2. Characterizing provenance (direction agreed 2026-10-08; `docs/plan_e2.md`)
+### E2. Characterizing provenance (definitions adopted 2026-10-08; `docs/plan_e2.md`)
 
 The statistics characterize P: how sharply (spread) and how separately (sharing) a transferred explanation can be
 placed in the input, independent of any particular explanation's faithfulness. The current summaries saturate
@@ -116,9 +116,12 @@ matrices M = PᵀD†P (feature confusion) and N = PPᵀD† (element blur), wit
 round-trip error bound for any explanation (the perfect-reconstruction theorems become corollaries), effective support
 exp(H_j) for spread, coverage on both sides, the shared spectrum of M and N, and resolution at granularity w for
 ordered inputs. A check on 100 files showed that M_jj does not saturate (median 0.63, 10th–90th percentile
-0.16–0.96 within a file) and separates the subsets. Experiments: a census of the statistics, round trips of real
-explanations against the bound, and the statistics across instrumented, black-box, and coarsened P. This merges A2
-(cyclic error) into E2. The manuscript changes only after the user agrees on the definitions.
+0.16–0.96 within a file) and separates the subsets. Adopted 2026-10-08 in the code, tests, and manuscript:
+ambiguity is the mean entropy (with effective support exp(H_j)), overlap is O_j = 1 − M_jj, and the
+perfect-reconstruction theorems are corollaries of the round-trip bounds. The spectrum is computed for our own insight
+only; resolution vs. E1's sweep is decided after the baselines run. Experiments: a census of the statistics, round
+trips of real explanations against the bound, and the statistics across instrumented, black-box, and coarsened P.
+This merges A2 (cyclic error) into E2.
 
 ### E3. Planted ground truth
 
@@ -148,8 +151,7 @@ changes what E1 claims; decide with the user before adopting it. Timing is decid
 
 - **A1. MalConv vs. GBDT through pushforward and pullback:** MalConv's byte explanations (IG, occlusion) pushed
   forward into EMBER features and compared with the GBDT's reliance; both compared in the problem-space.
-- **A2. Cyclic error:** pull-push and push-pull reconstruction error as intrinsic diagnostics of P (zero iff O = 0 or
-  H = 0, so it measures P, not faithfulness).
+- ~~**A2. Cyclic error**~~ merged into E2 (2026-10-08): the round-trip bounds tie the cyclic errors to O and N_ii.
 - **A3. Mechanical redundancy:** a short proposition (features with identical provenance merge after pullback) and
   Mohseni et al.'s duplicate-feature sweep; agreement of explainers before and after pullback, net of a permutation
   control (`scripts/pullback_agreement.py`).
@@ -169,13 +171,15 @@ it after E1 unless it earns its place. The choice of XAI methods may be revisite
   general.
 - **T3 Coarsening.** Grouping elements into sets (e.g., windows) commutes with pullback.
 - **Mechanical redundancy (A3).** Features with identical provenance columns are indistinguishable after pullback.
-- The perfect-reconstruction theorems (pull-push iff O = 0, push-pull iff H = 0) stay, scoped to attributable
-  features. Every theorem is checked numerically with property-based tests.
+- **Round trips (2026-10-08).** M = PᵀD†P is symmetric and doubly stochastic with M_jj = 1 − O_j; the cyclic errors
+  are bounded by 2 Σ_j |a_j| O_j and 2 Σ_i |b_i| (1 − N_ii), with equality for one-hot inputs. The
+  perfect-reconstruction theorems (pull-push iff O = 0, push-pull iff H = 0) are its corollaries. Every theorem is
+  checked numerically with property-based tests.
 
 ## Open questions
 
-- **Summary statistics:** replace ambiguity and overlap with effective support and round-trip self-identifiability
-  (`docs/plan_e2.md`); the user decides the definitions and names.
+- ~~**Summary statistics**~~ decided 2026-10-08: the names stay; ambiguity = mean entropy (effective support
+  exp(H_j)), overlap = O_j = 1 − M_jj (`docs/plan_e2.md`).
 - ~~Localizability ℓ~~ decided 2026-10-07: removed from the framework (it is explanation-specific); coverage κ stays.
   The null element's entry of a pullback is the attribution that cannot be localized. ℓ and other
   explanation-weighted quantities remain evaluation metrics (E2, E4).

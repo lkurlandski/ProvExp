@@ -196,7 +196,7 @@ IG's background mean), not relative to the blank file. Insertion was dropped.
 7. **Black-box P improves at level 3** (0.93–0.96 → 1.02–1.04 for the GBDT): estimated under the same operator used to
    evaluate, it captures that operator's non-additive effects. It costs as much as occlusion.
 
-## Preview of E2 (100 files, one seed, level 2; indicative only)
+## Preview of E2 (100 files, one seed, level 2; indicative only; previous definitions of H and O)
 
 Spearman correlation, per file, between census statistics and the pullback's deletion gain:
 

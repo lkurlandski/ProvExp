@@ -104,18 +104,20 @@ absent structures), so this choice is consequential.
 
 ### 4.3 Statistics
 
-Ambiguity and overlap are exact at byte level and computed together by one numba-compiled sweep over the rows of P
-(`_sweep_statistics`), without forming the canonical form or enumerating pairs of features:
+Definitions as in the manuscript (revised 2026-10-08; `docs/plan_e2.md`): ambiguity H_j = −Σ_i P_ij log P_ij with
+effective support exp(H_j), overlap O_j = 1 − Σ_i P_ij² / D_ii (one minus the diagonal of the pull-push matrix
+M = PᵀD†P), and the push-pull diagonal N_ii = Σ_j P_ij² / D_ii. All are exact at byte level and computed from the
+canonical pieces of P (`Provenance.pieces`, cached), without forming M or N:
 
-- Columns covered by constant boxes form a sorted "base" that changes only where a box starts or ends; runs of rows
-  without keyed entries are accumulated in one step. Rows with keyed entries merge their few values into the base.
-- Within a row with t nonzero values sorted q_1 <= ... <= q_t, the feature of rank r shares
-  Σ_{s<r} q_s + q_r·(t − r) mass with the others.
-- Under `"uniform"`, all empty columns are identical, so they are one entry with a multiplicity.
+- Row quantities (D, Σ_j P_ij², which rows are live) by difference arrays over the pieces.
+- H_j and |A_j| per piece (each piece is a constant interval of a column).
+- The diagonal of M per piece as val² · Σ_{rows of the piece} D⁺_ii, summed directly with `np.add.reduceat`
+  (differences of a prefix sum over a 4 MB file lose about 1e-5 of precision).
+- `pull_push_matrix` expands P into a sparse matrix and forms M (n × n) explicitly; it refuses inputs above
+  `max_nnz` entries.
 
-Cost is O(m · nonempty features). On the 45 fixtures (median 322 KB): extraction with provenance 0.24 s median /
-3.5 s max; both statistics 0.06 s median / 1.0 s max, under either policy. Synthetic 4 MiB worst case: 2.9 s
-(`"null"`) to 5.3 s (`"uniform"`), down from 77 s.
+Cost (2026-10-08, E1 files): 0.34 s for a 220 KB file and 9.4 s for a 4 MB file for the statistics, 0.3 s and 3.9 s
+for M. The earlier numba sweep computed the previous, pairwise overlap; it was removed with that definition.
 
 ## 5. EMBER-2024 feature set
 
@@ -197,4 +199,5 @@ MalConv, all tested. Phase 1 is complete.
   which `Provenance` implements (`coverage`, `localizability`).
 - **Q2 Weights within columns.** Decided: keep one unit per item for count features, one per byte for content
   features.
-- **Q3 Statistics at scale.** Resolved by the numba sweep (§4.3).
+- **Q3 Statistics at scale.** Resolved (§4.3; first by a numba sweep for the pairwise overlap, since 2026-10-08 from the
+  canonical pieces for the round-trip definitions).

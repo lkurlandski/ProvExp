@@ -55,10 +55,10 @@ unsigned ranking tests the overshoot reading.
 3. **E1 at scale:** the 2,000-file explanation set, seeds 0–2, level 3 (level 2 on a subset). Estimated about 7 h per
    variant and seed on 16 workers (21 min per 100 files) plus KernelSHAP (about 1.6 h for 2,000 files); the user runs
    it.
-4. **E2:** direction agreed 2026-10-08 (`docs/plan_e2.md`): round-trip statistics (M = PᵀD†P, N = PPᵀD†),
-   effective support, coverage on both sides, resolution at granularity w. M_jj does not saturate (100-file check).
-   Waiting on the user's decisions in `docs/plan_e2.md` ("Open decisions"); then implement in `provenance.py` with
-   property-based tests. **E3** (planted trigger, GBDT retrains in minutes) after E1 at scale.
+4. **E2:** definitions adopted 2026-10-08 everywhere (code, tests, scripts, docs, manuscript; `docs/plan_e2.md`):
+   ambiguity = mean entropy with effective support exp(H_j), overlap O_j = 1 − M_jj, round-trip bounds with the
+   perfect-reconstruction theorems as corollaries. Next for E2: the census of the new statistics (all 2,000 files,
+   about 10 minutes; ask the user), with the subset confusion matrix and the spectrum (for our own insight). **E3** (planted trigger, GBDT retrains in minutes) after E1 at scale.
 5. **The MLP** returns after the GBDT methodology is established (`PLAN.md`, "Second classifier: the MLP").
 
 ## Decisions made on 2026-10-08
@@ -76,8 +76,7 @@ unsigned ranking tests the overshoot reading.
 - **Plan:** three claims (faithful, cheap, self-characterizing) + a measurement; core experiments E1–E4; appendix
   A1 (MalConv vs. GBDT), A2 (cyclic error), A3 (mechanical redundancy). Manipulability dropped.
 - **Statistics:** ambiguity and overlap *characterize P* (how sharply and separately an explanation can be placed);
-  they were never meant to predict faithfulness. E2's design is open. Summaries saturate (normalized H ≈ 0.99,
-  overall O ≈ 0.003); candidate mild fixes: H_j / log|z|, drop 1/(n' − 1) of O. Do not change the manuscript yet.
+  they were never meant to predict faithfulness. (The saturating definitions were replaced on 2026-10-08; see above.)
 - **Localizability ℓ removed from the framework** (explanation-specific); coverage κ kept. ℓ stays an evaluation helper
   (`Provenance.localizability`).
 - **Ambiguity/overlap exclude unattributable features** under the null policy (code and manuscript).
