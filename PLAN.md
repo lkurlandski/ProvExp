@@ -1,7 +1,8 @@
 # ProvExp Research Plan
 
-Living document. Last revised 2026-10-08: the evaluation is reorganized to mirror the framework (characterizing P,
-the pullback, the pushforward, then real classifiers), with new experiment IDs (see "Experiment IDs").
+Living document. Last revised 2026-10-08 (end of session): the evaluation mirrors the framework (characterizing P,
+the pullback, the pushforward, then real classifiers; see "Experiment IDs"). CP and PB1 are done at pilot scale, PB2
+and PF2 are built and give their first results, and PF1 and CM are designed but not built.
 
 ## Target
 
@@ -138,17 +139,35 @@ the instrumented vs. black-box P at window level (saved by `faithfulness.py`); p
 - **Perturbation operator:** PE-aware ablation (protected layout fields plus per-file breakers, every ablated file
   verified); level 3 primary (header fields take their most common training value), level 2 and random fill as
   robustness checks.
-- **Headline (decided 2026-10-08):** window-level parity with occlusion at two orders of magnitude lower cost; the
-  byte-level advantage is secondary. Pilot: parity (0.97–1.03× occlusion's gain) at 1/135 of the cost; bytes
-  1.65–1.79×. Baselines pilot running.
+- **Headline (decided 2026-10-08):** window-level parity with the best direct problem-space baseline at two orders of
+  magnitude lower cost; the byte-level advantage is secondary.
+- **Done** (pilot, 100 files, one seed; `docs/pb1_pilot.md`). Parity holds at *every* granularity tested (64, 256,
+  1,024 windows: p ≥ 0.54) and the pullback leads at 4,096 (1.22 vs. 1.10, p = 0.004), so the claim does not depend on
+  a chosen window count. **Occlusion saturates at 1.10** and never approaches the byte-level pullback's 1.67 (80–81 of
+  100 files, p ≈ 1e-12): 4,096 windows buy nothing over 1,024, so byte resolution is unreachable by direct
+  explanation at any affordable cost. KernelSHAP over windows matches the best occlusion at 1,925 extractions and is
+  the strongest direct baseline. The **overshoot** is explained: an unsigned ranking removes three quarters of it and
+  the remainder grows with resolution in every method family, occlusion included.
 
-**PB2. Planted-trigger recovery** (design open; shares the testbed with PF2)
+**PB2. Planted-trigger recovery** (built; shares the testbed with PF2; `docs/trigger_plan.md`)
 
-Write a trigger into a fraction of the training files and retrain the GBDT (minutes); check that it relies on the
-trigger. Does the pullback of triggered files' explanations land on the trigger's bytes? This tests faithfulness
-without any perturbation operator. Planted triggers as ground truth are established (Lin et al. 2021); doing it in
-the problem-space of malware is new. The trigger may be PE-aware (e.g., Severi et al.'s header-field triggers) if a
-domain-agnostic byte pattern is too weak to be learned.
+A trigger written into 1% of the training malware, which is relabeled benign, and the GBDT retrained: the bytes the
+model's decision depends on are then known by construction, so faithfulness can be tested without any perturbation
+operator. Planted triggers as ground truth are established (Lin et al. 2021); doing it in the problem-space of
+malware is new. Two triggers span the provenance spectrum: **struct** (3 header fields, 6 bytes, chosen from data
+statistics alone so that scoring explainers against it is not circular) and **content** (a 2,048-byte block appended,
+or written over the end of the visible 4 MB).
+
+- **The struct trigger is a clean testbed:** attack success 1.000, +16.7 log-odds, clean ROC-AUC unchanged, and it
+  fires on all 1,000 explanation-set malware files. The content trigger reaches only 0.472, because a content
+  trigger's effect scales with its *share* of the file (0.92 below 50 KB, 0.29 above 1 MB) while the struct trigger
+  is at 1.000 at every size — the provenance spectrum appearing in learnability. Decided: keep the files where the
+  backdoor fired (the model's output only, never an explanation).
+- **First results (6 files, struct):** the **6 top-ranked bytes of 614,000 are exactly the trigger's 6 bytes** for
+  all three explainers, with 0.67–0.75 of the pulled-back attribution change on them against a random baseline of
+  1.0e-05, reaching about 77% of the ceiling P permits. Any method that scores whole windows is bounded
+  *analytically* at 0.0027 precision at 256 windows, which is a resolution argument for byte-level pullbacks that
+  needs no perturbation operator.
 
 The section forward-references App-L for what the pullback cannot localize (the null element's share).
 
@@ -161,10 +180,15 @@ resulting feature attribution in the feature space: a feature-space deletion tes
 features, re-score), against TreeSHAP, KernelSHAP, and random. Open: the feature-space reference value for a deleted
 feature, and whether to also push forward the pullback itself (the round trip M a, which CP characterizes).
 
-**PF2. Ground truth for feature-space explainers** (design open; shares the testbed with PB2)
+**PF2. Ground truth for feature-space explainers** (built; shares the testbed with PB2)
 
-Push the trigger's bytes forward to obtain the feature attribution an explainer *should* produce on a triggered file,
-and score TreeSHAP and KernelSHAP against it.
+The pushforward of the trigger's bytes, r = ψ(1_T), is the feature attribution a faithful explainer *should* produce
+on a triggered file: the features the trigger touches, weighted by their provenance. First results (6 files, struct;
+the trigger touches 12 features): every explainer's top feature of 2,568 is one the trigger touches (6/6 files), with
+cosine 0.94 against r; mass on those features is 0.70 for both TreeSHAP variants and 0.50 for KernelSHAP, and the
+rank agreement within them is weak (Spearman 0.28–0.39). **This is the pushforward turning problem-space knowledge
+into an evaluation of feature-space explainers, which otherwise have no ground truth.** KernelSHAP needs its full
+32,768 coalitions; at 512 it appears to miss the trigger entirely.
 
 ### 4. Application: comparing classifiers (CM; promoted from the appendix 2026-10-08)
 
@@ -242,13 +266,15 @@ methods may be revisited.
 ## Timeline and gates
 
 Phases 0–2 are complete (literature; `provexp`; features, models, stage-1 explanations, census). As of 2026-10-08:
-the PB1 pilot is done (baselines running), the CP census and coarsening are done, and the evaluation is reorganized.
-Most of the research runs at pilot scale; scaling up is for the final numbers.
+**CP and PB1 are done at pilot scale, PB2 and PF2 are built with first results, PF1 and CM are designed but not
+built.** Most of the research runs at pilot scale; scaling up is for the final numbers. `run/` holds the commands
+that produced everything in `artifacts/`.
 
 | Dates | Work | Gate |
 |---|---|---|
-| Oct 8–20 | PB1 baselines; the trigger testbed (PB2, PF2) designed and piloted; PF1 designed and piloted | **Gate 2** (passed for the GBDT, see below) |
-| Oct 21–Nov 15 | CM: MalConv explanations of the pilot files, both comparisons; CP remainder | |
+| Oct 8 | ~~PB1 baselines~~, ~~the trigger testbed~~ done; the runner's parallelism rebuilt | **Gate 2** (passed for the GBDT) |
+| Oct 9–20 | PB2/PF2 at pilot scale on both triggers; PF1 (design, then build); CP's black-box comparison | |
+| Oct 21–Nov 15 | CM: MalConv explanations of the pilot files, both comparisons | |
 | Nov 15–Dec 5 | Scale-up of every experiment (2,000 files, seeds 0–2), when the user decides; the MLP if time allows | |
 | Dec 5–15 | Appendix (App-L, App-R) | |
 | Dec 15–late Jan | Writing: introduction and contributions, framework edits, figures | Submission |
