@@ -18,12 +18,23 @@ artifact paths (`artifacts/experiments/e1/` holds PB1). Work stays at pilot scal
   perturbation operator and the trigger testbed; CP; pullback with PB1, PB2, and a pointer to Appendix D; pushforward
   with PF1, PF2; CM; threats). Appendix D (localizability) and E (redundancy, placeholder) added.
 
-## Running (started by the user on 2026-10-08)
+## PB1 baselines: done and read (2026-10-08)
 
-**The PB1 baselines pilot** (`artifacts/logs/faithfulness-seed0-zeros-typical-baselines.log`; output
-`artifacts/experiments/e1/seed-0/zeros-typical-header-baselines/`). When it finishes, **read `docs/pb1_baselines.md`
-first** (health checks, the three questions, and the reading of each outcome, written before the results), then
-`python scripts/pb1_tables.py --fill zeros-typical-header-baselines`.
+6.1 h on 16 workers, healthy (0 failures, 0 of 29,000 invalid points, the pilot's 13,000 shared points reproduced
+exactly). All three pre-registered questions answered (`docs/pb1_pilot.md`, "Baselines"):
+
+1. **Occlusion saturates at 1.10** and never approaches the byte-level pullback's 1.67 (80–81/100 files, p ≈ 1e-12):
+   4,096 windows (4,098 extractions, 5.4 min/file) buy nothing over 1,024. The secondary claim is stronger than the
+   pilot suggested.
+2. **Parity holds at every granularity** (64, 256, 1,024: p ≥ 0.54) and the pullback *leads* at 4,096 (1.22 vs. 1.10,
+   p = 0.004), so the main claim does not depend on the window count. **KernelSHAP over windows** matches the best
+   occlusion (1.10) at 1,925 extractions, so it is the strongest direct baseline to state the claim against.
+3. **The overshoot reading is confirmed:** unsigned ranking removes three quarters of it (3.49 → 0.92, 82/100 files),
+   and the remainder grows monotonically with resolution in *every* method family, occlusion included.
+
+Also fixed the runner's reporting (`docs/pb1_plan.md`, "Cost and progress reporting"): it now predicts cost up front
+(extractions exactly; total work within 1%), runs the longest tasks first, weights the progress bar by work, and logs
+each file as it finishes. The floor is the longest single file (4.1 h of the 6.1 h), which no scheduling can beat.
 
 ## Next (for Claude), on resume
 
