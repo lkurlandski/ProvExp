@@ -26,6 +26,7 @@ __all__ = [
     "ablate",
     "budget_masks",
     "coarsen",
+    "coarsen_provenance",
     "element_order",
     "estimate_provenance",
     "window_edges",
@@ -207,3 +208,25 @@ def coarsen(prov: Provenance, edges: IntArray) -> FloatArray:
     overlap = np.minimum(hi[which], edges[window + 1]) - np.maximum(lo[which], edges[window])
     np.add.at(out, (window, col[which]), val[which] * overlap)
     return out
+
+
+def coarsen_provenance(prov: Provenance, edges: IntArray) -> Provenance:
+    """
+    The provenance over windows of elements: each window becomes one element whose provenance is the sum of its
+    elements' (coarsening, which commutes with pullback). Its statistics describe P at that granularity: coarsening
+    never lowers a feature's overlap and never raises its ambiguity (both follow from merging rows).
+
+    Args:
+        prov: The provenance over m = edges[-1] elements.
+        edges: The window edges, shape (K + 1,).
+
+    Returns:
+        The provenance over the K windows, with the same feature names and empty policy.
+    """
+    out = coarsen(prov, edges)
+    K = edges.shape[0] - 1
+    # The null element's row is rebuilt by Provenance from the empty columns, so only the windows are kept.
+    window, j = np.nonzero(out[:K] > 0)
+    C = BoxMatrix((K, prov.num_features))
+    C.add_boxes(window, window + 1, j, j + 1, out[window, j])
+    return Provenance(C, prov.feature_names, prov.empty)

@@ -11,6 +11,7 @@ import pytest
 from provexp.ablation import ablate
 from provexp.ablation import budget_masks
 from provexp.ablation import coarsen
+from provexp.ablation import coarsen_provenance
 from provexp.ablation import element_order
 from provexp.ablation import estimate_provenance
 from provexp.ablation import window_edges
@@ -177,6 +178,48 @@ def test_coarsen(C: BoxMatrix, num_windows: int, empty: str) -> None:
     P = prov.to_dense()
     expected = np.stack([P[lo:hi].sum(axis=0) for lo, hi in zip(edges[:-1], edges[1:])] + [P[m] if prov.has_null else np.zeros(prov.num_features)])
     assert np.allclose(coarsen(prov, edges), expected)
+
+
+@given(boxmatrices(), st.integers(1, 8), st.sampled_from(["null", "uniform", "ignore"]), st.integers(0, 2 ** 16))
+@settings(max_examples=150, deadline=None)
+def test_coarsen_provenance(C: BoxMatrix, num_windows: int, empty: str, seed: int) -> None:
+    """The provenance over windows is the summed rows, and pullback commutes with coarsening."""
+    prov = Provenance(C, empty=empty)  # type: ignore[arg-type]
+    m = prov.num_elements
+    edges = window_edges(m, num_windows)
+    K = edges.shape[0] - 1
+    coarse = coarsen_provenance(prov, edges)
+    assert coarse.num_elements == K and coarse.empty == prov.empty
+    assert np.allclose(coarse.to_dense()[:K], coarsen(prov, edges)[:K])
+    a = np.random.default_rng(seed).normal(size=prov.num_features)
+    b = prov.pullback(a)
+    expected = np.array([b[lo:hi].sum() for lo, hi in zip(edges[:-1], edges[1:])])
+    assert np.allclose(coarse.pullback(a)[:K], expected)
+    if prov.has_null:
+        assert np.isclose(coarse.pullback(a)[-1], b[-1])
+
+
+@given(boxmatrices(), st.integers(1, 8), st.sampled_from(["null", "ignore"]))
+@settings(max_examples=150, deadline=None)
+def test_coarsening_raises_overlap_and_lowers_ambiguity(C: BoxMatrix, num_windows: int, empty: str) -> None:
+    """Merging rows never lowers O_j (Cauchy-Schwarz: (sum a)^2 / sum b <= sum a^2 / b) and never raises H_j."""
+    prov = Provenance(C, empty=empty)  # type: ignore[arg-type]
+    coarse = coarsen_provenance(prov, window_edges(prov.num_elements, num_windows))
+    att = prov.included
+    assert np.array_equal(coarse.included, att)
+    assert np.all(coarse.overlap().per_feature[att] >= prov.overlap().per_feature[att] - 1e-9)
+    assert np.all(coarse.ambiguity().per_feature[att] <= prov.ambiguity().per_feature[att] + 1e-9)
+
+
+def test_coarsen_provenance_to_single_elements() -> None:
+    """Windows of one element each leave the provenance unchanged."""
+    C = BoxMatrix((5, 3))
+    C.add_boxes(0, 3, 0, 1, 1.0)
+    C.add_boxes(2, 5, 1, 2, 2.0)
+    prov = Provenance(C)
+    coarse = coarsen_provenance(prov, window_edges(5, 5))
+    assert np.allclose(coarse.to_dense(), prov.to_dense())
+    assert np.allclose(coarse.overlap().per_feature, prov.overlap().per_feature)
 
 
 def test_estimate_provenance_with_heterogeneous_scales() -> None:
