@@ -14,8 +14,9 @@ artifact paths (`artifacts/experiments/e1/` holds PB1). Work stays at pilot scal
 - **PB1:** pilot done (parity with occlusion at 256 windows, 1/135 of the cost; bytes 1.65–1.79×). The baselines pilot
   is running (below).
 - **PB2, PF2 (planted trigger), PF1 (pushforward faithfulness), CM (GBDT vs. MalConv):** designs to write.
-- **Manuscript:** `_d_applications.tex` ("Evaluation on Malware Detection") describes the old order and must be
-  restructured to the new one (next).
+- **Manuscript:** `_d_applications.tex` ("Evaluation on Malware Detection") follows the new structure (setup with the
+  perturbation operator and the trigger testbed; CP; pullback with PB1, PB2, and a pointer to Appendix D; pushforward
+  with PF1, PF2; CM; threats). Appendix D (localizability) and E (redundancy, placeholder) added.
 
 ## Running (started by the user on 2026-10-08)
 
@@ -26,7 +27,7 @@ first** (health checks, the three questions, and the reading of each outcome, wr
 
 ## Next (for Claude), on resume
 
-1. Restructure the manuscript's evaluation section to the new order (CP, PB, PF, CM; App-L in the appendix).
+1. ~~Restructure the manuscript's evaluation section~~ done; the user reviews it.
 2. When the baselines finish: answer the three questions (`docs/pb1_baselines.md`), update `docs/pb1_pilot.md`.
 3. Design the planted-trigger testbed (PB2, PF2) in `docs/trigger_plan.md`; then PF1; then CM (MalConv explanations
    of the pilot files are not computed yet).

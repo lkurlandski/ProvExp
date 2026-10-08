@@ -1,113 +1,131 @@
-Having established the framework, we now evaluate it on static PE malware detection, the domain that motivated it. The framework itself is domain-agnostic: it depends only on the provenance matrix $P$, never on what an element or a feature means. The experiments use domain knowledge only where it protects their integrity (a PE-aware perturbation operator, and possibly a PE-aware trigger), and we say where and why.
+Having established the framework, we now evaluate it on static PE malware detection, the domain that motivated it. The evaluation mirrors the framework and moves from intrinsic to extrinsic: we first characterize the provenance matrix itself (Section~\ref{sec:XML:CharacterizingP}), then apply each of its two operators, the pullback (Section~\ref{sec:XML:Pullback}) and the pushforward (Section~\ref{sec:XML:Pushforward}), and finally use both to compare two real classifiers that see the same files through entirely different representations (Section~\ref{sec:XML:Comparison}).
 
-\paragraph{Thesis and claims.} Explanation provenance, built once by instrumenting the feature extractor, transfers explanations between the feature-space and the problem-space. The evaluation supports three claims and one measurement:
+The framework itself is domain-agnostic: it depends only on the provenance matrix $P$, never on what an element or a feature means. The experiments use domain knowledge only where it protects their integrity (a PE-aware perturbation operator, and possibly a PE-aware trigger), and we say where and why.
+
+\paragraph{Claims.} The evaluation supports four claims:
 \begin{enumerate}[noitemsep, topsep=2pt]
-    \item \textbf{Faithful:} pulled-back explanations identify the elements that actually drive the decision (E1, E3).
-    \item \textbf{Cheap:} a pullback costs one instrumented feature extraction, whereas direct problem-space explanation costs hundreds to thousands (E1).
-    \item \textbf{Self-characterizing:} statistics of $P$ alone describe how sharply and how separately any transferred explanation can be placed, and bound how much of it a round trip loses (E2).
-    \item \textbf{Measurement:} how much of what a production-style detector relies on can be localized in the input at all (E4).
+    \item \textbf{$P$ characterizes transfers:} statistics of $P$ alone describe how sharply and how separately any transferred explanation can be placed, and bound how much of it a round trip loses.
+    \item \textbf{The pullback is faithful and cheap:} pulled-back explanations identify the elements that drive the decision, at the cost of one instrumented feature extraction instead of hundreds to thousands.
+    \item \textbf{The pushforward is faithful and useful:} it translates a problem-space explanation into the feature vocabulary faithfully, and turns problem-space knowledge into a reference answer for feature-space explainers.
+    \item \textbf{Real classifiers can be compared across spaces:} with both operators, a feature-based detector and a raw-byte detector can be explained and compared in either space.
 \end{enumerate}
 
 \begin{table}[t]
   \centering
   \small
-  \begin{tabular}{llll}
+  \begin{tabular}{lllll}
     \toprule
-    Experiment & Question & Claim & Status \\
+    Section & ID & Question & Claim & Status \\
     \midrule
-    E1 & Do pullbacks remove the evidence for a decision, and at what cost? & 1, 2 & pilot done \\
-    E2 & What do the statistics of $P$ say about transfers? & 3 & census done \\
-    E3 & Does the pullback recover a planted trigger? & 1 & design open \\
-    E4 & How much reliance can be localized at all? & measurement & pilot done \\
+    \ref{sec:XML:CharacterizingP} Characterizing $P$ & CP & What do the statistics of $P$ say about transfers? & 1 & done \\
+    \ref{sec:XML:Pullback} Pullback & PB1 & Do pullbacks remove a decision's evidence, and at what cost? & 2 & pilot done \\
+     & PB2 & Does the pullback recover a planted trigger? & 2 & design open \\
+    \ref{sec:XML:Pushforward} Pushforward & PF1 & Are pushed-forward explanations faithful in the feature-space? & 3 & design open \\
+     & PF2 & Does the pushforward give feature explainers a ground truth? & 3 & design open \\
+    \ref{sec:XML:Comparison} Comparison & CM & How do a feature-based and a raw-byte detector compare? & 4 & planned \\
     \bottomrule
   \end{tabular}
-  \caption{Experiments, the claims they support, and their status. Results below are from the pilot (100 files, one seed) unless stated otherwise.}
+  \caption{Experiments, the claims they support, and their status. Results are from a pilot (100 files, one seed) unless stated otherwise. The IDs match the project's documentation.}
   \label{tab:XML:Experiments}
 \end{table}
 
 \subsection{Experimental Setup}
 \label{sec:XML:Setup}
 
-\paragraph{Data.} We use the PE files of EMBER-2024~\cite{joyce2025ember}, truncated to their first 4{,}000{,}000 bytes (13--16\% of the files are longer); every feature is recomputed on the truncated files, so that the feature extractor, $P$, and the models see the same object. The \textit{explanation set} is 2{,}000 test files, 1{,}000 per label, deduplicated with TLSH and with at most 10 files per malware family. Experiments are first run on a pilot subset of 100 files (50 per label) and one model seed; we expect most of the research to be done at this scale, and to scale up (all 2{,}000 files, three seeds) for the final numbers.
+\paragraph{Data.} We use the PE files of EMBER-2024~\cite{joyce2025ember}, truncated to their first 4{,}000{,}000 bytes (13--16\% of the files are longer); every feature is recomputed on the truncated files, so that the feature extractor, $P$, and the models see the same object. The \textit{explanation set} is 2{,}000 test files, 1{,}000 per label, deduplicated with TLSH and with at most 10 files per malware family. Experiments are first run on a pilot subset of 100 of these files (50 per label) and one model seed; we expect most of the research to be done at this scale, and to scale up (all 2{,}000 files, three seeds) for the final numbers.
 
-\paragraph{Feature set and provenance.} We use the EMBER feature set, version 3~\cite{joyce2025ember} (2{,}568 features), and instrument its reference implementation so that every feature records which bytes it is computed from (counted, read, or hashed), and with what weight. The instrumented extractor reproduces the original features exactly (except for one hash-seed-dependent quirk of the reference code), and $P$ is obtained by normalizing each feature's contributions (Definition~\ref{def:ExplanationProvenance}). Features to which no byte contributes, e.g., a hash bucket that nothing falls into, are assigned to the null element. Extracting the features with provenance takes 0.15\,s for the median file (208\,KB).
+\paragraph{Feature set and provenance.} We use the EMBER feature set, version 3~\cite{joyce2025ember} (2{,}568 features in 12 groups: byte histogram, entropy windows, strings, header fields, sections, imports, exports, data directories, Rich header, signature, parser warnings, and general file properties). We instrument its reference implementation so that every feature records which bytes it is computed from (counted, read, or hashed), and with what weight. The instrumented extractor reproduces the original features exactly (except for one hash-seed-dependent quirk of the reference code), and $P$ is obtained by normalizing each feature's contributions (Definition~\ref{def:ExplanationProvenance}). Features to which no byte contributes, e.g., a hash bucket that nothing falls into, are assigned to the null element. Extracting the features with provenance takes 0.15\,s for the median file (208\,KB).
 
-\paragraph{Models.} The first classifier we experiment with is a gradient-boosted decision tree (LightGBM, EMBER's baseline parameters, test ROC-AUC 0.9976), because it is the standard and strongest model family for EMBER-style features and because tree and neural models respond very differently to problem-space perturbations. The framework does not depend on the classifier: $P$ is a property of the feature extractor alone. A multilayer perceptron (ROC-AUC 0.9959) was part of the E1 pilot and returns once the methodology is established on the GBDT; the pilot showed that its explanations, not $P$, are the weak link (E1).
+\paragraph{Models.} The feature-based classifier is a gradient-boosted decision tree (LightGBM, EMBER's baseline parameters, test ROC-AUC 0.9976), the standard and strongest model family for EMBER-style features; it is the classifier for Sections~\ref{sec:XML:CharacterizingP}--\ref{sec:XML:Pushforward}. The raw-byte classifier, used in Section~\ref{sec:XML:Comparison}, is MalConv~\cite{raff2018malware} (the released EMBER-2024 medium checkpoints, three seeds), which reads the bytes directly and needs no provenance of its own. The framework does not depend on the classifier: $P$ is a property of the feature extractor alone. A multilayer perceptron over the same features (ROC-AUC 0.9959) was part of the pullback pilot and will return once the methodology is established on the GBDT; the pilot showed that its explanations, not $P$, are the weak link (Section~\ref{sec:XML:Pullback}).
 
-\paragraph{Explainers.} Every explainer attributes the model's malware log-odds. For the GBDT we use TreeSHAP in its path-dependent and interventional forms~\cite{lundberg2017unified} (background of 1{,}000 balanced training files) and KernelSHAP (32{,}768 coalitions, a 16-file balanced background). For the MLP, Integrated Gradients~\cite{sundararajan2017axiomatic} from the background mean and KernelSHAP.
+\paragraph{Explainers.} Every explainer attributes the model's malware log-odds. For the GBDT we use TreeSHAP in its path-dependent and interventional forms~\cite{lundberg2017unified} (background of 1{,}000 balanced training files) and KernelSHAP (32{,}768 coalitions, a 16-file balanced background). For MalConv, Integrated Gradients~\cite{sundararajan2017axiomatic} and occlusion over the bytes; for the MLP, Integrated Gradients from the background mean and KernelSHAP.
 
-\subsection{E1: Problem-Space Faithfulness and Cost}
-\label{sec:XML:E1}
+\paragraph{Perturbation operator.} Several experiments delete bytes, i.e., replace them, and naive replacement breaks PE files in ways that make any comparison meaningless. This is where the evaluation uses domain knowledge. The operator never changes the fields that define the file's layout (found by a sweep over 2{,}000 training files) or the fields that break a particular file, verifies every perturbed file at run time, and replaces the other header fields with their most common value in the training set instead of zeros. Content bytes are zeroed. Two variants serve as robustness checks: header fields zeroed, and content bytes randomized. In the pilot, no file failed, and none of the 23{,}000 perturbed versions of the files failed verification.
 
-\paragraph{Question.} When a feature-space explanation is pulled back to the bytes, do the top-ranked bytes carry the evidence for the decision, compared with explaining directly in the problem-space, and at what cost? This tests claims~1 and~2.
-
-\paragraph{Methods compared.} Each method ranks the bytes of a file by evidence for the predicted class:
-\begin{itemize}[noitemsep, topsep=2pt]
-    \item \textit{Pullback} of each explainer, at byte level, and coarsened to $K$ windows of bytes (Proposition~\ref{prop:Coarsening}), which separates granularity from information;
-    \item \textit{Occlusion} over $K$ equal windows~\cite{zeiler2014visualizing}, the standard direct problem-space explainer ($K + 1$ feature extractions), at $K \in \{64, 256, 1024, 4096\}$ for a cost--faithfulness curve;
-    \item \textit{KernelSHAP over windows}, a second direct problem-space explainer whose players are the 256 windows;
-    \item \textit{Black-box pullback}: the pullback through a provenance matrix estimated from the occlusion run itself, which needs no instrumentation;
-    \item \textit{Random} window orders, and an \textit{unsigned} ranking of the pullback (a diagnostic, see below).
-\end{itemize}
-
-\paragraph{Perturbation operator.} Deleting a byte means replacing it, and naive replacement breaks PE files in ways that make any comparison meaningless. This is where E1 uses domain knowledge. The operator never changes the fields that define the file's layout (found by a sweep over 2{,}000 training files) or the fields that break a particular file, verifies every perturbed file at run time, and replaces the other header fields with their most common value in the training set instead of zeros (\textit{level 3}; zeroed header fields, \textit{level 2}, are a robustness check). Content bytes are zeroed, with random bytes as a robustness check. In the pilot, no file failed and none of the 23{,}000 perturbed versions of the files failed verification.
-
-\paragraph{Metric.} Deletion curves~\cite{petsiuk2018rise}: delete the top-ranked bytes at log-spaced budgets from 0.1\% to 50\% of the file, re-extract the features, re-score the model, and record the evidence removed, $s \cdot (f(x) - f(x'))$, with $s$ the sign of the original log-odds. A method's score is its area (the mean over the budgets), reported as its gain over random relative to occlusion's: $1$ means as good as occlusion. Methods are compared per file with paired Wilcoxon tests. Cost is measured in feature extractions and wall-clock time.
-
-\paragraph{Pilot results.} At equal granularity (256 windows), the pullback of all three GBDT explainers matches occlusion (0.97--1.03 of its gain, not significantly different under the level-3 operator) at 1/135 of the cost (one extraction against 258). At byte level, which occlusion cannot reach, the pullback removes 1.65--1.79 times occlusion's gain, on 79--96 of 100 files; realistic header values (level 3) account for 15--18\% of that margin. For the MLP, neither IG nor KernelSHAP reaches occlusion at window level, and the black-box pullback of the same explanations is just as far behind: the shortfall comes from the explanations, not from $P$.
+\paragraph{Planted trigger.} A shared testbed for Sections~\ref{sec:XML:Pullback} and~\ref{sec:XML:Pushforward}: a trigger written into a fraction of the training files, and a GBDT retrained on them, so that the bytes the model relies on in triggered files are known.
 
 \begin{proposalbox}
-A pilot with the remaining baselines is running: occlusion at 64--4{,}096 windows (does finer occlusion close the byte-level gap, and at what cost?), KernelSHAP over windows, and the unsigned ranking. The last tests a reading of an observed \textit{overshoot}: deleting the top half of the bytes removes more evidence than deleting everything, plausibly because a signed ranking deletes the supporting bytes and keeps the opposing ones. The reading of each outcome was fixed before the run.
+Design open: the trigger (a domain-agnostic byte pattern, or a PE-aware one if the model cannot learn the former; either stays inside the experiment), the poisoning rate and label, and how to confirm that the retrained model relies on it.
 \end{proposalbox}
 
-\subsection{E2: Characterizing Provenance}
-\label{sec:XML:E2}
+\subsection{Characterizing the Provenance Matrix}
+\label{sec:XML:CharacterizingP}
 
-\paragraph{Question.} What do the statistics of $P$ (Section~\ref{sec:CharacterizingExplanationProvenanceMatrix}) say, from $P$ alone, about how sharply and how separately explanations can be placed in the input, and do their guarantees hold for real explanations? This tests claim~3. The statistics characterize $P$; they are not meant to predict the faithfulness of a particular explanation.
+\paragraph{Question (CP).} What do the statistics of $P$ (Section~\ref{sec:CharacterizingExplanationProvenanceMatrix}) say, from $P$ alone, about how sharply and how separately explanations can be placed in the input, and do their guarantees hold for real explanations? The statistics characterize $P$; they are not meant to predict the faithfulness of a particular explanation.
 
-\paragraph{Design.} For every file of the explanation set we compute, for the full feature set and for each feature group (the 12 groups of the feature set: histogram, strings, header fields, imports, \dots) in isolation: coverage, ambiguity with its effective support, overlap, and the element-side diagonal $N_{i,i}$. We also compute the group confusion matrix (the share of a group's attribution that a pull--push round trip lands on each group, i.e., the blocks of $M$), the round-trip error of every explanation against the bound of Theorem~\ref{theorem:RoundTripBounds}, and the statistics of $P$ coarsened to windows of bytes.
+\paragraph{Design.} For every file of the explanation set we compute, for the full feature set and for each feature group in isolation: coverage, ambiguity with its effective support, overlap, and the element-side diagonal $N_{i,i}$. We also compute the group confusion matrix (the share of a group's attribution that a pull--push round trip lands on each group, i.e., the blocks of $M$), the round-trip error of every explanation against the bound of Theorem~\ref{theorem:RoundTripBounds}, and the statistics of $P$ coarsened to windows of bytes (Proposition~\ref{prop:Coarsening}).
 
 \paragraph{Results (2{,}000 files).}
 \begin{itemize}[noitemsep, topsep=2pt]
     \item \textit{Overlap is informative feature by feature}: within a file, the attributable features' $O_j$ range from 0.05 to 0.82 (10th to 90th percentile). The most-overlapping features are global aggregates computed from the same bytes as many others (string statistics, file size, file entropy; $O_j \approx 0.99$).
     \item \textit{Group overlap separates design from data}: for some groups (header fields, data directories) it is the same in every file and reflects how the extractor is built; for others (sections, imports, strings, entropy windows) it varies and describes the file.
     \item \textit{The confusion matrix is stable and readable}: for example, 31\% of the attribution of the entropy-window features returns on the byte histogram, and 22\% of the general features' on the header features, because they read the same bytes.
-    \item \textit{The bound holds for every file and all six explainers of both models}, and the actual round-trip error is 0.59--0.71 of the bound at the median: from $P$ alone, the bound anticipates within a factor of about 1.5 how much of any explanation a round trip loses (60--70\% of its mass).
-    \item \textit{Ambiguity in bytes mostly measures file size} for content features (histogram, strings) and not for structural ones (sections, imports, header), so effective support is reported per group.
-    \item \textit{Coarsening costs separation} (Proposition~\ref{prop:Coarsening}): overlap rises from 0.41 at byte level to 0.90 at 4{,}096 windows and 0.98 at 256. Where E1 shows that a 256-window pullback ranks windows as well as occlusion, E2 shows that such a window explanation says \textit{where} in the file, but no longer \textit{which feature}: an argument for byte-level pullbacks from $P$ alone.
+    \item \textit{The bound holds for every file and all six explainers of two models}, and the actual round-trip error is 0.59--0.71 of the bound at the median: from $P$ alone, the bound anticipates within a factor of about 1.5 how much of any explanation a round trip loses (60--70\% of its mass).
+    \item \textit{Ambiguity in bytes mostly measures file size} for content features (histogram, strings) and not for structural ones (sections, imports, header fields), so effective support is reported per group.
+    \item \textit{Coarsening costs separation}: overlap rises from 0.41 at byte level to 0.90 at 4{,}096 windows and 0.98 at 256. A window explanation says \textit{where} in the file, but no longer \textit{which feature}; this anticipates the pullback's results at window and byte level (Section~\ref{sec:XML:Pullback}).
 \end{itemize}
 
 \begin{proposalbox}
-Remaining for E2: compare the statistics of the instrumented and black-box provenance at window level (saved by the E1 runs from now on); exactness for additive feature groups is predicted by the framework, and where the two differ is where a black-box estimate of provenance falls short. Possibly, the resolution of $P$ for ordered inputs.
+Remaining: compare the statistics of the instrumented $P$ with those of a black-box estimate of $P$ (from window occlusion) at window level; the framework predicts exact agreement for additive feature groups, so the differences show where black-box provenance falls short. Possibly, the resolution of $P$ for ordered inputs.
 \end{proposalbox}
 
-\subsection{E3: Planted Ground Truth}
-\label{sec:XML:E3}
+\subsection{Application: The Pullback}
+\label{sec:XML:Pullback}
 
-\paragraph{Question.} With a known answer, does the pullback recover it? Explanations of real models have no ground truth; a planted trigger provides one (Lin et al., 2021). % TODO: add the citation to main.bib. This tests claim~1 independently of any perturbation operator.
+The pullback turns a feature-space explanation into a problem-space one. We test whether the result is faithful, first with a perturbation test against direct problem-space explanation (PB1), then with a known answer (PB2).
+
+\paragraph{Faithfulness and cost (PB1).} When a feature-space explanation is pulled back to the bytes, do the top-ranked bytes carry the evidence for the decision, compared with explaining directly in the problem-space, and at what cost? Each method ranks the bytes of a file by evidence for the predicted class:
+\begin{itemize}[noitemsep, topsep=2pt]
+    \item the \textit{pullback} of each explainer, at byte level, and coarsened to $K$ windows of bytes, which separates granularity from information;
+    \item \textit{occlusion} over $K$ equal windows~\cite{zeiler2014visualizing}, the standard direct problem-space explainer ($K + 1$ feature extractions), at $K \in \{64, 256, 1024, 4096\}$ for a cost--faithfulness curve;
+    \item \textit{KernelSHAP over windows}, a second direct problem-space explainer whose players are the 256 windows;
+    \item the \textit{black-box pullback}: the pullback through a provenance matrix estimated from the occlusion run itself, which needs no instrumentation;
+    \item \textit{random} window orders, and an \textit{unsigned} ranking of the pullback (a diagnostic, see below).
+\end{itemize}
+The metric is the deletion curve~\cite{petsiuk2018rise}: delete the top-ranked bytes at log-spaced budgets from 0.1\% to 50\% of the file with the perturbation operator, re-extract the features, re-score the model, and record the evidence removed, $s \cdot (f(x) - f(x'))$, with $s$ the sign of the original log-odds. A method's score is its area (the mean over the budgets), reported as its gain over random relative to occlusion's: $1$ means as good as occlusion. Methods are compared per file with paired Wilcoxon tests. Cost is measured in feature extractions and wall-clock time.
+
+\paragraph{Pilot results (PB1).} At equal granularity (256 windows), the pullback of all three GBDT explainers matches occlusion (0.97--1.03 of its gain; not significantly different with the primary operator) at 1/135 of the cost (one extraction against 258). At byte level, which occlusion cannot reach, the pullback removes 1.65--1.79 times occlusion's gain, on 79--96 of 100 files; realistic header values account for 15--18\% of that margin. For the MLP, neither IG nor KernelSHAP reaches occlusion at window level, and the black-box pullback of the same explanations is just as far behind: the shortfall comes from the explanations, not from $P$.
 
 \begin{proposalbox}
-Design open. Plan: write a trigger into a fraction of the malicious (or benign) training files, retrain the GBDT, and check that it relies on the trigger. Then (i) pull back explanations of triggered test files and measure how much of the attribution lands on the trigger's bytes; (ii) push the trigger's bytes forward to obtain the feature attribution an explainer \textit{should} produce, and score TreeSHAP and KernelSHAP against it. The trigger may be a domain-agnostic byte pattern or, if the model cannot learn one, a PE-aware trigger (e.g., header-field triggers from the backdoor literature); either stays inside the experiment.
+A pilot with the remaining baselines is running: occlusion at 64--4{,}096 windows (does finer occlusion close the byte-level gap, and at what cost?), KernelSHAP over windows, and the unsigned ranking. The last tests a reading of an observed \textit{overshoot}: deleting the top half of the bytes removes more evidence than deleting everything, plausibly because a signed ranking deletes the supporting bytes and keeps the opposing ones. The reading of each outcome was fixed before the run.
 \end{proposalbox}
 
-\subsection{E4: How Much Reliance Can Be Localized}
-\label{sec:XML:E4}
+\paragraph{Planted-trigger recovery (PB2).} With a known answer, does the pullback recover it? Explanations of real models have no ground truth; a planted trigger provides one (Lin et al., 2021). % TODO: add the citation to main.bib.
+For triggered test files, we pull back the retrained model's explanations and measure how much of the attribution lands on the trigger's bytes, compared with the trigger's share of the file. This tests faithfulness without any perturbation operator.
 
-\paragraph{Question.} How much of what a production-style detector relies on can be placed in the input at all? This is a measurement of the feature set and models, made possible by the null element (Definition~\ref{def:Pullback}): the null element's share of a pulled-back explanation is exactly the attribution that cannot be localized.
+\paragraph{What the pullback cannot localize.} The null element's share of a pulled-back explanation is exactly the attribution that no part of the input can carry (Definition~\ref{def:Pullback}). For the GBDT it is about a fifth of the attribution, most of it on features whose value encodes an absence; Appendix~D reports this measurement per explainer.
 
-\paragraph{Pilot results (2{,}000 files).} In a typical file, about 70\% of the 2{,}568 features are unattributable, almost all because something is absent (e.g., an import hash bucket that nothing falls into); 102 features are never attributable, 88 of them because the reference extractor does not report which bytes caused a parser warning. About 22\% of the GBDT's attribution (TreeSHAP) rests on unattributable features, 17--18\% of it on absences; for the MLP (IG), 37\% rests on absences alone. Explainers whose baseline is zero (gradient $\times$ input) cannot credit absences at all, so the measurement must be reported per explainer.
+\subsection{Application: The Pushforward}
+\label{sec:XML:Pushforward}
 
-\subsection{Further Analyses}
+The pushforward turns a problem-space explanation into a feature-space one: it explains a model in a vocabulary chosen by the analyst, here the features, from an explanation computed over the bytes. We test whether the result is faithful (PF1) and use it to give feature-space explainers a ground truth (PF2).
+
+\paragraph{Faithfulness (PF1).} We push a direct problem-space explanation of the GBDT forward (occlusion at the window counts of PB1, already computed) and test the resulting feature attribution in the feature-space: delete the top-ranked features (replace their values with a reference), re-score the model, and compare with the deletion curves of TreeSHAP, KernelSHAP, and random feature orders. A faithful pushforward should approach the feature-space explainers, which are computed in the model's own space.
 
 \begin{proposalbox}
-Appendix-grade, time permitting: (A1) pushing the byte-level explanations of a raw-byte model (MalConv~\cite{raff2018malware}) forward into the feature-space and comparing its reliance with the GBDT's; (A3) mechanical redundancy: features with identical provenance cannot be told apart after a pullback, and the explainers' agreement before and after pullback, net of a permutation control.
+Design open: the feature-space reference value of a deleted feature; whether to also push forward the pullback itself (the round trip $M a$, characterized in Section~\ref{sec:XML:CharacterizingP}). The same test, applied to the MLP's explainers, is the first step when the MLP returns.
+\end{proposalbox}
+
+\paragraph{Ground truth for feature-space explainers (PF2).} On a triggered file, the pushforward of the trigger's bytes is the feature attribution a faithful explainer \textit{should} produce: the features the trigger touches, weighted by their provenance. We score TreeSHAP and KernelSHAP of the retrained GBDT against it (how much of their attribution falls on those features, and how it is distributed among them). This turns problem-space knowledge into an evaluation of feature-space explainers, which otherwise have no ground truth.
+
+\subsection{Application: Comparing Classifiers Across Spaces}
+\label{sec:XML:Comparison}
+
+\paragraph{Question (CM).} The two operators make it possible to compare classifiers that see the same file through different representations. We compare the feature-based GBDT with the raw-byte MalConv, on the same truncated files, in both spaces:
+\begin{itemize}[noitemsep, topsep=2pt]
+    \item \textit{Problem-space:} the GBDT's pulled-back explanations against MalConv's direct byte explanations (IG, occlusion): do the two models rely on the same parts of a file? We measure agreement over windows against a permutation control, and cross-deletion: do one model's top-ranked bytes remove the other model's evidence (with the operator of Section~\ref{sec:XML:Setup})?
+    \item \textit{Feature-space:} MalConv's explanations pushed forward against the GBDT's TreeSHAP: which feature groups does each model's reliance fall on?
+\end{itemize}
+
+\begin{proposalbox}
+Planned: MalConv explanations of the pilot files, the agreement and cross-deletion measurements, and the group-level comparison. The feature-space half depends on the pushforward's faithfulness (PF1).
 \end{proposalbox}
 
 \subsection{Threats to Validity}
 
 \begin{itemize}[noitemsep, topsep=2pt]
-    \item \textit{Scale:} results so far are from a 100-file pilot and one seed (E1) or 2{,}000 files and one seed (E2, E4).
-    \item \textit{One model family:} the GBDT first; the MLP returns once the method is established.
-    \item \textit{Perturbations:} every problem-space faithfulness test depends on the perturbation operator. Ours is PE-aware and verified, and two variants serve as robustness checks, but no operator keeps a file entirely on the data manifold.
+    \item \textit{Scale:} results so far are from a 100-file pilot and one seed (PB1, coarsening) or 2{,}000 files and one seed (CP census, localizability).
+    \item \textit{Model families:} the GBDT for the operators; MalConv for the comparison; the MLP returns once the method is established.
+    \item \textit{Perturbations:} every problem-space faithfulness test depends on the perturbation operator. Ours is PE-aware and verified, and two variants serve as robustness checks, but no operator keeps a file entirely on the data manifold. The planted trigger (PB2, PF2) does not depend on it.
     \item \textit{Instrumentation:} the instrumented provenance is exact for additive feature groups and a convention for the others (entropy windows, hashed names); the black-box estimate measures the gap.
 \end{itemize}
