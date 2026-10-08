@@ -225,6 +225,25 @@ fires on a minority of the files we would explain.
 Claude's recommendation: **1 now** (it answers the question and costs nothing), with 2 as a follow-up if the
 large-file coverage turns out to matter for the attribution results.
 
+## Explanations of triggered files (`scripts/trigger_explain.py`, 2026-10-08)
+
+For each selected file the script extracts the features of the clean file and of its triggered version and explains
+both with the **poisoned** model, so that the quantity of interest is the explanation's change,
+a(triggered) − a(clean): what the trigger caused. Decision 1 is implemented as the **backdoor-fired filter**: a file
+is kept only if the poisoned model gives the triggered version the target label, which uses the model's output alone
+and never an explanation.
+
+Smoke test (struct trigger, 2–3 files):
+
+- **The backdoor fires on 1,000 of 1,000** explanation-set malware files, so the struct trigger loses nothing to the
+  filter. Log-odds flip sharply (e.g. +7.1 → −6.1) while the clean model stays positive (+7.7).
+- **The feature-space explainers find the trigger.** Share of |a(triggered) − a(clean)| on the 3 trigger features
+  (of 2,568), and the rank of the best trigger feature: path TreeSHAP 0.67–0.73, rank 0; interventional 0.69–0.71,
+  rank 0; KernelSHAP 0.51–0.53, rank 0. This is PF2's measurement in miniature.
+- **KernelSHAP needs its full budget.** At 512 coalitions it put 0.1% on the trigger features; at 32,768 it puts 51%.
+  With 2,568 features a small budget is pure noise, so never read a low-budget KernelSHAP as "it misses the trigger".
+- Completeness errors are 1e-11 or better, except interventional TreeSHAP's known 8e-5.
+
 ## Decisions
 
 Taken 2026-10-08:
