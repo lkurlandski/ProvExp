@@ -1,0 +1,104 @@
+{
+  "num_samples": 4000,
+  "seed": 0,
+  "fields": {
+    "IMAGE_OPTIONAL_HEADER.MinorOperatingSystemVersion": {
+      "label_tv": 0.008522511255627824,
+      "value_int": 32793,
+      "value": "1980",
+      "gap": 65484,
+      "distinct": 6,
+      "files": 3999
+    },
+    "IMAGE_OPTIONAL_HEADER.MinorSubsystemVersion": {
+      "label_tv": 0.009556778389194618,
+      "value_int": 32793,
+      "value": "1980",
+      "gap": 65484,
+      "distinct": 7,
+      "files": 3999
+    },
+    "IMAGE_OPTIONAL_HEADER.MinorImageVersion": {
+      "label_tv": 0.02651650825412704,
+      "value_int": 43024,
+      "value": "10a8",
+      "gap": 45023,
+      "distinct": 34,
+      "files": 3999
+    }
+  },
+  "candidates": {
+    "IMAGE_OPTIONAL_HEADER.MajorImageVersion": {
+      "label_tv": 0.14911780890445225,
+      "value_int": 43425,
+      "value": "a1a9",
+      "gap": 44220,
+      "distinct": 26,
+      "files": 3999
+    },
+    "IMAGE_OPTIONAL_HEADER.MinorImageVersion": {
+      "label_tv": 0.02651650825412704,
+      "value_int": 43024,
+      "value": "10a8",
+      "gap": 45023,
+      "distinct": 34,
+      "files": 3999
+    },
+    "IMAGE_OPTIONAL_HEADER.MajorLinkerVersion": {
+      "label_tv": 0.3208386693346673,
+      "value_int": 169,
+      "value": "a9",
+      "gap": 172,
+      "distinct": 17,
+      "files": 3999
+    },
+    "IMAGE_OPTIONAL_HEADER.MinorLinkerVersion": {
+      "label_tv": 0.28671760880440217,
+      "value_int": 169,
+      "value": "a9",
+      "gap": 173,
+      "distinct": 47,
+      "files": 3999
+    },
+    "IMAGE_OPTIONAL_HEADER.MajorOperatingSystemVersion": {
+      "label_tv": 0.30024887443721865,
+      "value_int": 32773,
+      "value": "0580",
+      "gap": 65525,
+      "distinct": 7,
+      "files": 3999
+    },
+    "IMAGE_OPTIONAL_HEADER.MinorOperatingSystemVersion": {
+      "label_tv": 0.008522511255627824,
+      "value_int": 32793,
+      "value": "1980",
+      "gap": 65484,
+      "distinct": 6,
+      "files": 3999
+    },
+    "IMAGE_OPTIONAL_HEADER.MinorSubsystemVersion": {
+      "label_tv": 0.009556778389194618,
+      "value_int": 32793,
+      "value": "1980",
+      "gap": 65484,
+      "distinct": 7,
+      "files": 3999
+    },
+    "IMAGE_FILE_HEADER.NumberOfSymbols": {
+      "label_tv": 0.030015007503751887,
+      "value_int": 2147505016,
+      "value": "78530080",
+      "gap": 4294924558,
+      "distinct": 83,
+      "files": 3999
+    },
+    "IMAGE_FILE_HEADER.PointerToSymbolTable": {
+      "label_tv": 0.054027263631815925,
+      "value_int": 2166584832,
+      "value": "00762381",
+      "gap": 4256764927,
+      "distinct": 150,
+      "files": 3999
+    }
+  }
+}
