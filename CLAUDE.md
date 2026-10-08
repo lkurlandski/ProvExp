@@ -12,6 +12,7 @@ plus a null element) transfers explanations between the feature-space (EMBER v3 
 - `PLAN.md`: claims, experiments (E1–E4, appendix A1–A3), timeline, gates, open questions.
 - `docs/plan_e1.md` and `docs/e1_pilot.md`: the current experiment (faithfulness and cost) and its results.
   `docs/e1_baselines.md`: the running baselines pilot, with the reading of each outcome decided in advance.
+- `docs/plan_e2.md` and `docs/e2_census.md`: E2 (characterizing P): the revised statistics and the census.
   `docs/pilot.md`: the census.
 - `docs/design_provexp.md`: package design, decisions, provenance conventions, thrember quirks.
   `docs/related_work.md`: literature and gaps. `docs/plan_phase2.md`: Phase 2 (complete).

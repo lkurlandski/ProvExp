@@ -1,0 +1,107 @@
+# E2 Census: The Revised Statistics on the Explanation Set
+
+Run 2026-10-08 (`scripts/provenance_census.py --seed 0`, definitions of 2026-10-08; tables from
+`scripts/e2_tables.py --seed 0`, plus the per-feature arrays). Plan and definitions: `docs/plan_e2.md`. The previous
+census (previous definitions) is in `census-2026-10-07/`.
+
+## Run
+
+2,000 files, 0 failures, 2 with the known hash-seed mismatch in `pefilewarnings`. 1.4 s per file (median), 47 s max;
+30 minutes on 16 workers (the old progress bar did not advance; fixed).
+
+## Findings
+
+**1. Overlap is informative per feature; as a file-level summary it is narrow.** Within a file, the attributable
+features' O_j span 0.05 to 0.82 (10th to 90th percentile, median over files), median 0.35. The overall O of a file
+lies in 0.29–0.46 (10th–90th) and correlates weakly with size (ρ = −0.39). The most-overlapping features are the
+global aggregates computed from the same bytes as many others (`strings:entropy`, `strings:printables`,
+`strings:avlength`, `strings:numstrings`, `general:size`, `general:entropy`; O ≈ 0.98–0.99 in every file).
+
+**2. Subsets in isolation: overlap separates structure from content.**
+
+| subset | effective support (elements) | overlap O (10th / 50th / 90th) | element coverage | N_ii |
+|---|---|---|---|---|
+| header | 2 | 0.34 (constant) | 0.04% | 0.25 |
+| datadirectories | 4 | 0.08 (constant) | 0.03% | 0.25 |
+| general | 1 | 0.17 (constant) | 100% | ≈ 0 |
+| authenticode | 8 | 0.82 (constant) | 0.01% | 0.12 |
+| richheader | 8 | 0.14 / 0.18 / 0.44 | 0.004% | 0.12 |
+| section | 12 | 0.54 / 0.58 / 0.68 | 99.8% | ≈ 0 |
+| imports | 27 | 0.43 / 0.50 / 0.67 | 0.12% | 0.04 |
+| strings | 107 | 0.10 / 0.14 / 0.20 | 6.4% | 0.003 |
+| byteentropy | 288 | 0.11 / 0.19 / 0.27 | 100% | ≈ 0 |
+| histogram | 440 | 0 | 100% | ≈ 0 |
+
+Where the overlap of a subset is constant across files (header, data directories, general, authenticode), it is a
+property of the extractor's design (which fields are read from shared bytes), not of the file; where it varies
+(section, imports, strings, entropy windows, Rich header), it describes the file. The histogram's bins partition the
+bytes, so its overlap in isolation is exactly 0.
+
+**3. The confusion matrix is stable and readable** (mean over files; share of a subset's attribution that a round
+trip lands on each subset; diagonal, then the largest leaks):
+
+| from | stays | largest leaks |
+|---|---|---|
+| header | 0.96 | general 0.02 |
+| datadirectories | 0.95 | authenticode 0.04 |
+| imports | 0.87 | strings 0.08 |
+| richheader | 0.87 | histogram 0.07, byteentropy 0.06 |
+| section | 0.79 | histogram 0.09, byteentropy 0.07 |
+| exports | 0.78 | strings 0.11, byteentropy 0.06 |
+| histogram | 0.74 | byteentropy 0.17, strings 0.05 |
+| strings | 0.73 | histogram 0.12, byteentropy 0.07, imports 0.05 |
+| authenticode | 0.61 | datadirectories 0.14, histogram 0.11 |
+| byteentropy | 0.60 | histogram 0.31 |
+| general | 0.44 | header 0.22, histogram 0.19, byteentropy 0.10 |
+
+It matches the 100-file check, and benign and malware files agree except for authenticode (0.49 vs. 0.73).
+
+**4. The round-trip bound holds for every file and explainer and is within about 1.5× of the error.**
+
+| explainer | files | error / ‖a‖₁ (median) | bound / ‖a‖₁ (median) | error / bound (10th / 50th / 90th) |
+|---|---|---|---|---|
+| path TreeSHAP | 2,000 | 0.69 | 0.97 | 0.67 / 0.71 / 0.77 |
+| interventional TreeSHAP | 2,000 | 0.64 | 0.94 | 0.64 / 0.68 / 0.74 |
+| KernelSHAP (GBDT) | 100 | 0.61 | 0.93 | 0.61 / 0.65 / 0.72 |
+| IG (MLP) | 2,000 | 0.64 | 1.09 | 0.55 / 0.59 / 0.64 |
+| KernelSHAP (MLP) | 100 | 0.66 | 1.09 | 0.56 / 0.59 / 0.65 |
+| gradient × input (MLP) | 2,000 | 0.69 | 1.12 | 0.57 / 0.62 / 0.69 |
+
+From P alone, the bound anticipates how much of any explanation a pull–push round trip loses, within a factor of
+about 1.4–1.7, for six explainers of two models. A pull–push round trip loses 60–70% of the attribution mass, mostly
+to the most-overlapping features.
+
+**5. Ambiguity in elements is mostly file size.** The overall H correlates with size at ρ = 0.85 (effective support
+ρ = 0.76); malware has larger effective supports (median 210 vs. 73 elements) because its files are larger (median
+792 KB vs. 160 KB). Per subset, the content features scale with size (histogram ρ = 0.84, strings 0.77, entropy 0.64)
+and the structural ones do not (section −0.01, imports 0.20, header constant). Effective support is therefore best
+reported per subset (or as a fraction of the file, which shrinks with size, ρ = −0.63); the overall H mixes the two.
+
+**6. The spectrum adds little.** The share of eigenvalues above 0.99 (median 9% of the attributable features) tracks
+the share of features with O_j < 0.01 (7%) at ρ = 0.96, so the top of the spectrum restates the diagonal. The only
+new information is the bottom: about 10% of the eigenvalues are below 0.01, i.e., attribution patterns over the
+features that a round trip (almost) erases, the generalization of A3's duplicate features. Consistent with the
+user's skepticism: keep it out of the paper unless A3 needs it.
+
+**7. Element-side statistics are informative per subset only** (as in the check): for the full set every element
+feeds the histogram (coverage 1, N_ii ≈ 4e-4).
+
+## Implications
+
+- The paper's E2 evidence: the per-subset table (effective support, overlap, coverage), the confusion heatmap, and the
+  bound's tightness across explainers. All three come from P alone, and the bound connects them to what happens to
+  real explanations.
+- Report effective support per subset, not the overall H. Overall O can be reported, but per-feature and per-subset
+  overlap carry the information.
+- The spectrum stays a diagnostic (possibly A3's near-zero share).
+
+## Next steps
+
+1. **The statistics track P** (`docs/plan_e2.md`, experiment 3): compute them on P coarsened to E1's window counts
+   (cheap, from P alone) and on the black-box P. The black-box P is not saved by `faithfulness.py`; save it in the E1
+   runs at scale instead of a separate occlusion run.
+2. **Resolution at granularity w:** after the baselines decision (`docs/e1_baselines.md`), which says whether the
+   comparison with E1's sweep is worth making.
+3. **Reporting (decide with the user):** effective support per subset rather than the overall H; the confusion heatmap
+   as the headline figure; the bound's tightness as the link to real explanations.
+4. **Spectrum:** dropped from the paper unless A3 uses the near-zero share.
