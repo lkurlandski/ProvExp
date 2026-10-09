@@ -410,8 +410,12 @@ not apply at this end: a window-level method *could* be as precise here.
 3. **The shortfall from 1 is explanation-side for the struct trigger** (interaction credit on untouched features) and
    **P-side for the content trigger's tail** (relied-on features shared with the file). The decomposition above names
    which.
-4. **To fix in the code:** the "ceiling" label in `trigger_tables.py` should become "round trip", and the table could
-   add the true bound (the best single feature's column share on T).
+4. **Fixed in the code (2026-10-09):** `trigger_tables.py` now prints the round trip under that name ("not a
+   bound"), adds the true bound (the best single feature's column share on T: 1 / 1 / 1 for struct, 0.98 / 1 / 1 for
+   content), and reports PF2 under the support reading: mass on supp(r), top-1 and top-10 in supp(r), and random
+   (|supp(r)| / n); cosine and Spearman are gone. Re-run on both triggers; every other number is unchanged. Top-10 is
+   exactly 0.3 for the struct trigger on every file (the 3 header features, then interaction credit), and 0.3 / 0.5 /
+   0.71 for content against 0.12 random: informative for diffuse triggers, nearly fixed by the model for sharp ones.
 
 ## Decisions
 

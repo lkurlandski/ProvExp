@@ -8,20 +8,24 @@ PB2 (does the pullback land on the trigger's bytes?), per file and explainer:
     mass on T           the share of |P delta a| that falls on T, including the null element in the total
     precision at |T|    the share of T among the |T| top-ranked bytes
     null share          the share of |P delta a| on the null element, which no byte can carry
-and two reference points:
+and reference points:
     random              |T| / m, what an arbitrary ranking achieves
-    ceiling             the same measured on P r, where r is the pushforward of T (below): the most that *any*
-                        feature-space explanation can place on T under this P, because the features the trigger
-                        touches also read bytes outside T (so a value below 1 is a property of P, not a failure)
+    round trip          the same measured on P r, where r is the pushforward of T (below): the push-pull round trip
+                        of the trigger. Not an upper bound (it was called the "ceiling" until 2026-10-09): r weights
+                        every touched feature by provenance, while an explanation may credit only the sharpest ones
+    bound               the most any nonnegative feature-space explanation can place on T: the largest column share
+                        on T of any feature, max_j (P^T 1_T)_j (1 when some feature is computed from T alone)
     window bound        |T| / (window size), the most any method that scores whole windows of bytes can achieve;
                         stated analytically, since running occlusion for a 6-byte trigger would cost hours per file
 
-PF2 (does the pushforward give feature-space explainers a ground truth?), per file and explainer:
-    r = psi(1_T)        the pushforward of a uniform explanation on T: the feature attribution a faithful explainer
-                        should produce, namely the features the trigger touches, weighted by their provenance
-    mass on supp(r)     the share of |delta a| on those features (the primary score)
-    cosine, spearman    the agreement between delta a and r on them (secondary)
-    top-1 in supp(r)    whether the explainer's top feature is one the trigger touches
+PF2 (does the pushforward give feature-space explainers a ground truth?), per file and explainer. r = psi(1_T) is
+read as a *support*, not a target (decided 2026-10-09; docs/trigger_plan.md): its weights say how much of each
+feature the trigger computes, a property of P, not which features the model uses; its support, the features the
+trigger touches, is a ground truth that does not depend on the model.
+    mass on supp(r)     the share of |delta a| on the support (recall-like; even an ideal explainer of a tree model
+                        stays below 1, because interactions move credit onto untouched features)
+    top-1, top-10       whether the top feature is in the support, and the share of the top 10 that are
+    random              |supp(r)| / n, a random attribution's expected mass and top-k share
 
 Usage:
     PYTHONHASHSEED=0 python scripts/trigger_tables.py --poison artifacts/poison/struct --num_workers 8
@@ -40,7 +44,6 @@ import warnings
 import numpy as np
 from numpy import typing as npt
 import polars as pl
-from scipy.stats import spearmanr
 from tqdm import tqdm
 
 from provexp.data.simpledb import SimpleDB
@@ -109,8 +112,11 @@ def process_shard(shard: int, rows: list[dict[str, Any]], dbdir: Path, explanati
             "index": row["index"], "name": row["name"], "size": row["size"], "num_elements": m,
             "trigger_bytes": int(inside.sum()), "trigger_share": float(inside.mean()),
             "num_trigger_features": int(support.sum()),
-            "ceiling_mass_on_T": mass_on(prov.pullback(r), inside),
-            "ceiling_precision_at_T": precision_at(prov.pullback(r), inside, 1.0),
+            "support_share": float(support.mean()),
+            "roundtrip_mass_on_T": mass_on(prov.pullback(r), inside),
+            "roundtrip_precision_at_T": precision_at(prov.pullback(r), inside, 1.0),
+            "bound_mass_on_T": float(prov.rmatvec(np.append(inside, False).astype(np.float64)
+                                                  if prov.has_null else inside.astype(np.float64)).max()),
         }
         for K in WINDOW_COUNTS:
             record[f"window_bound_k{K}"] = min(1.0, float(inside.sum()) / max(m / K, 1.0))
@@ -123,16 +129,8 @@ def process_shard(shard: int, rows: list[dict[str, Any]], dbdir: Path, explanati
                 f"null_share:{name}": float(abs(b[-1]) / np.abs(b).sum()) if np.abs(b).sum() > 0 else float("nan"),
                 f"pf_mass_on_support:{name}": float(np.abs(delta[support]).sum() / np.abs(delta).sum()) if np.abs(delta).sum() > 0 else float("nan"),
                 f"pf_top1_in_support:{name}": bool(support[int(np.argmax(np.abs(delta)))]),
+                f"pf_top10_in_support:{name}": float(support[np.argsort(-np.abs(delta), kind="stable")[:10]].mean()),
             }
-            # Agreement with the reference, on the features the trigger touches.
-            if support.sum() > 1:
-                u, v = np.abs(delta[support]), r[support]
-                norm = float(np.linalg.norm(u) * np.linalg.norm(v))
-                record[f"pf_cosine:{name}"] = float(u @ v / norm) if norm > 0 else float("nan")
-                record[f"pf_spearman:{name}"] = float(spearmanr(u, v).statistic)
-            else:
-                record[f"pf_cosine:{name}"] = float("nan")
-                record[f"pf_spearman:{name}"] = float("nan")
         out.append(record)
     return out
 
@@ -209,22 +207,26 @@ def main() -> None:
     print("## PB2: the pullback on the trigger's bytes (10th / 50th / 90th percentile)\n")
     rows_pb = [{"method": f"pullback, {n}", "mass on T": q(f"mass_on_T:{n}"), "precision at |T|": q(f"precision_at_T:{n}"),
                 "null share": q(f"null_share:{n}")} for n in names]
-    rows_pb.append({"method": "ceiling (any feature explanation)", "mass on T": q("ceiling_mass_on_T"),
-                    "precision at |T|": q("ceiling_precision_at_T"), "null share": "—"})
+    rows_pb.append({"method": "bound (best single feature)", "mass on T": q("bound_mass_on_T"),
+                    "precision at |T|": "—", "null share": "—"})
+    rows_pb.append({"method": "round trip P psi(1_T) (not a bound)", "mass on T": q("roundtrip_mass_on_T"),
+                    "precision at |T|": q("roundtrip_precision_at_T"), "null share": "—"})
     rows_pb.append({"method": "random ranking", "mass on T": q("trigger_share"), "precision at |T|": q("trigger_share"), "null share": "—"})
     for K in WINDOW_COUNTS:
         rows_pb.append({"method": f"any window-level method, K = {K}", "mass on T": "—",
                         "precision at |T|": q(f"window_bound_k{K}"), "null share": "—"})
     print(markdown(pl.DataFrame(rows_pb)), "\n")
 
-    print("## PF2: feature-space explainers against the pushforward of the trigger\n")
-    print(markdown(pl.DataFrame([{
+    print("## PF2: feature-space explainers against the support of the trigger's pushforward\n")
+    rows_pf = [{
         "explainer": n,
         "mass on supp(r)": q(f"pf_mass_on_support:{n}"),
-        "cosine with r": q(f"pf_cosine:{n}"),
-        "spearman with r": q(f"pf_spearman:{n}"),
         "top-1 in supp(r)": f"{int(table[f'pf_top1_in_support:{n}'].sum())}/{table.height}",
-    } for n in names])), "\n")
+        "top-10 in supp(r)": q(f"pf_top10_in_support:{n}"),
+    } for n in names]
+    rows_pf.append({"explainer": "random", "mass on supp(r)": q("support_share"), "top-1 in supp(r)": "—",
+                    "top-10 in supp(r)": q("support_share")})
+    print(markdown(pl.DataFrame(rows_pf)), "\n")
     print(f"Wrote {outdir.as_posix()}/metrics-{args.which}.parquet.")
 
 

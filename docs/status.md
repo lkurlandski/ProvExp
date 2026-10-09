@@ -12,7 +12,7 @@ in artifact paths (`artifacts/experiments/e1/` holds PB1). Work stays at pilot s
 |---|---|
 | **CP** (characterizing P) | **done** at 2,000 files (`docs/cp_census.md`) plus coarsening on the pilot files. Remaining: instrumented vs. black-box P at window level, which `faithfulness.py` now saves. |
 | **PB1** (pullback faithfulness and cost) | **done** at pilot scale, baselines included (`docs/pb1_pilot.md`). Gate 2 passed for the GBDT. |
-| **PB2, PF2** (planted trigger) | **done at pilot scale** (50 files per trigger; `docs/trigger_plan.md`, "Pilot-scale results"). Struct: precision at \|T\| = 1 on 50/50 files. Content: 0.94 on the typical file, failing exactly where P says it must. PF2 reads r as a support (decided 2026-10-09). Open: the "ceiling" label in `trigger_tables.py`. |
+| **PB2, PF2** (planted trigger) | **done at pilot scale** (50 files per trigger; `docs/trigger_plan.md`, "Pilot-scale results"). Struct: precision at \|T\| = 1 on 50/50 files. Content: 0.94 on the typical file, failing exactly where P says it must. PF2 reads r as a support (decided 2026-10-09; tables updated). |
 | **PF1** (pushforward faithfulness) | **designed with the user 2026-10-09** (`docs/pf1_plan.md`), not built. `faithfulness.py` now saves the window scores (`window_scores.npz`); **waiting on the user's re-run** (`run/17_pf1_window_scores.sh`). |
 | **CM** (GBDT vs. MalConv) | designed, not built; MalConv explanations of the pilot files are not computed yet. |
 | **The MLP** | set aside temporarily; returns after the GBDT methodology is established. |
@@ -67,9 +67,8 @@ to null mass and overlap; < 0.5 claim 3 weakened, rethink with the user).
 
 ## Next (for Claude), on resume
 
-1. ~~Read the pilot-scale PB2/PF2 results~~ done 2026-10-09 (`docs/trigger_plan.md`). Follow-ups: rename the
-   "ceiling" in `trigger_tables.py` to "round trip" and add the true bound (best single feature's column share on T);
-   PF2's metric code still prints cosine and Spearman against r; demote them to match the support reading.
+1. ~~Read the pilot-scale PB2/PF2 results~~ done 2026-10-09 (`docs/trigger_plan.md`), and the follow-ups in
+   `trigger_tables.py` (round trip renamed, true bound added, PF2 under the support reading) are done and re-run.
 2. **PF1** (the pushforward's faithfulness): the one experiment with no evidence yet, and claim 3 rests on it. Design
    it with the user first — designed 2026-10-09 (`docs/pf1_plan.md`). `faithfulness.py` now writes
    `window_scores.npz` (per-window occlusion at every window count, KernelSHAP over windows, x and the fully ablated
