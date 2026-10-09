@@ -153,6 +153,12 @@ occlusion. Byte-level occlusion would need one extraction per byte.
 
 ## Baselines (2026-10-08): the sweep, KernelSHAP over windows, and the unsigned ranking
 
+> **Pending re-read (2026-10-09):** every ranking in this document broke ties by position in the file. At 1,024 and
+> 4,096 windows most occlusion windows score exactly 0, so position decided much of occlusion's curves (the pullback
+> is barely affected). `run/21_pb1_tiebreak.sh` re-runs the curves with seeded random tie-breaks; its reading is fixed
+> in `docs/pb1_baselines.md` ("Tie-break re-run"). Until then, treat occlusion's numbers at 1,024–4,096 windows, and
+> the saturation, as provisional.
+
 Run `zeros-typical-header-baselines/` (level 3, GBDT, the same 100 files; 6.1 h on 16 workers,
 `scripts/pb1_tables.py --fill zeros-typical-header-baselines`). The reading of each outcome was fixed in advance
 (`docs/pb1_baselines.md`). **Healthy:** 0 failed files, 0 of 29,000 invalid curve points, no warning, 0 failed
