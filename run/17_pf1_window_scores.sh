@@ -12,7 +12,21 @@ cd "$(dirname "$0")/.."
 source env/bin/activate
 export PYTHONHASHSEED=0
 
-OMP_NUM_THREADS=1 python scripts/faithfulness.py --seed 0 --num_files 100 --num_workers 64 \
-  --header typical --sweep_windows 64 1024 4096 --kernelshap_samples 2048 --timeout 28800 --tag baselines-scores \
+LOG=artifacts/logs/faithfulness-seed0-zeros-typical-baselines-scores.log
+echo "PF1 inputs: faithfulness.py on the 100 pilot files (baselines configuration, 64 workers, about 1.5-2 h)."
+echo "Output: artifacts/experiments/e1/seed-0/zeros-typical-header-baselines-scores/"
+echo "Log:    $LOG   (follow with: tail -f $LOG)"
+
+OMP_NUM_THREADS=1 python scripts/faithfulness.py \
+  --seed 0 \
+  --num_files 100 \
   --files artifacts/experiments/e1/seed-0/zeros-typical-header/files.parquet \
-  &> artifacts/logs/faithfulness-seed0-zeros-typical-baselines-scores.log
+  --header typical \
+  --sweep_windows 64 1024 4096 \
+  --kernelshap_samples 2048 \
+  --timeout 28800 \
+  --tag baselines-scores \
+  --num_workers 64 \
+  &> "$LOG"
+
+echo "Done. See the end of $LOG for the summary."

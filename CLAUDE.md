@@ -31,7 +31,10 @@ plus a null element) transfers explanations between the feature-space (EMBER v3 
   explanations and census (explain, provenance_census, pullback_agreement, pilot_tables); CP (cp_tables,
   cp_coarsening); PB1 (discover_protected_fields, header_typical_values, faithfulness, pb1_tables).
 - `run/`: the commands that produced `artifacts/`, one numbered script per step, with the runtimes they took. **Add a
-  script here whenever a new experiment is run**, and keep its arguments in sync with what was actually run.
+  script here whenever a new experiment is run**, and keep its arguments in sync with what was actually run. In
+  these scripts: (1) `echo` a short line before each step saying what runs and, above all, **the log file** a long
+  step writes to; (2) put one argument (or one short group) per line with `\` continuations, so that long commands
+  are readable and easy to edit.
 - `tests/`: `reference/` is a verbatim copy of thrember's `features.py`. **Never edit it.**
 
 ## Environment
