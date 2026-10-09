@@ -46,6 +46,7 @@ from numpy import typing as npt
 import polars as pl
 from tqdm import tqdm
 
+from provexp.ablation import element_order
 from provexp.data.simpledb import SimpleDB
 from provexp.data.simpledb import SimpleDBIterator
 from provexp.featuresets.ember2024.features import PEFeatureExtractor
@@ -76,12 +77,12 @@ def mass_on(values: npt.NDArray[np.float64], inside: npt.NDArray[np.bool_]) -> f
     return float(np.abs(values[:inside.shape[0]][inside]).sum() / total) if total > 0 else float("nan")
 
 
-def precision_at(values: npt.NDArray[np.float64], inside: npt.NDArray[np.bool_], direction: float) -> float:
-    """The share of the trigger's elements among the |T| highest-ranked ones."""
+def precision_at(values: npt.NDArray[np.float64], inside: npt.NDArray[np.bool_], direction: float, tiebreak: npt.NDArray[np.int64]) -> float:
+    """The share of the trigger's elements among the |T| highest-ranked ones, ties broken by `tiebreak`, not position."""
     n = int(inside.sum())
     if n == 0:
         return float("nan")
-    top = np.argsort(-direction * values[:inside.shape[0]], kind="stable")[:n]
+    top = element_order(values[:inside.shape[0]], direction, tiebreak)[:n]
     return float(inside[top].mean())
 
 
@@ -105,6 +106,9 @@ def process_shard(shard: int, rows: list[dict[str, Any]], dbdir: Path, explanati
         one_T = np.zeros(prov.num_rows)
         one_T[:m][inside] = 1.0 / max(int(inside.sum()), 1)
         r = prov.pushforward(one_T)
+        # Ties (e.g., bytes with identical provenance) are broken by a seeded permutation, never by position, which
+        # would favor the trigger at the end of the file or penalize it.
+        tiebreak = np.random.default_rng(int(row["index"])).permutation(m).astype(np.int64)
         support = r > 0
         # The direction of the decision the trigger causes, so that "top-ranked" means "most responsible".
         direction = float(np.sign(row["log_odds_triggered_poisoned"] - row["log_odds_clean_poisoned"])) or 1.0
@@ -114,7 +118,7 @@ def process_shard(shard: int, rows: list[dict[str, Any]], dbdir: Path, explanati
             "num_trigger_features": int(support.sum()),
             "support_share": float(support.mean()),
             "roundtrip_mass_on_T": mass_on(prov.pullback(r), inside),
-            "roundtrip_precision_at_T": precision_at(prov.pullback(r), inside, 1.0),
+            "roundtrip_precision_at_T": precision_at(prov.pullback(r), inside, 1.0, tiebreak),
             "bound_mass_on_T": float(prov.rmatvec(np.append(inside, False).astype(np.float64)
                                                   if prov.has_null else inside.astype(np.float64)).max()),
         }
@@ -125,7 +129,7 @@ def process_shard(shard: int, rows: list[dict[str, Any]], dbdir: Path, explanati
             b = prov.pullback(delta)
             record |= {
                 f"mass_on_T:{name}": mass_on(b, inside),
-                f"precision_at_T:{name}": precision_at(b, inside, direction),
+                f"precision_at_T:{name}": precision_at(b, inside, direction, tiebreak),
                 f"null_share:{name}": float(abs(b[-1]) / np.abs(b).sum()) if np.abs(b).sum() > 0 else float("nan"),
                 f"pf_mass_on_support:{name}": float(np.abs(delta[support]).sum() / np.abs(delta).sum()) if np.abs(delta).sum() > 0 else float("nan"),
                 f"pf_top1_in_support:{name}": bool(support[int(np.argmax(np.abs(delta)))]),

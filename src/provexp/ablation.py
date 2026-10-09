@@ -30,6 +30,7 @@ __all__ = [
     "element_order",
     "estimate_provenance",
     "window_edges",
+    "window_order",
 ]
 
 
@@ -38,6 +39,9 @@ Fill = Literal["zeros", "random"]
 BoolArray = npt.NDArray[np.bool_]
 FloatArray = npt.NDArray[np.float64]
 IntArray = npt.NDArray[np.int64]
+
+# Scores within this fraction of the largest magnitude of each other count as tied when a tie-break is given.
+TIE_TOLERANCE = 1e-9
 
 # Fractions of the ablatable elements, log-spaced because evidence is concentrated in small parts of the input.
 BUDGETS: tuple[float, ...] = (0.001, 0.002, 0.005, 0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1.0)
@@ -97,18 +101,51 @@ def ablate(
 ################################################################################
 
 
-def element_order(scores: npt.ArrayLike, direction: float = 1.0) -> IntArray:
+def element_order(scores: npt.ArrayLike, direction: float = 1.0, tiebreak: Optional[IntArray] = None) -> IntArray:
     """
-    The elements ordered by decreasing `direction * scores`; ties keep their input order.
+    The elements ordered by decreasing `direction * scores`.
+
+    Without `tiebreak`, ties keep their input order. With it, ties are broken by the permutation (an element earlier in
+    it comes first), and scores within TIE_TOLERANCE of the largest magnitude count as tied.
 
     Args:
         scores: A score per element, shape (m,), e.g., a pulled-back explanation without its null element.
         direction: The sign of the evidence to rank first, e.g., the sign of the model's log-odds.
+        tiebreak: Optionally, a permutation of the elements, shape (m,), e.g., a seeded random one.
     """
     s = np.asarray(scores, dtype=np.float64)
     if s.ndim != 1:
         raise ValueError(f"Expected one score per element. Got shape {s.shape}.")
-    return np.argsort(-np.sign(direction) * s, kind="stable").astype(np.int64)
+    if tiebreak is None:
+        return np.argsort(-np.sign(direction) * s, kind="stable").astype(np.int64)
+    if tiebreak.shape != s.shape:
+        raise ValueError(f"Expected a tie-break permutation of {s.shape[0]} elements. Got shape {tiebreak.shape}.")
+    # NOTE: equal scores often differ by round-off (e.g., features or elements with identical provenance), which would
+    # otherwise decide their order; quantizing makes such near-ties exact, so that the permutation decides.
+    scale = float(np.abs(s).max(initial=0.0))
+    key = -np.sign(direction) * (np.round(s / (TIE_TOLERANCE * scale)) if scale > 0 else s)
+    return np.asarray(tiebreak[np.argsort(key[tiebreak], kind="stable")], dtype=np.int64)
+
+
+def window_order(scores: npt.ArrayLike, edges: IntArray, direction: float = 1.0, tiebreak: Optional[IntArray] = None) -> IntArray:
+    """
+    The elements ordered window by window: the windows by decreasing `direction * scores` (see `element_order`), each
+    window's elements in their own order. Ties are broken between whole windows, never by scattering their elements.
+    Without `tiebreak`, this equals `element_order` of the scores repeated over each window's elements.
+
+    Args:
+        scores: A score per window, shape (K,).
+        edges: The window edges, shape (K + 1,).
+        direction: The sign of the evidence to rank first.
+        tiebreak: Optionally, a permutation of the windows, shape (K,).
+    """
+    s = np.asarray(scores, dtype=np.float64)
+    if edges.shape != (s.shape[0] + 1,):
+        raise ValueError(f"Expected {s.shape[0] + 1} window edges. Got shape {edges.shape}.")
+    windows = element_order(s, direction, tiebreak)
+    if windows.shape[0] == 0:
+        return np.zeros(0, dtype=np.int64)
+    return np.concatenate([np.arange(edges[k], edges[k + 1], dtype=np.int64) for k in windows])
 
 
 def budget_masks(order: IntArray, protected: BoolArray, budgets: Sequence[float] = BUDGETS) -> list[BoolArray]:

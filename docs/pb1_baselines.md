@@ -92,3 +92,27 @@ Read the overshoot table: `pullback_abs:*` vs. `pullback:*` (median overshoot an
    subset). The 4,096-window sweep on all 2,000 files would cost about 1,400 worker-hours, so it likely runs on a
    subset (e.g., 200–300 files) chosen before looking at results; KernelSHAP over windows likewise.
 3. Then CP and the planted trigger (PB2, PF2); the MLP returns after the GBDT methodology is established.
+
+## Tie-break re-run (2026-10-09; `run/21_pb1_tiebreak.sh`): reading fixed in advance
+
+**Why.** Rankings broke ties by position in the file. At 1,024 and 4,096 windows a median 62% and 89% of occlusion's
+windows score exactly 0 (occluding them changes nothing), so every budget past the few positive windows deleted zero
+windows from the start of the file onward: position, not evidence, decided much of occlusion's curve (at 4,096
+windows, the budgets from about 6% up). The pullback rarely ties (position decided a median < 0.5% of its selection).
+Now ties are broken by a seeded permutation (of bytes for byte-level rankings, of whole windows for window-level ones),
+and scores within 1e-9 (relative) count as tied. On 6 files, the change moved occlusion's curve points by up to
+1.57 log-odds and the pullback's by at most 0.13; with `--tiebreak position` the new code reproduces the old curves
+exactly. Pass 1 is reused from run 17 (the occlusion and KernelSHAP scores themselves do not change).
+
+**Reading, against `artifacts/reports/pb1_tables-baselines.md`** (gains relative to occlusion at 256 windows):
+1. *The pullback's numbers* (byte-level 1.67, coarsened 0.89-1.22) should move by at most about 0.05. More would be
+   a bug: find it before reading anything else.
+2. *Occlusion's saturation.* **Stands** if occlusion at 4,096 windows stays within 0.05 of occlusion at 1,024 and
+   the byte-level pullback stays ahead of the best direct baseline (occlusion at any window count or KernelSHAP over
+   windows) on most files (p < 0.01). **Revised** if occlusion at 4,096 rises clearly above 1,024 (> 0.05): then the
+   plateau was partly an artifact of positional ties, and PB1 states "occlusion improves with resolution but stays
+   below the byte-level pullback at 4,096 extractions per file" if the gap remains, or reports parity if it closes.
+3. *Parity at equal granularity* (64, 256, 1,024 windows) and the lead at 4,096: re-read with the new numbers; a
+   change of conclusion at any window count is reported as such.
+4. *The overshoot*: re-read; the unsigned-ranking reading stands if it still removes most of the byte-level overshoot.
+Any change in PB1's conclusions goes to `docs/pb1_pilot.md`, `PLAN.md`, and the manuscript (PB1 baselines).

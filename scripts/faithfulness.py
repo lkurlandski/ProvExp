@@ -81,6 +81,7 @@ from provexp.ablation import coarsen_provenance
 from provexp.ablation import element_order
 from provexp.ablation import estimate_provenance
 from provexp.ablation import window_edges
+from provexp.ablation import window_order
 from provexp.data.simpledb import SimpleDB
 from provexp.data.simpledb import SimpleDBIterator
 from provexp.explain.feature import gbdt_function
@@ -316,7 +317,7 @@ def process_kernelshap(task: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-def process_file(data: bytes, explanations: dict[str, FloatArray], num_windows: int, fill: Fill, header: HeaderFill, seed: int, budgets: tuple[float, ...], sweep: Optional[dict[int, dict[str, FloatArray]]] = None, shapley: Optional[dict[str, FloatArray]] = None, pass1: Optional[dict[str, Any]] = None) -> tuple[list[dict[str, Any]], dict[str, Any], dict[str, Any]]:
+def process_file(data: bytes, explanations: dict[str, FloatArray], num_windows: int, fill: Fill, header: HeaderFill, seed: int, budgets: tuple[float, ...], sweep: Optional[dict[int, dict[str, FloatArray]]] = None, shapley: Optional[dict[str, FloatArray]] = None, pass1: Optional[dict[str, Any]] = None, tiebreak: bool = True) -> tuple[list[dict[str, Any]], dict[str, Any], dict[str, Any]]:
     """
     Everything for one file that pass 1 did not do: the K-window occlusion, the black-box provenance, the rankings,
     and the deletion curves.
@@ -325,6 +326,9 @@ def process_file(data: bytes, explanations: dict[str, FloatArray], num_windows: 
         sweep: Per further window count, the per-model occlusion score of each window (from pass 1).
         shapley: Per model, the Shapley value of each of the K windows (from pass 1).
         pass1: Pass 1's timing, extraction counts, and verification failures, to record alongside this pass's.
+        tiebreak: Break ties in every ranking by a seeded random permutation (of the bytes for byte-level rankings, of
+            the windows for window-level ones), instead of by position in the file. Ties are common: at 4,096 windows,
+            occluding most windows changes nothing, so their scores are exactly 0.
     """
     m = len(data)
     t_0 = time.perf_counter()
@@ -361,31 +365,44 @@ def process_file(data: bytes, explanations: dict[str, FloatArray], num_windows: 
     shapley = shapley or {}
     sweep_info: dict[str, Any] = dict(pass1 or {})
 
-    # Rankings: element orders per model and method.
+    # Rankings: element orders per model and method. Window-level methods rank whole windows (window_order), so a tie
+    # is broken between windows, never by scattering their bytes. The permutations come from their own seeded stream,
+    # the same for every model and method at a resolution, so that the random orders below are unchanged.
     t_0 = time.perf_counter()
+    ties = np.random.default_rng([seed, 1]) if tiebreak else None
+
+    def permutation(n: int) -> Optional[npt.NDArray[np.int64]]:
+        return ties.permutation(n).astype(np.int64) if ties is not None else None
+
+    byte_perm = permutation(m)
+    perm_K = permutation(K)
+    window_sets: dict[int, tuple[int, npt.NDArray[np.int64], npt.NDArray[np.int64], dict[str, FloatArray], Optional[npt.NDArray[np.int64]]]] = {}
+    for J, (K_j, window_j, scores_j) in sorted(windowed.items()):
+        window_sets[J] = (K_j, window_j, window_edges(m, J), scores_j, permutation(K_j))
     orders: dict[str, dict[str, npt.NDArray[np.int64]]] = {name: {} for name in scorer.models}
     for name in scorer.models:
+        d = direction[name]
         for e in MODELS.get(name, []):
             if e not in explanations:
                 continue
             b = prov.pullback(explanations[e])[:m]
-            orders[name][f"pullback:{e}"] = element_order(b, direction[name])
-            orders[name][f"pullback_abs:{e}"] = element_order(np.abs(b))
-            per_window = np.bincount(window, weights=b, minlength=K)
-            orders[name][f"pullback_k:{e}"] = element_order(per_window[window], direction[name])
-            for J, (K_j, window_j, _) in windowed.items():
-                per_window_j = np.bincount(window_j, weights=b, minlength=K_j)
-                orders[name][f"pullback_k{J}:{e}"] = element_order(per_window_j[window_j], direction[name])
-            orders[name][f"blackbox:{e}"] = element_order(blackbox.pullback(explanations[e])[:m], direction[name])
+            orders[name][f"pullback:{e}"] = element_order(b, d, byte_perm)
+            orders[name][f"pullback_abs:{e}"] = element_order(np.abs(b), 1.0, byte_perm)
+            orders[name][f"pullback_k:{e}"] = window_order(np.bincount(window, weights=b, minlength=K), edges, d, perm_K)
+            for J, (K_j, window_j, edges_j, _, perm_j) in window_sets.items():
+                orders[name][f"pullback_k{J}:{e}"] = window_order(np.bincount(window_j, weights=b, minlength=K_j), edges_j, d, perm_j)
+            # The black-box provenance is spread evenly over each window, so each window's first element carries its score.
+            orders[name][f"blackbox:{e}"] = window_order(blackbox.pullback(explanations[e])[:m][edges[:-1]], edges, d, perm_K)
         # Occlusion scores are already the evidence for malware (f0 - f(occluded)), and so are the Shapley values.
-        orders[name]["occlusion"] = element_order(occlusion[name][window], direction[name])
-        for J, (_, window_j, occlusion_j) in windowed.items():
-            orders[name][f"occlusion_k{J}"] = element_order(occlusion_j[name][window_j], direction[name])
+        orders[name]["occlusion"] = window_order(occlusion[name], edges, d, perm_K)
+        for J, (K_j, _, edges_j, scores_j, perm_j) in window_sets.items():
+            # NOTE: pass 1 allocates J scores, but a file with fewer than J bytes has only K_j windows.
+            orders[name][f"occlusion_k{J}"] = window_order(scores_j[name][:K_j], edges_j, d, perm_j)
         if name in shapley:
-            orders[name]["kernelshap_windows"] = element_order(shapley[name][window], direction[name])
+            orders[name]["kernelshap_windows"] = window_order(shapley[name], edges, d, perm_K)
     t_rank = time.perf_counter() - t_0
     rng = np.random.default_rng(seed)
-    random_orders = {f"random:{r}": element_order(rng.permutation(K).astype(np.float64)[window]) for r in range(3)}
+    random_orders = {f"random:{r}": window_order(rng.permutation(K).astype(np.float64), edges) for r in range(3)}
 
     records: list[dict[str, Any]] = []
 
@@ -499,7 +516,7 @@ def process_one(task: dict[str, Any]) -> tuple[list[dict[str, Any]], dict[str, A
         data = load_sample(task["shard"], task["position"], task["name"], task["dbdir"])
         recs, info, arr = process_file(
             data, task["explanations"], task["num_windows"], task["fill"], task["header"],
-            task["seed"], task["budgets"], task["sweep"], task["shapley"], task["pass1"],
+            task["seed"], task["budgets"], task["sweep"], task["shapley"], task["pass1"], task["tiebreak"],
         )
         return (
             [base | r for r in recs],
@@ -526,6 +543,42 @@ def _pass1(task: dict[str, Any]) -> dict[str, Any]:
                 "num_windows": task.get("num_windows", 0), "k_lo": task.get("k_lo", 0), "k_hi": task.get("k_hi", 0)}
     finally:
         signal.alarm(0)
+
+
+def reuse_pass1(rundir: Path, indices: list[int], config: dict[str, Any]) -> tuple[dict[int, dict[int, dict[str, FloatArray]]], dict[int, dict[str, FloatArray]], dict[int, dict[str, Any]], dict[int, float]]:
+    """
+    Pass 1's outputs from an earlier run's window_scores.npz and files.parquet, so that a run that changes only pass 2
+    (e.g., the rankings) need not repeat it. The earlier run's configuration must match.
+
+    Returns:
+        Per file index: the sweep's per-window scores (per window count and model), KernelSHAP's per-window values (per
+        model), pass 1's record (timing, extractions, failures), and pass 1's seconds.
+    """
+    report = json.loads((rundir / "report.json").read_text())
+    for key, value in config.items():
+        if report.get(key) != value:
+            raise ValueError(f"{rundir.as_posix()} was run with {key} = {report.get(key)}, not {value}.")
+    scores = load_window_scores(rundir / "window_scores.npz")
+    files = pl.read_parquet(rundir / "files.parquet")
+    missing = sorted(set(indices) - set(scores))
+    if missing:
+        raise RuntimeError(f"{rundir.as_posix()} has no window scores for files {missing[:5]}.")
+    prefixes = ("seconds_occlusion_k", "occlusion_extractions_k", "invalid_windows_k", "num_windows_k", "seconds_kernelshap_windows",
+                "kernelshap_windows_extractions", "kernelshap_windows_failed")
+    columns = [c for c in files.columns if c.startswith(prefixes)]
+    records = {int(r["index"]): r for r in files.select("index", *columns).to_dicts()}
+    sweeps: dict[int, dict[int, dict[str, FloatArray]]] = {}
+    shapleys: dict[int, dict[str, FloatArray]] = {}
+    info: dict[int, dict[str, Any]] = {}
+    seconds: dict[int, float] = {}
+    for i in indices:
+        sweeps[i] = {J: {name: scores[i][f"occlusion_k{J}:{name}"] for name in config["classifiers"]}
+                     for J in dict.fromkeys(config["sweep_windows"]) if J != config["num_windows"]}
+        if config["kernelshap_samples"] > 0:
+            shapleys[i] = {name: scores[i][f"kernelshap_windows:{name}"] for name in config["classifiers"]}
+        info[i] = {c: v for c, v in records[i].items() if c != "index" and v is not None}
+        seconds[i] = float(sum(v for c, v in info[i].items() if c.startswith(("seconds_occlusion_k", "seconds_kernelshap_windows"))))
+    return sweeps, shapleys, info, seconds
 
 
 def extractions_per_file(num_windows: int, sweep_windows: tuple[int, ...], kernelshap_samples: int, budgets: tuple[float, ...], num_methods: int = 26) -> int:
@@ -578,6 +631,8 @@ def main() -> None:
     parser.add_argument("--outdir", type=Path, default=ROOT / "artifacts" / "experiments" / "e1")
     parser.add_argument("--num_workers", type=int, default=os.cpu_count())
     parser.add_argument("--timeout", type=int, default=3600, help="The maximum number of seconds per file.")
+    parser.add_argument("--tiebreak", type=str, choices=["random", "position"], default="random", help="Break ties in the rankings by a seeded random permutation (the default since 2026-10-09) or by position in the file (the earlier behavior).")
+    parser.add_argument("--reuse_scores", type=Path, default=None, help="An earlier run's directory whose window_scores.npz provides pass 1 (the sweep and KernelSHAP over windows), which is then skipped; its configuration must match.")
     args = parser.parse_args()
 
     if os.environ.get("PYTHONHASHSEED") != "0":
@@ -669,6 +724,13 @@ def main() -> None:
     pass1_info: dict[int, dict[str, Any]] = {int(r["index"]): {} for r in rows}
     pass1_seconds: dict[int, float] = {int(r["index"]): 0.0 for r in rows}
     pass1_failures: list[str] = []
+    if args.reuse_scores is not None:
+        indices = [int(r["index"]) for r in rows]
+        config = {"seed": args.seed, "sweep_windows": args.sweep_windows, "kernelshap_samples": args.kernelshap_samples,
+                  "fill": args.fill, "header": args.header, "num_windows": args.num_windows, "classifiers": list(models)}
+        sweeps, shapleys, pass1_info, pass1_seconds = reuse_pass1(args.reuse_scores, indices, config)
+        print(f"Pass 1: reused from {args.reuse_scores.as_posix()} ({len(pass1_tasks)} tasks skipped).", flush=True)
+        pass1_tasks = []
     if pass1_tasks:
         # Longest-first, so that the biggest chunks start immediately.
         pass1_tasks.sort(key=lambda t: -(predicted[t["index"]] * (t.get("k_hi", 0) - t.get("k_lo", 0) + t.get("kernelshap_samples", 0))))
@@ -708,7 +770,7 @@ def main() -> None:
     pass2_tasks = [
         common | {
             "index": int(r["index"]), "name": r["name"], "label": r["label"],
-            "shard": int(r["shard"]), "position": int(r["position"]), "budgets": BUDGETS,
+            "shard": int(r["shard"]), "position": int(r["position"]), "budgets": BUDGETS, "tiebreak": args.tiebreak == "random",
             "seed": args.sample_seed + int(r["index"]),
             "explanations": {e: A[int(r["index"])] for e, A in explanations.items()},
             "sweep": sweeps[int(r["index"])], "shapley": shapleys.get(int(r["index"])),
@@ -755,6 +817,8 @@ def main() -> None:
         "kernelshap_samples": args.kernelshap_samples,
         "fill": args.fill,
         "header": args.header,
+        "tiebreak": args.tiebreak,
+        "reuse_scores": args.reuse_scores.as_posix() if args.reuse_scores is not None else None,
         "num_windows": args.num_windows,
         "budgets": list(BUDGETS),
         "num_files": samples.height,

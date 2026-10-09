@@ -13,6 +13,7 @@ from provexp.ablation import budget_masks
 from provexp.ablation import coarsen
 from provexp.ablation import coarsen_provenance
 from provexp.ablation import element_order
+from provexp.ablation import window_order
 from provexp.ablation import estimate_provenance
 from provexp.ablation import window_edges
 from provexp.boxmatrix import BoxMatrix
@@ -230,3 +231,35 @@ def test_estimate_provenance_with_heterogeneous_scales() -> None:
     prov = estimate_provenance(x, X, edges)
     assert prov.is_empty.tolist() == [False, False, True]
     assert np.allclose(coarsen(prov, edges)[:4, 1], [0.25, 0.0, 0.75, 0.0])
+
+
+class TestTieBreaks:
+
+    def test_a_tiebreak_decides_ties_and_near_ties(self) -> None:
+        scores = np.array([0.0, 2.0, 0.0, 2.0 + 1e-15, 1.0])
+        assert element_order(scores, tiebreak=np.array([3, 1, 4, 2, 0])).tolist() == [3, 1, 4, 2, 0]
+        assert element_order(scores, tiebreak=np.array([1, 3, 0, 2, 4])).tolist() == [1, 3, 4, 0, 2]
+
+    def test_without_a_tiebreak_nothing_changes(self) -> None:
+        scores = np.array([0.0, 2.0, -1.0, 2.0, 1.0])
+        assert element_order(scores, tiebreak=np.arange(5)).tolist() == element_order(scores).tolist()
+
+    @given(st.integers(1, 60), st.integers(1, 20), st.integers(0, 2 ** 16))
+    @settings(max_examples=100, deadline=None)
+    def test_window_order_equals_the_repeated_element_order(self, m: int, K: int, seed: int) -> None:
+        rng = np.random.default_rng(seed)
+        edges = window_edges(m, K)
+        scores = rng.integers(-2, 3, size=edges.shape[0] - 1).astype(np.float64)
+        window = np.repeat(np.arange(edges.shape[0] - 1), np.diff(edges))
+        assert window_order(scores, edges, -1.0).tolist() == element_order(scores[window], -1.0).tolist()
+
+    @given(st.integers(1, 60), st.integers(1, 20), st.integers(0, 2 ** 16))
+    @settings(max_examples=100, deadline=None)
+    def test_window_order_keeps_windows_whole(self, m: int, K: int, seed: int) -> None:
+        rng = np.random.default_rng(seed)
+        edges = window_edges(m, K)
+        Kw = edges.shape[0] - 1
+        order = window_order(np.zeros(Kw), edges, tiebreak=rng.permutation(Kw).astype(np.int64))
+        assert sorted(order.tolist()) == list(range(m))
+        window = np.repeat(np.arange(Kw), np.diff(edges))[order]
+        assert np.count_nonzero(np.diff(window)) == Kw - 1  # each window's elements are contiguous
