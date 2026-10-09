@@ -13,7 +13,7 @@ in artifact paths (`artifacts/experiments/e1/` holds PB1). Work stays at pilot s
 | **CP** (characterizing P) | **done** at 2,000 files (`docs/cp_census.md`) plus coarsening on the pilot files. Remaining: instrumented vs. black-box P at window level, which `faithfulness.py` now saves. |
 | **PB1** (pullback faithfulness and cost) | **done** at pilot scale, baselines included (`docs/pb1_pilot.md`). Gate 2 passed for the GBDT. |
 | **PB2, PF2** (planted trigger) | **done at pilot scale** (50 files per trigger; `docs/trigger_plan.md`, "Pilot-scale results"). Struct: precision at \|T\| = 1 on 50/50 files. Content: 0.94 on the typical file, failing exactly where P says it must. Open: how PF2 reads r for diffuse triggers; the "ceiling" label in `trigger_tables.py`. |
-| **PF1** (pushforward faithfulness) | designed, not built (`PLAN.md`, section 3). |
+| **PF1** (pushforward faithfulness) | **designed with the user 2026-10-09** (`docs/pf1_plan.md`), not built. Needs `faithfulness.py` to save window scores and a re-run. |
 | **CM** (GBDT vs. MalConv) | designed, not built; MalConv explanations of the pilot files are not computed yet. |
 | **The MLP** | set aside temporarily; returns after the GBDT methodology is established. |
 | **Manuscript** | framework and evaluation sections follow the current structure; `_d_applications.tex` carries the designs and pilot numbers. Do not try to compile it (no LaTeX here). |

@@ -179,12 +179,15 @@ The section forward-references App-L for what the pullback cannot localize (the 
 
 ### 3. Application: the pushforward
 
-**PF1. Faithfulness of the pushforward** (new; design to write)
+**PF1. Faithfulness of the pushforward** (designed 2026-10-09; `docs/pf1_plan.md`; not built)
 
-Push a direct problem-space explanation forward (occlusion at the PB1 window counts, already computed) and test the
-resulting feature attribution in the feature space: a feature-space deletion test of the GBDT (remove the top-ranked
-features, re-score), against TreeSHAP, KernelSHAP, and random. Open: the feature-space reference value for a deleted
-feature, and whether to also push forward the pullback itself (the round trip M a, which CP characterizes).
+Push direct problem-space explanations forward (occlusion at 256 windows, KernelSHAP over windows; the per-window
+scores must first be saved by `faithfulness.py` and re-run) and test them with a feature-space deletion test of the
+GBDT against TreeSHAP, KernelSHAP, random, and a naive incidence-sum pushforward. Two references for a deleted feature
+(the ablated file's features, matched to the problem space; the interventional background, matched to TreeSHAP), also
+restricted to attributable features. The round trip M a is a secondary reference. Success: far above random and the
+naive baseline, a pre-stated fraction of TreeSHAP's area under the matched reference, the gap traced to null mass and
+overlap.
 
 **PF2. Ground truth for feature-space explainers** (built; shares the testbed with PB2)
 
