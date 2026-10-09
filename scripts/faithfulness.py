@@ -28,6 +28,9 @@ Outputs, in `{outdir}/seed-{seed}/{fill}[-{header}-header][-{tag}]/`:
                         provenance coarsened to windows, which features each finds attributable, and the overlap and
                         ambiguity of each feature under each of them at the window level (`overlap_instrumented`,
                         `overlap_blackbox`, `ambiguity_instrumented`, `ambiguity_blackbox`)
+    window_scores.npz   per file, every direct problem-space explanation's per-window scores and the features of
+                        the original and fully ablated file, which PF1 pushes forward (docs/pf1_plan.md); keys
+                        `{index}/{key}`, read with `load_window_scores` (see `window_arrays` for the keys)
     report.json         the configuration, exclusions, verification failures, and timing
 
 Parallelism (restructured 2026-10-08): a single file can cost hours (4.1 h of a 6.1 h run), so parallelizing across
@@ -361,8 +364,7 @@ def process_file(data: bytes, explanations: dict[str, FloatArray], num_windows: 
     t_0 = time.perf_counter()
     orders: dict[str, dict[str, npt.NDArray[np.int64]]] = {name: {} for name in scorer.models}
     for name in scorer.models:
-        explainers = MODELS[name]
-        for e in explainers:
+        for e in MODELS.get(name, []):
             if e not in explanations:
                 continue
             b = prov.pullback(explanations[e])[:m]
@@ -422,13 +424,65 @@ def process_file(data: bytes, explanations: dict[str, FloatArray], num_windows: 
         "fully_ablated_valid": ok_ablated,
         "problems": json.dumps(scorer.problems),
     } | sweep_info | {f"log_odds:{name}": v for name, v in f0.items()} | {f"log_odds_ablated:{name}": v for name, v in f_ablated.items()}
+    arrays_windows = window_arrays(edges, occlusion, windowed, shapley, x0, scorer.features(unprotected)[0], ok_ablated)
     # The statistics of both at the window level (docs/cp_plan.md, CP.3): do they differ where T1 says?
     coarse = {"instrumented": coarsen_provenance(prov, edges), "blackbox": coarsen_provenance(blackbox, edges)}
-    arrays = {"tv": tv.astype(np.float32), "attributable": attributable, "estimated": estimated}
+    arrays = {"tv": tv.astype(np.float32), "attributable": attributable, "estimated": estimated, "windows": arrays_windows}
     for name, Pk in coarse.items():
         arrays[f"overlap_{name}"] = Pk.overlap().per_feature.astype(np.float32)
         arrays[f"ambiguity_{name}"] = Pk.ambiguity().per_feature.astype(np.float32)
     return records, info, arrays
+
+
+def window_arrays(edges: npt.NDArray[np.int64], occlusion: dict[str, FloatArray], windowed: dict[int, tuple[int, npt.NDArray[np.int64], dict[str, FloatArray]]], shapley: dict[str, FloatArray], x: FloatArray, x_ablated: FloatArray, ablated_valid: bool) -> dict[str, npt.NDArray[Any]]:
+    """
+    The per-window scores of every direct problem-space explanation of one file, for PF1 (docs/pf1_plan.md).
+
+    Keys: `edges` and `occlusion:{model}` (the K windows), `edges_k{J}` and `occlusion_k{J}:{model}` (each further
+    window count), `kernelshap_windows:{model}` (over the K windows), `x` (the file's features), and `x_ablated` (the
+    features of the fully ablated file, PF1's reference matched to the problem-space; NaN if it failed verification).
+
+    Args:
+        edges: The K windows' edges.
+        occlusion: Per model, the occlusion score of each of the K windows.
+        windowed: Per further window count J, the number of windows, the window of each element, and per model the
+            occlusion score of each window.
+        shapley: Per model, KernelSHAP's value of each of the K windows (empty if it was not run).
+        x: The features of the file.
+        x_ablated: The features of the fully ablated file.
+        ablated_valid: Whether the fully ablated file passed verification.
+
+    Returns:
+        The arrays, by key.
+    """
+    out: dict[str, npt.NDArray[Any]] = {"edges": np.asarray(edges, dtype=np.int64), "x": np.asarray(x, dtype=np.float64)}
+    out["x_ablated"] = np.asarray(x_ablated, dtype=np.float64) if ablated_valid else np.full(x.shape[0], np.nan)
+    for name, values in occlusion.items():
+        out[f"occlusion:{name}"] = np.asarray(values, dtype=np.float64)
+    for J, (K_j, _, scores) in windowed.items():
+        out[f"edges_k{J}"] = window_edges(int(edges[-1]), J)
+        for name, values in scores.items():
+            # NOTE: pass 1 allocates J scores, but a file with fewer than J bytes has only K_j windows.
+            out[f"occlusion_k{J}:{name}"] = np.asarray(values[:K_j], dtype=np.float64)
+    for name, values in shapley.items():
+        out[f"kernelshap_windows:{name}"] = np.asarray(values, dtype=np.float64)
+    return out
+
+
+def save_window_scores(path: Path, arrays: dict[int, dict[str, npt.NDArray[Any]]]) -> None:
+    """Save every file's `window_arrays` in one archive, under the keys `{index}/{key}`."""
+    flat = {f"{index}/{key}": value for index, per_file in arrays.items() for key, value in per_file.items()}
+    np.savez_compressed(path, **flat)  # type: ignore[arg-type]
+
+
+def load_window_scores(path: Path) -> dict[int, dict[str, npt.NDArray[Any]]]:
+    """Load an archive written by `save_window_scores`: per file index, its arrays by key."""
+    out: dict[int, dict[str, npt.NDArray[Any]]] = {}
+    with np.load(path) as archive:
+        for flat in archive.files:
+            index, key = flat.split("/", 1)
+            out.setdefault(int(index), {})[key] = archive[flat]
+    return out
 
 
 def process_one(task: dict[str, Any]) -> tuple[list[dict[str, Any]], dict[str, Any], dict[int, dict[str, Any]]]:
@@ -677,6 +731,7 @@ def main() -> None:
     for key in ("tv", "attributable", "estimated", *(f"{s}_{p}" for s in ("overlap", "ambiguity") for p in ("instrumented", "blackbox"))):
         stacked[key] = np.stack([arrays[i][key] for i in order]) if order else np.zeros((0, d))
     np.savez_compressed(outdir / "provenance.npz", **stacked)
+    save_window_scores(outdir / "window_scores.npz", {i: arrays[i]["windows"] for i in order})
 
     ok = files.filter(pl.col("status") == "ok")
     curves_table = pl.DataFrame(records, infer_schema_length=None) if records else pl.DataFrame({"valid": []})

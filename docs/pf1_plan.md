@@ -39,8 +39,8 @@ would need occlusion on bytes outside the SimpleDB, and the utility does not jus
 
 ## To build
 
-- `faithfulness.py` saves only curves and window-level provenance statistics, not the per-window occlusion and
-  KernelSHAP scores. It must save them (scores and window edges per file and model), then re-run the baselines
-  configuration on the pilot files (about 1.1 h on 64 workers; the user runs it).
+- Done 2026-10-09: `faithfulness.py` writes `window_scores.npz` (per file: window edges and occlusion scores at every
+  window count, KernelSHAP over windows, the features x and x̃ of the original and fully ablated file), read with
+  `load_window_scores`. The baselines configuration is re-run by `run/17_pf1_window_scores.sh` (user).
 - A PF1 script: load the saved window scores, push them forward through the window-coarsened P, build x̃ per file
   (one extraction of the ablated file), and run the feature-space deletion curves for every method and reference.

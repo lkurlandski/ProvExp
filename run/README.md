@@ -11,7 +11,7 @@ Conventions, which matter for reproducibility:
 - Scripts take their defaults from `scripts/*.py`; only the arguments that differ from a default are written out, so
   a diff against the script shows what was chosen.
 - Long steps (hours) are meant to be run in `tmux`. The runtimes in the comments are what they actually took on this
-  machine (64 cores).
+  machine (2 sockets x 16 cores, hyperthreaded: 64 logical CPUs).
 
 Reconstructed on 2026-10-08 from `artifacts/logs/` and the reports in `artifacts/`; steps 1-9 ran before that date,
 so their scripts record the arguments their logs and reports show, not a transcript of the shell.

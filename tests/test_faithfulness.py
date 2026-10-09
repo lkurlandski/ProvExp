@@ -8,6 +8,9 @@ progress reporting"). These tests pin the two properties that make that safe:
     2. a mask's features do not depend on when or where it is evaluated, because its random fill is seeded by the
        mask itself.
 
+A third group pins what the runner saves for PF1: the per-window scores it ranks with, and the fully ablated file's
+features (docs/pf1_plan.md).
+
 They use a stub model, so they need neither a trained model nor the binaries' database, only a real PE file from
 tests/data/ (see scripts/make_fixtures.py).
 """
@@ -29,9 +32,12 @@ from faithfulness import _STATE  # noqa: E402
 from faithfulness import Scorer  # noqa: E402
 from faithfulness import chunk_windows  # noqa: E402
 from faithfulness import extractions_per_file  # noqa: E402
+from faithfulness import load_window_scores  # noqa: E402
 from faithfulness import occlude  # noqa: E402
 from faithfulness import occlude_range  # noqa: E402
 from faithfulness import predict_seconds  # noqa: E402
+from faithfulness import process_file  # noqa: E402
+from faithfulness import save_window_scores  # noqa: E402
 from provexp.featuresets.ember2024.features import PEFeatureExtractor  # noqa: E402
 
 
@@ -172,3 +178,51 @@ def test_a_different_seed_changes_the_random_fill_but_not_the_zero_fill(stubbed:
     a = scorer_for(data, "random", seed=1).features(mask)[0]
     b = scorer_for(data, "random", seed=2).features(mask)[0]
     assert not np.array_equal(a, b)
+
+
+################################################################################
+# Window Scores (PF1)
+################################################################################
+
+
+SWEEP = 8
+
+
+def test_process_file_saves_the_scores_it_ranks_with(stubbed: PEFeatureExtractor, data: bytes) -> None:
+    """The saved scores are exactly the occlusion, sweep, and KernelSHAP scores, and the ablated file's features."""
+    seed = 7
+    scorer = scorer_for(data, "zeros", seed)
+    f0, _ = scorer.scores(np.zeros(len(data), dtype=np.bool_))
+    edges_j = window_edges(len(data), SWEEP)
+    window_j = np.repeat(np.arange(edges_j.shape[0] - 1), np.diff(edges_j))
+    sweep = {SWEEP: occlude_range(scorer, window_j, f0, 0, edges_j.shape[0] - 1)[0]}
+    shapley = {"stub": np.random.default_rng(0).normal(size=NUM_WINDOWS)}
+    _, _, arrays = process_file(data, {}, NUM_WINDOWS, "zeros", "typical", seed, (0.5, 1.0), sweep, shapley)
+    saved = arrays["windows"]
+
+    edges, _, _, occlusion, _ = occlude(scorer_for(data, "zeros", seed), len(data), NUM_WINDOWS)
+    assert np.array_equal(saved["edges"], edges)
+    assert np.array_equal(saved["occlusion:stub"], occlusion["stub"])
+    assert np.array_equal(saved[f"edges_k{SWEEP}"], edges_j)
+    assert np.array_equal(saved[f"occlusion_k{SWEEP}:stub"], sweep[SWEEP]["stub"])
+    assert np.array_equal(saved["kernelshap_windows:stub"], shapley["stub"])
+    protection = protect(data, header="typical")
+    x_ablated, problem = scorer.features(~protection.mask)
+    assert problem is None
+    assert np.array_equal(saved["x_ablated"], x_ablated)
+    assert np.array_equal(saved["x"], scorer.features(np.zeros(len(data), dtype=np.bool_))[0])
+
+
+def test_window_scores_round_trip(tmp_path: Path) -> None:
+    rng = np.random.default_rng(0)
+    arrays = {
+        3: {"edges": np.arange(5), "occlusion:gbdt": rng.normal(size=4), "x_ablated": np.full(2, np.nan)},
+        11: {"edges": np.arange(3), "kernelshap_windows:gbdt": rng.normal(size=2)},
+    }
+    save_window_scores(tmp_path / "w.npz", arrays)
+    loaded = load_window_scores(tmp_path / "w.npz")
+    assert loaded.keys() == arrays.keys()
+    for index, per_file in arrays.items():
+        assert loaded[index].keys() == per_file.keys()
+        for key, value in per_file.items():
+            assert np.array_equal(loaded[index][key], value, equal_nan=True)

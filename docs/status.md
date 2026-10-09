@@ -13,7 +13,7 @@ in artifact paths (`artifacts/experiments/e1/` holds PB1). Work stays at pilot s
 | **CP** (characterizing P) | **done** at 2,000 files (`docs/cp_census.md`) plus coarsening on the pilot files. Remaining: instrumented vs. black-box P at window level, which `faithfulness.py` now saves. |
 | **PB1** (pullback faithfulness and cost) | **done** at pilot scale, baselines included (`docs/pb1_pilot.md`). Gate 2 passed for the GBDT. |
 | **PB2, PF2** (planted trigger) | **done at pilot scale** (50 files per trigger; `docs/trigger_plan.md`, "Pilot-scale results"). Struct: precision at \|T\| = 1 on 50/50 files. Content: 0.94 on the typical file, failing exactly where P says it must. PF2 reads r as a support (decided 2026-10-09). Open: the "ceiling" label in `trigger_tables.py`. |
-| **PF1** (pushforward faithfulness) | **designed with the user 2026-10-09** (`docs/pf1_plan.md`), not built. Needs `faithfulness.py` to save window scores and a re-run. |
+| **PF1** (pushforward faithfulness) | **designed with the user 2026-10-09** (`docs/pf1_plan.md`), not built. `faithfulness.py` now saves the window scores (`window_scores.npz`); **waiting on the user's re-run** (`run/17_pf1_window_scores.sh`). |
 | **CM** (GBDT vs. MalConv) | designed, not built; MalConv explanations of the pilot files are not computed yet. |
 | **The MLP** | set aside temporarily; returns after the GBDT methodology is established. |
 | **Manuscript** | framework and evaluation sections follow the current structure; `_d_applications.tex` carries the designs and pilot numbers. Do not try to compile it (no LaTeX here). |
@@ -42,9 +42,10 @@ in artifact paths (`artifacts/experiments/e1/` holds PB1). Work stays at pilot s
    "ceiling" in `trigger_tables.py` to "round trip" and add the true bound (best single feature's column share on T);
    PF2's metric code still prints cosine and Spearman against r; demote them to match the support reading.
 2. **PF1** (the pushforward's faithfulness): the one experiment with no evidence yet, and claim 3 rests on it. Design
-   it with the user first — the open question is the feature-space reference value for a deleted feature. Note: PB1's
-   per-window occlusion and KernelSHAP scores were *not* saved (only curves and window-level provenance statistics),
-   so PF1 needs `faithfulness.py` to save them and a re-run, or its own occlusion.
+   it with the user first — designed 2026-10-09 (`docs/pf1_plan.md`). `faithfulness.py` now writes
+   `window_scores.npz` (per-window occlusion at every window count, KernelSHAP over windows, x and the fully ablated
+   file's features; `load_window_scores`). Next: check the user's `run/17_pf1_window_scores.sh` run (its curves
+   should equal the baselines run's exactly), then build the PF1 script; fix the success fraction with the user first.
 3. **CP's black-box comparison** (cheap: the window-level statistics of both provenances are already saved by any new
    `faithfulness.py` run).
 4. **CM**, which needs MalConv explanations of the pilot files first.
