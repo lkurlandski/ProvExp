@@ -47,5 +47,11 @@ would need occlusion on bytes outside the SimpleDB, and the utility does not jus
 - Done 2026-10-09: `faithfulness.py` writes `window_scores.npz` (per file: window edges and occlusion scores at every
   window count, KernelSHAP over windows, the features x and x̃ of the original and fully ablated file), read with
   `load_window_scores`. The baselines configuration is re-run by `run/17_pf1_window_scores.sh` (user).
-- A PF1 script: load the saved window scores, push them forward through the window-coarsened P, build x̃ per file
-  (one extraction of the ablated file), and run the feature-space deletion curves for every method and reference.
+- Done 2026-10-09: `scripts/pf1.py` (tests: `tests/test_pf1.py`), run by `run/18_pf1.sh` (a few minutes). Per file it
+  re-extracts x with its provenance (checked against the saved x), pushes every saved window explanation forward
+  through P coarsened to the same windows (and the naive incidence sum), adds the byte-level round trip M a of each
+  native explainer and three random orders, and runs the deletion curves for both references and both candidate sets.
+  Ties are broken by a seeded permutation (a window pushforward is exactly zero on many features), never by index.
+  It checks that deleting every feature under the matched reference reproduces PB1's fully ablated log-odds, prints
+  the criterion of decision 5, and the gap diagnostics (each native explanation's share on unattributable features
+  and its |a|-weighted overlap at K windows). Smoke-tested on 2 files (16 windows; numbers meaningless).

@@ -60,7 +60,7 @@ longest-first, so its ETA was pessimistic; the fix came after the run started).
    row for the file. `x_ablated` is NaN where the fully ablated file failed verification (`fully_ablated_valid`);
    those files drop out of the matched-reference analysis only (count them).
 
-**Then:** run the PF1 analysis (`docs/pf1_plan.md`) and read it against the criterion fixed in advance (decision 5):
+**Then:** run the PF1 analysis, `run/18_pf1.sh` (built and smoke-tested; a few minutes) and read it against the criterion fixed in advance (decision 5):
 first, is the pushforward significantly above random and the naive incidence sum (if not, claim 3 fails); then
 R = area(pushforward) / area(TreeSHAP) under the matched reference (≥ 0.8 faithful; 0.5-0.8 partial, gap to be traced
 to null mass and overlap; < 0.5 claim 3 weakened, rethink with the user).
