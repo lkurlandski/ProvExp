@@ -55,3 +55,52 @@ would need occlusion on bytes outside the SimpleDB, and the utility does not jus
   It checks that deleting every feature under the matched reference reproduces PB1's fully ablated log-odds, prints
   the criterion of decision 5, and the gap diagnostics (each native explanation's share on unattributable features
   and its |a|-weighted overlap at K windows). Smoke-tested on 2 files (16 windows; numbers meaningless).
+
+## Results (2026-10-09, pilot: 100 files, GBDT seed 0; `run/18_pf1.sh`)
+
+Inputs from `run/17_pf1_window_scores.sh` (138 min on 32 workers), which passed every check: 100/100 files `ok`, its
+29,000 curve points equal the baselines run's exactly (max difference 0.0), the window scores are complete for every
+file, all 100 fully ablated files are valid, and the saved x equals the feature store's row exactly. PF1 itself:
+6 minutes on 8 workers; deleting every feature under the matched reference reproduces PB1's fully ablated log-odds
+exactly. Log: `artifacts/logs/pf1-seed0-baselines-scores.log`.
+
+Mean deletion area (R = ratio to path TreeSHAP's mean area; wins = files above random / above the naive baseline):
+
+| method | ablated, all | R | wins vs random / naive | background, all | R | ablated, attributable | R |
+|---|---|---|---|---|---|---|---|
+| TreeSHAP path | 8.47 | 1 | 100 / — | 8.93 | 1 | 6.49 | 1 |
+| TreeSHAP interventional | 8.67 | 1.02 | 100 / — | 9.05 | 1.01 | 6.63 | 1.02 |
+| KernelSHAP | 8.51 | 1.00 | 100 / — | 8.67 | 0.97 | 6.55 | 1.01 |
+| round trip M a, path | 6.75 | 0.80 | 100 / — | 6.46 | 0.72 | 5.03 | 0.78 |
+| **push: KernelSHAP over 256 windows** | 3.39 | **0.40** | 100 / 68 | 2.56 | 0.29 | 2.06 | 0.32 |
+| push: occlusion, 4,096 windows | 3.15 | 0.37 | 100 / 67 | 2.32 | 0.26 | 2.06 | 0.32 |
+| push: occlusion, 1,024 windows | 2.92 | 0.34 | 97 / 59 | 2.25 | 0.25 | 1.82 | 0.28 |
+| **push: occlusion, 256 windows** | 2.78 | **0.33** | 99 / 59 | 2.28 | 0.26 | 1.66 | 0.26 |
+| push: occlusion, 64 windows | 2.62 | 0.31 | 99 / 62 | 2.34 | 0.26 | 1.56 | 0.24 |
+| naive: occlusion, 256 windows | 2.54 | 0.30 | 95 / — | 2.01 | 0.23 | 1.42 | 0.22 |
+| random | 0.81 | 0.10 | — | 0.90 | 0.10 | 0.81 | 0.12 |
+
+**Against the criterion fixed in advance (decision 5), matched reference:**
+- *Required:* passes for every pushed source. Above random at p ≈ 2e-18 (97–100 of 100 files); above the naive
+  incidence sum at p = 1.5e-6 (KernelSHAP over windows) to 0.011 (occlusion at 256 windows), on 59–68 of 100 files.
+- *Strength:* **R = 0.31–0.40: "weakened"** by the bands fixed in advance (< 0.5), for every source and against
+  either TreeSHAP. Under the background reference R is lower (0.25–0.29); restricting to attributable features does
+  not raise it (0.24–0.32).
+
+**Reading (diagnostic, not a reframing of the claim):**
+1. **The operator is not where the loss is.** The byte-level round trip M a, which pushes a byte-level explanation
+   forward through the same operator, keeps 0.72–0.80 of TreeSHAP's area. Pushing forward a *window-level*
+   explanation keeps 0.31–0.40.
+2. **The null element does not explain the gap** (decision 5 named it as a candidate): native explanations put a
+   median 21–27% of their mass on unattributable features, but excluding those features from every ranking leaves R
+   where it was (0.26 vs. 0.33 for occlusion at 256 windows).
+3. **Overlap at window level does**, as CP predicts: the |a|-weighted overlap of the native explanations' features at
+   256 windows is a median 0.98 (CP's coarsening: 0.41 at bytes, 0.98 at 256 windows). At that granularity almost
+   every window feeds many features, so a window's score cannot be assigned to one feature. R rises with resolution
+   (0.31 at 64 windows to 0.37 at 4,096), and with a better window explainer (0.40 for KernelSHAP over windows).
+4. **The D⁺ split helps, modestly.** The pushforward beats the naive incidence sum on 59–68 of 100 files; the margin
+   is 10–20% in area.
+
+Open (to decide with the user): what claim 3 says in light of R < 0.5. A cheap diagnostic would separate resolution
+from the source explanation's quality: the round trip of TreeSHAP through P coarsened to the *same* windows
+(coarsen the pullback, push it forward), which is the best any 256-window explanation could do through this P.

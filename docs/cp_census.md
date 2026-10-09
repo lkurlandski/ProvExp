@@ -137,3 +137,35 @@ Part 2 (the black-box P at the window level) is saved by `faithfulness.py` from 
 comparison is `scripts/cp_blackbox.py` (2026-10-09), first run on `run/17_pf1_window_scores.sh`'s output
 (`run/19_cp_blackbox.sh`). Ambiguity is a property of one column, so it must agree where the columns agree; overlap
 depends on every feature reading the same windows (through D), so it can differ even there.
+
+## CP.3 results: instrumented vs. black-box P at 256 windows (2026-10-09; `run/19_cp_blackbox.sh`)
+
+From run 17's `provenance.npz` (100 pilot files, level 3, zero fill); report `artifacts/reports/cp_blackbox.md`.
+Per subset, over (file, feature) pairs attributable under both:
+
+| subset | median TV | effective support (windows): instr. / black-box | ambiguity agrees | overlap: instr. / black-box |
+|---|---|---|---|---|
+| header | 0 | 1 / 1 | 0.99 | 0.993 / 0.986 |
+| histogram | 1.6e-6 | 76 / 77 | 0.88 | 0.992 / 0.993 |
+| datadirectories | 0 | 1 / 1 | 0.85 | 0.993 / 0.989 |
+| richheader | 0 | 1 / 1 | 0.84 | 0.993 / 0.988 |
+| section | 0 | 1 / 1 | 0.67 | 0.992 / 0.987 |
+| strings | 0.44 | 18 / 49 | 0.13 | 0.986 / 0.993 |
+| byteentropy | 0.61 | 11 / 42 | 0.03 | 0.974 / 0.989 |
+| imports | 0.60 | 1.6 / 3 | 0.0004 | 0.990 / 0.995 |
+| exports | 0.67 | 1.9 / 5 | 0.02 | 0.974 / 0.991 |
+| authenticode | 0.38 | 21 / 8 | 0 | 0.993 / 0.989 |
+| all | 0.13 | 15 / 35 | 0.43 | 0.988 / 0.992 |
+
+- **Ambiguity tracks P where T1 says.** Additive groups agree (header 0.99; histogram, data directories, Rich header
+  0.84–0.88); the exceptions are explained: `histogram:byte_00` disagrees on all 100 files (zero fill adds counts to
+  bin 0), and the section disagreements are its entropy-derived features (`max_entropy`, entropy hashes), which are
+  not additive. Non-additive groups disagree almost everywhere, and the black-box P is *more spread*: 2-4x the
+  effective support for strings, entropy windows, and hashed imports/exports (occluding part of a string or a name
+  changes or moves it rather than removing a share). Authenticode is the one group the black-box sees as sharper.
+- **Overlap agrees almost nowhere (3%), even where the columns agree (4%)**, as expected: O_j depends on every
+  feature reading the same windows through D. Its *level* barely moves (0.988 vs. 0.992): at 256 windows overlap is
+  saturated near 1 under either P, so at this granularity it cannot distinguish them. Overlap is informative at the
+  byte level (0.41), where the black-box P cannot be estimated.
+- CP.3 is therefore done at the pilot: the statistics computed from a black-box P agree with the instrumented ones
+  exactly where T1 says the provenance agrees, and the disagreement elsewhere is in the direction of a more diffuse P.

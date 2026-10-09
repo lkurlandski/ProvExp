@@ -1,6 +1,6 @@
 # Status
 
-Last updated: 2026-10-09 (PB2/PF2 pilot read; PF1 design in discussion). The evaluation mirrors the framework (`PLAN.md`, "Experiment IDs"):
+Last updated: 2026-10-09 (PF1 and CP.3 results in; claim 3 to discuss). The evaluation mirrors the framework (`PLAN.md`, "Experiment IDs"):
 1. characterizing P (CP), 2. the pullback (PB1, PB2), 3. the pushforward (PF1, PF2), 4. comparing classifiers (CM);
 appendix App-L (localizability) and App-R (redundancy). Old IDs E1–E4 / A1–A3 survive only in pre-2026-10-08 docs and
 in artifact paths (`artifacts/experiments/e1/` holds PB1). Work stays at pilot scale (~100 files, one seed).
@@ -10,10 +10,10 @@ in artifact paths (`artifacts/experiments/e1/` holds PB1). Work stays at pilot s
 
 | | state |
 |---|---|
-| **CP** (characterizing P) | **done** at 2,000 files (`docs/cp_census.md`) plus coarsening on the pilot files. Remaining: instrumented vs. black-box P at window level, which `faithfulness.py` now saves. |
+| **CP** (characterizing P) | **done** at 2,000 files plus coarsening and CP.3 (instrumented vs. black-box statistics at 256 windows: ambiguity agrees where T1 says; overlap saturated at window level) (`docs/cp_census.md`). |
 | **PB1** (pullback faithfulness and cost) | **done** at pilot scale, baselines included (`docs/pb1_pilot.md`). Gate 2 passed for the GBDT. |
 | **PB2, PF2** (planted trigger) | **done at pilot scale** (50 files per trigger; `docs/trigger_plan.md`, "Pilot-scale results"). Struct: precision at \|T\| = 1 on 50/50 files. Content: 0.94 on the typical file, failing exactly where P says it must. PF2 reads r as a support (decided 2026-10-09; tables updated). |
-| **PF1** (pushforward faithfulness) | **designed with the user 2026-10-09** (`docs/pf1_plan.md`), not built. `faithfulness.py` now saves the window scores (`window_scores.npz`); **waiting on the user's re-run** (`run/17_pf1_window_scores.sh`). |
+| **PF1** (pushforward faithfulness) | **done at pilot scale** (`docs/pf1_plan.md`, "Results"). Passes the required test (above random and naive) but **R = 0.31–0.40: "weakened"** by the bands fixed in advance; the loss is window-level overlap, not the operator (byte-level round trip R = 0.80). **Claim 3's wording to decide with the user.** |
 | **CM** (GBDT vs. MalConv) | designed, not built; MalConv explanations of the pilot files are not computed yet. |
 | **The MLP** | set aside temporarily; returns after the GBDT methodology is established. |
 | **Manuscript** | framework and evaluation sections follow the current structure; `_d_applications.tex` carries the designs and pilot numbers. Do not try to compile it (no LaTeX here). |
@@ -36,35 +36,11 @@ in artifact paths (`artifacts/experiments/e1/` holds PB1). Work stays at pilot s
   about 1.1 h on 64 workers against 4.1 h before at any worker count. Verified bit-exact against the baselines run
   and pinned by `tests/test_faithfulness.py`, whose tests were themselves checked against two injected bugs.
 
-## When run 17 finishes (`run/17_pf1_window_scores.sh`, started 2026-10-09 ~08:00, 32 workers, ~2-2.3 h)
+## Run 17 (2026-10-09): done and verified
 
-**What it is for.** It re-runs the PB1 baselines configuration (same 100 files, level-3 operator, occlusion at
-64/256/1,024/4,096 windows, KernelSHAP over 256 windows at 2,048 coalitions) only to obtain what the first run did
-not save: `window_scores.npz`, every direct problem-space explanation's per-window scores plus the features of the
-original file (x) and the fully ablated file (x̃). These are PF1's inputs: the explanations to push forward, and x̃ as
-the reference matched to the problem space. Nothing in PB1 changes; the curves are a by-product.
-Output: `artifacts/experiments/e1/seed-0/zeros-typical-header-baselines-scores/`; log:
-`artifacts/logs/faithfulness-seed0-zeros-typical-baselines-scores.log` (its progress bar counts tasks, which run
-longest-first, so its ETA was pessimistic; the fix came after the run started).
-
-**Checks, in order, and what each outcome means:**
-1. *Did it finish?* The log ends with the summary JSON; `status` should be 100 `ok` (or the same failures as the
-   baselines run). Failed or timed-out files → note which; PF1 runs on the files that are `ok` in both runs.
-2. *Is it the same run?* `curves.parquet` must equal the baselines run's
-   (`zeros-typical-header-baselines/curves.parquet`) point for point (max difference 0.0; the runner is
-   deterministic and was verified bit-exact on 2026-10-08). **Equal** → the saved window scores are the very ones
-   behind PB1's published numbers, and PF1 can use them. **Not equal** → stop: something non-deterministic or a
-   regression in today's change; find it before any PF1 result is trusted.
-3. *Are the inputs complete?* `load_window_scores` gives one entry per `ok` file with `edges`, `occlusion:gbdt`,
-   `occlusion_k{64,1024,4096}:gbdt`, `kernelshap_windows:gbdt`, `x`, `x_ablated`. `x` must equal the feature store's
-   row for the file. `x_ablated` is NaN where the fully ablated file failed verification (`fully_ablated_valid`);
-   those files drop out of the matched-reference analysis only (count them).
-
-**Then:** run CP.3, `run/19_cp_blackbox.sh` (seconds; instrumented vs. black-box statistics from this run's
-`provenance.npz`), and the PF1 analysis, `run/18_pf1.sh` (built and smoke-tested; a few minutes) and read it against the criterion fixed in advance (decision 5):
-first, is the pushforward significantly above random and the naive incidence sum (if not, claim 3 fails); then
-R = area(pushforward) / area(TreeSHAP) under the matched reference (≥ 0.8 faithful; 0.5-0.8 partial, gap to be traced
-to null mass and overlap; < 0.5 claim 3 weakened, rethink with the user).
+`run/17_pf1_window_scores.sh` finished in 138 min on 32 workers: 100/100 files ok, curves equal to the baselines run
+exactly, window scores complete, x equal to the feature store. CP.3 (`run/19`) and PF1 (`run/18`) ran on it (by the
+user); results in `docs/cp_census.md` and `docs/pf1_plan.md`.
 
 ## Next (for Claude), on resume
 
