@@ -133,4 +133,7 @@ strings 0.40, section 0.71) to 0.86–0.99 at 4,096 windows and 0.97–0.99 at 2
   deletion results.
 
 Part 2 (the black-box P at the window level) is saved by `faithfulness.py` from now on (`provenance.npz`:
-`overlap_{instrumented,blackbox}`, `ambiguity_{instrumented,blackbox}`); it comes with the PB1 runs at scale.
+`overlap_{instrumented,blackbox}`, `ambiguity_{instrumented,blackbox}`); it comes with the PB1 runs at scale. The
+comparison is `scripts/cp_blackbox.py` (2026-10-09), first run on `run/17_pf1_window_scores.sh`'s output
+(`run/19_cp_blackbox.sh`). Ambiguity is a property of one column, so it must agree where the columns agree; overlap
+depends on every feature reading the same windows (through D), so it can differ even there.

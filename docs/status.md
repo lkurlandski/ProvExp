@@ -60,7 +60,8 @@ longest-first, so its ETA was pessimistic; the fix came after the run started).
    row for the file. `x_ablated` is NaN where the fully ablated file failed verification (`fully_ablated_valid`);
    those files drop out of the matched-reference analysis only (count them).
 
-**Then:** run the PF1 analysis, `run/18_pf1.sh` (built and smoke-tested; a few minutes) and read it against the criterion fixed in advance (decision 5):
+**Then:** run CP.3, `run/19_cp_blackbox.sh` (seconds; instrumented vs. black-box statistics from this run's
+`provenance.npz`), and the PF1 analysis, `run/18_pf1.sh` (built and smoke-tested; a few minutes) and read it against the criterion fixed in advance (decision 5):
 first, is the pushforward significantly above random and the naive incidence sum (if not, claim 3 fails); then
 R = area(pushforward) / area(TreeSHAP) under the matched reference (≥ 0.8 faithful; 0.5-0.8 partial, gap to be traced
 to null mass and overlap; < 0.5 claim 3 weakened, rethink with the user).
@@ -74,8 +75,9 @@ to null mass and overlap; < 0.5 claim 3 weakened, rethink with the user).
    `window_scores.npz` (per-window occlusion at every window count, KernelSHAP over windows, x and the fully ablated
    file's features; `load_window_scores`). Next: check the user's `run/17_pf1_window_scores.sh` run (its curves
    should equal the baselines run's exactly), then build the PF1 script (success criterion fixed: `docs/pf1_plan.md`, decision 5).
-3. **CP's black-box comparison** (cheap: the window-level statistics of both provenances are already saved by any new
-   `faithfulness.py` run).
+3. **CP's black-box comparison:** `scripts/cp_blackbox.py` built (2026-10-09); runs on run 17's `provenance.npz`
+   (`run/19_cp_blackbox.sh`). Expectation from T1: ambiguity agrees where the columns agree; overlap need not, since
+   it depends on the other features through D.
 4. **CM**, which needs MalConv explanations of the pilot files first.
 
 ## Decisions made on 2026-10-09
