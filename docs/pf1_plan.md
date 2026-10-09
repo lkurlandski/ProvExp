@@ -131,3 +131,10 @@ R vs. path TreeSHAP, matched reference (ablated, all features):
 
 Open (to decide with the user): what claim 3 says, given that R < 0.5 for every window-level source but the loss is
 the source's resolution, not the operator or the source explainers (`docs/status.md`).
+
+## Decision (2026-10-09): claim 3, option A
+
+Claim 3 is stated conditionally: the pushforward is faithful up to the resolution of its source, and P (overlap at
+that resolution) predicts the limit. The window round trip of TreeSHAP is a risky reference on its own (partly
+circular); it is acceptable as evidence only through the **trend** across window counts. So the trend must be shown
+densely enough and tied to P: R achievable at each resolution against the overlap at that resolution.

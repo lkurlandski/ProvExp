@@ -13,7 +13,7 @@ in artifact paths (`artifacts/experiments/e1/` holds PB1). Work stays at pilot s
 | **CP** (characterizing P) | **done** at 2,000 files plus coarsening and CP.3 (instrumented vs. black-box statistics at 256 windows: ambiguity agrees where T1 says; overlap saturated at window level) (`docs/cp_census.md`). |
 | **PB1** (pullback faithfulness and cost) | **done** at pilot scale, baselines included (`docs/pb1_pilot.md`). Gate 2 passed for the GBDT. |
 | **PB2, PF2** (planted trigger) | **done at pilot scale** (50 files per trigger; `docs/trigger_plan.md`, "Pilot-scale results"). Struct: precision at \|T\| = 1 on 50/50 files. Content: 0.94 on the typical file, failing exactly where P says it must. PF2 reads r as a support (decided 2026-10-09; tables updated). |
-| **PF1** (pushforward faithfulness) | **done at pilot scale, with the resolution diagnostic** (`docs/pf1_plan.md`). Required test passes; R = 0.31–0.40 ("weakened"). The diagnostic shows resolution binds: TreeSHAP's own information expressed at 256 windows reaches only 0.37 (occlusion 0.33, KernelSHAP over windows 0.40), rising to 0.80 at bytes. **Claim 3's wording to decide with the user.** |
+| **PF1** (pushforward faithfulness) | **done at pilot scale, with the resolution diagnostic** (`docs/pf1_plan.md`). Required test passes; R = 0.31–0.40 ("weakened"). The diagnostic shows resolution binds: TreeSHAP's own information expressed at 256 windows reaches only 0.37 (occlusion 0.33, KernelSHAP over windows 0.40), rising to 0.80 at bytes. **Claim 3 reworded (option A):** faithful up to the source's resolution, a limit P predicts; evidence is the trend across window counts. |
 | **CM** (GBDT vs. MalConv) | designed, not built; MalConv explanations of the pilot files are not computed yet. |
 | **The MLP** | set aside temporarily; returns after the GBDT methodology is established. |
 | **Manuscript** | framework and evaluation sections follow the current structure; `_d_applications.tex` carries the designs and pilot numbers. Do not try to compile it (no LaTeX here). |
@@ -57,6 +57,9 @@ user); results in `docs/cp_census.md` and `docs/pf1_plan.md`.
 4. **CM**, which needs MalConv explanations of the pilot files first.
 
 ## Decisions made on 2026-10-09
+
+- **Claim 3, option A:** the pushforward is faithful up to its source's resolution, a limit predicted by P's overlap;
+  PF2 carries "useful". The TreeSHAP window round trip counts only through its trend across window counts.
 
 - **No scaling yet** (user): experiments stay on the pilot subset until the preliminary results are solid and the
   claims and contributions are clear. CM is close but not next.

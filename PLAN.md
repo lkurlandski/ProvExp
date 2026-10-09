@@ -32,9 +32,12 @@ mirrors the framework, from intrinsic to extrinsic, and supports four claims:
    trip loses. They are not predictors of a particular pullback's faithfulness (corrected 2026-10-07).
 2. **The pullback is faithful and cheap (PB1, PB2):** pulled-back explanations identify the elements that drive the
    decision, at the cost of one instrumented feature extraction instead of hundreds to thousands.
-3. **The pushforward is faithful and useful (PF1, PF2):** it translates a problem-space explanation into the
-   feature vocabulary faithfully, and turns problem-space knowledge (a planted trigger) into a reference answer for
-   feature-space explainers.
+3. **The pushforward is faithful up to its source's resolution, and useful (PF1, PF2)** (reworded 2026-10-09 after
+   PF1, option A): pushed forward, a problem-space explanation keeps what its resolution allows, a limit set by P's
+   overlap at that resolution and measurable in advance (CP); and the pushforward turns problem-space knowledge (a
+   planted trigger) into a reference answer for feature-space explainers. Evidence for the first half is the trend
+   across window counts (the window round trips, 64 windows to bytes); the byte-level point uses TreeSHAP's own round
+   trip, acceptable only as the end of that trend (user, 2026-10-09).
 4. **Comparing real classifiers (CM):** with both operators, a feature-based detector (GBDT) and a raw-byte detector
    (MalConv) can be compared in either space.
 
