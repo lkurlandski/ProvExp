@@ -4,19 +4,20 @@ bytes and grouping the most credited spans across files by content.
 
 Per file: the pullback b = Pa of one explainer's explanation of the GBDT (which attributes the malware log-odds); the
 `top_k` bytes with the most credit in the chosen direction (benign: b < 0, the default; malware: b > 0), ranked with a
-seeded random tie-break; those bytes merged into contiguous spans; and, per span, its credit and the feature that
-contributes most to it, (Pᵀ1_span)_j a_j. Across files: spans with identical content form one pattern, ranked by the
-number of files it appears in times its mean credit.
+seeded random tie-break; each byte's top feature, the j with the most credit P_ij a_j; and those bytes merged into
+contiguous spans that share a top feature (so adjacent fields of different features stay apart). Across files: spans
+with the same top feature and identical content form one pattern, ranked by the number of files it appears in times
+its mean credit.
 
 Outputs, in `{outdir}/seed-{seed}/{explainer}-{direction}/`:
     files.parquet       one row per file: status, size, total credit in the direction, the share of it in the top_k
                         bytes, and whether the extracted features match the feature store
     spans.parquet       one row per span: file, start, length, content (binary), credit, share of the file's credit,
-                        and the top feature with its share of the span's credit
-    patterns.parquet    one row per pattern (spans of at least `min_length` bytes, grouped by content): files, benign
-                        and malware files, mean and total credit, the most common top feature, and the score
+                        and its top feature with that feature's share of the span's credit
+    patterns.parquet    one row per pattern (spans of at least `min_length` bytes, grouped by top feature and content):
+                        files, benign and malware files, mean and total credit, and the score
     report.json         the configuration, failures, and timing
-The top patterns are printed at the end.
+The top patterns are printed at the end, overall and per feature group (the prefix of the feature name).
 
 Usage:
     PYTHONHASHSEED=0 python scripts/shortcuts.py --seed 0 --explainer treeshap_interventional --num_workers 32
@@ -60,39 +61,60 @@ _EXTRACTOR: Optional[PEFeatureExtractor] = None
 ################################################################################
 
 
-def top_spans(scores: npt.NDArray[np.float64], direction: float, top_k: int, tiebreak: npt.NDArray[np.int64]) -> list[tuple[int, int]]:
+def top_elements(scores: npt.NDArray[np.float64], direction: float, top_k: int, tiebreak: npt.NDArray[np.int64]) -> npt.NDArray[np.int64]:
     """
-    The contiguous spans formed by the `top_k` elements with the most credit in `direction`.
+    The `top_k` elements with the most credit in `direction`, in order of position.
 
     Args:
         scores: The pulled-back explanation without its null element, shape (m,).
         direction: The sign of the credit to rank first (-1 for benign, 1 for malware).
         top_k: The number of elements to take; only elements with credit of the right sign are taken.
         tiebreak: A permutation of the elements that breaks ties in the ranking (see `element_order`).
-
-    Returns:
-        The spans as (start, length), in order of position.
     """
     if scores.ndim != 1:
         raise ValueError(f"Expected one score per element. Got shape {scores.shape}.")
     if top_k <= 0:
         raise ValueError(f"Expected a positive top_k. Got {top_k}.")
     order = element_order(scores, direction, tiebreak)[:top_k]
-    chosen = np.sort(order[direction * scores[order] > 0])
-    if chosen.size == 0:
+    return np.sort(order[direction * scores[order] > 0])
+
+
+def provenance_rows(prov: Provenance, rows: npt.NDArray[np.int64], chunk: int = 64) -> npt.NDArray[np.float64]:
+    """
+    The rows of P for a few elements, as a dense array of shape (len(rows), n), read directly from the boxes (keyed
+    boxes, e.g., a byte histogram, are never expanded over the whole file).
+    """
+    box = prov.contributions
+    m, n = box.shape
+    if rows.size and (rows.min() < 0 or rows.max() >= m):
+        raise ValueError(f"Expected element indices in [0, {m}).")
+    out = np.zeros((rows.size, n), dtype=np.float64)
+    r0, r1, c0, c1, w = box.boxes
+    k0, k1, kc, kk, kw = box.keyed_boxes
+    for at in range(0, rows.size, chunk):
+        part = rows[at:at + chunk, None]
+        # Constant boxes: w over the columns [c0, c1) of every covered row.
+        ri, bi = np.nonzero((r0[None, :] <= part) & (part < r1[None, :]))
+        span = c1[bi] - c0[bi]
+        which = np.repeat(np.arange(bi.size), span)
+        cols = np.repeat(c0[bi], span) + (np.arange(which.size) - np.repeat(np.cumsum(span) - span, span))
+        np.add.at(out, (at + ri[which], cols), w[bi][which])
+        # Keyed boxes: w at column c + key[row] of every covered row.
+        ri, bi = np.nonzero((k0[None, :] <= part) & (part < k1[None, :]))
+        cols = kc[bi].copy()
+        for key in np.unique(kk[bi]):
+            mask = kk[bi] == key
+            cols[mask] += box.keys[key][rows[at + ri[mask]]].astype(np.int64)
+        np.add.at(out, (at + ri, cols), kw[bi])
+    return out * prov.scale[None, :]
+
+
+def feature_spans(elements: npt.NDArray[np.int64], top: npt.NDArray[np.int64]) -> list[tuple[int, int, int]]:
+    """Merge sorted elements into contiguous runs that share a top feature: (start, length, feature)."""
+    if elements.size == 0:
         return []
-    breaks = np.flatnonzero(np.diff(chosen) != 1) + 1
-    return [(int(run[0]), int(run.size)) for run in np.split(chosen, breaks)]
-
-
-def span_features(prov: Provenance, a: npt.NDArray[np.float64], start: int, length: int, direction: float) -> tuple[int, float]:
-    """The feature that contributes most credit in `direction` to a span, (Pᵀ1_span)_j a_j, and its share."""
-    indicator = np.zeros(prov.num_rows, dtype=np.float64)
-    indicator[start:start + length] = 1.0
-    contributions = direction * prov.rmatvec(indicator) * a
-    total = float(contributions[contributions > 0].sum())
-    j = int(np.argmax(contributions))
-    return j, float(contributions[j] / total) if total > 0 else float("nan")
+    breaks = np.flatnonzero((np.diff(elements) != 1) | (np.diff(top) != 0)) + 1
+    return [(int(elements[g[0]]), int(g.size), int(top[g[0]])) for g in np.split(np.arange(elements.size), breaks)]
 
 
 ################################################################################
@@ -176,16 +198,24 @@ def process_shard(
             credit = direction * b
             total = float(credit[credit > 0].sum())
             tiebreak = np.random.default_rng([seed, int(meta["index"])]).permutation(prov.num_elements).astype(np.int64)
-            found = top_spans(b, direction, top_k, tiebreak)
+            elements = top_elements(b, direction, top_k, tiebreak)
+            # The credit each chosen element passes to each feature, and its top feature.
+            per_feature = direction * provenance_rows(prov, elements) * a[None, :]
+            top = np.argmax(per_feature, axis=1).astype(np.int64)
+            found = feature_spans(elements, top)
             taken = 0.0
-            for start, length in found:
+            at = 0
+            for start, length, j in found:
                 c = float(credit[start:start + length].sum())
                 taken += c
-                j, share = span_features(prov, a, start, length, direction)
+                block = per_feature[at:at + length]
+                at += length
+                positive = float(block[block > 0].sum())
                 spans.append({
                     "index": meta["index"], "label": meta["label"], "start": start, "length": length,
                     "content": data[start:start + min(length, max_content)], "credit": c,
-                    "share": c / total if total > 0 else float("nan"), "top_feature": names[j], "top_feature_share": share,
+                    "share": c / total if total > 0 else float("nan"), "top_feature": names[j],
+                    "top_feature_share": float(block[:, j].sum() / positive) if positive > 0 else float("nan"),
                 })
             files.append(base | {
                 "status": "ok", "error": "", "matches": matches, "credit": total, "num_spans": len(found),
@@ -214,24 +244,21 @@ def _star(task: tuple[Any, ...]) -> tuple[list[dict[str, Any]], list[dict[str, A
 
 def patterns(spans: pl.DataFrame, min_length: int) -> pl.DataFrame:
     """
-    Group spans of at least `min_length` bytes by content, and score each pattern by the number of files it appears in
-    times its mean credit (per file, the credit of its spans with that content summed).
+    Group spans of at least `min_length` bytes by top feature and content, and score each pattern by the number of
+    files it appears in times its mean credit (per file, the credit of its spans with that feature and content summed).
     """
     if min_length <= 0:
         raise ValueError(f"Expected a positive min_length. Got {min_length}.")
     long = spans.filter(pl.col("length") >= min_length)
-    per_file = long.group_by("content", "index", "label").agg(
-        pl.col("credit").sum(), pl.col("length").first(), pl.col("top_feature").mode().first(),
-    )
+    per_file = long.group_by("top_feature", "content", "index", "label").agg(pl.col("credit").sum(), pl.col("length").first())
     return (
-        per_file.group_by("content").agg(
+        per_file.group_by("top_feature", "content").agg(
             pl.len().alias("files"),
             (pl.col("label") == 0).sum().alias("benign_files"),
             (pl.col("label") == 1).sum().alias("malware_files"),
             pl.col("credit").mean().alias("mean_credit"),
             pl.col("credit").sum().alias("total_credit"),
             pl.col("length").first(),
-            pl.col("top_feature").mode().first(),
         )
         .with_columns((pl.col("files") * pl.col("mean_credit")).alias("score"))
         .sort("score", descending=True)
@@ -267,6 +294,7 @@ def main() -> None:
     parser.add_argument("--num_workers", type=int, default=os.cpu_count())
     parser.add_argument("--timeout", type=int, default=600, help="The maximum number of seconds per file.")
     parser.add_argument("--show", type=int, default=40, help="The number of top patterns to print.")
+    parser.add_argument("--show_per_group", type=int, default=10, help="The number of top patterns to print per feature group.")
     args = parser.parse_args()
 
     if os.environ.get("PYTHONHASHSEED") != "0":
@@ -347,10 +375,17 @@ def main() -> None:
     (outdir / "report.json").write_text(json.dumps(report, indent=2))
     print(json.dumps({k: v for k, v in report.items() if k not in ("config", "failed")}, indent=2))
 
+    def show(table: pl.DataFrame) -> None:
+        for r in table.iter_rows(named=True):
+            print(f"{r['score']:8.3f}  files {r['files']:4d} (benign {r['benign_files']:4d})  credit {r['mean_credit']:.3f}  "
+                  f"len {r['length']:5d}  {r['top_feature'][:40]:40s}  {preview(r['content'])}")
+
     print(f"\nTop {args.show} patterns (score = files x mean credit; spans of >= {args.min_length} bytes):")
-    for r in pattern_table.head(args.show).iter_rows(named=True):
-        print(f"{r['score']:8.3f}  files {r['files']:4d} (benign {r['benign_files']:4d})  credit {r['mean_credit']:.3f}  "
-              f"len {r['length']:5d}  {r['top_feature'][:40]:40s}  {preview(r['content'])}")
+    show(pattern_table.head(args.show))
+    grouped = pattern_table.with_columns(pl.col("top_feature").str.split(":").list.first().alias("group"))
+    for (group,), table in grouped.group_by("group", maintain_order=True):
+        print(f"\n{group}: {table.height} patterns, {int((table['files'] >= 2).sum())} in 2 or more files")
+        show(table.head(args.show_per_group))
     print(f"\nWrote {outdir.as_posix()}.")
 
 
