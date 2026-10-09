@@ -68,8 +68,14 @@ The claims above predate this structure and are to be rewritten to fit it.
    - **B. Byte-level discovery of what a feature-based detector keys on** (shortcuts, spurious correlations),
      using the pullback across a corpus. Open: why the pullback is the right tool here, and how the output is made
      useful to practitioners.
-   - **C. A pushforward application complementing B** (to be found): the core would then have one comparison using
-     both operators (A) and one practical application per operator (B, C).
+   - **B targets real shortcuts in the EMBER models** (user, 2026-10-09): identify, and maybe patch, what the
+     detectors actually key on, to show real utility in the domain (not only planted ones).
+   - **C. A pushforward application complementing B.** The fallback, acceptable to the user: *B finds the shortcut,
+     C removes it*, using the pushforward's per-feature share of the shortcut's bytes to decide which features to
+     drop or neutralize (a feature diff cannot tell "this feature is the shortcut" from "barely touched by it").
+     B-then-C may be done anyway. An independent pushforward application would be better; candidates in "Open
+     questions". The core would then have one comparison using both operators (A) and one practical application per
+     operator (B, C).
 
 ## Principle: domain-agnostic framework, selective domain knowledge in experiments
 
@@ -323,7 +329,17 @@ methods may be revisited.
   statistic of P "predicting" a transfer that is linear in P is close to a tautology; a real use connects P to
   something not computed through P, such as model or attack behavior). Undecided what to do with them.
 - **The pushforward application (C)** and **why the pullback is the right tool for B** (2026-10-09; see "Paper
-  structure").
+  structure"). Candidates for an independent C: (1) *are detectors right for the right reasons?* push expert byte
+  annotations (e.g., capa or YARA match locations) into feature space and compare with the detector's explanation;
+  (2) *bounding what control of a byte set can do*: for additive features the pushforward's share bounds how far the
+  feature can move, so a worst-case score over the controllable features bounds evasion without crafting attacks,
+  validated against real attacks (close to the "attacker-controllable regions" direction the user has rejected:
+  ask before pursuing); (3) *translating explanations between feature sets* (pull back through one extractor's P,
+  push forward through another's), which needs a second extractor.
+- **A further feature set (on hold, 2026-10-09; not EMBER v2, too similar to v3).** Candidates: within PE, byte
+  n-grams (a very different P: high resolution, low overlap) or disassembly-based opcode n-grams (a more complex
+  extractor); across domains, which would also answer "Generality", DREBIN-style Android features or flow features
+  from packets (CICFlowMeter-style statistics).
 - **Signed provenance:** rescale-rule matrices can be signed; our axioms require P ≥ 0. Keep structural (unsigned)
   provenance plus a stated limitation unless PB1 shows a need.
 - **Naming** ("provenance" vs. "attribution lineage").
