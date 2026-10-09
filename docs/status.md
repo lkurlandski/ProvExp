@@ -16,7 +16,7 @@ the pilot results and the claims are settled (user). `run/` holds the commands t
 | **2. Intrinsic: CP** | Census, coarsening, CP.3 done (`docs/cp_census.md`); in the paper, its theory (round-trip bounds) and CP.3's agreement check. |
 | **2. Intrinsic: PB2, PF2** (planted triggers) | Done at pilot scale (`docs/trigger_plan.md`); **demoted**, possibly removed later. |
 | **3-A. Comparing detectors** | Not built. GBDT on EMBER v3, a GBDT on byte n-grams (to build), MalConv; both operators. |
-| **3-B. Real shortcuts via the pullback** | Not designed; **next** (after the user decides to invest in it). |
+| **3-B. Real shortcuts via the pullback** | **Designed** (`docs/shortcuts_plan.md`); not built. Next. |
 | **3-C. YARA/capa matches pushed forward** | Adopted, not designed. Coverage check stopped early: public YARA signatures too sparse; generic rules and capa untested; capa's default backend is very slow. |
 | **Appendix** | App-R's duplicate-feature sweep not run; App-L a stated limitation; the byte-set control bound accepted, not started. |
 | **The MLP** | Set aside temporarily; returns after the GBDT methodology is established. |
@@ -24,9 +24,8 @@ the pilot results and the claims are settled (user). `run/` holds the commands t
 
 ## Next (for Claude), on resume
 
-1. With the user, decide whether to invest in **3-B** and design it: what "a shortcut" is operationally, how
-   pulled-back credit is grouped by byte content across files, the baselines without P (feature-space SHAP,
-   occlusion), and how usefulness to practitioners is shown (`PLAN.md`, "Open questions").
+1. **3-B** (`docs/shortcuts_plan.md`): build the pullback-to-patterns pipeline and smoke-test it on the pilot
+   files, then the 2,000-file set; then the insertion test against data-mined and random patterns.
 2. Rewrite the claims (`PLAN.md`, "Thesis and claims") to fit the new structure; ask the user before changing what a
    claim is for.
 3. Later: 3-C's rule source (generic YARA rules, or capa with a faster backend or file-scope rules); 3-A's byte n-gram

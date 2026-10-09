@@ -75,8 +75,9 @@ designed or built yet.
   compared in the problem space (pullback vs. direct byte explanations) and in the feature space (MalConv's
   explanations pushed forward). Another domain or file format comes later.
 - **3-B. Finding what a feature-based detector keys on** (the pullback): real shortcuts in the EMBER models (user),
-  found at byte level across a corpus, by grouping pulled-back credit by byte content (domain-agnostic), and maybe
-  patched. Why the pullback: feature-space SHAP names hashed or aggregate features a practitioner cannot act on,
+  found at byte level across a corpus, by grouping pulled-back credit by byte content, and maybe patched. Design in
+  `docs/shortcuts_plan.md` (2026-10-09): a shortcut is a learned association that passes the insertion test;
+  benign-pushing patterns first; the 2,000-file set first, more files if needed; ambiguity as a filter rejected. Why the pullback: feature-space SHAP names hashed or aggregate features a practitioner cannot act on,
   occlusion is ~135× costlier per file and saturates at window resolution, and raw-byte models' explanations explain
   a different model. Candidate validation: inserting a discovered benign-associated pattern into malware should lower
   the score (a shortcut is an evasion vector). Open: how the output is made useful to practitioners.

@@ -15,7 +15,7 @@ plus a null element) transfers explanations between the feature-space (EMBER v3 
   `docs/pb1_pilot.md`, `docs/pb1_baselines.md` (PB1: pullback faithfulness and cost; the baselines doc fixes the
   reading of each outcome in advance); `docs/trigger_plan.md` (the planted-trigger testbed: PB2 and PF2, design and
   results); `docs/pf1_plan.md` (PF1: the pushforward's faithfulness and the resolution trend); `docs/appendix.md`
-  (App-L, App-R).
+  (App-L, App-R); `docs/shortcuts_plan.md` (3-B: real shortcuts via the pullback).
 - `docs/design_provexp.md`: package design, decisions, provenance conventions, thrember quirks.
   `docs/related_work.md`: literature and gaps. `docs/archive/`: superseded documents (the Phase 2 plan and census,
   old IDs E1–E4, A1–A3; artifact paths such as `artifacts/experiments/e1/` (PB1) still use them).
@@ -106,4 +106,5 @@ Follow `/home/lk3591/Documents/code/SSViT/exeformer/exeformer.py` (ignore that i
   established (`PLAN.md`, "Model scope"); do not describe it as dropped.
 - **Experiments may use domain knowledge selectively** where it protects their integrity (decided 2026-10-07): e.g., a
   PE-aware perturbation operator for the faithfulness evaluation (PB1) or a PE-aware trigger for the planted ground
-  truth (PB2, PF2). Keep it inside the experiment, say why it is needed, and never let it into the framework.
+  truth (PB2, PF2). Keep it inside the experiment, say why it is needed, and never let it into the framework. The
+  extrinsic applications (3-A, 3-B, 3-C) may lean into domain-specific ideas where appropriate (user, 2026-10-09).
