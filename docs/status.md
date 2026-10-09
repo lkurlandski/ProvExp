@@ -1,50 +1,46 @@
 # Status
 
-Last updated: 2026-10-09 (run 21 read). The evaluation mirrors the framework (`PLAN.md`, "Experiment IDs"):
-1. characterizing P (CP), 2. the pullback (PB1, PB2), 3. the pushforward (PF1, PF2), 4. comparing classifiers (CM);
-appendix App-L (localizability) and App-R (redundancy). Work stays at pilot scale (100 files, one seed) until the
-pilot results and the claims are settled (user, 2026-10-09). `run/` holds the commands that produced everything in
+Last updated: 2026-10-09 (end of the second review). **The paper is restructured** (`PLAN.md`, "Paper structure"):
+1. the framework; 2. an intrinsic, laboratory-style evaluation (done at pilot scale); 3. extrinsic applications for
+security practitioners (3-A, 3-B, 3-C: chosen, not designed). Work stays at pilot scale (100 files, one seed) until
+the pilot results and the claims are settled (user). `run/` holds the commands that produced everything in
 `artifacts/`.
 
 ## Where we are
 
 | | state |
 |---|---|
-| **CP** (characterizing P) | **done**: census at 2,000 files, coarsening and CP.3 at pilot scale (`docs/cp_census.md`). |
-| **PB1** (pullback faithfulness and cost) | **done at pilot scale** (`docs/pb1_pilot.md`). The tie-break re-run (`run/21`) changed no conclusion: occlusion saturates at about 1.10 (1.11 at 4,096 windows, p = 0.40 vs. 1,024), the byte-level pullback stays at 1.67 (79–85/100 files vs. every direct baseline, p ≤ 6e-12), parity at 64–1,024 windows, the pullback ahead at 4,096. |
-| **PB2, PF2** (planted trigger) | **done at pilot scale** (`docs/trigger_plan.md`). Struct: the 6 top-ranked bytes are the trigger's on 50/50 files. Content: precision 0.94 in the typical file, failing exactly where P says. PF2 reads r as a support. |
-| **PF1** (pushforward faithfulness) | **done at pilot scale** (`docs/pf1_plan.md`). Required test passes; R = 0.31–0.40 for window-level sources; the resolution trend rises monotonically from 0.34 (64 windows) to 0.80 (bytes) as P's overlap falls, supporting claim 3 as reworded (option A). |
-| **CM** (GBDT vs. MalConv) | designed, not built; next after PB1's re-read (the user decides when). |
-| **App-L, App-R** | App-L done (`docs/appendix.md`); App-R's duplicate-feature sweep not run. |
-| **The MLP** | set aside temporarily; returns after the GBDT methodology is established. |
-| **Manuscript** | `_d_applications.tex` documents the theory, designs, and pilot results (updated 2026-10-09). Polishing is low priority until the full experiments exist (user). Do not try to compile it. |
-
-## Run 21 (PB1 tie-break re-run): read 2026-10-09
-
-Clean (100 `ok`, pass 1 reused, 0 invalid curve points, 15 min). Read against the rule fixed in advance
-(`docs/pb1_baselines.md`, "Tie-break re-run"): all four readings stand. Pullback moved ≤ 0.003; occlusion at 4,096
-windows 1.101 → 1.105 (vs. 1.097 at 1,024); matched-K parity and the 4,096 lead unchanged (p = 0.008, was 0.004);
-the unsigned ranking still removes most of the overshoot. Costs are now run 17's: KernelSHAP over windows counts
-2,050 extractions (run 12's 1,925 shared a cache with occlusion), so "1/1,900 of the cost" became "1/2,000". Results
-written to `docs/pb1_pilot.md`, `PLAN.md`, and the manuscript (the "Pending" box removed). The paired comparisons not
-in `pb1_tables.py` (best direct baseline, matched K) were computed ad hoc; they reproduce the pre-fix doc exactly on
-run 12.
+| **1. Framework** | Definitions and modest theory in `manuscript/_c_framework.tex`. Round-trip matrices M, N kept as theory; ambiguity and overlap have no demonstrated use (undecided); coverage and the null element's share are not contributions (`CLAUDE.md`). A Shapley-style uniqueness result is noted as a possible strengthening, not pursued now. |
+| **2. Intrinsic: PB1** (pullback faithfulness, cost) | **Done at pilot scale** (`docs/pb1_pilot.md`); survived the tie-break re-run (`run/21`): parity with the best direct baseline at 64–1,024 windows, the pullback ahead at 4,096; at byte level 1.67× occlusion (79–85/100 files vs. every direct baseline, p ≤ 6e-12); occlusion saturates at about 1.10. All paired tests are now in `scripts/pb1_tables.py`. |
+| **2. Intrinsic: PF1** (pushforward faithfulness) | **Done at pilot scale** (`docs/pf1_plan.md`): R = 0.31–0.40 for window-level sources; the resolution trend rises from 0.34 (64 windows) to 0.80 (bytes). |
+| **2. Intrinsic: CP** | Census, coarsening, CP.3 done (`docs/cp_census.md`); in the paper, its theory (round-trip bounds) and CP.3's agreement check. |
+| **2. Intrinsic: PB2, PF2** (planted triggers) | Done at pilot scale (`docs/trigger_plan.md`); **demoted**, possibly removed later. |
+| **3-A. Comparing detectors** | Not built. GBDT on EMBER v3, a GBDT on byte n-grams (to build), MalConv; both operators. |
+| **3-B. Real shortcuts via the pullback** | Not designed; **next** (after the user decides to invest in it). |
+| **3-C. YARA/capa matches pushed forward** | Adopted, not designed. Coverage check stopped early: public YARA signatures too sparse; generic rules and capa untested; capa's default backend is very slow. |
+| **Appendix** | App-R's duplicate-feature sweep not run; App-L a stated limitation; the byte-set control bound accepted, not started. |
+| **The MLP** | Set aside temporarily; returns after the GBDT methodology is established. |
+| **Manuscript** | `_d_applications.tex` reflects the old structure (CP, PB, PF, CM); to be reorganized once the extrinsic applications exist. Polish is low priority (user). Do not try to compile it. |
 
 ## Next (for Claude), on resume
 
-1. **Not CM yet** (user): the work is being rethought at a high level first. The paper's structure is now framework /
-   intrinsic evaluation / extrinsic applications (`PLAN.md`, "Paper structure"): A = CM (GBDT on EMBER v3, GBDT on
-   byte n-grams, MalConv), B = real shortcuts in the EMBER models via the pullback (then patched, B-then-C), C =
-   YARA/capa matches pushed forward into the GBDT's features (adopted; coverage check stopped early: public YARA
-   signatures are too sparse, generic rules and capa untested, capa's default backend is very slow). Open: what to
-   do with ambiguity and overlap; how B is made useful to practitioners.
-2. Small, agreed: move the paired tests PB1 now computes ad hoc (each method vs. the best direct baseline; pullback vs.
-   occlusion at the same window count) into `scripts/pb1_tables.py`.
-3. Rewrite the claims (`PLAN.md`, "Thesis and claims") to fit the new structure, once the extrinsic core is settled.
+1. With the user, decide whether to invest in **3-B** and design it: what "a shortcut" is operationally, how
+   pulled-back credit is grouped by byte content across files, the baselines without P (feature-space SHAP,
+   occlusion), and how usefulness to practitioners is shown (`PLAN.md`, "Open questions").
+2. Rewrite the claims (`PLAN.md`, "Thesis and claims") to fit the new structure; ask the user before changing what a
+   claim is for.
+3. Later: 3-C's rule source (generic YARA rules, or capa with a faster backend or file-scope rules); 3-A's byte n-gram
+   feature set and its provenance; what to do with ambiguity and overlap.
 
 ## The 2026-10-09 session
 
-- Run 21 read: PB1's conclusions survive random tie-breaks (above).
+- Run 21 read: PB1's conclusions survive random tie-breaks (`docs/pb1_pilot.md`, "Tie-break re-run"). Costs now
+  from run 17 (KernelSHAP over windows: 2,050 extractions; run 12 shared a cache with occlusion). `pb1_tables.py`
+  prints every paired test (vs. each direct baseline, at the same window count, signed vs. unsigned overshoot).
+- Second review with the user: the paper restructured; 3-A/B/C chosen (`PLAN.md`, "Paper structure"); statistics,
+  trigger experiments, and App-L re-scoped; `CLAUDE.md` updated (coverage/null element are not contributions;
+  brief hypotheses instead of elaborate readings; domain-agnostic byte-set control is in scope).
+- Partial coverage check for 3-C (YARA-Forge on the pilot files; capa timing), stopped early by the user.
 - PB2/PF2 at pilot scale (50 files per trigger). Corrected a mislabeled "ceiling" (it was the round trip P ψ(1_T); the
   true bound is 1).
 - PF1 designed, built, and run, with the resolution diagnostic and the resolution trend; claim 3 reworded (option A).

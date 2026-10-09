@@ -1,10 +1,10 @@
 # ProvExp Research Plan
 
-Living document. Last revised 2026-10-09 (second review: the paper's structure, "Paper structure"; the claims below
-are to be rewritten to fit it). Before that, 2026-10-09 (end of session): the evaluation mirrors the framework (characterizing P,
-the pullback, the pushforward, then real classifiers; see "Experiment IDs"). CP, PB1, PB2, PF1, and PF2 are done at
-pilot scale (PB1's curves re-run with random tie-breaks, `run/21`: no conclusion changed); CM is designed but not built. No
-scaling until the pilot results and the claims are settled (user, 2026-10-09).
+Living document. Last revised 2026-10-09 (second review, after run 21). **The paper is restructured** into a
+framework, an intrinsic evaluation, and extrinsic applications (see "Paper structure", which supersedes the order of
+"Experiments" below). The intrinsic evaluation is done at pilot scale (CP's theory, PB1, PF1; PB2/PF2 demoted); the
+extrinsic applications (3-A, 3-B, 3-C) are chosen but not designed or built. The claims ("Thesis and claims") predate
+the restructuring and are to be rewritten. No scaling until the pilot results and the claims are settled (user).
 
 ## Target
 
@@ -51,41 +51,52 @@ provenance pipeline (user, 2026-10-09; see `CLAUDE.md`). App-L stays only as a s
 
 The claims above predate this structure and are to be rewritten to fit it.
 
-1. **Framework.** The formalization of feature-space vs. problem-space explanation, the pullback and pushforward,
-   and element-feature provenance as the mechanism behind them, with the modest theory (round-trip bounds,
-   coarsening, composition). Parts are borrowed (G-DeepSHAP's rescale rule, group aggregation; reviewers will also
-   raise taint tracking and provenance semirings, to be cited and distinguished: P is weighted, conserves
-   attribution, and serves explanation transfer), but assembling them into one framework and applying it to program
-   feature extractors is a contribution (user).
-2. **Intrinsic evaluation** (laboratory-style; not meant to captivate a security audience): show that the framework
-   works in practice and where its limits are. P is correct (T1, black-box agreement), the transfers are faithful
-   (PB1, PF1), and the limits (resolution) are measurable. The trigger experiments (PB2, PF2) stay for now but are
-   **demoted**; they may be removed later (user).
-3. **Extrinsic applications** (what the framework provides in practice, for security practitioners; each must be
-   impossible or much costlier without P, and have a baseline that does not use P):
-   - **A. Comparing classifiers (CM):** the GBDT and MalConv compared in both spaces, using the pullback and the
-     pushforward. A second feature set is not worth it if it is EMBER v2 (too similar to v3).
-   - **B. Byte-level discovery of what a feature-based detector keys on** (shortcuts, spurious correlations),
-     using the pullback across a corpus. Open: why the pullback is the right tool here, and how the output is made
-     useful to practitioners.
-   - **B targets real shortcuts in the EMBER models** (user, 2026-10-09): identify, and maybe patch, what the
-     detectors actually key on, to show real utility in the domain (not only planted ones).
-   - **C (adopted 2026-10-09): rule-based detectors' explanations in the GBDT's features.** A YARA or capa match is
-     a problem-space explanation of a rule-based detector (the matched bytes are why it fired); pushed forward, it
-     is cast in the GBDT's feature vocabulary. Per-rule feature profiles (mean pushforward over the files where a
-     rule fires) exist only in feature space; compare them with the GBDT's explanations on those files. Partial
-     coverage check on the 100 pilot files (2026-10-09, stopped early by the user, who is confident in the idea):
-     YARA-Forge core and full sets (most public repositories) fire on 10/50 malware files with byte locations, 0
-     benign, and no rule on 5 or more files (family signatures; too sparse for profiles). Untested: generic rules
-     (Yara-Rules `crypto/`, `packers/`, `antidebug_antivm/`, `capabilities/`) and capa, whose vivisect backend took
-     more than 10 minutes on one 2.7 MB file (faster: an IDA/Ghidra/Binary Ninja backend; or file-scope rules only,
-     seconds per file, but losing the code-level capabilities).
-   - **Earlier fallback for C:** *B finds the shortcut,
-     C removes it*, using the pushforward's per-feature share of the shortcut's bytes to decide which features to
-     drop or neutralize (a feature diff cannot tell "this feature is the shortcut" from "barely touched by it").
-     B-then-C may be done anyway. An independent pushforward application would be better; candidates in "Open
-     questions". The core would then have one comparison using both operators (A) and one practical application per
-     operator (B, C).
+**1. Framework.** The formalization of feature-space vs. problem-space explanation; the pullback and pushforward;
+element-feature provenance as the mechanism behind them; the modest theory (T1, composition, coarsening, the
+round-trip matrices M and N and their bounds). Parts are borrowed (G-DeepSHAP's rescale rule, group aggregation;
+reviewers will also raise taint tracking and provenance semirings, to be cited and distinguished: P is weighted,
+conserves attribution, and serves explanation transfer), but assembling them into one framework and applying it to
+program feature extractors is a contribution (user). The summary statistics ambiguity and overlap have no
+demonstrated use yet (see "Open questions"); coverage and the null element's share are not contributions.
+
+**2. Intrinsic evaluation** (laboratory-style; not meant to captivate a security audience): the framework works in
+practice, and its limits are measurable. Done at pilot scale:
+- P is correct: T1 and agreement with the black-box P where T1 predicts it (CP.3, PB1's black-box comparison).
+- The pullback is faithful and cheap (PB1): window-level parity with the best direct baseline at 1/135 to 1/2,000
+  of the cost; at byte level 1.67× occlusion's gain, which no direct method reaches at affordable cost.
+- The pushforward is faithful up to its source's resolution (PF1): the resolution trend, 0.34 → 0.80.
+- Demoted, possibly removed later (user): the planted triggers (PB2, PF2). App-L is a stated limitation only.
+
+**3. Extrinsic applications** (what the framework provides security practitioners). Each must be impossible or much
+costlier without P and have a baseline that does not use P; state a brief hypothesis before running. None is
+designed or built yet.
+- **3-A. Comparing detectors** (CM, both operators): the GBDT on EMBER v3, a GBDT on **byte n-grams** (the quickest
+  way to widen the comparison: a P at the other end of the spectrum; not EMBER v2, too similar to v3), and MalConv,
+  compared in the problem space (pullback vs. direct byte explanations) and in the feature space (MalConv's
+  explanations pushed forward). Another domain or file format comes later.
+- **3-B. Finding what a feature-based detector keys on** (the pullback): real shortcuts in the EMBER models (user),
+  found at byte level across a corpus, by grouping pulled-back credit by byte content (domain-agnostic), and maybe
+  patched. Why the pullback: feature-space SHAP names hashed or aggregate features a practitioner cannot act on,
+  occlusion is ~135× costlier per file and saturates at window resolution, and raw-byte models' explanations explain
+  a different model. Candidate validation: inserting a discovered benign-associated pattern into malware should lower
+  the score (a shortcut is an evasion vector). Open: how the output is made useful to practitioners.
+  *B then patch:* remove a found shortcut using each feature's share of the shortcut's bytes, (Pᵀ1_S)_j (a feature
+  diff cannot tell "this feature is the shortcut" from "barely touched by it"); likely done anyway.
+- **3-C. Rule-based detectors' explanations in the GBDT's features** (the pushforward; adopted 2026-10-09): a YARA
+  or capa match is a problem-space explanation of a rule-based detector (the matched bytes are why it fired);
+  pushed forward, it is cast in the GBDT's feature vocabulary. Per-rule feature profiles (the mean pushforward over
+  the files where a rule fires) exist only in feature space (byte offsets differ across files, features do not);
+  compare them with the GBDT's explanations on those files: does the learned detector rely on what the rules see?
+  Partial coverage check (100 pilot files, stopped early; the user is confident in the idea): public YARA signatures
+  (YARA-Forge core and full) are too sparse (10/50 malware files with byte locations, 0 benign, no rule on 5 or more
+  files). Untested: generic rules (Yara-Rules `crypto/`, `packers/`, `antidebug_antivm/`, `capabilities/`) and capa,
+  whose default (vivisect) backend took more than 10 minutes on one 2.7 MB file; faster: an IDA, Ghidra, or Binary
+  Ninja backend, or file-scope rules only (seconds per file, without the code-level capabilities).
+
+**Appendix:** App-R (mechanical redundancy); App-L (a limitation); **bounding what control of a byte set can do**
+(accepted 2026-10-09, posed domain-agnostically): for additive features (Pᵀ1_S)_j bounds how far feature j can
+move when S is controlled, so a worst-case score over the controllable features bounds evasion without crafting
+attacks, validated against real attacks.
 
 ## Principle: domain-agnostic framework, selective domain knowledge in experiments
 
@@ -338,21 +349,10 @@ methods may be revisited.
   demonstrated use: overlap's only one is PF1's resolution trend, which largely restates the round-trip bound (any
   statistic of P "predicting" a transfer that is linear in P is close to a tautology; a real use connects P to
   something not computed through P, such as model or attack behavior). Undecided what to do with them.
-- **The pushforward application (C)** and **why the pullback is the right tool for B** (2026-10-09; see "Paper
-  structure"). Candidates for an independent C: (1) *are detectors right for the right reasons?* push expert byte
-  annotations (e.g., capa or YARA match locations) into feature space and compare with the detector's explanation;
-  (2) *bounding what control of a byte set can do*: for additive features the share of feature j computed by the set
-  S, (Pᵀ1_S)_j, bounds how far the feature can move, so a worst-case score over the controllable features bounds
-  evasion without crafting attacks, validated against real attacks. **Accepted for the appendix** (user, 2026-10-09),
-  posed domain-agnostically (an arbitrary byte set S); only PE-specific regions are ruled out. (3) *translating explanations between feature sets* (pull back through one extractor's P,
-  push forward through another's), which needs a second extractor.
-  **On (1) (2026-10-09, revised after discussion):** a YARA or capa match is itself a problem-space explanation (of a
-  rule-based detector: the matched bytes are, by construction, why it fired), so ψ(b_YARA) casts it in the GBDT's
-  feature vocabulary; D† is the normalization that makes it an explanation (it conserves the total). By adjointness,
-  an inner-product score is the same in either space (⟨Pa, b⟩ = ⟨a, Pᵀb⟩), but vector-valued comparisons and
-  aggregation across files are not: byte offsets differ per file, features do not, so a per-rule feature profile
-  (the mean pushforward over the files where the rule fires) exists only in feature space. That is where (1) uses
-  the pushforward. (2) needs the unnormalized share Pᵀ1_S (what fraction of feature j the set S computes).
+- **How 3-B is made useful to practitioners** (2026-10-09): what the output is (ranked byte patterns with their
+  prevalence by label?) and how its usefulness is shown (insertion as evasion? patching?).
+- **Further pushforward applications** (for later brainstorming): translating explanations between feature sets
+  (pull back through one extractor's P, push forward through another's), once 3-A has a second extractor.
 - **A further feature set (on hold, 2026-10-09; not EMBER v2, too similar to v3).** For A, **byte n-grams for PE**
   are the quickest way to widen the comparison (user); another domain or file format comes later. Candidates: within
   PE, byte n-grams (a very different P: high resolution, low overlap) or disassembly-based opcode n-grams (a more complex
@@ -383,8 +383,8 @@ methods may be revisited.
 ## Timeline and gates
 
 Phases 0–2 are complete (literature; `provexp`; features, models, stage-1 explanations, census). As of 2026-10-09:
-**CP, PB1, PB2, PF1, and PF2 are done at pilot scale; CM is designed but not built.** PB1's tie-break re-run
-(`run/21`) changed no conclusion. Most of the research runs at pilot scale; scaling up is for the
+**the intrinsic evaluation is done at pilot scale (CP's theory, PB1, PF1; PB2/PF2 demoted); the extrinsic
+applications 3-A, 3-B, 3-C are chosen but not designed.** The dates below were set before the restructuring. Most of the research runs at pilot scale; scaling up is for the
 final numbers, when the pilot results and claims are settled. `run/` holds the commands that produced everything in
 `artifacts/`.
 
@@ -392,10 +392,10 @@ final numbers, when the pilot results and claims are settled. `run/` holds the c
 |---|---|---|
 | Oct 8 | ~~PB1 baselines~~, ~~the trigger testbed~~ done; the runner's parallelism rebuilt | **Gate 2** (passed for the GBDT) |
 | Oct 9 | ~~PB2/PF2 at pilot scale~~, ~~PF1 and its resolution trend~~, ~~CP.3~~; the tie-break fix (PB1 re-run pending) | |
-| Oct 10–20 | ~~Read run 21 (PB1 with random tie-breaks)~~ (Oct 9, no conclusion changed); remaining polish at pilot scale | |
-| Oct 21–Nov 15 | CM: MalConv explanations of the pilot files, both comparisons | |
-| Nov 15–Dec 5 | Scale-up of every experiment (2,000 files, seeds 0–2), when the user decides; the MLP if time allows | |
-| Dec 5–15 | Appendix (App-L, App-R) | |
+| Oct 9 (later) | ~~Run 21 read~~ (no conclusion changed); **the paper restructured** (framework / intrinsic / extrinsic) | |
+| next | Design 3-B (real shortcuts via the pullback); then 3-C and 3-A (byte n-gram GBDT, MalConv explanations) at pilot scale | to re-plan with the user |
+| later | Scale-up (2,000 files, seeds 0–2), when the user decides; the MLP if time allows | |
+| later | Appendix (App-R; the byte-set control bound) | |
 | Dec 15–late Jan | Writing: introduction and contributions, framework edits, figures | Submission |
 
 Gate 1 (the pilot census, `docs/archive/pilot.md`) passed provisionally for the measurement result (now App-L).
@@ -411,8 +411,11 @@ was dropped as a flawed test. Thresholds are reassessed with the user.
   may still support a narrower claim; fallback venue.
 - **Perturbations go off-manifold:** zero/random edits break parsing and distort faithfulness. Mitigation: report
   parse-failure rates; move to a PE-aware operator.
-- **Smearing:** histogram and entropy features spread over the whole file. Treated as a measured result (CP, App-L),
-  not a limitation.
+- **Smearing:** histogram and entropy features spread over the whole file, which limits how sharply the pullback
+  can place their credit. A stated limitation of the transfer at fine resolution (CP's round-trip bounds).
+- **The extrinsic applications are not designed yet**, and they carry the paper's security relevance. 3-C depends on
+  rules that fire often enough (public signatures do not) and on capa's cost; 3-B on finding real shortcuts worth
+  reporting.
 - **Reviewer pool:** Raff co-authored EMBER-2024, MalConv, and the SHAP-on-EMBER critique; engage it directly (App-R,
   CM).
 - **The pushforward is faithful only up to its source's resolution (PF1):** window-level explanations keep a third of
