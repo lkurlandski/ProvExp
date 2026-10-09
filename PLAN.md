@@ -331,13 +331,18 @@ methods may be revisited.
 - **The pushforward application (C)** and **why the pullback is the right tool for B** (2026-10-09; see "Paper
   structure"). Candidates for an independent C: (1) *are detectors right for the right reasons?* push expert byte
   annotations (e.g., capa or YARA match locations) into feature space and compare with the detector's explanation;
-  (2) *bounding what control of a byte set can do*: for additive features the pushforward's share bounds how far the
-  feature can move, so a worst-case score over the controllable features bounds evasion without crafting attacks,
-  validated against real attacks (close to the "attacker-controllable regions" direction the user has rejected:
-  ask before pursuing); (3) *translating explanations between feature sets* (pull back through one extractor's P,
+  (2) *bounding what control of a byte set can do*: for additive features the share of feature j computed by the set
+  S, (Pᵀ1_S)_j, bounds how far the feature can move, so a worst-case score over the controllable features bounds
+  evasion without crafting attacks, validated against real attacks. **Accepted for the appendix** (user, 2026-10-09),
+  posed domain-agnostically (an arbitrary byte set S); only PE-specific regions are ruled out. (3) *translating explanations between feature sets* (pull back through one extractor's P,
   push forward through another's), which needs a second extractor.
-- **A further feature set (on hold, 2026-10-09; not EMBER v2, too similar to v3).** Candidates: within PE, byte
-  n-grams (a very different P: high resolution, low overlap) or disassembly-based opcode n-grams (a more complex
+  **Caveat on (1), found 2026-10-09:** scoring an explanation against a byte set S is the same in both spaces, by
+  adjointness: ⟨Pa, 1_S⟩ = ⟨a, Pᵀ1_S⟩. The per-feature share Pᵀ1_S is not the framework's pushforward
+  ψ(1_S) = PᵀD†1_S, so (1), the remediation step of B-then-C, and (2) use P's transpose, not ψ. ψ is needed when the
+  problem-space input is an *amount* of evidence to be divided among features (an explanation), not a region.
+- **A further feature set (on hold, 2026-10-09; not EMBER v2, too similar to v3).** For A, **byte n-grams for PE**
+  are the quickest way to widen the comparison (user); another domain or file format comes later. Candidates: within
+  PE, byte n-grams (a very different P: high resolution, low overlap) or disassembly-based opcode n-grams (a more complex
   extractor); across domains, which would also answer "Generality", DREBIN-style Android features or flow features
   from packets (CICFlowMeter-style statistics).
 - **Signed provenance:** rescale-rule matrices can be signed; our axioms require P ≥ 0. Keep structural (unsigned)

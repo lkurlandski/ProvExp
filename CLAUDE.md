@@ -93,8 +93,9 @@ Follow `/home/lk3591/Documents/code/SSViT/exeformer/exeformer.py` (ignore that i
   complex feature extractor and depends only on the relationships between elements and features (P), never on what an
   element or a feature *means*. `provexp` (outside `featuresets/`), the provenance statistics, the census, and the
   core analyses work with elements, features, feature subsets, and P only. Do not propose analyses, modules, or
-  stratifications built on PE-format structure (headers, sections, overlay, packers, "attacker-controllable
-  regions"); the user has rejected this direction several times.
+  stratifications built on PE-format structure (headers, sections, overlay, packers, PE-specific "attacker-controllable
+  regions" such as the DOS header); the user has rejected this direction several times. Questions about what control
+  of an *arbitrary* byte set allows, posed domain-agnostically in terms of P, are welcome (user, 2026-10-09).
 - **Coverage, localizability, and the null element's share are not contributions** (user, 2026-10-09). Do not propose
   promoting them, building analyses on them, or reporting "reliance on absence" as a finding. (i) They measure a
   particular explanation of a particular file by a particular explainer, not the provenance; (ii) a large share of
