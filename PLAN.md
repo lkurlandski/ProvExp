@@ -70,7 +70,17 @@ The claims above predate this structure and are to be rewritten to fit it.
      useful to practitioners.
    - **B targets real shortcuts in the EMBER models** (user, 2026-10-09): identify, and maybe patch, what the
      detectors actually key on, to show real utility in the domain (not only planted ones).
-   - **C. A pushforward application complementing B.** The fallback, acceptable to the user: *B finds the shortcut,
+   - **C (adopted 2026-10-09): rule-based detectors' explanations in the GBDT's features.** A YARA or capa match is
+     a problem-space explanation of a rule-based detector (the matched bytes are why it fired); pushed forward, it
+     is cast in the GBDT's feature vocabulary. Per-rule feature profiles (mean pushforward over the files where a
+     rule fires) exist only in feature space; compare them with the GBDT's explanations on those files. Partial
+     coverage check on the 100 pilot files (2026-10-09, stopped early by the user, who is confident in the idea):
+     YARA-Forge core and full sets (most public repositories) fire on 10/50 malware files with byte locations, 0
+     benign, and no rule on 5 or more files (family signatures; too sparse for profiles). Untested: generic rules
+     (Yara-Rules `crypto/`, `packers/`, `antidebug_antivm/`, `capabilities/`) and capa, whose vivisect backend took
+     more than 10 minutes on one 2.7 MB file (faster: an IDA/Ghidra/Binary Ninja backend; or file-scope rules only,
+     seconds per file, but losing the code-level capabilities).
+   - **Earlier fallback for C:** *B finds the shortcut,
      C removes it*, using the pushforward's per-feature share of the shortcut's bytes to decide which features to
      drop or neutralize (a feature diff cannot tell "this feature is the shortcut" from "barely touched by it").
      B-then-C may be done anyway. An independent pushforward application would be better; candidates in "Open

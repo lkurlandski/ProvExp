@@ -33,9 +33,11 @@ run 12.
 ## Next (for Claude), on resume
 
 1. **Not CM yet** (user): the work is being rethought at a high level first. The paper's structure is now framework /
-   intrinsic evaluation / extrinsic applications (`PLAN.md`, "Paper structure"). Open, to discuss with the user:
-   the pushforward application (C) that complements B; why the pullback is the right tool for B and how B is made
-   useful to practitioners; what to do with ambiguity and overlap (`PLAN.md`, "Open questions").
+   intrinsic evaluation / extrinsic applications (`PLAN.md`, "Paper structure"): A = CM (GBDT on EMBER v3, GBDT on
+   byte n-grams, MalConv), B = real shortcuts in the EMBER models via the pullback (then patched, B-then-C), C =
+   YARA/capa matches pushed forward into the GBDT's features (adopted; coverage check stopped early: public YARA
+   signatures are too sparse, generic rules and capa untested, capa's default backend is very slow). Open: what to
+   do with ambiguity and overlap; how B is made useful to practitioners.
 2. Small, agreed: move the paired tests PB1 now computes ad hoc (each method vs. the best direct baseline; pullback vs.
    occlusion at the same window count) into `scripts/pb1_tables.py`.
 3. Rewrite the claims (`PLAN.md`, "Thesis and claims") to fit the new structure, once the extrinsic core is settled.
