@@ -84,7 +84,9 @@ designed or built yet.
   feature or tell spurious from meaningful); **cheaper than occlusion** (one extraction vs. hundreds/file), so it runs
   corpus-wide. Run 23 (appended aggregate strings do not move the model) marks the boundary: P says which spurious
   reliance is byte-settable (forgeable metadata) and which is not (aggregates). Mitigation (drop/neutralize the
-  carrying features, or retrain) is the "possibly mitigate" half, bridging to 3-C.
+  carrying features via Pᵀ1_S, or retrain) is the "possibly mitigate" half, internal to 3-B (NOT 3-C, which is the
+  separate YARA/capa pushforward application). **Status: little real progress this session (assistant's fault); the
+  runs are raw material, not a settled experiment -- see `docs/shortcuts_plan.md`, "Status note".**
 - **3-C. Rule-based detectors' explanations in the GBDT's features** (the pushforward; adopted 2026-10-09): a YARA
   or capa match is a problem-space explanation of a rule-based detector (the matched bytes are why it fired);
   pushed forward, it is cast in the GBDT's feature vocabulary. Per-rule feature profiles (the mean pushforward over
@@ -352,9 +354,10 @@ methods may be revisited.
   demonstrated use: overlap's only one is PF1's resolution trend, which largely restates the round-trip bound (any
   statistic of P "predicting" a transfer that is linear in P is close to a tautology; a real use connects P to
   something not computed through P, such as model or attack behavior). Undecided what to do with them.
-- **3-B's remaining work** (2026-10-09): the mitigation half -- remove a surfaced spurious correlation (drop/neutralize
-  the carrying features via 3-C's pushforward, or retrain with the artifact randomized) and show reliance drops without
-  hurting clean accuracy. Decide 3-B vs. 3-C. Identify is done (run 22 + run 24).
+- **3-B is unfinished** (2026-10-09): consolidate a defensible "the pullback surfaces spurious correlations" result
+  driven by the discovery output (run 24's fields were hand-picked), add baselines (data-mined patterns; occlusion for
+  cost), and optionally the mitigation half (remove a surfaced correlation via Pᵀ1_S or retraining; internal to 3-B,
+  not 3-C). Framing churned this session; little net progress.
 - **Further pushforward applications** (for later brainstorming): translating explanations between feature sets
   (pull back through one extractor's P, push forward through another's), once 3-A has a second extractor.
 - **A further feature set (on hold, 2026-10-09; not EMBER v2, too similar to v3).** For A, **byte n-grams for PE**
@@ -397,7 +400,7 @@ final numbers, when the pilot results and claims are settled. `run/` holds the c
 | Oct 8 | ~~PB1 baselines~~, ~~the trigger testbed~~ done; the runner's parallelism rebuilt | **Gate 2** (passed for the GBDT) |
 | Oct 9 | ~~PB2/PF2 at pilot scale~~, ~~PF1 and its resolution trend~~, ~~CP.3~~; the tie-break fix (PB1 re-run pending) | |
 | Oct 9 (later) | ~~Run 21 read~~; **paper restructured**; ~~3-B identify spurious correlations~~ (runs 22, 24) | |
-| next | 3-B mitigation (or defer to 3-C); then 3-C and 3-A (byte n-gram GBDT, MalConv explanations) at pilot scale | to re-plan with the user |
+| next | **finish 3-B** (consolidate, baselines, maybe mitigation); then 3-C and 3-A at pilot scale | to re-plan with the user |
 | later | Scale-up (2,000 files, seeds 0–2), when the user decides; the MLP if time allows | |
 | later | Appendix (App-R; the byte-set control bound) | |
 | Dec 15–late Jan | Writing: introduction and contributions, framework edits, figures | Submission |

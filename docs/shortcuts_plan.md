@@ -61,12 +61,23 @@ measure the move toward benign. The lever must match the feature.
 Parse-only verification (user); runtime functionality out of scope (no sandbox). Import-via-LIEF not run (new
 dependency; the metadata cases already make the point).
 
-## Mitigation (the "possibly mitigate" half; bridges to 3-C)
+## Mitigation (the "possibly mitigate" half; NOT 3-C)
 
 Once a spurious correlation is named, P says which features carry it, so it can be removed -- drop/neutralize those
-features (via the pushforward's per-feature share, 3-C) or retrain with the artifact randomized -- and the fix checked
-by re-running the set-bytes test and clean accuracy. Scoped but not yet built; decide with the user whether it lands
-in 3-B or 3-C.
+features (using each feature's share of the artifact's bytes, Pᵀ1_S) or retrain with the artifact randomized -- and
+the fix checked by re-running the set-bytes test and clean accuracy. Scoped, not built. (3-C is a *separate*
+application: rule-based detectors' matches pushed into the GBDT's feature space. Mitigation here is internal to 3-B.)
+
+## Status note (2026-10-09)
+
+3-B made **little real progress** this session despite the tooling and three runs below. The fault was the
+assistant's: the framing churned (shortcut -> "legibility of reliance" -> back to spurious correlations) and the
+assistant repeatedly turned a fire-and-forget task into open-ended questions and a PB1-redundant framing. What exists
+is raw material, not a settled experiment: discovery (run 22) and a causal/exploitability check on two metadata
+fields (run 24), plus a correctly-negative content-append check (run 23). **Not done:** a consolidated, defensible
+"identify spurious correlations" result; the baselines (data-mined label-skewed patterns; occlusion as the cost
+baseline); mitigation; and a clean mapping from discovered patterns to the fields/features tested (run 24's two
+fields were hand-picked, not driven by the discovery output).
 
 ## Out of scope / decided against
 

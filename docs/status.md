@@ -16,7 +16,7 @@ the pilot results and the claims are settled (user). `run/` holds the commands t
 | **2. Intrinsic: CP** | Census, coarsening, CP.3 done (`docs/cp_census.md`); in the paper, its theory (round-trip bounds) and CP.3's agreement check. |
 | **2. Intrinsic: PB2, PF2** (planted triggers) | Done at pilot scale (`docs/trigger_plan.md`); **demoted**, possibly removed later. |
 | **3-A. Comparing detectors** | Not built. GBDT on EMBER v3, a GBDT on byte n-grams (to build), MalConv; both operators. |
-| **3-B. Spurious correlations via the pullback** | **Identify done** (`run/22`, `run/24`, `docs/shortcuts_plan.md`): the pullback surfaces forgeable-metadata shortcuts (Delphi timestamp, certificate) from opaque features; run 24 confirms them causal and attacker-settable (timestamp +0.42 vs +0.12 random). Mitigation half scoped, not built. Not PB1/SHAP. |
+| **3-B. Spurious correlations via the pullback** | **Little real progress** (assistant's fault; framing churned). Tooling + 3 runs exist (`run/22` discovery, `run/23` append=negative, `run/24` set-field=moved score), but no consolidated result, no baselines, no mitigation, and run 24's fields were hand-picked, not driven by discovery. See `docs/shortcuts_plan.md`, "Status note". |
 | **3-C. YARA/capa matches pushed forward** | Adopted, not designed. Coverage check stopped early: public YARA signatures too sparse; generic rules and capa untested; capa's default backend is very slow. |
 | **Appendix** | App-R's duplicate-feature sweep not run; App-L a stated limitation; the byte-set control bound accepted, not started. |
 | **The MLP** | Set aside temporarily; returns after the GBDT methodology is established. |
@@ -24,9 +24,11 @@ the pilot results and the claims are settled (user). `run/` holds the commands t
 
 ## Next (for Claude), on resume
 
-1. **3-B**: identify-spurious-correlations is done (run 22 + run 24). Decide with the user whether to build the
-   mitigation half (drop/neutralize the carrying features or retrain; bridges to 3-C) in 3-B or 3-C. Next extrinsic
-   application otherwise: **3-C** (rule-based
+1. **3-B is not done.** Consolidate it into one defensible experiment (see `resume-prompt.md` and
+   `docs/shortcuts_plan.md`): a clean "the pullback surfaces spurious correlations" result driven by the discovery
+   output (not hand-picked fields), baselines (data-mined label-skewed patterns; occlusion for cost), run 24's
+   causal/exploitability evidence, and optionally the mitigation half (internal to 3-B; NOT 3-C). Only then move to
+   **3-C** (rule-based
    detectors' matches pushed into the GBDT's features) or **3-A** (GBDT on byte n-grams, MalConv) -- the user picks.
 2. Rewrite the claims (`PLAN.md`, "Thesis and claims") to fit the new structure; ask the user before changing what a
    claim is for.
