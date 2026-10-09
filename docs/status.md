@@ -16,7 +16,7 @@ in artifact paths (`artifacts/experiments/e1/` holds PB1). Work stays at pilot s
 | **PF1** (pushforward faithfulness) | **done at pilot scale, with the resolution trend** (`docs/pf1_plan.md`). Required test passes; R = 0.31–0.40 for window sources. R attainable rises monotonically 0.34 → 0.80 from 64 windows to bytes as P's overlap falls 0.99 → 0.41; bound holds everywhere. Supports claim 3 as reworded (option A). |
 | **CM** (GBDT vs. MalConv) | designed, not built; MalConv explanations of the pilot files are not computed yet. |
 | **The MLP** | set aside temporarily; returns after the GBDT methodology is established. |
-| **Manuscript** | framework and evaluation sections follow the current structure; `_d_applications.tex` carries the designs and pilot numbers. Do not try to compile it (no LaTeX here). |
+| **Manuscript** | `_d_applications.tex` updated 2026-10-09: claim 3 reworded (option A), status table, trigger design and validation, CP.3, PB1 baselines, PB2/PF2/PF1 pilot results, Table `tab:XML:Resolution`, threats. Still to rewrite: the introduction's contribution list (C1–C3, `PLAN.md`). Do not try to compile it (no LaTeX here). |
 
 ## The session's results
 
