@@ -28,7 +28,12 @@ curve with native feature-space explainers. The deletion itself needs no feature
 5. **Success criterion, fixed in advance** (as in `docs/pb1_baselines.md`): the pushforward is not expected to beat
    TreeSHAP, which sees the model directly. Claim 3 holds if the pushforward is far above random and above the
    naive baseline, and recovers a stated fraction of TreeSHAP's feature-space area under the matched reference, with
-   the remaining gap traced to the null element's mass and to overlap. The fraction is to be fixed before the run.
+   the remaining gap traced to the null element's mass and to overlap. **Fixed with the user (2026-10-09):**
+   - *required:* the pushforward's area is significantly above random and above the naive incidence sum (Wilcoxon
+     signed-rank over files); if not, claim 3 fails;
+   - *strength,* from R = area(pushforward) / area(TreeSHAP) under the matched reference: R ≥ 0.8, a faithful
+     translation (claim 3 as stated); 0.5 ≤ R < 0.8, partial (stated with the gap, if the gap is traced to the null
+     element's share and to overlap); R < 0.5, claim 3 weakened and its framing rethought.
 
 Metric: the normalized area under the deletion curve, as in PB1, with signed rankings in the direction of the
 decision. Comparators: TreeSHAP (path, interventional), KernelSHAP, random, the naive baseline.

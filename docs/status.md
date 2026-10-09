@@ -45,7 +45,7 @@ in artifact paths (`artifacts/experiments/e1/` holds PB1). Work stays at pilot s
    it with the user first — designed 2026-10-09 (`docs/pf1_plan.md`). `faithfulness.py` now writes
    `window_scores.npz` (per-window occlusion at every window count, KernelSHAP over windows, x and the fully ablated
    file's features; `load_window_scores`). Next: check the user's `run/17_pf1_window_scores.sh` run (its curves
-   should equal the baselines run's exactly), then build the PF1 script; fix the success fraction with the user first.
+   should equal the baselines run's exactly), then build the PF1 script (success criterion fixed: `docs/pf1_plan.md`, decision 5).
 3. **CP's black-box comparison** (cheap: the window-level statistics of both provenances are already saved by any new
    `faithfulness.py` run).
 4. **CM**, which needs MalConv explanations of the pilot files first.
@@ -53,7 +53,7 @@ in artifact paths (`artifacts/experiments/e1/` holds PB1). Work stays at pilot s
 ## Decisions made on 2026-10-09
 
 - **PF1 design** as in `docs/pf1_plan.md` (two references, attributable-only variant, naive incidence-sum baseline,
-  success criterion fixed in advance; the success fraction still to be set). No pushforward of triggered files.
+  success criterion fixed in advance: beat random and the naive baseline, then R = area ratio to TreeSHAP with cut-offs 0.8 / 0.5). No pushforward of triggered files.
 - **PF2 reads r = ψ(1_T) as a support, not a target:** mass on supp(r) and top-k in supp(r); cosine and Spearman
   against r dropped as faithfulness scores (manuscript, PLAN, `docs/trigger_plan.md`).
 

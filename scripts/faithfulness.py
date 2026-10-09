@@ -112,6 +112,7 @@ FloatArray = npt.NDArray[np.float64]
 SECONDS_PER_EXTRACTION = 0.040
 SECONDS_PER_EXTRACTION_PER_MB = 0.251
 BoolArray = npt.NDArray[np.bool_]
+BAR_FORMAT = "{desc}: {percentage:3.0f}%|{bar}| {n:.0f}/{total:.0f} predicted worker-minutes [{elapsed}<{remaining}]"
 
 _STATE: dict[str, Any] = {}
 
@@ -631,6 +632,15 @@ def main() -> None:
     rows = samples.select("index", "name", "label", "shard", "position", "size").to_dicts()
     predicted = {int(r["index"]): float(predict_seconds(np.asarray([r["size"]]), per_file)[0]) for r in rows}
     total = sum(predicted.values())
+    # The progress bars count predicted worker-minutes, not tasks: tasks run longest-first, so a count of tasks makes
+    # the run look far slower than it is until the end.
+    each = {int(r["index"]): float(predict_seconds(np.asarray([r["size"]]), 1)[0]) / 60 for r in rows}
+
+    def pass1_minutes(out: dict[str, Any]) -> float:
+        n = out.get("k_hi", 0) - out.get("k_lo", 0) if out["kind"] == "occlude" else args.kernelshap_samples
+        return float(n) * each[int(out["index"])]
+
+    pass2_extractions = 2 + args.num_windows + len(BUDGETS) * 26
     print(f"Explainers: {explainers}.", flush=True)
     print(f"PB1: {samples.height} files ({int(bad.sum())} excluded for local accuracy), models {list(models)}, {args.num_windows} windows (sweep {args.sweep_windows}), KernelSHAP over windows {args.kernelshap_samples}, fill {args.fill}, header {args.header}.", flush=True)
     print(f"Cost: {per_file} extractions per file; predicted {total / 3600:.1f} worker-hours, so about "
@@ -664,10 +674,11 @@ def main() -> None:
         pass1_tasks.sort(key=lambda t: -(predicted[t["index"]] * (t.get("k_hi", 0) - t.get("k_lo", 0) + t.get("kernelshap_samples", 0))))
         print(f"Pass 1: {len(pass1_tasks)} tasks (the sweep in chunks of windows, and KernelSHAP).", flush=True)
         with mp.get_context("fork").Pool(args.num_workers, initializer=_init_worker, initargs=initargs) as pool:
-            bar = tqdm(total=len(pass1_tasks), desc="pass 1", smoothing=0.0, mininterval=30)
+            bar = tqdm(total=sum(pass1_minutes(t) for t in pass1_tasks), desc="pass 1", smoothing=0.0, mininterval=30,
+                       bar_format=BAR_FORMAT)
             with bar:
                 for out in pool.imap_unordered(_pass1, pass1_tasks):
-                    bar.update(1)
+                    bar.update(pass1_minutes(out))
                     i_file = out["index"]
                     if "error" in out:
                         pass1_failures.append(f"{i_file}: {out['error']}")
@@ -711,10 +722,11 @@ def main() -> None:
     infos: list[dict[str, Any]] = []
     arrays: dict[int, dict[str, Any]] = {}
     with mp.get_context("fork").Pool(args.num_workers, initializer=_init_worker, initargs=initargs) as pool:
-        bar = tqdm(total=len(pass2_tasks), desc="pass 2", smoothing=0.0, mininterval=30)
+        bar = tqdm(total=sum(pass2_extractions * each[t["index"]] for t in pass2_tasks), desc="pass 2", smoothing=0.0,
+                   mininterval=30, bar_format=BAR_FORMAT)
         with bar:
             for recs, inf, arr in pool.imap_unordered(process_one, pass2_tasks):
-                bar.update(1)
+                bar.update(pass2_extractions * each[int(inf["index"])])
                 records.extend(recs)
                 infos.append(inf)
                 arrays.update(arr)
