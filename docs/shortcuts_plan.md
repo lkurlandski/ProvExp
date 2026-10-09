@@ -93,6 +93,15 @@ Baselines: random patterns of matched length, and data-mined label-skewed patter
 **Verification: the modified file must still parse** (PB1's verifier); checking that it still *runs* is out of scope
 (user, 2026-10-09) -- no sandbox. Compare pullback-found patterns against the baselines on the same files.
 
+**Content increment** (`scripts/shortcuts_insert.py`, tested; `run/23_shortcuts_insert.sh`): the string patterns
+appended to held-out test malware (GBDT raw score > 0, not in the explanation set, not truncated), vs. random bytes
+of the same length. Smoke test (3 files, 3 patterns): runs end to end, every file still parsed, but the string
+insertions moved the score the *wrong* way by a tiny amount (about +0.1 log-odds), random by 0. Not to be read from
+3 files; run 23 (200 files) is the test. A caveat the result may show: the DOS-stub string is already in every PE,
+so appending a copy barely changes its feature; the discriminating strings (e.g. `GetCurrentThreadId`) are the real
+probes. If appending does not reproduce a pattern's effect, the effect may depend on *where* the string sits, which
+the set-field and import increments (and other placements) would test.
+
 ## Open
 
 - k per file, span merging, and the minimum number of files for a pattern; how many files are needed.
