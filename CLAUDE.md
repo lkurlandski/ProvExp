@@ -9,14 +9,18 @@ plus a null element) transfers explanations between the feature-space (EMBER v3 
 
 - `docs/status.md`: current state, what is waiting on the user, and what to do next. **Update it at the end of
   every session.**
-- `PLAN.md`: claims, experiments by ID (CP, PB1–2, PF1–2, CM; appendix App-L, App-R; mapping from the old IDs E1–E4,
-  A1–A3 in "Experiment IDs"), timeline, gates, open questions.
-- Experiment docs are named by ID: `docs/cp_plan.md`, `docs/cp_census.md` (CP: characterizing P);
-  `docs/pb1_plan.md`, `docs/pb1_pilot.md`, `docs/pb1_baselines.md` (PB1: pullback faithfulness and cost; the
-  baselines doc fixes the reading of each outcome in advance); `docs/trigger_plan.md` (the planted-trigger testbed for PB2
-  and PF2). `docs/pilot.md`: the Phase 2 census (old IDs).
+- `PLAN.md`: claims, experiments by ID (CP, PB1–2, PF1–2, CM; appendix App-L, App-R), timeline, gates, open
+  questions.
+- Experiment docs, named by ID: `docs/cp_plan.md`, `docs/cp_census.md` (CP: characterizing P); `docs/pb1_plan.md`,
+  `docs/pb1_pilot.md`, `docs/pb1_baselines.md` (PB1: pullback faithfulness and cost; the baselines doc fixes the
+  reading of each outcome in advance); `docs/trigger_plan.md` (the planted-trigger testbed: PB2 and PF2, design and
+  results); `docs/pf1_plan.md` (PF1: the pushforward's faithfulness and the resolution trend); `docs/appendix.md`
+  (App-L, App-R).
 - `docs/design_provexp.md`: package design, decisions, provenance conventions, thrember quirks.
-  `docs/related_work.md`: literature and gaps. `docs/plan_phase2.md`: Phase 2 (complete).
+  `docs/related_work.md`: literature and gaps. `docs/archive/`: superseded documents (the Phase 2 plan and census,
+  old IDs E1–E4, A1–A3; artifact paths such as `artifacts/experiments/e1/` (PB1) still use them).
+- **Results are read against a rule fixed before the run** (as in `docs/pb1_baselines.md`, `docs/pf1_plan.md`):
+  write down what each outcome would mean before looking, and report a failed check as such.
 - `manuscript/_c_framework.tex`: the framework's definitions; `_d_applications.tex`: the evaluation. Keep code and
   manuscript consistent.
 
@@ -29,7 +33,12 @@ plus a null element) transfers explanations between the feature-space (EMBER v3 
   verification, experiment code), `metrics.py`.
 - `scripts/`: data (featurize, check_features, build_metadata, select_explanation_set, train_classic, make_fixtures);
   explanations and census (explain, provenance_census, pullback_agreement, pilot_tables); CP (cp_tables,
-  cp_coarsening); PB1 (discover_protected_fields, header_typical_values, faithfulness, pb1_tables).
+  cp_coarsening, cp_blackbox); PB1 (discover_protected_fields, header_typical_values, faithfulness, pb1_tables);
+  the trigger (trigger_select, trigger_poison, trigger_validate, trigger_explain, trigger_tables); PF1 (pf1,
+  pf1_resolution).
+- **Rankings break ties by a seeded permutation, never by position or index** (`ablation.element_order` /
+  `window_order` with `tiebreak`, `pf1.feature_order`), and treat scores within 1e-9 (relative) as tied: equal scores
+  are common (features or bytes with identical provenance; occlusion windows that change nothing).
 - `run/`: the commands that produced `artifacts/`, one numbered script per step, with the runtimes they took. **Add a
   script here whenever a new experiment is run**, and keep its arguments in sync with what was actually run. In
   these scripts: (1) `echo` a short line before each step saying what runs and, above all, **the log file** a long

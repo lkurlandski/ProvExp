@@ -1,217 +1,102 @@
-# PF1: Faithfulness of the Pushforward (Design)
+# PF1: Faithfulness of the Pushforward (Design and Results)
 
-Agreed with the user on 2026-10-09. See `PLAN.md` (claim 3, PF1). Not built yet.
+Designed with the user and run on 2026-10-09; condensed the same day (the step-by-step record is in git history). See
+`PLAN.md` (claim 3, PF1) and the manuscript (PF1, Table `tab:XML:Resolution`).
 
-## Question
+## Question and claim
 
-Is the pushforward a = PᵀD†b of a problem-space explanation b a faithful feature-space explanation of the same model?
-Tested with a feature-space deletion test of the GBDT: remove the top-ranked features, re-score, and compare the
-curve with native feature-space explainers. The deletion itself needs no feature extraction.
+Is the pushforward a = PᵀD⁺b of a problem-space explanation b a faithful feature-space explanation of the same model?
+Tested by feature-space deletion of the GBDT: remove the top-ranked features, re-score, compare the area of the curve
+with native feature-space explainers. **Claim 3 (option A, decided 2026-10-09):** the pushforward is faithful up to
+the resolution of its source, a limit set by P's overlap at that resolution and known before any explanation is
+computed. The evidence is the trend across resolutions (below); the byte-level end point, which uses TreeSHAP's own
+round trip, counts only as the end of that trend (user).
 
-## Decisions (2026-10-09)
+## Design (decided 2026-10-09)
 
-1. **Two references for a deleted feature**, reported side by side, because each favours one family of explainers:
-   - *matched to the problem space:* x̃ = σ(ablate(x)), the features of the fully ablated file under the PB1 operator
-     (level 3); deleting feature j sets x_j := x̃_j. Deleting every feature reproduces the end point of PB1's
-     problem-space curve, so both spaces share their start and end, and occlusion is judged against the reference it
-     was computed with;
-   - *matched to TreeSHAP:* the interventional background expectation.
-2. **Unattributable features.** A pushforward of a byte explanation never credits features with empty provenance
-   (the null element). The deletion test is also reported restricted to attributable features, so that PF1 measures
-   the translation and App-L measures the coverage gap.
-3. **What is pushed forward:** occlusion at 256 windows (the 64–4,096 sweep if cheap once saved), KernelSHAP over
-   windows (the strongest direct baseline), and, as a secondary reference only, the round trip M a of each feature
-   explainer (partly circular; it shows what CP's L1 bound costs in deletion terms).
-4. **Naive baseline:** credit each feature with the plain sum of b over the bytes it reads (incidence sum, no D†
-   split), which counts bytes that feed many features several times. If PᵀD†b does not beat it, the claim is about
-   aggregation in general, not about the operator.
-5. **Success criterion, fixed in advance** (as in `docs/pb1_baselines.md`): the pushforward is not expected to beat
-   TreeSHAP, which sees the model directly. Claim 3 holds if the pushforward is far above random and above the
-   naive baseline, and recovers a stated fraction of TreeSHAP's feature-space area under the matched reference, with
-   the remaining gap traced to the null element's mass and to overlap. **Fixed with the user (2026-10-09):**
-   - *required:* the pushforward's area is significantly above random and above the naive incidence sum (Wilcoxon
-     signed-rank over files); if not, claim 3 fails;
-   - *strength,* from R = area(pushforward) / area(TreeSHAP) under the matched reference: R ≥ 0.8, a faithful
-     translation (claim 3 as stated); 0.5 ≤ R < 0.8, partial (stated with the gap, if the gap is traced to the null
-     element's share and to overlap); R < 0.5, claim 3 weakened and its framing rethought.
+1. **Two references for a deleted feature:** *matched to the problem space*, x̃ = σ(ablate(x)), the features of the
+   fully ablated file under the PB1 operator (level 3), so that deleting every feature reproduces PB1's end point
+   exactly; and *matched to TreeSHAP*, the interventional expectation over the 1,000-file background.
+2. **Candidates:** every feature, and (as a check) only the attributable ones, since a pushforward of a byte
+   explanation never credits features with empty provenance.
+3. **Pushed forward:** occlusion at 64, 256, 1,024, 4,096 windows and KernelSHAP over 256 windows (PB1's direct
+   explainers, saved by `faithfulness.py` in `window_scores.npz`), through P coarsened to the same windows.
+4. **Naive baseline:** each feature gets the plain sum of the scores of the windows it reads (no D⁺ split).
+5. **Criterion fixed in advance:** *required*: above random and above the naive baseline (Wilcoxon over files);
+   *strength*: R = area(pushforward) / area(path TreeSHAP) under the matched reference, ≥ 0.8 faithful, 0.5–0.8
+   partial, < 0.5 weakened.
+6. **Rankings:** ties broken by a seeded permutation of the features, and scores within 1e-9 (relative) count as tied
+   (features with identical provenance get identical pushforwards up to round-off; before this fix, round-off decided
+   their order and two equally valid computations disagreed on 39 of 960 curve points). Area: the mean of the
+   evidence removed over the budgets below 100%, as in PB1.
 
-Metric: the normalized area under the deletion curve, as in PB1, with signed rankings in the direction of the
-decision. Comparators: TreeSHAP (path, interventional), KernelSHAP, random, the naive baseline.
+Code: `scripts/pf1.py` (`tests/test_pf1.py`; `run/18_pf1.sh`) and `scripts/pf1_resolution.py`
+(`tests/test_pf1_resolution.py`; the coarsened P is built sparse; `run/20_pf1_resolution.sh`). Inputs from
+`run/17_pf1_window_scores.sh`. Not planned: pushing forward occlusion of triggered files (user: not worth the
+complexity).
 
-Not planned: pushing forward the occlusion of *triggered* files (a ground-truth check through the PF2 testbed). It
-would need occlusion on bytes outside the SimpleDB, and the utility does not justify the complexity (user,
-2026-10-09).
+## Results (pilot: 100 files, GBDT seed 0)
 
-## To build
+Checks: all 100 files; deleting every feature under the matched reference reproduces PB1's fully ablated log-odds
+exactly; the re-extracted features equal the saved ones and the feature store exactly; the sparse and dense round
+trips agree exactly (24,000 curve points). Logs: `artifacts/logs/pf1-seed0-baselines-scores.log`,
+`artifacts/logs/pf1_resolution-seed0-baselines-scores.log`.
 
-- Done 2026-10-09: `faithfulness.py` writes `window_scores.npz` (per file: window edges and occlusion scores at every
-  window count, KernelSHAP over windows, the features x and x̃ of the original and fully ablated file), read with
-  `load_window_scores`. The baselines configuration is re-run by `run/17_pf1_window_scores.sh` (user).
-- Done 2026-10-09: `scripts/pf1.py` (tests: `tests/test_pf1.py`), run by `run/18_pf1.sh` (a few minutes). Per file it
-  re-extracts x with its provenance (checked against the saved x), pushes every saved window explanation forward
-  through P coarsened to the same windows (and the naive incidence sum), adds the byte-level round trip M a of each
-  native explainer and three random orders, and runs the deletion curves for both references and both candidate sets.
-  Ties are broken by a seeded permutation (a window pushforward is exactly zero on many features), never by index.
-  It checks that deleting every feature under the matched reference reproduces PB1's fully ablated log-odds, prints
-  the criterion of decision 5, and the gap diagnostics (each native explanation's share on unattributable features
-  and its |a|-weighted overlap at K windows). Smoke-tested on 2 files (16 windows; numbers meaningless).
+### The pushforward of direct problem-space explanations
 
-## Results (2026-10-09, pilot: 100 files, GBDT seed 0; `run/18_pf1.sh`)
-
-Inputs from `run/17_pf1_window_scores.sh` (138 min on 32 workers), which passed every check: 100/100 files `ok`, its
-29,000 curve points equal the baselines run's exactly (max difference 0.0), the window scores are complete for every
-file, all 100 fully ablated files are valid, and the saved x equals the feature store's row exactly. PF1 itself:
-6 minutes on 8 workers; deleting every feature under the matched reference reproduces PB1's fully ablated log-odds
-exactly. Log: `artifacts/logs/pf1-seed0-baselines-scores.log`.
-
-Mean deletion area (R = ratio to path TreeSHAP's mean area; wins = files above random / above the naive baseline).
-Numbers after the tie fix of run 20 (they moved by at most 0.04 in area and 0.01 in R; no conclusion changed):
-
-| method | ablated, all | R | wins vs random / naive | background, all | R | ablated, attributable | R |
-|---|---|---|---|---|---|---|---|
-| TreeSHAP path | 8.47 | 1 | 100 / — | 8.93 | 1 | 6.49 | 1 |
-| TreeSHAP interventional | 8.67 | 1.02 | 100 / — | 9.05 | 1.01 | 6.63 | 1.02 |
-| KernelSHAP | 8.51 | 1.00 | 100 / — | 8.67 | 0.97 | 6.55 | 1.01 |
-| round trip M a, path | 6.75 | 0.80 | 100 / — | 6.46 | 0.72 | 5.03 | 0.78 |
-| **push: KernelSHAP over 256 windows** | 3.39 | **0.40** | 100 / 70 | 2.55 | 0.29 | 2.03 | 0.31 |
-| push: occlusion, 4,096 windows | 3.15 | 0.37 | 100 / 67 | 2.32 | 0.26 | 2.06 | 0.32 |
-| push: occlusion, 1,024 windows | 2.90 | 0.34 | 97 / 59 | 2.25 | 0.25 | 1.82 | 0.28 |
-| **push: occlusion, 256 windows** | 2.74 | **0.32** | 99 / 57 | 2.28 | 0.26 | 1.63 | 0.25 |
-| push: occlusion, 64 windows | 2.63 | 0.31 | 100 / 60 | 2.35 | 0.26 | 1.54 | 0.24 |
-| naive: occlusion, 256 windows | 2.54 | 0.30 | 95 / — | 2.01 | 0.23 | 1.42 | 0.22 |
-| random | 0.81 | 0.10 | — | 0.90 | 0.10 | 0.81 | 0.12 |
-
-**Against the criterion fixed in advance (decision 5), matched reference:**
-- *Required:* passes for every pushed source. Above random at p ≈ 2e-18 (97–100 of 100 files); above the naive
-  incidence sum at p = 2.6e-6 (KernelSHAP over windows) to 0.023 (occlusion at 256 windows), on 57–70 of 100 files.
-- *Strength:* **R = 0.31–0.40: "weakened"** by the bands fixed in advance (< 0.5), for every source and against
-  either TreeSHAP. Under the background reference R is lower (0.25–0.29); restricting to attributable features does
-  not raise it (0.24–0.32).
-
-**Reading (diagnostic, not a reframing of the claim):**
-1. **The operator is not where the loss is.** The byte-level round trip M a, which pushes a byte-level explanation
-   forward through the same operator, keeps 0.72–0.80 of TreeSHAP's area. Pushing forward a *window-level*
-   explanation keeps 0.31–0.40.
-2. **The null element does not explain the gap** (decision 5 named it as a candidate): native explanations put a
-   median 21–27% of their mass on unattributable features, but excluding those features from every ranking leaves R
-   where it was (0.26 vs. 0.33 for occlusion at 256 windows).
-3. **Overlap at window level does**, as CP predicts: the |a|-weighted overlap of the native explanations' features at
-   256 windows is a median 0.98 (CP's coarsening: 0.41 at bytes, 0.98 at 256 windows). At that granularity almost
-   every window feeds many features, so a window's score cannot be assigned to one feature. R rises with resolution
-   (0.31 at 64 windows to 0.37 at 4,096), and with a better window explainer (0.40 for KernelSHAP over windows).
-4. **The D⁺ split helps, modestly.** The pushforward beats the naive incidence sum on 59–68 of 100 files; the margin
-   is 10–20% in area.
-
-### Resolution diagnostic (2026-10-09, run before deciding claim 3)
-
-Each native explanation pulled back (without its null element), summed over K windows, and pushed forward through P
-coarsened to the same windows (`windowtrip_k{K}`): what is left of a feature-space explanation when it is expressed
-at K windows, i.e., what a K-window explanation carrying the *same information as TreeSHAP* would score. Reading
-fixed before the run: ≈ 0.33-0.40 at 256 windows → resolution binds; ≥ 0.6 → the window explainers are the weak link.
-Every earlier method's curves were unchanged by the re-run (76,000 points, max difference 0.0).
-
-R vs. path TreeSHAP, matched reference (ablated, all features):
-
-| resolution | push: occlusion | push: KernelSHAP over windows | window round trip: path / interventional / KernelSHAP |
-|---|---|---|---|
-| 64 windows | 0.31 | — | 0.34 / 0.34 / 0.35 |
-| 256 windows | 0.33 | **0.40** | **0.37** / 0.37 / 0.38 |
-| 1,024 windows | 0.34 | — | 0.43 / 0.43 / 0.44 |
-| 4,096 windows | 0.37 | — | 0.50 / 0.51 / 0.52 |
-| bytes (no null element) | — | — | 0.80 / 0.82 / 0.81 |
-
-1. **Resolution binds.** At 256 windows, even TreeSHAP's own information reaches only R = 0.37 once it is expressed
-   over windows. Occlusion gets 0.33 (89% of that), and KernelSHAP over windows 0.40, slightly *above* it (the
-   window round trip is a reference, not a strict bound). The direct problem-space explainers are not the weak link
-   at this resolution.
-2. **What is attainable rises steeply with resolution** (0.34, 0.37, 0.43, 0.50, then 0.80 at bytes), as CP's
-   coarsening predicts (overlap 0.98 at 256 windows, 0.41 at bytes). Occlusion falls behind it as resolution grows
-   (0.37 vs. 0.50 at 4,096 windows), the same saturation PB1 found in the problem-space (occlusion stops improving
-   beyond 1,024 windows).
-3. **The null element is irrelevant here:** the byte-level round trip is 0.80 with or without it.
-
-Open (to decide with the user): what claim 3 says, given that R < 0.5 for every window-level source but the loss is
-the source's resolution, not the operator or the source explainers (`docs/status.md`).
-
-## Decision (2026-10-09): claim 3, option A
-
-Claim 3 is stated conditionally: the pushforward is faithful up to the resolution of its source, and P (overlap at
-that resolution) predicts the limit. The window round trip of TreeSHAP is a risky reference on its own (partly
-circular); it is acceptable as evidence only through the **trend** across window counts. So the trend must be shown
-densely enough and tied to P: R achievable at each resolution against the overlap at that resolution.
-
-## Resolution trend (prepared 2026-10-09; `scripts/pf1_resolution.py`, `run/20_pf1_resolution.sh`)
-
-Why: under option A, claim 3's first half rests on the trend of what is attainable across resolutions, which must be
-dense (the diagnostic jumped from 4,096 windows, R = 0.50, to bytes, 0.80) and tied to P.
-
-What: for every native explainer and file, the window round trip at 64, 256, 1,024, 4,096, 16,384, 65,536, and
-262,144 windows and at the bytes (no occlusion can follow beyond 4,096; that is the point), with its deletion curves
-under both references, and at each resolution, from P: the mean overlap of the attributable features (P only), the
-|a|-weighted overlap, the round trip's L1 loss, and CP's bound 2 Σ|a_j| O_j. The window round trip is exactly the
-pull-push operator M of P coarsened to K windows, so CP's theorem applies to it. The coarsened P is built sparse (a
-dense one would take gigabytes at 262,144 windows), and is tested equal to the dense code.
-
-**Fix found while preparing it:** features with identical provenance get identical pushforwards up to round-off
-(1e-13 relative), and their ranking was decided by that round-off rather than by the seeded tie-break; two equally
-valid computations (dense and sparse) then disagreed on 39 of 960 curve points (up to 0.94 log-odds). `feature_order`
-now treats scores within 1e-9 (relative) as tied; with it the two agree exactly (0 of 960). PF1 is re-run with the
-fix (step 1 of run 20), so its numbers above may move slightly; they are updated after the run.
-
-**Reading fixed in advance:**
-1. *The trend (required for option A):* R attainable rises with resolution and the P-only mean overlap falls, across
-   the 8 resolutions, for each explainer and both references (monotone up to a dip of at most 0.02 between adjacent
-   resolutions). If R is not monotone, or the rise stops well before the bytes, report that and revisit option A.
-2. *The bound:* CP's bound holds for every file, explainer, and resolution (it is a theorem; a violation is a bug).
-3. *Per-file prediction (secondary, reported either way):* at a fixed resolution, Spearman between a file's ratio
-   (area of a_K / area of a) and its overlap. |rho| ≥ 0.3 with the expected sign (more overlap, lower R) counts as
-   "P predicts which files lose more"; weaker is reported as "P predicts the trend across resolutions, not the
-   ranking of files".
-4. *The pushforward of occlusion* at 64-4,096 windows is read against R attainable at the same resolution (from step
-   1), as the share of what is attainable that a real direct explainer reaches.
-
-### Results (run 20, 2026-10-09; log `artifacts/logs/pf1_resolution-seed0-baselines-scores.log`)
-
-Healthy: both steps finished; PF1's end point equals PB1's (difference 0); the sparse round trips reproduce `pf1.py`'s
-dense ones exactly (24,000 curve points, 0 differ). R attainable (window round trip / explainer, mean areas) and P's
-statistics (median over files, path TreeSHAP):
-
-| resolution | R path / interv. / KernelSHAP (ablated) | R path (background) | mean overlap (P only) | weighted overlap | loss / bound |
+| method | ablated, all | R | files above random / naive | background, all: R | ablated, attributable: R |
 |---|---|---|---|---|---|
-| 64 windows | 0.34 / 0.34 / 0.34 | 0.33 | 0.989 | 0.990 | 1.16 / 1.98 |
-| 256 | 0.37 / 0.36 / 0.38 | 0.37 | 0.978 | 0.981 | 1.17 / 1.96 |
-| 1,024 | 0.43 / 0.42 / 0.44 | 0.42 | 0.955 | 0.959 | 1.15 / 1.92 |
-| 4,096 | 0.50 / 0.50 / 0.52 | 0.50 | 0.896 | 0.908 | 1.12 / 1.82 |
-| 16,384 | 0.61 / 0.60 / 0.62 | 0.58 | 0.780 | 0.806 | 1.02 / 1.61 |
-| 65,536 | 0.69 / 0.69 / 0.71 | 0.64 | 0.611 | 0.649 | 0.86 / 1.30 |
-| 262,144 | 0.75 / 0.75 / 0.77 | 0.69 | 0.470 | 0.554 | 0.80 / 1.11 |
-| bytes | 0.80 / 0.80 / 0.81 | 0.72 | 0.412 | 0.494 | 0.70 / 0.99 |
+| TreeSHAP path | 8.47 | 1 | 100 / — | 1 | 1 |
+| TreeSHAP interventional | 8.67 | 1.02 | 100 / — | 1.01 | 1.02 |
+| KernelSHAP | 8.51 | 1.00 | 100 / — | 0.97 | 1.01 |
+| round trip M a (bytes), path | 6.75 | 0.80 | 100 / — | 0.72 | 0.78 |
+| **push: KernelSHAP over 256 windows** | 3.39 | **0.40** | 100 / 70 | 0.29 | 0.31 |
+| push: occlusion, 4,096 windows | 3.15 | 0.37 | 100 / 67 | 0.26 | 0.32 |
+| push: occlusion, 1,024 windows | 2.90 | 0.34 | 97 / 59 | 0.25 | 0.28 |
+| **push: occlusion, 256 windows** | 2.74 | **0.32** | 99 / 57 | 0.26 | 0.25 |
+| push: occlusion, 64 windows | 2.63 | 0.31 | 100 / 60 | 0.26 | 0.24 |
+| naive: occlusion, 256 windows | 2.54 | 0.30 | 95 / — | 0.23 | 0.22 |
+| random | 0.81 | 0.10 | — | 0.10 | 0.12 |
 
-Against the reading fixed in advance:
-1. **The trend: passes.** R rises strictly at every step, for all three explainers and both references (no dip at
-   all), from 0.34 at 64 windows to 0.80 at bytes, while the P-only mean overlap falls from 0.989 to 0.412. The rise
-   continues to the bytes (+0.05 from 262,144 windows), so it does not stop early. The byte-level end point is now
-   one point of a dense, monotone curve rather than a lone TreeSHAP round trip.
-2. **The bound: holds** on 2,400 of 2,400 (file, explainer, resolution); the largest loss / bound is 0.83.
-3. **Per-file prediction: passes at every window resolution, not at the bytes.** Spearman between a file's ratio and
-   its P-only mean overlap: −0.43 (64), −0.46 (256), −0.71 (1,024), −0.82 (4,096), −0.81 (16,384), −0.74 (65,536),
-   −0.55 (262,144), but +0.04 at the bytes (weighted overlap −0.20). Caveat to check: at a fixed window count, overlap
-   is partly file size (a small file at 4,096 windows is near byte resolution), so part of this is "small files
-   lose less"; a partial correlation controlling for size would separate the two (tables only).
-4. **Occlusion's share of what is attainable** at the same resolution: 0.91 (64), 0.87 (256), 0.80 (1,024), 0.74
-   (4,096); KernelSHAP over 256 windows 1.08. Real direct explainers are close to the limit when coarse and fall
-   behind it as resolution grows (occlusion's saturation, as in PB1).
+- **Required: passes** for every source (above random at p ≈ 2e-18; above the naive baseline at p = 2.6e-6 to 0.023,
+  on 57–70 of 100 files: the D⁺ split helps, by 10–20% of the area).
+- **Strength: R = 0.31–0.40, "weakened"** by the bands fixed in advance, for every source and either TreeSHAP; lower
+  under the background reference (0.25–0.29).
+- **Not the operator:** pushed forward from the bytes, TreeSHAP's own explanation keeps R = 0.80.
+- **Not the null element:** native explanations put 21–27% of their mass on unattributable features, but excluding
+  them leaves R where it was.
 
-**The size check (2026-10-09; rule fixed before computing: the per-file reading survives if the partial Spearman
-given file size stays at |ρ| ≥ 0.3 with the expected sign at most window resolutions).** It does not survive. At a
-fixed window count a file's overlap is mostly its size (ρ(overlap, size) = 0.81-0.97), and with size held fixed (rank
-partial correlation) ρ(R, overlap) is about 0 at 64 and 256 windows, −0.13 to −0.20 at 1,024, and −0.25 to −0.42 at
-4,096-262,144 (path TreeSHAP: |ρ| ≥ 0.3 at 3 of 7 window resolutions; KernelSHAP 2 of 7). The explanation-weighted
-overlap does a little better given size (−0.30 to −0.52 from 4,096 windows to the bytes), but it was not the
-predictor chosen in advance. **So the per-file reading is dropped:** at a fixed resolution, which files lose more is
-mostly how large they are, which overlap at a fixed window count largely restates.
+### The resolution trend (what a K-window explanation can reach)
 
-**Reading for claim 3 (option A):** the evidence supports "faithful up to the source's resolution, a limit P
-predicts": what survives the pushforward is set by resolution, moves monotonically with P's overlap across more than
-three orders of magnitude of resolution, and is bounded by CP's theorem everywhere. P predicts the trend across
-resolutions, not the ranking of files at one resolution.
+Each native explanation pulled back (attributable part), summed over K windows, and pushed forward through P coarsened
+to the same windows: exactly the pull-push round trip M_K of the coarsened P, so CP's bound applies. Reading fixed in
+advance: (1) R rises and overlap falls monotonically (dips ≤ 0.02 allowed), for every explainer and reference;
+(2) the bound holds everywhere; (3) per file, secondary: |ρ| ≥ 0.3 between a file's R and its overlap.
+
+| resolution | R path / interv. / KernelSHAP (ablated) | R path (background) | mean overlap (P only) | loss / bound (median) | occlusion's R (share of attainable) |
+|---|---|---|---|---|---|
+| 64 windows | 0.34 / 0.34 / 0.34 | 0.33 | 0.989 | 1.16 / 1.98 | 0.31 (0.91) |
+| 256 | 0.37 / 0.36 / 0.38 | 0.37 | 0.978 | 1.17 / 1.96 | 0.32 (0.87); KernelSHAP 0.40 (1.08) |
+| 1,024 | 0.43 / 0.42 / 0.44 | 0.42 | 0.955 | 1.15 / 1.92 | 0.34 (0.80) |
+| 4,096 | 0.50 / 0.50 / 0.52 | 0.50 | 0.896 | 1.12 / 1.82 | 0.37 (0.74) |
+| 16,384 | 0.61 / 0.60 / 0.62 | 0.58 | 0.780 | 1.02 / 1.61 | — |
+| 65,536 | 0.69 / 0.69 / 0.71 | 0.64 | 0.611 | 0.86 / 1.30 | — |
+| 262,144 | 0.75 / 0.75 / 0.77 | 0.69 | 0.470 | 0.80 / 1.11 | — |
+| bytes | 0.80 / 0.80 / 0.81 | 0.72 | 0.412 | 0.70 / 0.99 | — |
+
+1. **The trend passes:** R rises strictly at every step, for all explainers and both references, as overlap falls;
+   the rise continues to the bytes.
+2. **The bound holds** on 2,400 of 2,400 (file, explainer, resolution); the largest loss / bound is 0.83.
+3. **Per file, it does not survive file size.** Raw ρ(R, overlap) is −0.43 to −0.82 at window resolutions, but at a
+   fixed window count overlap is mostly file size (ρ = 0.81–0.97), and with size held fixed (rank partial
+   correlation; rule fixed before computing) ρ is about 0 at 64–256 windows and reaches |ρ| ≥ 0.3 at only 3 of 7
+   window resolutions. Dropped: P predicts the trend across resolutions, not which files lose more.
+4. **Direct explainers are near the limit when coarse** (occlusion 0.91 of attainable at 64 windows) and fall behind
+   as resolution grows (0.74 at 4,096), occlusion's saturation as in PB1.
+
+## Reading
+
+The pushforward is faithful up to the resolution of its source: what survives is set by resolution, moves
+monotonically with P's overlap over more than three orders of magnitude of resolution, and is bounded by CP's theorem
+everywhere. A 256-window explanation, however good, carries little feature-level information through this P (R ≈
+0.37 at best). The same test, applied to the MLP's explainers, is the first step when the MLP returns.
