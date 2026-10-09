@@ -259,7 +259,7 @@ the file's entropy).
 | pullback, path TreeSHAP | 0.75 | **1.000** |
 | pullback, interventional TreeSHAP | 0.74 | **1.000** |
 | pullback, KernelSHAP | 0.67 | **1.000** |
-| ceiling: any feature-space explanation under this P | 0.98 | 1.000 |
+| round trip P ψ(1_T) (labelled "ceiling"; see the correction below) | 0.98 | 1.000 |
 | random ranking | 1.0e-05 | 1.0e-05 |
 | any method that scores 256-byte-count windows | — | 0.0027 |
 | any method that scores 4,096 windows | — | 0.043 |
@@ -268,6 +268,12 @@ The **6 top-ranked bytes of 614,000 are exactly the trigger's 6 bytes**, for all
 0.67–0.75 against a random baseline of 1.0e-05, and reaches about 77% of the ceiling, the most any feature-space
 explanation could place on T given that the trigger's features also read bytes outside it (that ceiling is a property
 of P, measured as the pullback of the reference r below). Only about 2% of the attribution goes to the null element.
+
+**Correction (2026-10-09):** the "ceiling" row is *not* an upper bound. It is the push–pull round trip of the
+trigger, P ψ(1_T), and the trigger's header features are computed from T alone (column share on T = 1), so a one-hot
+explanation on one of them would put all of its mass on T. The true maximum is 1 for both triggers; the shortfall to
+0.75 comes from the explanation (see the pilot-scale results below), not from P. The row is kept in the script's output
+as the *round-trip reference*.
 
 The **window bounds are analytic, not measured**: the best precision any method that scores whole windows can reach
 is |T| / (window size), so 0.0027 at 256 windows and 0.043 at 4,096. The byte-level pullback is 375x better than the
@@ -286,6 +292,121 @@ pushforward of a uniform explanation on the trigger's bytes.
 Every explainer's top feature is one the trigger touches, and all three agree closely with r in magnitude
 (cosine 0.94) while agreeing much less on the *order* of the trigger's 12 features (Spearman 0.28–0.39). KernelSHAP
 puts less of its change on them (0.50 vs. 0.70) and is the least sharp of the three, consistent with PB1.
+
+## Pilot-scale results (`run/16_trigger_pb2_pf2.sh`, 2026-10-08 overnight; read 2026-10-09)
+
+Both triggers, 50 files each, the poisoned GBDT, three explainers at full budget (KernelSHAP 32,768 coalitions). The
+run finished cleanly (7 min and 5 min of explanations, under a minute of metrics; completeness errors 1e-11 / 8e-5 /
+1e-14 for path / interventional / KernelSHAP, as before). The struct backdoor fired on 1,000 of 1,000 candidates, the
+content backdoor on 548 of 1,000; the first 50 fired files of each were explained. Tables: `artifacts/logs/
+trigger_tables-{struct,content-marker}.log`; metrics: `artifacts/experiments/trigger/*/metrics-delta.parquet`.
+Percentiles are 10th / 50th / 90th over files.
+
+### The struct trigger: the 6-file numbers hold exactly
+
+| method | mass on T | precision at \|T\| | null share |
+|---|---|---|---|
+| pullback, path TreeSHAP | 0.72 / 0.76 / 0.77 | **1 / 1 / 1** | 0.005 / 0.026 / 0.055 |
+| pullback, interventional TreeSHAP | 0.73 / 0.75 / 0.77 | **1 / 1 / 1** | 0.004 / 0.022 / 0.054 |
+| pullback, KernelSHAP | 0.62 / 0.67 / 0.70 | **1 / 1 / 1** | 0.006 / 0.018 / 0.040 |
+| round trip P ψ(1_T) | 0.94 / 0.99 / 1.00 | 1 / 1 / 1 | — |
+| random ranking | 1.5e-06 / 8.0e-06 / 4.6e-05 | same | — |
+| window-level bound, K = 256 | — | 0.0004 / 0.002 / 0.012 | — |
+| window-level bound, K = 4,096 | — | 0.006 / 0.033 / 0.19 | — |
+
+- **Precision at |T| is 1 on all 50 files for all three explainers**: in a median 753 KB file (up to 4 MB), the 6
+  top-ranked bytes are the trigger's. Mass on T is tight across files (0.72–0.77 for TreeSHAP) and matches the 6-file
+  medians to two digits. The window bounds are as before: byte-level precision is about 500x above what any
+  window-level method could reach at K = 256.
+- **PF2:** every explainer's top feature is a trigger feature on 50/50 files; mass on supp(r) 0.70 (TreeSHAP) and 0.50
+  (KernelSHAP) against 0.005 for a random attribution (12 of 2,568 features); cosine 0.92–0.93; Spearman 0.30 (path),
+  0.29 (interventional), 0.47 (KernelSHAP). All as in the 6-file run.
+- **Where the other quarter goes (new).** The three header features carry 0.70 of path TreeSHAP's |Δa| (0.50 for
+  KernelSHAP), and the global features the trigger also touches (histogram, entropy window, file entropy) only
+  0.0025. The rest lies on features the trigger does **not** change (`characteristics_DLL`, `security_size`,
+  `latest_signing_time`, ...): interaction credit, which Shapley values of a tree model move whenever one feature's
+  value changes the paths taken. Mass on T is therefore limited by the explanation (how much of Δa stays on the
+  trigger's features), not by P, and the pullback places exactly what it is given. KernelSHAP spreads more of its
+  change over untouched features, as in PB1.
+
+### The content trigger: not diffuse where it matters
+
+The trigger is 2,048 bytes, a median share of 0.67% of a median 306 KB file (the fired files skew small, as
+expected), and it touches a median of 317 features. The window bounds are now vacuous (1 at K = 256 for the median
+file; a 2,048-byte block holds whole windows of most files), so the resolution argument from the struct trigger does
+not apply at this end: a window-level method *could* be as precise here.
+
+| method | mass on T | precision at \|T\| | null share |
+|---|---|---|---|
+| pullback, path TreeSHAP | 0.22 / 0.61 / 0.66 | 0.28 / **0.94** / 0.98 | 0.010 / 0.027 / 0.062 |
+| pullback, interventional TreeSHAP | 0.20 / 0.60 / 0.67 | 0.27 / **0.94** / 0.98 | 0.003 / 0.023 / 0.077 |
+| pullback, KernelSHAP | 0.16 / 0.52 / 0.60 | 0.23 / **0.93** / 0.98 | 0.005 / 0.019 / 0.060 |
+| round trip P ψ(1_T) | 0.27 / 0.60 / 0.74 | 0.49 / 0.95 / 1 | — |
+| random ranking | 0.001 / 0.007 / 0.063 | same | — |
+| window-level bound, K = 256 | — | 0.25 / 1 / 1 | — |
+
+- **The typical file is recovered almost as sharply as the struct trigger:** 94% of the 2,048 top-ranked bytes are
+  trigger bytes (random: 0.7%), and mass on T is 0.61, about 90x random.
+- **Why: the model learned the content trigger through two features, not 317.** `section:overlay_entropy` and
+  `section:overlay_size` carry 0.42 of path TreeSHAP's |Δa| (0.28 of KernelSHAP's); the string-distribution features
+  the marker moves come next (0.20 for the strings group), and the histogram and byte-entropy features, the diffuse
+  ones, carry 0.08 and 0.06. When the file had no overlay, the appended block *is* the overlay, so those two features
+  are computed from T alone: the trigger touches hundreds of features with spread provenance but is used through the
+  sharpest ones it touches.
+- **The lower tail is exactly where those features stop being sharp,** which P predicts:
+
+  | files (path TreeSHAP) | n | mass on T | precision at \|T\| | round trip |
+  |---|---|---|---|---|
+  | appended, no overlay before | 39 | 0.62 | 0.96 | 0.61 |
+  | appended to an existing overlay (median 6.7 KB) | 8 | 0.32 | 0.30 | 0.54 |
+  | overwritten at the end of a 4 MB file (overlay 3.9 MB) | 3 | 0.006 | 0.02 | 0.001 |
+
+  When the overlay already existed, the overlay features read T *and* the old overlay, and the pullback correctly
+  splits their credit between them (Mann–Whitney p = 7e-6 for mass on T, with vs. without an overlay). When the
+  trigger overwrites the end of a 3.9 MB overlay, the features the model relies on are 0.05% trigger, and the pullback
+  places almost nothing on T: P says T cannot be localized, and it is not. The overlay split explains the mechanism
+  inside this experiment; the framework-level statement is in terms of P alone (next point).
+- **Mass on T factors into the explanation and P.** Writing w_j = |Δa_j| / Σ|Δa| and s_j = (Pᵀ 1_T)_j (the share of
+  feature j's provenance on T), the mass of the pullback of |Δa| is Σ_j w_j s_j. It tracks the measured mass on T
+  closely (median absolute difference 0.05 for TreeSHAP, 0.15 for KernelSHAP; Spearman 0.88–0.91 for the content
+  trigger), which is nearly an identity (it differs only by sign cancellation), so it is a decomposition, not a
+  prediction. Its use is diagnostic: a low mass on T is either the explainer crediting features T does not compute
+  (low w on high-s features, struct's interaction credit) or the model relying on features T shares with the rest of
+  the file (low s, content's tail).
+- **The round trip is no ceiling here either:** the pullbacks exceed P ψ(1_T) on 26 of 50 files (TreeSHAP), because
+  ψ(1_T) weights all 317 touched features by provenance while the model uses the two sharpest. The best single feature
+  has column share 1 on T in the median file (0.98 at the 10th percentile).
+- **PF2: r is a support, not a target, for a diffuse trigger.**
+
+  | explainer | mass on supp(r) | cosine with r | Spearman with r | top-1 in supp(r) |
+  |---|---|---|---|---|
+  | path TreeSHAP | 0.58 / 0.67 / 0.70 | 0.28 / 0.66 / 0.82 | −0.03 / 0.04 / 0.11 | 50/50 |
+  | interventional TreeSHAP | 0.57 / 0.67 / 0.70 | 0.27 / 0.64 / 0.81 | −0.03 / 0.03 / 0.11 | 50/50 |
+  | KernelSHAP | 0.34 / 0.51 / 0.55 | 0.29 / 0.65 / 0.81 | −0.04 / 0.03 / 0.13 | 50/50 |
+
+  Mass on supp(r) is about 5x random (0.12; supp(r) is 12% of the features) and every top feature is one the
+  trigger touches, but the agreement *within* supp(r) is gone (Spearman ≈ 0.03). r = ψ(1_T) says which features the
+  trigger could have moved and by how much of their provenance; it cannot say which of them the model uses. With 12
+  touched features (struct) that distinction barely matters; with 317 it dominates. So PF2's primary metric (mass on
+  supp(r), and top-k in supp(r)) carries over to diffuse triggers, while cosine and Spearman against r measure
+  agreement with P's weighting rather than faithfulness to the model and should be reported for sharp triggers only,
+  or replaced (an open question for the PF2 write-up).
+
+### Reading
+
+1. **PB2 holds at both ends of the spectrum, for different reasons.** Struct: exact recovery (precision 1 on 50/50)
+   and a resolution advantage no window-level method can match. Content: 0.94 precision on the typical file, with no
+   resolution advantage (the trigger is bigger than a window) but a localization that follows P exactly, including
+   where P says the trigger cannot be localized.
+2. **"Diffuse" is a property of the features the model uses, not of the trigger.** The content trigger touches 317
+   features but the model learned it through two that T computes alone. The provenance spectrum (CP) is about the
+   features an explanation credits, which is why CP's statistics are read on the explanation's features and not on
+   the trigger's.
+3. **The shortfall from 1 is explanation-side for the struct trigger** (interaction credit on untouched features) and
+   **P-side for the content trigger's tail** (relied-on features shared with the file). The decomposition above names
+   which.
+4. **To fix in the code:** the "ceiling" label in `trigger_tables.py` should become "round trip", and the table could
+   add the true bound (the best single feature's column share on T).
 
 ## Decisions
 

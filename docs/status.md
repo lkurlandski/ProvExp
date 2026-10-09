@@ -1,6 +1,6 @@
 # Status
 
-Last updated: 2026-10-08 (end of session). The evaluation mirrors the framework (`PLAN.md`, "Experiment IDs"):
+Last updated: 2026-10-09 (PB2/PF2 pilot read; PF1 design in discussion). The evaluation mirrors the framework (`PLAN.md`, "Experiment IDs"):
 1. characterizing P (CP), 2. the pullback (PB1, PB2), 3. the pushforward (PF1, PF2), 4. comparing classifiers (CM);
 appendix App-L (localizability) and App-R (redundancy). Old IDs E1–E4 / A1–A3 survive only in pre-2026-10-08 docs and
 in artifact paths (`artifacts/experiments/e1/` holds PB1). Work stays at pilot scale (~100 files, one seed).
@@ -12,7 +12,7 @@ in artifact paths (`artifacts/experiments/e1/` holds PB1). Work stays at pilot s
 |---|---|
 | **CP** (characterizing P) | **done** at 2,000 files (`docs/cp_census.md`) plus coarsening on the pilot files. Remaining: instrumented vs. black-box P at window level, which `faithfulness.py` now saves. |
 | **PB1** (pullback faithfulness and cost) | **done** at pilot scale, baselines included (`docs/pb1_pilot.md`). Gate 2 passed for the GBDT. |
-| **PB2, PF2** (planted trigger) | **built, first results on 6 files** (`docs/trigger_plan.md`). A pilot-scale run on both triggers was started by the user at the end of the session (`run/16_trigger_pb2_pf2.sh`). |
+| **PB2, PF2** (planted trigger) | **done at pilot scale** (50 files per trigger; `docs/trigger_plan.md`, "Pilot-scale results"). Struct: precision at \|T\| = 1 on 50/50 files. Content: 0.94 on the typical file, failing exactly where P says it must. Open: how PF2 reads r for diffuse triggers; the "ceiling" label in `trigger_tables.py`. |
 | **PF1** (pushforward faithfulness) | designed, not built (`PLAN.md`, section 3). |
 | **CM** (GBDT vs. MalConv) | designed, not built; MalConv explanations of the pilot files are not computed yet. |
 | **The MLP** | set aside temporarily; returns after the GBDT methodology is established. |
@@ -30,7 +30,7 @@ in artifact paths (`artifacts/experiments/e1/` holds PB1). Work stays at pilot s
   only 0.472, because **a content trigger's effect scales with its share of the file** (0.92 below 50 KB, 0.29 above
   1 MB) while the struct trigger is at 1.000 at every size.
 - **PB2/PF2 first results** (6 files, struct): the **6 top-ranked bytes of 614,000 are exactly the trigger's**, for
-  all three explainers, at about 77% of the ceiling P permits, while any window-level method is bounded analytically
+  all three explainers (the "77% of the ceiling" read here was wrong: corrected 2026-10-09), while any window-level method is bounded analytically
   at 0.0027 precision. Every explainer's top feature of 2,568 is one the trigger touches.
 - **The runner's parallelism was rebuilt** to split one file's work (a single file was 4.1 h of the 6.1 h run), giving
   about 1.1 h on 64 workers against 4.1 h before at any worker count. Verified bit-exact against the baselines run
@@ -38,14 +38,13 @@ in artifact paths (`artifacts/experiments/e1/` holds PB1). Work stays at pilot s
 
 ## Next (for Claude), on resume
 
-1. **Read the pilot-scale PB2/PF2 results** the user started at the end of the session: the tables are in
-   `artifacts/logs/trigger_tables-{struct,content-marker}.log`, the metrics in
-   `artifacts/experiments/trigger/*/metrics-delta.parquet`. Compare the struct trigger against the 6-file numbers in
-   `docs/trigger_plan.md`, and read the content trigger as the diffuse end of the provenance spectrum (its ceiling
-   and window bounds will be very different: thousands of trigger bytes rather than 6). Write both into
-   `docs/trigger_plan.md` and update `docs/status.md`.
+1. ~~Read the pilot-scale PB2/PF2 results~~ done 2026-10-09 (`docs/trigger_plan.md`). Follow-ups: rename the
+   "ceiling" in `trigger_tables.py` to "round trip" and add the true bound (best single feature's column share on T);
+   decide how PF2 reads r for a diffuse trigger (support vs. target).
 2. **PF1** (the pushforward's faithfulness): the one experiment with no evidence yet, and claim 3 rests on it. Design
-   it with the user first — the open question is the feature-space reference value for a deleted feature.
+   it with the user first — the open question is the feature-space reference value for a deleted feature. Note: PB1's
+   per-window occlusion and KernelSHAP scores were *not* saved (only curves and window-level provenance statistics),
+   so PF1 needs `faithfulness.py` to save them and a re-run, or its own occlusion.
 3. **CP's black-box comparison** (cheap: the window-level statistics of both provenances are already saved by any new
    `faithfulness.py` run).
 4. **CM**, which needs MalConv explanations of the pilot files first.

@@ -163,11 +163,17 @@ or written over the end of the visible 4 MB).
   trigger's effect scales with its *share* of the file (0.92 below 50 KB, 0.29 above 1 MB) while the struct trigger
   is at 1.000 at every size — the provenance spectrum appearing in learnability. Decided: keep the files where the
   backdoor fired (the model's output only, never an explanation).
-- **First results (6 files, struct):** the **6 top-ranked bytes of 614,000 are exactly the trigger's 6 bytes** for
-  all three explainers, with 0.67–0.75 of the pulled-back attribution change on them against a random baseline of
-  1.0e-05, reaching about 77% of the ceiling P permits. Any method that scores whole windows is bounded
-  *analytically* at 0.0027 precision at 256 windows, which is a resolution argument for byte-level pullbacks that
-  needs no perturbation operator.
+- **Pilot scale (50 files per trigger, 2026-10-09; `docs/trigger_plan.md`, "Pilot-scale results").** **Struct:**
+  the 6-file numbers hold exactly: precision at |T| = 1 on 50/50 files for all three explainers (the 6 top-ranked
+  bytes of a median 753 KB file are the trigger's), mass on T 0.75 (TreeSHAP) and 0.67 (KernelSHAP) against 8e-06
+  random. Any method that scores whole windows is bounded *analytically* at 0.002 precision at 256 windows, a
+  resolution argument for byte-level pullbacks that needs no perturbation operator. The missing quarter of the mass is
+  interaction credit the explainers put on features the trigger does not change, not a limit of P (the earlier
+  "77% of the ceiling" was wrong: that "ceiling" is the round trip P ψ(1_T), not a bound; the true bound is 1).
+  **Content** (2,048 bytes, 317 features touched): precision 0.94 and mass 0.61 on the typical file, because the model
+  learned it through the two overlay features the appended block computes alone; recovery falls exactly where those
+  features also read other bytes (an existing overlay: 0.30; overwriting a 3.9 MB overlay: 0.02), as P predicts. No
+  resolution advantage at this end (the trigger is larger than a window).
 
 The section forward-references App-L for what the pullback cannot localize (the null element's share).
 
@@ -188,7 +194,11 @@ the trigger touches 12 features): every explainer's top feature of 2,568 is one 
 cosine 0.94 against r; mass on those features is 0.70 for both TreeSHAP variants and 0.50 for KernelSHAP, and the
 rank agreement within them is weak (Spearman 0.28–0.39). **This is the pushforward turning problem-space knowledge
 into an evaluation of feature-space explainers, which otherwise have no ground truth.** KernelSHAP needs its full
-32,768 coalitions; at 512 it appears to miss the trigger entirely.
+32,768 coalitions; at 512 it appears to miss the trigger entirely. At pilot scale (50 files) the struct numbers hold
+(top-1 in supp(r) 50/50, mass 0.70 / 0.50, cosine 0.92–0.93). For the content trigger (317 touched features) mass on
+supp(r) is 0.67 / 0.51 against 0.12 random and top-1 is 50/50, but the agreement with r's weights vanishes (Spearman
+0.03): r says which features the trigger could move, not which the model uses. Open: whether PF2 reads r as a
+support (mass, top-k) rather than as the attribution an explainer should produce (`docs/trigger_plan.md`).
 
 ### 4. Application: comparing classifiers (CM; promoted from the appendix 2026-10-08)
 
