@@ -95,12 +95,34 @@ Baselines: random patterns of matched length, and data-mined label-skewed patter
 
 **Content increment** (`scripts/shortcuts_insert.py`, tested; `run/23_shortcuts_insert.sh`): the string patterns
 appended to held-out test malware (GBDT raw score > 0, not in the explanation set, not truncated), vs. random bytes
-of the same length. Smoke test (3 files, 3 patterns): runs end to end, every file still parsed, but the string
-insertions moved the score the *wrong* way by a tiny amount (about +0.1 log-odds), random by 0. Not to be read from
-3 files; run 23 (200 files) is the test. A caveat the result may show: the DOS-stub string is already in every PE,
-so appending a copy barely changes its feature; the discriminating strings (e.g. `GetCurrentThreadId`) are the real
-probes. If appending does not reproduce a pattern's effect, the effect may depend on *where* the string sits, which
-the set-field and import increments (and other placements) would test.
+of the same length.
+
+**Run 23 result (2026-10-09): a clean negative. Appending the strings does not evade.** 197 of 200 files scored,
+0 parse failures, 2.3 min. Over the 197 files, every pattern's median drop in the malware log-odds is between
++0.00 and -0.37 (negative = the score went *up*, toward malware), and **nothing flipped to benign** (flip rate 0 for
+every pattern, pattern and random alike). The largest move, the DOS-stub string, is -0.37 (wrong way). Random bytes
+move the score by 0.
+
+**Reading: this is a limitation of the test, not of the pullback, and it is the smearing the framework measures.**
+EMBER's string features are *aggregates* over all of a file's strings (counts, average length, a char histogram,
+entropy, per-regex counts). The pullback correctly reports which bytes fed a benign-pushing feature in the file where
+it was explained, but appending one occurrence of that string to a *different* malware file -- which already has
+thousands of strings -- changes the aggregate by a negligible amount, so the model does not respond. Equivalently:
+the feature has high ambiguity (its value is spread over many bytes), so a few inserted bytes cannot set it. The
+append test implicitly assumed a feature is "present/absent at these bytes", which holds for header fields (one field
+= a few bytes) but not for aggregate content features. It also does not add a real import: an import comes from the
+import table, not a raw-byte string scan, so appending `VCRUNTIME140.dll` as text does nothing to the import features.
+
+**Implication for the increments.** The faithful tests manipulate the feature the way the model reads it, through the
+real bytes -> parser -> feature path (non-circular):
+- **Set-field** (header values: the Delphi timestamp, SizeOfStackReserve, a debug-directory size): the feature *is*
+  the field value, so writing the bytes sets it exactly. The clean case; do this next.
+- **Imports via a PE editor** (LIEF): actually add the library/function to the import table, so the hashed import
+  feature changes as it would in a real evasive sample.
+- **Certificate transplant**: as before.
+Open for the user: whether a found content pattern that cannot be inserted still counts as a "shortcut" (it is real
+in the data and the model keys on the aggregate; it is just not evadable by byte insertion), and whether the headline
+should move to the set-field / import cases.
 
 ## Open
 
