@@ -14,7 +14,7 @@ Drafted 2026-10-08 with the user. See `PLAN.md` (CP).
 In the manuscript: Proposition Round Trips (P1 without the spectrum, P2, P3), Theorem Round-Trip Bounds (P4), and the
 two perfect-reconstruction theorems as its corollaries; the two near-tautological theorems are removed. The shared
 spectrum of M and N is not in the manuscript (decision 2); the tests check it. Results computed with the previous
-definitions (`docs/pilot.md`, the CP preview in `docs/pb1_pilot.md`) are marked as such.
+definitions (`docs/archive/pilot.md`, the CP preview in `docs/pb1_pilot.md`) are marked as such.
 
 ## Purpose (unchanged)
 
