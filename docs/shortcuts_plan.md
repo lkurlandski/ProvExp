@@ -44,10 +44,14 @@ applies only to features a few bytes can actually set.
   to 200 held-out malware did **not** move the GBDT (median drop +0.00 to -0.37, nothing flipped; random moved 0).
   Correct and expected: string features are file-wide aggregates (high ambiguity), so one appended occurrence barely
   changes them, and appended text is not a real import. Appending is the wrong lever for aggregate features.
-- **Do next:** the lever that matches the feature -- set a header field (the feature *is* the field value: Delphi
-  timestamp, SizeOfStackReserve, a debug-directory size), and add a real import with a PE editor (LIEF). Expect the
-  named bytes to move the score; this confirms the pullback's localization. Parse-only verification (user); runtime
-  functionality out of scope (no sandbox).
+- **Run 24** (`scripts/shortcuts_setfield.py`, `run/24_shortcuts_setfield.sh`): the matching lever -- set a header
+  field (the feature *is* the field value) to its flagged benign value in 200 held-out malware, vs. a random value of
+  the same width. 197 scored, 0.5 min. Both fields move the GBDT toward benign: the **Delphi TimeDateStamp** +0.416
+  vs. +0.115 random (the specific value matters, ~3.6x the control), and **DEBUG.Size 0x54** +0.691 vs. +0.552 random
+  (mostly from changing the field at all; the model keys on a debug directory being present, not its exact size).
+  Flips are near zero, as expected for one field. **This confirms the pullback located the bytes that drive the
+  feature.** Parse-only verification (user); runtime functionality out of scope (no sandbox). The import-via-LIEF
+  case is optional and not run (new dependency; the set-field case already makes the point). **3-B is complete.**
 
 ## Out of scope / decided against
 

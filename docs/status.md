@@ -16,7 +16,7 @@ the pilot results and the claims are settled (user). `run/` holds the commands t
 | **2. Intrinsic: CP** | Census, coarsening, CP.3 done (`docs/cp_census.md`); in the paper, its theory (round-trip bounds) and CP.3's agreement check. |
 | **2. Intrinsic: PB2, PF2** (planted triggers) | Done at pilot scale (`docs/trigger_plan.md`); **demoted**, possibly removed later. |
 | **3-A. Comparing detectors** | Not built. GBDT on EMBER v3, a GBDT on byte n-grams (to build), MalConv; both operators. |
-| **3-B. Legibility of a detector's reliance** (the pullback) | **Demonstrated** (`run/22`, `docs/shortcuts_plan.md`): resolves hashed/aggregate features to the content per file (impossible from SHAP, cheaper than occlusion). Framing settled (legibility, not evasion). Remaining: the set-field/import correctness spot-check (run 23 confirmed appending aggregate strings does not move the model, as expected). |
+| **3-B. Legibility of a detector's reliance** (the pullback) | **Complete** (`run/22`, `run/24`, `docs/shortcuts_plan.md`): resolves hashed/aggregate features to the content per file (impossible from SHAP, cheaper than occlusion); the set-field spot-check (run 24) confirmed the named bytes drive the feature (TimeDateStamp +0.42 vs +0.12 random). |
 | **3-C. YARA/capa matches pushed forward** | Adopted, not designed. Coverage check stopped early: public YARA signatures too sparse; generic rules and capa untested; capa's default backend is very slow. |
 | **Appendix** | App-R's duplicate-feature sweep not run; App-L a stated limitation; the byte-set control bound accepted, not started. |
 | **The MLP** | Set aside temporarily; returns after the GBDT methodology is established. |
@@ -24,10 +24,8 @@ the pilot results and the claims are settled (user). `run/` holds the commands t
 
 ## Next (for Claude), on resume
 
-1. **3-B** correctness spot-check (extend `scripts/shortcuts_insert.py`): on the run-23 files, set a header field
-   (Delphi timestamp, SizeOfStackReserve, a debug-directory size) and add a real import (LIEF), and confirm the
-   named bytes move the GBDT as predicted. This closes 3-B; the headline (legibility of reliance) is already made by
-   run 22.
+1. **3-B is complete** (run 22 headline, run 24 spot-check). Next extrinsic application: **3-C** (rule-based
+   detectors' matches pushed into the GBDT's features) or **3-A** (GBDT on byte n-grams, MalConv) -- the user picks.
 2. Rewrite the claims (`PLAN.md`, "Thesis and claims") to fit the new structure; ask the user before changing what a
    claim is for.
 3. Later: 3-C's rule source (generic YARA rules, or capa with a faster backend or file-scope rules); 3-A's byte n-gram
