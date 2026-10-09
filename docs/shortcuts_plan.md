@@ -47,6 +47,34 @@ too few. Pullbacks are cheap (the 2,000-file census, with heavy statistics inclu
 so tens of thousands of test files are feasible (ask before running). Prevalence in the training set (1.3 TB)
 needs a sample.
 
+## Run 22: discovery on the 2,000-file set (2026-10-09)
+
+`run/22_shortcuts.sh`; logs `artifacts/logs/shortcuts-seed0-treeshap_interventional-{benign,malware}.log`. Clean:
+2,000/2,000 files, 1,998 match the feature store (the 2 known pefile-warning mismatches), 1.6 min per direction on
+32 workers. The top 256 bytes hold a median 60% (benign) and 63% (malware) of a file's credit in that direction.
+**Scale is sufficient for discovery:** 454 benign-pushing and 473 malware-pushing patterns appear in 10 or more files.
+
+**Benign-pushing** (files containing the pattern; of them benign):
+- Header and data-directory values dominate the top: an entry point of 0 (295; 229) and SizeOfCode 0 (199; 199),
+  i.e., files without code; ImageBase 0x10000000, the DLL default (488; 426); particular debug-directory sizes
+  (0x54: 247; 185, 0x70: 164; 136); particular **certificate sizes** (security_size 0x2838, 0x2820, ...: 7-29 files
+  each, all or nearly all benign, plausibly one signer each); the Delphi constant TimeDateStamp 0x2A425E19 (35; only
+  5 benign: malware already carries it).
+- Content: section names behind hashed features (`.reloc`, `.rsrc`, `.text`); imported libraries `VCRUNTIME140.dll`
+  (176; 147), `Qt6Core.dll` (13; 13), `python312.dll` (11; 11), `msi.dll`, `mscoree.dll`, `api-ms-win-crt-*`;
+  strings `GetCurrentThreadId`, `<Module>`, the DOS-stub message (434; 165).
+- **Why the pullback:** one hashed feature mixes unrelated names (`imports:library_hash_254` carries `python312.dll`,
+  `api-ms-win-core-registry-l1-1-0.dll`, and `msi.dll`); SHAP on features cannot tell them apart, the pullback names
+  the one in each file.
+
+**Malware-pushing:** zero-valued fields lead (no certificate, CheckSum 0, no exports, no debug directory), then
+content that reads as capabilities: `CreateToolhelp32Snapshot`, `VirtualProtect`, `WS2_32.dll`, `WININET.dll`,
+`urlmon.dll`, `FromBase64String`, `PowerShell`, `User-Agent` (a natural link to 3-C's capa rules).
+
+**Candidates for the tests:** content an attacker can add (strings anywhere in the file; imports via a PE editor),
+and field values an attacker can set (TimeDateStamp, SizeOfStackReserve, a debug directory), and a transplanted
+certificate (a known real-world technique), which the certificate-size patterns point to.
+
 ## Decided against
 
 - **Ambiguity as a filter** on which credit may form spans (user, 2026-10-09: forced; do not try to make it work).
