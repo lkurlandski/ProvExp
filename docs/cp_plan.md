@@ -93,6 +93,10 @@ weighted prior would make M depend on the explanation, which we want to avoid.)
 
 ## The statistics, in dual pairs
 
+> **Status (2026-10-09).** The round-trip matrices M and N and their bounds stay, as theory in the framework. The
+> standalone census of ambiguity and overlap is not a contribution unless a use is found (open: `PLAN.md`, "Open
+> questions"). Coverage and the null element's share are not contributions at all (`CLAUDE.md`; `docs/appendix.md`).
+
 | question | pullback side (features) | pushforward side (elements) |
 |---|---|---|
 | How much can be localized at all? | coverage κ (attributable features) | element coverage: share of elements with D_ii > 0 |

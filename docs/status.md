@@ -32,9 +32,13 @@ run 12.
 
 ## Next (for Claude), on resume
 
-1. Take stock with the user (begun 2026-10-09 after run 21): are the four claims and the contributions supported at
-   pilot scale, and what is missing before CM? See the session's notes below.
-2. Then CM: MalConv explanations of the pilot files (`explain/problem.py` has IG and occlusion), when the user decides.
+1. **Not CM yet** (user): the work is being rethought at a high level first. The paper's structure is now framework /
+   intrinsic evaluation / extrinsic applications (`PLAN.md`, "Paper structure"). Open, to discuss with the user:
+   the pushforward application (C) that complements B; why the pullback is the right tool for B and how B is made
+   useful to practitioners; what to do with ambiguity and overlap (`PLAN.md`, "Open questions").
+2. Small, agreed: move the paired tests PB1 now computes ad hoc (each method vs. the best direct baseline; pullback vs.
+   occlusion at the same window count) into `scripts/pb1_tables.py`.
+3. Rewrite the claims (`PLAN.md`, "Thesis and claims") to fit the new structure, once the extrinsic core is settled.
 
 ## The 2026-10-09 session
 
@@ -50,6 +54,16 @@ run 12.
   and PF1 docs; `CLAUDE.md` updated (doc list, the tie-break rule, readings fixed in advance, `run/` script style).
 
 ## Decisions
+
+2026-10-09 (second review, after run 21):
+- **Paper structure:** framework / intrinsic evaluation (lab-style: PB1, PF1, CP's theory) / extrinsic applications
+  (A = CM, B = byte-level discovery of what a detector keys on via the pullback, C = a pushforward application, to
+  be found). Adding EMBER v2 as a second feature set is not worth it (too similar to v3).
+- **Trigger experiments (PB2, PF2) demoted**, kept for now, possibly removed later.
+- **Round-trip matrices M, N stay** as theory; ambiguity and overlap undecided; **coverage, localizability, and the
+  null element's share are not contributions** (explanation-specific; a pipeline limitation, not a finding).
+- **Theory:** an axiomatic (Shapley-style) uniqueness result noted in `PLAN.md` as a possible strengthening, not now.
+- **Hypotheses before experiments, briefly** (not elaborate pre-registered readings; `CLAUDE.md`).
 
 2026-10-09:
 - **Claim 3, option A:** the pushforward is faithful up to its source's resolution, a limit set by P's overlap; PF2

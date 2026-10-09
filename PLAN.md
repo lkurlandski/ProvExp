@@ -1,6 +1,7 @@
 # ProvExp Research Plan
 
-Living document. Last revised 2026-10-09 (end of session): the evaluation mirrors the framework (characterizing P,
+Living document. Last revised 2026-10-09 (second review: the paper's structure, "Paper structure"; the claims below
+are to be rewritten to fit it). Before that, 2026-10-09 (end of session): the evaluation mirrors the framework (characterizing P,
 the pullback, the pushforward, then real classifiers; see "Experiment IDs"). CP, PB1, PB2, PF1, and PF2 are done at
 pilot scale (PB1's curves re-run with random tie-breaks, `run/21`: no conclusion changed); CM is designed but not built. No
 scaling until the pilot results and the claims are settled (user, 2026-10-09).
@@ -42,9 +43,33 @@ mirrors the framework, from intrinsic to extrinsic, and supports four claims:
 4. **Comparing real classifiers (CM):** with both operators, a feature-based detector (GBDT) and a raw-byte detector
    (MalConv) can be compared in either space.
 
-Localizability (how much of a detector's reliance can be placed in the input at all; a fifth to a third rests on
-unattributable features, mostly absences) is reported in the appendix (App-L) and forward-referenced from the pullback
-section.
+Localizability (the share of an explanation on unattributable features) is **not** a contribution and is not a
+finding: it measures one explanation, not P, and a large unattributable share reflects a limitation of the
+provenance pipeline (user, 2026-10-09; see `CLAUDE.md`). App-L stays only as a stated limitation.
+
+## Paper structure (decided 2026-10-09, second review)
+
+The claims above predate this structure and are to be rewritten to fit it.
+
+1. **Framework.** The formalization of feature-space vs. problem-space explanation, the pullback and pushforward,
+   and element-feature provenance as the mechanism behind them, with the modest theory (round-trip bounds,
+   coarsening, composition). Parts are borrowed (G-DeepSHAP's rescale rule, group aggregation; reviewers will also
+   raise taint tracking and provenance semirings, to be cited and distinguished: P is weighted, conserves
+   attribution, and serves explanation transfer), but assembling them into one framework and applying it to program
+   feature extractors is a contribution (user).
+2. **Intrinsic evaluation** (laboratory-style; not meant to captivate a security audience): show that the framework
+   works in practice and where its limits are. P is correct (T1, black-box agreement), the transfers are faithful
+   (PB1, PF1), and the limits (resolution) are measurable. The trigger experiments (PB2, PF2) stay for now but are
+   **demoted**; they may be removed later (user).
+3. **Extrinsic applications** (what the framework provides in practice, for security practitioners; each must be
+   impossible or much costlier without P, and have a baseline that does not use P):
+   - **A. Comparing classifiers (CM):** the GBDT and MalConv compared in both spaces, using the pullback and the
+     pushforward. A second feature set is not worth it if it is EMBER v2 (too similar to v3).
+   - **B. Byte-level discovery of what a feature-based detector keys on** (shortcuts, spurious correlations),
+     using the pullback across a corpus. Open: why the pullback is the right tool here, and how the output is made
+     useful to practitioners.
+   - **C. A pushforward application complementing B** (to be found): the core would then have one comparison using
+     both operators (A) and one practical application per operator (B, C).
 
 ## Principle: domain-agnostic framework, selective domain knowledge in experiments
 
@@ -160,7 +185,8 @@ only.
   most 0.003 and occlusion at 4,096 by 0.004 (1.101 → 1.105); every conclusion above stands (the numbers are the
   re-run's; `docs/pb1_pilot.md`, "Tie-break re-run").
 
-**PB2. Planted-trigger recovery** (built; shares the testbed with PF2; `docs/trigger_plan.md`)
+**PB2. Planted-trigger recovery** (built; shares the testbed with PF2; `docs/trigger_plan.md`). **Demoted
+(2026-10-09):** kept for now, possibly removed later; the struct result is close to guaranteed by construction.
 
 A trigger written into 1% of the training malware, which is relabeled benign, and the GBDT retrained: the bytes the
 model's decision depends on are then known by construction, so faithfulness can be tested without any perturbation
@@ -191,7 +217,7 @@ or written over the end of the visible 4 MB).
   substantive point is the analytic window bound. No measured direct baseline runs on triggered files, so at the
   content end the claim is that the pullback finds the trigger, not that it beats occlusion there.
 
-The section forward-references App-L for what the pullback cannot localize (the null element's share).
+App-L is stated as a limitation of the provenance pipeline, not a finding (see "Thesis and claims").
 
 ### 3. Application: the pushforward
 
@@ -207,7 +233,9 @@ monotonically from R = 0.34 at 64 windows to 0.80 at the bytes as P's mean overl
 bound holds in all 2,400 cases, and direct explainers reach 0.74–0.91 of what their resolution allows (KernelSHAP
 over windows 1.08). Per file, overlap adds little beyond file size (dropped). Hence claim 3 as reworded (option A).
 
-**PF2. Ground truth for feature-space explainers** (built; shares the testbed with PB2)
+**PF2. Ground truth for feature-space explainers** (built; shares the testbed with PB2). **Demoted (2026-10-09):**
+kept for now, possibly removed later; its ground truth, the support of r, is nearly recoverable without P (the
+features whose value the trigger changes), so it does not by itself show the pushforward is useful.
 
 **Reading (decided 2026-10-09): r is a support, not a target.** The pushforward of the trigger's bytes, r = ψ(1_T),
 weights each feature by how much of it the trigger computes, a property of P alone; it cannot say which of those
@@ -246,9 +274,9 @@ user before adopting it.
 
 ### Appendix
 
-- **App-L. Localizability:** the share of attribution that the pullback sends to the null element (reliance on
-  absence), split into file-dependent absences and never-attributable features, per explainer. Done at 2,000 files
-  (`docs/appendix.md`).
+- **App-L. Localizability:** the share of attribution that the pullback sends to the null element, split into
+  file-dependent absences and never-attributable features, per explainer. Done at 2,000 files (`docs/appendix.md`).
+  A stated limitation of the provenance pipeline only, not a finding or a contribution (2026-10-09).
 - **App-R. Mechanical redundancy:** a short proposition (features with identical provenance merge after pullback) and
   Mohseni et al.'s duplicate-feature sweep; agreement of explainers before and after pullback, net of a permutation
   control (`scripts/pullback_agreement.py`; no general agreement gain, `docs/appendix.md`). The duplicate-feature
@@ -271,6 +299,12 @@ methods may be revisited.
 - **T3 Coarsening** (manuscript, Proposition Coarsening, 2026-10-08). Grouping elements into sets (e.g., windows)
   commutes with pullback, never raises ambiguity, and never lowers overlap.
 - **Mechanical redundancy (App-R).** Features with identical provenance columns are indistinguishable after pullback.
+- **Possible strengthening (noted 2026-10-09, not pursued now):** an axiomatic characterization in the style of
+  Shapley's uniqueness theorem: show that the pullback is the only transfer satisfying a short list of properties
+  (e.g., linearity in the explanation, conservation of the total, zero credit to elements no feature reads, and
+  agreement with the Shapley value of σ for additive features, T1), and ask the same for the pushforward. This would
+  answer "it is just the rescale rule" with "it is the only rule with these properties". Unknown whether it is
+  provable cleanly.
 - **Round trips (2026-10-08).** M = PᵀD†P is symmetric and doubly stochastic with M_jj = 1 − O_j; the cyclic errors
   are bounded by 2 Σ_j |a_j| O_j and 2 Σ_i |b_i| (1 − N_ii), with equality for one-hot inputs. The
   perfect-reconstruction theorems (pull-push iff O = 0, push-pull iff H = 0) are its corollaries. Every theorem is
@@ -283,6 +317,13 @@ methods may be revisited.
 - ~~Localizability ℓ~~ decided 2026-10-07: removed from the framework (it is explanation-specific); coverage κ stays.
   The null element's entry of a pullback is the attribution that cannot be localized. ℓ and other
   explanation-weighted quantities remain evaluation metrics (CP, App-L).
+- **Ambiguity and overlap (2026-10-09):** the round-trip matrices M and N stay in the framework as theory (their
+  diagonals are 1 − O_j and N_ii), hopefully with a practical use later. The standalone statistics have no
+  demonstrated use: overlap's only one is PF1's resolution trend, which largely restates the round-trip bound (any
+  statistic of P "predicting" a transfer that is linear in P is close to a tautology; a real use connects P to
+  something not computed through P, such as model or attack behavior). Undecided what to do with them.
+- **The pushforward application (C)** and **why the pullback is the right tool for B** (2026-10-09; see "Paper
+  structure").
 - **Signed provenance:** rescale-rule matrices can be signed; our axioms require P ≥ 0. Keep structural (unsigned)
   provenance plus a stated limitation unless PB1 shows a need.
 - **Naming** ("provenance" vs. "attribution lineage").

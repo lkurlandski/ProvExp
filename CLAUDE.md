@@ -19,8 +19,9 @@ plus a null element) transfers explanations between the feature-space (EMBER v3 
 - `docs/design_provexp.md`: package design, decisions, provenance conventions, thrember quirks.
   `docs/related_work.md`: literature and gaps. `docs/archive/`: superseded documents (the Phase 2 plan and census,
   old IDs E1–E4, A1–A3; artifact paths such as `artifacts/experiments/e1/` (PB1) still use them).
-- **Results are read against a rule fixed before the run** (as in `docs/pb1_baselines.md`, `docs/pf1_plan.md`):
-  write down what each outcome would mean before looking, and report a failed check as such.
+- **State a hypothesis before running an experiment** (what you expect and why), and report a failed check as such.
+  Keep it short and proportionate: a sentence or two, not an elaborate pre-registered reading for every outcome
+  (user, 2026-10-09).
 - `manuscript/_c_framework.tex`: the framework's definitions; `_d_applications.tex`: the evaluation. Keep code and
   manuscript consistent.
 
@@ -94,6 +95,11 @@ Follow `/home/lk3591/Documents/code/SSViT/exeformer/exeformer.py` (ignore that i
   core analyses work with elements, features, feature subsets, and P only. Do not propose analyses, modules, or
   stratifications built on PE-format structure (headers, sections, overlay, packers, "attacker-controllable
   regions"); the user has rejected this direction several times.
+- **Coverage, localizability, and the null element's share are not contributions** (user, 2026-10-09). Do not propose
+  promoting them, building analyses on them, or reporting "reliance on absence" as a finding. (i) They measure a
+  particular explanation of a particular file by a particular explainer, not the provenance; (ii) a large share of
+  attribution on unattributable features reflects a limitation of the provenance extraction pipeline (features whose
+  bytes it cannot name), not a broad, novel finding about detectors. App-L stays only as a stated limitation.
 - **The GBDT is the first classifier we experiment with** (decided 2026-10-08). The framework stays general-purpose
   (P does not depend on the classifier). The MLP is set aside *temporarily* and returns once the GBDT methodology is
   established (`PLAN.md`, "Model scope"); do not describe it as dropped.

@@ -5,6 +5,12 @@ the data-quality notes). All 2,000 files of the explanation set, seed 0, printed
 Localizability ℓ(a) is an evaluation metric here, not part of the framework: the share of an explanation's magnitude
 on attributable features, which the pullback places in the file rather than on the null element.
 
+> **Status (user, 2026-10-09): a limitation, not a finding.** Localizability, coverage, and the null element's share
+> are not contributions and are not to be promoted. They measure one explanation of one file by one explainer, not
+> the provenance, and a large unattributable share reflects a limitation of the provenance extraction pipeline
+> (features whose bytes it cannot name), not a broad finding about detectors. App-L is kept only to state that
+> limitation.
+
 ## App-L. A fifth to a third of what the models rely on cannot be localized
 
 **Most features are unattributable in a given file, mostly because something is absent.** About 70% of a typical
