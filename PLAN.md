@@ -336,10 +336,13 @@ methods may be revisited.
   evasion without crafting attacks, validated against real attacks. **Accepted for the appendix** (user, 2026-10-09),
   posed domain-agnostically (an arbitrary byte set S); only PE-specific regions are ruled out. (3) *translating explanations between feature sets* (pull back through one extractor's P,
   push forward through another's), which needs a second extractor.
-  **Caveat on (1), found 2026-10-09:** scoring an explanation against a byte set S is the same in both spaces, by
-  adjointness: ⟨Pa, 1_S⟩ = ⟨a, Pᵀ1_S⟩. The per-feature share Pᵀ1_S is not the framework's pushforward
-  ψ(1_S) = PᵀD†1_S, so (1), the remediation step of B-then-C, and (2) use P's transpose, not ψ. ψ is needed when the
-  problem-space input is an *amount* of evidence to be divided among features (an explanation), not a region.
+  **On (1) (2026-10-09, revised after discussion):** a YARA or capa match is itself a problem-space explanation (of a
+  rule-based detector: the matched bytes are, by construction, why it fired), so ψ(b_YARA) casts it in the GBDT's
+  feature vocabulary; D† is the normalization that makes it an explanation (it conserves the total). By adjointness,
+  an inner-product score is the same in either space (⟨Pa, b⟩ = ⟨a, Pᵀb⟩), but vector-valued comparisons and
+  aggregation across files are not: byte offsets differ per file, features do not, so a per-rule feature profile
+  (the mean pushforward over the files where the rule fires) exists only in feature space. That is where (1) uses
+  the pushforward. (2) needs the unnormalized share Pᵀ1_S (what fraction of feature j the set S computes).
 - **A further feature set (on hold, 2026-10-09; not EMBER v2, too similar to v3).** For A, **byte n-grams for PE**
   are the quickest way to widen the comparison (user); another domain or file format comes later. Candidates: within
   PE, byte n-grams (a very different P: high resolution, low overlap) or disassembly-based opcode n-grams (a more complex
