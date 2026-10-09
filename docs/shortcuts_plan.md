@@ -79,6 +79,20 @@ certificate (a known real-world technique), which the certificate-size patterns 
 
 - **Ambiguity as a filter** on which credit may form spans (user, 2026-10-09: forced; do not try to make it work).
 
+## The insertion / set-field test (scope decided 2026-10-09)
+
+On held-out test malware outside the explanation set (start with ~100-200 files), apply three kinds of change an
+attacker can make, each carrying a top benign-pushing pattern, and measure the drop in the malware log-odds and the
+share of files that flip to benign:
+1. **Insert content:** benign-pushing strings appended to the file; benign-pushing imports added with a PE editor.
+2. **Set a header field:** e.g., the Delphi timestamp, SizeOfStackReserve, a debug-directory size.
+3. **Transplant a certificate:** attach a benign file's certificate (a known real-world technique; the
+   certificate-size patterns point to it).
+
+Baselines: random patterns of matched length, and data-mined label-skewed patterns (needs a training-set sample).
+**Verification: the modified file must still parse** (PB1's verifier); checking that it still *runs* is out of scope
+(user, 2026-10-09) -- no sandbox. Compare pullback-found patterns against the baselines on the same files.
+
 ## Open
 
 - k per file, span merging, and the minimum number of files for a pattern; how many files are needed.
