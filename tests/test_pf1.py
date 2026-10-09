@@ -22,6 +22,7 @@ from pf1 import delete_to_background  # noqa: E402
 from pf1 import delete_to_reference  # noqa: E402
 from pf1 import feature_order  # noqa: E402
 from pf1 import incidence_pushforward  # noqa: E402
+from pf1 import window_roundtrip  # noqa: E402
 from pf1 import window_pushforward  # noqa: E402
 from provexp.ablation import coarsen  # noqa: E402
 
@@ -141,3 +142,23 @@ class TestDeletion:
 @pytest.mark.parametrize("R,expected", [(0.95, "faithful"), (0.8, "faithful"), (0.79, "partial"), (0.5, "partial"), (0.49, "weakened")])
 def test_band_matches_the_criterion_fixed_in_advance(R: float, expected: str) -> None:
     assert band(R) == expected
+
+
+class TestWindowRoundtrip:
+
+    def test_one_element_per_window_is_the_byte_level_round_trip_without_the_null_element(self) -> None:
+        prov = small_provenance()
+        a = np.array([1.0, -0.5, 2.0, 3.0])
+        b = prov.pullback(a)[:8]
+        assert np.allclose(window_roundtrip(prov, window_edges(8, 8), b), prov.pushforward(b))
+
+    def test_one_window_spreads_everything_by_the_column_shares(self) -> None:
+        prov = small_provenance()
+        b = np.arange(8, dtype=np.float64)
+        out = window_roundtrip(prov, window_edges(8, 1), b)
+        # A single window feeds features 0-2 with P = 1 each and D = 3, so each gets a third of the total.
+        assert np.allclose(out, [b.sum() / 3] * 3 + [0.0])
+
+    def test_rejects_a_null_element(self) -> None:
+        with pytest.raises(ValueError):
+            window_roundtrip(small_provenance(), window_edges(8, 2), np.zeros(9))

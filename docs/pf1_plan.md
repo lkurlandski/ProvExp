@@ -101,6 +101,33 @@ Mean deletion area (R = ratio to path TreeSHAP's mean area; wins = files above r
 4. **The D⁺ split helps, modestly.** The pushforward beats the naive incidence sum on 59–68 of 100 files; the margin
    is 10–20% in area.
 
-Open (to decide with the user): what claim 3 says in light of R < 0.5. A cheap diagnostic would separate resolution
-from the source explanation's quality: the round trip of TreeSHAP through P coarsened to the *same* windows
-(coarsen the pullback, push it forward), which is the best any 256-window explanation could do through this P.
+### Resolution diagnostic (2026-10-09, run before deciding claim 3)
+
+Each native explanation pulled back (without its null element), summed over K windows, and pushed forward through P
+coarsened to the same windows (`windowtrip_k{K}`): what is left of a feature-space explanation when it is expressed
+at K windows, i.e., what a K-window explanation carrying the *same information as TreeSHAP* would score. Reading
+fixed before the run: ≈ 0.33-0.40 at 256 windows → resolution binds; ≥ 0.6 → the window explainers are the weak link.
+Every earlier method's curves were unchanged by the re-run (76,000 points, max difference 0.0).
+
+R vs. path TreeSHAP, matched reference (ablated, all features):
+
+| resolution | push: occlusion | push: KernelSHAP over windows | window round trip: path / interventional / KernelSHAP |
+|---|---|---|---|
+| 64 windows | 0.31 | — | 0.34 / 0.34 / 0.35 |
+| 256 windows | 0.33 | **0.40** | **0.37** / 0.37 / 0.38 |
+| 1,024 windows | 0.34 | — | 0.43 / 0.43 / 0.44 |
+| 4,096 windows | 0.37 | — | 0.50 / 0.51 / 0.52 |
+| bytes (no null element) | — | — | 0.80 / 0.82 / 0.81 |
+
+1. **Resolution binds.** At 256 windows, even TreeSHAP's own information reaches only R = 0.37 once it is expressed
+   over windows. Occlusion gets 0.33 (89% of that), and KernelSHAP over windows 0.40, slightly *above* it (the
+   window round trip is a reference, not a strict bound). The direct problem-space explainers are not the weak link
+   at this resolution.
+2. **What is attainable rises steeply with resolution** (0.34, 0.37, 0.43, 0.50, then 0.80 at bytes), as CP's
+   coarsening predicts (overlap 0.98 at 256 windows, 0.41 at bytes). Occlusion falls behind it as resolution grows
+   (0.37 vs. 0.50 at 4,096 windows), the same saturation PB1 found in the problem-space (occlusion stops improving
+   beyond 1,024 windows).
+3. **The null element is irrelevant here:** the byte-level round trip is 0.80 with or without it.
+
+Open (to decide with the user): what claim 3 says, given that R < 0.5 for every window-level source but the loss is
+the source's resolution, not the operator or the source explainers (`docs/status.md`).

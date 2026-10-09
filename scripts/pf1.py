@@ -12,6 +12,10 @@ model gives a deletion curve. The methods:
                             a window feeding many features is counted many times): the naive baseline
     roundtrip:{explainer}   the pull-push round trip M a of a native explanation, at the byte level (a secondary
                             reference; CP bounds its L1 error)
+    roundtrip_nonull:{explainer}, windowtrip_k{K}:{explainer}
+                            the resolution diagnostic: the same without the null element's share, and with the
+                            pullback summed over K windows before pushing forward through P coarsened to them (the best
+                            any K-window explanation can do through this P)
     random:{seed}           a random order
 
 Two references for a deleted feature (decision 1):
@@ -129,6 +133,22 @@ def window_pushforward(prov: Provenance, edges: npt.NDArray[np.int64], b: npt.Ar
     return coarsen_provenance(prov, edges).pushforward(np.asarray(b, dtype=np.float64)), incidence_pushforward(coarse, b)
 
 
+def window_roundtrip(prov: Provenance, edges: npt.NDArray[np.int64], b: npt.ArrayLike) -> FloatArray:
+    """
+    A problem-space explanation summed over windows and pushed forward through the provenance coarsened to the same
+    windows: what is left of b at that resolution.
+
+    Args:
+        prov: The provenance over m = edges[-1] elements.
+        edges: The window edges, shape (K + 1,).
+        b: A score per element, shape (m,) (no null element).
+    """
+    b_ = np.asarray(b, dtype=np.float64)
+    if b_.shape != (prov.num_elements,):
+        raise ValueError(f"Expected one score per element ({prov.num_elements}). Got {b_.shape}.")
+    return coarsen_provenance(prov, edges).pushforward(np.add.reduceat(b_, edges[:-1]))
+
+
 ################################################################################
 # Feature-Space Deletion
 ################################################################################
@@ -185,6 +205,17 @@ def methods_of(prov: Provenance, saved: dict[str, npt.NDArray[Any]], native: dic
         out[f"roundtrip:{name}"] = prov.pull_push(a)
     for r in range(NUM_RANDOM):
         out[f"random:{r}"] = rng.normal(size=prov.num_features)
+    # The resolution diagnostic (docs/pf1_plan.md, "Results"), added after the random draws so that every other
+    # method's ranking is unchanged: a native explanation pulled back, without its null element (a window explanation
+    # has none), then pushed forward from the bytes and from each window count. The second is the best any explanation
+    # at that window count can do through this P, which separates the resolution from the source explanation.
+    window_sets = {int(saved["edges"].shape[0] - 1): saved["edges"]}
+    window_sets |= {int(k.removeprefix("edges_k")): v for k, v in saved.items() if k.startswith("edges_k")}
+    for name, a in native.items():
+        b = prov.pullback(a)[:prov.num_elements]
+        out[f"roundtrip_nonull:{name}"] = prov.pushforward(b)
+        for K, edges in sorted(window_sets.items()):
+            out[f"windowtrip_k{K}:{name}"] = window_roundtrip(prov, edges, b)
     return out
 
 
@@ -312,6 +343,23 @@ def tables(curves: pl.DataFrame, files: pl.DataFrame) -> None:
                 print(f"- {method} vs {ref}: above random p = {p_random:.2g}, above naive p = {p_naive:.2g} "
                       f"({'passes' if required else 'FAILS'} the requirement); R = {R:.2f} ({band(R)})")
         print()
+
+    print("## Resolution diagnostic (matched reference: ablated, all features; R vs path TreeSHAP)\n")
+    if wide.height and any(c.startswith("windowtrip_") for c in wide.columns):
+        ref = float(wide["treeshap_path"].to_numpy().mean())
+        def ratio(method: str) -> str:
+            return f"{float(wide[method].to_numpy().mean()) / ref:.2f}" if method in wide.columns else "—"
+        Ks = sorted({int(c.split(":")[0].removeprefix("windowtrip_k")) for c in wide.columns if c.startswith("windowtrip_")})
+        rows_d: list[dict[str, str]] = []
+        for K in Ks:
+            # The K-window occlusion run is saved as `occlusion`, the sweep as `occlusion_k{J}`.
+            push = f"push:occlusion_k{K}" if f"push:occlusion_k{K}" in wide.columns else "push:occlusion"
+            rows_d.append({"windows": str(K), "push: occlusion": ratio(push),
+                           "push: KernelSHAP over windows": ratio("push:kernelshap_windows") if push == "push:occlusion" else "—"}
+                          | {f"window round trip, {e}": ratio(f"windowtrip_k{K}:{e}") for e in NATIVE})
+        rows_d.append({"windows": "bytes (no null)", "push: occlusion": "—", "push: KernelSHAP over windows": "—"}
+                      | {f"window round trip, {e}": ratio(f"roundtrip_nonull:{e}") for e in NATIVE})
+        print(markdown(pl.DataFrame(rows_d)), "\n")
 
     print("## Gap diagnostics (median over files)\n")
     rows = [{"explainer": name,
