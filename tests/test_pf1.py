@@ -162,3 +162,11 @@ class TestWindowRoundtrip:
     def test_rejects_a_null_element(self) -> None:
         with pytest.raises(ValueError):
             window_roundtrip(small_provenance(), window_edges(8, 2), np.zeros(9))
+
+
+def test_near_ties_from_round_off_are_ties() -> None:
+    """Scores equal up to round-off follow the permutation, as exact ties do, however the round-off falls."""
+    scores = np.array([1.0, 0.3, 0.3 + 1e-15, 0.3 - 1e-15])
+    tiebreak = np.array([3, 1, 0, 2])
+    assert feature_order(scores, 1.0, tiebreak).tolist() == [0, 3, 1, 2]
+    assert feature_order(scores[[0, 2, 1, 3]], 1.0, tiebreak).tolist() == [0, 3, 1, 2]

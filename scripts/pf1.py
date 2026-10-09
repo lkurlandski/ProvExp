@@ -82,6 +82,7 @@ NATIVE = ["treeshap_path", "treeshap_interventional", "kernelshap_gbdt"]
 NUM_RANDOM = 3
 REFERENCES = ("ablated", "background")
 CANDIDATES = ("all", "attributable")
+TIE_TOLERANCE = 1e-9  # Relative to the largest score; see feature_order.
 
 FloatArray = npt.NDArray[np.float64]
 BoolArray = npt.NDArray[np.bool_]
@@ -97,12 +98,18 @@ _STATE: dict[str, Any] = {}
 def feature_order(scores: npt.ArrayLike, direction: float, tiebreak: npt.NDArray[np.int64]) -> npt.NDArray[np.int64]:
     """
     The features ordered by decreasing `direction * scores`, ties broken by the permutation `tiebreak` (a feature
-    earlier in it comes first), never by feature index.
+    earlier in it comes first), never by feature index. Scores within TIE_TOLERANCE of the largest magnitude of each
+    other count as tied.
     """
     s = np.asarray(scores, dtype=np.float64)
     if s.ndim != 1 or tiebreak.shape != s.shape:
         raise ValueError(f"Expected scores and a tie-break permutation of the same length. Got {s.shape} and {tiebreak.shape}.")
-    return tiebreak[np.argsort(-np.sign(direction) * s[tiebreak], kind="stable")].astype(np.int64)
+    # NOTE: features with identical provenance get identical pushforwards up to round-off (1e-13 relative), and two
+    # equally valid ways of computing them (dense and sparse) then rank them differently. Quantizing the scores makes
+    # such near-ties exact, so that the seeded permutation, not round-off, decides their order.
+    scale = float(np.abs(s).max(initial=0.0))
+    key = -np.sign(direction) * (np.round(s / (TIE_TOLERANCE * scale)) if scale > 0 else s)
+    return tiebreak[np.argsort(key[tiebreak], kind="stable")].astype(np.int64)
 
 
 def incidence_pushforward(coarse: FloatArray, b: npt.ArrayLike) -> FloatArray:

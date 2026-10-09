@@ -36,6 +36,20 @@ in artifact paths (`artifacts/experiments/e1/` holds PB1). Work stays at pilot s
   about 1.1 h on 64 workers against 4.1 h before at any worker count. Verified bit-exact against the baselines run
   and pinned by `tests/test_faithfulness.py`, whose tests were themselves checked against two injected bugs.
 
+## When run 20 finishes (`run/20_pf1_resolution.sh`; the user runs it in tmux, ~20-25 min)
+
+**What it is for:** the evidence for claim 3 under option A (the pushforward is faithful up to its source's
+resolution, a limit P predicts): the trend of R attainable from 64 windows to the bytes, tied to P's overlap and CP's
+bound. Step 1 re-runs PF1 with the tie fix in `feature_order`; step 2 is `scripts/pf1_resolution.py`.
+
+**Checks:** both logs end with "Wrote ..."; PF1's step prints "End point ... 0" and its R values may move slightly
+from the ones in `docs/pf1_plan.md` (update them); the resolution log's "Check against scripts/pf1.py's window round
+trips" must say 0 differ, and "CP's bound holds" must be all of them.
+
+**Then:** read the tables against the reading fixed in advance (`docs/pf1_plan.md`, "Resolution trend"): (1) the
+trend, required for option A; (2) the bound; (3) per-file prediction, secondary; (4) occlusion's share of what is
+attainable. Then the manuscript update (PF1, PB2/PF2, CP.3, claim 3).
+
 ## Run 17 (2026-10-09): done and verified
 
 `run/17_pf1_window_scores.sh` finished in 138 min on 32 workers: 100/100 files ok, curves equal to the baselines run

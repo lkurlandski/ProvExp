@@ -2,7 +2,8 @@
 # PF1 (docs/pf1_plan.md): the pushforward's faithfulness by feature-space deletion of the GBDT, on the window scores
 # saved by run/17_pf1_window_scores.sh, with the resolution diagnostic (window round trips; added 2026-10-09).
 # The first run (without the diagnostic) took 6 min on 8 workers; with it, about 10 min on 16.
-# Run only after the checks in docs/status.md ("When run 17 finishes") pass.
+# Run only after the checks in docs/status.md ("When run 17 finishes") pass. Re-run by run/20_pf1_resolution.sh after
+# the tie fix in feature_order (2026-10-09).
 set -euo pipefail
 cd "$(dirname "$0")/.."
 source env/bin/activate

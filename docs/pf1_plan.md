@@ -138,3 +138,33 @@ Claim 3 is stated conditionally: the pushforward is faithful up to the resolutio
 that resolution) predicts the limit. The window round trip of TreeSHAP is a risky reference on its own (partly
 circular); it is acceptable as evidence only through the **trend** across window counts. So the trend must be shown
 densely enough and tied to P: R achievable at each resolution against the overlap at that resolution.
+
+## Resolution trend (prepared 2026-10-09; `scripts/pf1_resolution.py`, `run/20_pf1_resolution.sh`)
+
+Why: under option A, claim 3's first half rests on the trend of what is attainable across resolutions, which must be
+dense (the diagnostic jumped from 4,096 windows, R = 0.50, to bytes, 0.80) and tied to P.
+
+What: for every native explainer and file, the window round trip at 64, 256, 1,024, 4,096, 16,384, 65,536, and
+262,144 windows and at the bytes (no occlusion can follow beyond 4,096; that is the point), with its deletion curves
+under both references, and at each resolution, from P: the mean overlap of the attributable features (P only), the
+|a|-weighted overlap, the round trip's L1 loss, and CP's bound 2 Σ|a_j| O_j. The window round trip is exactly the
+pull-push operator M of P coarsened to K windows, so CP's theorem applies to it. The coarsened P is built sparse (a
+dense one would take gigabytes at 262,144 windows), and is tested equal to the dense code.
+
+**Fix found while preparing it:** features with identical provenance get identical pushforwards up to round-off
+(1e-13 relative), and their ranking was decided by that round-off rather than by the seeded tie-break; two equally
+valid computations (dense and sparse) then disagreed on 39 of 960 curve points (up to 0.94 log-odds). `feature_order`
+now treats scores within 1e-9 (relative) as tied; with it the two agree exactly (0 of 960). PF1 is re-run with the
+fix (step 1 of run 20), so its numbers above may move slightly; they are updated after the run.
+
+**Reading fixed in advance:**
+1. *The trend (required for option A):* R attainable rises with resolution and the P-only mean overlap falls, across
+   the 8 resolutions, for each explainer and both references (monotone up to a dip of at most 0.02 between adjacent
+   resolutions). If R is not monotone, or the rise stops well before the bytes, report that and revisit option A.
+2. *The bound:* CP's bound holds for every file, explainer, and resolution (it is a theorem; a violation is a bug).
+3. *Per-file prediction (secondary, reported either way):* at a fixed resolution, Spearman between a file's ratio
+   (area of a_K / area of a) and its overlap. |rho| ≥ 0.3 with the expected sign (more overlap, lower R) counts as
+   "P predicts which files lose more"; weaker is reported as "P predicts the trend across resolutions, not the
+   ranking of files".
+4. *The pushforward of occlusion* at 64-4,096 windows is read against R attainable at the same resolution (from step
+   1), as the share of what is attainable that a real direct explainer reaches.
