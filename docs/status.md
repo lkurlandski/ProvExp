@@ -39,8 +39,8 @@ in artifact paths (`artifacts/experiments/e1/` holds PB1). Work stays at pilot s
 ## Run 20 (2026-10-09): done and verified
 
 PF1 re-run with the tie fix (numbers moved ≤ 0.01 in R) and the resolution trend: R attainable rises monotonically
-from 0.34 (64 windows) to 0.80 (bytes) as P's overlap falls from 0.99 to 0.41; CP's bound holds 2,400/2,400; per-file
-overlap predicts R at window resolutions (ρ −0.43 to −0.82), not at bytes. Option A is supported
+from 0.34 (64 windows) to 0.80 (bytes) as P's overlap falls from 0.99 to 0.41; CP's bound holds 2,400/2,400. The per-file
+correlation of overlap and R (ρ −0.43 to −0.82) is mostly file size and fails the size check: dropped. Option A is supported
 (`docs/pf1_plan.md`, "Results (run 20)").
 
 ## Run 17 (2026-10-09): done and verified

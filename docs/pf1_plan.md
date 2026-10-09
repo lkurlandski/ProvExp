@@ -202,7 +202,16 @@ Against the reading fixed in advance:
    (4,096); KernelSHAP over 256 windows 1.08. Real direct explainers are close to the limit when coarse and fall
    behind it as resolution grows (occlusion's saturation, as in PB1).
 
+**The size check (2026-10-09; rule fixed before computing: the per-file reading survives if the partial Spearman
+given file size stays at |ρ| ≥ 0.3 with the expected sign at most window resolutions).** It does not survive. At a
+fixed window count a file's overlap is mostly its size (ρ(overlap, size) = 0.81-0.97), and with size held fixed (rank
+partial correlation) ρ(R, overlap) is about 0 at 64 and 256 windows, −0.13 to −0.20 at 1,024, and −0.25 to −0.42 at
+4,096-262,144 (path TreeSHAP: |ρ| ≥ 0.3 at 3 of 7 window resolutions; KernelSHAP 2 of 7). The explanation-weighted
+overlap does a little better given size (−0.30 to −0.52 from 4,096 windows to the bytes), but it was not the
+predictor chosen in advance. **So the per-file reading is dropped:** at a fixed resolution, which files lose more is
+mostly how large they are, which overlap at a fixed window count largely restates.
+
 **Reading for claim 3 (option A):** the evidence supports "faithful up to the source's resolution, a limit P
-predicts": what survives the pushforward is set by resolution, moves monotonically with P's overlap across three
-orders of magnitude of resolution, is bounded by CP's theorem everywhere, and, at window resolutions, P also ranks
-which files lose more. At the byte level P's overlap no longer ranks files.
+predicts": what survives the pushforward is set by resolution, moves monotonically with P's overlap across more than
+three orders of magnitude of resolution, and is bounded by CP's theorem everywhere. P predicts the trend across
+resolutions, not the ranking of files at one resolution.
