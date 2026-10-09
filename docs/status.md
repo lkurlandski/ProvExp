@@ -58,6 +58,9 @@ user); results in `docs/cp_census.md` and `docs/pf1_plan.md`.
 
 ## Decisions made on 2026-10-09
 
+- **No scaling yet** (user): experiments stay on the pilot subset until the preliminary results are solid and the
+  claims and contributions are clear. CM is close but not next.
+
 - **PF1 design** as in `docs/pf1_plan.md` (two references, attributable-only variant, naive incidence-sum baseline,
   success criterion fixed in advance: beat random and the naive baseline, then R = area ratio to TreeSHAP with cut-offs 0.8 / 0.5). No pushforward of triggered files.
 - **PF2 reads r = ψ(1_T) as a support, not a target:** mass on supp(r) and top-k in supp(r); cosine and Spearman
