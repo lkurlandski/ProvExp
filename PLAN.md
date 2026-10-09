@@ -74,15 +74,16 @@ designed or built yet.
   way to widen the comparison: a P at the other end of the spectrum; not EMBER v2, too similar to v3), and MalConv,
   compared in the problem space (pullback vs. direct byte explanations) and in the feature space (MalConv's
   explanations pushed forward). Another domain or file format comes later.
-- **3-B. Finding what a feature-based detector keys on** (the pullback): real shortcuts in the EMBER models (user),
-  found at byte level across a corpus, by grouping pulled-back credit by byte content, and maybe patched. Design in
-  `docs/shortcuts_plan.md` (2026-10-09): a shortcut is a learned association that passes the insertion test;
-  benign-pushing patterns first; the 2,000-file set first, more files if needed; ambiguity as a filter rejected. Why the pullback: feature-space SHAP names hashed or aggregate features a practitioner cannot act on,
-  occlusion is ~135× costlier per file and saturates at window resolution, and raw-byte models' explanations explain
-  a different model. Candidate validation: inserting a discovered benign-associated pattern into malware should lower
-  the score (a shortcut is an evasion vector). Open: how the output is made useful to practitioners.
-  *B then patch:* remove a found shortcut using each feature's share of the shortcut's bytes, (Pᵀ1_S)_j (a feature
-  diff cannot tell "this feature is the shortcut" from "barely touched by it"); likely done anyway.
+- **3-B. Making a feature-based detector's reliance legible in the bytes** (the pullback; framing decided
+  2026-10-09, `docs/shortcuts_plan.md`). Across a corpus, resolve each relied-upon feature's credit back onto the
+  content that produced it -- naming the library/section/string behind hashed and aggregate features that
+  feature-space SHAP can only report as an opaque bucket. **Impossible from feature-space SHAP** (it names the
+  bucket, not the content) and **much cheaper/finer than occlusion** (one extraction vs. hundreds per file, PB1), so
+  it runs over the whole test set. Done (run 22): e.g. `imports:library_hash_254` resolves to `python312.dll` /
+  `msi.dll` / `api-ms-win-core-registry-*` per file. A non-circular correctness spot-check (manipulate a named byte
+  through the real path, confirm the score moves) applies where a few bytes set the feature (header fields, real
+  imports via LIEF); run 23 confirmed that appending aggregate *string* content does not move the model, as expected
+  (high ambiguity). Evasion/"shortcut" is **not** the headline (user).
 - **3-C. Rule-based detectors' explanations in the GBDT's features** (the pushforward; adopted 2026-10-09): a YARA
   or capa match is a problem-space explanation of a rule-based detector (the matched bytes are why it fired);
   pushed forward, it is cast in the GBDT's feature vocabulary. Per-rule feature profiles (the mean pushforward over
@@ -350,8 +351,8 @@ methods may be revisited.
   demonstrated use: overlap's only one is PF1's resolution trend, which largely restates the round-trip bound (any
   statistic of P "predicting" a transfer that is linear in P is close to a tautology; a real use connects P to
   something not computed through P, such as model or attack behavior). Undecided what to do with them.
-- **How 3-B is made useful to practitioners** (2026-10-09): what the output is (ranked byte patterns with their
-  prevalence by label?) and how its usefulness is shown (insertion as evasion? patching?).
+- **3-B's remaining work** (2026-10-09): the set-field / real-import correctness spot-check on the run-23 files; its
+  framing is settled (legibility of reliance, not evasion).
 - **Further pushforward applications** (for later brainstorming): translating explanations between feature sets
   (pull back through one extractor's P, push forward through another's), once 3-A has a second extractor.
 - **A further feature set (on hold, 2026-10-09; not EMBER v2, too similar to v3).** For A, **byte n-grams for PE**
@@ -393,8 +394,8 @@ final numbers, when the pilot results and claims are settled. `run/` holds the c
 |---|---|---|
 | Oct 8 | ~~PB1 baselines~~, ~~the trigger testbed~~ done; the runner's parallelism rebuilt | **Gate 2** (passed for the GBDT) |
 | Oct 9 | ~~PB2/PF2 at pilot scale~~, ~~PF1 and its resolution trend~~, ~~CP.3~~; the tie-break fix (PB1 re-run pending) | |
-| Oct 9 (later) | ~~Run 21 read~~ (no conclusion changed); **the paper restructured** (framework / intrinsic / extrinsic) | |
-| next | Design 3-B (real shortcuts via the pullback); then 3-C and 3-A (byte n-gram GBDT, MalConv explanations) at pilot scale | to re-plan with the user |
+| Oct 9 (later) | ~~Run 21 read~~; **paper restructured**; ~~3-B discovery (run 22) and framing~~ (legibility of reliance) | |
+| next | 3-B set-field/import spot-check; then 3-C and 3-A (byte n-gram GBDT, MalConv explanations) at pilot scale | to re-plan with the user |
 | later | Scale-up (2,000 files, seeds 0–2), when the user decides; the MLP if time allows | |
 | later | Appendix (App-R; the byte-set control bound) | |
 | Dec 15–late Jan | Writing: introduction and contributions, framework edits, figures | Submission |
@@ -414,9 +415,9 @@ was dropped as a flawed test. Thresholds are reassessed with the user.
   parse-failure rates; move to a PE-aware operator.
 - **Smearing:** histogram and entropy features spread over the whole file, which limits how sharply the pullback
   can place their credit. A stated limitation of the transfer at fine resolution (CP's round-trip bounds).
-- **The extrinsic applications are not designed yet**, and they carry the paper's security relevance. 3-C depends on
-  rules that fire often enough (public signatures do not) and on capa's cost; 3-B on finding real shortcuts worth
-  reporting.
+- **The extrinsic applications carry the paper's security relevance.** 3-B is demonstrated (run 22) and its framing
+  is settled; 3-A and 3-C are not built. 3-C depends on rules that fire often enough (public signatures do not) and
+  on capa's cost.
 - **Reviewer pool:** Raff co-authored EMBER-2024, MalConv, and the SHAP-on-EMBER critique; engage it directly (App-R,
   CM).
 - **The pushforward is faithful only up to its source's resolution (PF1):** window-level explanations keep a third of
