@@ -13,7 +13,7 @@ in artifact paths (`artifacts/experiments/e1/` holds PB1). Work stays at pilot s
 | **CP** (characterizing P) | **done** at 2,000 files plus coarsening and CP.3 (instrumented vs. black-box statistics at 256 windows: ambiguity agrees where T1 says; overlap saturated at window level) (`docs/cp_census.md`). |
 | **PB1** (pullback faithfulness and cost) | **done** at pilot scale, baselines included (`docs/pb1_pilot.md`). Gate 2 passed for the GBDT. |
 | **PB2, PF2** (planted trigger) | **done at pilot scale** (50 files per trigger; `docs/trigger_plan.md`, "Pilot-scale results"). Struct: precision at \|T\| = 1 on 50/50 files. Content: 0.94 on the typical file, failing exactly where P says it must. PF2 reads r as a support (decided 2026-10-09; tables updated). |
-| **PF1** (pushforward faithfulness) | **done at pilot scale, with the resolution diagnostic** (`docs/pf1_plan.md`). Required test passes; R = 0.31–0.40 ("weakened"). The diagnostic shows resolution binds: TreeSHAP's own information expressed at 256 windows reaches only 0.37 (occlusion 0.33, KernelSHAP over windows 0.40), rising to 0.80 at bytes. **Claim 3 reworded (option A):** faithful up to the source's resolution, a limit P predicts; evidence is the trend across window counts. |
+| **PF1** (pushforward faithfulness) | **done at pilot scale, with the resolution trend** (`docs/pf1_plan.md`). Required test passes; R = 0.31–0.40 for window sources. R attainable rises monotonically 0.34 → 0.80 from 64 windows to bytes as P's overlap falls 0.99 → 0.41; bound holds everywhere. Supports claim 3 as reworded (option A). |
 | **CM** (GBDT vs. MalConv) | designed, not built; MalConv explanations of the pilot files are not computed yet. |
 | **The MLP** | set aside temporarily; returns after the GBDT methodology is established. |
 | **Manuscript** | framework and evaluation sections follow the current structure; `_d_applications.tex` carries the designs and pilot numbers. Do not try to compile it (no LaTeX here). |
@@ -36,19 +36,12 @@ in artifact paths (`artifacts/experiments/e1/` holds PB1). Work stays at pilot s
   about 1.1 h on 64 workers against 4.1 h before at any worker count. Verified bit-exact against the baselines run
   and pinned by `tests/test_faithfulness.py`, whose tests were themselves checked against two injected bugs.
 
-## When run 20 finishes (`run/20_pf1_resolution.sh`; the user runs it in tmux, ~20-25 min)
+## Run 20 (2026-10-09): done and verified
 
-**What it is for:** the evidence for claim 3 under option A (the pushforward is faithful up to its source's
-resolution, a limit P predicts): the trend of R attainable from 64 windows to the bytes, tied to P's overlap and CP's
-bound. Step 1 re-runs PF1 with the tie fix in `feature_order`; step 2 is `scripts/pf1_resolution.py`.
-
-**Checks:** both logs end with "Wrote ..."; PF1's step prints "End point ... 0" and its R values may move slightly
-from the ones in `docs/pf1_plan.md` (update them); the resolution log's "Check against scripts/pf1.py's window round
-trips" must say 0 differ, and "CP's bound holds" must be all of them.
-
-**Then:** read the tables against the reading fixed in advance (`docs/pf1_plan.md`, "Resolution trend"): (1) the
-trend, required for option A; (2) the bound; (3) per-file prediction, secondary; (4) occlusion's share of what is
-attainable. Then the manuscript update (PF1, PB2/PF2, CP.3, claim 3).
+PF1 re-run with the tie fix (numbers moved ≤ 0.01 in R) and the resolution trend: R attainable rises monotonically
+from 0.34 (64 windows) to 0.80 (bytes) as P's overlap falls from 0.99 to 0.41; CP's bound holds 2,400/2,400; per-file
+overlap predicts R at window resolutions (ρ −0.43 to −0.82), not at bytes. Option A is supported
+(`docs/pf1_plan.md`, "Results (run 20)").
 
 ## Run 17 (2026-10-09): done and verified
 
