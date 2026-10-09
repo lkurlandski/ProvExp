@@ -36,6 +36,35 @@ in artifact paths (`artifacts/experiments/e1/` holds PB1). Work stays at pilot s
   about 1.1 h on 64 workers against 4.1 h before at any worker count. Verified bit-exact against the baselines run
   and pinned by `tests/test_faithfulness.py`, whose tests were themselves checked against two injected bugs.
 
+## When run 17 finishes (`run/17_pf1_window_scores.sh`, started 2026-10-09 ~08:00, 32 workers, ~2-2.3 h)
+
+**What it is for.** It re-runs the PB1 baselines configuration (same 100 files, level-3 operator, occlusion at
+64/256/1,024/4,096 windows, KernelSHAP over 256 windows at 2,048 coalitions) only to obtain what the first run did
+not save: `window_scores.npz`, every direct problem-space explanation's per-window scores plus the features of the
+original file (x) and the fully ablated file (x̃). These are PF1's inputs: the explanations to push forward, and x̃ as
+the reference matched to the problem space. Nothing in PB1 changes; the curves are a by-product.
+Output: `artifacts/experiments/e1/seed-0/zeros-typical-header-baselines-scores/`; log:
+`artifacts/logs/faithfulness-seed0-zeros-typical-baselines-scores.log` (its progress bar counts tasks, which run
+longest-first, so its ETA was pessimistic; the fix came after the run started).
+
+**Checks, in order, and what each outcome means:**
+1. *Did it finish?* The log ends with the summary JSON; `status` should be 100 `ok` (or the same failures as the
+   baselines run). Failed or timed-out files → note which; PF1 runs on the files that are `ok` in both runs.
+2. *Is it the same run?* `curves.parquet` must equal the baselines run's
+   (`zeros-typical-header-baselines/curves.parquet`) point for point (max difference 0.0; the runner is
+   deterministic and was verified bit-exact on 2026-10-08). **Equal** → the saved window scores are the very ones
+   behind PB1's published numbers, and PF1 can use them. **Not equal** → stop: something non-deterministic or a
+   regression in today's change; find it before any PF1 result is trusted.
+3. *Are the inputs complete?* `load_window_scores` gives one entry per `ok` file with `edges`, `occlusion:gbdt`,
+   `occlusion_k{64,1024,4096}:gbdt`, `kernelshap_windows:gbdt`, `x`, `x_ablated`. `x` must equal the feature store's
+   row for the file. `x_ablated` is NaN where the fully ablated file failed verification (`fully_ablated_valid`);
+   those files drop out of the matched-reference analysis only (count them).
+
+**Then:** run the PF1 analysis (`docs/pf1_plan.md`) and read it against the criterion fixed in advance (decision 5):
+first, is the pushforward significantly above random and the naive incidence sum (if not, claim 3 fails); then
+R = area(pushforward) / area(TreeSHAP) under the matched reference (≥ 0.8 faithful; 0.5-0.8 partial, gap to be traced
+to null mass and overlap; < 0.5 claim 3 weakened, rethink with the user).
+
 ## Next (for Claude), on resume
 
 1. ~~Read the pilot-scale PB2/PF2 results~~ done 2026-10-09 (`docs/trigger_plan.md`). Follow-ups: rename the
