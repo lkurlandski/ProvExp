@@ -116,3 +116,7 @@ exactly. Pass 1 is reused from run 17 (the occlusion and KernelSHAP scores thems
    change of conclusion at any window count is reported as such.
 4. *The overshoot*: re-read; the unsigned-ranking reading stands if it still removes most of the byte-level overshoot.
 Any change in PB1's conclusions goes to `docs/pb1_pilot.md`, `PLAN.md`, and the manuscript (PB1 baselines).
+
+**Result (2026-10-09):** all four readings stand, and no conclusion changed. The pullback moved by at most 0.003;
+occlusion at 4,096 windows by 0.004 (1.105, vs. 1.097 at 1,024; p = 0.40); the byte-level pullback beats every direct
+baseline on 79–85 of 100 files (p ≤ 6e-12). Details in `docs/pb1_pilot.md` ("Tie-break re-run").

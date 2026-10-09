@@ -2,7 +2,7 @@
 
 Living document. Last revised 2026-10-09 (end of session): the evaluation mirrors the framework (characterizing P,
 the pullback, the pushforward, then real classifiers; see "Experiment IDs"). CP, PB1, PB2, PF1, and PF2 are done at
-pilot scale (PB1's curves are being re-run with random tie-breaks, `run/21`); CM is designed but not built. No
+pilot scale (PB1's curves re-run with random tie-breaks, `run/21`: no conclusion changed); CM is designed but not built. No
 scaling until the pilot results and the claims are settled (user, 2026-10-09).
 
 ## Target
@@ -148,16 +148,17 @@ only.
 - **Headline (decided 2026-10-08):** window-level parity with the best direct problem-space baseline at two orders of
   magnitude lower cost; the byte-level advantage is secondary.
 - **Done** (pilot, 100 files, one seed; `docs/pb1_pilot.md`). Parity holds at *every* granularity tested (64, 256,
-  1,024 windows: p ≥ 0.54) and the pullback leads at 4,096 (1.22 vs. 1.10, p = 0.004), so the claim does not depend on
-  a chosen window count. **Occlusion saturates at 1.10** and never approaches the byte-level pullback's 1.67 (80–81 of
-  100 files, p ≈ 1e-12): 4,096 windows buy nothing over 1,024, so byte resolution is unreachable by direct
-  explanation at any affordable cost. KernelSHAP over windows matches the best occlusion at 1,925 extractions and is
-  the strongest direct baseline. The **overshoot** is explained: an unsigned ranking removes three quarters of it and
-  the remainder grows with resolution in every method family, occlusion included.
-- **Pending: the tie-break re-run (`run/21`, 2026-10-09).** The rankings broke ties by position in the file, and at
-  1,024–4,096 windows most occlusion windows score exactly 0, so position decided much of occlusion's curves; the
-  saturation at 1.10 in particular must be re-read. Reading fixed in advance in `docs/pb1_baselines.md` ("Tie-break
-  re-run"); the numbers above are from before the fix.
+  1,024 windows: p ≥ 0.55) and the pullback leads at 4,096 (1.22 vs. 1.11, p = 0.008), so the claim does not depend on
+  a chosen window count. **Occlusion saturates at about 1.10** and never approaches the byte-level pullback's 1.67
+  (79–85 of 100 files against each of the strongest direct baselines, p ≤ 6e-12): 4,096 windows buy nothing over
+  1,024 (1.11 vs. 1.10, p = 0.40), so byte resolution is unreachable by direct explanation at any affordable cost.
+  KernelSHAP over windows matches the best occlusion at 2,050 extractions and is the strongest direct baseline. The
+  **overshoot** is explained: an unsigned ranking removes three quarters of it and the remainder grows with resolution
+  in every method family, occlusion included.
+- **Tie-break re-run (`run/21`, 2026-10-09): passed.** The rankings had broken ties by position in the file, which
+  decided much of occlusion's curves at 1,024–4,096 windows. With seeded random tie-breaks the pullback moved by at
+  most 0.003 and occlusion at 4,096 by 0.004 (1.101 → 1.105); every conclusion above stands (the numbers are the
+  re-run's; `docs/pb1_pilot.md`, "Tie-break re-run").
 
 **PB2. Planted-trigger recovery** (built; shares the testbed with PF2; `docs/trigger_plan.md`)
 
@@ -307,8 +308,8 @@ methods may be revisited.
 ## Timeline and gates
 
 Phases 0–2 are complete (literature; `provexp`; features, models, stage-1 explanations, census). As of 2026-10-09:
-**CP, PB1, PB2, PF1, and PF2 are done at pilot scale; CM is designed but not built.** PB1's curves are re-run with
-random tie-breaks (`run/21`) before PB1 is final. Most of the research runs at pilot scale; scaling up is for the
+**CP, PB1, PB2, PF1, and PF2 are done at pilot scale; CM is designed but not built.** PB1's tie-break re-run
+(`run/21`) changed no conclusion. Most of the research runs at pilot scale; scaling up is for the
 final numbers, when the pilot results and claims are settled. `run/` holds the commands that produced everything in
 `artifacts/`.
 
@@ -316,7 +317,7 @@ final numbers, when the pilot results and claims are settled. `run/` holds the c
 |---|---|---|
 | Oct 8 | ~~PB1 baselines~~, ~~the trigger testbed~~ done; the runner's parallelism rebuilt | **Gate 2** (passed for the GBDT) |
 | Oct 9 | ~~PB2/PF2 at pilot scale~~, ~~PF1 and its resolution trend~~, ~~CP.3~~; the tie-break fix (PB1 re-run pending) | |
-| Oct 10–20 | Read run 21 (PB1 with random tie-breaks); remaining polish at pilot scale | |
+| Oct 10–20 | ~~Read run 21 (PB1 with random tie-breaks)~~ (Oct 9, no conclusion changed); remaining polish at pilot scale | |
 | Oct 21–Nov 15 | CM: MalConv explanations of the pilot files, both comparisons | |
 | Nov 15–Dec 5 | Scale-up of every experiment (2,000 files, seeds 0–2), when the user decides; the MLP if time allows | |
 | Dec 5–15 | Appendix (App-L, App-R) | |

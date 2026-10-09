@@ -153,16 +153,16 @@ occlusion. Byte-level occlusion would need one extraction per byte.
 
 ## Baselines (2026-10-08): the sweep, KernelSHAP over windows, and the unsigned ranking
 
-> **Pending re-read (2026-10-09):** every ranking in this document broke ties by position in the file. At 1,024 and
-> 4,096 windows most occlusion windows score exactly 0, so position decided much of occlusion's curves (the pullback
-> is barely affected). `run/21_pb1_tiebreak.sh` re-runs the curves with seeded random tie-breaks; its reading is fixed
-> in `docs/pb1_baselines.md` ("Tie-break re-run"). Until then, treat occlusion's numbers at 1,024–4,096 windows, and
-> the saturation, as provisional.
-
 Run `zeros-typical-header-baselines/` (level 3, GBDT, the same 100 files; 6.1 h on 16 workers,
 `scripts/pb1_tables.py --fill zeros-typical-header-baselines`). The reading of each outcome was fixed in advance
 (`docs/pb1_baselines.md`). **Healthy:** 0 failed files, 0 of 29,000 invalid curve points, no warning, 0 failed
 KernelSHAP coalitions, and all 13,000 curve points shared with the pilot reproduce it exactly (max difference 0.0).
+
+**The numbers in this section are from the tie-break re-run** (`run/21`, `zeros-typical-header-baselines-ties/`,
+2026-10-09; see "Tie-break re-run" below): the curves recomputed with seeded random tie-breaks, pass 1 (the per-window
+scores) reused from run 17. Costs are run 17's, where each method's extractions are counted on their own (run 12
+shared one extraction cache between the occlusion sweep and KernelSHAP, so it counted 1,925 extractions for
+KernelSHAP instead of 2,050).
 
 Gains below are still relative to occlusion at K = 256, so they are comparable with the tables above.
 
@@ -170,16 +170,17 @@ Gains below are still relative to occlusion at K = 256, so they are comparable w
 
 | method | gain | extractions | seconds |
 |---|---|---|---|
-| pullback (bytes), path TreeSHAP | **1.67** | **1** | **0.17** |
-| occlusion, 4,096 windows | 1.10 | 4,098 | 321 |
-| KernelSHAP over 256 windows | 1.10 | 1,925 | 94 |
-| occlusion, 1,024 windows | 1.10 | 1,026 | 88 |
-| occlusion, 256 windows | 1.00 | 258 | 22 |
-| occlusion, 64 windows | 0.93 | 66 | 5 |
+| pullback (bytes), path TreeSHAP | **1.67** | **1** | **0.15** |
+| occlusion, 4,096 windows | 1.11 | 4,099 | 327 |
+| KernelSHAP over 256 windows | 1.10 | 2,050 | 105 |
+| occlusion, 1,024 windows | 1.10 | 1,025 | 83 |
+| occlusion, 256 windows | 1.00 | 258 | 21 |
+| occlusion, 64 windows | 0.93 | 65 | 5 |
 
-Occlusion improves from 0.93 to 1.10 between 64 and 1,024 windows and then **stops**: 4,096 windows (4,098
-extractions, 5.4 minutes per file) buys nothing over 1,024 (1.10 both). The byte-level pullback stays far above at
-1.67, beating the best direct baseline on 80–81 of 100 files (p ≈ 1e-12 for each). This is the first of the
+Occlusion improves from 0.93 to 1.10 between 64 and 1,024 windows and then **stops**: 4,096 windows (4,099
+extractions, 5.4 minutes per file) buys nothing over 1,024 (1.105 vs. 1.097; 54/100 files, p = 0.40). The byte-level
+pullback stays far above at 1.67, beating each of the strongest direct baselines (occlusion at 1,024 and 4,096 windows,
+KernelSHAP over windows) on 79–85 of 100 files for each explainer (p ≤ 6e-12). This is the first of the
 pre-registered outcomes: **the secondary claim stands as is**, and more strongly than expected, because occlusion
 plateaus instead of closing the gap. A plausible mechanism: as windows shrink, occluding one window changes the
 features too little to measure reliably, so occlusion's per-window scores get noisier while the pullback's
@@ -191,30 +192,30 @@ Matched comparisons (the pullback coarsened to K vs. occlusion at the same K, pa
 
 | K | pullback | occlusion | pullback wins | p |
 |---|---|---|---|---|
-| 64 | 0.89 | 0.93 | 54/100 | 0.54 |
-| 256 | 0.98 | 1.00 | 54/100 | 0.82 |
-| 1,024 | 1.08 | 1.10 | 53/100 | 0.65 |
-| 4,096 | 1.22 | 1.10 | 60/100 | 0.004 |
+| 64 | 0.89 | 0.93 | 53/100 | 0.55 |
+| 256 | 0.98 | 1.00 | 52/100 | 0.82 |
+| 1,024 | 1.08 | 1.10 | 53/100 | 0.63 |
+| 4,096 | 1.22 | 1.11 | 61/100 | 0.008 |
 
-The main claim therefore does not depend on the window count: parity at 64, 256, and 1,024 windows, and at 4,096 the
-pullback is **ahead** (1.22 vs. 1.10). Coarsening the pullback is free (one extraction at every K), so the whole
+The main claim therefore does not depend on the window count: parity at 64, 256, and 1,024 windows (p ≥ 0.55 for all
+three explainers), and at 4,096 the pullback is **ahead** (1.22–1.23 vs. 1.11, p = 0.002–0.008). Coarsening the pullback is free (one extraction at every K), so the whole
 column costs what one extraction costs.
 
-### Q2. KernelSHAP over windows matches the best occlusion, at 1,925 extractions
+### Q2. KernelSHAP over windows matches the best occlusion, at 2,050 extractions
 
-1.10, equal to occlusion at 1,024 and 4,096 windows, and ahead of occlusion at 256 (84/100 files, p = 1e-11) at
-about 7× its cost. This is the second pre-registered outcome: it is a *second, stronger* direct baseline, so the main
+1.10, equal to occlusion at 1,024 and 4,096 windows, and ahead of occlusion at 256 (83/100 files, p = 1e-11) at
+about 8× its cost. This is the second pre-registered outcome: it is a *second, stronger* direct baseline, so the main
 claim is stated against **the best direct problem-space baseline, 1.10**, which the byte-level pullback beats by
-1.5× at 1/1,900 of the cost.
+1.5× at 1/2,000 of the cost.
 
 ### Q3. The unsigned ranking removes most of the overshoot, and the rest is resolution
 
-The byte-level overshoot falls from 3.49 (signed) to 0.92 (unsigned, ranking by magnitude), reduced on 82 of 100
-files (p = 2e-13). The residual tracks resolution monotonically, in both method families:
+The byte-level overshoot falls from 3.49 (signed) to 0.92 (unsigned, ranking by magnitude), reduced on 83 of 100
+files (p = 1e-13). The residual tracks resolution monotonically, in both method families:
 
 | median overshoot | 64 windows | 256 | 1,024 | 4,096 | bytes |
 |---|---|---|---|---|---|
-| occlusion | 0.15 | 0.34 | 0.67 | 0.80 | — |
+| occlusion | 0.15 | 0.25 | 0.67 | 1.04 | — |
 | pullback (signed) | 0.39 | 0.53 | 0.82 | 1.50 | 3.49 |
 | pullback (unsigned) | — | — | — | — | 0.92 |
 
@@ -228,10 +229,33 @@ expected, since it also deletes the bytes that oppose the decision.
 ### What this settles
 
 1. The **main claim** is window-level parity with the best direct problem-space baseline at 1/135 of its cost
-   (1/1,900 against the strongest), and it holds at every granularity tested.
+   (1/2,000 against the strongest), and it holds at every granularity tested.
 2. The **secondary claim** is stronger than the pilot suggested: occlusion cannot reach byte resolution at any
    affordable cost, because it saturates at 1.10.
 3. The **overshoot** has an explanation that the data support, so it can be reported as a diagnostic.
+
+### Tie-break re-run (`run/21`, 2026-10-09)
+
+Until then every ranking broke ties by position in the file; at 1,024 and 4,096 windows a median 62% and 89% of
+occlusion's windows score exactly 0, so position decided much of occlusion's curves. Run 21 recomputed the curves with
+seeded random tie-breaks (100 files `ok`, pass 1 reused, 0 of 29,000 invalid curve points, 15 minutes on 32 workers;
+tables in `artifacts/reports/pb1_tables-baselines-ties.md`, the pre-fix tables in `pb1_tables-baselines.md`). Read
+against the rule fixed in advance (`docs/pb1_baselines.md`, "Tie-break re-run"):
+
+1. **The pullback's numbers moved by at most 0.003** in gain (byte-level 1.673 → 1.674; coarsened 0.89–1.23,
+   unchanged to two decimals): within 0.05, no bug.
+2. **Occlusion's saturation stands.** At 4,096 windows occlusion's gain went from 1.101 to 1.105, against 1.097 at
+   1,024 (within 0.05; 54/100 files, p = 0.40), and the byte-level pullback beats every direct baseline on 79–85 of
+   100 files (p ≤ 6e-12). The plateau was not an artifact of positional ties.
+3. **Parity and the lead at 4,096 are unchanged**: parity at 64, 256, and 1,024 windows (p ≥ 0.55), the pullback
+   ahead at 4,096 (61–63/100, p = 0.002–0.008, against 0.0007–0.004 before). No conclusion changes at any window
+   count.
+4. **The overshoot reading stands**: the unsigned ranking still removes most of it (3.49 → 0.92, 83/100 files).
+   Occlusion's own overshoot moved the most (0.34 → 0.25 at 256 windows, 0.80 → 1.04 at 4,096), as expected where its
+   ties were broken by position, and it still grows with resolution.
+
+The level-2 and random-fill runs (the first tables in this document) were not re-run: they are at 256 windows, where
+the re-run moved occlusion's area by 0.01 and the pullback's by at most 0.01.
 
 ## What insertion tests
 

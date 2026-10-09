@@ -1,6 +1,6 @@
 # Status
 
-Last updated: 2026-10-09 (end of session). The evaluation mirrors the framework (`PLAN.md`, "Experiment IDs"):
+Last updated: 2026-10-09 (run 21 read). The evaluation mirrors the framework (`PLAN.md`, "Experiment IDs"):
 1. characterizing P (CP), 2. the pullback (PB1, PB2), 3. the pushforward (PF1, PF2), 4. comparing classifiers (CM);
 appendix App-L (localizability) and App-R (redundancy). Work stays at pilot scale (100 files, one seed) until the
 pilot results and the claims are settled (user, 2026-10-09). `run/` holds the commands that produced everything in
@@ -11,7 +11,7 @@ pilot results and the claims are settled (user, 2026-10-09). `run/` holds the co
 | | state |
 |---|---|
 | **CP** (characterizing P) | **done**: census at 2,000 files, coarsening and CP.3 at pilot scale (`docs/cp_census.md`). |
-| **PB1** (pullback faithfulness and cost) | done at pilot scale (`docs/pb1_pilot.md`), but **its curves are being re-run with random tie-breaks** (`run/21`): occlusion's numbers at 1,024–4,096 windows and its saturation at 1.10 are provisional. |
+| **PB1** (pullback faithfulness and cost) | **done at pilot scale** (`docs/pb1_pilot.md`). The tie-break re-run (`run/21`) changed no conclusion: occlusion saturates at about 1.10 (1.11 at 4,096 windows, p = 0.40 vs. 1,024), the byte-level pullback stays at 1.67 (79–85/100 files vs. every direct baseline, p ≤ 6e-12), parity at 64–1,024 windows, the pullback ahead at 4,096. |
 | **PB2, PF2** (planted trigger) | **done at pilot scale** (`docs/trigger_plan.md`). Struct: the 6 top-ranked bytes are the trigger's on 50/50 files. Content: precision 0.94 in the typical file, failing exactly where P says. PF2 reads r as a support. |
 | **PF1** (pushforward faithfulness) | **done at pilot scale** (`docs/pf1_plan.md`). Required test passes; R = 0.31–0.40 for window-level sources; the resolution trend rises monotonically from 0.34 (64 windows) to 0.80 (bytes) as P's overlap falls, supporting claim 3 as reworded (option A). |
 | **CM** (GBDT vs. MalConv) | designed, not built; next after PB1's re-read (the user decides when). |
@@ -19,38 +19,26 @@ pilot results and the claims are settled (user, 2026-10-09). `run/` holds the co
 | **The MLP** | set aside temporarily; returns after the GBDT methodology is established. |
 | **Manuscript** | `_d_applications.tex` documents the theory, designs, and pilot results (updated 2026-10-09). Polishing is low priority until the full experiments exist (user). Do not try to compile it. |
 
-## Waiting on the user: run 21 (`run/21_pb1_tiebreak.sh`, tmux, ~15–25 min on 32 workers)
+## Run 21 (PB1 tie-break re-run): read 2026-10-09
 
-**What it is for.** PB1's rankings broke ties by position in the file. At 1,024 and 4,096 windows a median 62% and 89%
-of occlusion's windows score exactly 0, so position, not evidence, decided much of occlusion's deletion curves. The
-fix (seeded random tie-breaks: of bytes for byte-level rankings, of whole windows for window-level ones; near-ties
-within 1e-9 count as tied) is in `ablation.element_order` / `window_order` and `faithfulness.py --tiebreak random`.
-Run 21 recomputes PB1's curves, reusing pass 1 (the per-window scores) from run 17.
-
-**Checks:** the log (`artifacts/logs/faithfulness-seed0-zeros-typical-baselines-ties.log`) ends with "Wrote ..." and a
-summary with 100 `ok`, "reused" for pass 1, and 0 invalid curve points; the tables are in
-`artifacts/reports/pb1_tables-baselines-ties.md`, to compare with `artifacts/reports/pb1_tables-baselines.md` (the
-same run before the fix, regenerated 2026-10-09; it reproduces the numbers in `docs/pb1_pilot.md`).
-
-**Reading fixed in advance** (`docs/pb1_baselines.md`, "Tie-break re-run"): (1) the pullback's numbers move by at most
-about 0.05, else a bug; (2) occlusion's saturation stands if 4,096 windows stay within 0.05 of 1,024 and the
-byte-level pullback stays ahead of the best direct baseline (p < 0.01), else it is revised; (3) parity at equal
-granularity re-read; (4) the overshoot re-read. Then update `docs/pb1_pilot.md` (remove the "pending" note),
-`PLAN.md` (PB1), and the manuscript (PB1 baselines paragraph and its "Pending" box).
-
-**Verified before the run:** with `--tiebreak position`, the reuse path reproduces run 17's curves exactly (6 files,
-1,740 points, max difference 0). With random tie-breaks, occlusion's curve points moved by up to 1.57 log-odds, the
-pullback's by at most 0.13.
+Clean (100 `ok`, pass 1 reused, 0 invalid curve points, 15 min). Read against the rule fixed in advance
+(`docs/pb1_baselines.md`, "Tie-break re-run"): all four readings stand. Pullback moved ≤ 0.003; occlusion at 4,096
+windows 1.101 → 1.105 (vs. 1.097 at 1,024); matched-K parity and the 4,096 lead unchanged (p = 0.008, was 0.004);
+the unsigned ranking still removes most of the overshoot. Costs are now run 17's: KernelSHAP over windows counts
+2,050 extractions (run 12's 1,925 shared a cache with occlusion), so "1/1,900 of the cost" became "1/2,000". Results
+written to `docs/pb1_pilot.md`, `PLAN.md`, and the manuscript (the "Pending" box removed). The paired comparisons not
+in `pb1_tables.py` (best direct baseline, matched K) were computed ad hoc; they reproduce the pre-fix doc exactly on
+run 12.
 
 ## Next (for Claude), on resume
 
-1. Read run 21 against the reading above and update the docs.
-2. Take stock with the user: are the four claims and the contributions now supported at pilot scale (PLAN.md,
-   "Thesis and claims", "Contributions", "Open questions")? Then CM: MalConv explanations of the pilot files
-   (`explain/problem.py` has IG and occlusion), when the user decides.
+1. Take stock with the user (begun 2026-10-09 after run 21): are the four claims and the contributions supported at
+   pilot scale, and what is missing before CM? See the session's notes below.
+2. Then CM: MalConv explanations of the pilot files (`explain/problem.py` has IG and occlusion), when the user decides.
 
 ## The 2026-10-09 session
 
+- Run 21 read: PB1's conclusions survive random tie-breaks (above).
 - PB2/PF2 at pilot scale (50 files per trigger). Corrected a mislabeled "ceiling" (it was the round trip P ψ(1_T); the
   true bound is 1).
 - PF1 designed, built, and run, with the resolution diagnostic and the resolution trend; claim 3 reworded (option A).
