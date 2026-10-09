@@ -105,16 +105,65 @@ def main() -> None:
                 rows.append(row)
     print(markdown(pl.DataFrame(rows), 2), "\n")
 
+    # Paired comparisons beyond "vs. occlusion at K": the byte-level pullbacks against every direct baseline, the
+    # pullback against occlusion at the same window count, and occlusion at its two finest window counts.
+    rows = []
+    for model in models:
+        a = areas.filter((pl.col("model") == model) & (pl.col("curve") == "deletion")).pivot(on="method", index="index", values="area").drop_nulls()
+        if a.is_empty():
+            continue
+        windows = {report["num_windows"]: "occlusion"} | {J: f"occlusion_k{J}" for J in report.get("sweep_windows", []) if f"occlusion_k{J}" in a.columns}
+        direct = [m for m in list(windows.values()) + ["kernelshap_windows"] if m in a.columns]
+        pullbacks = sorted(m for m in a.columns if m.startswith("pullback:"))
+        pairs = [(m, d, "byte-level pullback vs. direct baseline") for m in pullbacks for d in direct if d != "occlusion"]
+        for J, d in sorted(windows.items()):
+            prefix = "pullback_k:" if d == "occlusion" else f"pullback_k{J}:"
+            pairs += [(m, d, f"same window count ({J})") for m in sorted(c for c in a.columns if c.startswith(prefix))]
+        if len(windows) > 1:
+            coarse, fine = sorted(windows)[-2:]
+            pairs.append((windows[fine], windows[coarse], "occlusion: finest vs. next finest"))
+        if len(pairs) == 0:
+            continue
+        gain_random = a["random"].to_numpy().mean()
+        gain_occlusion = a["occlusion"].to_numpy().mean() - gain_random
+        for x_name, y_name, kind in pairs:
+            x, y = a[x_name].to_numpy(), a[y_name].to_numpy()
+            rows.append({
+                "model": model, "comparison": kind, "method": x_name, "against": y_name,
+                "gain": float((x.mean() - gain_random) / gain_occlusion), "gain against": float((y.mean() - gain_random) / gain_occlusion),
+                "wins": f"{int((x > y).sum())}/{len(x)}", "p": f"{wilcoxon(x, y).pvalue:.1e}" if np.any(x != y) else "n/a",
+            })
+    if rows:
+        print("## Paired comparisons (deletion): gains relative to occlusion at the primary window count\n")
+        print(markdown(pl.DataFrame(rows), 3), "\n")
+
     print("## Overshoot beyond full ablation (deletion): median over files, and the share of files above 0.5\n")
     d = c.filter(pl.col("curve") == "deletion")
     peak = d.filter(pl.col("budget") < 1.0).group_by("index", "model", "method").agg(pl.col("evidence").max().alias("peak"))
     full = d.filter(pl.col("budget") == 1.0).select("index", "model", "method", pl.col("evidence").alias("full"))
+    overshoot = peak.join(full, on=["index", "model", "method"]).with_columns((pl.col("peak") - pl.col("full")).alias("overshoot"))
     t = (
-        peak.join(full, on=["index", "model", "method"]).with_columns((pl.col("peak") - pl.col("full")).alias("overshoot"))
-        .group_by("model", "method").agg(pl.col("overshoot").median().alias("median overshoot"), (pl.col("overshoot") > 0.5).mean().alias("share > 0.5"))
+        overshoot.group_by("model", "method").agg(pl.col("overshoot").median().alias("median overshoot"), (pl.col("overshoot") > 0.5).mean().alias("share > 0.5"))
         .sort("model", "method")
     )
     print(markdown(t, 2), "\n")
+
+    # The unsigned ranking against the signed one, per explainer: on how many files it reduces the overshoot.
+    rows = []
+    for model in models:
+        o = overshoot.filter(pl.col("model") == model).pivot(on="method", index="index", values="overshoot").drop_nulls()
+        for unsigned in sorted(m for m in o.columns if m.startswith("pullback_abs:")):
+            signed = unsigned.replace("pullback_abs:", "pullback:")
+            if signed not in o.columns:
+                continue
+            x, y = o[unsigned].to_numpy(), o[signed].to_numpy()
+            rows.append({
+                "model": model, "explainer": unsigned.split(":", 1)[1], "signed": float(np.median(y)), "unsigned": float(np.median(x)),
+                "reduced": f"{int((x < y).sum())}/{len(x)}", "p": f"{wilcoxon(x, y).pvalue:.1e}" if np.any(x != y) else "n/a",
+            })
+    if rows:
+        print("### Signed vs. unsigned ranking of the byte-level pullback: median overshoot, files where unsigned reduces it\n")
+        print(markdown(pl.DataFrame(rows), 2), "\n")
 
     # Cost vs. faithfulness: the extractions each direct method needs (the pullbacks need one).
     cost_columns = {"occlusion": "occlusion_extractions", "kernelshap_windows": "kernelshap_windows_extractions"}
