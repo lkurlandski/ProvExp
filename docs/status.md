@@ -16,7 +16,7 @@ the pilot results and the claims are settled (user). `run/` holds the commands t
 | **2. Intrinsic: CP** | Census, coarsening, CP.3 done (`docs/cp_census.md`); in the paper, its theory (round-trip bounds) and CP.3's agreement check. |
 | **2. Intrinsic: PB2, PF2** (planted triggers) | Done at pilot scale (`docs/trigger_plan.md`); **demoted**, possibly removed later. |
 | **3-A. Comparing detectors** | Not built. GBDT on EMBER v3, a GBDT on byte n-grams (to build), MalConv; both operators. |
-| **3-B. Real shortcuts via the pullback** | **Discovery done on 2,000 files** (`run/22`, `docs/shortcuts_plan.md`, "Run 22"): 454 benign-pushing patterns in 10 or more files; next, the insertion and set-the-field tests. |
+| **3-B. Real shortcuts via the pullback** | Discovery done (`run/22`); insertion test **built** (`scripts/shortcuts_insert.py`, tested) and smoke-tested; **waiting on the user: `run/23_shortcuts_insert.sh`** (strings into 200 held-out malware). |
 | **3-C. YARA/capa matches pushed forward** | Adopted, not designed. Coverage check stopped early: public YARA signatures too sparse; generic rules and capa untested; capa's default backend is very slow. |
 | **Appendix** | App-R's duplicate-feature sweep not run; App-L a stated limitation; the byte-set control bound accepted, not started. |
 | **The MLP** | Set aside temporarily; returns after the GBDT methodology is established. |
@@ -24,9 +24,10 @@ the pilot results and the claims are settled (user). `run/` holds the commands t
 
 ## Next (for Claude), on resume
 
-1. **3-B** (`docs/shortcuts_plan.md`, "Run 22"): discovery is done; decide with the user which candidates to test
-   and how (insertion of content, setting field values, a transplanted certificate), against random and data-mined
-   patterns, on held-out malware; prevalence by label in a training sample.
+1. **3-B** read run 23 (`tail -n 40 artifacts/logs/shortcuts_insert-seed0-treeshap_interventional.log`): do the
+   appended string patterns drop the malware score more than random? (The 3-file smoke test went the wrong way by a
+   hair; do not trust it.) Then the remaining increments: set-field, imports (a PE editor), the certificate
+   transplant; the data-mined baseline and training-set prevalence.
 2. Rewrite the claims (`PLAN.md`, "Thesis and claims") to fit the new structure; ask the user before changing what a
    claim is for.
 3. Later: 3-C's rule source (generic YARA rules, or capa with a faster backend or file-scope rules); 3-A's byte n-gram
