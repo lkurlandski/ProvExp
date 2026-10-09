@@ -191,17 +191,20 @@ overlap.
 
 **PF2. Ground truth for feature-space explainers** (built; shares the testbed with PB2)
 
-The pushforward of the trigger's bytes, r = ψ(1_T), is the feature attribution a faithful explainer *should* produce
-on a triggered file: the features the trigger touches, weighted by their provenance. First results (6 files, struct;
-the trigger touches 12 features): every explainer's top feature of 2,568 is one the trigger touches (6/6 files), with
-cosine 0.94 against r; mass on those features is 0.70 for both TreeSHAP variants and 0.50 for KernelSHAP, and the
-rank agreement within them is weak (Spearman 0.28–0.39). **This is the pushforward turning problem-space knowledge
-into an evaluation of feature-space explainers, which otherwise have no ground truth.** KernelSHAP needs its full
-32,768 coalitions; at 512 it appears to miss the trigger entirely. At pilot scale (50 files) the struct numbers hold
-(top-1 in supp(r) 50/50, mass 0.70 / 0.50, cosine 0.92–0.93). For the content trigger (317 touched features) mass on
-supp(r) is 0.67 / 0.51 against 0.12 random and top-1 is 50/50, but the agreement with r's weights vanishes (Spearman
-0.03): r says which features the trigger could move, not which the model uses. Open: whether PF2 reads r as a
-support (mass, top-k) rather than as the attribution an explainer should produce (`docs/trigger_plan.md`).
+**Reading (decided 2026-10-09): r is a support, not a target.** The pushforward of the trigger's bytes, r = ψ(1_T),
+weights each feature by how much of it the trigger computes, a property of P alone; it cannot say which of those
+features the model uses. Its support, the features the trigger touches, is model-independent ground truth: a faithful
+explanation of the trigger's effect must concentrate there. Primary metrics: mass on supp(r) and top-k in supp(r);
+cosine and Spearman against r's weights are dropped as faithfulness scores (they describe P). Caveat: even an ideal
+Shapley explainer of a tree model puts some credit on untouched features (interaction credit, about 30% for struct),
+so mass on supp(r) is recall-like with an ideal value below 1: it ranks explainers against each other and random,
+not on an absolute scale. Optional refinement: the support as the features whose value actually changed.
+
+Results (`docs/trigger_plan.md`). **Struct** (12 touched features, 50 files): top-1 in supp(r) 50/50 for every
+explainer; mass on supp(r) 0.70 (both TreeSHAP variants) and 0.50 (KernelSHAP) against 0.005 random. **Content**
+(317 touched features): top-1 50/50; mass 0.67 / 0.51 against 0.12 random. **This is the pushforward turning
+problem-space knowledge into an evaluation of feature-space explainers, which otherwise have no ground truth.**
+KernelSHAP needs its full 32,768 coalitions; at 512 it appears to miss the trigger entirely.
 
 ### 4. Application: comparing classifiers (CM; promoted from the appendix 2026-10-08)
 

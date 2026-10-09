@@ -389,8 +389,13 @@ not apply at this end: a window-level method *could* be as precise here.
   trigger could have moved and by how much of their provenance; it cannot say which of them the model uses. With 12
   touched features (struct) that distinction barely matters; with 317 it dominates. So PF2's primary metric (mass on
   supp(r), and top-k in supp(r)) carries over to diffuse triggers, while cosine and Spearman against r measure
-  agreement with P's weighting rather than faithfulness to the model and should be reported for sharp triggers only,
-  or replaced (an open question for the PF2 write-up).
+  agreement with P's weighting rather than faithfulness to the model.
+
+  **Decided (2026-10-09): r is read as a support, not a target.** PF2's metrics are mass on supp(r) and top-k in
+  supp(r), for both triggers; cosine and Spearman against r are dropped as faithfulness scores. Mass on supp(r) is
+  recall-like with an ideal value below 1 (a Shapley explainer of a tree model moves some credit onto untouched
+  features through interactions, about 30% for struct), so it compares explainers with each other and with random,
+  not on an absolute scale. Optional refinement: the support as the features whose value actually changed.
 
 ### Reading
 
