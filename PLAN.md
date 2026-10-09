@@ -1,8 +1,9 @@
 # ProvExp Research Plan
 
-Living document. Last revised 2026-10-08 (end of session): the evaluation mirrors the framework (characterizing P,
-the pullback, the pushforward, then real classifiers; see "Experiment IDs"). CP and PB1 are done at pilot scale, PB2
-and PF2 are built and give their first results, and PF1 and CM are designed but not built.
+Living document. Last revised 2026-10-09 (end of session): the evaluation mirrors the framework (characterizing P,
+the pullback, the pushforward, then real classifiers; see "Experiment IDs"). CP, PB1, PB2, PF1, and PF2 are done at
+pilot scale (PB1's curves are being re-run with random tie-breaks, `run/21`); CM is designed but not built. No
+scaling until the pilot results and the claims are settled (user, 2026-10-09).
 
 ## Target
 
@@ -94,8 +95,8 @@ provenance-graph IDS work) is deferred to writing time.
 
 ## Experiment IDs (renamed 2026-10-08)
 
-The IDs follow the evaluation's structure. The old IDs appear in documents written before 2026-10-08 (`docs/pilot.md`,
-`docs/plan_phase2.md`) and in artifact paths that predate the renaming (`artifacts/experiments/e1/`, which holds PB1).
+The IDs follow the evaluation's structure. The old IDs appear in the archived documents (`docs/archive/`) and in
+artifact paths that predate the renaming (`artifacts/experiments/e1/`, which holds PB1).
 
 | ID | Section | Was |
 |---|---|---|
@@ -125,9 +126,11 @@ effective support exp(H_j); overlap O_j = 1 − M_jj with M = PᵀD†P the pull
 N = PPᵀD† the push–pull matrix; the round-trip bounds (the perfect-reconstruction theorems are corollaries);
 coarsening never lowers overlap. Done: the census on all 2,000 files (overlap informative per feature and group; the
 group confusion matrix; the bound holds for every file and explainer, within about 1.5× of the error; ambiguity in
-bytes is mostly file size), and coarsening on the pilot files (overlap 0.41 at bytes, 0.98 at 256 windows). Remaining:
-the instrumented vs. black-box P at window level (saved by `faithfulness.py`); possibly resolution at granularity w
-(decided after the PB1 baselines). The spectrum is for our own insight only.
+bytes is mostly file size), coarsening on the pilot files (overlap 0.41 at bytes, 0.98 at 256 windows), and CP.3
+(2026-10-09): the black-box P's ambiguity agrees with the instrumented one where T1 says (additive groups) and is 2–4x
+more spread for non-additive ones; overlap is saturated at 256 windows under either. CP's overlap also does real work
+in PF1: it tracks what survives the pushforward across resolutions (claim 3). The spectrum is for our own insight
+only.
 
 ### 2. Application: the pullback
 
@@ -151,6 +154,10 @@ the instrumented vs. black-box P at window level (saved by `faithfulness.py`); p
   explanation at any affordable cost. KernelSHAP over windows matches the best occlusion at 1,925 extractions and is
   the strongest direct baseline. The **overshoot** is explained: an unsigned ranking removes three quarters of it and
   the remainder grows with resolution in every method family, occlusion included.
+- **Pending: the tie-break re-run (`run/21`, 2026-10-09).** The rankings broke ties by position in the file, and at
+  1,024–4,096 windows most occlusion windows score exactly 0, so position decided much of occlusion's curves; the
+  saturation at 1.10 in particular must be re-read. Reading fixed in advance in `docs/pb1_baselines.md` ("Tie-break
+  re-run"); the numbers above are from before the fix.
 
 **PB2. Planted-trigger recovery** (built; shares the testbed with PF2; `docs/trigger_plan.md`)
 
@@ -178,19 +185,26 @@ or written over the end of the visible 4 MB).
   features also read other bytes (an existing overlay: 0.30; overwriting a 3.9 MB overlay: 0.02), as P predicts. No
   resolution advantage at this end (the trigger is larger than a window).
 
+- **Framing (2026-10-09):** the struct result is close to guaranteed by construction (the header features'
+  provenance *is* T); it shows that the explainers find the trigger's features and that P maps them exactly, and the
+  substantive point is the analytic window bound. No measured direct baseline runs on triggered files, so at the
+  content end the claim is that the pullback finds the trigger, not that it beats occlusion there.
+
 The section forward-references App-L for what the pullback cannot localize (the null element's share).
 
 ### 3. Application: the pushforward
 
-**PF1. Faithfulness of the pushforward** (designed 2026-10-09; `docs/pf1_plan.md`; not built)
+**PF1. Faithfulness of the pushforward** (done at pilot scale, 2026-10-09; `docs/pf1_plan.md`)
 
-Push direct problem-space explanations forward (occlusion at 256 windows, KernelSHAP over windows; the per-window
-scores must first be saved by `faithfulness.py` and re-run) and test them with a feature-space deletion test of the
-GBDT against TreeSHAP, KernelSHAP, random, and a naive incidence-sum pushforward. Two references for a deleted feature
-(the ablated file's features, matched to the problem space; the interventional background, matched to TreeSHAP), also
-restricted to attributable features. The round trip M a is a secondary reference. Success: far above random and the
-naive baseline, a pre-stated fraction of TreeSHAP's area under the matched reference, the gap traced to null mass and
-overlap.
+Direct problem-space explanations (occlusion at 64–4,096 windows, KernelSHAP over 256 windows) pushed forward through
+P coarsened to their windows, tested by feature-space deletion of the GBDT against TreeSHAP, KernelSHAP, random, and
+a naive incidence sum; two references for a deleted feature (the ablated file's features, matched to the
+problem-space; the interventional background, matched to TreeSHAP). Criterion fixed in advance. **Result:** above
+random and the naive baseline (required), but R = 0.31–0.40 of TreeSHAP's area ("weakened"). The loss is resolution,
+not the operator: the **resolution trend** (TreeSHAP's information expressed at K windows and pushed forward) rises
+monotonically from R = 0.34 at 64 windows to 0.80 at the bytes as P's mean overlap falls from 0.99 to 0.41, CP's
+bound holds in all 2,400 cases, and direct explainers reach 0.74–0.91 of what their resolution allows (KernelSHAP
+over windows 1.08). Per file, overlap adds little beyond file size (dropped). Hence claim 3 as reworded (option A).
 
 **PF2. Ground truth for feature-space explainers** (built; shares the testbed with PB2)
 
@@ -232,11 +246,12 @@ user before adopting it.
 ### Appendix
 
 - **App-L. Localizability:** the share of attribution that the pullback sends to the null element (reliance on
-  absence), split into file-dependent absences and never-attributable features, per explainer. Mostly done
-  (`docs/pilot.md`, finding 2).
+  absence), split into file-dependent absences and never-attributable features, per explainer. Done at 2,000 files
+  (`docs/appendix.md`).
 - **App-R. Mechanical redundancy:** a short proposition (features with identical provenance merge after pullback) and
   Mohseni et al.'s duplicate-feature sweep; agreement of explainers before and after pullback, net of a permutation
-  control (`scripts/pullback_agreement.py`).
+  control (`scripts/pullback_agreement.py`; no general agreement gain, `docs/appendix.md`). The duplicate-feature
+  sweep is not yet run.
 
 ## Explainers
 
@@ -270,6 +285,13 @@ methods may be revisited.
 - **Signed provenance:** rescale-rule matrices can be signed; our axioms require P ≥ 0. Keep structural (unsigned)
   provenance plus a stated limitation unless PB1 shows a need.
 - **Naming** ("provenance" vs. "attribution lineage").
+- **Generality (raised 2026-10-09):** the framework claims domain-agnosticism but is evaluated on one feature
+  extractor (EMBER v3). A reviewer may ask for a second extractor or domain; a stated limitation for now, revisit
+  after CM.
+- **Scope of the cost claim (2026-10-09):** "one extraction instead of hundreds" ignores the explainer's own cost; it
+  holds for explainers cheap in the feature space (TreeSHAP: milliseconds), not for KernelSHAP (about 45 s per
+  file, more than occlusion at 256 windows). State it that way.
+- **At scale:** bootstrap confidence intervals for the headline numbers; seeds 0–2.
 
 ## Data, models, compute
 
@@ -284,21 +306,23 @@ methods may be revisited.
 
 ## Timeline and gates
 
-Phases 0–2 are complete (literature; `provexp`; features, models, stage-1 explanations, census). As of 2026-10-08:
-**CP and PB1 are done at pilot scale, PB2 and PF2 are built with first results, PF1 and CM are designed but not
-built.** Most of the research runs at pilot scale; scaling up is for the final numbers. `run/` holds the commands
-that produced everything in `artifacts/`.
+Phases 0–2 are complete (literature; `provexp`; features, models, stage-1 explanations, census). As of 2026-10-09:
+**CP, PB1, PB2, PF1, and PF2 are done at pilot scale; CM is designed but not built.** PB1's curves are re-run with
+random tie-breaks (`run/21`) before PB1 is final. Most of the research runs at pilot scale; scaling up is for the
+final numbers, when the pilot results and claims are settled. `run/` holds the commands that produced everything in
+`artifacts/`.
 
 | Dates | Work | Gate |
 |---|---|---|
 | Oct 8 | ~~PB1 baselines~~, ~~the trigger testbed~~ done; the runner's parallelism rebuilt | **Gate 2** (passed for the GBDT) |
-| Oct 9–20 | PB2/PF2 at pilot scale on both triggers; PF1 (design, then build); CP's black-box comparison | |
+| Oct 9 | ~~PB2/PF2 at pilot scale~~, ~~PF1 and its resolution trend~~, ~~CP.3~~; the tie-break fix (PB1 re-run pending) | |
+| Oct 10–20 | Read run 21 (PB1 with random tie-breaks); remaining polish at pilot scale | |
 | Oct 21–Nov 15 | CM: MalConv explanations of the pilot files, both comparisons | |
 | Nov 15–Dec 5 | Scale-up of every experiment (2,000 files, seeds 0–2), when the user decides; the MLP if time allows | |
 | Dec 5–15 | Appendix (App-L, App-R) | |
 | Dec 15–late Jan | Writing: introduction and contributions, framework edits, figures | Submission |
 
-Gate 1 (the pilot census, `docs/pilot.md`) passed provisionally for the measurement result (now App-L).
+Gate 1 (the pilot census, `docs/archive/pilot.md`) passed provisionally for the measurement result (now App-L).
 Gate 2 (the PB1 pilot, `docs/pb1_pilot.md`, 2026-10-08): passed for the GBDT (window-level parity with occlusion under
 level-2 and level-3 operators, byte-level advantage 1.65–1.79×). The MLP did not reach occlusion (the explanations, not
 P, are the bottleneck); it is set aside temporarily and returns after the GBDT methodology is established. Insertion
@@ -315,6 +339,7 @@ was dropped as a flawed test. Thresholds are reassessed with the user.
   not a limitation.
 - **Reviewer pool:** Raff co-authored EMBER-2024, MalConv, and the SHAP-on-EMBER critique; engage it directly (App-R,
   CM).
-- **The pushforward has no evidence yet:** PF1 and PF2 are new. If the pushforward is not faithful, claim 3 narrows
-  to a diagnostic use and CM's feature-space half weakens.
+- **The pushforward is faithful only up to its source's resolution (PF1):** window-level explanations keep a third of
+  TreeSHAP's feature-space faithfulness. Claim 3 is stated that way (option A); CM's feature-space half rests on
+  MalConv's byte-level explanations, which the resolution trend puts near R ≈ 0.8 at best.
 - **Timeline:** if needed, App-R shrinks first, then CM's cross-deletion.
