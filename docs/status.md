@@ -15,7 +15,7 @@ the pilot results and the claims are settled (user). `run/` holds the commands t
 | **2. Intrinsic: PF1** (pushforward faithfulness) | **Done at pilot scale** (`docs/pf1_plan.md`): R = 0.31–0.40 for window-level sources; the resolution trend rises from 0.34 (64 windows) to 0.80 (bytes). |
 | **2. Intrinsic: CP** | Census, coarsening, CP.3 done (`docs/cp_census.md`); in the paper, its theory (round-trip bounds) and CP.3's agreement check. |
 | **2. Intrinsic: PB2, PF2** (planted triggers) | Done at pilot scale (`docs/trigger_plan.md`); **demoted**, possibly removed later. |
-| **3-A. Comparing detectors** | Not built. GBDT on EMBER v3, a GBDT on byte n-grams (to build), MalConv; both operators. |
+| **3-A. Comparing detectors** | **Now the pullback's application** (3-B dropped, 2026-10-12). GBDT on EMBER v3 vs. MalConv; byte n-grams set aside. First check done (run 30, `PLAN.md` 3-A): shared reliance appears at byte level (cross-deletion at 0.1%: the GBDT's byte pullback removes 1.54 of MalConv's evidence vs. 0.55-0.79 for window rankings, 0 random), hidden at window level. Security framing to settle with the user. |
 | **3-B. Spurious correlations via the pullback** | **Done at pilot scale** (`docs/shortcuts_plan.md`, "Results"). Top 20 discovery patterns by a fixed rule, transplanted into 200 held-out malware at the bytes the file's P names: 5 confirmed, 4 of them artifacts (certificate-table size +1.34 vs. -0.27 random; DEBUG.Size 0x54; the `.rsrc` name in a hashed bucket). Mitigation: 6 P-named features neutralized, AUC 0.99759 -> 0.99756; the exploits removed (`.rsrc` residual +0.06 vs. +0.02 random). Baseline without P (run 25): the top chi-squared 4-grams are certificate (DER) bytes, the same signing signal, but the model credits them ~0 and appending them moves nothing; the model reads the data-directory size, which only P locates. Run 29 (forging the confirmed artifacts together): 3.6% of detected malware evades at 1% FPR vs. 0.1% random; 0.1% after neutralization; carried by two named data-directory sizes. **Failed as the pullback application** (findings rest on named features; `docs/shortcuts_plan.md`, "Why it failed"). |
 | **3-C. YARA/capa matches pushed forward** | Adopted, not designed. Coverage check stopped early: public YARA signatures too sparse; generic rules and capa untested; capa's default backend is very slow. |
 | **Appendix** | App-R's duplicate-feature sweep not run; App-L a stated limitation; the byte-set control bound accepted, not started. |
@@ -24,16 +24,17 @@ the pilot results and the claims are settled (user). `run/` holds the commands t
 
 ## Next (for Claude), on resume
 
-1. **Brainstorm a new pullback application** with the user: 3-5 candidates, each screened against the criteria in
-   `PLAN.md` (section 3: needs what only P gives; a practical task; the realistic alternative named; a go/no-go check
-   on existing data first; extra skepticism for ideas the user has ruled out), for a general security audience. The
-   user picks; run the go/no-go check; only then design. 3-C and 3-A wait.
+1. **3-A's security framing** (proposed 2026-10-12, user to decide): the detectors' shared attack surface at byte
+   level (evasion transfer between an ensemble's members), and disagreement triage. Then: where the shared bytes lie;
+   whether the window-vs-byte gap survives a per-file paired test.
 2. Rewrite the claims (`PLAN.md`, "Thesis and claims") to fit the new structure; ask the user before changing what a
    claim is for.
-3. Later: 3-C's rule source (generic YARA rules, or capa with a faster backend or file-scope rules); 3-A's byte n-gram
-   feature set and its provenance; what to do with ambiguity and overlap.
+3. Later: 3-C's rule source (generic YARA rules, or capa with a faster backend or file-scope rules); what to do with
+   ambiguity and overlap.
 
 ## The 2026-10-12 session
+
+- Later the same day: 3-B dropped as the pullback application; 3-A takes its place (user). Run 30 (`scripts/cm_check.py`): GBDT vs. MalConv agreement and cross-deletion on PB1's pilot files (about 9 min).
 
 - 3-B scope settled with the user in one exchange (all four parts; top 20 benign-pushing; 2,500 + 2,500 training sample), then executed: `scripts/shortcuts_transplant.py` (placement by the target's P; confirmation rule fixed before the run, tightened after the smoke test so that beating an anomalous random control is not enough), `shortcuts_reliance.py` (credit, carried features Pᵀ1_S), `shortcuts_train_sample.py` (prevalence, exact 4-gram mining; smoke-tested only), `shortcuts_tables.py` (tables, labels, the neutralize rule), `train_classic.py --neutralize`. Runs 25-28 done (run 25 by the user); the baseline is in `docs/shortcuts_plan.md`.
 

@@ -80,7 +80,14 @@ practice, and its limits are measurable. Done at pilot scale:
 - **3-A. Comparing detectors** (CM, both operators): the GBDT on EMBER v3, a GBDT on **byte n-grams** (the quickest
   way to widen the comparison: a P at the other end of the spectrum; not EMBER v2, too similar to v3), and MalConv,
   compared in the problem space (pullback vs. direct byte explanations) and in the feature space (MalConv's
-  explanations pushed forward). Another domain or file format comes later.
+  explanations pushed forward). Another domain or file format comes later. **Now the pullback's application**
+  (2026-10-12, 3-B dropped); byte n-grams set aside for now (user). First check, run 30 (`scripts/cm_check.py`, PB1's
+  100 files and operator): agreement is weak at every resolution (median rho <= 0.07); the top overlap is 2-3x chance
+  at windows, 6.5x at bytes (pullback vs. MalConv IG). Cross-deletion at 0.1% of bytes (median evidence removed): the
+  GBDT's byte pullback removes 1.54 of MalConv's (window-level GBDT occlusion 0.79, pullback at 256 windows 0.55,
+  random 0); MalConv's byte IG removes 2.04 of the GBDT's (its window rankings 0.03-0.09). Shared reliance shows up
+  at byte level and is largely hidden at window level. Unchecked: where the shared bytes lie; MalConv's own IG
+  deletion overshoots enormously (72 log-odds at 50%), a known fragility.
 - **3-B. Finding (and mitigating) spurious correlations with the pullback** (`docs/shortcuts_plan.md`). **Failed as
   the pullback application (2026-10-12): the findings rest on named features, so P was a convenience; see
   `docs/shortcuts_plan.md`, "Why it failed". To be replaced by a new pullback application (brainstorm next).** A
