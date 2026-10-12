@@ -1,8 +1,8 @@
 # 3-C (revised): Auditing a raw-byte detector through the pushforward
 
-Status: **mock-up, for screening with the user** (2026-10-12). No code until the user approves the mock; then the
-go/no-go below, fixed in advance. Replaces the rule-based 3-C (`docs/rules_plan.md`, on hold), which rested on the
-pullback and Pᵀ rather than the pushforward.
+Status (end of 2026-10-12): mock screened and approved; go/no-go fixed in advance and built; **runs 38-41 in progress**
+(the user's runs; 38 done, 39 running). Next: read the go/no-go against the criterion below. Replaces the rule-based 3-C
+(`docs/rules_plan.md`, on hold), which rested on the pullback and Pᵀ rather than the pushforward.
 
 ## Why this task (and why the pushforward)
 
@@ -21,21 +21,27 @@ This is 3-B's task on the model where 3-B's failure does not apply: 3-B failed b
 names, so SHAP plus the names found its shortcuts directly. MalConv has no names.
 
 **Why not MalConv's IG directly?** IG is the right per-file explanation, and it is the pushforward's input. A shortcut
-is a claim about many files, and IG cannot be aggregated across files without shared units: by offset works only for
-the DOS header (everything after `e_lfanew` moves); by content (n-grams) loses the location (3-B's miner found the
-certificate's DER bytes, not the certificate-size field the model used); by parsed structure needs a hand-built
-mapping per format (alternative 1). The pushforward supplies the units (the extractor's features), splits shared bytes among them (D†;
-better than the naive sum in PF1), and puts MalConv's reliance in the GBDT's vocabulary, so each shortcut can be
-checked against the GBDT (a link to 3-A).
+is a claim about many files, and IG cannot be aggregated across files without shared units: by offset works only for the
+DOS header (everything after `e_lfanew` moves); by content (n-grams) loses the location (3-B's miner found the
+certificate's DER bytes, not the certificate-size field the model used); by parsed structure needs a hand-built mapping
+per format (alternative 1). The pushforward supplies the units (the extractor's features), splits shared bytes among
+them (D†; better than the naive sum in PF1), and puts MalConv's reliance in the GBDT's vocabulary, so each shortcut can
+be checked against the GBDT (a link to 3-A).
 
 ## Realistic alternatives (named up front)
 
 1. **Hand-built aggregation** (a PE parser locating header fields, section names, imports, ... in each file, and
    IG summed over them): set aside (user, 2026-10-12): it takes tremendous manual effort for one format; the
    pushforward does it automatically for any extractor.
-2. **A surrogate.** A GBDT on EMBER features trained to mimic MalConv's log-odds, explained with TreeSHAP and aggregated.
-   No P needed. It finds what *predicts* MalConv, not what MalConv *uses*, so it should yield more candidates that the
-   transplant does not confirm.
+2. **A surrogate.** A GBDT on EMBER features trained to mimic MalConv's log-odds, explained with TreeSHAP and
+   aggregated. No P needed. It finds what *predicts* MalConv, not what MalConv *uses*, so it should yield more
+   candidates that the transplant does not confirm.
+   Trained on the **test split** outside the explanation set, not on MalConv's training split: only MalConv's test
+   predictions are saved, and the surrogate distills MalConv's function, not the labels, so any large set of inputs
+   labeled by MalConv will do. The test split is also the explanation set's distribution (EMBER-2024's test files are
+   later), so the surrogate mimics MalConv best where it is compared. Relatives of the explanation files (families,
+   near-duplicates) may sit in its training pool, which can only favor the surrogate (the safe direction). To state in
+   the paper (agreed with the user, 2026-10-12).
 3. (Weaker, for context only) coarse region aggregation (header / sections / overlay), as in Demetrio et al. and
    Aryal et al.
 
@@ -119,6 +125,11 @@ candidate is in the DOS header, the go stands but the finding is weak (Demetrio 
 - Known wrinkle: several hashed features of one field (e.g., three `section:characteristics_hash_*` reading the same 4
   bytes) form separate patterns with the same content, so they can take several of the 20 slots. Same for both sources;
   left as is.
+
+## Results so far
+
+- **Run 38 (surrogate):** 484,094 training files, 2 min. Fidelity: R^2 0.96 and Spearman 0.98 held out; R^2 0.95,
+  Spearman 0.97, sign agreement 0.95 on the explanation set. A strong competitor: criterion (b) is a real test.
 
 ## What carries over
 

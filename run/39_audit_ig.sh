@@ -11,12 +11,12 @@ export PYTHONHASHSEED=0
 echo "3-C MalConv IG: 2,000 files on GPUs 0-3 (about 45-60 min)."
 echo "Output: artifacts/experiments/audit_discover/seed-0/ig/"
 echo "Logs:   artifacts/logs/audit_ig-seed0-part{0,1,2,3}.log"
-for part in 0 1 2 3; do
+for part in 0 1; do
   CUDA_VISIBLE_DEVICES=$part python scripts/audit_discover.py \
     --seed 0 \
     --phase ig \
     --part $part \
-    --num_parts 4 \
+    --num_parts 2 \
     &> "artifacts/logs/audit_ig-seed0-part$part.log" &
 done
 wait

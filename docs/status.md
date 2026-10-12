@@ -1,10 +1,11 @@
 # Status
 
-Last updated: 2026-10-12, end of session (3-A done at pilot scale and written up; 3-B dropped; 3-C on hold after
-failing the sniff test). **The paper is restructured** (`PLAN.md`, "Paper structure"): 1. the framework; 2. an
-intrinsic, laboratory-style evaluation (done at pilot scale); 3. extrinsic applications for security practitioners: 3-A (the pullback, done at pilot scale), 3-C (the
-pushforward, on hold); 3-B dropped. Work stays at pilot scale (100 files, one seed) until the pilot results and the
-claims are settled (user). `run/` holds the commands that produced everything in `artifacts/` (runs 01-37).
+Last updated: 2026-10-12, end of session. **The extrinsic half was re-planned with the user** (a step back after 3-B
+and 3-C failed the same way). The pullback/pushforward symmetry is the framework's novelty, so the pushforward needs its
+own application: **3-C revised, auditing MalConv for shortcuts through the pushforward** (`docs/audit_plan.md`), with a
+go/no-go fixed in advance and runs 38-41 in progress (the user's). 3-A stays the pullback's application; 3-B dropped;
+the rule-based 3-C on hold. Work stays at pilot scale except where a task needs a corpus (3-C revised uses the
+2,000-file explanation set, user). `run/` holds the commands that produced everything in `artifacts/` (runs 01-41).
 
 ## Where we are
 
@@ -17,28 +18,43 @@ claims are settled (user). `run/` holds the commands that produced everything in
 | **2. Intrinsic: PB2, PF2** (planted triggers) | Done at pilot scale (`docs/trigger_plan.md`); **demoted**, possibly removed later. |
 | **3-A. Comparing detectors through the pullback** | **Done at pilot scale, written up** (runs 30-33; `docs/cm_plan.md`; `manuscript/_d_applications.tex`). GBDT (EMBER v3) vs. MalConv, byte by byte. Shared reliance: bytes in both top 1% are worth more to each model than its exclusive bytes; they lie in the header; window-level comparison without P misses them (paired, p ≤ 0.025). Disagreement triage (6.4% of test files disagree at 1% FPR): MalConv-only verdicts rest on bytes the GBDT does not read; GBDT-only verdicts on header bytes MalConv reads the other way (deleting them: MalConv detects 19/25 vs. 1/25), visible only at byte level (run 33). Deferred: seeds 1-2 (scale-up); real-attack transfer (`PLAN.md`, "Open questions"). Feature-space comparison: appendix F, not built. |
 | **3-B** | **Dropped** (2026-10-12; `docs/archive/shortcuts_plan.md`): findings rested on named features; its post-mortem gave the screening criteria (`PLAN.md`, section 3). |
-| **3-C. YARA matches pushed forward** | **On hold: failed the sniff test** (2026-10-12; post-mortem in `docs/rules_plan.md`). Runs 34-37 on generic Yara-Rules (pilot files): coverage passes; most represented rules are reliance gaps against a concentration-matched reference; deletion supports the two gap categories, not "relied on". But the results rest on the pullback (reliance) and Pᵀ (representation), not the pushforward: as built, 3-C is 3-A with a rule as the second detector. No scaling. Open (user): a pushforward-native task (output needed in feature space), mocked up first, or 3-C as an application of P as a whole. |
+| **3-C revised. Auditing MalConv through the pushforward** | **Go/no-go running** (`docs/audit_plan.md`; runs 38-41). MalConv's IG pushed forward into EMBER features (coordinates shared by every file), aggregated over the 2,000 explanation-set files into (feature, content) candidates, confirmed by 3-B's transplant scored by MalConv; the alternative is a surrogate GBDT trained on MalConv's scores. No-go if nothing is confirmed or the surrogate finds at least half of the confirmed candidates. Run 38 done (surrogate fidelity R^2 0.95 on the explanation set: a strong competitor); 39 running. |
+| **3-C (rule-based)** | On hold (`docs/rules_plan.md`): rested on the pullback and Pᵀ, not the pushforward. |
 | **Appendix** | App-R's duplicate-feature sweep not run; App-L a stated limitation; the byte-set control bound accepted, not started; F (feature-space comparison of the detectors) a placeholder. |
 | **The MLP** | Set aside temporarily; returns after the GBDT methodology is established. |
 | **Manuscript** | `_d_applications.tex` follows the old order (CP, PB, PF, then CM = 3-A, written up 2026-10-12); to be reorganized into intrinsic / extrinsic once 3-C exists. Claim 4 rewritten for 3-A; claims 1-3 not yet. Polish is low priority (user). Do not try to compile it. |
 
 ## Next (for Claude), on resume
 
-0. **3-C revised** (2026-10-12, step back with the user): the pullback/pushforward symmetry is the novelty, so the
-   pushforward needs an application. Auditing MalConv for shortcuts through the pushforward (`docs/audit_plan.md`):
-   mock screened, go/no-go fixed (no-go if nothing is confirmed, or the surrogate finds at least half of the confirmed
-   candidates). Hand-built aggregation with a PE parser is not a realistic alternative (user). Built and smoke-tested;
-   **waiting on the user to run `run/38`-`run/41`** (38 and 39 in parallel, about an hour; then 40 and 41, about 20
-   min). Then read the go/no-go against the criterion. Item 1 below is superseded by this.
-1. **3-C, no code until a mock-up passes** (screening criterion 6, `PLAN.md` section 3). Write one or two candidate
-   tasks whose output must live in feature space (where the model is trained and changed: which features to
-   constrain, sanitize, or retrain on, starting from byte-level knowledge such as rule matches) as a paper paragraph
-   and table with hypothetical numbers and the operator behind each column; screen them with the user. If none
-   passes, the fallback is 3-C as an application of P as a whole (the user decides; it leaves the paper without a
-   pushforward-specific application). Do not resume runs 34-37's line (`docs/rules_plan.md`) or scale it.
-2. Rewrite claims 1-3 (`PLAN.md`, "Thesis and claims") for the new structure; ask before changing what a claim is for.
-3. Later: reorganize `_d_applications.tex` into intrinsic / extrinsic; the scale-up (all experiments together, when
-   the user decides); what to do with ambiguity and overlap.
+1. **Check runs 39-41** (the user's; logs in `artifacts/logs/audit_*-seed0*.log`). If 39 is done, `run/39`'s comments
+   still say 4 GPUs (the user ran 2 parts on GPUs 0-1): sync them and record the runtimes in `run/38`-`run/41`.
+2. **Read the go/no-go against the criterion in `docs/audit_plan.md`, as written**: (a) any confirmed candidate;
+   (b) the surrogate's top 20 hold fewer than half of the confirmed ones. Report a no-go as such; do not soften the
+   criterion after the fact. Note also how much of MalConv's credit falls on aggregates (objection 3) and whether the
+   confirmed shortcuts are only in the DOS header (weak, known).
+3. If go: re-check the mock (operator per column), then plan the experiment proper with the user (forging and evasion
+   at 1% FPR, the GBDT-relies-on column, tables). If no-go: post-mortem, then back to the user; the pushforward still
+   needs an application (do not propose dropping it).
+4. Later: rewrite claims 1-3 (ask before changing what a claim is for); reorganize `_d_applications.tex` into
+   intrinsic / extrinsic; rewrite the introduction's contributions around what is demonstrated; scale-up when the user
+   decides.
+
+## The 2026-10-12 session (latest): stepping back, and 3-C revised
+
+- **The step back.** Why the applications kept failing: they were chosen to show an operator, not from a need; on this
+  GBDT the reliance sits where P is trivial (named header fields) and where P is distinctive the reliance is small or
+  cannot be validated by deletion; with an indicator input the pushforward reduces to Pᵀ1_S. I proposed making 3-A the
+  sole extrinsic application; **the user rejected it**: the pullback alone is close to G-DeepSHAP, so the symmetry is
+  the novelty and the pushforward must have a purpose.
+- **The reframing that produced 3-C revised:** feature space is a coordinate system shared by every file, so the
+  pushforward turns per-file byte explanations of a problem-space model into something that can be aggregated over a
+  corpus (pullback: local explanations of feature models in bytes; pushforward: corpus-level explanations of byte
+  models in features). Task: shortcut discovery for MalConv, 3-B's task where 3-B's failure (named features) does not
+  apply.
+- Mock written and screened (`docs/audit_plan.md`); the go/no-go fixed. Built: `scripts/audit_surrogate.py`,
+  `scripts/audit_discover.py`, `scripts/shortcuts_transplant.py --scorer malconv`, `tests/test_audit.py`, `run/38`-`41`.
+  A fork-after-OpenMP deadlock in the surrogate's TreeSHAP pool was fixed (a non-forking pool, as in `explain.py`).
+- The user runs 38-41 with reduced resources (16 threads/workers, 2 GPUs); run 38 done.
 
 ## The 2026-10-12 session (later): 3-C, and what went wrong
 
@@ -94,6 +110,16 @@ claims are settled (user). `run/` holds the commands that produced everything in
   and PF1 docs; `CLAUDE.md` updated (doc list, the tie-break rule, readings fixed in advance, `run/` script style).
 
 ## Decisions
+
+2026-10-12 (latest):
+- **The pushforward needs an extrinsic application**; the symmetry is the novelty (user). 3-A alone is not enough.
+- **3-C revised adopted:** auditing MalConv for shortcuts through the pushforward (`docs/audit_plan.md`). Go/no-go
+  requires a confirmed shortcut (confirmation is cheap); discovery on the 2,000-file explanation set; MalConv
+  mitigation out of scope.
+- **Hand-built domain-specific aggregation (a PE parser) is not a realistic alternative**: tremendous manual effort for
+  one format (user). The realistic alternative is the surrogate.
+- The surrogate is trained on the test split outside the explanation set (only MalConv's test predictions exist); to
+  be stated in the paper.
 
 2026-10-12 (later):
 - **3-C on hold** after failing the sniff test: as built it rests on the pullback and Pᵀ, not the pushforward. Next

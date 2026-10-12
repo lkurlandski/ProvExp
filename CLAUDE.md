@@ -17,7 +17,8 @@ plus a null element) transfers explanations between the feature-space (EMBER v3 
   results); `docs/pf1_plan.md` (PF1: the pushforward's faithfulness and the resolution trend); `docs/cm_plan.md`
   (3-A: comparing detectors through the pullback, the pullback's application); `docs/audit_plan.md` (3-C revised:
   auditing a raw-byte detector through the pushforward, the pushforward's application); `docs/rules_plan.md` (the
-  rule-based 3-C, on hold); `docs/appendix.md` (App-L, App-R); `docs/archive/shortcuts_plan.md` (3-B: real shortcuts via the pullback; dropped, kept for its post-mortem).
+  rule-based 3-C, on hold); `docs/appendix.md` (App-L, App-R); `docs/archive/shortcuts_plan.md` (3-B: real
+  shortcuts via the pullback; dropped, kept for its post-mortem). `docs/resume-prompt.md`: where to pick up next.
 - `docs/design_provexp.md`: package design, decisions, provenance conventions, thrember quirks.
   `docs/related_work.md`: literature and gaps. `docs/archive/`: superseded documents (the Phase 2 plan and census,
   old IDs E1–E4, A1–A3; artifact paths such as `artifacts/experiments/e1/` (PB1) still use them).
@@ -65,6 +66,11 @@ plus a null element) transfers explanations between the feature-space (EMBER v3 
   scale up (2,000 files, seeds 0–2) only for final numbers, and only when the user decides.
 - **Do not run long or resource-intensive jobs** (featurization, training, large sweeps, the full test suite while
   the user's jobs run) without asking. Smoke-test on a small slice, then give the user the exact command.
+- **Resources in `run/` scripts:** at most 16 workers or threads and 2 GPUs (the user cut runs 38-40 down to these,
+  2026-10-12). Never edit a `run/` script while it runs (bash reads it as it goes); sync its comments afterwards.
+- **Explain plainly.** Lead with the plain-language version of an argument (what is computed, what it is compared
+  with, why it matters); define terms and avoid dense shorthand. The user could not follow a jargon-heavy explanation
+  (2026-10-12).
 - Light checks: `OMP_NUM_THREADS=2 nice -n 10 env/bin/pytest -q -p no:xdist tests/test_<module>.py`.
   Full suite: `env/bin/pytest -n 16 tests` (~4 min).
 - Before committing: `env/bin/ruff check src tests scripts` and `env/bin/mypy src tests scripts` (strict) must pass.
@@ -103,6 +109,12 @@ Follow `/home/lk3591/Documents/code/SSViT/exeformer/exeformer.py` (ignore that i
   particular explanation of a particular file by a particular explainer, not the provenance; (ii) a large share of
   attribution on unattributable features reflects a limitation of the provenance extraction pipeline (features whose
   bytes it cannot name), not a broad, novel finding about detectors. App-L stays only as a stated limitation.
+- **Extrinsic applications: one per operator; the pushforward is essential** (user, 2026-10-12). The pullback alone
+  is close to G-DeepSHAP; the symmetry between the spaces is the novelty, so never propose dropping the pushforward's
+  application or leaving it intrinsic-only. Before any code for an application: the screening criteria and a mock of
+  its paper table with the operator behind each column (`PLAN.md`, "Paper structure", 3). Realistic alternatives are
+  what a practitioner would actually do; a hand-built, format-specific mapping that takes tremendous manual effort
+  (e.g., a PE parser locating every field per file) is not one.
 - **The GBDT is the first classifier we experiment with** (decided 2026-10-08). The framework stays general-purpose
   (P does not depend on the classifier). The MLP is set aside *temporarily* and returns once the GBDT methodology is
   established (`PLAN.md`, "Model scope"); do not describe it as dropped.

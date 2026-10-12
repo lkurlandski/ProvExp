@@ -1,12 +1,14 @@
 # ProvExp Research Plan
 
-Living document. Last revised 2026-10-12 (3-A done at pilot scale as the pullback's application; 3-B dropped; 3-C
-on hold; 2026-10-09: second review, after run 21). **The paper is restructured** into a framework, an intrinsic
-evaluation, and extrinsic applications (see "Paper structure", which supersedes the order of "Experiments" below). The
-intrinsic evaluation is done at pilot scale (CP's theory, PB1, PF1; PB2/PF2 demoted). Extrinsic: 3-A (the pullback)
-done at pilot scale (`docs/cm_plan.md`); 3-B failed as the pullback application and is dropped; 3-C (the pushforward)
-is on hold (failed the sniff test, 2026-10-12). Claims 1-3 predate the restructuring and are to be rewritten; claim 4
-is rewritten for 3-A. No scaling until the pilot results and the claims are settled (user).
+Living document. Last revised 2026-10-12, end of session (the extrinsic half re-planned: 3-C revised, auditing MalConv
+through the pushforward, go/no-go running; 3-A done at pilot scale as the pullback's application; 3-B dropped; the
+rule-based 3-C on hold; 2026-10-09: second review, after run 21). **The paper is restructured** into a framework, an
+intrinsic evaluation, and extrinsic applications (see "Paper structure", which supersedes the order of "Experiments"
+below). The intrinsic evaluation is done at pilot scale (CP's theory, PB1, PF1; PB2/PF2 demoted). Extrinsic: 3-A (the
+pullback) done at pilot scale (`docs/cm_plan.md`); 3-B failed as the pullback application and is dropped; the rule-based
+3-C is on hold (failed the sniff test, 2026-10-12); 3-C revised (the pushforward) has its go/no-go running. Claims 1-3
+predate the restructuring and are to be rewritten; claim 4 is rewritten for 3-A. No scaling until the pilot results and
+the claims are settled (user).
 
 ## Target
 
@@ -74,12 +76,19 @@ practice, and its limits are measurable. Done at pilot scale:
 - Demoted, possibly removed later (user): the planted triggers (PB2, PF2). App-L is a stated limitation only.
 
 **3. Extrinsic applications** (what the framework provides security practitioners; for a general security audience).
+**Each operator needs its own application (user, 2026-10-12):** the pullback alone is close to G-DeepSHAP's rescale
+rule, so the framework's novelty is the symmetry between the spaces; without a purpose for the pushforward most of the
+project is moot. The symmetry, as the applications use it: the pullback gives *local* explanations of a feature-based
+model in the problem space (per file, at byte resolution; 3-A); the pushforward puts explanations of a problem-space
+model in coordinates shared by every file, so they can be *aggregated over a corpus* (3-C revised).
 **Screening criteria (adopted 2026-10-12, after 3-B failed; apply before writing any code):**
 1. *It needs what only P gives:* the content behind opaque (hashed/aggregate) features, per file; credit summed across
    several features onto shared bytes; or which bytes realize a feature. If feature-space SHAP plus the feature names
    plus the extractor's code does about as well, reject it.
 2. *A practical security task* that analysts or defenders actually do, not a question we invented.
-3. *The realistic alternative is named up front* (what a practitioner uses today), never a strawman.
+3. *The realistic alternative is named up front* (what a practitioner uses today), never a strawman. A hand-built,
+   format-specific mapping that takes tremendous manual effort (e.g., a PE parser locating every field, import, and
+   section per file) is not a realistic alternative (user, 2026-10-12).
 4. *A falsifiable go/no-go check runs first,* on existing data where possible, before an experiment is built; its
    failing outcome is stated in advance.
 5. Ideas the user has already ruled out or doubted get extra skepticism, not a second pitch.
@@ -144,11 +153,13 @@ practice, and its limits are measurable. Done at pilot scale:
   (Pᵀ plus the pullback), leaving no pushforward-specific application. Packing is not a motivation (user). capa
   deferred; a curated rule set (YARA-Forge) only for realism, later.
 
-- **3-C (revised, 2026-10-12): auditing a raw-byte detector through the pushforward** (`docs/audit_plan.md`;
-  mock-up, awaiting the user's screening). The pushforward puts per-file byte explanations (MalConv's IG) in coordinates
-  shared by every file, so a raw-byte model's reliance can be aggregated across a corpus: shortcut discovery for a model
-  with no feature names (3-B's task where 3-B's failure does not apply). Realistic alternatives: IG aggregated by
-  pefile field, and a surrogate GBDT trained on MalConv's scores. The symmetry is the framework's novelty, so the
+- **3-C (revised, 2026-10-12): auditing a raw-byte detector through the pushforward** (`docs/audit_plan.md`; mock
+  approved, go/no-go fixed and running: runs 38-41; no-go if no candidate is confirmed by a MalConv-scored transplant,
+  or if the surrogate's top 20 hold at least half of the confirmed ones; the surrogate's fidelity is R^2 0.95 on the
+  explanation set). The pushforward puts per-file byte explanations (MalConv's IG) in coordinates shared by every file,
+  so a raw-byte model's reliance can be aggregated across a corpus: shortcut discovery for a model with no feature names
+  (3-B's task where 3-B's failure does not apply). Realistic alternative: a surrogate GBDT trained on MalConv's scores
+  (hand-built aggregation with a PE parser is not realistic, user). The symmetry is the framework's novelty, so the
   pushforward needs an application (user); the rule-based design above stays on hold.
 
 **Appendix:** App-R (mechanical redundancy); App-L (a limitation); **bounding what control of a byte set can do**
@@ -188,8 +199,9 @@ features (ROC-AUC 0.9976 vs. 0.9959); and the GBDT's pilot result is already rob
    explainers, and planted-trigger ground truth (PB); faithfulness of the pushforward, and ground truth for
    feature-space explainers (PF).
 5. **Applications:** the pullback compares a feature-based and a raw-byte detector byte by byte: an ensemble's
-   shared attack surface and the triage of their disagreements (3-A); the pushforward casts rule-based detectors'
-   matches in a learned detector's features (3-C, not built).
+   shared attack surface and the triage of their disagreements (3-A); the pushforward aggregates a raw-byte
+   detector's per-file explanations over a corpus in the feature vocabulary, to find and confirm its shortcuts
+   (3-C revised, go/no-go running).
 
 The manuscript's contribution list (C1–C3 in the introduction) predates Phase 0 and must be rewritten: "first to
 formalize" and "novel rigorous theory" cannot stand (see Positioning). Naming ("provenance" collides with
@@ -464,7 +476,8 @@ the research runs at pilot scale; scaling up is for the final numbers, when the 
 | Oct 12 (later) | 3-B dropped; ~~3-A at pilot scale~~ (runs 30-32: cross-deletion, shared attack surface, triage) | |
 | Oct 12 (later) | ~~3-A's window-level triage~~ (run 33); ~~3-A written up~~ (`docs/cm_plan.md`, the manuscript) | |
 | Oct 12 (later) | 3-C: design, runs 34-37 (generic YARA rules); **on hold**, failed the sniff test (not the pushforward) | |
-| next | 3-C: a pushforward-native task as a mock-up, or 3-C as an application of P; rewrite claims 1-3 | with the user |
+| Oct 12 (end) | Step back; 3-C revised (auditing MalConv via the pushforward): mock, go/no-go built; runs 38-41 started | |
+| next | Read 3-C revised's go/no-go; if go, plan the experiment proper with the user; rewrite claims 1-3 | with the user |
 | later | Scale-up (2,000 files, seeds 0–2), when the user decides; the MLP if time allows | |
 | later | Appendix (App-R; the byte-set control bound) | |
 | Dec 15–late Jan | Writing: introduction and contributions, framework edits, figures | Submission |
@@ -485,9 +498,10 @@ was dropped as a flawed test. Thresholds are reassessed with the user.
 - **Smearing:** histogram and entropy features spread over the whole file, which limits how sharply the pullback
   can place their credit. A stated limitation of the transfer at fine resolution (CP's round-trip bounds).
 - **The extrinsic applications carry the paper's security relevance.** 3-A is done at pilot scale (one seed; its
-  "attack surface" rests on deletion, not on attacks); 3-B failed and is dropped; 3-C is on hold: generic rules fire
-  often enough, but no task yet needs the pushforward specifically (the paper may end up without a
-  pushforward-specific application).
+  "attack surface" rests on deletion, not on attacks); 3-B failed and is dropped; the rule-based 3-C is on hold; 3-C revised
+  (auditing MalConv via the pushforward) is the pushforward's candidate, its go/no-go running. Its risks: the surrogate
+  is strong (R^2 0.95), and MalConv's pushed-forward credit falls largely on aggregates (entropy, histogram), which
+  cannot be transplanted. If it fails, the pushforward still needs an application (user).
 - **Reviewer pool:** Raff co-authored EMBER-2024, MalConv, and the SHAP-on-EMBER critique; engage it directly (App-R,
   CM).
 - **The pushforward is faithful only up to its source's resolution (PF1):** window-level explanations keep a third of
