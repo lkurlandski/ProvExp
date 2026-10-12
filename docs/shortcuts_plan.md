@@ -44,6 +44,13 @@ held-out malware; evasion at the 1%-validation-FPR threshold, vs. random bytes i
 the neutralized GBDT. Hypothesis: the effects roughly add (about +2.5 log-odds), so a noticeable share of detected
 malware near the threshold evades, but not the confident files; the neutralized model shows no evasion.
 
+**Run 29 results** (threshold 0.676 log-odds at 1% validation FPR; 1,934 of 2,000 detected; 1,922 forgeable; ~3 min
+per model): **3.6% of detected malware evades** (70 files) vs. 0.1% with random bytes in the same runs; median drop
+2.20 vs. 0.36 log-odds. Neutralized GBDT: 0.1% vs. 0.16% (no effect). Hypothesis held, the share is modest.
+Leave-one-out on the 70 evading files (scratch analysis, not a run): the certificate size alone evades in 30%, DEBUG.Size
+alone in 33%, both in 91%; `.rsrc` applies to 14 of them and adds little (7% alone). **The evasion rests on two named
+data-directory sizes, not one, but both are named features that SHAP would surface; the hashed finding barely matters.**
+
 ## Design (settled 2026-10-12)
 
 1. **Discovery** (run 22, `scripts/shortcuts.py`): per file, the pullback of interventional TreeSHAP over the 2,000
