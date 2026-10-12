@@ -28,6 +28,10 @@ claims are settled (user). `run/` holds the commands that produced everything in
    the rule source (generic YARA rules such as Yara-Rules `crypto/`, `packers/`, `antidebug_antivm/`,
    `capabilities/`; or capa with a faster backend or file-scope rules), a coverage go/no-go check on the pilot files,
    what only the pushforward gives, and the realistic alternative.
+   Proposed 2026-10-12 (user: reasonable, keep thinking): per-rule feature profiles that split "the GBDT ignores
+   this rule's content" into a representation gap (matched bytes only diluted in aggregate features) and a reliance
+   gap (they determine features the GBDT does not weigh); generic YARA rules first, capa deferred. Go/no-go on the
+   pilot files once the user has installed YARA (`README.md`, "External tools for 3-C"; the user runs installs).
 2. Rewrite claims 1-3 (`PLAN.md`, "Thesis and claims") for the new structure; ask before changing what a claim is for.
 3. Later: reorganize `_d_applications.tex` into intrinsic / extrinsic; the scale-up (all experiments together, when
    the user decides); what to do with ambiguity and overlap.

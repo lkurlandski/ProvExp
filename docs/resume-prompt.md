@@ -34,7 +34,7 @@ then `PLAN.md`'s "Paper structure" (especially the screening criteria in section
 
 - Stay on the current task; every analysis must strengthen its claim. Batch validity checks; defer the merely
   interesting to `PLAN.md`'s "Open questions".
-- Decide scope with me in one exchange, then execute without a stream of micro-questions or reframings.
+- Decide scope with me in one or two exchanges, then execute without a stream of micro-questions or reframings.
 - Runs over about 10-15 minutes: smoke-test, then give me the `run/` script; shorter runs you can do yourself.
 - Pilot scale (100 files, one seed) until I decide otherwise. Keep docs short and current; update `docs/status.md` at
   the end of the session. Commit in logical pieces; do not push.
