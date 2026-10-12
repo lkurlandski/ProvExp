@@ -20,7 +20,7 @@ the pilot results and the claims are settled (user). `run/` holds the commands t
 | **3-C. YARA/capa matches pushed forward** | Adopted, not designed. Coverage check stopped early: public YARA signatures too sparse; generic rules and capa untested; capa's default backend is very slow. |
 | **Appendix** | App-R's duplicate-feature sweep not run; App-L a stated limitation; the byte-set control bound accepted, not started. |
 | **The MLP** | Set aside temporarily; returns after the GBDT methodology is established. |
-| **Manuscript** | `_d_applications.tex` reflects the old structure (CP, PB, PF, CM); to be reorganized once the extrinsic applications exist. Polish is low priority (user). Do not try to compile it. |
+| **Manuscript** | `_d_applications.tex` still follows the old order (CP, PB, PF, then CM = 3-A, written up 2026-10-12); to be reorganized into intrinsic / extrinsic once 3-C exists; claims 1-3 not yet rewritten. Polish is low priority (user). Do not try to compile it. |
 
 ## Next (for Claude), on resume
 
@@ -34,7 +34,8 @@ the pilot results and the claims are settled (user). `run/` holds the commands t
    surface is header and data-directory fields; 86% of its credit is on named features). #2 (option 1, user): run 32 done (`PLAN.md` 3-A): MalConv-only verdicts rest
    on bytes the GBDT does not read; GBDT-only verdicts on bytes MalConv reads the other way. Follow-ups done (offsets, blind-byte features, random fill;
    `PLAN.md` 3-A). 3-A's pullback analyses are complete at pilot scale.
-   Run 33 (the user): window-level triage loses the oppose category; byte resolution is needed. Next: the manuscript.
+   Run 33 (the user): window-level triage loses the oppose category; byte resolution is needed. Manuscript updated
+   (`_d_applications.tex`: claim 4, the experiments table, the 3-A section; appendix F: the feature-space comparison).
 2. Rewrite the claims (`PLAN.md`, "Thesis and claims") to fit the new structure; ask the user before changing what a
    claim is for.
 3. Later: 3-C's rule source (generic YARA rules, or capa with a faster backend or file-scope rules); what to do with
