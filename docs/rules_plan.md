@@ -1,7 +1,8 @@
 # 3-C: Rule matches pushed forward into a learned detector's features
 
-Status: design proposed (2026-10-12), go/no-go passed (runs 34, 35). Not built. The task's motivation may still be refined
-(user: the original question was crude; look for a question that better shows the pushforward's use before building).
+Status: design proposed (2026-10-12), go/no-go passed (runs 34, 35). Not built. The task's motivation may still be
+refined (user: the original question was crude; look for a question that better shows the pushforward's use before
+building).
 Packing is not a motivation or case study (user, 2026-10-12): well-explored.
 
 ## Proposed design
