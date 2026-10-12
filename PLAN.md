@@ -127,6 +127,9 @@ practice, and its limits are measurable. Done at pilot scale:
   files). Untested: generic rules (Yara-Rules `crypto/`, `packers/`, `antidebug_antivm/`, `capabilities/`) and capa,
   whose default (vivisect) backend took more than 10 minutes on one 2.7 MB file; faster: an IDA, Ghidra, or Binary
   Ninja backend, or file-scope rules only (seconds per file, without the code-level capabilities).
+  **2026-10-12:** design proposed (representation gap vs. reliance gap per rule; `docs/rules_plan.md`); generic
+  Yara-Rules go/no-go passed on the pilot files (run 34: 47 rules on >= 5 files, 16 with a split, carried by
+  `capabilities/` and `antidebug_antivm/`); capa deferred. Motivation still to refine; packing is not a motivation.
 
 **Appendix:** App-R (mechanical redundancy); App-L (a limitation); **bounding what control of a byte set can do**
 (accepted 2026-10-09, posed domain-agnostically): for additive features (Pᵀ1_S)_j bounds how far feature j can

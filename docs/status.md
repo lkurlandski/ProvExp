@@ -4,7 +4,7 @@ Last updated: 2026-10-12 (3-A done at pilot scale and written up; 3-B dropped; d
 restructured** (`PLAN.md`, "Paper structure"): 1. the framework; 2. an intrinsic, laboratory-style evaluation (done at
 pilot scale); 3. extrinsic applications for security practitioners: 3-A (the pullback, done at pilot scale), 3-C (the
 pushforward, not built); 3-B dropped. Work stays at pilot scale (100 files, one seed) until the pilot results and the
-claims are settled (user). `run/` holds the commands that produced everything in `artifacts/` (runs 01-33).
+claims are settled (user). `run/` holds the commands that produced everything in `artifacts/` (runs 01-34).
 
 ## Where we are
 
@@ -17,7 +17,7 @@ claims are settled (user). `run/` holds the commands that produced everything in
 | **2. Intrinsic: PB2, PF2** (planted triggers) | Done at pilot scale (`docs/trigger_plan.md`); **demoted**, possibly removed later. |
 | **3-A. Comparing detectors through the pullback** | **Done at pilot scale, written up** (runs 30-33; `docs/cm_plan.md`; `manuscript/_d_applications.tex`). GBDT (EMBER v3) vs. MalConv, byte by byte. Shared reliance: bytes in both top 1% are worth more to each model than its exclusive bytes; they lie in the header; window-level comparison without P misses them (paired, p ≤ 0.025). Disagreement triage (6.4% of test files disagree at 1% FPR): MalConv-only verdicts rest on bytes the GBDT does not read; GBDT-only verdicts on header bytes MalConv reads the other way (deleting them: MalConv detects 19/25 vs. 1/25), visible only at byte level (run 33). Deferred: seeds 1-2 (scale-up); real-attack transfer (`PLAN.md`, "Open questions"). Feature-space comparison: appendix F, not built. |
 | **3-B** | **Dropped** (2026-10-12; `docs/archive/shortcuts_plan.md`): findings rested on named features; its post-mortem gave the screening criteria (`PLAN.md`, section 3). |
-| **3-C. YARA/capa matches pushed forward** | Adopted, not designed. Coverage check stopped early: public YARA signatures too sparse; generic rules and capa untested; capa's default backend is very slow. |
+| **3-C. YARA/capa matches pushed forward** | Design proposed, go/no-go passed (run 34, `docs/rules_plan.md`): generic Yara-Rules, 47 rules on >= 5 pilot files, 16 whose bytes determine non-aggregate features (hashed imports, strings). Motivation still to refine; the reliance side needs a reference contrast. capa deferred. |
 | **Appendix** | App-R's duplicate-feature sweep not run; App-L a stated limitation; the byte-set control bound accepted, not started; F (feature-space comparison of the detectors) a placeholder. |
 | **The MLP** | Set aside temporarily; returns after the GBDT methodology is established. |
 | **Manuscript** | `_d_applications.tex` follows the old order (CP, PB, PF, then CM = 3-A, written up 2026-10-12); to be reorganized into intrinsic / extrinsic once 3-C exists. Claim 4 rewritten for 3-A; claims 1-3 not yet. Polish is low priority (user). Do not try to compile it. |

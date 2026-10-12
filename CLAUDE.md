@@ -15,7 +15,8 @@ plus a null element) transfers explanations between the feature-space (EMBER v3 
   `docs/pb1_pilot.md`, `docs/pb1_baselines.md` (PB1: pullback faithfulness and cost; the baselines doc fixes the
   reading of each outcome in advance); `docs/trigger_plan.md` (the planted-trigger testbed: PB2 and PF2, design and
   results); `docs/pf1_plan.md` (PF1: the pushforward's faithfulness and the resolution trend); `docs/cm_plan.md`
-  (3-A: comparing detectors through the pullback, the pullback's application); `docs/appendix.md` (App-L, App-R);
+  (3-A: comparing detectors through the pullback, the pullback's application); `docs/rules_plan.md` (3-C: rule
+  matches pushed forward, the pushforward's application); `docs/appendix.md` (App-L, App-R);
   `docs/archive/shortcuts_plan.md` (3-B: real shortcuts via the pullback; dropped, kept for its post-mortem).
 - `docs/design_provexp.md`: package design, decisions, provenance conventions, thrember quirks.
   `docs/related_work.md`: literature and gaps. `docs/archive/`: superseded documents (the Phase 2 plan and census,
@@ -37,7 +38,7 @@ plus a null element) transfers explanations between the feature-space (EMBER v3 
   explanations and census (explain, provenance_census, pullback_agreement, pilot_tables); CP (cp_tables,
   cp_coarsening, cp_blackbox); PB1 (discover_protected_fields, header_typical_values, faithfulness, pb1_tables);
   the trigger (trigger_select, trigger_poison, trigger_validate, trigger_explain, trigger_tables); PF1 (pf1,
-  pf1_resolution).
+  pf1_resolution); 3-A (cm_*); 3-C (yara_check).
 - **Rankings break ties by a seeded permutation, never by position or index** (`ablation.element_order` /
   `window_order` with `tiebreak`, `pf1.feature_order`), and treat scores within 1e-9 (relative) as tied: equal scores
   are common (features or bytes with identical provenance; occlusion windows that change nothing).
