@@ -2,6 +2,7 @@
 # 3-C reliance go/no-go (docs/rules_plan.md): for run 34's split rules, the GBDT's |TreeSHAP| pulled back onto each
 # rule's matched bytes vs. 200 random byte sets with the same run lengths, and the determined features' credit on files
 # where the rule fires vs. not. Needs run 34's output.
+# Superseded by run 36 (same script, more references; its output overwrites this one, with these numbers unchanged).
 set -euo pipefail
 cd "$(dirname "$0")/.."
 source env/bin/activate

@@ -3,19 +3,27 @@
 
 For each rule of run 34 with a split (located on at least 5 pilot files, its matched bytes S holding at least half of
 a non-aggregate feature in the median file) and each file where it matches, the reliance on S is the pullback of the
-GBDT's |TreeSHAP| summed over S (equal to sum_j |a_j| (P^T 1_S)_j, run 34's `credit_abs`). Two references:
+GBDT's |TreeSHAP| summed over S (equal to sum_j |a_j| (P^T 1_S)_j, run 34's `credit_abs`). Three references:
 
     random      200 byte sets with S's run lengths, each run placed at a uniform random offset in the file; S is
-                "above random" if its reliance exceeds their 95th percentile
+                "above random" if its reliance exceeds their 95th percentile (run 35)
+    read        the same, but drawn only from bytes whose provenance is at least as concentrated as S's: the
+                concentration of byte i is c_i = sum_j P_ij over the non-aggregate features (outside `histogram`,
+                `byteentropy`, `general`; P is column-normalized, so a byte of a short imported name holds a large
+                share of its hash bucket, a byte of a large section a tiny share of the section's entropy); eligible
+                bytes have c_i >= the 25th percentile of c over S. Runs are placed in the sequence of eligible bytes,
+                so a run may span a gap between them (run 36; is S credited more than other content the GBDT reads
+                as directly?). Nearly every byte has c_i > 0 (median 99.9% of a file), hence the threshold.
     elsewhere   the features S determines (share >= 0.5 in some file), their mean sum of |a_j| on the files where the
                 rule fires vs. the pilot files where it does not (no P needed; whether the GBDT weighs them at all)
 
 Go/no-go, fixed in advance (2026-10-12): the reliance side passes if more than half of the split rules are above
-random in at least 60% of their files.
+random in at least 60% of their files. The `read` reference has no gate: it locates reliance gaps. Also reported, as
+information: the signed credit on S (the pullback of TreeSHAP; positive is toward malware).
 
 Outputs, in `{outdir}/seed-{seed}/`:
-    files.parquet       one row per (rule, file): |S|, runs, reliance on S, the random sets' median and 95th
-                        percentile, S's percentile among them
+    files.parquet       one row per (rule, file): |S|, runs, reliance and signed credit on S, each reference's median
+                        and 95th percentile
     report.json         the configuration and timing
 
 Usage:
@@ -42,6 +50,7 @@ from provexp.featuresets.ember2024.features import PEFeatureExtractor
 sys.path.insert(0, str(Path(__file__).parent))
 
 from faithfulness import load_sample  # noqa: E402
+from yara_check import AGGREGATE_GROUPS  # noqa: E402
 from yara_check import DETERMINED  # noqa: E402
 from yara_check import EXPLAINER  # noqa: E402
 from yara_check import MIN_FILES  # noqa: E402
@@ -93,6 +102,8 @@ def random_runs(cumsum: FloatArray, lengths: IntArray, num: int, rng: np.random.
 
 def _init_worker() -> None:
     _STATE["extractor"] = PEFeatureExtractor()
+    groups = np.array([n.split(":")[0] for n in _STATE["extractor"].feature_names])
+    _STATE["outside"] = (~np.isin(groups, AGGREGATE_GROUPS)).astype(np.float64)
 
 
 def process_file(task: dict[str, Any]) -> list[dict[str, Any]]:
@@ -103,7 +114,9 @@ def process_file(task: dict[str, Any]) -> list[dict[str, Any]]:
         m = len(data)
         _, prov = _STATE["extractor"].feature_vector_with_provenance(data)
         score = prov.pullback(np.abs(task["explanation"]))[:m]
+        signed = prov.pullback(task["explanation"])[:m]
         cumsum = np.concatenate([[0.0], np.cumsum(score)])
+        concentration = prov.matvec(_STATE["outside"])[:m]
         rows: list[dict[str, Any]] = []
         for rule, instances in task["rules"].items():
             S = np.zeros(m, dtype=np.bool_)
@@ -113,10 +126,21 @@ def process_file(task: dict[str, Any]) -> list[dict[str, Any]]:
             rng = np.random.default_rng([task["seed"], task["index"], int(np.sum([ord(c) for c in rule]))])
             r = random_runs(cumsum, lengths, NUM_RANDOM, rng)
             s = float(score[S].sum())
-            rows.append(base | {"rule": rule, "matched": int(S.sum()), "runs": int(lengths.shape[0]), "reliance": s,
+            # The eligible bytes, at least as concentrated as most of S, and the score in their sequence.
+            tau = float(np.percentile(concentration[S], 25))
+            read = concentration >= max(tau, np.finfo(np.float64).tiny)
+            if lengths.max(initial=0) <= int(read.sum()):
+                cumsum_read = np.concatenate([[0.0], np.cumsum(score[read])])
+                r_read = random_runs(cumsum_read, lengths, NUM_RANDOM, rng)
+            else:
+                r_read = np.full(NUM_RANDOM, np.nan)
+            rows.append(base | {"rule": rule, "matched": int(S.sum()), "runs": int(lengths.shape[0]),
+                                "matched_read": int((S & read).sum()), "read": int(read.sum()), "tau": tau, "reliance": s,
+                                "signed": float(signed[S].sum()),
                                 "random_median": float(np.median(r)), "random_p95": float(np.percentile(r, PERCENTILE)),
-                                "percentile": float((r < s).mean()), "total": float(np.abs(task["explanation"]).sum()),
-                                "status": "ok", "error": ""})
+                                "percentile": float((r < s).mean()),
+                                "read_median": float(np.median(r_read)), "read_p95": float(np.percentile(r_read, PERCENTILE)),
+                                "total": float(np.abs(task["explanation"]).sum()), "status": "ok", "error": ""})
         return rows
     except Exception as err:
         return [base | {"rule": "", "status": "error", "error": f"{type(err).__name__}: {err}"[:300]}]
@@ -132,16 +156,22 @@ def summarize(files: pl.DataFrame, elsewhere: pl.DataFrame) -> None:
     ok = files.filter(pl.col("status") == "ok").with_columns(
         (pl.col("reliance") > pl.col("random_p95")).alias("above"),
         (pl.col("reliance") / pl.col("random_median")).alias("ratio"),
+        (pl.col("reliance") > pl.col("read_p95")).alias("above_read"),
+        (pl.col("reliance") / pl.col("read_median")).alias("ratio_read"),
         (pl.col("reliance") / pl.col("total")).alias("share"))
     per_rule = ok.group_by("rule").agg(
         pl.len().alias("files"), pl.col("above").mean().alias("above_random"), pl.col("ratio").median().alias("x_random"),
+        pl.col("above_read").mean().alias("above_read"), pl.col("ratio_read").median().alias("x_read"),
+        (pl.col("signed") > 0).mean().alias("toward_malware"), pl.col("signed").median().alias("signed"),
         pl.col("share").median().alias("share_of_total"), pl.col("matched").median().alias("matched"),
-    ).join(elsewhere, on="rule", how="left").sort("above_random", descending=True)
+    ).join(elsewhere, on="rule", how="left").sort("above_read", descending=True)
     passing = per_rule.filter(pl.col("above_random") >= MIN_ABOVE).height
-    with pl.Config(tbl_rows=40, fmt_str_lengths=60, float_precision=3, tbl_width_chars=200):
+    with pl.Config(tbl_rows=40, fmt_str_lengths=60, float_precision=3, tbl_width_chars=250):
         print("\n## Reliance on the matched bytes vs. random sets with the same runs\n")
         print("above_random: share of files where S beats the random sets' 95th percentile; x_random: median ratio to the")
-        print("random median; elsewhere: the determined features' mean sum |a_j| where the rule fires / where it does not.\n")
+        print("random median; above_read, x_read: the same against sets drawn from bytes as concentrated as S's;")
+        print("toward_malware: share of files where the signed credit on S is positive; signed: its median; elsewhere: the")
+        print("determined features' mean sum |a_j| where the rule fires / where it does not.\n")
         print(per_rule)
     gate = passing > per_rule.height / 2
     print(f"\n## Go/no-go\n\n{passing}/{per_rule.height} rules above random in >= {MIN_ABOVE:.0%} of their files "

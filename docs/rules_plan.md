@@ -67,4 +67,29 @@ other bytes that determine non-aggregate features, would be stricter); and |cred
 refinement (to discuss): **direction**, as in 3-A's triage: a rule firing says "suspicious"; does the GBDT read the same
 content toward malware or toward benign, per rule and across files?
 
+## The stricter reference (run 36, same script; supersedes run 35's output, its numbers unchanged)
+
+A first attempt drew the reference from bytes that any non-aggregate feature reads; that is 99.9% of a median file
+(section entropy and string counts read whole sections), so it was no stricter. The reference now matches S in
+**concentration**, c_i = sum_j P_ij over the non-aggregate features (a byte of a short imported name holds a large share
+of its hash bucket; a byte of a large section a tiny share of its entropy): random runs with S's lengths among bytes
+with c_i >= the 25th percentile of c over S (a pool 35-1,240x |S|). Hypothesis: the ratios drop by orders of
+magnitude; the generic API rules (registry, file operations) fall to the reference level, anti-debug and network rules
+stay above.
+
+| rule | files | above matched ref. | x matched median | signed credit > 0 |
+|---|---|---|---|---|
+| network_dns | 6 | 0.67 | 55.6 | 0.83 |
+| network_tcp_socket | 7 | 0.57 | 3.9 | 0.57 |
+| keylogger, win_private_profile, Winsock2, screenshot | 7-12 | 0.25-0.30 | 0.9-4.9 | 0.58-0.92 |
+| escalate_priv, win_hook, win_token, anti_dbg, win_files_operation, win_registry | 6-35 | 0.11-0.17 | 0.9-2.4 | 0.33-0.86 |
+| Internet_API, DebuggerException, the two PEiD rules | 5-8 | 0 | 0.5-1.2 | 0-1 |
+
+Ratios fell from 60-3,800x to about 1-5x (network_dns 56x). Against content the GBDT reads as directly, most rules'
+bytes are credited about like any other: the GBDT does not single out what the rule matches, beyond its general
+reliance on imported names. Only the DNS rule (and TCP sockets, marginally) stands out. The hypothesis held for the
+generic API rules and failed for anti-debug (anti_dbg: 0.15). **So reliance gaps do appear, under the matched
+reference: most represented rules are reliance gaps.** Direction (information): the signed credit is mostly toward
+malware (57-92% of files), except DebuggerException (0/8) and win_hook (2/6). Small samples (5-35 files per rule).
+
 Outputs: `artifacts/experiments/yara_reliance/seed-0/`; log `artifacts/logs/yara_reliance-seed0.log`.
