@@ -68,6 +68,7 @@ from faithfulness import load_window_scores  # noqa: E402
 
 __all__ = [
     "agreement",
+    "malconv_explanations",
     "top_overlap",
 ]
 
@@ -124,6 +125,16 @@ def _init_worker(gbdt_file: Path, malconv_file: Path) -> None:
     _STATE["extractor"] = PEFeatureExtractor()
     _STATE["gbdt"] = gbdt_function(lgb.Booster(model_file=str(gbdt_file)))
     _STATE["malconv"] = load_pretrained_malconv(malconv_file)
+
+
+def malconv_explanations(model: MalConv, data: bytes, steps: int, device: str) -> tuple[float, npt.NDArray[np.float32], npt.NDArray[np.float32]]:
+    """MalConv's log-odds, Integrated Gradients (per byte), and occlusion of its windows (per byte) for one file."""
+    x = encode(data).to(device)
+    with torch.no_grad():
+        z = model(x[None])
+    ig = malconv_integrated_gradients(model, x, steps=steps, batch_size=16)
+    occ = malconv_occlusion(model, x)
+    return float(z[0, 1] - z[0, 0]), ig.float().cpu().numpy(), occ.float().cpu().numpy()
 
 
 def malconv_log_odds(model: MalConv, data: bytes) -> float:
@@ -283,17 +294,12 @@ def main() -> None:
     tasks: list[dict[str, Any]] = []
     for r in tqdm(files.iter_rows(named=True), total=files.height, desc="MalConv", mininterval=10):
         data = load_sample(int(r["shard"]), int(r["position"]), r["name"], args.db)
-        x = encode(data).to(args.device)
-        with torch.no_grad():
-            z = model(x[None])
-        ig = malconv_integrated_gradients(model, x, steps=args.ig_steps, batch_size=16)
-        occ = malconv_occlusion(model, x)
+        log_odds, ig, occ = malconv_explanations(model, data, args.ig_steps, args.device)
         tasks.append({"index": int(r["index"]), "name": r["name"], "label": int(r["label"]), "shard": int(r["shard"]),
                       "position": int(r["position"]), "dbdir": args.db, "seed": int(r["index"]), "stride": stride,
                       "explanation": np.asarray(explanations[int(r["index"])], dtype=np.float64),
                       "windows": windows[int(r["index"])], "gbdt_log_odds": float(r["log_odds:gbdt"]),
-                      "malconv_log_odds": float(z[0, 1] - z[0, 0]),
-                      "ig": ig.float().cpu().numpy(), "mc_occlusion": occ.float().cpu().numpy()})
+                      "malconv_log_odds": log_odds, "ig": ig, "mc_occlusion": occ})
     seconds_malconv = time.time() - t_0
     del model
     print(f"Phase 1 (MalConv on {args.device}): {seconds_malconv:.0f} s.", flush=True)

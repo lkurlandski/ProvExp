@@ -88,6 +88,14 @@ practice, and its limits are measurable. Done at pilot scale:
   random 0); MalConv's byte IG removes 2.04 of the GBDT's (its window rankings 0.03-0.09). Shared reliance shows up
   at byte level and is largely hidden at window level. Unchecked: where the shared bytes lie; MalConv's own IG
   deletion overshoots enormously (72 log-odds at 50%), a known fragility.
+  Paired (run 31, `artifacts/reports/cm_tables.md`): the byte pullback beats both window GBDT rankings on MalConv
+  at every budget 0.1-5% (58-69/100 files, p <= 0.025); the reverse direction only at 0.1-0.2%. Shared set S =
+  T_g ∩ T_m (run 31, `scripts/cm_shared.py`; top 1%: |S| = 6.3% of T vs. 1% chance): deleting S removes 2.78
+  (GBDT) / 3.78 (MalConv) log-odds; same-size GBDT-only bytes 0.86 / -0.08; MalConv-only 0.04 / 2.58; random 0 / 0.
+  The shared evidence lies in the first 1 KB (97% of the GBDT's, 75% of MalConv's) and is carried by named header and
+  data-directory features (86% of its GBDT credit; hashed features 5%). **Caveat (3-B's pitfall):** an expert with a
+  PE parser could map most of these features to bytes by hand; P does it generally and per file, and window-level
+  methods (the P-free alternative) miss it.
 - **3-B. Finding (and mitigating) spurious correlations with the pullback** (`docs/shortcuts_plan.md`). **Failed as
   the pullback application (2026-10-12): the findings rest on named features, so P was a convenience; see
   `docs/shortcuts_plan.md`, "Why it failed". To be replaced by a new pullback application (brainstorm next).** A
