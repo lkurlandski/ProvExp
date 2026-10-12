@@ -1,6 +1,6 @@
 # 3-C: Rule matches pushed forward into a learned detector's features
 
-Status: design proposed (2026-10-12), go/no-go passed (run 34). Not built. The task's motivation may still be refined
+Status: design proposed (2026-10-12), go/no-go passed (runs 34, 35). Not built. The task's motivation may still be refined
 (user: the original question was crude; look for a question that better shows the pushforward's use before building).
 Packing is not a motivation or case study (user, 2026-10-12): well-explored.
 
@@ -45,3 +45,25 @@ files for most capability rules (imports vs. strings), so the location matters.
 features' credit elsewhere), every represented rule may look like a reliance gap. The experiment needs that contrast.
 
 Outputs: `artifacts/experiments/yara_check/seed-0/`; log `artifacts/logs/yara_check-seed0.log`.
+
+## Reliance go/no-go (run 35, `scripts/yara_reliance.py`; fixed in advance)
+
+For the 16 split rules, the pullback of the GBDT's |TreeSHAP| summed over S, against 200 random byte sets with S's run
+lengths at uniform offsets; S is above random in a file if it beats their 95th percentile. Pass: more than half of the
+rules above random in >= 60% of their files. Hypothesis: matched API names sit in the import table, whose bytes carry
+concentrated credit, so S beats random in most files.
+
+**GO: 14/16.** Every capability and anti-debug rule is above random in 83-100% of its files (median 60x to 3,800x the
+random median); the two PEiD rules that showed a split (Armadillo, MSVC 6) are not (their matches are large code
+regions). The features S determines carry 1.3-4.3x more credit on files where the rule fires than on the other pilot
+files. In absolute terms each rule's bytes stay a small part of the verdict (0.1-2.3% of |a|).
+
+**Reading, and what it changes.** The reliance side is not flat; if anything it is uniformly *high*: no represented
+rule is a reliance gap at this threshold, so the three-way split collapses to represented-and-relied-on vs. not
+represented, and the second half is P alone. Two caveats: uniform random runs mostly land on bytes no non-aggregate
+feature reads, so beating them partly says "S lies where the GBDT reads" (a reference matched in provenance, e.g.
+other bytes that determine non-aggregate features, would be stricter); and |credit| ignores direction. The likely
+refinement (to discuss): **direction**, as in 3-A's triage: a rule firing says "suspicious"; does the GBDT read the same
+content toward malware or toward benign, per rule and across files?
+
+Outputs: `artifacts/experiments/yara_reliance/seed-0/`; log `artifacts/logs/yara_reliance-seed0.log`.
