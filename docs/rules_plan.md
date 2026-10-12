@@ -93,3 +93,9 @@ reference: most represented rules are reliance gaps.** Direction (information): 
 malware (57-92% of files), except DebuggerException (0/8) and win_hook (2/6). Small samples (5-35 files per rule).
 
 Outputs: `artifacts/experiments/yara_reliance/seed-0/`; log `artifacts/logs/yara_reliance-seed0.log`.
+
+## Rule set (decided 2026-10-12)
+
+Stay with the generic Yara-Rules sets for the methodology: they already populate all three categories (representation
+gap, reliance gap, relied on), and the bottleneck is files per rule, not rules. A curated, realistic set (YARA-Forge,
+with files selected where its rules fire) is noted for later, before final numbers, for the realism of the case.

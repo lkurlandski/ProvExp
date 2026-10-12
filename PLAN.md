@@ -412,6 +412,9 @@ methods may be revisited.
   when the bytes it modifies carry the GBDT's pullback would tie it to attacks (days of tooling, e.g.,
   secml-malware). Until then, a stated limitation (`docs/cm_plan.md`, "Caveats").
 - **At scale:** bootstrap confidence intervals for the headline numbers; seeds 0–2.
+- **3-C's rule set (noted 2026-10-12):** the methodology uses generic Yara-Rules (`capabilities/`, `antidebug_antivm/`,
+  ...); before final numbers, consider a curated set (YARA-Forge, files selected where its rules fire) for realism
+  (`docs/rules_plan.md`).
 
 ## Data, models, compute
 
