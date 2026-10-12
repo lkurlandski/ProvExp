@@ -32,7 +32,8 @@ the pilot results and the claims are settled (user). `run/` holds the commands t
    positives each; MalConv predictions in `artifacts/checkpoints-predictions/`, names via
    `provexp.data.utils.decode_sha256_tensor`, which needs CPU tensors). Done: paired tests and the shared bytes (run 31, `PLAN.md` 3-A: the shared
    surface is header and data-directory fields; 86% of its credit is on named features). #2 (option 1, user): run 32 done (`PLAN.md` 3-A): MalConv-only verdicts rest
-   on bytes the GBDT does not read; GBDT-only verdicts on bytes MalConv reads the other way. Next: see `PLAN.md` 3-A caveats.
+   on bytes the GBDT does not read; GBDT-only verdicts on bytes MalConv reads the other way. Follow-ups done (offsets, blind-byte features, random fill;
+   `PLAN.md` 3-A). 3-A's pullback analyses are complete at pilot scale.
 2. Rewrite the claims (`PLAN.md`, "Thesis and claims") to fit the new structure; ask the user before changing what a
    claim is for.
 3. Later: 3-C's rule source (generic YARA rules, or capa with a faster backend or file-scope rules); what to do with

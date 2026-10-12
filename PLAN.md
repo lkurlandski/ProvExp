@@ -104,7 +104,12 @@ practice, and its limits are measurable. Done at pilot scale:
   benign (oppose); deleting those bytes makes MalConv detect 19/25 files (random same-size part of the GBDT's top
   set: 1/25); GBDT false positives likewise 17/25 vs. 1/25. Caveats: deleting the GBDT's blind bytes barely moves the
   GBDT (-0.16 vs. -4.55 for a random same-size part); for A = MalConv, any large deletion raises the GBDT (zero fill),
-  which confounds the B side.
+  which confounds the B side. Follow-up (run 32 re-run, both fills): (1) the GBDT's oppose and agree bytes lie in
+  the first 1 KB (87-97%), its blind bytes beyond 64 KB (69-72%); (2) the credit on its blind bytes is on aggregate
+  features (string-regex counts, section-entropy and import hashes), which deleting a few of their bytes barely
+  changes (run 23's boundary), so deletion cannot validate them; (3) random fill reproduces the GBDT-side results
+  (oppose bytes: MalConv detects 22/25 vs. 0/25) and does not remove the B-side confound when A = MalConv (any large
+  deletion raises the GBDT either way), so the MalConv-flagged cells are descriptive only.
 - **3-B. Finding (and mitigating) spurious correlations with the pullback** (`docs/shortcuts_plan.md`). **Failed as
   the pullback application (2026-10-12): the findings rest on named features, so P was a convenience; see
   `docs/shortcuts_plan.md`, "Why it failed". To be replaced by a new pullback application (brainstorm next).** A

@@ -68,6 +68,10 @@ Q_A = 0.01
 Q_B = (0.01, 0.05)
 Q_B_DELETE = 0.05  # The attended fraction whose categories are deleted.
 CATEGORIES = ("blind", "oppose", "agree")
+# Offset bins (bytes from the start of the file) for describing where each category's evidence lies.
+OFFSET_BINS = (0, 1024, 4096, 65536)
+# The GBDT features recorded per file for the credit on its blind bytes.
+NUM_BLIND_FEATURES = 5
 
 BoolArray = npt.NDArray[np.bool_]
 FloatArray = npt.NDArray[np.float64]
@@ -133,6 +137,17 @@ def process_file(task: dict[str, Any]) -> dict[str, Any]:
                 row[f"evidence_A:{c}:{q_b}"] = float(e_a[mask].sum())
                 row[f"evidence_B:{c}:{q_b}"] = float(e_b[mask].sum())
             if q_b == Q_B_DELETE:
+                # Where A's evidence in each category lies, by absolute offset.
+                edges = np.asarray([min(lo, m) for lo in OFFSET_BINS] + [m])
+                for c, mask in cats.items():
+                    for lo, hi, start in zip(edges[:-1], edges[1:], OFFSET_BINS):
+                        row[f"offset_{start}:{c}"] = float(e_a[lo:hi][mask[lo:hi]].sum())
+                # Which GBDT features carry the credit on its blind bytes (a_j times feature j's share in them).
+                if A == "gbdt" and cats["blind"].any():
+                    share = prov.rmatvec(np.append(cats["blind"], False).astype(np.float64) if prov.has_null else cats["blind"].astype(np.float64))
+                    credit = task["explanation"] * share
+                    top_j = np.argsort(-credit)[:NUM_BLIND_FEATURES]
+                    row["blind_features"] = json.dumps({int(j): float(credit[j]) for j in top_j if credit[j] > 0})
                 sets["top"] = top
                 for c, mask in cats.items():
                     if mask.any():
@@ -142,8 +157,9 @@ def process_file(task: dict[str, Any]) -> dict[str, Any]:
                         r[rng.choice(idx, size=int(mask.sum()), replace=False)] = True
                         sets[f"random_{c}"] = r
 
-        for name, mask in sets.items():
-            z = ablate(data, mask, protection.mask, "zeros", None, protection.header, protection.header_values)
+        for k, (name, mask) in enumerate(sets.items()):
+            fill_rng = np.random.default_rng([task["seed"], 3, k])
+            z = ablate(data, mask, protection.mask, task["fill"], fill_rng, protection.header, protection.header_values)
             try:
                 x = np.asarray(extractor.feature_vector(z), dtype=np.float64)  # type: ignore[no-untyped-call]
                 ok = verify(protection, data, z, float(x[IS_PE])) is None
@@ -161,7 +177,7 @@ def process_file(task: dict[str, Any]) -> dict[str, Any]:
 ################################################################################
 
 
-def summarize(files: pl.DataFrame, thresholds: dict[str, float]) -> None:
+def summarize(files: pl.DataFrame, thresholds: dict[str, float], names: list[str]) -> None:
     """Print, per cell, how A's evidence splits and what deleting each part does to both models."""
     ok = files.filter(pl.col("status") == "ok")
     print(f"\n{ok.height} of {files.height} files ok. A's top {Q_A:.0%} of bytes by evidence for malware, split by how B")
@@ -193,6 +209,31 @@ def summarize(files: pl.DataFrame, thresholds: dict[str, float]) -> None:
             stops = int((g[f"{A}:{name}"] <= thresholds[A]).sum())
             starts = int((g[f"{B}:{name}"] > thresholds[B]).sum())
             print(f"| {cell} | {name} | {g.height} | {float(dA.median()):.2f} | {float(dB.median()):.2f} | {stops} | {starts} |")  # type: ignore[arg-type]
+    print(f"\nWhere A's evidence in each category lies (q_B = {Q_B_DELETE:.0%}), by offset from the start: each file's share,")
+    print("averaged over the files with evidence in the category.\n")
+    bins = [f"[{lo}, {hi})" for lo, hi in zip(map(str, OFFSET_BINS), [*map(str, OFFSET_BINS[1:]), "end"])]
+    print("| cell | category | files | " + " | ".join(bins) + " |")
+    print("|---|---|---|" + "---|" * len(bins))
+    for cell in sorted(ok["cell"].unique()):
+        f = ok.filter(pl.col("cell") == cell)
+        for c in CATEGORIES:
+            v = f.select([f"offset_{lo}:{c}" for lo in OFFSET_BINS]).to_numpy()
+            total = v.sum(axis=1, keepdims=True)
+            keep = total[:, 0] > 0
+            share = v[keep] / total[keep]
+            print(f"| {cell} | {c} | {int(keep.sum())} | " + " | ".join(f"{x:.2f}" for x in share.mean(axis=0)) + " |")
+    if "blind_features" in ok.columns:
+        credit: dict[str, float] = {}
+        count: dict[str, int] = {}
+        for entry in ok["blind_features"].drop_nulls():
+            for j, v in json.loads(entry).items():
+                credit[names[int(j)]] = credit.get(names[int(j)], 0.0) + v
+                count[names[int(j)]] = count.get(names[int(j)], 0) + 1
+        print(f"\nThe GBDT features carrying the most credit on its blind bytes (top {NUM_BLIND_FEATURES} per file, summed):\n")
+        print("| feature | files | credit |")
+        print("|---|---|---|")
+        for name, v in sorted(credit.items(), key=lambda t: -t[1])[:15]:
+            print(f"| {name} | {count[name]} | {v:.2f} |")
 
 
 ################################################################################
@@ -212,12 +253,13 @@ def main() -> None:
     parser.add_argument("--checkpoints", type=Path, default=ROOT / "checkpoints")
     parser.add_argument("--db", type=Path, default=Path("/shared/datasets/EMBER-2024/data/ts"))
     parser.add_argument("--outdir", type=Path, default=ROOT / "artifacts" / "experiments" / "cm_triage")
+    parser.add_argument("--fill", type=str, choices=["zeros", "random"], default="zeros", help="How deletion fills bytes.")
     parser.add_argument("--num_workers", type=int, default=16)
     args = parser.parse_args()
 
     selection = args.selection or ROOT / "artifacts" / "explanation_set" / f"ts-disagreement-seed{args.seed}.parquet"
     thresholds: dict[str, float] = json.loads(selection.with_suffix(".json").read_text())["thresholds"]
-    outdir = args.outdir / f"seed-{args.seed}"
+    outdir = args.outdir / f"seed-{args.seed}" / args.fill
     outdir.mkdir(parents=True, exist_ok=True)
     expdir = args.explanations / f"seed-{args.seed}"
     explanations = np.load(expdir / f"{EXPLAINER}.npy")
@@ -241,7 +283,7 @@ def main() -> None:
         log_odds, ig, _ = malconv_explanations(model, data, args.ig_steps, args.device)
         tasks.append({"index": int(r["index"]), "name": r["name"], "label": int(r["label"]), "cell": r["cell"],
                       "A": "gbdt" if r["cell"].endswith("gbdt_only") else "malconv",
-                      "shard": int(r["shard"]), "position": int(r["position"]), "dbdir": args.db, "seed": int(r["index"]),
+                      "shard": int(r["shard"]), "position": int(r["position"]), "dbdir": args.db, "seed": int(r["index"]), "fill": args.fill,
                       "explanation": explanations[int(r["index"])].astype(np.float64), "malconv_log_odds": log_odds, "ig": ig})
     seconds_malconv = time.time() - t_0
     del model
@@ -265,7 +307,7 @@ def main() -> None:
               "explainer": EXPLAINER, "q_a": Q_A, "q_b": list(Q_B), "q_b_delete": Q_B_DELETE, "thresholds": thresholds,
               "seconds_malconv": seconds_malconv, "seconds_files": seconds_files, "failed": int((df["status"] != "ok").sum())}
     (outdir / "report.json").write_text(json.dumps(report, indent=2))
-    summarize(df, thresholds)
+    summarize(df, thresholds, PEFeatureExtractor().feature_names)
 
 
 if __name__ == "__main__":
