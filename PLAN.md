@@ -112,24 +112,11 @@ practice, and its limits are measurable. Done at pilot scale:
   attack on MalConv; does it transfer to the GBDT more often when the bytes it modifies carry the GBDT's pullback?
   Days of tooling (e.g., secml-malware); otherwise a stated limitation.
   (c) *Seeds 1-2* (models exist): replication, at scale-up.
-- **3-B. Finding (and mitigating) spurious correlations with the pullback** (`docs/shortcuts_plan.md`). **Failed as
-  the pullback application (2026-10-12): the findings rest on named features, so P was a convenience; see
-  `docs/shortcuts_plan.md`, "Why it failed". To be replaced by a new pullback application (brainstorm next).** A
-  feature-based detector learns reliance on content that tracks the label but is not about maliciousness (forgeable
-  metadata, compiler/packaging artifacts). The pullback surfaces these from an opaque feature set by naming the
-  content behind influential hashed/aggregate features across a corpus (run 22: e.g. `imports:library_hash_254` =
-  `python312.dll`/`msi.dll` per file); setting the named bytes confirms the model depends on them and an attacker can
-  forge them (run 24: the Delphi TimeDateStamp moves the GBDT +0.42 vs +0.12 random; a classic "signed/benign-metadata
-  -> benign" shortcut). **Not PB1** (per-file faithfulness) and **not SHAP** (cannot name content in an opaque
-  feature or tell spurious from meaningful); **cheaper than occlusion** (one extraction vs. hundreds/file), so it runs
-  corpus-wide. Run 23 (appended aggregate strings do not move the model) marks the boundary: P says which spurious
-  reliance is byte-settable (forgeable metadata) and which is not (aggregates). Mitigation (drop/neutralize the
-  carrying features via Pᵀ1_S, or retrain) is the "possibly mitigate" half, internal to 3-B (NOT 3-C, which is the
-  separate YARA/capa pushforward application). **Status (2026-10-12): done at pilot scale** (`docs/shortcuts_plan.md`, "Results"): the top 20 discovery patterns by a fixed rule, transplanted at the
-  bytes each target's P names; 4 artifacts confirmed causal and settable (certificate-table size +1.34 vs. -0.27
-  random; DEBUG.Size 0x54; the `.rsrc` name in a hashed bucket); neutralizing the 6 features P names removes them at
-  no measurable accuracy cost. Baseline without P (run 25): chi-squared 4-grams find certificate bytes the model
-  does not read (credit ~0, appending moves nothing); only P locates the field it does read.
+- **3-B. Spurious correlations via the pullback: dropped (2026-10-12)** (`docs/archive/shortcuts_plan.md`). The
+  pipeline worked at pilot scale (runs 22-29: discovery, causal transplant, mitigation by neutralizing the features
+  P names, 3.6% evasion at 1% FPR from forging the confirmed artifacts), but the findings rest on named features
+  (data-directory sizes) that SHAP plus feature names surfaces directly, so it did not show what the pullback adds.
+  Its post-mortem produced the screening criteria above. 3-A replaced it.
 - **3-C. Rule-based detectors' explanations in the GBDT's features** (the pushforward; adopted 2026-10-09): a YARA
   or capa match is a problem-space explanation of a rule-based detector (the matched bytes are why it fired);
   pushed forward, it is cast in the GBDT's feature vocabulary. Per-rule feature profiles (the mean pushforward over
@@ -209,13 +196,16 @@ artifact paths that predate the renaming (`artifacts/experiments/e1/`, which hol
 | PB2 | 2. Pullback: planted-trigger recovery | E3 (pullback half) |
 | PF1 | 3. Pushforward: faithfulness | new |
 | PF2 | 3. Pushforward: trigger ground truth for feature-space explainers | E3 (pushforward half) |
-| CM | 4. Comparing classifiers: GBDT vs. MalConv in both spaces | A1 (promoted from the appendix) |
+| CM | 3-A. Comparing detectors through the pullback (GBDT vs. MalConv); its feature-space half is in the appendix | A1 (promoted from the appendix) |
+| 3-B | Spurious correlations via the pullback (dropped; `docs/archive/shortcuts_plan.md`) | new (2026-10-09) |
+| 3-C | Rule-based detectors' matches pushed forward (not built) | new (2026-10-09) |
 | App-L | Appendix: localizability (reliance on absence) | E4 |
 | App-R | Appendix: mechanical redundancy | A3 |
 
 Documents and scripts carry the IDs: `docs/cp_plan.md`, `docs/cp_census.md`, `scripts/cp_tables.py`,
 `scripts/cp_coarsening.py`; `docs/pb1_plan.md`, `docs/pb1_pilot.md`, `docs/pb1_baselines.md`, `scripts/pb1_tables.py`
-(the runner is `scripts/faithfulness.py`). The planted trigger is a shared testbed for PB2 and PF2.
+(the runner is `scripts/faithfulness.py`); `docs/cm_plan.md`, `scripts/cm_*.py` (3-A). The planted trigger is a shared
+testbed for PB2 and PF2.
 
 ## Experiments
 
@@ -334,8 +324,9 @@ KernelSHAP needs its full 32,768 coalitions; at 512 it appears to miss the trigg
 ### 4. Application: comparing classifiers (CM; now 3-A, `docs/cm_plan.md`)
 
 Superseded by 3-A ("Paper structure"): the problem-space comparison is the pullback's application, done at pilot
-scale (runs 30-32). The feature-space comparison (MalConv's explanations pushed forward vs. the GBDT's TreeSHAP) is in
-the appendix as a curiosity, not built.
+scale (runs 30-33; `docs/cm_plan.md`) and written up in `manuscript/_d_applications.tex`. The feature-space
+comparison (MalConv's explanations pushed forward vs. the GBDT's TreeSHAP) is in the appendix as a curiosity, not
+built.
 
 ### Second classifier: the MLP (after the GBDT methodology is established)
 
@@ -432,11 +423,11 @@ methods may be revisited.
 
 ## Timeline and gates
 
-Phases 0–2 are complete (literature; `provexp`; features, models, stage-1 explanations, census). As of 2026-10-09:
-**the intrinsic evaluation is done at pilot scale (CP's theory, PB1, PF1; PB2/PF2 demoted); the extrinsic
-applications 3-A, 3-B, 3-C are chosen but not designed.** The dates below were set before the restructuring. Most of the research runs at pilot scale; scaling up is for the
-final numbers, when the pilot results and claims are settled. `run/` holds the commands that produced everything in
-`artifacts/`.
+Phases 0–2 are complete (literature; `provexp`; features, models, stage-1 explanations, census). As of 2026-10-12:
+**the intrinsic evaluation is done at pilot scale (CP's theory, PB1, PF1; PB2/PF2 demoted); 3-A is done at pilot
+scale and written up; 3-B is dropped; 3-C is not built.** The dates below were set before the restructuring. Most of
+the research runs at pilot scale; scaling up is for the final numbers, when the pilot results and claims are settled.
+`run/` holds the commands that produced everything in `artifacts/`.
 
 | Dates | Work | Gate |
 |---|---|---|
@@ -445,7 +436,8 @@ final numbers, when the pilot results and claims are settled. `run/` holds the c
 | Oct 9 (later) | ~~Run 21 read~~; **paper restructured**; ~~3-B identify spurious correlations~~ (runs 22, 24) | |
 | Oct 12 | ~~3-B consolidated~~ (runs 26-28: transplant, reliance, mitigation); baseline run 25 (done) | |
 | Oct 12 (later) | 3-B dropped; ~~3-A at pilot scale~~ (runs 30-32: cross-deletion, shared attack surface, triage) | |
-| next | 3-A write-up (PLAN, then the manuscript); 3-C at pilot scale | to re-plan with the user |
+| Oct 12 (later) | ~~3-A's window-level triage~~ (run 33); ~~3-A written up~~ (`docs/cm_plan.md`, the manuscript) | |
+| next | 3-C: settle its design (rule source, the go/no-go check), then pilot scale; rewrite claims 1-3 | with the user |
 | later | Scale-up (2,000 files, seeds 0–2), when the user decides; the MLP if time allows | |
 | later | Appendix (App-R; the byte-set control bound) | |
 | Dec 15–late Jan | Writing: introduction and contributions, framework edits, figures | Submission |

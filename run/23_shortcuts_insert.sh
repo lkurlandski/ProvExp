@@ -1,5 +1,5 @@
 #!/bin/bash
-# 3-B insertion test (docs/shortcuts_plan.md), content increment: append the top benign-pushing string patterns
+# 3-B insertion test (docs/archive/shortcuts_plan.md), content increment: append the top benign-pushing string patterns
 # (run/22) to held-out test malware the GBDT calls malware, verify the file still parses, re-extract and re-score,
 # and compare the drop in the malware log-odds against random bytes of the same length. 200 files, 20 patterns.
 # Smoke test: 3 files in 6 s. Expect a few minutes on 16 workers (shard iteration dominates).

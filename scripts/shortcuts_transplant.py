@@ -1,5 +1,5 @@
 """
-3-B transplant test (docs/shortcuts_plan.md): is each candidate spurious correlation surfaced by the pullback causal,
+3-B transplant test (docs/archive/shortcuts_plan.md): is each candidate spurious correlation surfaced by the pullback causal,
 and can an attacker set it? The candidates are not hand-picked: they are the top `--num_candidates` patterns of the
 discovery run (scripts/shortcuts.py, benign-pushing by default), by score, that recur in at least `--min_files` files.
 

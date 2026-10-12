@@ -1,5 +1,5 @@
 """
-3-B insertion test (docs/shortcuts_plan.md, "The insertion / set-field test"): does inserting a benign-pushing byte
+3-B insertion test (docs/archive/shortcuts_plan.md, "The insertion / set-field test"): does inserting a benign-pushing byte
 pattern into held-out malware lower the GBDT's score?
 
 This is the content case (increment 1): each pattern's bytes are appended to the file (or, past the 4 MB truncation,

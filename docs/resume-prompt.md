@@ -1,43 +1,40 @@
-# Resume: ProvExp, task 3-B
+# Resume: ProvExp, after 3-A (next: 3-C)
 
-We're resuming ProvExp. Read CLAUDE.md, then docs/status.md ("Where we are", the 3-B row, "Next"), then
-docs/shortcuts_plan.md in full (especially "Status note (2026-10-09)"), then PLAN.md's "Paper structure" and the 3-B
-bullet under "Experiments".
+We're resuming ProvExp. Read `CLAUDE.md`, then `docs/status.md` (the table, "Next", and the 2026-10-12 decisions),
+then `PLAN.md`'s "Paper structure" (especially the screening criteria in section 3 and the 3-C bullet), then
+`docs/cm_plan.md` (3-A, the model for what a finished application looks like). Skim `docs/related_work.md`, section H.
 
-## Where 3-B actually stands
+## Where things stand
 
-3-B is the extrinsic application: **use the pullback to find spurious correlations the GBDT has learned (reliance on
-label-correlated but non-malicious content: forgeable metadata, compiler/packaging artifacts), and possibly mitigate
-them.** This is NOT PB1 (per-file faithfulness) and NOT 3-C (the separate YARA/capa pushforward application).
+- **Framework and intrinsic evaluation:** done at pilot scale (CP's theory, PB1, PF1; PB2/PF2 demoted).
+- **3-A, the pullback's application: done at pilot scale and written up** (runs 30-33; `docs/cm_plan.md`;
+  `manuscript/_d_applications.tex`). The GBDT on EMBER v3 and MalConv compared byte by byte: their shared reliance (in
+  the header; missed by window-level comparison without P) and the triage of their disagreements (MalConv-only
+  verdicts rest on bytes the GBDT does not read; GBDT-only verdicts on header bytes MalConv reads the other way,
+  visible only at byte level). Deferred: seeds 1-2 (scale-up), real-attack transfer (`PLAN.md`, "Open questions").
+- **3-B: dropped** (`docs/archive/shortcuts_plan.md`). Its findings rested on named features; its post-mortem gave the
+  screening criteria.
+- **3-C, the pushforward's application: adopted, not designed.** A YARA or capa match is a problem-space explanation
+  of a rule-based detector; pushed forward, it is cast in the GBDT's features, so per-rule feature profiles can be
+  compared with what the GBDT relies on. A coverage check stopped early: public YARA signatures are too sparse;
+  generic rule sets and capa are untested; capa's default backend is very slow.
 
-Little real progress was made last session; the framing churned badly. What exists is raw material, not a settled
-experiment:
-- `scripts/shortcuts.py` + `run/22_shortcuts.sh`: discovery. Pulls back TreeSHAP per file over the 2,000-file test
-  set, groups the top-credited byte spans by content and top feature. Output in
-  `artifacts/experiments/shortcuts/seed-0/{treeshap_interventional-benign,-malware}/patterns.parquet`. Surfaced e.g.
-  the Delphi TimeDateStamp and certificate size (benign-pushing), capability strings (malware-pushing), and content
-  behind hashed import/section features.
-- `scripts/shortcuts_insert.py` + `run/23`: appending benign-pushing *string* content to held-out malware does NOT
-  move the GBDT (correct: aggregate features, not byte-settable). A boundary result.
-- `scripts/shortcuts_setfield.py` + `run/24`: setting the Delphi TimeDateStamp to its flagged value moves the GBDT
-  toward benign +0.42 vs +0.12 random; DEBUG.Size +0.69. Shows those spurious correlations are causal and
-  attacker-settable. BUT the two fields were hand-picked, not driven by the discovery output.
-- All three have tests (`tests/test_shortcuts*.py`), pass ruff/mypy.
+## What to do next
 
-## What 3-B still needs (decide scope first, then execute as a fire-and-forget task)
+1. **Settle 3-C's design with me before writing code.** Screen it against the criteria in `PLAN.md` (section 3):
+   what only the pushforward gives, the practical task, the realistic alternative (what a practitioner does today
+   without P), and a go/no-go check on existing data (e.g., rule coverage on the 100 pilot files) whose failing
+   outcome is stated in advance. Present one recommendation, not a survey.
+2. Then build 3-C at pilot scale, the way 3-A was built: a short hypothesis before each run, a numbered `run/`
+   script per step, results in an experiment doc and `PLAN.md`, then the manuscript.
+3. Later: rewrite claims 1-3 (ask before changing what a claim is for); reorganize `_d_applications.tex` into
+   intrinsic / extrinsic; the scale-up, all experiments together, when I decide.
 
-1. A single, defensible "the pullback surfaces spurious correlations" result, driven by the discovery output rather
-   than hand-picked fields: a short ranked list of surfaced spurious correlations, each with its content, prevalence
-   by label, model reliance, and (for the settable ones) the run-24-style causal/exploitability number.
-2. Baselines without P: data-mined label-skewed byte patterns (chi2/IG on a training sample) and occlusion as the
-   cost baseline (cite PB1). Needs a training-set sample from the 1.3 TB SimpleDB (hand me the command; I run long
-   jobs).
-3. Optional mitigation half: remove a surfaced correlation (neutralize the carrying features via each feature's share
-   of the artifact's bytes, Pᵀ1_S, or retrain with the artifact randomized) and show reliance drops without hurting
-   clean accuracy. Internal to 3-B.
+## How to work
 
-## How to work (I was not happy last session)
-
-Decide the scope of 3-B with me in ONE exchange, then execute without turning it into a stream of micro-questions or
-reframings. Keep docs short. Don't reframe the claim (see memory [[dont-reframe-research-claims]], [[3b-framing]]).
-Long runs: smoke-test, then hand me the exact command. Then let's take stock and move to 3-C or 3-A.
+- Stay on the current task; every analysis must strengthen its claim. Batch validity checks; defer the merely
+  interesting to `PLAN.md`'s "Open questions".
+- Decide scope with me in one exchange, then execute without a stream of micro-questions or reframings.
+- Runs over about 10-15 minutes: smoke-test, then give me the `run/` script; shorter runs you can do yourself.
+- Pilot scale (100 files, one seed) until I decide otherwise. Keep docs short and current; update `docs/status.md` at
+  the end of the session. Commit in logical pieces; do not push.

@@ -1,5 +1,5 @@
 #!/bin/bash
-# 3-B (docs/shortcuts_plan.md): on a training sample (50 random training shards, 50 benign + 50 malware files from
+# 3-B (docs/archive/shortcuts_plan.md): on a training sample (50 random training shards, 50 benign + 50 malware files from
 # each, 5,000 files), the prevalence by label of the top 100 benign-pushing discovery patterns at their feature's
 # bytes, and the baseline without P: label-skewed byte 4-grams (exact document frequencies, ranked by chi-squared).
 # Holds 16 GB of 4-gram counters in shared memory; reads about 55 GB of shards.

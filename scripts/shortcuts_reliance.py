@@ -1,5 +1,5 @@
 """
-3-B reliance (docs/shortcuts_plan.md): how much the GBDT relies on each candidate, measured the same way for the
+3-B reliance (docs/archive/shortcuts_plan.md): how much the GBDT relies on each candidate, measured the same way for the
 pullback's candidates and for the label-skewed 4-grams mined without P, and which features each pullback candidate
 carries (the input to mitigation).
 

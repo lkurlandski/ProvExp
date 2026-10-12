@@ -1,5 +1,5 @@
 #!/bin/bash
-# 3-B (docs/shortcuts_plan.md): over the 2,000-file explanation set, the credit toward benign of the top 20 pullback
+# 3-B (docs/archive/shortcuts_plan.md): over the 2,000-file explanation set, the credit toward benign of the top 20 pullback
 # candidates (at their feature's bytes, and at any occurrence) and of the top 20 mined 4-grams (run 25; at any
 # occurrence), and the features each candidate's bytes carry (the input to mitigation, run 28).
 # First run without --mined (4.0 min on 16 workers); this is the run with the mined 4-grams.

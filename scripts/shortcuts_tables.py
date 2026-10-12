@@ -1,5 +1,5 @@
 """
-3-B tables (docs/shortcuts_plan.md): the ranked list of candidate spurious correlations surfaced by the pullback, the
+3-B tables (docs/archive/shortcuts_plan.md): the ranked list of candidate spurious correlations surfaced by the pullback, the
 baseline without P (label-skewed 4-grams), and mitigation, assembled from the outputs of scripts/shortcuts_transplant.py,
 scripts/shortcuts_reliance.py, scripts/shortcuts_train_sample.py, and scripts/train_classic.py. Missing inputs are
 skipped.

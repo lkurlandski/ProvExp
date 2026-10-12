@@ -1,5 +1,5 @@
 #!/bin/bash
-# 3-B (docs/shortcuts_plan.md): the byte patterns the GBDT keys on, via the pullback of interventional TreeSHAP, on the
+# 3-B (docs/archive/shortcuts_plan.md): the byte patterns the GBDT keys on, via the pullback of interventional TreeSHAP, on the
 # 2,000-file explanation set: the top 256 credited bytes per file, split into spans that share a top feature, grouped
 # by feature and content across files. Benign-pushing patterns (the focus), then malware-pushing ones (secondary).
 # Smoke test: the 100 pilot files in 15 s on 16 workers. Expect a few minutes per direction on 32 workers.

@@ -1,5 +1,5 @@
 """
-3-B correctness spot-check (docs/shortcuts_plan.md): the pullback claims that certain header-field *bytes* carry a
+3-B correctness spot-check (docs/archive/shortcuts_plan.md): the pullback claims that certain header-field *bytes* carry a
 benign-pushing feature's credit. Set those bytes, in held-out malware, to the benign value the pullback flagged
 (run 22), through the real bytes -> parser -> feature path, and confirm the GBDT moves toward benign; a random value
 of the same width is the control. This is a validity check that the named bytes drive the feature, not the headline
@@ -49,7 +49,7 @@ from shortcuts_insert import score  # noqa: E402
 
 
 ROOT = Path(__file__).parent.parent
-# Benign-pushing header-field values from run 22 (docs/shortcuts_plan.md): the Delphi linker's constant timestamp and
+# Benign-pushing header-field values from run 22 (docs/archive/shortcuts_plan.md): the Delphi linker's constant timestamp and
 # a common benign debug-directory size. Each is (field key, little-endian value).
 DEFAULT_FIELDS = ("IMAGE_FILE_HEADER.TimeDateStamp=195e422a", "IMAGE_DIRECTORY_ENTRY_DEBUG.Size=54000000")
 

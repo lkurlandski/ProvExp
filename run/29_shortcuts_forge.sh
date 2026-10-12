@@ -1,5 +1,5 @@
 #!/bin/bash
-# 3-B exploitability (docs/shortcuts_plan.md): forge the confirmed artifacts (one per top feature: DEBUG.Size 0x54, the
+# 3-B exploitability (docs/archive/shortcuts_plan.md): forge the confirmed artifacts (one per top feature: DEBUG.Size 0x54, the
 # certificate-table size, the .rsrc name) together into 2,000 held-out malware, at the bytes each file's P names;
 # evasion at the 1%-validation-FPR threshold, against the original GBDT and the neutralized one (run 28).
 # Smoke test: 40 files in 0.3 min on 8 workers per model (16% evasion vs. 0% random on the original, 0% neutralized).

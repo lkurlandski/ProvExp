@@ -1,5 +1,5 @@
 #!/bin/bash
-# 3-B correctness spot-check (docs/shortcuts_plan.md): set a benign-pushing header field (run 22) to its flagged value
+# 3-B correctness spot-check (docs/archive/shortcuts_plan.md): set a benign-pushing header field (run 22) to its flagged value
 # in 200 held-out malware, through the real bytes -> parser -> feature path, and confirm the GBDT moves toward benign;
 # a random value of the same width is the control. Validity check that the named bytes drive the feature, not an
 # attack. Smoke test: 5 files in 4 s. Expect a few minutes on 16 workers (shard iteration dominates).

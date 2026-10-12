@@ -1,5 +1,5 @@
 """
-3-B on a training sample (docs/shortcuts_plan.md): (1) how common each surfaced candidate is by label in the data the
+3-B on a training sample (docs/archive/shortcuts_plan.md): (1) how common each surfaced candidate is by label in the data the
 GBDT learned from, and (2) the baseline without P: label-skewed byte 4-grams mined from the same sample (document
 frequency per label, ranked by chi-squared; the classic n-gram feature selection of Kolter & Maloof, 2006).
 

@@ -1,5 +1,5 @@
 """
-3-B exploitability check (docs/shortcuts_plan.md): do the confirmed spurious correlations, forged together, let
+3-B exploitability check (docs/archive/shortcuts_plan.md): do the confirmed spurious correlations, forged together, let
 detected malware cross the detector's operating threshold, and does the P-named mitigation remove that?
 
 The forge set is not hand-picked: the confirmed *artifact* candidates of the transplant test (scripts/

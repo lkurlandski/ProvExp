@@ -1,5 +1,9 @@
 # 3-B: Finding (and Mitigating) Spurious Correlations with the Pullback
 
+**Archived 2026-10-12: dropped as the pullback's application** (its findings rest on named features, so P was a
+convenience; see "Why it failed"). 3-A (`docs/cm_plan.md`) replaced it. Kept for the post-mortem, whose lessons became
+the screening criteria in `PLAN.md` ("Paper structure", 3), and for runs 22-29, whose scripts and artifacts remain.
+
 Started 2026-10-09. An extrinsic application (`PLAN.md`, "Paper structure"). Goal: an application of the pullback that
 is impossible or much more expensive without it.
 

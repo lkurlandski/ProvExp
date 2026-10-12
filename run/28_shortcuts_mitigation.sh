@@ -1,5 +1,5 @@
 #!/bin/bash
-# 3-B mitigation (docs/shortcuts_plan.md): neutralize the features carried by the confirmed artifact candidates (runs
+# 3-B mitigation (docs/archive/shortcuts_plan.md): neutralize the features carried by the confirmed artifact candidates (runs
 # 26, 27; the rule is in scripts/shortcuts_tables.py), retrain the GBDT, and re-run the transplant test against it.
 # Ran 2026-10-12: 6 features; training 3 min on every core; transplant 2 min on 16 workers.
 set -euo pipefail
