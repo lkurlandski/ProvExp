@@ -149,6 +149,39 @@ linear chains. Instead:
 - Dynamic taint tracking (libdft, DFSan; Neutaint, arXiv 1907.03756, uses neural sensitivity as continuous taint). A possible way to *automate* instrumentation; Neutaint is close in spirit to black-box provenance estimation.
 - Provenance-based IDS (Kairos, Poirot, etc.). [bib] Naming collision only.
 
+### H. Ensembles of static detectors with different feature sets (motivation for 3-A; checked 2026-10-12)
+Framing agreed with the user: "static detectors with different feature sets" are deployed and studied together. There
+is **no evidence that raw-byte and EMBER-style detectors specifically are paired in production**; do not claim it.
+- Microsoft Defender ATP, "Inside out: get to know the advanced technologies at the core of Microsoft Defender ATP
+  next generation protection" (Microsoft Security blog, 2019-06-24). Cloud "metadata-based ML engine": "Specialized ML
+  models, which include file type-specific models, feature-specific models, and adversary-hardened [models]" that
+  "analyze a featurized description of suspicious files"; "Stacked ensemble classifiers combine results from these
+  models to make a real-time verdict". A separate "file classification ML engine": "Multi-class, deep neural network
+  classifiers examine full file contents". Also "Detonating a Bad Rabbit: Windows Defender Antivirus and layered
+  machine learning defenses" (2017-12-11). **Not in bib.**
+- Kaspersky, "The multilayered security model in Kaspersky Lab products" (blog, 2017): "ML²", ML in several layers
+  (decision-tree ensembles on the client, deep models elsewhere). Marketing-level; cite only as supporting. **Not in bib.**
+- Quiring, Pirch, Reimsbach, Arp, Rieck. "Against All Odds: Winning the Defense Challenge in an Evasion Competition
+  with Diversification." arXiv 2010.09569, 2020. PEberus won the 2020 Microsoft MLSEC defender challenge. Read §IV:
+  four EMBER-based GBDTs (variations), a monotonic GBDT on byte skipgrams (3-skip 3-grams), and YARA signatures; "A PE
+  file is classified as malware if *any* of the system's components considers it as malicious" (max-combination);
+  "multiple classification models use distinct feature sets ... so that ... an attacker has to evade different feature
+  sets at the same time". Closest precedent for diverse-feature-set ensembles as a defense; also a precedent for 3-C
+  (rules alongside learned models). **Not in bib.**
+- MLSEC 2019 (Endgame, with MRG-Effitas and VM-Ray; DEF CON 27 AI Village): the attack targets were "three trained
+  models": "MalConv trained on EMBER 2018 binaries", "Non-negative MalConv trained on EMBER 2018 binaries", and "A
+  LightGBM model trained on the EMBER 2018 features dataset" (README, github.com/endgameinc/malware_evasion_competition).
+  50 samples, a point per model evaded (150 max; scoring from participant write-ups, e.g. ESET's 133/150; the
+  competition site is offline). The direct precedent for our exact pair. **Not in bib.**
+- Salman, Zhao, Asghar, Ikram, Kaushik, Kaafar. "On the Robustness of Malware Detectors to Adversarial Samples."
+  SECAI 2024 (arXiv 2408.02310). Raw-byte, EMBER, and LSH-based detectors; "adversarial program binaries crafted for
+  one detector are generally less effective against others"; evaluates an ensemble (majority vote) as mitigation.
+  **Not in bib.**
+- Transfer between raw-byte and EMBER-style models is reported inconsistently (e.g., MAB-Malware, Song et al.,
+  arXiv 2003.03100: 28-47% transfer to an EMBER model; others find LightGBM robust to MalConv-crafted samples). For
+  3-A: whether two members share an attack surface is model-pair-specific and unsettled, which a per-file map
+  addresses. Numbers taken from search summaries; read the papers before citing them.
+
 ## To read in full (priority order)
 1. Mohseni/Raff/Gaur 2026 (SHAP on EMBER critique): exact experiments and which claims our framework addresses.
 2. G-DeepSHAP Methods §6.4–6.7 and App. A.5: exact statements to cite; check the group-rescale normalization against our D†.
