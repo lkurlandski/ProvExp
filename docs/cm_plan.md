@@ -1,6 +1,6 @@
 # 3-A: Comparing detectors through the pullback (CM)
 
-Status: done at pilot scale (2026-10-12; runs 30-32). The pullback's extrinsic application, replacing 3-B (user,
+Status: done at pilot scale (2026-10-12; runs 30-33). The pullback's extrinsic application, replacing 3-B (user,
 2026-10-12). Scaling waits until the claims and the other applications are settled (user).
 
 ## Claim
@@ -75,6 +75,15 @@ no evidence that raw-byte and EMBER-style detectors specifically are paired in p
    the first 1 KB), often the other way. Validation: deleting the oppose bytes makes MalConv flag 19/25 GBDT-only
    malware (random same-size part of the GBDT's top set: 1/25) and 17/25 GBDT false positives (1/25); random fill
    22/25 vs. 0/25 and 18/25 vs. 1/25. Deleting blind bytes leaves B unchanged where A is the GBDT (as expected).
+4. **The triage needs byte resolution** (run 33, the realistic alternative: the same split over 256 windows on the 50
+   GBDT-flagged files). At windows the "oppose" category nearly vanishes: for GBDT-only malware, MalConv reads the
+   other way 0.06 of the GBDT's top evidence with the pullback summed per window and 0.02 with the GBDT's occlusion
+   (no P), vs. 0.33 at bytes; the oppose set is nonempty in 6 and 2 of 25 files (25 at bytes), and deleting it makes
+   MalConv flag 3/6 and 0/2 files, no better than random. "Agree" absorbs it (0.75 / 0.70 vs. 0.42). The oppose and
+   agree bytes interleave within the header (both in the first 1 KB), so any window merges them, and the window-level
+   diagnosis reads the opposite of the byte-level one: MalConv seems to *agree* with the GBDT's evidence. The coarsened
+   pullback behaves like occlusion here, so the loss comes from resolution, which only the pullback affords for the
+   GBDT. GBDT false positives: oppose 0.17 at bytes vs. 0.08 / 0.11 at windows, in 4 and 6 files.
 
 ## Caveats
 
@@ -91,5 +100,6 @@ no evidence that raw-byte and EMBER-style detectors specifically are paired in p
 
 ## Open (for the write-up)
 
-- Whether to add the window-level version of the triage (see `PLAN.md`, 3-A, "Possible strengthening").
+- The window-level triage is done (run 33). Real-attack transfer is noted for the future (`PLAN.md`, "Open
+  questions"); seeds 1-2 at scale-up.
 - The feature-space comparison (MalConv pushed forward) is in the appendix as a curiosity (user, 2026-10-12).

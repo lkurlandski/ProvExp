@@ -84,7 +84,7 @@ practice, and its limits are measurable. Done at pilot scale:
    failing outcome is stated in advance.
 5. Ideas the user has already ruled out or doubted get extra skepticism, not a second pitch.
 - **3-A. Comparing detectors through the pullback** (CM; `docs/cm_plan.md`). **The pullback's application; done at
-  pilot scale (2026-10-12, runs 30-32).** Layered static detectors over different feature sets are deployed and
+  pilot scale (2026-10-12, runs 30-33).** Layered static detectors over different feature sets are deployed and
   studied (Microsoft Defender, PEberus, MLSEC 2019; `docs/related_work.md`, H). The GBDT on EMBER v3 and MalConv,
   compared byte by byte (the GBDT's pullback of interventional TreeSHAP vs. MalConv's IG), answer two questions:
   (1) *the shared attack surface*: bytes in both top 1% (6.3% of each top set vs. 1% chance) are worth more to each
@@ -94,7 +94,10 @@ practice, and its limits are measurable. Done at pilot scale:
   files, p <= 0.025). (2) *disagreement triage* (6.4% of test files disagree at 1% FPR): when MalConv alone flags,
   77% of its evidence lies on bytes the GBDT does not read (the file body); when the GBDT alone flags malware,
   MalConv reads most of the same header bytes, a third of them the other way, and deleting those makes MalConv
-  detect 19/25 files (1/25 random). Caveats (in `docs/cm_plan.md`): aggregate features cannot be validated by
+  detect 19/25 files (1/25 random). Byte resolution is needed (run 33): over 256 windows, with the coarsened
+  pullback or the GBDT's occlusion (no P), the oppose share drops from 0.33 to 0.06 / 0.02 and its deletion no longer
+  flips MalConv; oppose and agree bytes interleave in the header, so windows read disagreement as agreement.
+  Caveats (in `docs/cm_plan.md`): aggregate features cannot be validated by
   deletion; the MalConv-flagged cells are descriptive only (large deletions raise the GBDT); deletion is not an
   attack. An expert could map the named header features by hand; automating that is the point (user). The
   feature-space comparison moved to the appendix; byte n-grams and other feature sets are set aside.

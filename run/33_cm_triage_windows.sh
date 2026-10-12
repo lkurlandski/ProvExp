@@ -15,12 +15,12 @@ for SOURCE in pullback occlusion; do
   echo "Triage at 256 windows, the GBDT's window evidence from its $SOURCE (50 files, 32 workers)."
   echo "Output: artifacts/experiments/cm_triage/seed-0/zeros-w256-$SOURCE/"
   echo "Log:    $LOG   (the summary is at its end)"
-  CUDA_VISIBLE_DEVICES=1 OMP_NUM_THREADS=1 python scripts/cm_triage.py \
+  CUDA_VISIBLE_DEVICES=3 OMP_NUM_THREADS=1 python scripts/cm_triage.py \
     --seed 0 \
     --windows 256 \
     --gbdt_windows "$SOURCE" \
     --cells benign_gbdt_only malware_gbdt_only \
-    --num_workers 32 \
+    --num_workers 16 \
     &> "$LOG"
 done
 
