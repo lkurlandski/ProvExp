@@ -1,10 +1,12 @@
 # ProvExp Research Plan
 
-Living document. Last revised 2026-10-12 (3-B consolidated; 2026-10-09: 3-B reframed to spurious correlations; second review, after run 21). **The paper is restructured** into a
-framework, an intrinsic evaluation, and extrinsic applications (see "Paper structure", which supersedes the order of
-"Experiments" below). The intrinsic evaluation is done at pilot scale (CP's theory, PB1, PF1; PB2/PF2 demoted); the
-extrinsic applications (3-A, 3-B, 3-C) are chosen but not designed or built. The claims ("Thesis and claims") predate
-the restructuring and are to be rewritten. No scaling until the pilot results and the claims are settled (user).
+Living document. Last revised 2026-10-12 (3-A done at pilot scale as the pullback's application; 3-B dropped;
+2026-10-09: second review, after run 21). **The paper is restructured** into a framework, an intrinsic evaluation, and
+extrinsic applications (see "Paper structure", which supersedes the order of "Experiments" below). The intrinsic
+evaluation is done at pilot scale (CP's theory, PB1, PF1; PB2/PF2 demoted). Extrinsic: 3-A (the pullback) done at
+pilot scale (`docs/cm_plan.md`); 3-B failed as the pullback application and is dropped; 3-C (the pushforward) not
+built. Claims 1-3 predate the restructuring and are to be rewritten; claim 4 is rewritten for 3-A. No scaling until
+the pilot results and the claims are settled (user).
 
 ## Target
 
@@ -40,8 +42,12 @@ mirrors the framework, from intrinsic to extrinsic, and supports four claims:
    planted trigger) into a reference answer for feature-space explainers. Evidence for the first half is the trend
    across window counts (the window round trips, 64 windows to bytes); the byte-level point uses TreeSHAP's own round
    trip, acceptable only as the end of that trend (user, 2026-10-09).
-4. **Comparing real classifiers (CM):** with both operators, a feature-based detector (GBDT) and a raw-byte detector
-   (MalConv) can be compared in either space.
+4. **Comparing deployed-style detectors through the pullback (3-A, CM)** (rewritten 2026-10-12; originally "with both
+   operators, a feature-based and a raw-byte detector can be compared in either space"; the feature-space half moved
+   to the appendix, user): the pullback puts a feature-based detector's explanations in the same byte space as a
+   raw-byte detector's, at byte resolution and one extraction per file, which locates (i) the bytes both rely on, an
+   ensemble's shared attack surface that window-level comparison without P misses, and (ii) for files on which they
+   disagree, whether the flagging detector's evidence is content the other does not read or reads the other way.
 
 Localizability (the share of an explanation on unattributable features) is **not** a contribution and is not a
 finding: it measures one explanation, not P, and a large unattributable share reflects a limitation of the
@@ -77,41 +83,30 @@ practice, and its limits are measurable. Done at pilot scale:
 4. *A falsifiable go/no-go check runs first,* on existing data where possible, before an experiment is built; its
    failing outcome is stated in advance.
 5. Ideas the user has already ruled out or doubted get extra skepticism, not a second pitch.
-- **3-A. Comparing detectors** (CM, both operators): the GBDT on EMBER v3, a GBDT on **byte n-grams** (the quickest
-  way to widen the comparison: a P at the other end of the spectrum; not EMBER v2, too similar to v3), and MalConv,
-  compared in the problem space (pullback vs. direct byte explanations). The feature-space comparison (MalConv's
-  explanations pushed forward) moved to the appendix as a curiosity (user, 2026-10-12); it returns to the main paper
-  only if it finds a use beyond being interesting. Another domain or file format comes later. **Done at pilot scale
-  (2026-10-12): the pullback's application** (shared attack surface; disagreement triage)
-  (2026-10-12, 3-B dropped); byte n-grams set aside for now (user). First check, run 30 (`scripts/cm_check.py`, PB1's
-  100 files and operator): agreement is weak at every resolution (median rho <= 0.07); the top overlap is 2-3x chance
-  at windows, 6.5x at bytes (pullback vs. MalConv IG). Cross-deletion at 0.1% of bytes (median evidence removed): the
-  GBDT's byte pullback removes 1.54 of MalConv's (window-level GBDT occlusion 0.79, pullback at 256 windows 0.55,
-  random 0); MalConv's byte IG removes 2.04 of the GBDT's (its window rankings 0.03-0.09). Shared reliance shows up
-  at byte level and is largely hidden at window level. Unchecked: where the shared bytes lie; MalConv's own IG
-  deletion overshoots enormously (72 log-odds at 50%), a known fragility.
-  Paired (run 31, `artifacts/reports/cm_tables.md`): the byte pullback beats both window GBDT rankings on MalConv
-  at every budget 0.1-5% (58-69/100 files, p <= 0.025); the reverse direction only at 0.1-0.2%. Shared set S =
-  T_g ∩ T_m (run 31, `scripts/cm_shared.py`; top 1%: |S| = 6.3% of T vs. 1% chance): deleting S removes 2.78
-  (GBDT) / 3.78 (MalConv) log-odds; same-size GBDT-only bytes 0.86 / -0.08; MalConv-only 0.04 / 2.58; random 0 / 0.
-  The shared evidence lies in the first 1 KB (97% of the GBDT's, 75% of MalConv's) and is carried by named header and
-  data-directory features (86% of its GBDT credit; hashed features 5%). **Caveat (3-B's pitfall):** an expert with a
-  PE parser could map most of these features to bytes by hand; P does it generally and per file, and window-level
-  methods (the P-free alternative) miss it.
-  The user accepts this: automating the mapping is the point (2026-10-12).
-  **Disagreement triage** (run 32, `scripts/cm_triage.py`; 25 test files per disagreement cell at 1% FPR): A (the
-  flagging model)'s top 1% of bytes split by how B reads them (attended = B's top 5% by |evidence|). When MalConv
-  alone flags (its detections and its false positives), 77% of its evidence lies on bytes the GBDT does not read
-  (blind). When the GBDT alone flags malware, MalConv reads most of the GBDT's evidence bytes, a third of them as
-  benign (oppose); deleting those bytes makes MalConv detect 19/25 files (random same-size part of the GBDT's top
-  set: 1/25); GBDT false positives likewise 17/25 vs. 1/25. Caveats: deleting the GBDT's blind bytes barely moves the
-  GBDT (-0.16 vs. -4.55 for a random same-size part); for A = MalConv, any large deletion raises the GBDT (zero fill),
-  which confounds the B side. Follow-up (run 32 re-run, both fills): (1) the GBDT's oppose and agree bytes lie in
-  the first 1 KB (87-97%), its blind bytes beyond 64 KB (69-72%); (2) the credit on its blind bytes is on aggregate
-  features (string-regex counts, section-entropy and import hashes), which deleting a few of their bytes barely
-  changes (run 23's boundary), so deletion cannot validate them; (3) random fill reproduces the GBDT-side results
-  (oppose bytes: MalConv detects 22/25 vs. 0/25) and does not remove the B-side confound when A = MalConv (any large
-  deletion raises the GBDT either way), so the MalConv-flagged cells are descriptive only.
+- **3-A. Comparing detectors through the pullback** (CM; `docs/cm_plan.md`). **The pullback's application; done at
+  pilot scale (2026-10-12, runs 30-32).** Layered static detectors over different feature sets are deployed and
+  studied (Microsoft Defender, PEberus, MLSEC 2019; `docs/related_work.md`, H). The GBDT on EMBER v3 and MalConv,
+  compared byte by byte (the GBDT's pullback of interventional TreeSHAP vs. MalConv's IG), answer two questions:
+  (1) *the shared attack surface*: bytes in both top 1% (6.3% of each top set vs. 1% chance) are worth more to each
+  model than its exclusive bytes (deleting them: 2.78 / 3.78 log-odds vs. 0.86 / -0.08 and 0.04 / 2.58 for same-size
+  exclusive sets, 0 random); they lie in the header (first 1 KB) and are carried by named header and data-directory
+  features (86%); the window-level alternative without P misses much of this shared reliance (paired, 58-69/100
+  files, p <= 0.025). (2) *disagreement triage* (6.4% of test files disagree at 1% FPR): when MalConv alone flags,
+  77% of its evidence lies on bytes the GBDT does not read (the file body); when the GBDT alone flags malware,
+  MalConv reads most of the same header bytes, a third of them the other way, and deleting those makes MalConv
+  detect 19/25 files (1/25 random). Caveats (in `docs/cm_plan.md`): aggregate features cannot be validated by
+  deletion; the MalConv-flagged cells are descriptive only (large deletions raise the GBDT); deletion is not an
+  attack. An expert could map the named header features by hand; automating that is the point (user). The
+  feature-space comparison moved to the appendix; byte n-grams and other feature sets are set aside.
+  **Possible strengthening (to decide with the user before the write-up):**
+  (a) *The window-level triage* (the realistic alternative for (2), criterion 3): the same split at 256 windows, with
+  the GBDT's pullback coarsened (isolates resolution) and the GBDT's occlusion (no P). Hypothesis: the oppose and
+  agree bytes interleave within the first 1 KB, so windows merge them and deleting the window-level "oppose" set no
+  longer flips MalConv selectively. Cost: occlusion of the 50 GBDT-flagged files at 256 windows, about 10 min.
+  (b) *Transfer of a real attack* (ties (1) to attacks, not deletion): a published functionality-preserving header
+  attack on MalConv; does it transfer to the GBDT more often when the bytes it modifies carry the GBDT's pullback?
+  Days of tooling (e.g., secml-malware); otherwise a stated limitation.
+  (c) *Seeds 1-2* (models exist): replication, at scale-up.
 - **3-B. Finding (and mitigating) spurious correlations with the pullback** (`docs/shortcuts_plan.md`). **Failed as
   the pullback application (2026-10-12): the findings rest on named features, so P was a convenience; see
   `docs/shortcuts_plan.md`, "Why it failed". To be replaced by a new pullback application (brainstorm next).** A
@@ -177,7 +172,9 @@ features (ROC-AUC 0.9976 vs. 0.9959); and the GBDT's pilot result is already rob
 4. **Evaluation of both operators:** problem-space faithfulness and cost of the pullback against direct problem-space
    explainers, and planted-trigger ground truth (PB); faithfulness of the pushforward, and ground truth for
    feature-space explainers (PF).
-5. **Application:** a feature-based and a raw-byte detector compared in both spaces (CM).
+5. **Applications:** the pullback compares a feature-based and a raw-byte detector byte by byte: an ensemble's
+   shared attack surface and the triage of their disagreements (3-A); the pushforward casts rule-based detectors'
+   matches in a learned detector's features (3-C, not built).
 
 The manuscript's contribution list (C1–C3 in the introduction) predates Phase 0 and must be rewritten: "first to
 formalize" and "novel rigorous theory" cannot stand (see Positioning). Naming ("provenance" collides with
@@ -329,15 +326,11 @@ explainer; mass on supp(r) 0.70 (both TreeSHAP variants) and 0.50 (KernelSHAP) a
 problem-space knowledge into an evaluation of feature-space explainers, which otherwise have no ground truth.**
 KernelSHAP needs its full 32,768 coalitions; at 512 it appears to miss the trigger entirely.
 
-### 4. Application: comparing classifiers (CM; promoted from the appendix 2026-10-08)
+### 4. Application: comparing classifiers (CM; now 3-A, `docs/cm_plan.md`)
 
-A feature-based detector (the GBDT) and a raw-byte detector (MalConv medium) explained in both spaces, on the same
-truncated files:
-- **Problem-space:** the GBDT's pullback vs. MalConv's direct byte explanations (IG, occlusion): agreement over
-  windows, against a permutation control; and cross-deletion (do one model's top bytes remove the other's evidence?)
-  with the PB1 operator.
-- **Feature-space:** MalConv's explanations pushed forward vs. the GBDT's TreeSHAP: which feature groups each relies on.
-- To do: MalConv explanations for the pilot files (`explain/problem.py` has IG and occlusion; not yet run).
+Superseded by 3-A ("Paper structure"): the problem-space comparison is the pullback's application, done at pilot
+scale (runs 30-32). The feature-space comparison (MalConv's explanations pushed forward vs. the GBDT's TreeSHAP) is in
+the appendix as a curiosity, not built.
 
 ### Second classifier: the MLP (after the GBDT methodology is established)
 
@@ -442,7 +435,8 @@ final numbers, when the pilot results and claims are settled. `run/` holds the c
 | Oct 9 | ~~PB2/PF2 at pilot scale~~, ~~PF1 and its resolution trend~~, ~~CP.3~~; the tie-break fix (PB1 re-run pending) | |
 | Oct 9 (later) | ~~Run 21 read~~; **paper restructured**; ~~3-B identify spurious correlations~~ (runs 22, 24) | |
 | Oct 12 | ~~3-B consolidated~~ (runs 26-28: transplant, reliance, mitigation); baseline run 25 (done) | |
-| next | 3-C and 3-A at pilot scale | to re-plan with the user |
+| Oct 12 (later) | 3-B dropped; ~~3-A at pilot scale~~ (runs 30-32: cross-deletion, shared attack surface, triage) | |
+| next | 3-A write-up (PLAN, then the manuscript); 3-C at pilot scale | to re-plan with the user |
 | later | Scale-up (2,000 files, seeds 0–2), when the user decides; the MLP if time allows | |
 | later | Appendix (App-R; the byte-set control bound) | |
 | Dec 15–late Jan | Writing: introduction and contributions, framework edits, figures | Submission |
@@ -462,12 +456,12 @@ was dropped as a flawed test. Thresholds are reassessed with the user.
   parse-failure rates; move to a PE-aware operator.
 - **Smearing:** histogram and entropy features spread over the whole file, which limits how sharply the pullback
   can place their credit. A stated limitation of the transfer at fine resolution (CP's round-trip bounds).
-- **The extrinsic applications carry the paper's security relevance.** 3-B is demonstrated (run 22) and its framing
-  is settled; 3-A and 3-C are not built. 3-C depends on rules that fire often enough (public signatures do not) and
-  on capa's cost.
+- **The extrinsic applications carry the paper's security relevance.** 3-A is done at pilot scale (one seed; its
+  "attack surface" rests on deletion, not on attacks); 3-B failed and is dropped; 3-C is not built and depends on
+  rules that fire often enough (public signatures do not) and on capa's cost.
 - **Reviewer pool:** Raff co-authored EMBER-2024, MalConv, and the SHAP-on-EMBER critique; engage it directly (App-R,
   CM).
 - **The pushforward is faithful only up to its source's resolution (PF1):** window-level explanations keep a third of
-  TreeSHAP's feature-space faithfulness. Claim 3 is stated that way (option A); CM's feature-space half rests on
-  MalConv's byte-level explanations, which the resolution trend puts near R ≈ 0.8 at best.
-- **Timeline:** if needed, App-R shrinks first, then CM's cross-deletion.
+  TreeSHAP's feature-space faithfulness. Claim 3 is stated that way (option A); the appendix's feature-space
+  comparison rests on MalConv's byte-level explanations, which the resolution trend puts near R ≈ 0.8 at best.
+- **Timeline:** if needed, App-R shrinks first, then the appendix's feature-space comparison.

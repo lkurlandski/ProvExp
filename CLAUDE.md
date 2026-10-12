@@ -14,8 +14,9 @@ plus a null element) transfers explanations between the feature-space (EMBER v3 
 - Experiment docs, named by ID: `docs/cp_plan.md`, `docs/cp_census.md` (CP: characterizing P); `docs/pb1_plan.md`,
   `docs/pb1_pilot.md`, `docs/pb1_baselines.md` (PB1: pullback faithfulness and cost; the baselines doc fixes the
   reading of each outcome in advance); `docs/trigger_plan.md` (the planted-trigger testbed: PB2 and PF2, design and
-  results); `docs/pf1_plan.md` (PF1: the pushforward's faithfulness and the resolution trend); `docs/appendix.md`
-  (App-L, App-R); `docs/shortcuts_plan.md` (3-B: real shortcuts via the pullback).
+  results); `docs/pf1_plan.md` (PF1: the pushforward's faithfulness and the resolution trend); `docs/cm_plan.md`
+  (3-A: comparing detectors through the pullback, the pullback's application); `docs/appendix.md` (App-L, App-R);
+  `docs/shortcuts_plan.md` (3-B: real shortcuts via the pullback; dropped, kept for its post-mortem).
 - `docs/design_provexp.md`: package design, decisions, provenance conventions, thrember quirks.
   `docs/related_work.md`: literature and gaps. `docs/archive/`: superseded documents (the Phase 2 plan and census,
   old IDs E1–E4, A1–A3; artifact paths such as `artifacts/experiments/e1/` (PB1) still use them).
