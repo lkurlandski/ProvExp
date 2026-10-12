@@ -99,6 +99,8 @@ practice, and its limits are measurable. Done at pilot scale:
   attack. An expert could map the named header features by hand; automating that is the point (user). The
   feature-space comparison moved to the appendix; byte n-grams and other feature sets are set aside.
   **Possible strengthening (to decide with the user before the write-up):**
+  Decided (user, 2026-10-12): (a) now, at pilot scale; (b) noted for the future (see "Open questions"); (c) at
+  scale-up.
   (a) *The window-level triage* (the realistic alternative for (2), criterion 3): the same split at 256 windows, with
   the GBDT's pullback coarsened (isolates resolution) and the GBDT's occlusion (no P). Hypothesis: the oppose and
   agree bytes interleave within the first 1 KB, so windows merge them and deleting the window-level "oppose" set no
@@ -408,6 +410,10 @@ methods may be revisited.
 - **Scope of the cost claim (2026-10-09):** "one extraction instead of hundreds" ignores the explainer's own cost; it
   holds for explainers cheap in the feature space (TreeSHAP: milliseconds), not for KernelSHAP (about 45 s per
   file, more than occlusion at 256 windows). State it that way.
+- **3-A against real attacks (noted 2026-10-12, user; for the future):** 3-A's "shared attack surface" rests on
+  deletion. Whether a published functionality-preserving header attack on MalConv transfers to the GBDT more often
+  when the bytes it modifies carry the GBDT's pullback would tie it to attacks (days of tooling, e.g.,
+  secml-malware). Until then, a stated limitation (`docs/cm_plan.md`, "Caveats").
 - **At scale:** bootstrap confidence intervals for the headline numbers; seeds 0–2.
 
 ## Data, models, compute

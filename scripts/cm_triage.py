@@ -16,7 +16,12 @@ Validation by deletion (PB1's operator, level 3, zeros; both models scored): A's
 category a random subset of A's top set of the same size. Expected: deleting blind bytes lowers A and leaves B as it
 was; deleting oppose bytes also raises B (they carry B's verdict); random subsets of A's top set fall in between.
 
-Outputs, in `{outdir}/seed-{seed}/`:
+The realistic alternative without P compares the models over windows (--windows 256): the same split and deletions
+with windows as units, the GBDT's window evidence either its pullback summed per window (isolates resolution) or its
+occlusion of each window (no P); MalConv's is its IG summed per window. The window variants are meant for the
+GBDT-flagged cells (--cells), where the byte-level validation is clean.
+
+Outputs, in `{outdir}/seed-{seed}/{fill}[-w{windows}-{gbdt_windows}]/`:
     files.parquet       one row per file: cell, A, both log-odds, the category sizes and A's evidence in each (per q_B),
                         and both models' log-odds after each deletion
     report.json         the configuration, thresholds, and timing
@@ -43,6 +48,7 @@ from tqdm import tqdm
 
 from provexp.ablation import ablate
 from provexp.ablation import element_order
+from provexp.ablation import window_edges
 from provexp.featuresets.ember2024.ablation import protect
 from provexp.featuresets.ember2024.ablation import verify
 from provexp.featuresets.ember2024.features import PEFeatureExtractor
@@ -120,23 +126,58 @@ def process_file(task: dict[str, Any]) -> dict[str, Any]:
         A, B = task["A"], "malconv" if task["A"] == "gbdt" else "gbdt"
         e_a, e_b = evidence[A], evidence[B]
         protection = protect(data, header="typical")
-        ablatable = ~protection.mask
-        perm = np.random.default_rng([task["seed"], 1]).permutation(m).astype(np.int64)
         rng = np.random.default_rng([task["seed"], 2])
         f0 = {"gbdt": float(gbdt(np.asarray(x0, dtype=np.float64)[None, :])[0]), "malconv": task["malconv_log_odds"]}
 
+        def score(mask: BoolArray, k: int) -> tuple[float, float, bool]:
+            fill_rng = np.random.default_rng([task["seed"], 3, k])
+            z = ablate(data, mask, protection.mask, task["fill"], fill_rng, protection.header, protection.header_values)
+            try:
+                x = np.asarray(extractor.feature_vector(z), dtype=np.float64)  # type: ignore[no-untyped-call]
+                ok = verify(protection, data, z, float(x[IS_PE])) is None
+                g = float(gbdt(x[None, :])[0]) if ok else float("nan")
+            except Exception:
+                ok, g = False, float("nan")
+            return g, malconv_log_odds(malconv, z), ok
+
+        # The units the categories are made of: bytes, or (--windows) contiguous windows, each window's evidence the
+        # sum over its bytes or, for the GBDT with --gbdt_windows occlusion, the drop when the window is deleted.
         row: dict[str, Any] = {"size": m, "gbdt_log_odds": f0["gbdt"], "malconv_log_odds": f0["malconv"],
                                # The GBDT's attribution on features without provenance (not localizable; App-L).
                                "gbdt_null": float(b[m]) if prov.has_null else 0.0}
+        if task["windows"] > 0:
+            edges = window_edges(m, task["windows"])
+            K = edges.shape[0] - 1
+            unit = np.repeat(np.arange(K), np.diff(edges))
+            u_e = {name: np.bincount(unit, weights=e, minlength=K) for name, e in evidence.items()}
+            if task["gbdt_windows"] == "occlusion":
+                occluded = np.zeros(K)
+                for k in range(K):
+                    g, _, ok = score(unit == k, 1000 + k)
+                    occluded[k] = f0["gbdt"] - g if ok else 0.0
+                    row["invalid_windows"] = row.get("invalid_windows", 0) + int(not ok)
+                u_e["gbdt"] = occluded
+            u_a, u_b = u_e[A], u_e[B]
+            u_ablatable = np.ones(K, dtype=np.bool_)
+            perm = np.random.default_rng([task["seed"], 1]).permutation(K).astype(np.int64)
+
+            def expand(mask: BoolArray) -> BoolArray:
+                return mask[unit]  # type: ignore[no-any-return]
+        else:
+            u_a, u_b, u_ablatable = e_a, e_b, ~protection.mask
+            perm = np.random.default_rng([task["seed"], 1]).permutation(m).astype(np.int64)
+
+            def expand(mask: BoolArray) -> BoolArray:
+                return mask
         sets: dict[str, BoolArray] = {}
         for q_b in Q_B:
-            top, cats = categories(e_a, e_b, ablatable, Q_A, q_b, perm)
-            row["top_size"], row["top_evidence"] = int(top.sum()), float(e_a[top].sum())
+            top, cats = categories(u_a, u_b, u_ablatable, Q_A, q_b, perm)
+            row["top_size"], row["top_evidence"] = int(expand(top).sum()), float(u_a[top].sum())
             for c, mask in cats.items():
-                row[f"size:{c}:{q_b}"] = int(mask.sum())
-                row[f"evidence_A:{c}:{q_b}"] = float(e_a[mask].sum())
-                row[f"evidence_B:{c}:{q_b}"] = float(e_b[mask].sum())
-            if q_b == Q_B_DELETE:
+                row[f"size:{c}:{q_b}"] = int(expand(mask).sum())
+                row[f"evidence_A:{c}:{q_b}"] = float(u_a[mask].sum())
+                row[f"evidence_B:{c}:{q_b}"] = float(u_b[mask].sum())
+            if q_b == Q_B_DELETE and task["windows"] == 0:
                 # Where A's evidence in each category lies, by absolute offset.
                 edges = np.asarray([min(lo, m) for lo in OFFSET_BINS] + [m])
                 for c, mask in cats.items():
@@ -148,25 +189,18 @@ def process_file(task: dict[str, Any]) -> dict[str, Any]:
                     credit = task["explanation"] * share
                     top_j = np.argsort(-credit)[:NUM_BLIND_FEATURES]
                     row["blind_features"] = json.dumps({int(j): float(credit[j]) for j in top_j if credit[j] > 0})
-                sets["top"] = top
+            if q_b == Q_B_DELETE:
+                sets["top"] = expand(top)
                 for c, mask in cats.items():
                     if mask.any():
-                        sets[c] = mask
+                        sets[c] = expand(mask)
                         idx = np.flatnonzero(top)
-                        r = np.zeros(m, dtype=np.bool_)
+                        r = np.zeros(top.shape[0], dtype=np.bool_)
                         r[rng.choice(idx, size=int(mask.sum()), replace=False)] = True
-                        sets[f"random_{c}"] = r
+                        sets[f"random_{c}"] = expand(r)
 
         for k, (name, mask) in enumerate(sets.items()):
-            fill_rng = np.random.default_rng([task["seed"], 3, k])
-            z = ablate(data, mask, protection.mask, task["fill"], fill_rng, protection.header, protection.header_values)
-            try:
-                x = np.asarray(extractor.feature_vector(z), dtype=np.float64)  # type: ignore[no-untyped-call]
-                ok = verify(protection, data, z, float(x[IS_PE])) is None
-                g = float(gbdt(x[None, :])[0]) if ok else float("nan")
-            except Exception:
-                ok, g = False, float("nan")
-            row[f"gbdt:{name}"], row[f"malconv:{name}"], row[f"valid:{name}"] = g, malconv_log_odds(malconv, z), ok
+            row[f"gbdt:{name}"], row[f"malconv:{name}"], row[f"valid:{name}"] = score(mask, k)
         return base | row | {"status": "ok", "error": "", "seconds": time.perf_counter() - t_0}
     except Exception as err:
         return base | {"status": "error", "error": f"{type(err).__name__}: {err}"[:300], "seconds": time.perf_counter() - t_0}
@@ -209,19 +243,20 @@ def summarize(files: pl.DataFrame, thresholds: dict[str, float], names: list[str
             stops = int((g[f"{A}:{name}"] <= thresholds[A]).sum())
             starts = int((g[f"{B}:{name}"] > thresholds[B]).sum())
             print(f"| {cell} | {name} | {g.height} | {float(dA.median()):.2f} | {float(dB.median()):.2f} | {stops} | {starts} |")  # type: ignore[arg-type]
-    print(f"\nWhere A's evidence in each category lies (q_B = {Q_B_DELETE:.0%}), by offset from the start: each file's share,")
-    print("averaged over the files with evidence in the category.\n")
-    bins = [f"[{lo}, {hi})" for lo, hi in zip(map(str, OFFSET_BINS), [*map(str, OFFSET_BINS[1:]), "end"])]
-    print("| cell | category | files | " + " | ".join(bins) + " |")
-    print("|---|---|---|" + "---|" * len(bins))
-    for cell in sorted(ok["cell"].unique()):
-        f = ok.filter(pl.col("cell") == cell)
-        for c in CATEGORIES:
-            v = f.select([f"offset_{lo}:{c}" for lo in OFFSET_BINS]).to_numpy()
-            total = v.sum(axis=1, keepdims=True)
-            keep = total[:, 0] > 0
-            share = v[keep] / total[keep]
-            print(f"| {cell} | {c} | {int(keep.sum())} | " + " | ".join(f"{x:.2f}" for x in share.mean(axis=0)) + " |")
+    if "offset_0:blind" in ok.columns:
+        print(f"\nWhere A's evidence in each category lies (q_B = {Q_B_DELETE:.0%}), by offset from the start: each file's share,")
+        print("averaged over the files with evidence in the category.\n")
+        bins = [f"[{lo}, {hi})" for lo, hi in zip(map(str, OFFSET_BINS), [*map(str, OFFSET_BINS[1:]), "end"])]
+        print("| cell | category | files | " + " | ".join(bins) + " |")
+        print("|---|---|---|" + "---|" * len(bins))
+        for cell in sorted(ok["cell"].unique()):
+            f = ok.filter(pl.col("cell") == cell)
+            for c in CATEGORIES:
+                v = f.select([f"offset_{lo}:{c}" for lo in OFFSET_BINS]).to_numpy()
+                total = v.sum(axis=1, keepdims=True)
+                keep = total[:, 0] > 0
+                share = v[keep] / total[keep]
+                print(f"| {cell} | {c} | {int(keep.sum())} | " + " | ".join(f"{x:.2f}" for x in share.mean(axis=0)) + " |")
     if "blind_features" in ok.columns:
         credit: dict[str, float] = {}
         count: dict[str, int] = {}
@@ -254,12 +289,16 @@ def main() -> None:
     parser.add_argument("--db", type=Path, default=Path("/shared/datasets/EMBER-2024/data/ts"))
     parser.add_argument("--outdir", type=Path, default=ROOT / "artifacts" / "experiments" / "cm_triage")
     parser.add_argument("--fill", type=str, choices=["zeros", "random"], default="zeros", help="How deletion fills bytes.")
+    parser.add_argument("--windows", type=int, default=0, help="Make the categories of this many windows instead of bytes (0: bytes).")
+    parser.add_argument("--gbdt_windows", type=str, choices=["pullback", "occlusion"], default="pullback", help="With --windows, the GBDT's window evidence: its pullback summed per window, or its occlusion (no P).")
+    parser.add_argument("--cells", type=str, nargs="+", default=None, help="Only these disagreement cells (default: all).")
     parser.add_argument("--num_workers", type=int, default=16)
     args = parser.parse_args()
 
     selection = args.selection or ROOT / "artifacts" / "explanation_set" / f"ts-disagreement-seed{args.seed}.parquet"
     thresholds: dict[str, float] = json.loads(selection.with_suffix(".json").read_text())["thresholds"]
-    outdir = args.outdir / f"seed-{args.seed}" / args.fill
+    variant = args.fill + (f"-w{args.windows}-{args.gbdt_windows}" if args.windows > 0 else "")
+    outdir = args.outdir / f"seed-{args.seed}" / variant
     outdir.mkdir(parents=True, exist_ok=True)
     expdir = args.explanations / f"seed-{args.seed}"
     explanations = np.load(expdir / f"{EXPLAINER}.npy")
@@ -268,6 +307,8 @@ def main() -> None:
     files = samples.select("index", "name").join(files, on="name", how="inner").sort("index")
     if files.height != samples.height:
         raise RuntimeError(f"{expdir.as_posix()} does not explain {selection.as_posix()}.")
+    if args.cells is not None:
+        files = files.filter(pl.col("cell").is_in(args.cells))
     if args.num_files > 0:
         files = pl.concat([g.head(args.num_files) for _, g in files.group_by("cell", maintain_order=True)])
     gbdt_file = args.models / "gbdt" / f"seed-{args.seed}" / "model.txt"
@@ -284,6 +325,7 @@ def main() -> None:
         tasks.append({"index": int(r["index"]), "name": r["name"], "label": int(r["label"]), "cell": r["cell"],
                       "A": "gbdt" if r["cell"].endswith("gbdt_only") else "malconv",
                       "shard": int(r["shard"]), "position": int(r["position"]), "dbdir": args.db, "seed": int(r["index"]), "fill": args.fill,
+                      "windows": args.windows, "gbdt_windows": args.gbdt_windows,
                       "explanation": explanations[int(r["index"])].astype(np.float64), "malconv_log_odds": log_odds, "ig": ig})
     seconds_malconv = time.time() - t_0
     del model
