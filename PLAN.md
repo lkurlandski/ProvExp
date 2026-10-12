@@ -1,6 +1,6 @@
 # ProvExp Research Plan
 
-Living document. Last revised 2026-10-09 (3-B reframed to spurious correlations; second review, after run 21). **The paper is restructured** into a
+Living document. Last revised 2026-10-12 (3-B consolidated; 2026-10-09: 3-B reframed to spurious correlations; second review, after run 21). **The paper is restructured** into a
 framework, an intrinsic evaluation, and extrinsic applications (see "Paper structure", which supersedes the order of
 "Experiments" below). The intrinsic evaluation is done at pilot scale (CP's theory, PB1, PF1; PB2/PF2 demoted); the
 extrinsic applications (3-A, 3-B, 3-C) are chosen but not designed or built. The claims ("Thesis and claims") predate
@@ -85,8 +85,11 @@ designed or built yet.
   corpus-wide. Run 23 (appended aggregate strings do not move the model) marks the boundary: P says which spurious
   reliance is byte-settable (forgeable metadata) and which is not (aggregates). Mitigation (drop/neutralize the
   carrying features via Pᵀ1_S, or retrain) is the "possibly mitigate" half, internal to 3-B (NOT 3-C, which is the
-  separate YARA/capa pushforward application). **Status: little real progress this session (assistant's fault); the
-  runs are raw material, not a settled experiment -- see `docs/shortcuts_plan.md`, "Status note".**
+  separate YARA/capa pushforward application). **Status (2026-10-12): done at pilot scale except the P-free
+  baseline** (`docs/shortcuts_plan.md`, "Results"): the top 20 discovery patterns by a fixed rule, transplanted at the
+  bytes each target's P names; 4 artifacts confirmed causal and settable (certificate-table size +1.34 vs. -0.27
+  random; DEBUG.Size 0x54; the `.rsrc` name in a hashed bucket); neutralizing the 6 features P names removes them at
+  no measurable accuracy cost. The mined-4-gram baseline waits on run 25.
 - **3-C. Rule-based detectors' explanations in the GBDT's features** (the pushforward; adopted 2026-10-09): a YARA
   or capa match is a problem-space explanation of a rule-based detector (the matched bytes are why it fired);
   pushed forward, it is cast in the GBDT's feature vocabulary. Per-rule feature profiles (the mean pushforward over
@@ -354,10 +357,7 @@ methods may be revisited.
   demonstrated use: overlap's only one is PF1's resolution trend, which largely restates the round-trip bound (any
   statistic of P "predicting" a transfer that is linear in P is close to a tautology; a real use connects P to
   something not computed through P, such as model or attack behavior). Undecided what to do with them.
-- **3-B is unfinished** (2026-10-09): consolidate a defensible "the pullback surfaces spurious correlations" result
-  driven by the discovery output (run 24's fields were hand-picked), add baselines (data-mined patterns; occlusion for
-  cost), and optionally the mitigation half (remove a surfaced correlation via Pᵀ1_S or retraining; internal to 3-B,
-  not 3-C). Framing churned this session; little net progress.
+- **3-B's baseline** (2026-10-12): the rest of 3-B is done at pilot scale; the mined-4-gram baseline (run 25) remains.
 - **Further pushforward applications** (for later brainstorming): translating explanations between feature sets
   (pull back through one extractor's P, push forward through another's), once 3-A has a second extractor.
 - **A further feature set (on hold, 2026-10-09; not EMBER v2, too similar to v3).** For A, **byte n-grams for PE**
@@ -400,7 +400,8 @@ final numbers, when the pilot results and claims are settled. `run/` holds the c
 | Oct 8 | ~~PB1 baselines~~, ~~the trigger testbed~~ done; the runner's parallelism rebuilt | **Gate 2** (passed for the GBDT) |
 | Oct 9 | ~~PB2/PF2 at pilot scale~~, ~~PF1 and its resolution trend~~, ~~CP.3~~; the tie-break fix (PB1 re-run pending) | |
 | Oct 9 (later) | ~~Run 21 read~~; **paper restructured**; ~~3-B identify spurious correlations~~ (runs 22, 24) | |
-| next | **finish 3-B** (consolidate, baselines, maybe mitigation); then 3-C and 3-A at pilot scale | to re-plan with the user |
+| Oct 12 | ~~3-B consolidated~~ (runs 26-28: transplant, reliance, mitigation); baseline run 25 with the user | |
+| next | 3-B's baseline (run 25); then 3-C and 3-A at pilot scale | to re-plan with the user |
 | later | Scale-up (2,000 files, seeds 0–2), when the user decides; the MLP if time allows | |
 | later | Appendix (App-R; the byte-set control bound) | |
 | Dec 15–late Jan | Writing: introduction and contributions, framework edits, figures | Submission |
