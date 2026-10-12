@@ -5,6 +5,9 @@ With `--poison`, the features and labels of the poisoned training files replace 
 scripts/trigger_poison.py); the model is then a backdoored instrument for the ground-truth experiments, and its
 output directory is suffixed with the poison's name.
 
+With `--neutralize`, the features named in a file (one per line) are set to zero in every split, so the model cannot
+use them (3-B mitigation, docs/shortcuts_plan.md); give the output a `--suffix`.
+
 Outputs, in `{outdir}/{learner}/seed-{seed}[-{poison}]/`:
     model.txt (GBDT) or model.pt (MLP)   the trained model
     metrics.json                         test metrics, plus the training configuration
@@ -29,6 +32,7 @@ import torch
 from numpy import typing as npt
 
 from provexp.data.tabular import load_features
+from provexp.data.tabular import load_manifest
 from provexp.metrics import compute_metrics
 from provexp.models.gbdt import train_gbdt
 from provexp.models.mlp import train_mlp
@@ -89,6 +93,7 @@ def main() -> None:
     parser.add_argument("--categorical", action="store_true", help="GBDT only. Treat the categorical features as such (incompatible with interventional TreeSHAP).")
     parser.add_argument("--limit", type=int, default=None, help="Use at most this many samples per split (for testing).")
     parser.add_argument("--poison", type=Path, default=None, help="A poison directory (scripts/trigger_poison.py); its files replace their clean training rows.")
+    parser.add_argument("--neutralize", type=Path, default=None, help="A file of feature names, one per line, to set to zero in every split.")
     parser.add_argument("--suffix", type=str, default=None, help="The output directory's suffix (default: the poison's name).")
     args = parser.parse_args()
 
@@ -96,12 +101,28 @@ def main() -> None:
     outdir = args.outdir / args.learner / f"seed-{args.seed}{suffix}"
     outdir.mkdir(parents=True, exist_ok=True)
 
+    neutral: list[int] = []
+    if args.neutralize is not None:
+        if args.suffix is None:
+            raise ValueError("Give a --suffix with --neutralize, so the model does not overwrite the clean one.")
+        names = load_manifest(args.features)["feature_names"]
+        index = {name: j for j, name in enumerate(names)}
+        wanted = [line.strip() for line in args.neutralize.read_text().splitlines() if line.strip()]
+        unknown = [name for name in wanted if name not in index]
+        if unknown:
+            raise ValueError(f"Unknown features in {args.neutralize.as_posix()}: {unknown[:5]}")
+        neutral = sorted(index[name] for name in wanted)
+        print(f"Neutralizing {len(neutral)} features: {wanted}", flush=True)
+
     t_0 = time.time()
     data = {}
     for split in ("tr", "vl", "ts"):
         X, meta = load_features(args.features, split, only_ok=True)
         if args.limit is not None:
             X, meta = X[:args.limit], meta.head(args.limit)
+        if neutral:
+            X = np.array(X)
+            X[:, neutral] = 0.0
         data[split] = (np.ascontiguousarray(X), meta["label"].to_numpy().astype(np.int64), meta)
         print(f"Loaded {split}: {X.shape}", flush=True)
     (X_tr, y_tr, meta_tr), (X_vl, y_vl, _), (X_ts, y_ts, meta_ts) = data["tr"], data["vl"], data["ts"]
@@ -132,6 +153,7 @@ def main() -> None:
         "num_samples": {split: int(d[0].shape[0]) for split, d in data.items()},
         "config": config,
         "poison": poison or None,
+        "neutralized": [int(j) for j in neutral] or None,
         "ts_metrics": metrics,
         "minutes": (time.time() - t_0) / 60,
     }
