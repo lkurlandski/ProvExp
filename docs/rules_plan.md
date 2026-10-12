@@ -94,6 +94,24 @@ malware (57-92% of files), except DebuggerException (0/8) and win_hook (2/6). Sm
 
 Outputs: `artifacts/experiments/yara_reliance/seed-0/`; log `artifacts/logs/yara_reliance-seed0.log`.
 
+## Deletion check (run 37, `scripts/yara_deletion.py`; fixed in advance)
+
+The 16 split rules plus the 7 crypto rules (representation-gap controls), 268 (rule, file) pairs: delete S with PB1's
+operator vs. 20 concentration-matched reference sets (run 36's reference); S is above in a file if the GBDT's response
+|Δ log-odds| beats the references' 95th percentile; a rule is "relied on" if above in at least half of its files.
+Criterion: deletion and attribution agree for more than half of the split rules, and their per-rule shares are
+positively rank-correlated. Hypothesis: network_dns and network_tcp_socket relied on, the rest not, crypto not.
+
+**The criterion is met (14/16 agree, Spearman 0.39), but the hypothesis fails where it matters.** The agreement comes
+from the gap category (no rule is relied on by deletion; 0-33% of files above). The two rules the attribution calls
+relied on are not confirmed: network_dns above in 1/6 files, network_tcp_socket 0/7. Their median response does exceed
+the references' median (0.081 vs. 0.000 and 0.061 vs. 0.014 log-odds), but the references are heavy-tailed and the
+95th percentile is not beaten. The representation-gap controls hold: deleting crypto matches changes nothing (median
+response 0 for 6/7 rules). Checked: zero bytes in the reference pool (a no-op under zero fill) are 1-22% of it, not
+the cause. **Reading:** the representation-gap and reliance-gap categories are supported; "relied on" is not
+confirmed at pilot scale (6-7 files per rule). The criterion was too weak (it could pass on the majority category); at
+scale, judge each category separately.
+
 ## Rule set (decided 2026-10-12)
 
 Stay with the generic Yara-Rules sets for the methodology: they already populate all three categories (representation
