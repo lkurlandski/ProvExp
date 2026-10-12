@@ -1,12 +1,12 @@
 # ProvExp Research Plan
 
-Living document. Last revised 2026-10-12 (3-A done at pilot scale as the pullback's application; 3-B dropped;
-2026-10-09: second review, after run 21). **The paper is restructured** into a framework, an intrinsic evaluation, and
-extrinsic applications (see "Paper structure", which supersedes the order of "Experiments" below). The intrinsic
-evaluation is done at pilot scale (CP's theory, PB1, PF1; PB2/PF2 demoted). Extrinsic: 3-A (the pullback) done at
-pilot scale (`docs/cm_plan.md`); 3-B failed as the pullback application and is dropped; 3-C (the pushforward) not
-built. Claims 1-3 predate the restructuring and are to be rewritten; claim 4 is rewritten for 3-A. No scaling until
-the pilot results and the claims are settled (user).
+Living document. Last revised 2026-10-12 (3-A done at pilot scale as the pullback's application; 3-B dropped; 3-C
+on hold; 2026-10-09: second review, after run 21). **The paper is restructured** into a framework, an intrinsic
+evaluation, and extrinsic applications (see "Paper structure", which supersedes the order of "Experiments" below). The
+intrinsic evaluation is done at pilot scale (CP's theory, PB1, PF1; PB2/PF2 demoted). Extrinsic: 3-A (the pullback)
+done at pilot scale (`docs/cm_plan.md`); 3-B failed as the pullback application and is dropped; 3-C (the pushforward)
+is on hold (failed the sniff test, 2026-10-12). Claims 1-3 predate the restructuring and are to be rewritten; claim 4
+is rewritten for 3-A. No scaling until the pilot results and the claims are settled (user).
 
 ## Target
 
@@ -83,6 +83,9 @@ practice, and its limits are measurable. Done at pilot scale:
 4. *A falsifiable go/no-go check runs first,* on existing data where possible, before an experiment is built; its
    failing outcome is stated in advance.
 5. Ideas the user has already ruled out or doubted get extra skepticism, not a second pitch.
+6. *Mock the result first* (added 2026-10-12, after 3-C): write the application's paper paragraph and table with
+   hypothetical numbers, mark the operator behind each column (pullback, pushforward, Pᵀ, none), and screen that
+   before any go/no-go or data check; re-check it after every run. Feasibility checks never substitute for it.
 - **3-A. Comparing detectors through the pullback** (CM; `docs/cm_plan.md`). **The pullback's application; done at
   pilot scale (2026-10-12, runs 30-33).** Layered static detectors over different feature sets are deployed and
   studied (Microsoft Defender, PEberus, MLSEC 2019; `docs/related_work.md`, H). The GBDT on EMBER v3 and MalConv,
@@ -127,9 +130,19 @@ practice, and its limits are measurable. Done at pilot scale:
   files). Untested: generic rules (Yara-Rules `crypto/`, `packers/`, `antidebug_antivm/`, `capabilities/`) and capa,
   whose default (vivisect) backend took more than 10 minutes on one 2.7 MB file; faster: an IDA, Ghidra, or Binary
   Ninja backend, or file-scope rules only (seconds per file, without the code-level capabilities).
-  **2026-10-12:** design proposed (representation gap vs. reliance gap per rule; `docs/rules_plan.md`); generic
-  Yara-Rules go/no-go passed on the pilot files (run 34: 47 rules on >= 5 files, 16 with a split, carried by
-  `capabilities/` and `antidebug_antivm/`); capa deferred. Motivation still to refine; packing is not a motivation.
+  **2026-10-12: on hold; the design failed the sniff test** (post-mortem in `docs/rules_plan.md`). Proposed: per
+  rule, a representation gap (matched bytes only diluted in aggregates) vs. a reliance gap (they determine features
+  the GBDT does not weigh) vs. relied on. Runs 34-37 on generic Yara-Rules: coverage and the split pass; against a
+  concentration-matched reference most represented rules are reliance gaps; deletion supports the two gap categories
+  but does not confirm "relied on". **But the results rest on the pullback (reliance = the pullback's mass on the
+  matched bytes) and on Pᵀ1_S (representation), not on the pushforward**, so 3-C as built is 3-A with a rule as the
+  second detector. Comparing the pushed-forward rule with TreeSHAP in feature space (option (a)) likely fails the same
+  way: per file it reduces to the pullback's mass again, and the one pushforward-only object, a per-rule profile
+  aggregated across files, is a description without a task. **Open, for the user:** (i) a task whose output must live
+  in feature space, where the model is trained and changed (e.g., which features to constrain, sanitize, or retrain
+  on, from byte-level knowledge), screened as a mock-up first; or (ii) present 3-C as an application of P as a whole
+  (Pᵀ plus the pullback), leaving no pushforward-specific application. Packing is not a motivation (user). capa
+  deferred; a curated rule set (YARA-Forge) only for realism, later.
 
 **Appendix:** App-R (mechanical redundancy); App-L (a limitation); **bounding what control of a byte set can do**
 (accepted 2026-10-09, posed domain-agnostically): for additive features (Pᵀ1_S)_j bounds how far feature j can
@@ -443,7 +456,8 @@ the research runs at pilot scale; scaling up is for the final numbers, when the 
 | Oct 12 | ~~3-B consolidated~~ (runs 26-28: transplant, reliance, mitigation); baseline run 25 (done) | |
 | Oct 12 (later) | 3-B dropped; ~~3-A at pilot scale~~ (runs 30-32: cross-deletion, shared attack surface, triage) | |
 | Oct 12 (later) | ~~3-A's window-level triage~~ (run 33); ~~3-A written up~~ (`docs/cm_plan.md`, the manuscript) | |
-| next | 3-C: settle its design (rule source, the go/no-go check), then pilot scale; rewrite claims 1-3 | with the user |
+| Oct 12 (later) | 3-C: design, runs 34-37 (generic YARA rules); **on hold**, failed the sniff test (not the pushforward) | |
+| next | 3-C: a pushforward-native task as a mock-up, or 3-C as an application of P; rewrite claims 1-3 | with the user |
 | later | Scale-up (2,000 files, seeds 0–2), when the user decides; the MLP if time allows | |
 | later | Appendix (App-R; the byte-set control bound) | |
 | Dec 15–late Jan | Writing: introduction and contributions, framework edits, figures | Submission |
@@ -464,8 +478,9 @@ was dropped as a flawed test. Thresholds are reassessed with the user.
 - **Smearing:** histogram and entropy features spread over the whole file, which limits how sharply the pullback
   can place their credit. A stated limitation of the transfer at fine resolution (CP's round-trip bounds).
 - **The extrinsic applications carry the paper's security relevance.** 3-A is done at pilot scale (one seed; its
-  "attack surface" rests on deletion, not on attacks); 3-B failed and is dropped; 3-C is not built and depends on
-  rules that fire often enough (public signatures do not) and on capa's cost.
+  "attack surface" rests on deletion, not on attacks); 3-B failed and is dropped; 3-C is on hold: generic rules fire
+  often enough, but no task yet needs the pushforward specifically (the paper may end up without a
+  pushforward-specific application).
 - **Reviewer pool:** Raff co-authored EMBER-2024, MalConv, and the SHAP-on-EMBER critique; engage it directly (App-R,
   CM).
 - **The pushforward is faithful only up to its source's resolution (PF1):** window-level explanations keep a third of

@@ -1,9 +1,9 @@
 # Status
 
-Last updated: 2026-10-12 (3-A done at pilot scale and written up; 3-B dropped; docs cleaned up). **The paper is
-restructured** (`PLAN.md`, "Paper structure"): 1. the framework; 2. an intrinsic, laboratory-style evaluation (done at
-pilot scale); 3. extrinsic applications for security practitioners: 3-A (the pullback, done at pilot scale), 3-C (the
-pushforward, not built); 3-B dropped. Work stays at pilot scale (100 files, one seed) until the pilot results and the
+Last updated: 2026-10-12, end of session (3-A done at pilot scale and written up; 3-B dropped; 3-C on hold after
+failing the sniff test). **The paper is restructured** (`PLAN.md`, "Paper structure"): 1. the framework; 2. an
+intrinsic, laboratory-style evaluation (done at pilot scale); 3. extrinsic applications for security practitioners: 3-A (the pullback, done at pilot scale), 3-C (the
+pushforward, on hold); 3-B dropped. Work stays at pilot scale (100 files, one seed) until the pilot results and the
 claims are settled (user). `run/` holds the commands that produced everything in `artifacts/` (runs 01-37).
 
 ## Where we are
@@ -17,24 +17,39 @@ claims are settled (user). `run/` holds the commands that produced everything in
 | **2. Intrinsic: PB2, PF2** (planted triggers) | Done at pilot scale (`docs/trigger_plan.md`); **demoted**, possibly removed later. |
 | **3-A. Comparing detectors through the pullback** | **Done at pilot scale, written up** (runs 30-33; `docs/cm_plan.md`; `manuscript/_d_applications.tex`). GBDT (EMBER v3) vs. MalConv, byte by byte. Shared reliance: bytes in both top 1% are worth more to each model than its exclusive bytes; they lie in the header; window-level comparison without P misses them (paired, p ≤ 0.025). Disagreement triage (6.4% of test files disagree at 1% FPR): MalConv-only verdicts rest on bytes the GBDT does not read; GBDT-only verdicts on header bytes MalConv reads the other way (deleting them: MalConv detects 19/25 vs. 1/25), visible only at byte level (run 33). Deferred: seeds 1-2 (scale-up); real-attack transfer (`PLAN.md`, "Open questions"). Feature-space comparison: appendix F, not built. |
 | **3-B** | **Dropped** (2026-10-12; `docs/archive/shortcuts_plan.md`): findings rested on named features; its post-mortem gave the screening criteria (`PLAN.md`, section 3). |
-| **3-C. YARA/capa matches pushed forward** | Design proposed, go/no-go passed (run 34, `docs/rules_plan.md`): generic Yara-Rules, 47 rules on >= 5 pilot files, 16 whose bytes determine non-aggregate features (hashed imports, strings). Reliance: above random for 14/16 rules (run 35), but against a concentration-matched reference (run 36) most represented rules are reliance gaps; only network_dns clearly stands out. Deletion check (run 37): reliance-gap and representation-gap categories supported; "relied on" (network_dns) not confirmed at pilot scale. Generic rules kept; YARA-Forge noted for later. **Sniff test failed (2026-10-12):** the results rest on the pullback (reliance) and Pᵀ (representation), not the pushforward; no scaling. Next: mock 3-C's paper table with the operator behind each column before any more experiments. capa deferred. |
+| **3-C. YARA matches pushed forward** | **On hold: failed the sniff test** (2026-10-12; post-mortem in `docs/rules_plan.md`). Runs 34-37 on generic Yara-Rules (pilot files): coverage passes; most represented rules are reliance gaps against a concentration-matched reference; deletion supports the two gap categories, not "relied on". But the results rest on the pullback (reliance) and Pᵀ (representation), not the pushforward: as built, 3-C is 3-A with a rule as the second detector. No scaling. Open (user): a pushforward-native task (output needed in feature space), mocked up first, or 3-C as an application of P as a whole. |
 | **Appendix** | App-R's duplicate-feature sweep not run; App-L a stated limitation; the byte-set control bound accepted, not started; F (feature-space comparison of the detectors) a placeholder. |
 | **The MLP** | Set aside temporarily; returns after the GBDT methodology is established. |
 | **Manuscript** | `_d_applications.tex` follows the old order (CP, PB, PF, then CM = 3-A, written up 2026-10-12); to be reorganized into intrinsic / extrinsic once 3-C exists. Claim 4 rewritten for 3-A; claims 1-3 not yet. Polish is low priority (user). Do not try to compile it. |
 
 ## Next (for Claude), on resume
 
-1. **3-C: settle its design with the user before building** (`PLAN.md`, 3-C; screening criteria in section 3). Open:
-   the rule source (generic YARA rules such as Yara-Rules `crypto/`, `packers/`, `antidebug_antivm/`,
-   `capabilities/`; or capa with a faster backend or file-scope rules), a coverage go/no-go check on the pilot files,
-   what only the pushforward gives, and the realistic alternative.
-   Proposed 2026-10-12 (user: reasonable, keep thinking): per-rule feature profiles that split "the GBDT ignores
-   this rule's content" into a representation gap (matched bytes only diluted in aggregate features) and a reliance
-   gap (they determine features the GBDT does not weigh); generic YARA rules first, capa deferred. Go/no-go on the
-   pilot files once the user has installed YARA (`README.md`, "External tools for 3-C"; the user runs installs).
+1. **3-C, no code until a mock-up passes** (screening criterion 6, `PLAN.md` section 3). Write one or two candidate
+   tasks whose output must live in feature space (where the model is trained and changed: which features to
+   constrain, sanitize, or retrain on, starting from byte-level knowledge such as rule matches) as a paper paragraph
+   and table with hypothetical numbers and the operator behind each column; screen them with the user. If none
+   passes, the fallback is 3-C as an application of P as a whole (the user decides; it leaves the paper without a
+   pushforward-specific application). Do not resume runs 34-37's line (`docs/rules_plan.md`) or scale it.
 2. Rewrite claims 1-3 (`PLAN.md`, "Thesis and claims") for the new structure; ask before changing what a claim is for.
 3. Later: reorganize `_d_applications.tex` into intrinsic / extrinsic; the scale-up (all experiments together, when
    the user decides); what to do with ambiguity and overlap.
+
+## The 2026-10-12 session (later): 3-C, and what went wrong
+
+- Setup: `README.md` documents the YARA (and capa + Ghidra) installs; the user installed yara-python 4.5.4 and
+  Yara-Rules (commit 0f93570) under `artifacts/rules/`.
+- Runs 34-37 (`scripts/yara_check.py`, `yara_reliance.py`, `yara_deletion.py`): coverage and split go/no-go, reliance
+  vs. random and vs. a concentration-matched reference, deletion check. Details in `docs/rules_plan.md`.
+- **The challenge:** I proposed a design whose flaw I had noted in its first message (per-file reliance is the
+  pullback's mass on the matched bytes; the pushforward would have to earn its place through cross-file profiles),
+  then ran four feasibility checks downstream of that premise without testing it. Each passed or nearly passed, which
+  looked like progress. Only when the user asked for a sniff test before scaling did I report that the results rest
+  on the pullback and Pᵀ. The user called this extremely disappointing: the same pattern as 3-B (feasibility checked
+  instead of relevance), hours spent on near-useless experiments. Remedy: screening criterion 6 (mock the result
+  first, operator per column, re-check after each run); the user should not have to remind me to reassess relevance.
+- Smaller missteps: a "stricter" reference that was not stricter (99.9% of bytes feed some non-aggregate feature);
+  a deletion criterion that could pass on the majority category alone; a packer case study the user rejected
+  (well-explored; not a motivation).
 
 ## The 2026-10-12 session
 
@@ -73,6 +88,15 @@ claims are settled (user). `run/` holds the commands that produced everything in
   and PF1 docs; `CLAUDE.md` updated (doc list, the tie-break rule, readings fixed in advance, `run/` script style).
 
 ## Decisions
+
+2026-10-12 (later):
+- **3-C on hold** after failing the sniff test: as built it rests on the pullback and Pᵀ, not the pushforward. Next
+  step is a mock-up of a pushforward-native task, or 3-C as an application of P (user decides).
+- **Screening criterion 6: mock the result first** (`PLAN.md`, section 3).
+- Packing is not a motivation or case study (user). Rule semantics do not matter to the method (a rule is a byte set
+  from an outside detector) but matter to the story's realism (user and Claude agree); YARA-Forge only later, for
+  realism. capa deferred.
+- Long installs and setup steps go in `README.md`; the user runs them.
 
 2026-10-12:
 - **3-B dropped** as the pullback application; **3-A is the pullback's application** (user). 3-C stays the

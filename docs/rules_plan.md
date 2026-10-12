@@ -118,3 +118,28 @@ scale, judge each category separately.
 Stay with the generic Yara-Rules sets for the methodology: they already populate all three categories (representation
 gap, reliance gap, relied on), and the bottleneck is files per rule, not rules. A curated, realistic set (YARA-Forge,
 with files selected where its rules fire) is noted for later, before final numbers, for the realism of the case.
+
+## Post-mortem (2026-10-12)
+
+**Why 3-C is on hold.** In the per-rule table this design produces, the "reliance" column is the pullback's mass on the
+matched bytes (per file, sum_j |a_j| (Pᵀ1_S)_j = the pullback of |a| summed over S), the "representation" column is
+Pᵀ1_S (P, not the pushforward ψ = PᵀD†b), and the deletion check uses no P. The pushforward proper only described
+which feature group a rule lands in. As built, 3-C is 3-A with a YARA rule as the second detector, and it does not show
+the pushforward's use, which was its purpose. The use case was also soft: who acts on "the model is redundant with
+rule R"? Nobody retires a cheap, explainable rule for it.
+
+**How it happened.** The first proposal already said that per-file reliance is a pullback quantity and that the
+pushforward would have to earn its place through profiles aggregated across files. The four checks that followed
+(runs 34-37) each tested feasibility one step downstream (coverage, a non-empty split, reliance against a reference,
+deletion), never that premise. Each passed or nearly passed, which looked like progress; the flaw surfaced only when
+the user asked for a sniff test before scaling. Same pattern as 3-B. Along the way: a "stricter" reference that was not
+(99.9% of bytes feed some non-aggregate feature), and a deletion criterion that could pass on the majority category.
+
+**What carries over.** The tooling (YARA scanning with byte offsets, per-rule Pᵀ1_S, concentration-matched references,
+deletion against them) and two facts: generic string rules match most files with byte locations, and their content
+reaches the GBDT mostly through hashed import features. Option (a), comparing the pushed-forward rule with TreeSHAP in
+feature space, is not pursued: per file it reduces to the pullback's mass again, and its aggregate is a description
+without a task.
+
+**Rule for next time** (`PLAN.md`, screening criterion 6): mock the paper's paragraph and table first, with the
+operator behind each column, and screen that before any data check; re-check it after every run.
