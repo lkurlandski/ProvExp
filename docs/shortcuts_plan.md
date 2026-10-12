@@ -22,6 +22,28 @@ Not every relied-upon pattern is spurious, and "spurious" is a judgement about t
 and whether an attacker can set it. The strongest cases here are forgeable metadata (a code-signing certificate, a
 compiler's timestamp), where "signed -> benign" is the textbook malware shortcut.
 
+**Framing (agreed 2026-10-12, after the SHAP check below).** The contribution is *systematic* discovery and
+realization: corpus-wide, over every feature, with no hand-built mapping from features to bytes. No head-to-head
+baseline; the comparison is published practice. Severi et al. (USENIX Sec 2021, Sec. 6 and Table 4) realize
+SHAP-selected EMBER features with a hand-built watermarking utility and discard "all hash-based features" ("given the
+preimage resistance of the hash function"), leaving 35, then "any features whose value is impacted by more than one
+other feature", leaving **17** (version fields, linker version, MZ_count, section counts, paths/URLs/registry counts,
+size, timestamp). Their task (a backdoor) is orthogonal to ours (auditing a detector); the overlap is the problem they
+had to work around. None of our confirmed artifacts is among their 17 (data-directory sizes; a section name in a hashed
+feature). The pullback does not invert hashes: it supplies, from the corpus, content that occupies the bucket, and
+Pᵀ1_S lists every feature a forged byte set also changes (their dependency problem).
+
+**Exploitability, not an attack.** The adversarial-malware literature (e.g., Demetrio et al., Anderson et al.,
+Pierazzi et al.) reaches higher evasion with general manipulations; we do not compete with it. The check is scoped:
+the adversary writes only the flagged content at the bytes P names, the file parses with its original section layout,
+and functionality is argued from the format (the loader ignores the certificate-table and debug-directory sizes and
+section names), not tested in a sandbox. The question is whether the shortcuts are a liability at the operating
+threshold and whether the P-named mitigation removes it.
+Run 29 (`scripts/shortcuts_forge.py`): the confirmed artifacts, one per top feature, forged together into 2,000
+held-out malware; evasion at the 1%-validation-FPR threshold, vs. random bytes in the same runs, on the original and
+the neutralized GBDT. Hypothesis: the effects roughly add (about +2.5 log-odds), so a noticeable share of detected
+malware near the threshold evades, but not the confident files; the neutralized model shows no evasion.
+
 ## Design (settled 2026-10-12)
 
 1. **Discovery** (run 22, `scripts/shortcuts.py`): per file, the pullback of interventional TreeSHAP over the 2,000

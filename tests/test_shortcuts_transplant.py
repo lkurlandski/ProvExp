@@ -24,6 +24,9 @@ from tests.strategies import full_boxmatrices
 
 sys.path.insert(0, str(Path(__file__).parent.parent / "scripts"))
 
+from shortcuts_forge import forge_set  # noqa: E402
+from shortcuts_forge import operating_threshold  # noqa: E402
+from shortcuts_forge import write_all  # noqa: E402
 from shortcuts_reliance import best_occurrence  # noqa: E402
 from shortcuts_reliance import occurrences  # noqa: E402
 from shortcuts_tables import label  # noqa: E402
@@ -303,3 +306,41 @@ class TestNeutralize:
             "name": ["datadirectories:security_size", "rare", "datadirectories:resource_virtual_address", "datadirectories:debug_size"],
         })
         assert neutralize(summary, carried, reliance) == ["datadirectories:security_size"]
+
+
+################################################################################
+# Forge
+################################################################################
+
+
+class TestForge:
+
+    def test_forge_set_one_confirmed_artifact_per_feature(self) -> None:
+        summary = pl.DataFrame({
+            "kind": ["pullback"] * 5 + ["mined"], "candidate": [15, 13, 19, 2, 4, 0],
+            "confirmed": [True, True, True, True, False, True],
+            "top_feature": ["datadirectories:security_size", "datadirectories:security_size",
+                            "datadirectories:resource_virtual_address", "datadirectories:debug_size",
+                            "datadirectories:debug_size", "x"],
+            "content": [bytes.fromhex(h) for h in ("20280000", "38280000", "00000000", "54000000", "70000000", "00")],
+        })
+        out = forge_set(summary)
+        assert out["candidate"].to_list() == [2, 13]
+        assert out["content"].to_list() == [bytes.fromhex("54000000"), bytes.fromhex("38280000")]
+
+    @pytest.mark.parametrize("fpr", [0.01, 0.1, 0.5])
+    def test_threshold_keeps_fpr(self, fpr: float) -> None:
+        scores = np.random.default_rng(0).normal(size=10_001)
+        t = operating_threshold(scores, fpr)
+        assert np.mean(scores > t) <= fpr
+        assert t in scores
+
+    def test_threshold_rejects_bad_fpr(self) -> None:
+        with pytest.raises(ValueError):
+            operating_threshold(np.zeros(3), 1.0)
+
+    def test_write_all(self) -> None:
+        data = bytes(10)
+        assert write_all(data, [(6, b"\x02\x02"), (1, b"\x01")]) == b"\x00\x01\x00\x00\x00\x00\x02\x02\x00\x00"
+        assert write_all(data, [(1, b"\x01\x01"), (2, b"\x02")]) is None
+        assert write_all(data, [(1, b"\x01"), (2, b"\x02")]) == b"\x00\x01\x02" + bytes(7)
