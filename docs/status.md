@@ -24,6 +24,12 @@ claims are settled (user). `run/` holds the commands that produced everything in
 
 ## Next (for Claude), on resume
 
+0. **3-C revised** (2026-10-12, step back with the user): the pullback/pushforward symmetry is the novelty, so the
+   pushforward needs an application. Auditing MalConv for shortcuts through the pushforward (`docs/audit_plan.md`):
+   mock screened, go/no-go fixed (no-go if nothing is confirmed, or the surrogate finds at least half of the confirmed
+   candidates). Hand-built aggregation with a PE parser is not a realistic alternative (user). Built and smoke-tested;
+   **waiting on the user to run `run/38`-`run/41`** (38 and 39 in parallel, about an hour; then 40 and 41, about 20
+   min). Then read the go/no-go against the criterion. Item 1 below is superseded by this.
 1. **3-C, no code until a mock-up passes** (screening criterion 6, `PLAN.md` section 3). Write one or two candidate
    tasks whose output must live in feature space (where the model is trained and changed: which features to
    constrain, sanitize, or retrain on, starting from byte-level knowledge such as rule matches) as a paper paragraph

@@ -144,6 +144,13 @@ practice, and its limits are measurable. Done at pilot scale:
   (Pᵀ plus the pullback), leaving no pushforward-specific application. Packing is not a motivation (user). capa
   deferred; a curated rule set (YARA-Forge) only for realism, later.
 
+- **3-C (revised, 2026-10-12): auditing a raw-byte detector through the pushforward** (`docs/audit_plan.md`;
+  mock-up, awaiting the user's screening). The pushforward puts per-file byte explanations (MalConv's IG) in coordinates
+  shared by every file, so a raw-byte model's reliance can be aggregated across a corpus: shortcut discovery for a model
+  with no feature names (3-B's task where 3-B's failure does not apply). Realistic alternatives: IG aggregated by
+  pefile field, and a surrogate GBDT trained on MalConv's scores. The symmetry is the framework's novelty, so the
+  pushforward needs an application (user); the rule-based design above stays on hold.
+
 **Appendix:** App-R (mechanical redundancy); App-L (a limitation); **bounding what control of a byte set can do**
 (accepted 2026-10-09, posed domain-agnostically): for additive features (Pᵀ1_S)_j bounds how far feature j can
 move when S is controlled, so a worst-case score over the controllable features bounds evasion without crafting

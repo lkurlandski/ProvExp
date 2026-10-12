@@ -27,9 +27,14 @@ Outputs, in `{outdir}/seed-{seed}/{tag}/`:
     summary.parquet     one row per candidate: applicability, median drops, paired effect, p-value, confirmed
     report.json         the configuration, statuses, and timing
 
+With `--scorer malconv`, MalConv (a raw-byte model) re-scores the files instead of the GBDT; this confirms the
+candidates of 3-C revised (docs/audit_plan.md, scripts/audit_discover.py), which are placed by the same provenance.
+
 Usage:
     PYTHONHASHSEED=0 python scripts/shortcuts_transplant.py --seed 0 --num_workers 16
     PYTHONHASHSEED=0 python scripts/shortcuts_transplant.py --seed 0 --model artifacts/models/gbdt/seed-0-neutral/model.txt --tag neutral
+    PYTHONHASHSEED=0 python scripts/shortcuts_transplant.py --seed 0 --scorer malconv --tag malconv \
+        --patterns artifacts/experiments/audit_discover/seed-0/malconv-benign/patterns.parquet
 """
 
 from __future__ import annotations
@@ -54,6 +59,7 @@ import numpy as np
 from numpy import typing as npt
 import polars as pl
 from scipy import stats
+import torch
 from tqdm import tqdm
 
 from provexp.data.simpledb import SimpleDB
@@ -62,6 +68,8 @@ from provexp.explain.feature import gbdt_function
 from provexp.featuresets.ember2024.ablation import parse
 from provexp.featuresets.ember2024.features import PEFeatureExtractor
 from provexp.featuresets.ember2024.trigger import apply_content
+from provexp.models.malconv import encode
+from provexp.models.malconv import load_pretrained_malconv
 from provexp.provenance import Provenance
 
 
@@ -78,6 +86,7 @@ ROOT = Path(__file__).parent.parent
 
 _EXTRACTOR: Optional[PEFeatureExtractor] = None
 _GBDT: Optional[Any] = None
+_MALCONV: Optional[Any] = None
 
 
 ################################################################################
@@ -187,10 +196,14 @@ def _raise_timeout(signum: int, frame: Optional[FrameType]) -> None:
     raise TransplantTimeout()
 
 
-def _init_worker(model_file: Path) -> None:
-    global _EXTRACTOR, _GBDT
+def _init_worker(model_file: Path, scorer: str = "gbdt") -> None:
+    global _EXTRACTOR, _GBDT, _MALCONV
     _EXTRACTOR = PEFeatureExtractor()
-    _GBDT = gbdt_function(lgb.Booster(model_file=str(model_file)))
+    if scorer == "malconv":
+        torch.set_num_threads(1)
+        _MALCONV = load_pretrained_malconv(model_file)
+    else:
+        _GBDT = gbdt_function(lgb.Booster(model_file=str(model_file)))
     # thrember prints unknown pefile warnings to stdout.
     sys.stdout = open(os.devnull, "w")
     warnings.filterwarnings("ignore")
@@ -198,7 +211,11 @@ def _init_worker(model_file: Path) -> None:
 
 
 def score(data: bytes) -> float:
-    """The GBDT's malware log-odds (raw score) of a file's bytes."""
+    """The scored model's malware log-odds of a file's bytes (the GBDT's raw score, or MalConv's logit difference)."""
+    if _MALCONV is not None:
+        with torch.no_grad():
+            z = _MALCONV(encode(data)[None])
+        return float(z[0, 1] - z[0, 0])
     assert _EXTRACTOR is not None and _GBDT is not None
     x = np.asarray(_EXTRACTOR.feature_vector(data), dtype=np.float64)  # type: ignore[no-untyped-call]
     return float(_GBDT(x[None, :])[0])
@@ -378,7 +395,8 @@ def main() -> None:
     parser.add_argument("--min_files", type=int, default=10)
     parser.add_argument("--mined", type=Path, default=None, help="Optionally, mined.parquet of scripts/shortcuts_train_sample.py: also append its top n-grams.")
     parser.add_argument("--num_mined", type=int, default=20)
-    parser.add_argument("--model", type=Path, default=None, help="The GBDT (default: artifacts/models/gbdt/seed-{seed}/model.txt).")
+    parser.add_argument("--scorer", type=str, choices=["gbdt", "malconv"], default="gbdt", help="The model that re-scores the files.")
+    parser.add_argument("--model", type=Path, default=None, help="The model file (default: artifacts/models/gbdt/seed-{seed}/model.txt, or checkpoints/malconv-seed{seed}.pt).")
     parser.add_argument("--tag", type=str, default="gbdt", help="The output subdirectory (e.g., the model).")
     parser.add_argument("--num_files", type=int, default=200)
     parser.add_argument("--min_score", type=float, default=0.0)
@@ -398,9 +416,11 @@ def main() -> None:
 
     outdir = args.outdir / f"seed-{args.seed}" / args.tag
     outdir.mkdir(parents=True, exist_ok=True)
-    model_file = args.model if args.model is not None else ROOT / "artifacts" / "models" / "gbdt" / f"seed-{args.seed}" / "model.txt"
+    default_model = (ROOT / "checkpoints" / f"malconv-seed{args.seed}.pt" if args.scorer == "malconv"
+                     else ROOT / "artifacts" / "models" / "gbdt" / f"seed-{args.seed}" / "model.txt")
+    model_file = args.model if args.model is not None else default_model
     if not model_file.exists():
-        raise RuntimeError(f"No GBDT at {model_file.as_posix()}.")
+        raise RuntimeError(f"No {args.scorer} model at {model_file.as_posix()}.")
 
     names = PEFeatureExtractor().feature_names
     index = {name: i for i, name in enumerate(names)}
@@ -439,7 +459,7 @@ def main() -> None:
     t_0 = time.time()
     files: list[dict[str, Any]] = []
     results: list[dict[str, Any]] = []
-    with mp.get_context("fork").Pool(args.num_workers, initializer=_init_worker, initargs=(model_file,)) as pool_:
+    with mp.get_context("fork").Pool(args.num_workers, initializer=_init_worker, initargs=(model_file, args.scorer)) as pool_:
         for f, r in tqdm(pool_.imap_unordered(_star, sorted(tasks, key=lambda t: -len(t[1]))), total=len(tasks), desc="shards", mininterval=10):
             files.extend(f)
             results.extend(r)
@@ -456,6 +476,7 @@ def main() -> None:
     report = {
         "config": {k: (v.as_posix() if isinstance(v, Path) else v) for k, v in vars(args).items()},
         "model": model_file.as_posix(),
+        "scorer": args.scorer,
         "num_targets": file_table.height,
         "status": dict(Counter(file_table["status"].to_list())),
         "num_scored": scored.height,
