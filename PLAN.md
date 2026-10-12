@@ -96,6 +96,15 @@ practice, and its limits are measurable. Done at pilot scale:
   data-directory features (86% of its GBDT credit; hashed features 5%). **Caveat (3-B's pitfall):** an expert with a
   PE parser could map most of these features to bytes by hand; P does it generally and per file, and window-level
   methods (the P-free alternative) miss it.
+  The user accepts this: automating the mapping is the point (2026-10-12).
+  **Disagreement triage** (run 32, `scripts/cm_triage.py`; 25 test files per disagreement cell at 1% FPR): A (the
+  flagging model)'s top 1% of bytes split by how B reads them (attended = B's top 5% by |evidence|). When MalConv
+  alone flags (its detections and its false positives), 77% of its evidence lies on bytes the GBDT does not read
+  (blind). When the GBDT alone flags malware, MalConv reads most of the GBDT's evidence bytes, a third of them as
+  benign (oppose); deleting those bytes makes MalConv detect 19/25 files (random same-size part of the GBDT's top
+  set: 1/25); GBDT false positives likewise 17/25 vs. 1/25. Caveats: deleting the GBDT's blind bytes barely moves the
+  GBDT (-0.16 vs. -4.55 for a random same-size part); for A = MalConv, any large deletion raises the GBDT (zero fill),
+  which confounds the B side.
 - **3-B. Finding (and mitigating) spurious correlations with the pullback** (`docs/shortcuts_plan.md`). **Failed as
   the pullback application (2026-10-12): the findings rest on named features, so P was a convenience; see
   `docs/shortcuts_plan.md`, "Why it failed". To be replaced by a new pullback application (brainstorm next).** A
