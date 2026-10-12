@@ -113,6 +113,15 @@ Test ROC-AUC 0.99759 -> 0.99756, accuracy 0.9755 -> 0.9753. Transplant after: ce
 features its bytes carry). The non-trivial parts are that P names that carrier set, and that removal costs nothing
 measurable in accuracy.
 
+**Does the pullback find what SHAP + feature names would miss?** (check on run 22's spans, 2026-10-12): the
+pullback adds something only where one content's credit is spread over several features. Within the top 256 bytes per
+file (median 60% of a file's benign credit), 83% of span credit is in spans where one feature carries >= 80%, and only
+3.5% in spans where no feature carries half. The spread cases are mostly several named flags of one header field
+(`header:characteristics_*`) or one section name's hashed features (`size_hash_43`, `vsize_hash_43`, ...), both easy
+to group by hand. Not checked: the other 40% of credit, on bytes with low per-byte credit. **Reading:** on this GBDT,
+SHAP plus feature names (and re-hashing names for hashed features) finds nearly all of what the pullback finds; P
+automates the tracing and the placement but is not necessary for discovery.
+
 ## Out of scope / decided against
 
 - **Legibility-of-reliance as the headline** (rejected 2026-10-09): subsumed by PB1. 3-B is about *spurious*
