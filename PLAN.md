@@ -79,8 +79,10 @@ practice, and its limits are measurable. Done at pilot scale:
 5. Ideas the user has already ruled out or doubted get extra skepticism, not a second pitch.
 - **3-A. Comparing detectors** (CM, both operators): the GBDT on EMBER v3, a GBDT on **byte n-grams** (the quickest
   way to widen the comparison: a P at the other end of the spectrum; not EMBER v2, too similar to v3), and MalConv,
-  compared in the problem space (pullback vs. direct byte explanations) and in the feature space (MalConv's
-  explanations pushed forward). Another domain or file format comes later. **Now the pullback's application**
+  compared in the problem space (pullback vs. direct byte explanations). The feature-space comparison (MalConv's
+  explanations pushed forward) moved to the appendix as a curiosity (user, 2026-10-12); it returns to the main paper
+  only if it finds a use beyond being interesting. Another domain or file format comes later. **Done at pilot scale
+  (2026-10-12): the pullback's application** (shared attack surface; disagreement triage)
   (2026-10-12, 3-B dropped); byte n-grams set aside for now (user). First check, run 30 (`scripts/cm_check.py`, PB1's
   100 files and operator): agreement is weak at every resolution (median rho <= 0.07); the top overlap is 2-3x chance
   at windows, 6.5x at bytes (pullback vs. MalConv IG). Cross-deletion at 0.1% of bytes (median evidence removed): the
@@ -143,6 +145,8 @@ practice, and its limits are measurable. Done at pilot scale:
 (accepted 2026-10-09, posed domain-agnostically): for additive features (Pᵀ1_S)_j bounds how far feature j can
 move when S is controlled, so a worst-case score over the controllable features bounds evasion without crafting
 attacks, validated against real attacks.
+Also **the feature-space comparison of the GBDT and MalConv** (MalConv's explanations pushed forward vs. the GBDT's
+TreeSHAP; moved out of 3-A, 2026-10-12): an intrigue, not built.
 
 ## Principle: domain-agnostic framework, selective domain knowledge in experiments
 
