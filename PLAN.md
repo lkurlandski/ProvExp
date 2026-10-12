@@ -124,6 +124,22 @@ model in coordinates shared by every file, so they can be *aggregated over a cor
   attack on MalConv; does it transfer to the GBDT more often when the bytes it modifies carry the GBDT's pullback?
   Days of tooling (e.g., secml-malware); otherwise a stated limitation.
   (c) *Seeds 1-2* (models exist): replication, at scale-up.
+  **Review after the step back (2026-10-12, end of session; to act on only if 3-C revised passes its go/no-go).**
+  3-A survives the analysis that sank 3-B: it needs what the pullback demonstrably gives (a faithful byte-level
+  explanation of a feature-based model from one extraction), and the realistic alternative (window occlusion) reaches
+  the *wrong conclusion*, not just a blurrier one (run 33: at windows, "reads it the other way" becomes "agrees"). The
+  hand-mappability worry is settled (hand-built parser mappings are not a realistic alternative, user). Its weaknesses:
+  it rests on deletion, not attacks, and "comparing detectors" reads as abstract. Planned changes:
+  1. *Frame the two applications as local vs. global*, both on the same two models: the pullback (3-A) explains one
+     file at a time, for an analyst (why do two detectors disagree on this file?); the pushforward (3-C revised) audits
+     a byte-level detector across a corpus. Lead 3-A with the disagreement triage (the local, analyst-facing part);
+     shared reliance supports it. 3-C's "GBDT relies on it" column ties the two together.
+  2. *Real-attack transfer* (option (b) above) to replace deletion with attacks: published functionality-preserving
+     header attacks on MalConv; do they transfer to the GBDT more often when the bytes they modify carry the GBDT's
+     pullback? Days of tooling (e.g., secml-malware); after 3-C's go/no-go.
+  3. The original 3-A's feature-space comparison (MalConv pushed forward vs. the GBDT's TreeSHAP; appendix F) returns
+     only if it serves 3-C revised; MalConv's pushed-forward IG for 2,000 files will exist anyway.
+  If 3-C revised fails, revisit both applications together rather than patching 3-A alone.
 - **3-B. Spurious correlations via the pullback: dropped (2026-10-12)** (`docs/archive/shortcuts_plan.md`). The
   pipeline worked at pilot scale (runs 22-29: discovery, causal transplant, mitigation by neutralizing the features
   P names, 3.6% evasion at 1% FPR from forging the confirmed artifacts), but the findings rest on named features

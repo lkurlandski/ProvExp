@@ -33,7 +33,8 @@ the rule-based 3-C on hold. Work stays at pilot scale except where a task needs 
    criterion after the fact. Note also how much of MalConv's credit falls on aggregates (objection 3) and whether the
    confirmed shortcuts are only in the DOS header (weak, known).
 3. If go: re-check the mock (operator per column), then plan the experiment proper with the user (forging and evasion
-   at 1% FPR, the GBDT-relies-on column, tables). If no-go: post-mortem, then back to the user; the pushforward still
+   at 1% FPR, the GBDT-relies-on column, tables). Then 3-A's planned changes (`PLAN.md`, 3-A, "Review after the step
+   back": local vs. global framing, triage first, real-attack transfer). If no-go: post-mortem, then back to the user; the pushforward still
    needs an application (do not propose dropping it).
 4. Later: rewrite claims 1-3 (ask before changing what a claim is for); reorganize `_d_applications.tex` into
    intrinsic / extrinsic; rewrite the introduction's contributions around what is demonstrated; scale-up when the user
