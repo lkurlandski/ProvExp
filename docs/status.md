@@ -1,6 +1,6 @@
 # Status
 
-Last updated: 2026-10-12 (3-B consolidated). **The paper is restructured** (`PLAN.md`, "Paper structure"):
+Last updated: 2026-10-12 (3-B done at pilot scale). **The paper is restructured** (`PLAN.md`, "Paper structure"):
 1. the framework; 2. an intrinsic, laboratory-style evaluation (done at pilot scale); 3. extrinsic applications for
 security practitioners (3-A, 3-B, 3-C: chosen, not designed). Work stays at pilot scale (100 files, one seed) until
 the pilot results and the claims are settled (user). `run/` holds the commands that produced everything in
@@ -16,7 +16,7 @@ the pilot results and the claims are settled (user). `run/` holds the commands t
 | **2. Intrinsic: CP** | Census, coarsening, CP.3 done (`docs/cp_census.md`); in the paper, its theory (round-trip bounds) and CP.3's agreement check. |
 | **2. Intrinsic: PB2, PF2** (planted triggers) | Done at pilot scale (`docs/trigger_plan.md`); **demoted**, possibly removed later. |
 | **3-A. Comparing detectors** | Not built. GBDT on EMBER v3, a GBDT on byte n-grams (to build), MalConv; both operators. |
-| **3-B. Spurious correlations via the pullback** | **Done at pilot scale except the P-free baseline** (`docs/shortcuts_plan.md`, "Results"). Top 20 discovery patterns by a fixed rule, transplanted into 200 held-out malware at the bytes the file's P names: 5 confirmed, 4 of them artifacts (certificate-table size +1.34 vs. -0.27 random; DEBUG.Size 0x54; the `.rsrc` name in a hashed bucket). Mitigation: 6 P-named features neutralized, AUC 0.99759 -> 0.99756; the exploits removed (`.rsrc` residual +0.06 vs. +0.02 random). **Waiting on the user: run 25** (training sample: prevalence, mined 4-grams), then runs 26-27 re-run with the mined 4-grams. |
+| **3-B. Spurious correlations via the pullback** | **Done at pilot scale** (`docs/shortcuts_plan.md`, "Results"). Top 20 discovery patterns by a fixed rule, transplanted into 200 held-out malware at the bytes the file's P names: 5 confirmed, 4 of them artifacts (certificate-table size +1.34 vs. -0.27 random; DEBUG.Size 0x54; the `.rsrc` name in a hashed bucket). Mitigation: 6 P-named features neutralized, AUC 0.99759 -> 0.99756; the exploits removed (`.rsrc` residual +0.06 vs. +0.02 random). Baseline without P (run 25): the top chi-squared 4-grams are certificate (DER) bytes, the same signing signal, but the model credits them ~0 and appending them moves nothing; the model reads the data-directory size, which only P locates. |
 | **3-C. YARA/capa matches pushed forward** | Adopted, not designed. Coverage check stopped early: public YARA signatures too sparse; generic rules and capa untested; capa's default backend is very slow. |
 | **Appendix** | App-R's duplicate-feature sweep not run; App-L a stated limitation; the byte-set control bound accepted, not started. |
 | **The MLP** | Set aside temporarily; returns after the GBDT methodology is established. |
@@ -24,7 +24,7 @@ the pilot results and the claims are settled (user). `run/` holds the commands t
 
 ## Next (for Claude), on resume
 
-1. **3-B: the baseline.** The user runs `bash run/25_shortcuts_train_sample.sh && bash run/26_shortcuts_reliance.sh && bash run/27_shortcuts_transplant.sh` (about 20 min); then `python scripts/shortcuts_tables.py --seed 0` (Table 2: mined 4-grams vs. the pullback's candidates; the training-prevalence column of Table 1) and write it into `docs/shortcuts_plan.md`. Then take stock with the user and move to **3-C** or **3-A** (the user picks).
+1. Take stock with the user and move to **3-C** or **3-A** (the user picks). 3-B's open item: scaling to seeds 1-2 (user's call).
 2. Rewrite the claims (`PLAN.md`, "Thesis and claims") to fit the new structure; ask the user before changing what a
    claim is for.
 3. Later: 3-C's rule source (generic YARA rules, or capa with a faster backend or file-scope rules); 3-A's byte n-gram
@@ -32,7 +32,7 @@ the pilot results and the claims are settled (user). `run/` holds the commands t
 
 ## The 2026-10-12 session
 
-- 3-B scope settled with the user in one exchange (all four parts; top 20 benign-pushing; 2,500 + 2,500 training sample), then executed: `scripts/shortcuts_transplant.py` (placement by the target's P; confirmation rule fixed before the run, tightened after the smoke test so that beating an anomalous random control is not enough), `shortcuts_reliance.py` (credit, carried features Pᵀ1_S), `shortcuts_train_sample.py` (prevalence, exact 4-gram mining; smoke-tested only), `shortcuts_tables.py` (tables, labels, the neutralize rule), `train_classic.py --neutralize`. Runs 26-28 done (26-27 without the mined 4-grams); run 25 is the user's.
+- 3-B scope settled with the user in one exchange (all four parts; top 20 benign-pushing; 2,500 + 2,500 training sample), then executed: `scripts/shortcuts_transplant.py` (placement by the target's P; confirmation rule fixed before the run, tightened after the smoke test so that beating an anomalous random control is not enough), `shortcuts_reliance.py` (credit, carried features Pᵀ1_S), `shortcuts_train_sample.py` (prevalence, exact 4-gram mining; smoke-tested only), `shortcuts_tables.py` (tables, labels, the neutralize rule), `train_classic.py --neutralize`. Runs 25-28 done (run 25 by the user); the baseline is in `docs/shortcuts_plan.md`.
 
 ## The 2026-10-09 session
 

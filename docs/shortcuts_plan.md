@@ -50,7 +50,7 @@ compiler's timestamp), where "signed -> benign" is the textbook malware shortcut
 Hypothesis (stated with the design): forgeable metadata moves the model clearly above the control; hashed-name
 content moves it less.
 
-## Results (seed 0; training-sample columns pending run 25)
+## Results (seed 0)
 
 Transplant over 197 scored malware (3 below zero log-odds skipped); drop = median move toward benign, content vs.
 random in the same bytes. carry = median share of j's provenance in the candidate's bytes (1 = the bytes set the
@@ -92,10 +92,19 @@ feature). test b/m = discovery files by label.
   name (`.rsrc`) moves it too; several metadata values (SizeOfCode 0, ImageBase, linker layout) do not beat a random
   value.
 
-**Baseline without P:** pending run 25 (training-sample prevalence; mined 4-grams, their reliance, and the append
-test; `python scripts/shortcuts_tables.py --seed 0`, Table 2). The point it should make: content without a location
-is ambiguous for exactly the candidates that matter (4 of the 20 are the 4-byte zero; the best-anywhere credit of
-`0x00000000` is the same for all of them).
+**Training prevalence** (run 25, 2,500 + 2,500 files, at the feature's bytes): the confirmed artifacts are
+benign-skewed in training too (DEBUG.Size 0x54: 22.0% vs. 6.4%; certificate sizes 0.4%/0.1% and 2.3%/0.0%; `.rsrc`
+92.8% vs. 82.2%), i.e., learned correlations, not explanation-set noise.
+
+**Baseline without P** (runs 25-27; `python scripts/shortcuts_tables.py --seed 0`, Table 2). The top benign-skewed
+4-grams by chi-squared are almost all X.509/DER bytes of embedded certificates (`/crl`, OID prefixes, ASN.1 times):
+the miner finds the same "signed -> benign" signal. But for the top 20 the model's credit is ~0 at any occurrence
+(mean 0.001; vs. 0.29 for the pullback's), and appending them moves nothing (+0.00 vs. +0.00): the model does not read
+the certificate's content, it reads the data-directory size, which the miner cannot point to. None of the 4-grams of
+any pullback candidate ranks in the miner's top 1,000. Content without a location is also ambiguous: the five
+`0x00000000` candidates share the same best-anywhere credit (0.29), while their credit at the feature's bytes ranges
+from -0.01 (IAT size) to 1.02 (entry point); the certificate size gets 0.14 anywhere vs. 0.86 at its field. Occlusion
+(the cost baseline, PB1) is not re-run.
 
 **Mitigation** (run 28): 6 features neutralized (`debug_size`, `security_size`, and the four hashed section features
 that the `.rsrc` name carries: `size_hash_43`, `vsize_hash_43`, `characteristics_hash_2`, `characteristics_hash_13`).
