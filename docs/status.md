@@ -16,7 +16,7 @@ the pilot results and the claims are settled (user). `run/` holds the commands t
 | **2. Intrinsic: CP** | Census, coarsening, CP.3 done (`docs/cp_census.md`); in the paper, its theory (round-trip bounds) and CP.3's agreement check. |
 | **2. Intrinsic: PB2, PF2** (planted triggers) | Done at pilot scale (`docs/trigger_plan.md`); **demoted**, possibly removed later. |
 | **3-A. Comparing detectors** | Not built. GBDT on EMBER v3, a GBDT on byte n-grams (to build), MalConv; both operators. |
-| **3-B. Spurious correlations via the pullback** | **Done at pilot scale** (`docs/shortcuts_plan.md`, "Results"). Top 20 discovery patterns by a fixed rule, transplanted into 200 held-out malware at the bytes the file's P names: 5 confirmed, 4 of them artifacts (certificate-table size +1.34 vs. -0.27 random; DEBUG.Size 0x54; the `.rsrc` name in a hashed bucket). Mitigation: 6 P-named features neutralized, AUC 0.99759 -> 0.99756; the exploits removed (`.rsrc` residual +0.06 vs. +0.02 random). Baseline without P (run 25): the top chi-squared 4-grams are certificate (DER) bytes, the same signing signal, but the model credits them ~0 and appending them moves nothing; the model reads the data-directory size, which only P locates. Run 29 (forging the confirmed artifacts together): 3.6% of detected malware evades at 1% FPR vs. 0.1% random; 0.1% after neutralization; carried by two named data-directory sizes. **Open (2026-10-12): whether 3-B shows enough value of the pullback; to rethink with the user.** |
+| **3-B. Spurious correlations via the pullback** | **Done at pilot scale** (`docs/shortcuts_plan.md`, "Results"). Top 20 discovery patterns by a fixed rule, transplanted into 200 held-out malware at the bytes the file's P names: 5 confirmed, 4 of them artifacts (certificate-table size +1.34 vs. -0.27 random; DEBUG.Size 0x54; the `.rsrc` name in a hashed bucket). Mitigation: 6 P-named features neutralized, AUC 0.99759 -> 0.99756; the exploits removed (`.rsrc` residual +0.06 vs. +0.02 random). Baseline without P (run 25): the top chi-squared 4-grams are certificate (DER) bytes, the same signing signal, but the model credits them ~0 and appending them moves nothing; the model reads the data-directory size, which only P locates. Run 29 (forging the confirmed artifacts together): 3.6% of detected malware evades at 1% FPR vs. 0.1% random; 0.1% after neutralization; carried by two named data-directory sizes. **Failed as the pullback application** (findings rest on named features; `docs/shortcuts_plan.md`, "Why it failed"). |
 | **3-C. YARA/capa matches pushed forward** | Adopted, not designed. Coverage check stopped early: public YARA signatures too sparse; generic rules and capa untested; capa's default backend is very slow. |
 | **Appendix** | App-R's duplicate-feature sweep not run; App-L a stated limitation; the byte-set control bound accepted, not started. |
 | **The MLP** | Set aside temporarily; returns after the GBDT methodology is established. |
@@ -24,7 +24,10 @@ the pilot results and the claims are settled (user). `run/` holds the commands t
 
 ## Next (for Claude), on resume
 
-1. Take stock with the user and move to **3-C** or **3-A** (the user picks). 3-B's open item: scaling to seeds 1-2 (user's call).
+1. **Brainstorm a new pullback application** with the user: 3-5 candidates, each screened against the criteria in
+   `PLAN.md` (section 3: needs what only P gives; a practical task; the realistic alternative named; a go/no-go check
+   on existing data first; extra skepticism for ideas the user has ruled out), for a general security audience. The
+   user picks; run the go/no-go check; only then design. 3-C and 3-A wait.
 2. Rewrite the claims (`PLAN.md`, "Thesis and claims") to fit the new structure; ask the user before changing what a
    claim is for.
 3. Later: 3-C's rule source (generic YARA rules, or capa with a faster backend or file-scope rules); 3-A's byte n-gram

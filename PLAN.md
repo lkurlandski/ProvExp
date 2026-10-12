@@ -67,14 +67,23 @@ practice, and its limits are measurable. Done at pilot scale:
 - The pushforward is faithful up to its source's resolution (PF1): the resolution trend, 0.34 → 0.80.
 - Demoted, possibly removed later (user): the planted triggers (PB2, PF2). App-L is a stated limitation only.
 
-**3. Extrinsic applications** (what the framework provides security practitioners). Each must be impossible or much
-costlier without P and have a baseline that does not use P; state a brief hypothesis before running. None is
-designed or built yet.
+**3. Extrinsic applications** (what the framework provides security practitioners; for a general security audience).
+**Screening criteria (adopted 2026-10-12, after 3-B failed; apply before writing any code):**
+1. *It needs what only P gives:* the content behind opaque (hashed/aggregate) features, per file; credit summed across
+   several features onto shared bytes; or which bytes realize a feature. If feature-space SHAP plus the feature names
+   plus the extractor's code does about as well, reject it.
+2. *A practical security task* that analysts or defenders actually do, not a question we invented.
+3. *The realistic alternative is named up front* (what a practitioner uses today), never a strawman.
+4. *A falsifiable go/no-go check runs first,* on existing data where possible, before an experiment is built; its
+   failing outcome is stated in advance.
+5. Ideas the user has already ruled out or doubted get extra skepticism, not a second pitch.
 - **3-A. Comparing detectors** (CM, both operators): the GBDT on EMBER v3, a GBDT on **byte n-grams** (the quickest
   way to widen the comparison: a P at the other end of the spectrum; not EMBER v2, too similar to v3), and MalConv,
   compared in the problem space (pullback vs. direct byte explanations) and in the feature space (MalConv's
   explanations pushed forward). Another domain or file format comes later.
-- **3-B. Finding (and mitigating) spurious correlations with the pullback** (`docs/shortcuts_plan.md`). A
+- **3-B. Finding (and mitigating) spurious correlations with the pullback** (`docs/shortcuts_plan.md`). **Failed as
+  the pullback application (2026-10-12): the findings rest on named features, so P was a convenience; see
+  `docs/shortcuts_plan.md`, "Why it failed". To be replaced by a new pullback application (brainstorm next).** A
   feature-based detector learns reliance on content that tracks the label but is not about maliciousness (forgeable
   metadata, compiler/packaging artifacts). The pullback surfaces these from an opaque feature set by naming the
   content behind influential hashed/aggregate features across a corpus (run 22: e.g. `imports:library_hash_254` =

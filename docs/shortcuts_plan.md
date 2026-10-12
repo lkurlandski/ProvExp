@@ -3,6 +3,27 @@
 Started 2026-10-09. An extrinsic application (`PLAN.md`, "Paper structure"). Goal: an application of the pullback that
 is impossible or much more expensive without it.
 
+## Why it failed (2026-10-12)
+
+**Outcome:** the pipeline works (discovery, causal confirmation, mitigation; 3.6% of detected malware evades at 1%
+FPR, removed by neutralizing 6 features at no accuracy cost), but it does not show the pullback's value. The relied-upon
+shortcuts sit on *named* features (`datadirectories:security_size`, `debug_size`) that feature-space SHAP surfaces
+directly; the one finding only the pullback could make (`.rsrc` in a hashed feature) barely matters (7% of the evasions
+alone). Of credit within the top bytes, 83% comes through spans dominated by one feature; summing credit across
+features (P's distinctive operation) rarely changes anything here.
+
+**Pitfalls, to avoid next time** (the criteria now in `PLAN.md`, section 3):
+- *The necessity of P was assumed, not checked.* The claim was "SHAP cannot name content in an opaque feature", but
+  nobody checked, before building, whether this model's reliance lies in opaque features. The check took minutes on
+  existing data (run 22's spans) and came last instead of first.
+- *A strawman baseline.* The byte 4-gram miner is not what a practitioner would use; the realistic alternative (SHAP
+  plus feature names plus the extractor's code) was never put up against the idea.
+- *Work piled onto a weak premise:* transplant, reliance, mining, mitigation, and forging were built before the premise
+  was tested, and positive intermediate results (confirmed shortcuts) were read as progress on the claim.
+- *The task was chosen for the method's story, not for need:* shortcut discovery is real, but on a feature set with
+  readable names it does not need what is distinctive about P (opaque-feature content, credit summed across features).
+- *Proposals to move on* from a partial result instead of reassessing it.
+
 ## Claim
 
 A feature-based detector can learn **spurious correlations** -- reliance on content that tracks the label in the
