@@ -24,9 +24,14 @@ the pilot results and the claims are settled (user). `run/` holds the commands t
 
 ## Next (for Claude), on resume
 
-1. **3-A's security framing** (proposed 2026-10-12, user to decide): the detectors' shared attack surface at byte
-   level (evasion transfer between an ensemble's members), and disagreement triage. Then: where the shared bytes lie;
-   whether the window-vs-byte gap survives a per-file paired test.
+1. **3-A leads with two uses (user, 2026-10-12):** (a) the shared attack surface of an ensemble (bytes both
+   detectors rely on; evasion transfer), motivated only if production use of such ensembles can be cited (candidates:
+   Microsoft Defender's stacked ensembles plus a full-content DNN engine, Kaspersky's ML², PEberus, MLSEC's three
+   target models; transfer evidence in the literature is mixed); (b) disagreement triage: disagreements are common
+   (test set, seed 0, 1% FPR: 6.4% of files; 29k malware only the GBDT detects, 2k only MalConv, about 1.5k false
+   positives each; MalConv predictions in `artifacts/checkpoints-predictions/`, names via
+   `provexp.data.utils.decode_sha256_tensor`, which needs CPU tensors). Next: where the shared bytes lie; paired
+   tests; a disagreement sample.
 2. Rewrite the claims (`PLAN.md`, "Thesis and claims") to fit the new structure; ask the user before changing what a
    claim is for.
 3. Later: 3-C's rule source (generic YARA rules, or capa with a faster backend or file-scope rules); what to do with
