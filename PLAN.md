@@ -36,6 +36,11 @@ feature sets cannot be mapped back to the program.
 
 ## Thesis and claims
 
+> **2026-10-13 (night):** paper claims now: (1) the pullback is faithful and cheap; (2) the pushforward is faithful up
+> to its source's resolution; (3) CM (the pullback compares detectors per file); (4) AU (the pushforward audits a
+> raw-byte detector across a corpus), reported with **loader-realizable perturbations only** (runs 47-49). Scale: a
+> seed-0, 500-file round now; 3 seeds and 10K files later on a cluster (not the old "2,000 files, seeds 0-2").
+
 > **2026-10-13 (user): CP and the theory are cut from the paper.** The statistics of P (ambiguity, overlap, coverage),
 > round trips (M, N), their bounds, and the perfect-reconstruction theorems feed no application result; they are
 > archived in `manuscript/archive/` (with Section 4.2, CP). The paper is now a *method* plus two applications, not a
@@ -492,9 +497,11 @@ the research runs at pilot scale; scaling up is for the final numbers, when the 
 | Oct 12 (end) | Step back; AU (auditing MalConv via the pushforward): mock, go/no-go built; runs 38-41 started | |
 | Oct 13 | AU: no-go on forging, post-mortem (run 42), reframed to scrambling; go (runs 43-44); experiment proper (runs 45-46); written up; Appendix F removed; repo reorganized | |
 | Oct 13 (later) | Introduction rewritten (framework+symmetry, contributions C1-C4); local TeX Live toolchain set up to match Overleaf | |
-| next | Finish the manuscript rough draft (related work, abstract, discussion, summary) and convert chapter -> conference paper; then scale up | with the user |
-| then | Scale-up: 2,000 files, seeds 0-2 (~48 h / 16 cores + GPU); AU mitigation and CM real-attack transfer (the deferred, now load-bearing, pieces) | with the user |
-| later | Scale-up (2,000 files, seeds 0–2), when the user decides; the MLP if time allows | |
+| Oct 13 (evening) | Manuscript in paper form: all sections drafted; CP and theory cut (archived); "framework" -> "method"; organized by operator (pullback: lab then CM; pushforward: lab then AU); Background and Related Work as Section 2; per-application threat models | |
+| Oct 13 (night) | AU corrected: held-out, detected-only, loader-realizable evasion with paired tests and a broad null (runs 47-49); string features 2.1x faster; seed-0 scale-up to 500 files prepared (`run/50`-`55`) | |
+| Oct 14-15 | **User runs `run/50`-`55`** (~20-24 h); then compare with the pilot, update the experiment docs and the manuscript's numbers | with the user |
+| then | Section-level writing (the user reads the restructured draft); AU mitigation written as a TODO | with the user |
+| later | Cluster round: 3 seeds, 10K files (after the deferred optimizations in `docs/design.md`); AU mitigation (1c) if taken up; real-attack transfer (1d) probably not | with the user |
 | later | Appendix (App-R; the byte-set control bound) | |
 | Dec 15–mid Jan | Writing: introduction and contributions, framework edits, figures | Submission (CCS '27 Cycle A, est. abstract ~Jan 7, paper ~Jan 14) |
 

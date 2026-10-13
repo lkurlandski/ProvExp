@@ -1,55 +1,40 @@
-# Resume: ProvExp (2026-10-13, evening) — manuscript writing
+# Resume: ProvExp (2026-10-14) — the 500-file scale-up results, then writing
 
-Read `CLAUDE.md`, then `docs/status.md` ("Where we are", "Next", and the 2026-10-13 decisions). This session is for
-**deep thinking and manuscript writing**, not tooling: the LaTeX toolchain and template are settled (below); do not
-spend time on them beyond `make` / `make check`.
-
-**Goal:** a complete rough draft of the paper for **ACM CCS 2027, Cycle A** (CfP not out; by CCS 2026, abstract
-~Jan 7 and paper ~Jan 14, 2027). Then decide on the scale-up.
+Read `CLAUDE.md`, then `docs/status.md` ("Where we are", "Next", and the 2026-10-13 decisions). Explain in plain
+language; no dense shorthand. Ask before changing what a claim is for.
 
 ## Where things stand
 
-- **Research:** framework and intrinsic evaluation (CP, PB1, PF1, PB2/PF2) done at pilot scale. Both applications
-  done and written up: **CM**, the pullback comparing a GBDT and MalConv per file (`docs/experiments/cm.md`); **AU**,
-  the pushforward auditing MalConv across a corpus (`docs/experiments/audit.md`; 9/20 features confirmed, scrambling
-  their bytes evades 22.5% of detected malware at 1% FPR).
-- **Manuscript** (`manuscript/`, `main.tex` + section fragments):
-  - written: introduction (`_b`, rewritten 2026-10-13: key insight, framework+symmetry framing, contributions C1-C4),
-    framework (`_c`), evaluation/applications (`_d`), **related work** (`_d2_related_work.tex`, drafted 2026-10-13:
-    propagation/G-DeepSHAP, malware XAI/FINER/Mohseni, feature-to-binary mapping by hand, multi-detector, shortcuts
-    and planted triggers, provenance terminology).
-  - missing: **abstract** (`_a` still holds the old dissertation-chapter bridge), **discussion/limitations** (`_e`),
-    **summary/conclusion** (`_f`), a findable **threat/system model**, and the **Ethical Considerations** and
-    **Open Science** appendices (empty headings in `main.tex`, after the bibliography as CCS requires).
-  - still in **dissertation-chapter voice** ("this chapter", research questions Q1-Q3, an internal experiments/status
-    table in `_d`, "Symbols used in this chapter" table, section titles like "Evaluation on Malware Detection",
-    "Summary"). Needs the chapter->paper pass.
-  - **Length: the body currently runs to page 14** (references start p. 14; 16 pp total) against CCS's **12-page**
-    body limit, before the missing sections are written. Cutting ~2-3 pages is part of the conversion (candidates to
-    discuss with the user, not to cut unilaterally: the status table, PB2/PF2 (demoted), the research questions,
-    parts of `_c`'s theory to the appendix).
-- **Build:** `cd manuscript && make` (also `make watch`, `make check`, `make clean`). ACM `acmart` `sigconf`,
-  `anonymous`, `acmthm=false` (the fragments define their own `\definition`/`\theorem`/`\proposition` headers). Do not
-  change fonts, margins, or spacing (CfP). CCS-specific copyright/DOI/ISBN are TODO until the CCS '27 template exists.
+- **Manuscript** (`manuscript/`, ACM CCS 2027 target, `acmart` `sigconf`; `make`, `make check`): restructured into paper
+  form on 2026-10-13; body ends on p. 11 of 12. Sections: Introduction / Background and Related Work / Transferring
+  Explanations with Provenance (preliminaries, P, pullback and pushforward, constructing P) / Pulling Back to the
+  Bytes (faithfulness, planted trigger, comparing two detectors) / Pushing Forward to the Features (faithfulness,
+  ground truth for explainers, auditing a raw-byte detector) / Discussion / Conclusion. The statistics of P, round
+  trips, and CP were cut (archived in `manuscript/archive/`). The user has not read the restructured text yet.
+- **AU was corrected (runs 47-49, `docs/experiments/audit.md`):** run 46's 22.5% counted undetected files, dropped
+  broken random draws, and reused the confirmation files. With loader-safe changes only, on 902 fresh detected malware:
+  the pushforward's fields evade **12.4%** vs. **6.0%** for as many other loader-ignored fields outside the DOS region
+  (p = 3e-12); surrogate 10.4%; union 18.4%. The manuscript still shows the old numbers.
+- **The seed-0 scale-up to 500 files** (250/label, superset of the pilot's 100;
+  `artifacts/explanation_set/ts-scaleup500-seed0.parquet`) is being run by the user: `run/50`-`55` (KernelSHAP; PB1
+  full baselines with GBDT + MLP; operator variants; PF1 + resolution + black-box P; CM incl. triage at 100/cell; both
+  triggers at 250 files). About 20-24 h.
+- **Speed:** string features 2.1x faster, bit-identical. Two deferred ideas in `docs/design.md`, "Deferred
+  optimizations" (reuse the parse in `verify`; the remaining extractor hotspots); not now.
 
 ## Next steps (in order)
 
-1. **Abstract** (five moves, >= 2 numbers), **discussion/limitations**, **conclusion**, **threat/system model**,
-   **ethics** and **open science** appendices, in paper voice. Use the `security-paper-writing` skill.
-2. **Chapter->paper pass:** voice, structure toward the security-paper skeleton, the 12-page body; check every
-   contribution bullet (C1-C4) maps to a section and to evidence that has actually been run.
-3. **Then the scale-up** (only once the draft convinces us the plan is solid, and when the user decides): 2,000 files,
-   seeds 0-2; ~48 h on 16 cores plus GPU time for MalConv's IG and any AU retrain.
+1. **Check the runs** (ask the user whether they finished): read the ends of `artifacts/logs/*scaleup*` and the tables
+   in `artifacts/reports/*scaleup500*.md`, `cm_tables-scaleup500.md`, `cp_blackbox-*scaleup500.md`; compare every
+   number the manuscript reports against the pilot; flag what moved and why; update the experiment docs
+   (`docs/experiments/pb1.md`, `pf1.md`, `trigger.md`, `cm.md`).
+2. **Update the manuscript's numbers:** AU's realizable results (lead with the pushforward; union second; threat model
+   says only loader-ignored or valid-value changes); then the 500-file numbers in Sections 4-5 and the abstract/intro.
+3. **Section-level writing** with the user, once they have read the draft.
 
-## Open decision for the user
+## Working rules from this session
 
-- **CCS Cycle A (~mid-Jan) vs. Cycle B (~late April).** A Cycle A reject cannot go to Cycle B. The plan says Cycle A;
-  Cycle B buys three months for the load-bearing pieces below.
-
-## Commitments from "claim the fuller vision" (user, 2026-10-13)
-
-The introduction's contributions were written toward the complete story, which makes three currently-deferred pieces
-**load-bearing before submission**: AU's **mitigation** (test-time field zeroing + a retrain), CM's **real-attack
-transfer**, and the **scale-up**. Track these; do not let the intro overclaim relative to what is run.
-
-Explain in plain language; no dense shorthand. Ask before changing what a claim is for.
+- Realistic perturbations only for anything framed as an attack (CCS standard; user).
+- Limitations light and confident; no "Threats to Validity".
+- Optimizations: smallest change for the big win; never patch third-party libraries or rewrite the pipeline.
+- Long jobs: smoke-test, then hand the user numbered `run/` scripts (max 16 CPUs, GPUs 2 and 3).

@@ -212,3 +212,34 @@ each counts the distinct strings with a match. Exact (strings contain no newline
 the newline like a string's end); bit-identical feature vectors on 400 files; 2.1x faster extraction overall (the
 regex loop was ~60% of it). The other hot spots (pefile's section entropy, the whole-file entropy `Counter`, pefile's
 parse) are left as they are by decision (user, 2026-10-13: no replacing pefile or rewriting the pipeline).
+
+## Deferred optimizations (noted 2026-10-13; revisit before the cluster round)
+
+Per extraction, after the string fix, a 1.8 MB file takes about 0.20 s (was 0.57 s). Two ideas the user wants to
+look at later; neither is implemented.
+
+1. **Reuse the extractor's parse in `verify` (experiment harness, our code).** `Scorer.features` (in
+   `scripts/faithfulness.py`, and the same pattern in the other runners) calls `feature_vector(z)`, which parses `z`
+   with pefile, and then `ablation.verify`, which parses `z` again (`ablation.parse`, a full load) for the parse and
+   layout checks. The second parse is the same call on the same bytes (~0.04 s, ~15% of an extraction). Patch (~15
+   lines): an added extractor method returning the features and the parsed `pefile.PE`; an optional `pe` argument to
+   `verify` (when absent, it parses as now, so no caller can silently skip a check). Optionally run `verify`'s cheap
+   checks (length, protected bytes) *before* extraction, so a failing file skips it (rare with our operator). The
+   user's position: the verification must stay on for every caller that perturbs files (it backs the paper's "every
+   perturbed file is verified"); reuse the parse rather than make the check optional.
+2. **The remaining extractor hotspots (thrember code).** Measured on the 1.8 MB file:
+
+   | hotspot | time | patch | size | gain |
+   |---|---|---|---|---|
+   | strings (rest: findall, decode, 76 passes) | 0.062 s | merge the plain case-insensitive literal regexes into one lowercase scan | ~20 lines | ~10-15%, fiddly to keep exact |
+   | pefile parse | 0.041 s | none (a partial load changes features) | — | — |
+   | section entropies (pefile `entropy_H`, overlay) | 0.040 s | numpy byte counts in first-occurrence order (bit-identical) | 25-50 lines | ~15% |
+   | whole-file entropy (`general`) | 0.039 s | same | ~25 lines | ~17% |
+   | byte-entropy windows | 0.020 s | vectorize over windows | ~30 lines | ~7% |
+
+   Together ~1.5-2x more, but each needs copying a thrember method (the add-only rule forbids editing it) or patching
+   pefile; the user rejected that for now ("too much code to review", 2026-10-13). An exact numpy byte counter
+   was written and verified bit-identical on 400 files, then removed before any commit (not in git history). Its
+   recipe: `np.bincount` for the counts, the first index of each present value from `np.unique(..., return_index=True)`
+   over 64 KB chunks (stop once every present value is seen), and iterate the values in that order, so the
+   floating-point sum matches `Counter` exactly.

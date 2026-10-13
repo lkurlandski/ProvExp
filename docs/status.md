@@ -1,51 +1,42 @@
 # Status
 
-Last updated: 2026-10-13 (evening; writing session: all sections drafted). The framework and intrinsic evaluation are done at pilot
-scale; both extrinsic applications are done and written up. The repository was reorganized (experiment docs under
-`docs/experiments/`, dropped threads archived, dead ideas in `docs/graveyard.md`). The two applications: **the pullback
-compares two detectors per file** (CM / Comparison, `docs/experiments/cm.md`), and **the pushforward audits a raw-byte
-detector across a corpus** (AU / Audit, `docs/experiments/audit.md`). `run/` holds the commands that produced
-everything in `artifacts/` (active runs 01-21, 30-33, 38-46; dropped runs in `run/archive/`).
+Last updated: 2026-10-13 (night; end of a long writing + experiments session). The manuscript is restructured into
+paper form (body ends on p. 11 of 12). AU's evasion result was corrected and made realistic (runs 47-49). The seed-0
+scale-up to 500 files is prepared (`run/50`-`55`, smoke-tested) and **the user is running it** (about 20-24 h). The
+string features are 2.1x faster (bit-identical). See `docs/resume-prompt.md`.
 
-**Current goal: finish a rough draft of the manuscript for ACM CCS 2027 Cycle A, then decide on the scale-up.** The
-venue switched from USENIX to CCS (2026-10-13). The manuscript builds locally on the CCS template (`cd manuscript &&
-make`). Introduction and related work are written; abstract, discussion, conclusion, threat model, and the ethics and
-open-science appendices remain; the document is still in dissertation-chapter voice and its body runs to page 14
-against CCS's 12-page limit. See `docs/resume-prompt.md`.
+**Current goal:** check the preliminary findings at 500 files (seed 0) and carry the confirmed numbers into the
+manuscript; then section-level writing. A later round (3 seeds, 10K files) runs on a computing cluster.
 
 ## Where we are
 
 | | state |
 |---|---|
-| **1. Framework** | Definitions and modest theory in `manuscript/_c_framework.tex`. Round-trip matrices M, N kept as theory; ambiguity and overlap have no demonstrated use (undecided); coverage and the null element's share are not contributions. A Shapley-style uniqueness result is noted as a possible strengthening, not pursued. |
-| **2. Intrinsic: PB1** (pullback faithfulness, cost) | Done at pilot scale (`docs/experiments/pb1.md`): parity with the best direct baseline at 64-1,024 windows, ahead at 4,096; at byte level 1.67x occlusion. |
-| **2. Intrinsic: PF1** (pushforward faithfulness) | Done at pilot scale (`docs/experiments/pf1.md`): R = 0.31-0.40 for window-level sources; the resolution trend rises 0.34 -> 0.80 (bytes). |
-| **2. Intrinsic: CP** | Census, coarsening, CP.3 done (`docs/experiments/cp.md`). |
-| **2. Intrinsic: PB2, PF2** (planted triggers) | Done at pilot scale (`docs/experiments/trigger.md`); demoted, possibly removed later. |
-| **CM. Comparison (pullback, local)** | Done at pilot scale, written up (runs 30-33; `docs/experiments/cm.md`; `manuscript/_d_applications.tex`). GBDT vs. MalConv byte by byte: shared reliance (bytes both rely on, in the header; window-level comparison without P misses them) and disagreement triage (GBDT-only verdicts rest on header bytes MalConv reads the other way; visible only at byte level). Reframed as the pullback's *local* use. Deferred: seeds 1-2; real-attack transfer. |
-| **AU. Audit (pushforward, global)** | **Done** (runs 38-46; `docs/experiments/audit.md`; `manuscript/_d_applications.tex`). MalConv's IG pushed forward into the EMBER features, aggregated over the 2,000-file explanation set. The working framing scrambles the bytes P names for the features MalConv's detection rests on: 9 of 20 confirmed outside the DOS header; scrambling them evades 22.5% of detected malware at 1% FPR (surrogate 24.6%, union 35.1%, random 16.5%). Global comparison with the GBDT (replaces the old Appendix F): MalConv leans on whole-file aggregates, the two detectors' localizable rankings barely agree (Spearman 0.10), only the checksum shared at the top. Mitigation (zero the fields; retrain) deferred (SSViT GPU work). |
-| **Appendix** | App-L a stated limitation; App-R's duplicate-feature sweep not run; the byte-set control bound accepted, not started. Old Appendix F (feature-space comparison) removed, promoted into AU. |
-| **The MLP** | Set aside temporarily; returns after the GBDT methodology is established. |
-| **Manuscript** | CCS template (`acmart` `sigconf`, anonymous), builds with `make` in `manuscript/` (18 pp; **body to p. 15 vs. a 12-page limit**). All sections drafted (2026-10-13, evening): abstract (`_a`), introduction (`_b`), system and threat model (`_b2`, new section 2), framework (`_c`), intrinsic evaluation (`_d_evaluation`, Section 4 "Evaluating the Transfers"), applications (`_d_applications`, Section 5 "Comparing and Auditing Detectors"), related work (`_d2`), discussion (`_e`), conclusion (`_f`), Ethical Considerations (`_h`) and Open Science (`_i`) appendices. Load-bearing TODOs marked in `_e` (AU mitigation, CM real-attack transfer, scale). Still in chapter voice in `_b`/`_c`/`_d` (research questions, internal experiments table, "this chapter"); cuts of ~3.3 pages to be decided with the user. |
+| **Manuscript** | `manuscript/` (CCS `acmart` `sigconf`, anonymous; `make`, `make check`). Order: 1 Introduction (`_b`; three contributions, no research questions) / 2 Background and Related Work (`_b2`; detection, post-hoc explanation, explaining malware detectors, transferring attributions, Our Position) / 3 Transferring Explanations with Provenance (`_c`; Preliminaries with Figures 1-2, the provenance matrix, pullback and pushforward with Figure 3, constructing P: instrumentation vs. occlusion, granularity, EMBER) / 4 Pulling Back to the Bytes (`_e`; faithfulness and cost, a planted trigger, comparing two detectors with a threat model) / 5 Pushing Forward to the Features (`_f`; faithfulness, ground truth for explainers, auditing a raw-byte detector with a threat model) / 6 Discussion (`_h`, light) / 7 Conclusion (`_i`); appendices: attribution the input cannot carry, ethics, open science. Body ends on p. 11. The user has not read the restructured text yet. **Stale numbers:** AU (still 22.5/16.5/24.6/35.1 from run 46; correct: realizable runs 47-49) and everything pilot-scale (until runs 50-55 land). Cut material in `manuscript/archive/` (statistics of P, round trips, CP, appendix theory, old background/related work, claims lists). |
+| **Pullback (PB1, PB2, CM)** | Pilot done (100 files; 50 per trigger; 25 per triage cell). 500-file seed-0 runs prepared: `run/51` (PB1 full baselines, GBDT + MLP), `run/52` (operator variants), `run/54` (CM: cross-deletion, shared, triage at 100/cell, window triage), `run/55` (triggers, 250 files each). |
+| **Pushforward (PF1, PF2, AU)** | PF1/PF2 pilot done; 500-file runs prepared (`run/53`, `run/55`). **AU corrected (runs 47-49, `docs/experiments/audit.md`):** on 902 fresh, detected held-out malware, loader-safe changes only: pushforward fields 12.4% evasion vs. 6.0% for as many other loader-ignored fields outside the DOS region (+6.4 pts, p = 3e-12; 3.8% with the DOS region), surrogate 10.4% (pushforward +2.0, p = 0.027), union 18.4%. Raw scrambling (19.7%) is no longer a headline (user: unrealistic perturbations unacceptable). Mitigation (1c) a manuscript TODO, no code; real-attack transfer (1d) not now. |
+| **CP / theory** | Cut from the paper, archived (`manuscript/archive/`). |
+| **The MLP** | Included in the 500-file pullback runs (PB1); otherwise set aside. |
+| **Speed** | String features 2.1x faster, bit-identical. Deferred ideas (`docs/design.md`, "Deferred optimizations"): reuse the extractor's parse in `verify` (~15%); numpy byte counts for the entropies and vectorized byte-entropy windows (~30% together, needs copying thrember code or patching pefile; user: not now). |
 
 ## Next
 
-1. ~~Write the missing sections~~ (done 2026-10-13 evening; TODOs inside: anonymized repo URL, binary access terms,
-   final numbers after the scale-up).
-2. **Chapter->paper pass (next):** first agree the cuts with the user (~3.3 pages: candidates in the 2026-10-13
-   evening decisions below); voice, structure, and length (cut ~2-3 pages to reach the 12-page body; discuss the cuts
-   with the user). Check that every contribution (C1-C4) maps to evidence that has been run. Ask before changing what
-   a claim is for.
-3. **Then scale up** (only once the draft convinces us the plan is solid, when the user decides): all 2,000 files,
-   seeds 0-2; up to ~48 h on 16 cores for the CPU work plus GPU time for MalConv's IG and any AU retrain. Tightens the
-   pilot numbers (esp. AU's 22.5% evasion, CM) with seed variance; does not change the argument. Nothing is scaled yet.
-4. **Deferred pieces, now load-bearing** (the intro claims the fuller vision): AU's **mitigation** (test-time field
-   zeroing + a retrain) and CM's **real-attack transfer**, both needing SSViT GPU work; and the MLP's return. Do not
-   let the intro overclaim relative to what is run.
-5. **Open decision (user):** CCS Cycle A (~mid-Jan 2027) or Cycle B (~late April 2027); a Cycle A reject cannot go to
-   Cycle B.
+1. **When runs 50-55 finish** (user): compare every pilot number with the 500-file results (tables in
+   `artifacts/reports/pb1_tables-*scaleup500.md`, `cm_tables-scaleup500.md`, `cp_blackbox-*scaleup500.md`; logs in
+   `artifacts/logs/*scaleup*`); flag anything that moved; update the experiment docs.
+2. **Carry numbers into the manuscript:** AU's realizable numbers (lead with the pushforward, 12.4% vs. 6.0%; union
+   second); then the 500-file numbers everywhere; rephrase the threat model to "only what the loader ignores or allows".
+   Headline claims are of lesser concern for now (user).
+3. **Section-level writing** with the user (they will read the restructured draft): prose, the intro's third paragraph
+   (overlaps 2.3/2.5), Table 2 layout, PB2/PF2 subsections reading like lab reports.
+4. **Later:** the cluster round (3 seeds, 10K files); the deferred optimizations before it; AU mitigation (1c);
+   CCS Cycle A vs. B (user's decision, open).
 
 ## Decisions
+
+2026-10-13 (night, end of session):
+- **The user runs `run/50`-`55` on the code as-is** (no verify/parse change tonight). Two optimization ideas are noted
+  for later in `docs/design.md`, "Deferred optimizations" (user asked).
 
 2026-10-13 (night, seed-0 scale-up prepared):
 - **Scale-up = 500 files, seed 0, full fidelity, GBDT + MLP** (user). Selection
