@@ -270,6 +270,37 @@ After the go, the user approved building the full experiment. Four parts, three 
    the shape:** MalConv's top reliance is dominated by byte-entropy/histogram aggregates, the GBDT's by localizable
    header/directory fields; the overlap is in the header fields.
 
+## Results of the experiment proper (runs 44-46, 2026-10-13)
+
+The experiment panned out: the pushforward's confirmed fields evade MalConv more than random header fields, and the
+global comparison gives a named feature-level finding MalConv had no vocabulary for. (Mock re-checked: each run still
+feeds the column that needs its operator; the pushforward is essential to the MalConv side.)
+
+- **Audit table (run 44):** 9 of the pushforward's top 20 features confirmed, all outside the DOS region; the
+  surrogate's top 20 hold 4 of the 9. Per-field scramble effects 0.10-0.24 log-odds.
+- **Combined evasion (run 46), 191 held-out malware, MalConv's 1% FPR threshold:** scrambling together the
+  pushforward-confirmed fields (9 fields, 34 bytes) drops MalConv's log-odds by a median 3.0 and evades on **22.5%** of
+  detected malware; the surrogate-confirmed (9) 2.6 and **24.6%**; their union (14) 4.2 and **35.1%**; the random
+  control (9 random locatable header/directory fields per file) 1.9 and **16.5%**. The smoke-test worry did not hold:
+  the discovered recipes beat the random one by 6-8 points, though ~16% of evasion comes from scrambling arbitrary
+  header fields. Pushforward ~= surrogate (the realistic alternative), as the user expected.
+- **Global comparison (run 45), all 2,000 files:** 2,214 of 2,568 features are aggregates (no locatable bytes).
+  MalConv puts 64% of its global importance (mean |attribution|) on aggregates, the GBDT 51%. MalConv's largest
+  reliance is on whole-file byte-entropy and histogram statistics plus the DOS-stub string; the GBDT's is on nameable
+  header and data-directory fields. **Among the 354 localizable features the two detectors' importance rankings barely
+  agree (Spearman 0.10; 0.63 over all features, inflated by the shared near-zero tail).** Their top-10 localizable
+  features overlap in only 1 (the checksum); top-25 in 6; top-50 in 18. The checksum is each detector's #2 localizable
+  field: a shared weakness. Several fields MalConv ranks high are ones the GBDT nearly ignores (SizeOfHeapReserve,
+  the global-pointer/copyright/export directory addresses, often zero): the "reliance on empty entries" the user reads
+  as a finding, and the kind of named reliance only the pushforward can surface for a raw-byte model. Hypothesis held:
+  both lean on header/directory fields (as 3-A found at the byte level), MalConv diverges onto the aggregates.
+
+**Takeaways for the write-up.** (i) The application stands on the pushforward: MalConv has no feature-space explanation
+without it, so neither the global comparison nor the audit table exists for a raw-byte model otherwise. (ii) The
+localizable finding (weak rank agreement; only the checksum shared at the top) is the pushforward's distinctive
+contribution, beyond 3-A's byte-level "both rely on the header." (iii) Report aggregate dominance as the stated
+resolution limit, not a finding. Since it panned out, remove Appendix F (user, 2026-10-13).
+
 ## What carries over
 
 3-B's machinery (`scripts/shortcuts*.py`): discovery by (feature, content), transplant at P's column, the training

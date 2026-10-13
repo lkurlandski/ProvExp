@@ -41,8 +41,13 @@ the rule-based 3-C on hold. Work stays at pilot scale except where a task needs 
    `scripts/audit_evade.py`); global GBDT/MalConv comparison replacing Appendix F (run 45, `scripts/cm_global.py`);
    mitigation deferred (needs SSViT GPU work). Runs 45-46 smoke-tested, **handed to the user to run**. See
    `docs/audit_plan.md`, "The experiment proper". Watch: the random evasion recipe may rival the discovered ones.
-   After the runs: remove Appendix F; rewrite claim 3 for the pushforward application (ask first); 3-A's planned
-   changes.
+   **Runs 45-46 done (2026-10-13), experiment panned out** (`docs/audit_plan.md`, "Results of the experiment proper"):
+   evasion 22.5% (pushforward) / 24.6% (surrogate) / 35.1% (union) vs 16.5% (random); global comparison shows MalConv
+   leans on whole-file aggregates, the two detectors' localizable rankings barely agree (Spearman 0.10), only the
+   checksum shared at the top.
+   Next (manuscript, ask before changing a claim's purpose): remove Appendix F; add 3-C revised to _d_applications.tex
+   as the pushforward's extrinsic application; rewrite claim 3 around it; then 3-A's planned changes (local vs. global
+   framing, triage-first, real-attack transfer). Scale-up when the user decides.
 3. If go: re-check the mock (operator per column), then plan the experiment proper with the user (forging and evasion
    at 1% FPR, the GBDT-relies-on column, tables). Then 3-A's planned changes (`PLAN.md`, 3-A, "Review after the step
    back": local vs. global framing, triage first, real-attack transfer). If no-go: post-mortem, then back to the user; the pushforward still

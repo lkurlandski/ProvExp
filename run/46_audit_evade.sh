@@ -2,7 +2,7 @@
 # 3-C revised, the combined effect (docs/audit_plan.md): in 200 held-out malware, scramble together the features each
 # source confirmed in run 44 (pushforward; surrogate; their union) and, as the null, as many random locatable fields,
 # then measure MalConv's drop and its evasion at the 1% FPR threshold. Needs run 44.
-# Smoke test: 24 malware x 4 recipes in 10 s on 8 workers. Expected: about 2-3 min on 16 workers.
+# Took 35 s on 16 workers (191 of 200 malware scored).
 set -euo pipefail
 cd "$(dirname "$0")/.."
 source env/bin/activate
