@@ -144,6 +144,19 @@ candidate is in the DOS header, the go stands but the finding is weak (Demetrio 
   `datadirectories:security_size` `0x2820` (effect 0.15, p 2e-19; its `0x2838` sibling 0.09).
 - **Go/no-go: no-go** by criterion (a): no candidate of the pushforward is confirmed. The surrogate, the competitor,
   found the only confirmed shortcut, and it is not in the DOS header.
+- **Post-mortem diagnostic (run 42, `scripts/audit_inplace.py`; 2026-10-13).** Which link broke: (1) IG's credit is
+  real in the file it explains, (2) the pushforward makes it recur, or (3) the content carries over to another file?
+  For the 20 candidates, in up to 200 files each where discovery found them (1,358 occurrences, 696 files), the
+  credited bytes were removed *in place*. Hypothesis (stated before the run): holds for header fields, fails for the
+  zero runs and section flags. **Wrong: it holds for all 20.** Removing the bytes raises MalConv's malware log-odds by
+  a median 0.46 (padding) or 0.50 (random bytes), against an IG credit of 0.44 (Spearman 0.66 across occurrences);
+  >= 0.1 in 90-100% of files for 19 candidates (66% for the DOS message). Control: random bytes of the same length
+  elsewhere in the same 512-byte MalConv window change it by a median -0.01 (paired difference 0.54), so the credit is
+  specific to the bytes, not to the window. **So links 1 and 2 hold; link 3 breaks**: removing the content where MalConv
+  found it costs benign evidence, but writing it into malware gives none. Likely why: MalConv keeps, per channel, only
+  the strongest window, and a window's response depends on the content's offset within it and on the rest of the
+  window; a benign file's peak needs its whole context, so the 4 bytes alone do not rebuild it elsewhere. Not separated
+  (offset vs. context) by this run.
 
 ## What carries over
 

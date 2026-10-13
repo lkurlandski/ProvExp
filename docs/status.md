@@ -30,7 +30,10 @@ the rule-based 3-C on hold. Work stays at pilot scale except where a task needs 
    candidates is confirmed by the transplant; the surrogate's top 20 hold the only confirmed one
    (`datadirectories:security_size`). Aggregates take 70% of the credit MalConv's top 20 features hold. Details in
    `docs/audit_plan.md`, "Results so far".
-2. **Now: post-mortem with the user**, then a new application for the pushforward (do not propose dropping it).
+2. **Post-mortem diagnostic done (run 42):** the pushforward's credit on MalConv is real and specific in place (all 20
+   candidates), but does not transfer to other files: the break is the forgeable-shortcut premise, not IG or the
+   pushforward (`docs/audit_plan.md`). Next: decide with the user whether to rescue 3-C (e.g., malware-direction
+   evidence removed in place) or brainstorm a new pushforward application (do not propose dropping it).
 3. If go: re-check the mock (operator per column), then plan the experiment proper with the user (forging and evasion
    at 1% FPR, the GBDT-relies-on column, tables). Then 3-A's planned changes (`PLAN.md`, 3-A, "Review after the step
    back": local vs. global framing, triage first, real-attack transfer). If no-go: post-mortem, then back to the user; the pushforward still
