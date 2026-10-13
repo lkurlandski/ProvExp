@@ -1,6 +1,6 @@
 # Status
 
-Last updated: 2026-10-13 (evening; end of a tooling session). The framework and intrinsic evaluation are done at pilot
+Last updated: 2026-10-13 (evening; writing session: all sections drafted). The framework and intrinsic evaluation are done at pilot
 scale; both extrinsic applications are done and written up. The repository was reorganized (experiment docs under
 `docs/experiments/`, dropped threads archived, dead ideas in `docs/graveyard.md`). The two applications: **the pullback
 compares two detectors per file** (CM / Comparison, `docs/experiments/cm.md`), and **the pushforward audits a raw-byte
@@ -26,13 +26,14 @@ against CCS's 12-page limit. See `docs/resume-prompt.md`.
 | **AU. Audit (pushforward, global)** | **Done** (runs 38-46; `docs/experiments/audit.md`; `manuscript/_d_applications.tex`). MalConv's IG pushed forward into the EMBER features, aggregated over the 2,000-file explanation set. The working framing scrambles the bytes P names for the features MalConv's detection rests on: 9 of 20 confirmed outside the DOS header; scrambling them evades 22.5% of detected malware at 1% FPR (surrogate 24.6%, union 35.1%, random 16.5%). Global comparison with the GBDT (replaces the old Appendix F): MalConv leans on whole-file aggregates, the two detectors' localizable rankings barely agree (Spearman 0.10), only the checksum shared at the top. Mitigation (zero the fields; retrain) deferred (SSViT GPU work). |
 | **Appendix** | App-L a stated limitation; App-R's duplicate-feature sweep not run; the byte-set control bound accepted, not started. Old Appendix F (feature-space comparison) removed, promoted into AU. |
 | **The MLP** | Set aside temporarily; returns after the GBDT methodology is established. |
-| **Manuscript** | CCS template (`acmart` `sigconf`, anonymous), builds with `make` in `manuscript/` (16 pp; body to p. 14 vs. a 12-page limit). Written: introduction (`_b`), framework (`_c`), applications (`_d`), related work (`_d2`). Missing: abstract (`_a` holds the old chapter bridge), discussion (`_e`), conclusion (`_f`), threat/system model, Ethical Considerations and Open Science appendices (empty headings). Still in chapter voice (research questions, internal experiments table, "this chapter"). |
+| **Manuscript** | CCS template (`acmart` `sigconf`, anonymous), builds with `make` in `manuscript/` (18 pp; **body to p. 15 vs. a 12-page limit**). All sections drafted (2026-10-13, evening): abstract (`_a`), introduction (`_b`), system and threat model (`_b2`, new section 2), framework (`_c`), evaluation (`_d`), related work (`_d2`), discussion (`_e`), conclusion (`_f`), Ethical Considerations (`_h`) and Open Science (`_i`) appendices. Load-bearing TODOs marked in `_e` (AU mitigation, CM real-attack transfer, scale). Still in chapter voice in `_b`/`_c`/`_d` (research questions, internal experiments table, "this chapter"); cuts of ~3.3 pages to be decided with the user. |
 
 ## Next
 
-1. **Write the missing sections in paper voice:** abstract (five moves, >= 2 numbers), discussion/limitations,
-   conclusion, threat/system model, Ethical Considerations and Open Science appendices.
-2. **Chapter->paper pass:** voice, structure, and length (cut ~2-3 pages to reach the 12-page body; discuss the cuts
+1. ~~Write the missing sections~~ (done 2026-10-13 evening; TODOs inside: anonymized repo URL, binary access terms,
+   final numbers after the scale-up).
+2. **Chapter->paper pass (next):** first agree the cuts with the user (~3.3 pages: candidates in the 2026-10-13
+   evening decisions below); voice, structure, and length (cut ~2-3 pages to reach the 12-page body; discuss the cuts
    with the user). Check that every contribution (C1-C4) maps to evidence that has been run. Ask before changing what
    a claim is for.
 3. **Then scale up** (only once the draft convinces us the plan is solid, when the user decides): all 2,000 files,
@@ -45,6 +46,19 @@ against CCS's 12-page limit. See `docs/resume-prompt.md`.
    Cycle B.
 
 ## Decisions
+
+2026-10-13 (evening, writing session):
+- **Missing sections drafted** in paper voice. New section 2, "System and Threat Model": the defender (owns detectors,
+  instruments the extractor once, white-box explainers), the two tasks (triage, audit), the adversary the audit
+  anticipates (malware author changing bytes; scrambling measures reliance, not a demonstrated attack), out of scope
+  (attacks on explanations/extractor/training data; the planted trigger is a ground truth, not a threat; dynamic
+  features). "Summary" renamed "Conclusion".
+- **Abstract reports AU's 22.5% next to the 16.5% random-field baseline** (Claude's call for honesty; the margin is
+  modest and a reviewer would find it). Abstract is ~270 words (trim later if needed).
+- **Cut candidates (not applied; for the user):** the claims list + experiments/status table in `_d` (~0.5 p); the
+  research questions in `_b` (~0.15 p); PB2/PF2 and the trigger setup to the appendix (~0.9 p); CP's instrumented-vs-
+  black-box paragraph to the appendix (~0.25 p); parts of `_c` (perfect-reconstruction theorems, desiderata, one of the
+  three framework figures) to the appendix (~1 p).
 
 2026-10-13:
 - **Venue switched to ACM CCS 2027, Cycle A** (user; prefers the ACM template to USENIX's). CfP not out; by CCS 2026,

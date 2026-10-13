@@ -1,0 +1,18 @@
+We will make the following artifacts available to the reviewers through an anonymized repository
+% TODO: anonymized repository URL (e.g., anonymous.4open.science) before submission.
+and release them publicly upon publication:
+\begin{itemize}[noitemsep, topsep=2pt]
+  \item the \texttt{provexp} library: the sparse provenance matrices, the pullback and pushforward, the statistics of
+    $P$ and the round-trip bounds, its black-box estimation, and coarsening, which do not depend on the domain;
+  \item the instrumented EMBER v3 feature extractor, which records provenance alongside the original features and
+    reproduces them exactly, with tests against a verbatim copy of the reference implementation;
+  \item the scripts for every experiment, the perturbation operator with its verification, the planted-trigger
+    testbed, the comparison, and the audit, together with numbered run scripts that reproduce every result in the
+    paper from the data, with the command-line arguments and runtimes we used;
+  \item the trained models, the explanation-set file lists, the computed explanations, and the result tables.
+\end{itemize}
+The binaries are not redistributed: they are part of EMBER-2024~\cite{joyce2025ember} and obtainable from its
+maintainers under its terms; our scripts identify every file by its hash. The released MalConv checkpoints are those
+distributed with EMBER-2024. Reproducing the full evaluation takes about two days on 16 CPU cores and one GPU; the
+pilot subset reproduces in hours.
+% TODO: update the runtimes after the scale-up.

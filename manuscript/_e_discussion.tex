@@ -1,9 +1,53 @@
-In this section, we will discuss our work more broadly.
+\paragraph{What provenance cannot place.} A transfer can only place attribution on features that some bytes produce.
+About a fifth of the GBDT's attribution rests on features no byte produces, almost all of them recording an absence
+(e.g., an import-hash bucket that nothing falls into); the pullback assigns it to the null element, which says
+honestly that no part of the file carries it (Appendix~\ref{sec:XML:AppLocalizability}). At the other end, features
+computed from the whole file (the byte histogram, file entropy, string statistics) read so many bytes that a transfer
+cannot say which of them matter: MalConv places most of its pushed-forward attribution on such aggregates, below what
+the pushforward can resolve (Section~\ref{sec:XML:Audit}). Both limits are properties of $P$, known before any
+explanation is computed, and the statistics of Section~\ref{sec:CharacterizingExplanationProvenanceMatrix} report
+them per file and per feature group.
 
-\begin{proposalbox}
-We will discuss the impact of these intriguing properties across other domains, tasks, etc.
-\end{proposalbox}
+\paragraph{Provenance is exact only for additive features.} For a feature that counts or reads bytes, $P$ is exact.
+For a feature that hashes a name or computes an entropy, a byte's share is a convention (every byte the feature reads gets an
+equal share), since such a feature does not decompose over its bytes. The black-box estimate of $P$ measures the gap: it agrees with the
+instrumented matrix where features are additive and spreads 2--4 times wider where they are not
+(Section~\ref{sec:XML:CharacterizingP}).
 
-% In this section, we'll discuss promising directions for future work, including but not limited to: i) learning provenance matrices from labeled pairs of feature-space and problem-space explanations; ii) using alternative, non-linear pullback and pushforward operations, e.g., modeling the problem using optimal transportation theory and learning a network to perform the transformation; and iii) learning surrogate differentiable feature extractors, nullifying the need for complex transformations entirely (problem-space explanations could be attained seamlessly through gradient methods).
+\paragraph{The transfers inherit their source's faithfulness.} A pullback or pushforward is as faithful as the
+explanation it transfers, and no more. The multilayer perceptron's explanations fell short of occlusion, and so did
+their pullbacks, through the instrumented and the estimated $P$ alike (Section~\ref{sec:XML:Pullback}); KernelSHAP
+needed its full sampling budget to see a planted trigger (Section~\ref{sec:XML:Pushforward}). The transfers make an
+explanation usable in the other space; they do not repair it.
 
-% Future work: using pushforward to compare the reasoning of EMBER models and MalConv models in EMBER feature-space? Using pullback to do the same in problem-space?
+\paragraph{Deletion and scrambling are not attacks.} Every problem-space test depends on how bytes are removed. Our
+operator keeps a file parseable and its layout intact, verifies every perturbed file, and has two variants as
+robustness checks, but it does not keep the program functional, and no operator keeps a file entirely within the
+distribution of real files. The shared bytes of Section~\ref{sec:XML:Comparison} are shared \emph{reliance}, and the
+evasion rates of Section~\ref{sec:XML:Audit} measure how much detection rests on the audited fields
+(Section~\ref{sec:XML:ThreatModel}). Whether functionality-preserving attacks published against MalConv transfer to
+the GBDT more often when they modify bytes that carry the GBDT's pullback would tie the comparison to real attacks.
+% TODO (load-bearing, "claim the fuller vision"): CM's real-attack transfer. Rewrite this paragraph once it is run.
+
+\paragraph{Scale.} Most results come from a 100-file pilot and one model seed; the census and the audit use 2{,}000
+files. % TODO: replace with the final scale (2,000 files, seeds 0-2) after the scale-up.
+The paired tests are significant at this scale, but the effect sizes, and the audit's evasion rate in particular, will
+move with more files and seeds.
+
+\paragraph{Mitigation.} The audit points to its own countermeasure: a field that a raw-byte detector relies on but an
+attacker can change freely should not be read at all. Overwriting the audited fields with a constant in every file, at
+test time or before retraining, removes them as a lever; its cost is whatever legitimate signal the fields carried,
+which the drop in clean detection measures. The disagreement triage points the other way, to feature engineering:
+when the raw-byte detector alone flags a file, three quarters of its evidence lies in content the feature-based
+detector's features do not read, which is where a new feature would help.
+% TODO (load-bearing, "claim the fuller vision"): AU's mitigation (test-time zeroing and a retrain). Report its results
+% here (or in Section~\ref{sec:XML:Audit}) and drop the conditional voice.
+
+\paragraph{Beyond Windows executables.} Nothing in the framework is specific to PE files. $P$ depends only on which
+input elements produce which features, so the transfers apply to any classifier whose features a program computes from
+a structured input: detectors over Android apps (permissions, API calls, and strings extracted from the manifest and
+the bytecode), documents, or network traffic (flow statistics computed from packets), where the elements would be
+bytes, instructions, or packets. Each needs its extractor instrumented once, or its $P$ estimated by occlusion. We have
+evaluated only PE files and EMBER features, whose extractor mixes all the cases the framework distinguishes (fields
+read directly, counts, hashes, and aggregates over the whole file); other extractors may sit at different points of
+that spectrum, which the statistics of $P$ would show before any explanation is computed.

@@ -1,0 +1,19 @@
+\paragraph{Malware.} We use the PE files of EMBER-2024~\cite{joyce2025ember}, a public research dataset of benign and
+malicious executables. We never execute them: every experiment parses the files, computes features, and runs
+classifiers on the bytes. Perturbed and triggered files are written only to storage with restricted access, never
+executed, and not released; our artifacts contain features, provenance matrices, explanations, and model scores, not
+binaries. % TODO: confirm the access terms under which the binaries were obtained.
+
+\paragraph{Evasion findings.} The audit identifies header fields whose scrambling evades a released research model,
+MalConv as distributed with EMBER-2024, and does not verify that the scrambled files still run. We do not evaluate any
+deployed commercial detector. Reliance of MalConv on header content is already documented and publicly
+exploited~\cite{demetrio2019explaining}; our contribution is the method that finds such reliance automatically, which
+we intend for defenders auditing their own detectors before deployment, together with the mitigation the audit points
+to. We judge that publishing the method and the fields benefits defenders more than attackers, since an attacker who
+can query a detector can already search the header for evasive changes directly.
+
+\paragraph{Poisoned models.} The planted-trigger experiments train backdoored models on a dataset we control, solely as
+a ground truth for evaluating explanations. The triggers are documented in the paper, the poisoned models are not
+deployed, and the poisoning technique (a fixed pattern with relabeled training samples) is standard in the literature.
+
+\paragraph{Human subjects.} None. The work involves no human participants and no personal data.
