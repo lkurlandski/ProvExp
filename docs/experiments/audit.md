@@ -312,3 +312,57 @@ prevalence check, forging and evasion at 1% FPR. CM's MalConv loading and IG. PB
 - Hand-built aggregation with a PE parser is not a realistic alternative (tremendous manual effort); ignored.
 - Discovery uses the 2,000-file explanation set, as in 3-B.
 - Mitigation for MalConv is out of scope.
+
+## Held-out evasion and realizability (run 47, 2026-10-13)
+
+**Why.** Writing the paper surfaced three problems with run 46's evasion numbers: (1) the rate counted 12 of 191 files
+MalConv does not detect at its 1% FPR threshold (detected-only, run 46 gives pushforward 17.3%, surrogate 19.6%, union
+30.7%, random 11.3%, not the 22.5/24.6/35.1/16.5% in the draft); (2) 434 of 955 random draws broke the parse and were
+dropped, so the null was conditioned differently from the recipes; (3) run 46 used exactly run 44's 200 files, on which
+the fields were confirmed (selection on the evaluation set). And the paper's threat model says the attacker keeps the
+program running, which scrambling does not check.
+
+**Design (run 47).** `scripts/audit_evade.py` with `--detected_only --random_retries 20 --realizable --exclude <run 44
+files>`: 1,000 fresh held-out test malware (not in the explanation set, not in run 44), of which 902 are detected
+at the threshold. Random draws that break the parse are redrawn. Realizable recipes change only what the Windows loader
+lets an attacker change (domain knowledge inside the experiment, `FREE` / `CONSTRAINED` in the script): free fields
+(CheckSum except native images; debug, global-pointer, copyright, certificate-table entries; export directory for
+executables only; PointerToSymbolTable, DOS message, SizeOfCode, SizeOfUninitializedData, MinorLinkerVersion,
+certificate contents) are scrambled; constrained fields (ImageBase only with relocations, 64K-aligned; Subsystem GUI <->
+console; heap/stack sizes consistent with commit) take a value drawn from 50,000 benign training files of the same
+machine type; loader-critical fields (the IAT directory among the confirmed nine; the DLL flag among the surrogate's)
+are left alone. Null for the realizable recipes: `random_free`, as many free fields of the candidate pool as
+`pushforward_realizable` changes (7.3 on average), drawn per file. Both nulls draw from pools that contain the confirmed
+fields themselves, so they are conservative. Paired by file: bootstrap 95% CIs, McNemar exact (fixed recipes) or
+Wilcoxon (vs. random). Took 5.6 min on 12 workers.
+
+**Hypotheses.** (1b) pushforward 15-18%, random 10-12%, significant at ~1,000 files; pushforward ~ surrogate. (1a) the
+realizable pushforward recipe keeps >= 2/3 of its evasion and stays above its null.
+
+**Results (902 detected held-out malware, seed 0).**
+
+| recipe | fields | evasion [95% CI] | median drop |
+|---|---|---|---|
+| union | 13.9 | 30.6% [27.6, 33.7] | 4.23 |
+| pushforward | 9.0 | 19.7% [17.2, 22.4] | 2.96 |
+| surrogate | 8.9 | 19.0% [16.4, 21.6] | 2.65 |
+| union, realizable | 11.2 | 18.4% [15.9, 21.0] | 2.92 |
+| pushforward, realizable | 7.3 | 12.4% [10.3, 14.6] | 1.84 |
+| random (null) | 9.0 | 12.3% [10.6, 14.1] | 2.01 |
+| random free fields (null) | 7.3 | 10.9% [9.2, 12.7] | 1.84 |
+| surrogate, realizable | 7.2 | 10.4% [8.5, 12.5] | 1.57 |
+
+Paired: pushforward - random **+7.5 pts [+5.7, +9.2], p = 3e-14**; surrogate - random +6.7 [+4.9, +8.5]; union - random
++18.3; pushforward - surrogate +0.8 [-1.1, +2.7], p = 0.48. Realizable: pushforward - random_free **+1.5 [-0.0, +3.0],
+p = 0.17 (not significant)**; surrogate - random_free -0.5 (n.s.); union - random_free **+7.5 [+5.9, +9.1], p = 2e-16**;
+pushforward_realizable - surrogate_realizable +2.0 [+0.3, +3.8], p = 0.027. Restricting to realizable changes costs the
+pushforward recipe 7.3 pts (70 vs. 4 discordant files).
+
+**Reading.** (1b) holds and is stronger than the pilot claim: on fresh, detected malware the pushforward's fields beat
+random fields by 7.5 points with a tight CI, and match the surrogate's. The draft's numbers must change (22.5 -> 19.7,
+16.5 -> 12.3, 24.6 -> 19.0, 35.1 -> 30.6). (1a) **fails for the pushforward recipe alone**: once restricted to what the
+loader allows, it is no better than as many random free fields (whose pool includes its own free fields). The union of
+the two methods' fields stays well above its null when realizable (18.4% vs. 10.9%). Not yet known: whether the loss
+comes from excluding the IAT entry or from writing benign rather than random values into ImageBase / Subsystem /
+SizeOfHeapReserve (i.e., MalConv reacting to *abnormal* values), and how the null behaves when it excludes the recipe's
+own fields. Two cheap follow-ups (~6 min each) would settle both; see `docs/status.md`.

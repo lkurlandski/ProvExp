@@ -47,6 +47,18 @@ against CCS's 12-page limit. See `docs/resume-prompt.md`.
 
 ## Decisions
 
+2026-10-13 (evening, experiments: 1a/1b of the experiment plan):
+- **Plan (user):** now 1a (realizability of AU's evasion) and 1b (significance on fresh, detected held-out malware);
+  then a seed-0 scale-up to 2,000 files. Mitigation (1c) is a manuscript TODO, no code yet; real-attack transfer (1d)
+  not now (maybe never). A later round (3 seeds, 10K files) runs on a cluster.
+- **Run 47 done** (`docs/experiments/audit.md`, "Held-out evasion and realizability"). Run 46's rates were inflated
+  (non-detected files counted; random draws that broke the parse dropped; evaluated on the confirmation files). On 902
+  fresh detected malware: pushforward 19.7% vs. random 12.3% (+7.5 pts, p = 3e-14), surrogate 19.0%, union 30.6%.
+  **Realizable (loader-safe) pushforward: 12.4%, not above random free fields (10.9%, p = 0.17);** realizable union
+  18.4% (p = 2e-16). The manuscript's AU numbers are now wrong (22.5/16.5/24.6/35.1) and must be updated; how to frame
+  realizability is for the user to decide. Proposed follow-ups (cheap): decompose the realizable loss (IAT exclusion
+  vs. benign values in constrained fields) and a null that excludes the recipe's own fields.
+
 2026-10-13 (evening, writing session, background/related work):
 - Section 2 is now "Background and Related Work" (user): an overview of learning-based detection, post-hoc
   explanation, explaining malware detectors, transferring attributions, and an "Our Position" subsection with the
