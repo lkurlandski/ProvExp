@@ -1,67 +1,101 @@
-\subsection{Malware Detectors}
-\label{sec:XML:Detectors}
+We review learning-based malware detection (Section~\ref{sec:XML:BgDetection}), post-hoc explanation
+(Section~\ref{sec:XML:BgExplanation}), how both meet in explaining malware detectors (Section~\ref{sec:XML:BgMalwareXAI}),
+and prior ways of moving attributions between representations (Section~\ref{sec:XML:BgTransfer}), and close with where
+explanation provenance fits (Section~\ref{sec:XML:BgPosition}).
 
-A static detector maps a file to a verdict without running it. Following Pierazzi et al.~\cite{pierazzi2020intriguing},
-a file is an object $z \in \mathcal{Z}$ in the \emph{problem space}, a sequence of \emph{elements} $z_i$, here bytes.
-A \emph{feature extractor} $\sigma: \mathcal{Z} \to \mathcal{X}$ maps it to a vector $x = \sigma(z)$ of
-\emph{features} $x_j$ in the \emph{feature space}, and a classifier $\phi: \mathcal{X} \to \mathcal{L}$ assigns it a
-label (Figure~\ref{fig:pipeline-problem-to-feature}).
+\subsection{Learning-Based Malware Detection}
+\label{sec:XML:BgDetection}
 
-\input{assets/framework_a}
+Static detectors classify a file from its contents, without running it. They differ above all in how they represent the
+file. \emph{Feature-based} detectors compute hand-engineered features with a parser: byte $n$-grams in early
+work~\cite{schultz2001data, kolter2004learning}, permissions and API calls for Android~\cite{arp2014drebin}, and, for
+Windows (PE) executables, the EMBER feature set~\cite{anderson2018ember}, the standard for benchmarks such as
+SOREL-20M~\cite{harang2020sorel} and BODMAS~\cite{yang2021bodmas}. Its third version~\cite{joyce2025ember} has 2{,}568
+features in 12 groups: byte and byte-entropy histograms, string statistics, header fields, sections, imports and
+exports hashed into buckets, data directories, the Rich header, the signature, parser warnings, and general file
+properties. Its extractor is a program, not a model: it parses the file, reads fields, counts and hashes names, and
+computes entropy over sliding windows. Gradient-boosted decision trees (GBDTs) such as LightGBM~\cite{ke2017lightgbm}
+are the standard and strongest model family for such features. \emph{Raw-byte} detectors learn from the bytes
+directly~\cite{raff2018malware, krvcal2018deep, raff2021classifying}: MalConv~\cite{raff2018malware} embeds each byte,
+convolves over windows of 512 bytes, and pools over the whole file.
 
-\paragraph{Feature-based detectors.} EMBER~\cite{anderson2018ember} is the standard feature set for static detection
-of Windows (PE) malware. Its third version~\cite{joyce2025ember} has 2{,}568 features in 12 groups: byte and
-byte-entropy histograms, string statistics, header fields, sections, imports and exports (hashed into buckets), data
-directories, the Rich header, the Authenticode signature, parser warnings, and general file properties. Its extractor
-is a program, not a model: it parses the file, reads fields, counts and hashes names, and computes entropy over
-sliding windows. Gradient-boosted decision trees such as LightGBM~\cite{ke2017lightgbm} are the standard and strongest
-model family for these features.
+Deployed engines layer both kinds: Microsoft Defender combines models over featurized metadata with deep networks over
+full file contents~\cite{microsoft2019insideout}, and the winning defense of a public evasion competition combined
+detectors over distinct feature sets so that an attacker must evade all of them at once~\cite{quiring2020against}. The
+separation between the file and its features also shapes attacks: a feature-space evasion must be realized as a valid
+file, the inverse feature-mapping problem~\cite{pierazzi2020intriguing}, which practical attacks solve with
+manipulations at known locations in the PE format~\cite{demetrio2021adversarial}. Learned detectors also pick up
+spurious correlations from their training data~\cite{arp2022and}, which is one reason to explain them.
 
-\paragraph{Raw-byte detectors.} MalConv~\cite{raff2018malware} needs no extractor: it embeds each byte, convolves over
-windows of 512 bytes, and pools over the whole file, so $\sigma$ is the identity and the problem and feature spaces
-coincide.
+\subsection{Post-Hoc Explanation}
+\label{sec:XML:BgExplanation}
 
-\subsection{Explaining Detectors}
-\label{sec:XML:Explaining}
+An \emph{explainer} assigns each input of a model a share of its output, its \emph{attribution}. Perturbation methods
+query the model on modified inputs: LIME~\cite{ribeiro2016should} fits a local surrogate, and
+occlusion~\cite{zeiler2014visualizing} replaces one window of the input at a time. Shapley-value
+methods~\cite{vstrumbelj2014explaining, lundberg2017unified} credit each input with its average marginal contribution
+over coalitions of inputs, the absent inputs drawn from a background distribution; KernelSHAP estimates these values
+for any model, and TreeSHAP~\cite{lundberg2020local} computes them exactly for tree ensembles, either
+\emph{path-dependent} (absent features follow the training data down each tree) or \emph{interventional} (absent
+features take values from a background set). Gradient methods such as Integrated
+Gradients~\cite{sundararajan2017axiomatic} integrate a network's gradient along a path from a baseline to the input,
+and propagation methods such as LRP~\cite{bach2015pixel} and DeepLIFT~\cite{shrikumar2017learning} redistribute the
+output backward layer by layer. All of them attribute the inputs the model reads. Faithfulness is tested by deleting
+the top-ranked inputs and measuring the drop in output~\cite{petsiuk2018rise}, by retraining without
+them~\cite{hooker2019benchmark}, by sanity checks~\cite{adebayo2018sanity}, or against a planted
+trigger~\cite{lin2021what}; explanations can also be manipulated~\cite{slack2020fooling}, a threat we do not address.
 
-An \emph{explainer} assigns each input of a model a share of the model's output, its \emph{attribution}. Every
-explainer in this paper attributes the malware log-odds: a GBDT's raw score, or the difference of a network's two
-logits. Which inputs an explainer credits depends on where it is applied (Figure~\ref{fig:feature-vs-problem-explanations}).
+\subsection{Explaining Malware Detectors}
+\label{sec:XML:BgMalwareXAI}
 
-\input{assets/framework_b}
+Security has its own requirements for explanations~\cite{guo2018lemna, warnecke2020evaluating, nadeem2023sok}, and
+practitioners want them~\cite{mink2023everybody}, yet the analyst's object, the file, and the detector's input, the
+feature vector, rarely coincide~\cite{rui2024position}. Explanations follow the representation. Feature-based detectors
+are explained at the feature level~\cite{melis2018explaining, fan2020can, wu2021android, zhu2024dynamic}, most often
+with SHAP over EMBER features, whose reliability on its own has been questioned~\cite{mohseni2026shap}. Raw-input
+detectors are explained over the input: activations and gradients show that MalConv relies heavily on the
+header~\cite{coull2019activation, bose2020explaining, demetrio2019explaining}, and hierarchical
+LIME~\cite{mitchell2024generating} and byte-level SHAP~\cite{aryal2024explainability} explain opcode and byte
+sequences. FINER~\cite{he2023finer} formalizes the path from problem space to feature space to explanation for security
+classifiers, and explicitly leaves out pattern-driven detectors such as EMBER-based ones, arguing that hashing and
+aggregation lose too much to map their explanations back to the program.
 
-\definition[\textit{Feature-Space Explanation}]
-\label{def:FeatureSpaceExplanation}
-{
-For a file $z$ with features $x = \sigma(z)$ and a classifier $\phi$, a feature-space explanation is a vector
-$a \in \mathcal{A} = \mathbb{R}^{|x|}$ whose entry $a_j$ is the attribution of feature $x_j$ to $\phi$'s decision.
-}
+Where an application needs to cross the two spaces, the mapping is built by hand. Explanation-guided backdoors select
+EMBER features by their SHAP values and realize them with a purpose-built PE editor, keeping only the 17 features that
+could be mapped to file content~\cite{severi2021explanation}; explanation-guided evasion modifies features one at a time
+with type-specific transformations~\cite{rosenberg2020generating}; and shortcut analyses confirm that a detector's top
+features are packing and metadata artifacts by reading the bytes of PE files manually~\cite{mohammed2026beyond}.
+Detectors over different representations are compared by their outputs~\cite{quiring2020against,
+salman2024robustness}, not by their evidence.
 
-\definition[\textit{Problem-Space Explanation}]
-\label{def:ProblemSpaceExplanation}
-{
-For a file $z$, a feature extractor $\sigma$, and a classifier $\phi$, a problem-space explanation is a vector
-$b \in \mathcal{B} = \mathbb{R}^{|z|}$ whose entry $b_i$ is the attribution of element $z_i$ to the decision of
-$\phi \circ \sigma$, with $b_i = 0$ for every element that no feature reads.
-}
+\subsection{Transferring Attributions}
+\label{sec:XML:BgTransfer}
 
-\paragraph{Explainers.} SHAP~\cite{lundberg2017unified} attributes Shapley values: each input's average marginal
-contribution to the output over coalitions of inputs, with the inputs outside a coalition replaced from a background
-distribution. KernelSHAP estimates them for any model by sampling coalitions; TreeSHAP~\cite{lundberg2020local}
-computes them exactly for tree ensembles, either \emph{path-dependent} (absent features follow the training data down
-each tree) or \emph{interventional} (absent features take their values from a background set). Integrated
-Gradients~\cite{sundararajan2017axiomatic} integrates a network's gradient along a straight path from a baseline input
-to the actual one; for MalConv, the gradient is taken with respect to the byte embeddings. \emph{Occlusion}~\cite{zeiler2014visualizing}
-replaces one window of the input at a time and records the change in the output; it needs only queries, and its
-resolution is the window.
+Redistributing an attribution from a stage's outputs to its inputs in proportion to each input's contribution is an
+established idea. DeepLIFT's chain rule~\cite{shrikumar2017learning} and LRP~\cite{bach2015pixel} apply it layer by
+layer inside a network, and G-DeepSHAP~\cite{chen2022explaining} lifts it to a series of models, propagating Shapley
+values from one model to the next with a generalized rescale rule that satisfies efficiency at every stage. These
+methods need every stage to be a model with its own attribution method; a feature extractor is a program, with
+parsing, hashing, and windowed statistics over discrete, variable-length input and no natural baseline. In the other
+direction, virtual inspection layers~\cite{vielhaben2024explainable} move relevance through an invertible linear
+transform, such as time to frequency, into a domain the model never computes. Grouping attributions over pixels into
+segments or tokens into words~\cite{jullum2021groupshapley} is the simplest case, a 0/1 map within one space. Recording
+which inputs produce an output is itself an old idea: provenance in databases~\cite{green2007provenance} and dynamic
+taint tracking in programs do so; system provenance graphs for intrusion detection~\cite{milajerdi2019poirot,
+cheng2024kairos} record causal relations among processes and files and are unrelated.
 
-\paragraph{Two spaces.} For a raw-byte detector, any of these explainers gives a problem-space explanation directly.
-For a feature-based detector, they give a feature-space explanation: it names the features a decision rests on, but
-not the bytes. Explaining a feature-based detector over the bytes requires perturbing files that must stay parseable
-and re-running the extractor for every perturbation: occlusion over $K$ windows costs $K + 1$ extractions per file,
-and byte resolution would cost one per byte.
+\subsection{Our Position}
+\label{sec:XML:BgPosition}
 
-\paragraph{Faithfulness.} An explanation is faithful if the inputs it ranks highest carry the evidence for the
-decision. The deletion curve~\cite{petsiuk2018rise} tests this by removing the top-ranked inputs at growing budgets
-and measuring how much of the model's output they take with them; a planted trigger~\cite{lin2021what} supplies a
-known answer. We use both.
+Explanation provenance differs from this work in three ways. \emph{First}, it obtains the stage-wise matrix for a
+feature extractor that is a program, by instrumenting it once or by estimating it with occlusion, and so brings
+attribution propagation to exactly the detectors FINER leaves out; the mapping that explanation-guided attacks and
+shortcut analyses build by hand, feature by feature, becomes a by-product of extraction, for every feature and every
+file. Our pullback coincides with G-DeepSHAP's rule when $P$ holds each byte's share of each feature, and we claim no
+novelty for that propagation step. \emph{Second}, the same matrix runs the other way: the pushforward moves a byte-level
+explanation through a non-invertible program into the features of a detector that never reads them, giving a raw-byte
+detector a vocabulary in which its reliance recurs across files. To our knowledge, no prior work transfers
+explanations in this direction. \emph{Third}, the two directions together put detectors over different representations
+into one space, which turns explanation transfer into two security tasks that output-level comparisons and per-file
+saliency cannot perform: triaging a disagreement between two detectors file by file, and auditing a raw-byte detector
+across a corpus.

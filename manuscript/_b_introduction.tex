@@ -15,8 +15,8 @@ the two kinds of explanation live in different spaces, two detectors cannot be c
 
 Existing work explains each kind of detector in its own space~\cite{fan2020can, warnecke2020evaluating,
 coull2019activation, bose2020explaining}. Explaining a feature-based detector directly over the bytes, e.g., by
-occluding windows of the file~\cite{zeiler2014visualizing}, costs one feature extraction per window and cannot reach
-byte resolution. Attribution-propagation rules carry explanations through a chain of
+occluding windows of the file~\cite{zeiler2014visualizing}, costs one feature extraction per window, so byte
+resolution is out of reach. Attribution-propagation rules carry explanations through a chain of
 models~\cite{shrikumar2017learning, chen2022explaining}, but need every stage to be a model with its own attribution
 method, not a parser; FINER~\cite{he2023finer} leaves EMBER-style detectors out, arguing that hashing and aggregation
 lose too much to map their explanations back to the program. Attacks that need the mapping from features to bytes

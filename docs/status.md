@@ -47,6 +47,14 @@ against CCS's 12-page limit. See `docs/resume-prompt.md`.
 
 ## Decisions
 
+2026-10-13 (evening, writing session, background/related work):
+- Section 2 is now "Background and Related Work" (user): an overview of learning-based detection, post-hoc
+  explanation, explaining malware detectors, transferring attributions, and an "Our Position" subsection with the
+  three novelties (P for program extractors; the pushforward; detectors over different representations in one space
+  -> triage and audit). The old standalone Related Work is archived (`archive/g_related_work_old.tex`).
+- Notation (problem/feature space, Definitions 1-2, Figures 1-2) moved to Section 3.1 "Preliminaries". Figure 3 is
+  input before 3.4 so the three figures do not stack on one page. Body ends on p. 11.
+
 2026-10-13 (evening, writing session, polish pass 1; user's 7 criticisms):
 - Intro rewritten in paper voice: research questions dropped, three compact contributions (method, pullback,
   pushforward). Figures 1-3 kept (user rejected a replacement overview figure); only their whitespace was tightened (Figure 2 panels fit their content; Figure 3 gaps and padding reduced; Figure 1 boxes slightly smaller).

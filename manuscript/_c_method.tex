@@ -1,7 +1,43 @@
-We define the provenance matrix (Section~\ref{sec:XML:ProvenanceMatrix}) and the two transfers through it
-(Section~\ref{sec:XML:Transfers}), and then construct the matrix for a real feature extractor
-(Section~\ref{sec:XML:Constructing}). The method depends only on which elements produce which features, never on what
-an element or a feature means; the malware domain supplies our examples.
+We fix notation (Section~\ref{sec:XML:Preliminaries}), define the provenance matrix
+(Section~\ref{sec:XML:ProvenanceMatrix}) and the two transfers through it (Section~\ref{sec:XML:Transfers}), and then
+construct the matrix for a real feature extractor (Section~\ref{sec:XML:Constructing}). The method depends only on which
+elements produce which features, never on what an element or a feature means; the malware domain supplies our examples.
+
+\subsection{Preliminaries}
+\label{sec:XML:Preliminaries}
+
+Following Pierazzi et al.~\cite{pierazzi2020intriguing}, a file is an object $z \in \mathcal{Z}$ in the \emph{problem
+space}, a sequence of \emph{elements} $z_i$, here bytes. A \emph{feature extractor} $\sigma: \mathcal{Z} \to
+\mathcal{X}$ maps it to a vector $x = \sigma(z)$ of \emph{features} $x_j$ in the \emph{feature space}, and a classifier
+$\phi: \mathcal{X} \to \mathcal{L}$ assigns it a label (Figure~\ref{fig:pipeline-problem-to-feature}). For a raw-byte
+detector, $\sigma$ is the identity and the two spaces coincide. Every explainer in this paper attributes the malware
+log-odds, a GBDT's raw score or the difference of a network's two logits, and which inputs it credits depends on where
+it is applied (Figure~\ref{fig:feature-vs-problem-explanations}).
+
+\input{assets/framework_a}
+
+\definition[\textit{Feature-Space Explanation}]
+\label{def:FeatureSpaceExplanation}
+{
+For a file $z$ with features $x = \sigma(z)$ and a classifier $\phi$, a feature-space explanation is a vector
+$a \in \mathcal{A} = \mathbb{R}^{|x|}$ whose entry $a_j$ is the attribution of feature $x_j$ to $\phi$'s decision.
+}
+
+\definition[\textit{Problem-Space Explanation}]
+\label{def:ProblemSpaceExplanation}
+{
+For a file $z$, a feature extractor $\sigma$, and a classifier $\phi$, a problem-space explanation is a vector
+$b \in \mathcal{B} = \mathbb{R}^{|z|}$ whose entry $b_i$ is the attribution of element $z_i$ to the decision of
+$\phi \circ \sigma$, with $b_i = 0$ for every element that no feature reads.
+}
+
+\input{assets/framework_b}
+
+For a raw-byte detector, any explainer gives a problem-space explanation directly. For a feature-based detector, it
+gives a feature-space explanation, which names the features a decision rests on but not the bytes. Explaining a
+feature-based detector over the bytes directly requires perturbing files that must stay parseable and re-running the
+extractor for every perturbation: occlusion over $K$ windows costs $K + 1$ extractions per file, and byte resolution
+would cost one per byte.
 
 \subsection{The Provenance Matrix}
 \label{sec:XML:ProvenanceMatrix}
@@ -38,8 +74,6 @@ is simply one more row of $P$, and makes the attribution that no part of the fil
 The provenance matrix transfers explanations between the two spaces, in both directions
 (Figure~\ref{fig:pullback-pushforward}).
 
-\input{assets/framework_c}
-
 \definition[\textit{Pullback}]
 \label{def:Pullback}
 {
@@ -75,6 +109,8 @@ makes it conserve attribution, $\sum_j a_j = \sum_i b_i$, whenever $b$ credits o
 crediting each feature with the plain sum of its elements' attribution instead would count a byte once for every
 feature that reads it. To our knowledge, the pushforward has not been used before: it explains a model in a vocabulary
 chosen by the analyst, even when the model never computes it.
+
+\input{assets/framework_c}
 
 \subsection{Constructing the Provenance Matrix}
 \label{sec:XML:Constructing}
