@@ -1,43 +1,63 @@
-We first set out the two kinds of explanation that explanation provenance connects (Section~\ref{sec:XML:Spaces}), then the setting in which we use it (Section~\ref{sec:XML:ThreatModel}).
+\subsection{Malware Detectors}
+\label{sec:XML:Detectors}
 
-\subsection{Feature-Space and Problem-Space Explanations}
-\label{sec:XML:Spaces}
-Before training machine learning models to classify objects, they need to be represented numerically. In the literature~\cite{pierazzi2020intriguing}, this process is commonly referred to as a feature-space transformation, where an object is moved from its natural form in the \textit{problem-space}, $\mathcal{Z}$, to a numerical representation in a \textit{feature-space}, $\mathcal{X}$, using a curated \textit{feature mapping function}, $\sigma: \mathcal{Z} \mapsto \mathcal{X}$. With an appropriate feature mapping function, a classifier $\phi: \mathcal{X} \mapsto \mathcal{L}$ can then be trained to learn the relationship between inputs and classification \textit{labels}, $\mathcal{L}$. This process is displayed in Figure~\ref{fig:pipeline-problem-to-feature}. Both problem-space and feature-space objects can usually be modeled as vectors. In our work, we'll refer to the individual components of problem-space objects as \textit{elements}, $z_i \in z \in \mathcal{Z}$, and the individual components of feature-space objects as \textit{features}, $x_i \in x \in \mathcal{X}$. Explanations are typically computed upon feature-space objects using an \textit{explanation backbone}, $\epsilon$, where each \textit{attribution} is a real-valued vector indicating the importance of each input feature.
+A static detector maps a file to a verdict without running it. Following Pierazzi et al.~\cite{pierazzi2020intriguing},
+a file is an object $z \in \mathcal{Z}$ in the \emph{problem space}, a sequence of \emph{elements} $z_i$, here bytes.
+A \emph{feature extractor} $\sigma: \mathcal{Z} \to \mathcal{X}$ maps it to a vector $x = \sigma(z)$ of
+\emph{features} $x_j$ in the \emph{feature space}, and a classifier $\phi: \mathcal{X} \to \mathcal{L}$ assigns it a
+label.
 
-\input{assets/framework_a}
+\paragraph{Feature-based detectors.} EMBER~\cite{anderson2018ember} is the standard feature set for static detection
+of Windows (PE) malware. Its third version~\cite{joyce2025ember} has 2{,}568 features in 12 groups: byte and
+byte-entropy histograms, string statistics, header fields, sections, imports and exports (hashed into buckets), data
+directories, the Rich header, the Authenticode signature, parser warnings, and general file properties. Its extractor
+is a program, not a model: it parses the file, reads fields, counts and hashes names, and computes entropy over
+sliding windows. Gradient-boosted decision trees such as LightGBM~\cite{ke2017lightgbm} are the standard and strongest
+model family for these features.
 
+\paragraph{Raw-byte detectors.} MalConv~\cite{raff2018malware} needs no extractor: it embeds each byte, convolves over
+windows of 512 bytes, and pools over the whole file, so $\sigma$ is the identity and the problem and feature spaces
+coincide.
 
-We begin by formalizing a core facet of explainable machine learning: the distinction between explanations for feature- and problem-space objects, as visualized in Figure~\ref{fig:feature-vs-problem-explanations}.
+\subsection{Explaining Detectors}
+\label{sec:XML:Explaining}
 
-\input{assets/framework_b}
-
-% NOTE: can we bake-in the idea of sigma-consistency here? Also refine the definitions for explanations a little more usefully (positive, negative, etc.).
-
-First, we consider the standard model explanation, conducted within the feature-space:
+An \emph{explainer} assigns each input of a model a share of the model's output, its \emph{attribution}. Every
+explainer in this paper attributes the malware log-odds: a GBDT's raw score, or the difference of a network's two
+logits. Which inputs an explainer credits depends on where it is applied.
 
 \definition[\textit{Feature-Space Explanation}]
 \label{def:FeatureSpaceExplanation}
 {
-Consider some sample $x \in \mathcal{X}$ in the feature-space and classifier $\phi$ that predicts $x$ belongs to class $l \in \mathcal{L}$. A feature-space explanation is a vector $a \in \mathbb{R}^{|x|} \subseteq \mathcal{A}$ where $a_i > a_j$ indicates that $x_i$ is a more influential feature than $x_j$ toward the classifier's decision.
+For a file $z$ with features $x = \sigma(z)$ and a classifier $\phi$, a feature-space explanation is a vector
+$a \in \mathcal{A} = \mathbb{R}^{|x|}$ whose entry $a_j$ is the attribution of feature $x_j$ to $\phi$'s decision.
 }
-
-While a feature-space explanation can elucidate which features are responsible for a given classification decision, it provides no insight on the problem-space object. If machine learning practitioners want to understand model explanations from a problem-space perspective, they need an explanation for each element of the original object, i.e., a problem-space explanation:
 
 \definition[\textit{Problem-Space Explanation}]
 \label{def:ProblemSpaceExplanation}
 {
-Consider some sample $z \in \mathcal{Z}$ in the problem-space, a feature map $\sigma$, and classifier $\phi$ that predicts $\sigma(z)$ belongs to class $l \in \mathcal{L}$. A problem-space explanation is a vector $b \in \mathbb{R}^{|z|} \subseteq \mathcal{B}$ where $b_i > b_j$ indicates that $z_i$ is a more influential element than $z_j$ toward the classifier's decision and if $z_i$ influences no feature under $\sigma$ then $b_i=0$.
+For a file $z$, a feature extractor $\sigma$, and a classifier $\phi$, a problem-space explanation is a vector
+$b \in \mathcal{B} = \mathbb{R}^{|z|}$ whose entry $b_i$ is the attribution of element $z_i$ to the decision of
+$\phi \circ \sigma$, with $b_i = 0$ for every element that no feature reads.
 }
 
-For some applications, the feature mapping function is trivial (or their is no distinction between problem- and feature-space in the first place) and feature-space explanations correspond exactly to problem-space ones. However, in many other domains, $\sigma$ is complex making the relation between the two explanations classes unclear.
+\paragraph{Explainers.} SHAP~\cite{lundberg2017unified} attributes Shapley values: each input's average marginal
+contribution to the output over coalitions of inputs, with the inputs outside a coalition replaced from a background
+distribution. KernelSHAP estimates them for any model by sampling coalitions; TreeSHAP~\cite{lundberg2020local}
+computes them exactly for tree ensembles, either \emph{path-dependent} (absent features follow the training data down
+each tree) or \emph{interventional} (absent features take their values from a background set). Integrated
+Gradients~\cite{sundararajan2017axiomatic} integrates a network's gradient along a straight path from a baseline input
+to the actual one; for MalConv, the gradient is taken with respect to the byte embeddings. \emph{Occlusion}~\cite{zeiler2014visualizing}
+replaces one window of the input at a time and records the change in the output; it needs only queries, and its
+resolution is the window.
 
-Consider, for a moment, the task of malware detection. Most malware detection pipelines employ extensive feature extraction routines, which may entail binary parsing, decompilation, and sandboxing. Thus, the original problem-space object, e.g., an executable file, and its feature-space representation, e.g., a `tabular' vector, bear little relation to each other. Sure, an analyst can easily apply an explainable machine learning technique and attain a feature-space explanation for the feature vector, but this may not help the analyst understand which portions of the original binary file were the most salient. On the flip side, should the analyst choose to apply explainable machine learning in the problem-space directly (easier said than done), they may be able to attain a problem-space explanation which directly informs them which portions of the executable file trigger the classification decision. However, without understanding the relationship between these bytes and the feature vector, the analyst still has little insight toward why or how the model is actually using said bytes. We therefore argue that feature- and problem-space explanations are both useful and furthermore complementary to each other.
+\paragraph{Two spaces.} For a raw-byte detector, any of these explainers gives a problem-space explanation directly.
+For a feature-based detector, they give a feature-space explanation: it names the features a decision rests on, but
+not the bytes. Explaining a feature-based detector over the bytes requires perturbing files that must stay parseable
+and re-running the extractor for every perturbation: occlusion over $K$ windows costs $K + 1$ extractions per file,
+and byte resolution would cost one per byte.
 
-Problem-space explanations, in particular, can often be exceedingly challenging to produce directly. In the malware classification scenario proposed above, $\sigma$ is non-invertible and non-differentiable, making many explanation techniques difficult or impossible to apply. The analyst could still apply a black-box, perturbation-based explanation method, e.g., LIME, but would have to take special care to ensure that any perturbed problem-space object, $z'$, is valid (in $\mathcal{Z}$) less $\sigma(z')$ be undefined. In many problem-spaces, such as that of executable files, such mutations are challenging to design and verify. Furthermore, even if the analyst could reliably perturb executables, they may still be severely inhibited by the costly nature of $\sigma$, which, if decompilation or sandboxing is involved, could require several minutes or several hours to finish. Since perturbation-based algorithms typically require hundreds if not thousands of queries, our hypothetical analyst could well have retired before receiving their problem-space explanation.
-
-\subsection{Setting}
-\label{sec:XML:ThreatModel}
-
-Explanation provenance serves a defender: a detector developer or analyst who maintains static detectors and wants to know what they rely on. The defender owns the detectors and their feature extractors, can run them on any file, and has the access a model owner has to explain them (TreeSHAP reads the trees, Integrated Gradients the network's gradients). We evaluate two tasks, one per transfer. \textit{Disagreement triage} is local (Section~\ref{sec:XML:Comparison}): when two detectors disagree on a file, is the flagging detector's evidence content the other does not read, or reads the other way? \textit{Reliance audit} is global (Section~\ref{sec:XML:Audit}): what content do a raw-byte detector's detections rest on across a corpus?
-
-The audit anticipates a malware author who wants a flagged file classified benign and can change its bytes, provided the program still runs; finding the content a detector relies on is what such an author would do first, and the audit lets the defender do it beforehand. We measure that reliance by scrambling the bytes $P$ names while keeping the file parseable, which quantifies how much detection rests on them rather than demonstrating an attack. Attacks on the explanations themselves, on the feature extractor, or on the training data are outside our scope.
+\paragraph{Faithfulness.} An explanation is faithful if the inputs it ranks highest carry the evidence for the
+decision. The deletion curve~\cite{petsiuk2018rise} tests this by removing the top-ranked inputs at growing budgets
+and measuring how much of the model's output they take with them; a planted trigger~\cite{lin2021what} supplies a
+known answer. We use both.

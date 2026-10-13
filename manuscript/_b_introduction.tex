@@ -1,27 +1,52 @@
-Machine learning has shown tremendous promise in the space of malware analysis~\cite{schultz2001data}. However, unlike signature or rule-based detection and classification techniques, the decisions produced by learned models, especially deep neural networks, are often challenging to understand for humans~\cite{rui2024position}. Explainable machine learning techniques offer a powerful toolkit to unveil the processes behind the black-box, which enhances the trust, reliability, and overall utility of ML systems~\cite{mink2023everybody}.
+Static malware detectors decide whether a file is malicious from its contents alone, before it runs. They come in two
+kinds. \emph{Feature-based} detectors parse the file into hand-engineered features, such as the 2{,}568 features of
+EMBER~\cite{anderson2018ember, joyce2025ember}, and learn over the feature vector, typically with gradient-boosted
+decision trees (GBDTs). \emph{Raw-byte} detectors such as MalConv~\cite{raff2018malware} learn from the bytes
+directly. Production engines run both: Microsoft Defender combines models over featurized metadata with deep networks
+over full file contents~\cite{microsoft2019insideout}. When a detector misses a malicious file or flags a benign one,
+analysts turn to explanations to find out why~\cite{mink2023everybody}.
 
-This is especially important in malware detection and classification. When a learned model is evaded by malware or flags a benign application as malicious, it is essential for analysts to be able to audit the model after the fact to understand the failure mode and devise mitigations (local explanations). Similarly, XML can be used to understand the behavior of models holistically, gauge the robustness and weaknesses of the models against certain evasive actions, and adjust feature engineering efforts in response (global explanations). To this end, several works have studied XML applied to the task of malware detection.
+The two kinds of detector explain themselves in spaces that do not meet. A feature-based detector's explanation
+credits features, such as the header checksum or a hashed import bucket, but does not say where in the file that
+evidence lies; analysts, who reason about the file itself, must map features back to bytes by hand. A raw-byte
+detector's explanation credits bytes, but bytes have no names: an offset means something different in every file, so
+these explanations cannot be aggregated across a corpus to reveal what the detector relies on in general. And because
+the two kinds of explanation live in different spaces, two detectors cannot be compared on the same file.
 
-Within this body of literature, two main tracks exist. First, several works have studied explainability applied to models relying on handcrafted feature sets, but these works only explain decisions at the feature-level~\cite{fan2020can, wu2021android, zhu2024dynamic}. Second, several works have studied explainability applied to models relying on raw, sequential feature sets (raw-bytes~\cite{raff2018malware}, bytecode~\cite{mclaughlin2017deep}, etc.), achieving saliency over the original sample~\cite{coull2019activation, bose2020explaining, mitchell2024generating}. Ultimately, modern industrial AVs continue to rely on models that use handcrafted feature sets (Figure~\ref{fig:pipeline-problem-to-feature}) and there is no general, principled method to translate these feature-level explanations back to semantically meaningful regions of the original artifact.
+Existing work explains each kind of detector in its own space~\cite{fan2020can, warnecke2020evaluating,
+coull2019activation, bose2020explaining}. Explaining a feature-based detector directly over the bytes, e.g., by
+occluding windows of the file~\cite{zeiler2014visualizing}, costs one feature extraction per window and cannot reach
+byte resolution. Attribution-propagation rules carry explanations through a chain of
+models~\cite{shrikumar2017learning, chen2022explaining}, but need every stage to be a model with its own attribution
+method, not a parser; FINER~\cite{he2023finer} leaves EMBER-style detectors out, arguing that hashing and aggregation
+lose too much to map their explanations back to the program. Attacks that need the mapping from features to bytes
+build it by hand, one feature at a time~\cite{pierazzi2020intriguing, severi2021explanation}.
 
-Our motivation stems from a paradox between what explainable machine learning techniques provide versus what malware analysts need. XML literature has yielded numerous effective techniques to efficiently and reliably explain models' decision-making in a so-called \textit{feature-space}, e.g., malware feature vectors, however, human analysts ultimately reason in the \textit{problem-space}, e.g., the software sample itself. This mismatch creates a practical gap: feature-space saliency is easy to obtain but often opaque to reverse engineers, whereas problem-space saliency is semantically meaningful but difficult to acquire (Figure~\ref{fig:feature-vs-problem-explanations}). We refer to this as the \textit{problem-space explanation paradox}; it is the motivation for this work.
+Our key insight is that \emph{every engineered feature is computed from specific bytes, so instrumenting the feature
+extractor once records, as a single matrix $P$, which bytes produce each feature and with what weight; and this one
+matrix transfers explanations in both directions}. The \emph{pullback} $b = Pa$ places a feature-space explanation on
+the bytes, and the \emph{pushforward} $a = P^\top D^\dagger b$ places a byte-level explanation in the features
+(Figure~\ref{fig:overview}). We call $P$ the file's \emph{explanation provenance}.
 
-The first half of this chapter proposes a general mechanism to bridge this gap using explanation transfers, depicted in Figure~\ref{fig:pullback-pushforward}. Our key insight is that every hand-crafted feature is computed from specific bytes of the input, so instrumenting the extractor records, as a single matrix $P$, which bytes produce each feature and with what weight; \emph{that same matrix transports attributions in both directions}. Pulling a feature-space explanation back onto the bytes (the \textit{pullback}) generalizes the rescale rule used to propagate attributions through differentiable networks~\cite{shrikumar2017learning, chen2022explaining} to arbitrary, non-differentiable feature extractors; and the same matrix pushes a byte-level explanation forward into the features (the \textit{pushforward}). This symmetry between the two directions is the heart of the method.
+\input{assets/overview}
 
-The second half applies the method to a modern static PE malware detection pipeline, where it resolves the problem-space explanation paradox and supports two security tasks that the two directions of transfer make possible. Used \textit{locally}, the pullback explains a feature-based detector one file at a time: given a gradient-boosted tree over EMBER features and a raw-byte network (MalConv) that disagree on a file, it places both detectors' evidence on the same bytes and shows whether the flagging detector reads content the other ignores or reads the opposite way. Used \textit{globally}, the pushforward audits the raw-byte detector across a corpus: because every file shares the extractor's feature vocabulary, per-file byte explanations of a model with no feature names can be aggregated into recurring, named reliance, which we confirm by scrambling exactly the bytes $P$ implicates and measuring the drop in detection. The pullback alone recovers a known mechanism; it is the pushforward, and the symmetry it completes, that lets a problem-space model be explained in a vocabulary it never had.
-
-The overall research direction is characterized by the following research questions:
-\begin{itemize}[noitemsep, topsep=-4pt, itemindent=0pt, wide]
-    \item[\textbf{\textcolor{darkblue}{\textlangle Q\textsubscript{1}\textrangle}}] What is the difference between explainability in the feature- and problem-space?
-    \item[\textbf{\textcolor{darkblue}{\textlangle Q\textsubscript{2}\textrangle}}] How can we bridge the gap between feature- and problem-space explanations?
-    \item[\textbf{\textcolor{darkblue}{\textlangle Q\textsubscript{3}\textrangle}}] Can this bridge support the security tasks analysts actually perform, both per file and across a corpus?
+We instrument the EMBER extractor and evaluate both transfers on EMBER-2024 with a GBDT and MalConv, each first in a
+controlled setting and then on a security task. The pullback is as faithful as occlusion at the same resolution, at
+1/135 of its cost, and at byte resolution removes 1.67 times as much evidence; given a planted trigger, its six
+top-ranked bytes are exactly the trigger's six bytes in all 50 test files. Used \emph{locally}, it compares the two detectors
+on a single file: when the GBDT alone flags malware, MalConv reads a third of the GBDT's evidence the other way, and
+deleting those bytes makes MalConv flag 19 of 25 such files, a distinction that vanishes over windows of bytes. The
+pushforward is faithful up to the resolution of its source. Used \emph{globally}, it gives MalConv's per-file
+explanations a shared vocabulary, so they can be aggregated over a corpus: 9 of the 20 fields MalConv relies on most
+are confirmed, and scrambling their 34 bytes evades 22.5\% of detected malware at a 1\% false-positive rate, against
+16.5\% for as many random header fields. In summary, we make the following contributions:
+\begin{itemize}
+    \item \textbf{Explanation provenance} (Section~\ref{sec:XML:Framework}): a matrix $P$, recorded by instrumenting a
+    feature extractor or estimated by occlusion, and two transfers through it, the pullback and the pushforward.
+    \item \textbf{The pullback} (Section~\ref{sec:XML:Pullback}): faithful at a fraction of the cost of direct
+    problem-space explanation and precise to the byte; it triages disagreements between a feature-based and a raw-byte
+    detector, file by file, where windows of bytes reach the opposite conclusion.
+    \item \textbf{The pushforward} (Section~\ref{sec:XML:Pushforward}): faithful up to the resolution of its source;
+    it audits a raw-byte detector across a corpus in named features, confirming reliance that evades a fifth of
+    detected malware and pointing to its mitigation.
 \end{itemize}
-
-In short, this chapter makes the following contributions:
-\begin{itemize}[noitemsep, topsep=-4pt]
-    \item[\textbf{\textcolor{darkred}{\textlangle C\textsubscript{1}\textrangle}}] We introduce explanation provenance: a matrix $P$, obtained by instrumenting the feature extractor, that transports attributions between the feature-space and the problem-space in both directions. The pullback generalizes attribution-propagation rules from differentiable networks to arbitrary feature extractors; the pushforward and the symmetry it completes are, to our knowledge, new (Section~\ref{sec:XML:Framework}).
-    \item[\textbf{\textcolor{darkred}{\textlangle C\textsubscript{2}\textrangle}}] We show the pullback is faithful and cheap: it recovers the bytes that drive a feature-based detector's decision from a single instrumented extraction, matching or beating direct problem-space explainers that cost hundreds to thousands of extractions; and, applied to two detectors with different feature sets, it locates their shared reliance and triages their disagreements per file, where comparison over byte windows without $P$ reaches the wrong conclusion (Sections~\ref{sec:XML:Pullback},~\ref{sec:XML:Comparison}).
-    \item[\textbf{\textcolor{darkred}{\textlangle C\textsubscript{3}\textrangle}}] We show the pushforward is faithful up to the resolution of its source and use it to audit a raw-byte detector across a corpus: aggregating its per-file explanations into named reliance, confirming the implicated content by scrambling it (evading over a fifth of detected malware at a 1\% false-positive rate), comparing the two detectors feature by feature, and pointing to a concrete mitigation (Sections~\ref{sec:XML:Pushforward},~\ref{sec:XML:Audit}).
-\end{itemize}
-
-The remainder of this paper is organized as follows. Section~\ref{sec:XML:Background} contrasts feature- and problem-space explanations and describes the setting; Section~\ref{sec:XML:Framework} defines explanation provenance, its construction, and its two transfers; Section~\ref{sec:XML:Setup} describes the experimental setup; Sections~\ref{sec:XML:Pullback} and~\ref{sec:XML:Pushforward} evaluate the pullback and the pushforward, each first in the laboratory and then on a security task; Section~\ref{sec:XML:RelatedWork} discusses related work, Section~\ref{sec:XML:Discussion} the method's scope and next steps, and Section~\ref{sec:XML:Summary} concludes.

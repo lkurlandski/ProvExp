@@ -1,0 +1,57 @@
+\begin{figure*}[t]
+\centering
+\tikzset{
+    >=Stealth,
+    panel/.style={draw=black!55, rounded corners=2pt, thick, inner sep=1.5mm},
+    lbl/.style={font=\scriptsize\ttfamily, anchor=west, inner sep=0.6pt},
+    bar/.style={anchor=west, minimum height=2.0mm, inner sep=0pt, draw=black!60, line width=0.2pt},
+    hd/.style={font=\footnotesize, align=center},
+    op/.style={font=\footnotesize, align=center, fill=white, inner sep=1pt},
+}
+\begin{tikzpicture}
+    \def\rowsep{0.34}
+    % ---------------- problem space: bytes -----------------------------------------------------------------------
+    \node[font=\scriptsize, anchor=west] at (3.0, -0.12) {$b_i$};
+    \foreach \name/\w/\shade [count=\k] in {%
+        {DOS header}/0.25/15, {PE header: CheckSum}/1.30/75, {data directories}/0.85/55,
+        {.text}/0.55/35, {.rsrc}/0.15/10, {overlay}/0.70/45} {
+        \node[lbl] at (0, -0.1 - \k*\rowsep) {\name};
+        \node[bar, minimum width=\w cm, fill=black!\shade] at (3.0, -0.1 - \k*\rowsep) {};
+    }
+    \node[panel, fit={(-0.1,0.05) (4.45,-2.25)}] (zp) {};
+    \node[hd, anchor=south] (zt) at (zp.north) {\textbf{problem space}: the bytes of a file $z$};
+
+    % ---------------- feature space: features ---------------------------------------------------------------------
+    \begin{scope}[xshift=9.55cm]
+    \node[font=\scriptsize, anchor=west] at (3.55, -0.12) {$a_j$};
+    \foreach \name/\w/\shade [count=\k] in {%
+        {header.checksum}/1.35/75, {datadir.debug.size}/0.75/50, {imports.hash[17]}/0.35/25,
+        {section.entropy[.text]}/0.45/30, {strings.num\_urls}/0.20/15, {byte\_histogram[0x00]}/0.60/40} {
+        \node[lbl] at (0, -0.1 - \k*\rowsep) {\name};
+        \node[bar, minimum width=\w cm, fill=black!\shade] at (3.55, -0.1 - \k*\rowsep) {};
+    }
+    \node[panel, fit={(-0.1,0.05) (5.0,-2.25)}] (xp) {};
+    \node[hd, anchor=south] (xt) at (xp.north) {\textbf{feature space}: the features $x = \sigma(z)$};
+    \end{scope}
+    \draw[->, dashed, black!60] (zt.east) -- node[above, font=\scriptsize, text=black] {extraction $\sigma$, records $P$} (xt.west);
+
+    % ---------------- the provenance matrix ---------------------------------------------------------------------
+    \begin{scope}[shift={(7.0,-1.12)}]
+        \foreach \i/\j/\v in {0/0/70, 1/0/40, 1/1/70, 2/2/55, 3/2/55, 3/3/30, 4/3/30, 2/4/20, 3/4/20, 4/4/20,
+                              5/4/20, 0/5/12, 1/5/12, 2/5/12, 3/5/12, 4/5/12, 5/5/12} {
+            \fill[black!\v] (\j*0.14 - 0.42, 0.42 - \i*0.14) rectangle ++(0.14, -0.14);
+        }
+        \draw[black!60] (-0.42, 0.42) rectangle (0.42, -0.42);
+        \node[font=\small, anchor=east] at (-0.48, 0) {$P$};
+    \end{scope}
+
+    % ---------------- transfers ---------------------------------------------------------------------------------
+    \draw[->, thick] (4.6, -0.42) -- node[op, above=1pt] {pushforward $a = P^{\top} D^{\dagger} b$} (9.4, -0.42);
+    \draw[<-, thick] (4.6, -1.82) -- node[op, below=1pt] {pullback $b = P a$} (9.4, -1.82);
+\end{tikzpicture}
+\caption{Explanation provenance. Instrumenting the feature extractor $\sigma$ records which bytes produce each feature,
+and with what weight, as a matrix $P$. The same matrix pulls a feature-space explanation $a$ (e.g., TreeSHAP of a
+GBDT) back onto the bytes, and pushes a problem-space explanation $b$ (e.g., Integrated Gradients of MalConv) forward
+into the features. Bars are illustrative.}
+\label{fig:overview}
+\end{figure*}

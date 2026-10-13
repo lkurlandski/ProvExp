@@ -24,9 +24,11 @@ P and the round-trip theory were cut from the paper (2026-10-13) and archived in
 - **State a hypothesis before running an experiment** (what you expect and why), and report a failed check as such.
   Keep it short and proportionate: a sentence or two, not an elaborate pre-registered reading for every outcome
   (user, 2026-10-09).
-- Manuscript fragments: `_b2_background` (spaces, setting), `_c_method` (P, constructing P, transfers, coarsening),
-  `_d_setup`, `_e_pullback` (PB1, PB2, CM), `_f_pushforward` (PF1, PF2, AU), `_g_related_work`, `_h_discussion`,
-  `_i_conclusion`; appendices `_j`-`_l`. Cut material lives in `manuscript/archive/`. Keep code and manuscript
+- Manuscript order: intro (`_b`, holds Figure 1 `assets/overview.tex`), background (`_b2`: detectors, explainers,
+  faithfulness), related work (`_g`), method (`_c`: P, transfers, constructing P incl. granularity and EMBER),
+  pullback (`_e`: data/models, PB1 incl. the deletion operator, PB2 incl. the trigger, CM with its threat model),
+  pushforward (`_f`: PF1, PF2, AU with its threat model), discussion (`_h`), conclusion (`_i`); appendices `_j`-`_l`.
+  No internal IDs (PB1, ...) in the paper text. Cut material lives in `manuscript/archive/`. Keep code and manuscript
   consistent.
 
 ## Layout
