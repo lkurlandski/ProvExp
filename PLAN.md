@@ -36,6 +36,14 @@ feature sets cannot be mapped back to the program.
 
 ## Thesis and claims
 
+> **2026-10-13 (user): CP and the theory are cut from the paper.** The statistics of P (ambiguity, overlap, coverage),
+> round trips (M, N), their bounds, and the perfect-reconstruction theorems feed no application result; they are
+> archived in `manuscript/archive/` (with Section 4.2, CP). The paper is now a *method* plus two applications, not a
+> framework; claims are softened accordingly. Paper claims: (1) the pullback is faithful and cheap; (2) the pushforward
+> is faithful up to its source's resolution (no longer "a limit set by overlap"); (3) CM; (4) AU. The coarsened-
+> provenance definition stays (PB1, PF1, CM's window controls use it). Sections below that mention CP, the statistics,
+> or "Modest theory" are historical.
+
 Explanation provenance, a matrix P (elements × features, plus a null element) built by instrumenting the feature
 extractor, transfers explanations between the two spaces: pullback b = Pa, pushforward a = PᵀD†b. The evaluation
 mirrors the framework, from intrinsic to extrinsic, and supports four claims:

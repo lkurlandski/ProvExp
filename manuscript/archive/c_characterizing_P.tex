@@ -1,0 +1,72 @@
+% ARCHIVED 2026-10-13 from _c_framework.tex (Section 3.4). Cut from the paper: the statistics of P (ambiguity,
+% overlap, coverage) and the coarsening proposition feed no application result. Kept for possible reintroduction (e.g.,
+% the dissertation). The coarsened-provenance definition survives, shortened, in _c_framework.tex.
+
+\subsection{Characterizing the Explanation Provenance Matrix}
+\label{sec:CharacterizingExplanationProvenanceMatrix}
+
+The provenance matrix is the defining ingredient of explanation transformations. To anticipate when such transformations will yield interpretable explanations, we introduce summary statistics. They describe $P$ along two axes: how widely each feature's provenance is spread over the elements (ambiguity), and how much the features share their elements with each other (overlap).
+
+\begin{notationbox}
+Consider provenance matrix $P \in \mathbb{R}^{(|z| + 1) \times |x|}$. Let $A_j=\{\,i: P_{i,j}>0\,\}$ be the row support of column $j$.
+\end{notationbox}
+
+\definition[\textit{Provenance Ambiguity}]{
+\label{def:ProvenanceAmbiguity}
+Consider $z \in \mathcal{Z}$, $x \in \mathcal{X}$, and provenance $P$ with row support given by $A_j$ and unattributable features $U$. We define the provenance ambiguity of each feature, $H_j$, its effective support, $e^{H_j}$, and the overall provenance ambiguity, $H$, as:
+\begin{equation}
+\begin{gathered}
+    H_j = -\sum_i P_{i,j} \log P_{i,j} \qquad
+    e^{H_j} \in [1, |A_j|] \\
+    H = \frac{1}{|x| - |U|} \sum_{j \notin U} H_j
+\end{gathered}
+\end{equation}
+}
+
+Ambiguity asks how concentrated each feature's provenance is within the problem-space. The effective support $e^{H_j}$ is the number of elements over which the provenance of feature $j$ is effectively spread: a feature that draws equally on $k$ elements has $e^{H_j} = k$, and a feature that draws on a single element has $e^{H_j} = 1$. When $e^{H_j}$ is small, the pulled-back attribution of the feature is naturally sharp; as it grows, the attribution is smeared over more elements. Dividing by $|z|$ expresses the spread as a fraction of the object.
+
+A complementary question is whether different features draw from distinct or shared elements. Read column $j$ of $P$ as a distribution over the elements, $P_{i,j}$, the share of feature $j$'s provenance that comes from $\bar{z}_i$. Conversely, if no feature is more likely than another a priori, Bayes' rule gives $P_{i,j} / D_{i,i}$ as the probability that attribution on element $\bar{z}_i$ belongs to feature $j$; this is exactly how the pushforward distributes an element's attribution (Definition~\ref{def:Pushforward}). Overlap is the probability that this inversion assigns feature $j$'s attribution to some other feature.
+
+\definition[\textit{Provenance Overlap}]{
+\label{def:ProvenanceOverlap}
+Consider $z \in \mathcal{Z}$, $x \in \mathcal{X}$, and provenance $P$ with row sums $D$ and unattributable features $U$. We define the provenance overlap of each feature, $O_j$, and the overall provenance overlap, $O$, as:
+\begin{equation}
+    O_j = 1 - \sum_i \frac{P_{i,j}^2}{D_{i,i}} \qquad
+    O = \frac{1}{|x| - |U|} \sum_{j \notin U} O_j
+\end{equation}
+where the sum runs over the elements with $D_{i,i} > 0$.
+}
+
+Overlap is bounded, $O_j \in [0, 1]$, and vanishes exactly when the elements of feature $j$ influence no other feature: since $P_{i,j} \le D_{i,i}$, each term satisfies $P_{i,j}^2 / D_{i,i} \le P_{i,j}$, so the sum is at most $\sum_i P_{i,j} = 1$, with equality if and only if $D_{i,i} = P_{i,j}$ for every $i \in A_j$. Small $O_j$ means feature $j$ keeps its elements to itself; large $O_j$ means its elements are shared, and its attribution collides with that of other features during a pullback. Section~\ref{sec:Framework:Preservation} shows that $O_j$ is exactly the share of feature $j$'s attribution that a pull--push round trip moves to other features.
+
+The null element is why the summaries average over the attributable features only. An unattributable feature's provenance is one-hot on the null element, so it is perfectly unambiguous ($H_j = 0$), and all $|U|$ unattributable features share the null element ($O_j = 1 - 1/|U|$). Both are mathematically correct, since the pullback indeed sends the attribution of every unattributable feature to the same place, where they can no longer be told apart, but neither describes how sharply attribution can be localized within $z$. The null element's row is zero in every attributable column, so it never enters the statistics of the attributable features. We complement the summaries with a measure of how much of the feature set is attributable at all.
+
+\definition[\textit{Provenance Coverage}]
+\label{def:Coverage}
+{
+Consider $z \in \mathcal{Z}$, $x \in \mathcal{X}$, and provenance $P$ with unattributable features $U$. We define the provenance coverage, $\kappa$, as:
+\begin{equation}
+    \kappa = \frac{|x| - |U|}{|x|}
+\end{equation}
+}
+
+Coverage is a property of $P$ alone: the fraction of features that are attributable to some element of $z$. Coverage and the summaries are complementary: $\kappa$ says how much of the feature set can be localized at all, and $H$ and $O$ say how sharply and how separately its attributable part can be.
+
+Practitioners often want explanations at a coarser granularity than single elements, e.g., windows of bytes or functions instead of bytes. Grouping elements does not require new provenance.
+
+\definition[\textit{Coarsened Provenance}]
+\label{def:Coarsening}
+{
+Consider provenance $P$ and a partition $G = \{g_1, \dots, g_K\}$ of the elements of $z$, with the null element kept as its own group. The coarsened provenance $P^G \in \mathbb{R}^{(K + 1) \times |x|}$ has entries $P^G_{g,j} = \sum_{i \in g} P_{i,j}$.
+}
+
+$P^G$ satisfies the axioms of Definition~\ref{def:ExplanationProvenance} for the object whose elements are the groups: its entries are nonnegative, its columns still sum to one, a group influences $x_j$ if and only if one of its elements does, and the null element is unchanged.
+
+\proposition[\textit{Coarsening}]{
+\label{prop:Coarsening}
+Pullback commutes with coarsening, $\tau_{P^G}(a)_g = \sum_{i \in g} \tau_P(a)_i$; and coarsening never raises ambiguity and never lowers overlap: $H^G_j \le H_j$ and $O^G_j \ge O_j$ for every feature.
+\textit{Proof.} The first claim is linearity: $(P^G a)_g = \sum_j \sum_{i \in g} P_{i,j} a_j = \sum_{i \in g} (Pa)_i$. Column $j$ of $P^G$ is the distribution of the group of an element drawn from column $j$ of $P$, and a function of a random variable has at most its entropy, so $H^G_j \le H_j$. The row sums of $P^G$ are $D^G_{g} = \sum_{i \in g} D_{i,i}$, and for each group, by the Cauchy--Schwarz inequality in Engel form, $(\sum_{i \in g} P_{i,j})^2 / \sum_{i \in g} D_{i,i} \le \sum_{i \in g} P_{i,j}^2 / D_{i,i}$ (over the elements with $D_{i,i} > 0$; the others have $P_{i,j} = 0$). Summing over the groups gives $1 - O^G_j \le 1 - O_j$. \hfill$\square$
+}
+
+Coarsening therefore keeps everything the pullback says about the groups, but trades separation for granularity: the coarser the groups, the more features share each of them, and the less a group's attribution can be traced back to the features that produced it.
+

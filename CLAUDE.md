@@ -3,7 +3,8 @@
 Dissertation research: **explanation provenance** for malware detectors. A provenance matrix P (bytes × features,
 plus a null element) transfers explanations between the feature-space (EMBER v3 features) and the problem-space
 (the bytes of a PE file): pullback b = Pa, pushforward a = PᵀD†b. Target: ACM CCS 2027, Cycle A
-(est. mid-January 2027; CfP not out yet), as a single security paper with modest theory.
+(est. mid-January 2027; CfP not out yet), as a single security paper: a method (explanation provenance) and its two security applications. The statistics of
+P and the round-trip theory were cut from the paper (2026-10-13) and archived in `manuscript/archive/`.
 
 ## Read first
 
@@ -23,7 +24,8 @@ plus a null element) transfers explanations between the feature-space (EMBER v3 
 - **State a hypothesis before running an experiment** (what you expect and why), and report a failed check as such.
   Keep it short and proportionate: a sentence or two, not an elaborate pre-registered reading for every outcome
   (user, 2026-10-09).
-- `manuscript/_c_framework.tex`: the framework's definitions; `_d_applications.tex`: the evaluation. Keep code and
+- `manuscript/_c_framework.tex`: the method's definitions; `_d_evaluation.tex`: the intrinsic evaluation;
+  `_d_applications.tex`: the applications (CM, AU). Keep code and
   manuscript consistent.
 
 ## Layout

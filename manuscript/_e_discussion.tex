@@ -5,14 +5,12 @@ honestly that no part of the file carries it (Appendix~\ref{sec:XML:AppLocalizab
 computed from the whole file (the byte histogram, file entropy, string statistics) read so many bytes that a transfer
 cannot say which of them matter: MalConv places most of its pushed-forward attribution on such aggregates, below what
 the pushforward can resolve (Section~\ref{sec:XML:Audit}). Both limits are properties of $P$, known before any
-explanation is computed, and the statistics of Section~\ref{sec:CharacterizingExplanationProvenanceMatrix} report
-them per file and per feature group.
+explanation is computed.
 
 \paragraph{Provenance is exact only for additive features.} For a feature that counts or reads bytes, $P$ is exact.
 For a feature that hashes a name or computes an entropy, a byte's share is a convention (every byte the feature reads gets an
-equal share), since such a feature does not decompose over its bytes. The black-box estimate of $P$ measures the gap: it agrees with the
-instrumented matrix where features are additive and spreads 2--4 times wider where they are not
-(Section~\ref{sec:XML:CharacterizingP}).
+equal share), since such a feature does not decompose over its bytes. A black-box estimate of $P$, obtained by occlusion, needs no such
+convention, and its pullback performs comparably at the window level (Section~\ref{sec:XML:Pullback}).
 
 \paragraph{The transfers inherit their source's faithfulness.} A pullback or pushforward is as faithful as the
 explanation it transfers, and no more. The multilayer perceptron's explanations fell short of occlusion, and so did
@@ -43,11 +41,11 @@ detector's features do not read, which is where a new feature would help.
 % TODO (load-bearing, "claim the fuller vision"): AU's mitigation (test-time zeroing and a retrain). Report its results
 % here (or in Section~\ref{sec:XML:Audit}) and drop the conditional voice.
 
-\paragraph{Beyond Windows executables.} Nothing in the framework is specific to PE files. $P$ depends only on which
+\paragraph{Beyond Windows executables.} Nothing in the method is specific to PE files. $P$ depends only on which
 input elements produce which features, so the transfers apply to any classifier whose features a program computes from
 a structured input: detectors over Android apps (permissions, API calls, and strings extracted from the manifest and
 the bytecode), documents, or network traffic (flow statistics computed from packets), where the elements would be
 bytes, instructions, or packets. Each needs its extractor instrumented once, or its $P$ estimated by occlusion. We have
-evaluated only PE files and EMBER features, whose extractor mixes all the cases the framework distinguishes (fields
-read directly, counts, hashes, and aggregates over the whole file); other extractors may sit at different points of
-that spectrum, which the statistics of $P$ would show before any explanation is computed.
+evaluated only PE files and EMBER features, whose extractor mixes the kinds of features a program computes (fields
+read directly, counts, hashes, and aggregates over the whole file); other extractors may lean toward one kind or
+another, which changes how sharply their explanations can be placed in the input.

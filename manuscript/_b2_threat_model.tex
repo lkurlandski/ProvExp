@@ -1,11 +1,11 @@
-The framework serves a defender: a detector developer or an analyst who maintains static detectors for executable
+The method serves a defender: a detector developer or an analyst who maintains static detectors for executable
 files and wants to know what they rely on. We state what the defender needs, which adversary the applications
 anticipate, and what is out of scope.
 
 \paragraph{The defender.} The defender owns the detectors and their feature extractors and can run them on any file.
 To compute the provenance matrix $P$ exactly, the defender instruments the extractor's source code, once; without the
-source, $P$ can be estimated from the extractor's outputs alone by occluding windows of bytes, at a cost in accuracy
-that we measure (Section~\ref{sec:XML:CharacterizingP}). The transfers take an explanation as input and are only as
+source, $P$ can be estimated from the extractor's outputs alone by occluding windows of bytes, at the cost of
+one extraction per window and without byte resolution (Section~\ref{sec:XML:Pullback}). The transfers take an explanation as input and are only as
 faithful as it is. The explainers we use need the access a model owner has: TreeSHAP reads the trees, and Integrated
 Gradients reads the raw-byte network's gradients; KernelSHAP and occlusion need only queries. The defender also has
 a labeled corpus of files on which to explain and audit the detectors.

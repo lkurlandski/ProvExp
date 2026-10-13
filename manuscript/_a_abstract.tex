@@ -8,8 +8,7 @@ compared with the other, and byte explanations cannot be aggregated across files
 engineered feature is computed from specific bytes, so instrumenting the feature extractor yields a \emph{provenance
 matrix} that records which bytes produce each feature and with what weight, and that this one matrix transfers
 explanations in both directions: it pulls feature attributions back onto the bytes, and pushes byte attributions
-forward into named features. We formalize both transfers, derive statistics of the matrix that bound what any transfer
-can preserve, and evaluate them on EMBER v3 features, a gradient-boosted tree, and MalConv over EMBER-2024 files. The
+forward into named features. We evaluate both transfers on EMBER v3 features, a gradient-boosted tree, and MalConv over EMBER-2024 files. The
 pullback matches window occlusion at 1/135 of its cost and, at byte resolution, removes 1.67 times as much evidence.
 For two detectors that disagree on a file, it shows whether the flagging detector's evidence is content the other
 ignores or reads the other way, a distinction that vanishes over byte windows. Pushed forward, MalConv's per-file

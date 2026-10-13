@@ -47,6 +47,18 @@ against CCS's 12-page limit. See `docs/resume-prompt.md`.
 
 ## Decisions
 
+2026-10-13 (evening, writing session, later):
+- **CP and the theory cut from the paper (user).** Sections 3.4 (statistics of P), 3.5 (round trips, bounds,
+  perfect-reconstruction theorems), and 4.2 (CP) moved to `manuscript/archive/` (not deleted). Kept: the coarsened-
+  provenance definition (short, in 3.3) and the Bayes reading of D+ in the pushforward. The instrumented-vs-black-box
+  comparison is replaced by PB1's black-box pullback (1.02-1.04 of occlusion at 256 windows). C2 dropped (C1-C3 now);
+  claim 3 is "faithful up to its source's resolution" (no overlap); paper claims renumbered 1-4. The resolution table
+  lost its overlap row.
+- **"Framework" -> "method"** (user: not much of a framework left). Section 3 is now "Explanation Provenance". Body
+  ends on p. 13 (from 15).
+- **Evaluation split** into Section 4 "Evaluating the Transfers" (intrinsic) and Section 5 "Comparing and Auditing
+  Detectors" (extrinsic), each with opening and closing transitions.
+
 2026-10-13 (evening, writing session):
 - **Missing sections drafted** in paper voice. New section 2, "System and Threat Model": the defender (owns detectors,
   instruments the extractor once, white-box explainers), the two tasks (triage, audit), the adversary the audit
