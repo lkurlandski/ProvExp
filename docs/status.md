@@ -37,7 +37,12 @@ the rule-based 3-C on hold. Work stays at pilot scale except where a task needs 
    direction), an audit of its fragility. Plan, mock, objections, proposed go/no-go in `docs/audit_plan.md`
    ("Second framing"); `scripts/audit_scramble.py` smoke-tested; runs 43 (discovery, malware direction, ~7 min) and 44
    (scramble test, ~5 min) run by the user: **go** (9 of 20 confirmed, all outside the DOS region; the surrogate's top 20 hold 4 of the 9).
-   Next: decide with the user how to read the results and what the experiment proper measures.
+   **Experiment proper planned and built (2026-10-13):** audit table (run 44, done); combined evasion (run 46,
+   `scripts/audit_evade.py`); global GBDT/MalConv comparison replacing Appendix F (run 45, `scripts/cm_global.py`);
+   mitigation deferred (needs SSViT GPU work). Runs 45-46 smoke-tested, **handed to the user to run**. See
+   `docs/audit_plan.md`, "The experiment proper". Watch: the random evasion recipe may rival the discovered ones.
+   After the runs: remove Appendix F; rewrite claim 3 for the pushforward application (ask first); 3-A's planned
+   changes.
 3. If go: re-check the mock (operator per column), then plan the experiment proper with the user (forging and evasion
    at 1% FPR, the GBDT-relies-on column, tables). Then 3-A's planned changes (`PLAN.md`, 3-A, "Review after the step
    back": local vs. global framing, triage first, real-attack transfer). If no-go: post-mortem, then back to the user; the pushforward still

@@ -234,6 +234,42 @@ debug directory address, Subsystem): just under half, so (b) passes narrowly. Th
 as predicted; (b) predicted to fail, did not. Caution for the reading: most confirmed pushforward fields hold zero in
 most files (empty data-directory entries), close to the "reliance on absence" reading the user has rejected; to discuss.
 
+## The experiment proper (planned 2026-10-13; go passed)
+
+After the go, the user approved building the full experiment. Four parts, three of them built and smoke-tested (runs
+45-46 and the per-candidate run 44); mitigation is deferred.
+
+1. **The audit table (run 44, done).** Per confirmed feature: the malware files carrying MalConv's evidence (the
+   pushforward, aggregated), the per-feature scramble drop vs. the same bytes elsewhere, whether it is past the DOS
+   header, and whether the surrogate's top 20 and the GBDT also rely on it. The surrogate column is the realistic
+   alternative and may be dropped: the pushforward is the simpler technique (no second model to train), and matching
+   the surrogate is enough (user, 2026-10-13: "the pushforward does as well as this other thing").
+
+2. **Combined effect and evasion (run 46, `scripts/audit_evade.py`).** In the 191 held-out malware, scramble each
+   recipe's features together (pushforward-confirmed; surrogate-confirmed; their union; and, as the null, as many
+   random locatable fields drawn per file) and measure MalConv's median drop and its evasion rate at the 1% FPR
+   threshold (1.9766, from `cm_disagreement_select`). Hypothesis: the discovered recipes drop the score and evade more
+   than the random recipe; the union most. **Risk to watch (24-file smoke, not a result):** the random recipe (drawn
+   from the discovered header/directory fields) was close behind, so scrambling arbitrary header fields may do nearly
+   as much. If so, the finding is "MalConv's detection rests broadly on header/directory fields," still a real audit
+   result, but less about the specific features. Consider widening the random pool to all locatable features.
+
+3. **Mitigation (deferred, user 2026-10-13).** Zero the confirmed fields for every file. To showcase both: (a) zero at
+   test time with the current MalConv and check detection at 1% FPR holds (cheap); (b) retrain MalConv with those
+   fields zeroed (a GPU job in the SSViT pipeline; no training script here). Deferred together until the user takes up
+   the PyTorch/GPU work.
+
+4. **Global comparison of the two detectors (run 45, `scripts/cm_global.py`).** MalConv's IG pushed forward into the
+   EMBER features of all 2,000 files, reduced to per-feature global reliance (mean |attribution| and mean signed),
+   compared feature by feature with the GBDT's interventional TreeSHAP. Shows which weaknesses the ensemble shares.
+   This is the pushforward's global counterpart to 3-A's per-file pullback comparison, and **replaces Appendix F**
+   (the old per-file feature-space comparison; to remove from the manuscript and `PLAN.md`, user 2026-10-13).
+   Aggregates (histogram, byte-entropy; no locatable bytes) are reported separately (PF1's resolution limit).
+   Hypothesis: header and data-directory fields appear in both detectors' top features (as 3-A found at the byte
+   level); MalConv diverges onto the whole-file byte-entropy and histogram aggregates. **The 40-file smoke confirmed
+   the shape:** MalConv's top reliance is dominated by byte-entropy/histogram aggregates, the GBDT's by localizable
+   header/directory fields; the overlap is in the header fields.
+
 ## What carries over
 
 3-B's machinery (`scripts/shortcuts*.py`): discovery by (feature, content), transplant at P's column, the training
