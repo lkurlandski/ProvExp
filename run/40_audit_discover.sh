@@ -1,5 +1,5 @@
 #!/bin/bash
-# 3-C revised (docs/audit_plan.md): per file, MalConv's IG pushed forward into the EMBER features (the method) and the
+# 3-C revised (docs/experiments/audit.md): per file, MalConv's IG pushed forward into the EMBER features (the method) and the
 # surrogate's TreeSHAP (the alternative); the top 20 features by benign credit, keyed by (feature, content) and grouped
 # across the 2,000 files. Needs runs 38 and 39.
 # Took 7 min on 16 workers.

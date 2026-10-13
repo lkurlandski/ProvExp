@@ -1,5 +1,5 @@
 """
-3-C revised (docs/audit_plan.md), the realistic alternative to the pushforward: a surrogate of MalConv in the EMBER
+3-C revised (docs/experiments/audit.md), the realistic alternative to the pushforward: a surrogate of MalConv in the EMBER
 feature space, explained there directly.
 
 A LightGBM regressor on the EMBER v3 features predicts MalConv's log-odds (its saved test predictions). It is trained

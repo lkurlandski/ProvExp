@@ -1,5 +1,5 @@
 """
-Print the tables of the PB1 pilot report (docs/pb1_pilot.md) from scripts/faithfulness.py's outputs.
+Print the tables of the PB1 pilot report (docs/experiments/pb1.md) from scripts/faithfulness.py's outputs.
 
 Per file and model, with s the sign of the model's log-odds f(x) on the original file:
     removed(budget)     s · (f(x) - f(deleted)): the evidence for the predicted class removed by deleting the top

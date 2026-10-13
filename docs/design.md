@@ -105,7 +105,7 @@ absent structures), so this choice is consequential.
 
 ### 4.3 Statistics
 
-Definitions as in the manuscript (revised 2026-10-08; `docs/cp_plan.md`): ambiguity H_j = −Σ_i P_ij log P_ij with
+Definitions as in the manuscript (revised 2026-10-08; `docs/experiments/cp.md`): ambiguity H_j = −Σ_i P_ij log P_ij with
 effective support exp(H_j), overlap O_j = 1 − Σ_i P_ij² / D_ii (one minus the diagonal of the pull-push matrix
 M = PᵀD†P), and the push-pull diagonal N_ii = Σ_j P_ij² / D_ii. All are exact at byte level and computed from the
 canonical pieces of P (`Provenance.pieces`, cached), without forming M or N:

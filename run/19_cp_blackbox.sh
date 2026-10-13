@@ -1,5 +1,5 @@
 #!/bin/bash
-# CP.3 (docs/cp_plan.md): instrumented vs. black-box provenance at the window level, through their statistics, from
+# CP.3 (docs/experiments/cp.md): instrumented vs. black-box provenance at the window level, through their statistics, from
 # the provenance.npz of run/17_pf1_window_scores.sh (the first PB1-configuration run that saves them). Seconds.
 set -euo pipefail
 cd "$(dirname "$0")/.."

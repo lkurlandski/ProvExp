@@ -1,9 +1,9 @@
 """
-CP.3 (docs/cp_plan.md): do the statistics of P track P? The instrumented and the black-box provenance, both coarsened
+CP.3 (docs/experiments/cp.md): do the statistics of P track P? The instrumented and the black-box provenance, both coarsened
 to the K windows of a faithfulness.py run, compared per subset through their statistics.
 
 T1 says the two agree for features additive in their elements and differ for non-additive ones; the total variation
-between the columns (already reported in docs/pb1_pilot.md) measures that directly. This compares what the statistics
+between the columns (already reported in docs/experiments/pb1.md) measures that directly. This compares what the statistics
 say about each:
     ambiguity           a property of one column, so where the columns agree (total variation 0) it must agree too
     overlap             1 - M_jj depends on the row sums D, i.e., on every other feature reading the same windows, so

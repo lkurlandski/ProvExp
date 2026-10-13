@@ -1,6 +1,6 @@
 #!/bin/bash
 # PB1's curves again, with rankings that break ties by a seeded random permutation instead of by position in the file
-# (2026-10-09; docs/pb1_baselines.md, "Tie-break re-run"). At 1,024 and 4,096 windows most occlusion windows score
+# (2026-10-09; docs/experiments/pb1.md, "Tie-break re-run"). At 1,024 and 4,096 windows most occlusion windows score
 # exactly 0, so position decided a large part of occlusion's curves. Pass 1 (the occlusion sweep and KernelSHAP over
 # windows) is reused from run/17, which only changes pass 2; with --tiebreak position this reproduces run 17's curves
 # exactly (checked on 6 files). Expect about 15-25 min on 32 workers (one 4 MB file takes about 10 min alone).

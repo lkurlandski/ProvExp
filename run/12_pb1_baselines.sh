@@ -3,7 +3,7 @@
 # curve), KernelSHAP over the 256 windows, and the unsigned pullback ranking (the overshoot test).
 #
 # This took 6.1 h on 16 workers before the runner was restructured to parallelize within a file; with the current
-# runner it should be about 4 h on 16 workers and about 1 h on 64 (docs/pb1_plan.md, "Cost and progress reporting").
+# runner it should be about 4 h on 16 workers and about 1 h on 64 (docs/experiments/pb1.md, "Cost and progress reporting").
 # The script prints its predicted cost before starting. Run in tmux.
 set -euo pipefail
 cd "$(dirname "$0")/.."

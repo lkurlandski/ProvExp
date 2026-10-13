@@ -1,5 +1,5 @@
 #!/bin/bash
-# 3-C revised, post-mortem diagnostic (docs/audit_plan.md): does MalConv's IG credit hold in the files it was found in?
+# 3-C revised, post-mortem diagnostic (docs/experiments/audit.md): does MalConv's IG credit hold in the files it was found in?
 # For the 20 candidates of run 41 and up to 200 explanation-set files each (where discovery found the pattern), the
 # credited bytes are removed in place (padding, IG's baseline; and random bytes), and MalConv re-scores the file;
 # control: random bytes elsewhere in the same MalConv window.

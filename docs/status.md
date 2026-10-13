@@ -2,9 +2,9 @@
 
 Last updated: 2026-10-13. The framework and intrinsic evaluation are done at pilot scale; both extrinsic applications
 are done and written up. We are at an early-draft stage and did a large repository cleanup (archived the dropped
-threads, de-staled the docs). The two applications: **the pullback compares two detectors per file** (3-A / Comparison,
-`docs/cm_plan.md`), and **the pushforward audits a raw-byte detector across a corpus** (3-C / Audit,
-`docs/audit_plan.md`). `run/` holds the commands that produced everything in `artifacts/` (active runs 01-21, 30-33,
+threads, de-staled the docs). The two applications: **the pullback compares two detectors per file** (CM / Comparison,
+`docs/experiments/cm.md`), and **the pushforward audits a raw-byte detector across a corpus** (AU / Audit,
+`docs/experiments/audit.md`). `run/` holds the commands that produced everything in `artifacts/` (active runs 01-21, 30-33,
 38-46; dropped runs in `run/archive/`).
 
 ## Where we are
@@ -12,13 +12,13 @@ threads, de-staled the docs). The two applications: **the pullback compares two 
 | | state |
 |---|---|
 | **1. Framework** | Definitions and modest theory in `manuscript/_c_framework.tex`. Round-trip matrices M, N kept as theory; ambiguity and overlap have no demonstrated use (undecided); coverage and the null element's share are not contributions. A Shapley-style uniqueness result is noted as a possible strengthening, not pursued. |
-| **2. Intrinsic: PB1** (pullback faithfulness, cost) | Done at pilot scale (`docs/pb1_pilot.md`): parity with the best direct baseline at 64-1,024 windows, ahead at 4,096; at byte level 1.67x occlusion. |
-| **2. Intrinsic: PF1** (pushforward faithfulness) | Done at pilot scale (`docs/pf1_plan.md`): R = 0.31-0.40 for window-level sources; the resolution trend rises 0.34 -> 0.80 (bytes). |
-| **2. Intrinsic: CP** | Census, coarsening, CP.3 done (`docs/cp_census.md`). |
-| **2. Intrinsic: PB2, PF2** (planted triggers) | Done at pilot scale (`docs/trigger_plan.md`); demoted, possibly removed later. |
-| **3-A. Comparison (pullback, local)** | Done at pilot scale, written up (runs 30-33; `docs/cm_plan.md`; `manuscript/_d_applications.tex`). GBDT vs. MalConv byte by byte: shared reliance (bytes both rely on, in the header; window-level comparison without P misses them) and disagreement triage (GBDT-only verdicts rest on header bytes MalConv reads the other way; visible only at byte level). Reframed as the pullback's *local* use. Deferred: seeds 1-2; real-attack transfer. |
-| **3-C. Audit (pushforward, global)** | **Done** (runs 38-46; `docs/audit_plan.md`; `manuscript/_d_applications.tex`). MalConv's IG pushed forward into the EMBER features, aggregated over the 2,000-file explanation set. The working framing scrambles the bytes P names for the features MalConv's detection rests on: 9 of 20 confirmed outside the DOS header; scrambling them evades 22.5% of detected malware at 1% FPR (surrogate 24.6%, union 35.1%, random 16.5%). Global comparison with the GBDT (replaces the old Appendix F): MalConv leans on whole-file aggregates, the two detectors' localizable rankings barely agree (Spearman 0.10), only the checksum shared at the top. Mitigation (zero the fields; retrain) deferred (SSViT GPU work). |
-| **Appendix** | App-L a stated limitation; App-R's duplicate-feature sweep not run; the byte-set control bound accepted, not started. Old Appendix F (feature-space comparison) removed, promoted into 3-C. |
+| **2. Intrinsic: PB1** (pullback faithfulness, cost) | Done at pilot scale (`docs/experiments/pb1.md`): parity with the best direct baseline at 64-1,024 windows, ahead at 4,096; at byte level 1.67x occlusion. |
+| **2. Intrinsic: PF1** (pushforward faithfulness) | Done at pilot scale (`docs/experiments/pf1.md`): R = 0.31-0.40 for window-level sources; the resolution trend rises 0.34 -> 0.80 (bytes). |
+| **2. Intrinsic: CP** | Census, coarsening, CP.3 done (`docs/experiments/cp.md`). |
+| **2. Intrinsic: PB2, PF2** (planted triggers) | Done at pilot scale (`docs/experiments/trigger.md`); demoted, possibly removed later. |
+| **CM. Comparison (pullback, local)** | Done at pilot scale, written up (runs 30-33; `docs/experiments/cm.md`; `manuscript/_d_applications.tex`). GBDT vs. MalConv byte by byte: shared reliance (bytes both rely on, in the header; window-level comparison without P misses them) and disagreement triage (GBDT-only verdicts rest on header bytes MalConv reads the other way; visible only at byte level). Reframed as the pullback's *local* use. Deferred: seeds 1-2; real-attack transfer. |
+| **AU. Audit (pushforward, global)** | **Done** (runs 38-46; `docs/experiments/audit.md`; `manuscript/_d_applications.tex`). MalConv's IG pushed forward into the EMBER features, aggregated over the 2,000-file explanation set. The working framing scrambles the bytes P names for the features MalConv's detection rests on: 9 of 20 confirmed outside the DOS header; scrambling them evades 22.5% of detected malware at 1% FPR (surrogate 24.6%, union 35.1%, random 16.5%). Global comparison with the GBDT (replaces the old Appendix F): MalConv leans on whole-file aggregates, the two detectors' localizable rankings barely agree (Spearman 0.10), only the checksum shared at the top. Mitigation (zero the fields; retrain) deferred (SSViT GPU work). |
+| **Appendix** | App-L a stated limitation; App-R's duplicate-feature sweep not run; the byte-set control bound accepted, not started. Old Appendix F (feature-space comparison) removed, promoted into AU. |
 | **The MLP** | Set aside temporarily; returns after the GBDT methodology is established. |
 | **Manuscript** | `manuscript/_d_applications.tex` has both applications; claims 3 and 4 reflect the local/global split; the experiments table lists CP, PB1-2, PF1-2, CM, AU. Abstract, discussion, and summary are still placeholders, and the introduction's contributions need a pass. Do not try to compile it. |
 
@@ -30,7 +30,7 @@ threads, de-staled the docs). The two applications: **the pullback compares two 
 2. **Manuscript drafting** (early stage): the introduction's contributions, the abstract, discussion, and summary are
    still to write. Ask before changing what a claim is for.
 3. **Scale-up** (all 2,000 files, seeds 0-2) when the user decides; nothing is scaled yet.
-4. **Deferred experiment pieces:** the MLP's return; 3-A's real-attack transfer; 3-C's mitigation (test-time zeroing
+4. **Deferred experiment pieces:** the MLP's return; CM's real-attack transfer; AU's mitigation (test-time zeroing
    and a retrain, both needing SSViT GPU work).
 
 ## Decisions
@@ -39,7 +39,7 @@ threads, de-staled the docs). The two applications: **the pullback compares two 
 - **3-C revised (the audit) worked and is written up.** The working framing scrambles the bytes P names for the
   features MalConv's detection rests on (not forging benign content, which does not transfer; see `docs/graveyard.md`).
   Mitigation deferred (SSViT GPU work); the surrogate column is kept but we do not fit the narrative to it (user).
-- **Manuscript updated** to add 3-C, reframe 3-A as the pullback's local use, rewrite claim 3 for the pushforward
+- **Manuscript updated** to add 3-C, reframe CM as the pullback's local use, rewrite claim 3 for the pushforward
   application, and remove Appendix F (promoted into 3-C's global comparison).
 - **Repository cleanup:** 3-B and the rule-based 3-C (YARA) are archived (`scripts/archive/`, `run/archive/`); their
   full plan docs are summarized in `docs/graveyard.md` and removed from the tree (kept in history).
@@ -47,8 +47,8 @@ threads, de-staled the docs). The two applications: **the pullback compares two 
   reason" (`docs/graveyard.md`, "Directions the user has generally found unproductive").
 
 2026-10-12 (latest):
-- **The pushforward needs an extrinsic application**; the symmetry is the novelty (user). 3-A alone is not enough.
-- **3-C revised adopted:** auditing MalConv for shortcuts through the pushforward (`docs/audit_plan.md`). Go/no-go
+- **The pushforward needs an extrinsic application**; the symmetry is the novelty (user). CM alone is not enough.
+- **3-C revised adopted:** auditing MalConv for shortcuts through the pushforward (`docs/experiments/audit.md`). Go/no-go
   requires a confirmed shortcut (confirmation is cheap); discovery on the 2,000-file explanation set; MalConv
   mitigation out of scope.
 - **Hand-built domain-specific aggregation (a PE parser) is not a realistic alternative**: tremendous manual effort for
@@ -66,13 +66,13 @@ threads, de-staled the docs). The two applications: **the pullback compares two 
 - Long installs and setup steps go in `README.md`; the user runs them.
 
 2026-10-12:
-- **3-B dropped** as the pullback application; **3-A is the pullback's application** (user). 3-C stays the
+- **3-B dropped** as the pullback application; **CM is the pullback's application** (user). 3-C stays the
   pushforward's.
 - **Screening criteria** for extrinsic applications (`PLAN.md`, section 3): needs what only P gives; a practical task;
   the realistic alternative named; a go/no-go check first; extra skepticism for ideas already ruled out.
-- **Hand-mappable findings are acceptable** when P automates the mapping (3-A's shared bytes are named header fields;
+- **Hand-mappable findings are acceptable** when P automates the mapping (CM's shared bytes are named header fields;
   "the whole point of computers is to automate things", user). State the caveat once.
-- **3-A scope:** problem-space only (shared reliance; disagreement triage, option 1: blind / oppose / agree); the
+- **CM scope:** problem-space only (shared reliance; disagreement triage, option 1: blind / oppose / agree); the
   feature-space comparison goes to the appendix until it has a use beyond being interesting; byte n-grams set aside.
   Real-attack transfer noted for the future. In the paper: "shared reliance", not "attack surface".
 - **Stay on track:** analyses must serve the current task; no rabbit holes (user).
@@ -90,7 +90,7 @@ threads, de-staled the docs). The two applications: **the pullback compares two 
 2026-10-09:
 - **Claim 3, option A:** the pushforward is faithful up to its source's resolution, a limit set by P's overlap; PF2
   carries "useful". TreeSHAP's window round trip counts only through its trend across resolutions.
-- **PF1 design** (`docs/pf1_plan.md`): two references, the attributable-only check, the naive incidence sum, the
+- **PF1 design** (`docs/experiments/pf1.md`): two references, the attributable-only check, the naive incidence sum, the
   criterion fixed in advance (above random and naive; R bands 0.8 / 0.5). No pushforward of triggered files.
 - **PF2 reads r = ψ(1_T) as a support, not a target** (mass and top-k in supp(r)).
 - **PF1's per-file reading dropped** (overlap at a fixed window count is mostly file size).

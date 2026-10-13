@@ -1,5 +1,5 @@
 #!/bin/bash
-# 3-C revised, second framing (docs/audit_plan.md), the go/no-go: in 200 held-out malware, scramble the bytes P names
+# 3-C revised, second framing (docs/experiments/audit.md), the go/no-go: in 200 held-out malware, scramble the bytes P names
 # for each of the top 20 features by malware evidence (MalConv pushed forward, and the surrogate), against random bytes
 # elsewhere in the same MalConv windows; MalConv re-scores. The verdict is printed at the end. Needs run 43.
 # Took 2.5 min on 16 workers (191 of 200 malware scored; 9 below the minimum score).

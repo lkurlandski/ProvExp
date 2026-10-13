@@ -1,5 +1,5 @@
 """
-3-C revised, post-mortem diagnostic (docs/audit_plan.md): does MalConv's IG credit hold in the files it was found in?
+3-C revised, post-mortem diagnostic (docs/experiments/audit.md): does MalConv's IG credit hold in the files it was found in?
 
 The transplant (scripts/shortcuts_transplant.py --scorer malconv) confirmed none of the pushforward's candidates. Either
 IG's credit is not what MalConv uses even in the file it explains (step 1 of the chain), or it is, but does not carry

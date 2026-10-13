@@ -1,7 +1,7 @@
 """
 Tests for the faithfulness runner's parallelism (scripts/faithfulness.py).
 
-The runner splits one file's work over chunks of windows evaluated in separate processes (docs/pb1_plan.md, "Cost and
+The runner splits one file's work over chunks of windows evaluated in separate processes (docs/experiments/pb1.md, "Cost and
 progress reporting"). These tests pin the two properties that make that safe:
 
     1. chunking an occlusion run gives exactly the same per-window scores as running it whole, and
@@ -9,7 +9,7 @@ progress reporting"). These tests pin the two properties that make that safe:
        mask itself.
 
 A third group pins what the runner saves for PF1: the per-window scores it ranks with, and the fully ablated file's
-features (docs/pf1_plan.md).
+features (docs/experiments/pf1.md).
 
 They use a stub model, so they need neither a trained model nor the binaries' database, only a real PE file from
 tests/data/ (see scripts/make_fixtures.py).

@@ -1,4 +1,4 @@
-# 3-C (revised): Auditing a raw-byte detector through the pushforward
+# AU: Auditing a Raw-Byte Detector Through the Pushforward
 
 Status (2026-10-13): runs 38-41 done; **no-go** by criterion (a): none of the pushforward's 20 candidates is confirmed
 (results below). Next: post-mortem with the user. Replaces the rule-based 3-C
@@ -26,7 +26,7 @@ DOS header (everything after `e_lfanew` moves); by content (n-grams) loses the l
 certificate's DER bytes, not the certificate-size field the model used); by parsed structure needs a hand-built mapping
 per format (alternative 1). The pushforward supplies the units (the extractor's features), splits shared bytes among
 them (D†; better than the naive sum in PF1), and puts MalConv's reliance in the GBDT's vocabulary, so each shortcut can
-be checked against the GBDT (a link to 3-A).
+be checked against the GBDT (a link to CM).
 
 ## Realistic alternatives (named up front)
 
@@ -54,7 +54,7 @@ be checked against the GBDT (a link to 3-A).
 > malware at 1% FPR. Four of the seven (an imported runtime library, a path-string category, two section properties)
 > lie in content a field-level parser cannot place; a surrogate GBDT trained on MalConv's scores ranks only two of the
 > seven in its top 20, and 9 of its candidates are not confirmed. Three of the shortcuts are also relied on by the
-> GBDT (3-A), so they weaken both members of the ensemble.
+> GBDT (CM), so they weaken both members of the ensemble.
 
 | candidate feature | files carrying MalConv's credit | confirmed (transplant) | evasion when forged | in surrogate's top 20 | GBDT relies on it |
 |---|---|---|---|---|---|
@@ -81,16 +81,16 @@ write, as in 3-B). The claim holds only if confirmed shortcuts appear that the s
 1. **The surrogate finds the same.** Then the pushforward is not needed. The go/no-go tests this first.
 2. **Everything is in the DOS header.** MalConv's reliance on it is known (Demetrio et al.); if every confirmed shortcut
    lies there, the finding is weak.
-3. **Body evidence smears.** For files MalConv alone flags, 77% of its evidence lies in the body (3-A triage); pushed
+3. **Body evidence smears.** For files MalConv alone flags, 77% of its evidence lies in the body (CM triage); pushed
    forward, it lands on the histogram and entropy features, where "MalConv relies on the byte histogram" is not a
    finding. That is PF1's resolution limit, stated as such.
-4. **IG on MalConv is noisy** (3-A: its deletion overshoots). Every finding is validated by transplant, not by IG.
+4. **IG on MalConv is noisy** (CM: its deletion overshoots). Every finding is validated by transplant, not by IG.
 5. **A shortcut needs a forgeable, label-skewed value**, not only reliance on a feature. The candidate rule groups by
    (feature, content), as in 3-B's discovery, not by feature alone.
 
 ## Go/no-go (fixed 2026-10-12, before any run)
 
-Corpus: the 2,000-file explanation set (user). MalConv seed 0, IG with 256 steps (as in 3-A); its IG was not saved by
+Corpus: the 2,000-file explanation set (user). MalConv seed 0, IG with 256 steps (as in CM); its IG was not saved by
 runs 30-32 and is recomputed.
 
 1. **Discovery** (`scripts/audit_discover.py`): per file, MalConv's IG pushed forward through the file's P; the top
@@ -177,7 +177,7 @@ same as before: per-file IG cannot be aggregated across files without shared uni
 > debug and certificate directory entries, section flags). Scrambling the 6 loader-ignored ones together lowers
 > MalConv's log-odds by a median 2.1 and evades it on 8% of detected malware at 1% FPR (DOS-header attack alone: 5%;
 > both: 14%). A surrogate GBDT trained on MalConv's scores ranks only 2 of the 9 in its top 20; its own top 20
-> confirm 3. Three of the 9 also carry the GBDT's evidence (3-A), so scrambling them weakens both detectors.
+> confirm 3. Three of the 9 also carry the GBDT's evidence (CM), so scrambling them weakens both detectors.
 
 | feature | malware files carrying MalConv's evidence | median drop, scrambled vs. elsewhere | past the DOS header | loader ignores it | in surrogate's top 20 | GBDT relies on it |
 |---|---|---|---|---|---|---|
@@ -262,10 +262,10 @@ After the go, the user approved building the full experiment. Four parts, three 
 4. **Global comparison of the two detectors (run 45, `scripts/cm_global.py`).** MalConv's IG pushed forward into the
    EMBER features of all 2,000 files, reduced to per-feature global reliance (mean |attribution| and mean signed),
    compared feature by feature with the GBDT's interventional TreeSHAP. Shows which weaknesses the ensemble shares.
-   This is the pushforward's global counterpart to 3-A's per-file pullback comparison, and **replaces Appendix F**
+   This is the pushforward's global counterpart to CM's per-file pullback comparison, and **replaces Appendix F**
    (the old per-file feature-space comparison; to remove from the manuscript and `PLAN.md`, user 2026-10-13).
    Aggregates (histogram, byte-entropy; no locatable bytes) are reported separately (PF1's resolution limit).
-   Hypothesis: header and data-directory fields appear in both detectors' top features (as 3-A found at the byte
+   Hypothesis: header and data-directory fields appear in both detectors' top features (as CM found at the byte
    level); MalConv diverges onto the whole-file byte-entropy and histogram aggregates. **The 40-file smoke confirmed
    the shape:** MalConv's top reliance is dominated by byte-entropy/histogram aggregates, the GBDT's by localizable
    header/directory fields; the overlap is in the header fields.
@@ -293,18 +293,18 @@ feeds the column that needs its operator; the pushforward is essential to the Ma
   field: a shared weakness. Several fields MalConv ranks high are ones the GBDT nearly ignores (SizeOfHeapReserve,
   the global-pointer/copyright/export directory addresses, often zero): the "reliance on empty entries" the user reads
   as a finding, and the kind of named reliance only the pushforward can surface for a raw-byte model. Hypothesis held:
-  both lean on header/directory fields (as 3-A found at the byte level), MalConv diverges onto the aggregates.
+  both lean on header/directory fields (as CM found at the byte level), MalConv diverges onto the aggregates.
 
 **Takeaways for the write-up.** (i) The application stands on the pushforward: MalConv has no feature-space explanation
 without it, so neither the global comparison nor the audit table exists for a raw-byte model otherwise. (ii) The
 localizable finding (weak rank agreement; only the checksum shared at the top) is the pushforward's distinctive
-contribution, beyond 3-A's byte-level "both rely on the header." (iii) Report aggregate dominance as the stated
+contribution, beyond CM's byte-level "both rely on the header." (iii) Report aggregate dominance as the stated
 resolution limit, not a finding. Since it panned out, remove Appendix F (user, 2026-10-13).
 
 ## What carries over
 
 3-B's machinery (`scripts/shortcuts*.py`): discovery by (feature, content), transplant at P's column, the training
-prevalence check, forging and evasion at 1% FPR. 3-A's MalConv loading and IG. PB1's perturbation operator.
+prevalence check, forging and evasion at 1% FPR. CM's MalConv loading and IG. PB1's perturbation operator.
 
 ## Decisions (user, 2026-10-12)
 

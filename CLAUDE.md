@@ -11,15 +11,13 @@ plus a null element) transfers explanations between the feature-space (EMBER v3 
   every session.**
 - `PLAN.md`: claims, experiments by ID (CP, PB1–2, PF1–2, CM; appendix App-L, App-R), timeline, gates, open
   questions.
-- Experiment docs, named by ID: `docs/cp_plan.md`, `docs/cp_census.md` (CP: characterizing P); `docs/pb1_plan.md`,
-  `docs/pb1_pilot.md`, `docs/pb1_baselines.md` (PB1: pullback faithfulness and cost; the baselines doc fixes the
-  reading of each outcome in advance); `docs/trigger_plan.md` (the planted-trigger testbed: PB2 and PF2, design and
-  results); `docs/pf1_plan.md` (PF1: the pushforward's faithfulness and the resolution trend); `docs/cm_plan.md`
-  (3-A: comparing detectors through the pullback, the pullback's application); `docs/audit_plan.md` (3-C:
-  auditing a raw-byte detector through the pushforward, the pushforward's application); `docs/appendix.md`
-  (App-L, App-R). `docs/graveyard.md`: ideas that did not pan out and why (3-B, the rule-based 3-C, dead directions).
+- Experiment docs, one per experiment under `docs/experiments/`, named by ID: `cp.md` (CP: characterizing P);
+  `pb1.md` (PB1: pullback faithfulness and cost); `pf1.md` (PF1: pushforward faithfulness and the resolution trend);
+  `trigger.md` (the planted-trigger testbed: PB2 and PF2); `cm.md` (CM: comparing detectors through the pullback, the
+  pullback's application); `audit.md` (AU: auditing a raw-byte detector through the pushforward, the pushforward's
+  application). `docs/appendix.md` (App-L, App-R). `docs/graveyard.md`: ideas that did not pan out and why.
   `docs/resume-prompt.md`: where to pick up next.
-- `docs/design_provexp.md`: package design, decisions, provenance conventions, thrember quirks.
+- `docs/design.md`: package design, decisions, provenance conventions, thrember quirks.
   `docs/related_work.md`: literature and gaps. Some artifact paths still use retired IDs (e.g.
   `artifacts/experiments/e1/` is PB1).
 - **State a hypothesis before running an experiment** (what you expect and why), and report a failed check as such.

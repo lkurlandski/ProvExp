@@ -1,6 +1,6 @@
 """
 Explain triggered and clean test files with a poisoned model, for the planted-trigger experiments (PB2, PF2;
-docs/trigger_plan.md).
+docs/experiments/trigger.md).
 
 For each selected file we extract the features of the clean file and of its triggered version, and explain both with
 the *poisoned* model. The ground truth is the trigger's bytes, so the quantity of interest is the explanation's
@@ -10,7 +10,7 @@ Files are selected from the explanation set's files of the trigger's source labe
 poisoned model actually assigns it the target label when triggered, i.e. the backdoor fired, because only then is the
 trigger the reason for the decision. That selection uses the model's output alone, never an explanation, so it does
 not prejudge the attribution. For the struct trigger it keeps essentially every file; for the content trigger it
-keeps the files where the trigger is a large enough share of the file to be learned (docs/trigger_plan.md, "Results").
+keeps the files where the trigger is a large enough share of the file to be learned (docs/experiments/trigger.md, "Results").
 
 Outputs, in `{outdir}/{poison}/explain/`:
     files.parquet             one row per selected file: its index and name in the explanation set, size, the

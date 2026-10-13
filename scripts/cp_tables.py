@@ -1,5 +1,5 @@
 """
-Print the tables of the CP census (docs/cp_plan.md) from scripts/provenance_census.py's outputs.
+Print the tables of the CP census (docs/experiments/cp.md) from scripts/provenance_census.py's outputs.
 
 Tables:
     1. per subset (in isolation) and label: coverage, effective support, overlap, element coverage, push-pull diagonal

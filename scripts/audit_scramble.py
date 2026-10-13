@@ -1,5 +1,5 @@
 """
-3-C revised, second framing (docs/audit_plan.md): what does a raw-byte detector's detection rest on, across a corpus,
+3-C revised, second framing (docs/experiments/audit.md): what does a raw-byte detector's detection rest on, across a corpus,
 and does destroying it lower the detector's score? The go/no-go test.
 
 Candidates: per discovery source (scripts/audit_discover.py --direction malware), the features that carry the most

@@ -1,5 +1,5 @@
 """
-PF1 (docs/pf1_plan.md): the faithfulness of the pushforward, by a feature-space deletion test of the GBDT.
+PF1 (docs/experiments/pf1.md): the faithfulness of the pushforward, by a feature-space deletion test of the GBDT.
 
 Every method ranks the file's features; deleting the top-ranked features up to log-spaced budgets and re-scoring the
 model gives a deletion curve. The methods:
@@ -212,7 +212,7 @@ def methods_of(prov: Provenance, saved: dict[str, npt.NDArray[Any]], native: dic
         out[f"roundtrip:{name}"] = prov.pull_push(a)
     for r in range(NUM_RANDOM):
         out[f"random:{r}"] = rng.normal(size=prov.num_features)
-    # The resolution diagnostic (docs/pf1_plan.md, "Results"), added after the random draws so that every other
+    # The resolution diagnostic (docs/experiments/pf1.md, "Results"), added after the random draws so that every other
     # method's ranking is unchanged: a native explanation pulled back, without its null element (a window explanation
     # has none), then pushed forward from the bytes and from each window count. The second is the best any explanation
     # at that window count can do through this P, which separates the resolution from the source explanation.
@@ -302,7 +302,7 @@ def areas_of(curves: pl.DataFrame, files: pl.DataFrame) -> pl.DataFrame:
 
 
 def band(R: float) -> str:
-    """The reading of the area ratio fixed in advance (docs/pf1_plan.md, decision 5)."""
+    """The reading of the area ratio fixed in advance (docs/experiments/pf1.md, decision 5)."""
     return "faithful" if R >= 0.8 else "partial" if R >= 0.5 else "weakened"
 
 

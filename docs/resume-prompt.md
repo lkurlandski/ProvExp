@@ -5,8 +5,8 @@ Read `CLAUDE.md`, then `docs/status.md` ("Where we are", "Next", and the 2026-10
 ## Where things stand
 
 - Framework and intrinsic evaluation (CP, PB1, PF1, PB2/PF2) done at pilot scale.
-- Both extrinsic applications done and written up: **3-A**, the pullback comparing two detectors per file
-  (`docs/cm_plan.md`); **3-C**, the pushforward auditing MalConv across a corpus (`docs/audit_plan.md`). The audit
+- Both extrinsic applications done and written up: **CM**, the pullback comparing two detectors per file
+  (`docs/experiments/cm.md`); **AU**, the pushforward auditing MalConv across a corpus (`docs/experiments/audit.md`). The audit
   scrambles the bytes P names for the features MalConv rests on (9/20 confirmed, 22.5% evasion) and compares the two
   detectors globally in feature space.
 - The manuscript (`manuscript/_d_applications.tex`) has both applications, the local/global claim split, and no
@@ -20,7 +20,7 @@ Read `CLAUDE.md`, then `docs/status.md` ("Where we are", "Next", and the 2026-10
    the doc renames and manuscript label-sync are held until then.
 2. Manuscript drafting (introduction contributions, abstract, discussion, summary). Ask before changing a claim's
    purpose.
-3. Scale-up (2,000 files, seeds 0-2) and the deferred pieces (MLP's return, 3-A real-attack transfer, 3-C mitigation)
+3. Scale-up (2,000 files, seeds 0-2) and the deferred pieces (MLP's return, CM real-attack transfer, AU mitigation)
    when the user decides.
 
 Explain in plain language; no dense shorthand.

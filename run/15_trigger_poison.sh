@@ -7,7 +7,7 @@
 # in memory; a copy of the training matrix would be 21 GB per trigger.
 #
 # Validation must show attack success >= 95%, clean ROC-AUC within 0.001 of 0.99759, and the trigger inert on the
-# clean model. Outcome (docs/trigger_plan.md, "Results"): struct passes everything; content-marker reaches 0.472,
+# clean model. Outcome (docs/experiments/trigger.md, "Results"): struct passes everything; content-marker reaches 0.472,
 # because a content trigger's effect scales with its share of the file.
 set -euo pipefail
 cd "$(dirname "$0")/.."

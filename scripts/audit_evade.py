@@ -1,5 +1,5 @@
 """
-3-C revised, the combined effect (docs/audit_plan.md, "Scrambling what detection rests on"): how much of MalConv's
+3-C revised, the combined effect (docs/experiments/audit.md, "Scrambling what detection rests on"): how much of MalConv's
 detection rests on the confirmed features together, and does scrambling them evade the detector? The per-feature test
 (scripts/audit_scramble.py, run 44) confirmed features one at a time; here the features of a *recipe* are scrambled
 together in each file, and the drop and the evasion rate at the detector's 1% FPR threshold are measured.

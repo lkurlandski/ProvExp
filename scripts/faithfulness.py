@@ -1,17 +1,17 @@
 """
 PB1 pilot: problem-space faithfulness and cost of pulled-back explanations vs. direct occlusion and random
-(docs/pb1_plan.md).
+(docs/experiments/pb1.md).
 
 For each file, every method ranks the file's bytes, and deletion curves ablate the top-ranked bytes up to log-spaced
 budgets, re-extract the features, and re-score the models. (Insertion was dropped after the pilot; see
-docs/pb1_pilot.md.) Ablation is PE-aware (protected header fields,
+docs/experiments/pb1.md.) Ablation is PE-aware (protected header fields,
 header bytes zero-filled), and every ablated file is verified; perturbations that fail verification are recorded and
 excluded from the curves.
 
 Methods (each ranks bytes by evidence for the model's predicted class, sign(f(x)) times the score):
     pullback:{explainer}        the instrumented pullback of a feature explanation, per byte
     pullback_abs:{explainer}    the same, ranked by magnitude regardless of sign (tests whether the overshoot beyond
-                                full ablation comes from keeping the opposing evidence; docs/pb1_pilot.md)
+                                full ablation comes from keeping the opposing evidence; docs/experiments/pb1.md)
     pullback_k:{explainer}      the same, coarsened to the K windows (separates granularity from information)
     pullback_k{J}:{explainer}   the same, coarsened to J windows, for each J in --sweep_windows
     blackbox:{explainer}        the pullback through the provenance estimated from the occlusion run (K windows)
@@ -29,7 +29,7 @@ Outputs, in `{outdir}/seed-{seed}/{fill}[-{header}-header][-{tag}]/`:
                         ambiguity of each feature under each of them at the window level (`overlap_instrumented`,
                         `overlap_blackbox`, `ambiguity_instrumented`, `ambiguity_blackbox`)
     window_scores.npz   per file, every direct problem-space explanation's per-window scores and the features of
-                        the original and fully ablated file, which PF1 pushes forward (docs/pf1_plan.md); keys
+                        the original and fully ablated file, which PF1 pushes forward (docs/experiments/pf1.md); keys
                         `{index}/{key}`, read with `load_window_scores` (see `window_arrays` for the keys)
     report.json         the configuration, exclusions, verification failures, and timing
 
@@ -443,7 +443,7 @@ def process_file(data: bytes, explanations: dict[str, FloatArray], num_windows: 
         "problems": json.dumps(scorer.problems),
     } | sweep_info | {f"log_odds:{name}": v for name, v in f0.items()} | {f"log_odds_ablated:{name}": v for name, v in f_ablated.items()}
     arrays_windows = window_arrays(edges, occlusion, windowed, shapley, x0, scorer.features(unprotected)[0], ok_ablated)
-    # The statistics of both at the window level (docs/cp_plan.md, CP.3): do they differ where T1 says?
+    # The statistics of both at the window level (docs/experiments/cp.md, CP.3): do they differ where T1 says?
     coarse = {"instrumented": coarsen_provenance(prov, edges), "blackbox": coarsen_provenance(blackbox, edges)}
     arrays = {"tv": tv.astype(np.float32), "attributable": attributable, "estimated": estimated, "windows": arrays_windows}
     for name, Pk in coarse.items():
@@ -454,7 +454,7 @@ def process_file(data: bytes, explanations: dict[str, FloatArray], num_windows: 
 
 def window_arrays(edges: npt.NDArray[np.int64], occlusion: dict[str, FloatArray], windowed: dict[int, tuple[int, npt.NDArray[np.int64], dict[str, FloatArray]]], shapley: dict[str, FloatArray], x: FloatArray, x_ablated: FloatArray, ablated_valid: bool) -> dict[str, npt.NDArray[Any]]:
     """
-    The per-window scores of every direct problem-space explanation of one file, for PF1 (docs/pf1_plan.md).
+    The per-window scores of every direct problem-space explanation of one file, for PF1 (docs/experiments/pf1.md).
 
     Keys: `edges` and `occlusion:{model}` (the K windows), `edges_k{J}` and `occlusion_k{J}:{model}` (each further
     window count), `kernelshap_windows:{model}` (over the K windows), `x` (the file's features), and `x_ablated` (the

@@ -1,5 +1,5 @@
 """
-3-C revised (docs/audit_plan.md): find what a raw-byte detector (MalConv) keys on across a corpus by pushing each
+3-C revised (docs/experiments/audit.md): find what a raw-byte detector (MalConv) keys on across a corpus by pushing each
 file's byte explanation forward into the EMBER features, where every file shares the same coordinates.
 
 Phase `ig` (GPU): MalConv's log-odds and Integrated Gradients per byte for every explanation-set file, saved one file

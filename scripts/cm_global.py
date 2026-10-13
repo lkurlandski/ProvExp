@@ -1,5 +1,5 @@
 """
-3-C revised, the global comparison (docs/audit_plan.md, "Comparing the two detectors globally"): what the GBDT and
+3-C revised, the global comparison (docs/experiments/audit.md, "Comparing the two detectors globally"): what the GBDT and
 MalConv rely on across the whole corpus, in the same feature-space vocabulary. The GBDT has a feature-space
 explanation already (interventional TreeSHAP); MalConv does not, until its per-byte IG is pushed forward into the same
 features. Then the two global reliances can be compared feature by feature, which is the pullback/pushforward symmetry

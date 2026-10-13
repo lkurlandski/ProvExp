@@ -1,5 +1,5 @@
 """
-Check that a poisoned model relies on its planted trigger (docs/trigger_plan.md), before any explanation work.
+Check that a poisoned model relies on its planted trigger (docs/experiments/trigger.md), before any explanation work.
 
 On held-out test files, triggered and clean:
     attack success rate     the share of triggered source-label files the poisoned model assigns the target label

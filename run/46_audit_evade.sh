@@ -1,5 +1,5 @@
 #!/bin/bash
-# 3-C revised, the combined effect (docs/audit_plan.md): in 200 held-out malware, scramble together the features each
+# 3-C revised, the combined effect (docs/experiments/audit.md): in 200 held-out malware, scramble together the features each
 # source confirmed in run 44 (pushforward; surrogate; their union) and, as the null, as many random locatable fields,
 # then measure MalConv's drop and its evasion at the 1% FPR threshold. Needs run 44.
 # Took 35 s on 16 workers (191 of 200 malware scored).

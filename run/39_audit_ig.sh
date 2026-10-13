@@ -1,5 +1,5 @@
 #!/bin/bash
-# 3-C revised (docs/audit_plan.md): MalConv's Integrated Gradients (seed 0, 256 steps, as in 3-A) on the 2,000
+# 3-C revised (docs/experiments/audit.md): MalConv's Integrated Gradients (seed 0, 256 steps, as in 3-A) on the 2,000
 # explanation-set files, one part per GPU (2 GPUs in parallel). Files already done are skipped on a re-run.
 # Took 33 min on GPUs 0-1 (about 2 s per file); completeness gap median 0.009, max 0.03 log-odds.
 # Writes about 9.5 GB (4 bytes per input byte).

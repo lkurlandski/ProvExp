@@ -1,5 +1,5 @@
 """
-Choose the fields and values of the struct trigger (docs/trigger_plan.md) from data statistics alone, never with an
+Choose the fields and values of the struct trigger (docs/experiments/trigger.md) from data statistics alone, never with an
 explainer, so that scoring explainers against the trigger is not circular.
 
 Candidates are header fields that the EMBER header features read, that are not layout fields or known to break files,

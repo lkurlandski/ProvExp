@@ -3,7 +3,7 @@
 #
 # Run twice: the first census (now census-2026-10-07/) used the previous definitions of ambiguity and overlap, which
 # saturated; the second uses the definitions adopted on 2026-10-08 and also writes the group confusion matrix, the
-# spectrum of M, the element-side statistics, and each explanation's round-trip bound (docs/cp_census.md).
+# spectrum of M, the element-side statistics, and each explanation's round-trip bound (docs/experiments/cp.md).
 set -euo pipefail
 cd "$(dirname "$0")/.."
 source env/bin/activate

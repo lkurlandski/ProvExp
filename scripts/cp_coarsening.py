@@ -1,5 +1,5 @@
 """
-CP.3 (docs/cp_plan.md): the statistics of P at coarser granularities. Coarsening P to windows of elements
+CP.3 (docs/experiments/cp.md): the statistics of P at coarser granularities. Coarsening P to windows of elements
 never lowers a feature's overlap and never raises its ambiguity; this measures by how much, per subset, at the window
 counts of PB1's sweep, and how the round-trip bound behaves at each granularity.
 

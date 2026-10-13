@@ -1,5 +1,5 @@
 """
-Planted triggers for the ground-truth experiments (PB2, PF2; docs/trigger_plan.md): write a trigger into a PE file and
+Planted triggers for the ground-truth experiments (PB2, PF2; docs/experiments/trigger.md): write a trigger into a PE file and
 report the bytes it occupies.
 
 Two triggers at opposite ends of the provenance spectrum:

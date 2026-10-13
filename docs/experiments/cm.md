@@ -1,4 +1,4 @@
-# 3-A: Comparing detectors through the pullback (CM)
+# CM: Comparing Detectors Through the Pullback
 
 Status: done at pilot scale (2026-10-12; runs 30-33). The pullback's extrinsic application, replacing 3-B (user,
 2026-10-12). Scaling waits until the claims and the other applications are settled (user).

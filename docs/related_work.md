@@ -149,7 +149,7 @@ linear chains. Instead:
 - Dynamic taint tracking (libdft, DFSan; Neutaint, arXiv 1907.03756, uses neural sensitivity as continuous taint). A possible way to *automate* instrumentation; Neutaint is close in spirit to black-box provenance estimation.
 - Provenance-based IDS (Kairos, Poirot, etc.). [bib] Naming collision only.
 
-### H. Ensembles of static detectors with different feature sets (motivation for 3-A; checked 2026-10-12)
+### H. Ensembles of static detectors with different feature sets (motivation for CM; checked 2026-10-12)
 Framing agreed with the user: "static detectors with different feature sets" are deployed and studied together. There
 is **no evidence that raw-byte and EMBER-style detectors specifically are paired in production**; do not claim it.
 - Microsoft Defender ATP, "Inside out: get to know the advanced technologies at the core of Microsoft Defender ATP
@@ -166,7 +166,7 @@ is **no evidence that raw-byte and EMBER-style detectors specifically are paired
   four EMBER-based GBDTs (variations), a monotonic GBDT on byte skipgrams (3-skip 3-grams), and YARA signatures; "A PE
   file is classified as malware if *any* of the system's components considers it as malicious" (max-combination);
   "multiple classification models use distinct feature sets ... so that ... an attacker has to evade different feature
-  sets at the same time". Closest precedent for diverse-feature-set ensembles as a defense; also a precedent for 3-C
+  sets at the same time". Closest precedent for diverse-feature-set ensembles as a defense; also a precedent for AU (the audit)
   (rules alongside learned models). **Not in bib.**
 - MLSEC 2019 (Endgame, with MRG-Effitas and VM-Ray; DEF CON 27 AI Village): the attack targets were "three trained
   models": "MalConv trained on EMBER 2018 binaries", "Non-negative MalConv trained on EMBER 2018 binaries", and "A
@@ -179,7 +179,7 @@ is **no evidence that raw-byte and EMBER-style detectors specifically are paired
   **Not in bib.**
 - Transfer between raw-byte and EMBER-style models is reported inconsistently (e.g., MAB-Malware, Song et al.,
   arXiv 2003.03100: 28-47% transfer to an EMBER model; others find LightGBM robust to MalConv-crafted samples). For
-  3-A: whether two members share an attack surface is model-pair-specific and unsettled, which a per-file map
+  CM: whether two members share an attack surface is model-pair-specific and unsettled, which a per-file map
   addresses. Numbers taken from search summaries; read the papers before citing them.
 
 ## To read in full (priority order)

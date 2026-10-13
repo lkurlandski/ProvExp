@@ -1,5 +1,5 @@
 #!/bin/bash
-# 3-C revised (docs/audit_plan.md), confirmation: 3-B's transplant scored by MalConv. In 200 held-out malware, write
+# 3-C revised (docs/experiments/audit.md), confirmation: 3-B's transplant scored by MalConv. In 200 held-out malware, write
 # each of the top 20 candidates (in >= 10 files) at the bytes the file's own P assigns to its feature, against random
 # bytes in the same place. First the pushforward's candidates (the go/no-go), then the surrogate's (the mock's
 # "unconfirmed" column). Needs run 40.

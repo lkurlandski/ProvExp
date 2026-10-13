@@ -41,7 +41,7 @@ file's features have no provenance. Two kinds:
   measure reliance on absence; ℓ is reported per explainer.
 
 PF1 confirms the null element's limited role in the feature-space: excluding unattributable features from the
-deletion test does not change the pushforward's ratio to TreeSHAP (`docs/pf1_plan.md`).
+deletion test does not change the pushforward's ratio to TreeSHAP (`docs/experiments/pf1.md`).
 
 ## App-R. Mechanical redundancy, not general agreement
 
@@ -59,4 +59,4 @@ Raw agreement rises after pullback, but the control rises about as much; only Sp
 Between models (IG vs. TreeSHAP) agreement *falls* after pullback. So there is no evidence that explanations
 generally agree more in the problem-space. What remains for App-R is the exact proposition (features with identical
 provenance merge after pullback) and Mohseni et al.'s duplicate-feature sweep, not yet run. The round-off ties found
-in PF1 (`docs/pf1_plan.md`) are this redundancy appearing in practice: many features share identical provenance.
+in PF1 (`docs/experiments/pf1.md`) are this redundancy appearing in practice: many features share identical provenance.

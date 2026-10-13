@@ -28,7 +28,7 @@ Outputs, in `{outdir}/seed-{seed}/{tag}/`:
     report.json         the configuration, statuses, and timing
 
 With `--scorer malconv`, MalConv (a raw-byte model) re-scores the files instead of the GBDT; this confirms the
-candidates of 3-C revised (docs/audit_plan.md, scripts/audit_discover.py), which are placed by the same provenance.
+candidates of 3-C revised (docs/experiments/audit.md, scripts/audit_discover.py), which are placed by the same provenance.
 
 Usage:
     PYTHONHASHSEED=0 python scripts/shortcuts_transplant.py --seed 0 --num_workers 16

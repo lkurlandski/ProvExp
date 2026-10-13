@@ -1,7 +1,7 @@
 #!/bin/bash
 # PF1's inputs: the PB1 baselines configuration re-run, now that faithfulness.py also saves window_scores.npz (every
 # direct problem-space explanation's per-window scores, and the features of the original and fully ablated file;
-# docs/pf1_plan.md). Same files, operator, sweep, and KernelSHAP budget as run/12_pb1_baselines.sh, so its curves
+# docs/experiments/pf1.md). Same files, operator, sweep, and KernelSHAP budget as run/12_pb1_baselines.sh, so its curves
 # should reproduce that run's exactly (the runner is deterministic), which doubles as a check.
 #
 # Written to a new directory (tag baselines-scores) so the original baselines run is kept.

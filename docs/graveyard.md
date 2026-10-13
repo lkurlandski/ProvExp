@@ -36,7 +36,7 @@ bytes reach the features (representation gap) and whether the GBDT relies on the
 ψ = PᵀD⁺b — the operator whose application it was supposed to demonstrate. The "reliance" column was the pullback's
 mass on the matched bytes, the "representation" column was Pᵀ1_S, and the deletion check used no P at all. The
 go/no-go's hypothesis also failed where it mattered (agreement came from generic API rules; anti-debug rules, the
-interesting case, showed a reliance gap of only 0.15). Superseded by the pushforward audit (see `docs/audit_plan.md`),
+interesting case, showed a reliance gap of only 0.15). Superseded by the pushforward audit (see `docs/experiments/audit.md`),
 which uses the pushforward essentially. Full doc: `docs/rules_plan.md` before commit (see history).
 
 ### The pushforward-as-shortcut-forging framing (no-go 2026-10-13, within the audit)
@@ -47,7 +47,7 @@ credit is real and specific in the file it explains, but does not **transfer** t
 only the strongest convolution window per channel and a field's contribution depends on its context and offset within
 that window. The forgeable-shortcut premise does not fit MalConv. The fix (approved by the user) was to flip to
 *destroying* malware evidence in place — scrambling the bytes P names — which needs no transfer and became the working
-audit. Recorded in `docs/audit_plan.md`.
+audit. Recorded in `docs/experiments/audit.md`.
 
 ## Directions the user has generally found unproductive
 

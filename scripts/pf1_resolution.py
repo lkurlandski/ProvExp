@@ -1,5 +1,5 @@
 """
-PF1's resolution trend (docs/pf1_plan.md, "Decision: claim 3, option A"): how much of a feature-space explanation's
+PF1's resolution trend (docs/experiments/pf1.md, "Decision: claim 3, option A"): how much of a feature-space explanation's
 faithfulness survives being expressed at K windows, from 64 windows to the bytes, and whether P predicts it.
 
 For each file, native explainer a (path and interventional TreeSHAP, KernelSHAP), and resolution K, the window round

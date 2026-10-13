@@ -1,5 +1,5 @@
 #!/bin/bash
-# PF1's resolution trend (docs/pf1_plan.md, "Resolution trend"), in two steps:
+# PF1's resolution trend (docs/experiments/pf1.md, "Resolution trend"), in two steps:
 #   1. PF1 again (run/18_pf1.sh's command), because feature_order now treats near-ties from round-off as ties
 #      (2026-10-09): features with identical provenance got their order from 1e-13 differences, not the seeded
 #      tie-break. About 10 min on 16 workers.

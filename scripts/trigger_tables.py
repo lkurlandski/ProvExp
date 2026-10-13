@@ -1,5 +1,5 @@
 """
-The planted-trigger metrics (PB2 and PF2; docs/trigger_plan.md) from scripts/trigger_explain.py's outputs.
+The planted-trigger metrics (PB2 and PF2; docs/experiments/trigger.md) from scripts/trigger_explain.py's outputs.
 
 The trigger's bytes T are the ground truth. For every explained file we build the provenance of the *triggered* file
 and work with the explanation's change, delta a = a(triggered) - a(clean), which is what the trigger caused.
@@ -19,7 +19,7 @@ and reference points:
                         stated analytically, since running occlusion for a 6-byte trigger would cost hours per file
 
 PF2 (does the pushforward give feature-space explainers a ground truth?), per file and explainer. r = psi(1_T) is
-read as a *support*, not a target (decided 2026-10-09; docs/trigger_plan.md): its weights say how much of each
+read as a *support*, not a target (decided 2026-10-09; docs/experiments/trigger.md): its weights say how much of each
 feature the trigger computes, a property of P, not which features the model uses; its support, the features the
 trigger touches, is a ground truth that does not depend on the model.
     mass on supp(r)     the share of |delta a| on the support (recall-like; even an ideal explainer of a tree model

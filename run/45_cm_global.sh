@@ -1,5 +1,5 @@
 #!/bin/bash
-# 3-C revised, the global comparison (docs/audit_plan.md): MalConv's per-byte IG (run 39) pushed forward into the
+# 3-C revised, the global comparison (docs/experiments/audit.md): MalConv's per-byte IG (run 39) pushed forward into the
 # EMBER features of all 2,000 explanation-set files, then both detectors' global reliance (mean |attribution| and mean
 # signed) compared feature by feature against the GBDT's interventional TreeSHAP. Needs run 39. Replaces Appendix F.
 # Took 7 min for the push on 16 workers; compare is seconds. 2,214 of 2,568 features are aggregates (no locatable bytes).
