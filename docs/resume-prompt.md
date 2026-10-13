@@ -1,45 +1,50 @@
-# Resume: ProvExp (2026-10-13, after lunch)
+# Resume: ProvExp (2026-10-13, evening) — manuscript writing
 
-Read `CLAUDE.md`, then `docs/status.md` ("Where we are", "Next", and the 2026-10-13 decisions). Current goal:
-**finish a rough draft of the manuscript, then kick off a larger-scale set of experiments.**
+Read `CLAUDE.md`, then `docs/status.md` ("Where we are", "Next", and the 2026-10-13 decisions). This session is for
+**deep thinking and manuscript writing**, not tooling: the LaTeX toolchain and template are settled (below); do not
+spend time on them beyond `make` / `make check`.
+
+**Goal:** a complete rough draft of the paper for **ACM CCS 2027, Cycle A** (CfP not out; by CCS 2026, abstract
+~Jan 7 and paper ~Jan 14, 2027). Then decide on the scale-up.
 
 ## Where things stand
 
-- Framework and intrinsic evaluation (CP, PB1, PF1, PB2/PF2) done at pilot scale.
-- Both extrinsic applications done and written up: **CM**, the pullback comparing two detectors per file
-  (`docs/experiments/cm.md`); **AU**, the pushforward auditing MalConv across a corpus (`docs/experiments/audit.md`).
-  AU scrambles the bytes P names for the features MalConv rests on (9/20 confirmed, 22.5% evasion at 1% FPR) and
-  compares the two detectors globally in feature space.
-- **Manuscript** (`manuscript/`): the framework (`_c`) and applications (`_d`) sections are written; the
-  **introduction (`_b`) was just rewritten** (key-insight sentence, framework+symmetry framing, contributions
-  C1-C4, G-DeepSHAP `chen2022explaining` cited). Still to write: **related work** (no section file yet; only
-  `docs/related_work.md`), **abstract** (`_a` is a one-line chapter bridge), **discussion** (`_e`) and **summary**
-  (`_f`) are placeholders. The document is still written as a **dissertation chapter**; it needs a real
-  chapter->paper conversion (voice, structure, plus a findable **threat/system model** and an **ethics/disclosure**
-  section) for a CCS submission (ACM `acmart` `sigconf`, <= 12 pp body).
-- **Repository reorganized:** experiment docs merged and moved to `docs/experiments/{cp,pb1,pf1,trigger,cm,audit}.md`;
-  dropped threads (3-B, the rule-based audit) archived under `scripts/archive/` and `run/archive/` and summarized in
-  `docs/graveyard.md`; the "3-A/3-C" vocabulary retired (CM/AU are canonical).
-
-## LaTeX toolchain (in progress)
-
-- **user-space TeX Live + `latexmk` + `pdflatex`** in `~/texlive` (installed). `cd manuscript && make` builds
-  `main.pdf`; `make check` lists undefined refs/citations and overfull boxes. `main.tex` is the complete document
-  (placeholder preamble: plain `article`, the colors, `\textlangle`/`\textrangle`, numbered
-  `\definition`/`\theorem`/`\proposition` headers, `notationbox`/`proposalbox`) on the CCS template (ACM `acmart` `sigconf`, `anonymous`).
+- **Research:** framework and intrinsic evaluation (CP, PB1, PF1, PB2/PF2) done at pilot scale. Both applications
+  done and written up: **CM**, the pullback comparing a GBDT and MalConv per file (`docs/experiments/cm.md`); **AU**,
+  the pushforward auditing MalConv across a corpus (`docs/experiments/audit.md`; 9/20 features confirmed, scrambling
+  their bytes evades 22.5% of detected malware at 1% FPR).
+- **Manuscript** (`manuscript/`, `main.tex` + section fragments):
+  - written: introduction (`_b`, rewritten 2026-10-13: key insight, framework+symmetry framing, contributions C1-C4),
+    framework (`_c`), evaluation/applications (`_d`), **related work** (`_d2_related_work.tex`, drafted 2026-10-13:
+    propagation/G-DeepSHAP, malware XAI/FINER/Mohseni, feature-to-binary mapping by hand, multi-detector, shortcuts
+    and planted triggers, provenance terminology).
+  - missing: **abstract** (`_a` still holds the old dissertation-chapter bridge), **discussion/limitations** (`_e`),
+    **summary/conclusion** (`_f`), a findable **threat/system model**, and the **Ethical Considerations** and
+    **Open Science** appendices (empty headings in `main.tex`, after the bibliography as CCS requires).
+  - still in **dissertation-chapter voice** ("this chapter", research questions Q1-Q3, an internal experiments/status
+    table in `_d`, "Symbols used in this chapter" table, section titles like "Evaluation on Malware Detection",
+    "Summary"). Needs the chapter->paper pass.
+  - **Length: the body currently runs to page 14** (references start p. 14; 16 pp total) against CCS's **12-page**
+    body limit, before the missing sections are written. Cutting ~2-3 pages is part of the conversion (candidates to
+    discuss with the user, not to cut unilaterally: the status table, PB2/PF2 (demoted), the research questions,
+    parts of `_c`'s theory to the appendix).
+- **Build:** `cd manuscript && make` (also `make watch`, `make check`, `make clean`). ACM `acmart` `sigconf`,
+  `anonymous`, `acmthm=false` (the fragments define their own `\definition`/`\theorem`/`\proposition` headers). Do not
+  change fonts, margins, or spacing (CfP). CCS-specific copyright/DOI/ISBN are TODO until the CCS '27 template exists.
 
 ## Next steps (in order)
 
-1. ~~Verify the local compile~~ (done 2026-10-13).
-2. **Draft the remaining sections in paper (not chapter) voice:** related work (position against G-DeepSHAP
-   `chen2022explaining` and FINER `he2023finer`), abstract (five-move, >=2 numbers), discussion/limitations, summary.
-   Then add the threat/system model and ethics/disclosure sections. Writing these in paper voice now avoids a second
-   rewrite.
-3. **Chapter->paper global pass:** voice, structure toward the security-paper skeleton, length (<= 12 pp body for CCS).
-4. **Then scale up** (only once the draft convinces us the plan is solid): all 2,000 files, seeds 0-2. Budget up to
-   ~48 h on 16 cores for the CPU work, **plus GPU time** for MalConv's IG (runs 39/45) and any AU retrain. This
-   tightens the pilot numbers (especially AU's 22.5% evasion and CM) with seed variance / confidence intervals; it
-   does not change the argument.
+1. **Abstract** (five moves, >= 2 numbers), **discussion/limitations**, **conclusion**, **threat/system model**,
+   **ethics** and **open science** appendices, in paper voice. Use the `security-paper-writing` skill.
+2. **Chapter->paper pass:** voice, structure toward the security-paper skeleton, the 12-page body; check every
+   contribution bullet (C1-C4) maps to a section and to evidence that has actually been run.
+3. **Then the scale-up** (only once the draft convinces us the plan is solid, and when the user decides): 2,000 files,
+   seeds 0-2; ~48 h on 16 cores plus GPU time for MalConv's IG and any AU retrain.
+
+## Open decision for the user
+
+- **CCS Cycle A (~mid-Jan) vs. Cycle B (~late April).** A Cycle A reject cannot go to Cycle B. The plan says Cycle A;
+  Cycle B buys three months for the load-bearing pieces below.
 
 ## Commitments from "claim the fuller vision" (user, 2026-10-13)
 

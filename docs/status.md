@@ -1,16 +1,17 @@
 # Status
 
-Last updated: 2026-10-13 (checkpoint before a lunch break). The framework and intrinsic evaluation are done at pilot
+Last updated: 2026-10-13 (evening; end of a tooling session). The framework and intrinsic evaluation are done at pilot
 scale; both extrinsic applications are done and written up. The repository was reorganized (experiment docs under
 `docs/experiments/`, dropped threads archived, dead ideas in `docs/graveyard.md`). The two applications: **the pullback
 compares two detectors per file** (CM / Comparison, `docs/experiments/cm.md`), and **the pushforward audits a raw-byte
 detector across a corpus** (AU / Audit, `docs/experiments/audit.md`). `run/` holds the commands that produced
 everything in `artifacts/` (active runs 01-21, 30-33, 38-46; dropped runs in `run/archive/`).
 
-**Current goal: finish a rough draft of the manuscript, then kick off larger-scale experiments.** The introduction was
-rewritten (framework+symmetry framing, contributions C1-C4); related work, abstract, discussion, and summary remain,
-and the document still needs a dissertation-chapter -> conference-paper conversion. The manuscript compiles locally:
-`cd manuscript && make` (`main.tex` is now the complete document, preamble included).
+**Current goal: finish a rough draft of the manuscript for ACM CCS 2027 Cycle A, then decide on the scale-up.** The
+venue switched from USENIX to CCS (2026-10-13). The manuscript builds locally on the CCS template (`cd manuscript &&
+make`). Introduction and related work are written; abstract, discussion, conclusion, threat model, and the ethics and
+open-science appendices remain; the document is still in dissertation-chapter voice and its body runs to page 14
+against CCS's 12-page limit. See `docs/resume-prompt.md`.
 
 ## Where we are
 
@@ -25,24 +26,23 @@ and the document still needs a dissertation-chapter -> conference-paper conversi
 | **AU. Audit (pushforward, global)** | **Done** (runs 38-46; `docs/experiments/audit.md`; `manuscript/_d_applications.tex`). MalConv's IG pushed forward into the EMBER features, aggregated over the 2,000-file explanation set. The working framing scrambles the bytes P names for the features MalConv's detection rests on: 9 of 20 confirmed outside the DOS header; scrambling them evades 22.5% of detected malware at 1% FPR (surrogate 24.6%, union 35.1%, random 16.5%). Global comparison with the GBDT (replaces the old Appendix F): MalConv leans on whole-file aggregates, the two detectors' localizable rankings barely agree (Spearman 0.10), only the checksum shared at the top. Mitigation (zero the fields; retrain) deferred (SSViT GPU work). |
 | **Appendix** | App-L a stated limitation; App-R's duplicate-feature sweep not run; the byte-set control bound accepted, not started. Old Appendix F (feature-space comparison) removed, promoted into AU. |
 | **The MLP** | Set aside temporarily; returns after the GBDT methodology is established. |
-| **Manuscript** | `manuscript/_d_applications.tex` has both applications; claims 3 and 4 reflect the local/global split; the experiments table lists CP, PB1-2, PF1-2, CM, AU. Abstract, discussion, and summary are still placeholders, and the introduction's contributions need a pass. Do not try to compile it. |
+| **Manuscript** | CCS template (`acmart` `sigconf`, anonymous), builds with `make` in `manuscript/` (16 pp; body to p. 14 vs. a 12-page limit). Written: introduction (`_b`), framework (`_c`), applications (`_d`), related work (`_d2`). Missing: abstract (`_a` holds the old chapter bridge), discussion (`_e`), conclusion (`_f`), threat/system model, Ethical Considerations and Open Science appendices (empty headings). Still in chapter voice (research questions, internal experiments table, "this chapter"). |
 
 ## Next
 
-1. **Local LaTeX compile works** (2026-10-13): `cd manuscript && make` (also `make watch`, `make check`, `make clean`)
-   builds `main.pdf` cleanly (all refs/cites resolve). `main.tex` now holds the preamble itself (user: no separate
-   wrapper); it uses the CCS template (ACM `acmart` `sigconf`, two-column, 16 pages as of now). Remaining overfull box: the experiments table in `_d` (152pt; an internal status table the paper conversion should drop).
-2. **Finish the manuscript rough draft, in paper (not chapter) voice:** related work **drafted** (2026-10-13,
-   `_d2_related_work.tex`, after the applications; 10 new bib entries, author lists checked against arXiv), abstract (five-move, >=2 numbers), discussion/limitations,
-   summary; then add a threat/system model and an ethics/disclosure section. The introduction (`_b`) is already
-   rewritten. Finish with a dissertation-chapter -> conference-paper global pass (voice, structure, <= 12 pp body for CCS). Ask before
-   changing what a claim is for.
-3. **Then scale up** (only once the draft convinces us the plan is solid): all 2,000 files, seeds 0-2; up to ~48 h on
-   16 cores for the CPU work plus GPU time for MalConv's IG and any AU retrain. Tightens the pilot numbers (esp. AU's
-   22.5% evasion, CM) with seed variance; does not change the argument. Nothing is scaled yet.
+1. **Write the missing sections in paper voice:** abstract (five moves, >= 2 numbers), discussion/limitations,
+   conclusion, threat/system model, Ethical Considerations and Open Science appendices.
+2. **Chapter->paper pass:** voice, structure, and length (cut ~2-3 pages to reach the 12-page body; discuss the cuts
+   with the user). Check that every contribution (C1-C4) maps to evidence that has been run. Ask before changing what
+   a claim is for.
+3. **Then scale up** (only once the draft convinces us the plan is solid, when the user decides): all 2,000 files,
+   seeds 0-2; up to ~48 h on 16 cores for the CPU work plus GPU time for MalConv's IG and any AU retrain. Tightens the
+   pilot numbers (esp. AU's 22.5% evasion, CM) with seed variance; does not change the argument. Nothing is scaled yet.
 4. **Deferred pieces, now load-bearing** (the intro claims the fuller vision): AU's **mitigation** (test-time field
    zeroing + a retrain) and CM's **real-attack transfer**, both needing SSViT GPU work; and the MLP's return. Do not
    let the intro overclaim relative to what is run.
+5. **Open decision (user):** CCS Cycle A (~mid-Jan 2027) or Cycle B (~late April 2027); a Cycle A reject cannot go to
+   Cycle B.
 
 ## Decisions
 
@@ -65,8 +65,7 @@ and the document still needs a dissertation-chapter -> conference-paper conversi
 - **Introduction rewritten** with two framing choices (user): (i) **framework + symmetry first** (applications are
   evidence); (ii) **claim the fuller vision** in the contributions -> this makes AU's mitigation, CM's real-attack
   transfer, and the scale-up load-bearing before submission.
-- **LaTeX toolchain = user-space TeX Live + latexmk + pdflatex**, to match the user's Overleaf project (not tectonic,
-  not conda). Installed in `~/texlive`; `manuscript/main.tex` is a complete document
+- **LaTeX toolchain = user-space TeX Live + latexmk + pdflatex** (not tectonic, not conda). Installed in `~/texlive`; `manuscript/main.tex` is a complete document
   (preamble included) built with `make`.
 
 2026-10-12 (latest):
