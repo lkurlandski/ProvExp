@@ -141,7 +141,7 @@ model in coordinates shared by every file, so they can be *aggregated over a cor
      Appendix F; now that 3-C revised passed, it is promoted into 3-C's global comparison in the main text and
      **Appendix F is removed** (manuscript updated).
   If 3-C revised fails, revisit both applications together rather than patching 3-A alone.
-- **3-B. Spurious correlations via the pullback: dropped (2026-10-12)** (`docs/archive/shortcuts_plan.md`). The
+- **3-B. Spurious correlations via the pullback: dropped (2026-10-12)** (`docs/graveyard.md`). The
   pipeline worked at pilot scale (runs 22-29: discovery, causal transplant, mitigation by neutralizing the features
   P names, 3.6% evasion at 1% FPR from forging the confirmed artifacts), but the findings rest on named features
   (data-directory sizes) that SHAP plus feature names surfaces directly, so it did not show what the pullback adds.
@@ -156,7 +156,7 @@ model in coordinates shared by every file, so they can be *aggregated over a cor
   files). Untested: generic rules (Yara-Rules `crypto/`, `packers/`, `antidebug_antivm/`, `capabilities/`) and capa,
   whose default (vivisect) backend took more than 10 minutes on one 2.7 MB file; faster: an IDA, Ghidra, or Binary
   Ninja backend, or file-scope rules only (seconds per file, without the code-level capabilities).
-  **2026-10-12: on hold; the design failed the sniff test** (post-mortem in `docs/rules_plan.md`). Proposed: per
+  **2026-10-12: on hold; the design failed the sniff test** (post-mortem in `docs/graveyard.md`). Proposed: per
   rule, a representation gap (matched bytes only diluted in aggregates) vs. a reliance gap (they determine features
   the GBDT does not weigh) vs. relied on. Runs 34-37 on generic Yara-Rules: coverage and the split pass; against a
   concentration-matched reference most represented rules are reliance gaps; deletion supports the two gap categories
@@ -238,7 +238,7 @@ provenance-graph IDS work) is deferred to writing time.
 
 ## Experiment IDs (renamed 2026-10-08)
 
-The IDs follow the evaluation's structure. The old IDs appear in the archived documents (`docs/archive/`) and in
+The IDs follow the evaluation's structure. The old IDs appear in git history and in
 artifact paths that predate the renaming (`artifacts/experiments/e1/`, which holds PB1).
 
 | ID | Section | Was |
@@ -249,7 +249,7 @@ artifact paths that predate the renaming (`artifacts/experiments/e1/`, which hol
 | PF1 | 3. Pushforward: faithfulness | new |
 | PF2 | 3. Pushforward: trigger ground truth for feature-space explainers | E3 (pushforward half) |
 | CM | 3-A. Comparing detectors through the pullback (GBDT vs. MalConv); its feature-space half is in the appendix | A1 (promoted from the appendix) |
-| 3-B | Spurious correlations via the pullback (dropped; `docs/archive/shortcuts_plan.md`) | new (2026-10-09) |
+| 3-B | Spurious correlations via the pullback (dropped; `docs/graveyard.md`) | new (2026-10-09) |
 | 3-C | Rule-based detectors' matches pushed forward (not built) | new (2026-10-09) |
 | App-L | Appendix: localizability (reliance on absence) | E4 |
 | App-R | Appendix: mechanical redundancy | A3 |
@@ -463,7 +463,7 @@ methods may be revisited.
 - **At scale:** bootstrap confidence intervals for the headline numbers; seeds 0–2.
 - **3-C's rule set (noted 2026-10-12):** the methodology uses generic Yara-Rules (`capabilities/`, `antidebug_antivm/`,
   ...); before final numbers, consider a curated set (YARA-Forge, files selected where its rules fire) for realism
-  (`docs/rules_plan.md`).
+  (`docs/graveyard.md`).
 
 ## Data, models, compute
 
@@ -499,7 +499,7 @@ the research runs at pilot scale; scaling up is for the final numbers, when the 
 | later | Appendix (App-R; the byte-set control bound) | |
 | Dec 15–late Jan | Writing: introduction and contributions, framework edits, figures | Submission |
 
-Gate 1 (the pilot census, `docs/archive/pilot.md`) passed provisionally for the measurement result (now App-L).
+Gate 1 (the pilot census, in git history) passed provisionally for the measurement result (now App-L).
 Gate 2 (the PB1 pilot, `docs/pb1_pilot.md`, 2026-10-08): passed for the GBDT (window-level parity with occlusion under
 level-2 and level-3 operators, byte-level advantage 1.65–1.79×). The MLP did not reach occlusion (the explanations, not
 P, are the bottleneck); it is set aside temporarily and returns after the GBDT methodology is established. Insertion

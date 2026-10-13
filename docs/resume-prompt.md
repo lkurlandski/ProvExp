@@ -1,24 +1,26 @@
-# Resume: ProvExp, 3-C revised's go/no-go (2026-10-13)
+# Resume: ProvExp (2026-10-13)
 
-We're resuming ProvExp. Read `CLAUDE.md`, then `docs/status.md` ("Next", and the 2026-10-12 "latest" session and
-decisions), then `docs/audit_plan.md` (3-C revised: the mock, the objections, and the go/no-go criterion).
+Read `CLAUDE.md`, then `docs/status.md` ("Where we are", "Next", and the 2026-10-13 decisions).
 
 ## Where things stand
 
-- Framework and intrinsic evaluation done at pilot scale; 3-A (the pullback's application) done and written up.
-- Yesterday we stepped back: the pullback/pushforward symmetry is the novelty, so the pushforward needs its own
-  application. **3-C revised: auditing MalConv for shortcuts through the pushforward.** MalConv's per-file IG is pushed
-  into the EMBER features, which every file shares, so its reliance can be aggregated over the 2,000-file explanation
-  set; candidates are confirmed by a transplant scored by MalConv. The competitor is a surrogate GBDT trained on
-  MalConv's scores (fidelity R^2 0.95).
-- I started runs 38-41 (`run/`). 38 is done; 39 (IG, 2 GPUs) was running; 40 and 41 follow.
+- Framework and intrinsic evaluation (CP, PB1, PF1, PB2/PF2) done at pilot scale.
+- Both extrinsic applications done and written up: **3-A**, the pullback comparing two detectors per file
+  (`docs/cm_plan.md`); **3-C**, the pushforward auditing MalConv across a corpus (`docs/audit_plan.md`). The audit
+  scrambles the bytes P names for the features MalConv rests on (9/20 confirmed, 22.5% evasion) and compares the two
+  detectors globally in feature space.
+- The manuscript (`manuscript/_d_applications.tex`) has both applications, the local/global claim split, and no
+  more Appendix F. Abstract, introduction contributions, discussion, and summary are still early-stage.
+- We just did a large repository cleanup: dropped threads archived (`scripts/archive/`, `run/archive/`), dead ideas
+  recorded in `docs/graveyard.md`, docs de-staled.
 
-## What to do
+## Likely next
 
-1. Check runs 39-41 (logs: `artifacts/logs/audit_*-seed0*.log`); sync `run/39`'s comments (I ran 2 parts on GPUs 0-1)
-   and record the runtimes in `run/38`-`41`.
-2. Read the go/no-go **as written** in `docs/audit_plan.md` and tell me plainly: go or no-go, and why. Also say how much
-   of MalConv's credit fell on aggregates and whether the confirmed shortcuts lie only in the DOS header.
-3. Then we decide the next step together (go: plan the experiment proper; no-go: a short post-mortem).
+1. A naming/organization scheme for the live docs and experiment IDs is proposed and awaiting the user's decision;
+   the doc renames and manuscript label-sync are held until then.
+2. Manuscript drafting (introduction contributions, abstract, discussion, summary). Ask before changing a claim's
+   purpose.
+3. Scale-up (2,000 files, seeds 0-2) and the deferred pieces (MLP's return, 3-A real-attack transfer, 3-C mitigation)
+   when the user decides.
 
 Explain in plain language; no dense shorthand.

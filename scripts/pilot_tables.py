@@ -1,5 +1,5 @@
 """
-Print the tables of the pilot report (docs/archive/pilot.md) from the census and, if present, the pullback agreement.
+Print the tables of the pilot census report (the old Phase 2 pilot report, in git history) from the census and, if present, the pullback agreement.
 
 Usage:
     python scripts/pilot_tables.py --seed 0
@@ -46,7 +46,7 @@ def main() -> None:
     report = json.loads((indir / "report.json").read_text())
     if "statistics" not in json.loads((indir / "census" / "report.json").read_text()):
         print("NOTE: this census predates the 2026-10-08 definitions of ambiguity and overlap (normalized entropy and "
-              "pairwise overlap); docs/archive/pilot.md reports those. Rerun scripts/provenance_census.py for the current ones.\n")
+              "pairwise overlap); the old pilot report (git history) has those. Rerun scripts/provenance_census.py for the current ones.\n")
     names = PEFeatureExtractor().feature_names
     prefix = np.array([n.split(":", 1)[0] for n in names])
     groups = list(dict.fromkeys(prefix.tolist()))

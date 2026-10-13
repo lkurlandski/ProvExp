@@ -1,5 +1,5 @@
 """
-3-B (docs/archive/shortcuts_plan.md): find the byte patterns a detector keys on, by pulling each file's explanation back to its
+3-B (docs/graveyard.md): find the byte patterns a detector keys on, by pulling each file's explanation back to its
 bytes and grouping the most credited spans across files by content.
 
 Per file: the pullback b = Pa of one explainer's explanation of the GBDT (which attributes the malware log-odds); the

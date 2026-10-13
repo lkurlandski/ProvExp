@@ -1,13 +1,14 @@
 # `provexp` Package Design
 
-Status: Phase 1 core implemented, 2026-10-06 (statistics kernel and null policy added). Open questions are collected in [§9](#9-open-questions).
+Design notes for the `provexp` package: its data structures, conventions, and the thrember-instrumentation quirks.
+Open questions are collected in [§9](#9-open-questions).
 
 ## 1. Scope and priorities
 
-Phase 1 builds the **library**: the data structures, operators, and statistics of the framework, one
+The package is the **library**: the data structures, operators, and statistics of the framework, one
 provenance-instrumented feature set (EMBER-2024 / thrember v3, PE files only), and the data and model
-utilities the experiments will need. Large-scale processing, experiment drivers, storage of results, and
-CLIs are out of scope for this phase.
+utilities the experiments need. Experiment drivers and results storage live in `scripts/`, `run/`, and
+`artifacts/`, not in the package.
 
 Decisions:
 
@@ -23,7 +24,7 @@ Decisions:
 | Test reference | A verbatim copy of only `features.py` (+ `pefile_warnings.txt`) in `tests/reference/`. |
 | Dependencies | No dependency on the `thrember` package. |
 | Environment | `uv` + `pip`, Python 3.14, venv in `env/`. Nothing from the miniconda installation. |
-| Models | MalConv medium only (EMBER-2024). |
+| Models | GBDT (LightGBM), MLP, and MalConv medium (EMBER-2024), in `src/provexp/models/`. |
 | Results storage | Not the package's job. |
 
 ## 2. Package layout (as implemented)
@@ -52,11 +53,11 @@ ProvExp/
 Deferred to when they are needed:
 
 - `estimate.py`: perturbation-based estimation of P for any feature extractor, which treats σ as a black box. It is
-  feature-set-agnostic, so it belongs in the core. Phase 3.
+  feature-set-agnostic, so it belongs in the core.
 - `featureset.py`: a protocol for feature sets (`extract(bytes) -> (x, Provenance)`), to formalize once there is a
   second feature set.
 - `models/gbdt.py`, `models/mlp.py`, `data/tabular.py`, `scripts/train_classic.py`: the GBDT/MLP pieces of SSViT's
-  `main_classic.py`. These depend on featurizing the dataset with our extractor (Phase 2).
+  `main_classic.py` (now implemented in the package).
 
 ## 3. `BoxMatrix`
 
@@ -172,7 +173,7 @@ Extraction with provenance takes 0.01–3 s per file (about 2× thrember).
 | `src/simpledb.py` | `Sample`, `SimpleDB`, `SimpleDBReader`, `SimpleDBIterator`, `roundup`, `CreateSimpleDB` | `MetadataDB*` and `SimpleDBOrganizer` dropped. |
 | `exeformer/exeformer.py` | `_unwrap_state_dict`, `_unshard_embedding`, `convert_released_malconv_state_dict`, the medium MalConv config | |
 | `MalConv2` (fork in `third_party/`) | The architecture, with MalConv2's parameter names | Standard memory instead of chunked max-pooling. Logits are **identical** (max difference 0.0) to MalConv2 on all 45 fixtures. |
-| `src/main_classic.py` | Nothing yet | GBDT params, MLP, metrics, and the npz shard loader come over in Phase 2. |
+| `src/main_classic.py` | GBDT params, MLP, metrics, the npz shard loader | Now in `src/provexp/models/` and `data/`. |
 
 Data locations (read-only): binaries in `/shared/datasets/EMBER-2024/data/{tr,vl,ts}` (SimpleDB); split index
 files in `SSViT/index/ember2024/us/`.
@@ -187,10 +188,11 @@ files in `SSViT/index/ember2024/us/`.
 - `test_ember2024.py`: §5.3.
 - `test_malconv.py`: shapes, padding, checkpoint conversion, predictions on fixtures.
 
-## 8. Phase 1 status
+## 8. Implementation status
 
-Done: `BoxMatrix`, `Provenance`, the instrumented EMBER-2024 feature set, SimpleDB access, the fixture script, and
-MalConv, all tested. Phase 1 is complete.
+The library is complete and tested: `BoxMatrix`, `Provenance` (operators and statistics), the instrumented
+EMBER-2024 feature set, SimpleDB access and the feature store, the fixture script, and the GBDT, MLP, and MalConv
+models.
 
 ## 9. Open questions
 

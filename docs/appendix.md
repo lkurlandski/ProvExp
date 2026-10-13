@@ -1,6 +1,6 @@
 # Appendix Results: Localizability (App-L) and Mechanical Redundancy (App-R)
 
-Moved here on 2026-10-09 from the Phase 2 census report (now `docs/archive/pilot.md`, which has the full tables and
+Moved here on 2026-10-09 from the old pilot census report (in git history, which has the full tables and
 the data-quality notes). All 2,000 files of the explanation set, seed 0, printed by `scripts/pilot_tables.py --seed 0`.
 Localizability ℓ(a) is an evaluation metric here, not part of the framework: the share of an explanation's magnitude
 on attributable features, which the pullback places in the file rather than on the null element.

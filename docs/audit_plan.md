@@ -2,7 +2,7 @@
 
 Status (2026-10-13): runs 38-41 done; **no-go** by criterion (a): none of the pushforward's 20 candidates is confirmed
 (results below). Next: post-mortem with the user. Replaces the rule-based 3-C
-(`docs/rules_plan.md`, on hold), which rested on the pullback and Pᵀ rather than the pushforward.
+(`docs/graveyard.md`, on hold), which rested on the pullback and Pᵀ rather than the pushforward.
 
 ## Why this task (and why the pushforward)
 

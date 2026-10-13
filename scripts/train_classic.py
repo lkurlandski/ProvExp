@@ -6,7 +6,7 @@ scripts/trigger_poison.py); the model is then a backdoored instrument for the gr
 output directory is suffixed with the poison's name.
 
 With `--neutralize`, the features named in a file (one per line) are set to zero in every split, so the model cannot
-use them (3-B mitigation, docs/archive/shortcuts_plan.md); give the output a `--suffix`.
+use them (3-B mitigation, docs/graveyard.md); give the output a `--suffix`.
 
 Outputs, in `{outdir}/{learner}/seed-{seed}[-{poison}]/`:
     model.txt (GBDT) or model.pt (MLP)   the trained model

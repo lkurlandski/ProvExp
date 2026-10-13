@@ -15,13 +15,13 @@ plus a null element) transfers explanations between the feature-space (EMBER v3 
   `docs/pb1_pilot.md`, `docs/pb1_baselines.md` (PB1: pullback faithfulness and cost; the baselines doc fixes the
   reading of each outcome in advance); `docs/trigger_plan.md` (the planted-trigger testbed: PB2 and PF2, design and
   results); `docs/pf1_plan.md` (PF1: the pushforward's faithfulness and the resolution trend); `docs/cm_plan.md`
-  (3-A: comparing detectors through the pullback, the pullback's application); `docs/audit_plan.md` (3-C revised:
-  auditing a raw-byte detector through the pushforward, the pushforward's application); `docs/rules_plan.md` (the
-  rule-based 3-C, on hold); `docs/appendix.md` (App-L, App-R); `docs/archive/shortcuts_plan.md` (3-B: real
-  shortcuts via the pullback; dropped, kept for its post-mortem). `docs/resume-prompt.md`: where to pick up next.
+  (3-A: comparing detectors through the pullback, the pullback's application); `docs/audit_plan.md` (3-C:
+  auditing a raw-byte detector through the pushforward, the pushforward's application); `docs/appendix.md`
+  (App-L, App-R). `docs/graveyard.md`: ideas that did not pan out and why (3-B, the rule-based 3-C, dead directions).
+  `docs/resume-prompt.md`: where to pick up next.
 - `docs/design_provexp.md`: package design, decisions, provenance conventions, thrember quirks.
-  `docs/related_work.md`: literature and gaps. `docs/archive/`: superseded documents (the Phase 2 plan and census,
-  old IDs E1–E4, A1–A3; artifact paths such as `artifacts/experiments/e1/` (PB1) still use them).
+  `docs/related_work.md`: literature and gaps. Some artifact paths still use retired IDs (e.g.
+  `artifacts/experiments/e1/` is PB1).
 - **State a hypothesis before running an experiment** (what you expect and why), and report a failed check as such.
   Keep it short and proportionate: a sentence or two, not an elaborate pre-registered reading for every outcome
   (user, 2026-10-09).
@@ -39,7 +39,8 @@ plus a null element) transfers explanations between the feature-space (EMBER v3 
   explanations and census (explain, provenance_census, pullback_agreement, pilot_tables); CP (cp_tables,
   cp_coarsening, cp_blackbox); PB1 (discover_protected_fields, header_typical_values, faithfulness, pb1_tables);
   the trigger (trigger_select, trigger_poison, trigger_validate, trigger_explain, trigger_tables); PF1 (pf1,
-  pf1_resolution); 3-A (cm_*); 3-C (yara_check).
+  pf1_resolution); 3-A (cm_check, cm_shared, cm_triage, cm_tables); 3-C audit (audit_*, cm_global); shared
+  discovery/transplant machinery (shortcuts, shortcuts_transplant). Dropped experiments are under `scripts/archive/`.
 - **Rankings break ties by a seeded permutation, never by position or index** (`ablation.element_order` /
   `window_order` with `tiebreak`, `pf1.feature_order`), and treat scores within 1e-9 (relative) as tied: equal scores
   are common (features or bytes with identical provenance; occlusion windows that change nothing).
@@ -100,18 +101,19 @@ Follow `/home/lk3591/Documents/code/SSViT/exeformer/exeformer.py` (ignore that i
 - **The framework and the core contributions are domain-agnostic.** The framework applies to any classifier with a
   complex feature extractor and depends only on the relationships between elements and features (P), never on what an
   element or a feature *means*. `provexp` (outside `featuresets/`), the provenance statistics, the census, and the
-  core analyses work with elements, features, feature subsets, and P only. Do not propose analyses, modules, or
-  stratifications built on PE-format structure (headers, sections, overlay, packers, PE-specific "attacker-controllable
-  regions" such as the DOS header); the user has rejected this direction several times. Questions about what control
-  of an *arbitrary* byte set allows, posed domain-agnostically in terms of P, are welcome (user, 2026-10-09).
-- **Coverage, localizability, and the null element's share are not contributions** (user, 2026-10-09). Do not propose
-  promoting them, building analyses on them, or reporting "reliance on absence" as a finding. (i) They measure a
-  particular explanation of a particular file by a particular explainer, not the provenance; (ii) a large share of
-  attribution on unattributable features reflects a limitation of the provenance extraction pipeline (features whose
-  bytes it cannot name), not a broad, novel finding about detectors. App-L stays only as a stated limitation.
-- **Extrinsic applications: one per operator; the pushforward is essential** (user, 2026-10-12). The pullback alone
-  is close to G-DeepSHAP; the symmetry between the spaces is the novelty, so never propose dropping the pushforward's
-  application or leaving it intrinsic-only. Before any code for an application: the screening criteria and a mock of
+  core analyses work with elements, features, feature subsets, and P only. Analyses stratified on PE-format structure
+  (headers, sections, overlay, packers, PE-specific "attacker-controllable regions") have repeatedly not led anywhere,
+  so propose one only with a concrete reason rather than by default; questions about what control of an *arbitrary*
+  byte set allows, posed domain-agnostically in terms of P, are welcome. See `docs/graveyard.md`.
+- **Coverage, localizability, and the null element's share are not currently treated as contributions.** They measure
+  a particular explanation of a particular file by a particular explainer, not the provenance, and a large share of
+  attribution on unattributable features reflects a limitation of the provenance extraction pipeline, not a finding
+  about detectors; App-L stays a stated limitation. Reconsider promoting them, or reporting "reliance on absence",
+  only with a strong and specific case.
+- **Extrinsic applications: one per operator; the pushforward is essential.** The pullback alone is close to
+  G-DeepSHAP; the symmetry between the spaces is the novelty, so do not casually propose dropping the pushforward's
+  application or leaving it intrinsic-only — raise it only with a real argument. Before any code for an application:
+  the screening criteria and a mock of
   its paper table with the operator behind each column (`PLAN.md`, "Paper structure", 3). Realistic alternatives are
   what a practitioner would actually do; a hand-built, format-specific mapping that takes tremendous manual effort
   (e.g., a PE parser locating every field per file) is not one.
