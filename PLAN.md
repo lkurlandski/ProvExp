@@ -137,8 +137,9 @@ model in coordinates shared by every file, so they can be *aggregated over a cor
   2. *Real-attack transfer* (option (b) above) to replace deletion with attacks: published functionality-preserving
      header attacks on MalConv; do they transfer to the GBDT more often when the bytes they modify carry the GBDT's
      pullback? Days of tooling (e.g., secml-malware); after 3-C's go/no-go.
-  3. The original 3-A's feature-space comparison (MalConv pushed forward vs. the GBDT's TreeSHAP; appendix F) returns
-     only if it serves 3-C revised; MalConv's pushed-forward IG for 2,000 files will exist anyway.
+  3. Done (2026-10-13): 3-A's old feature-space comparison (MalConv pushed forward vs. the GBDT's TreeSHAP) was
+     Appendix F; now that 3-C revised passed, it is promoted into 3-C's global comparison in the main text and
+     **Appendix F is removed** (manuscript updated).
   If 3-C revised fails, revisit both applications together rather than patching 3-A alone.
 - **3-B. Spurious correlations via the pullback: dropped (2026-10-12)** (`docs/archive/shortcuts_plan.md`). The
   pipeline worked at pilot scale (runs 22-29: discovery, causal transplant, mitigation by neutralizing the features
@@ -183,7 +184,7 @@ model in coordinates shared by every file, so they can be *aggregated over a cor
 move when S is controlled, so a worst-case score over the controllable features bounds evasion without crafting
 attacks, validated against real attacks.
 Also **the feature-space comparison of the GBDT and MalConv** (MalConv's explanations pushed forward vs. the GBDT's
-TreeSHAP; moved out of 3-A, 2026-10-12): an intrigue, not built.
+TreeSHAP; moved out of 3-A 2026-10-12, built 2026-10-13 as 3-C revised's global comparison, `scripts/cm_global.py`).
 
 ## Principle: domain-agnostic framework, selective domain knowledge in experiments
 
@@ -521,6 +522,6 @@ was dropped as a flawed test. Thresholds are reassessed with the user.
 - **Reviewer pool:** Raff co-authored EMBER-2024, MalConv, and the SHAP-on-EMBER critique; engage it directly (App-R,
   CM).
 - **The pushforward is faithful only up to its source's resolution (PF1):** window-level explanations keep a third of
-  TreeSHAP's feature-space faithfulness. Claim 3 is stated that way (option A); the appendix's feature-space
-  comparison rests on MalConv's byte-level explanations, which the resolution trend puts near R ≈ 0.8 at best.
-- **Timeline:** if needed, App-R shrinks first, then the appendix's feature-space comparison.
+  TreeSHAP's feature-space faithfulness. Claim 3 is stated that way (option A); 3-C revised's global comparison rests
+  on MalConv's byte-level explanations, which the resolution trend puts near R ≈ 0.8 at best.
+- **Timeline:** if needed, App-R shrinks first.
