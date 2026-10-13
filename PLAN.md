@@ -1,14 +1,13 @@
 # ProvExp Research Plan
 
-Living document. Last revised 2026-10-12, end of session (the extrinsic half re-planned: 3-C revised, auditing MalConv
-through the pushforward, go/no-go running; CM done at pilot scale as the pullback's application; 3-B dropped; the
-rule-based 3-C on hold; 2026-10-09: second review, after run 21). **The paper is restructured** into a framework, an
-intrinsic evaluation, and extrinsic applications (see "Paper structure", which supersedes the order of "Experiments"
-below). The intrinsic evaluation is done at pilot scale (CP's theory, PB1, PF1; PB2/PF2 demoted). Extrinsic: CM (the
-pullback) done at pilot scale (`docs/experiments/cm.md`); 3-B failed as the pullback application and is dropped; the rule-based
-3-C is on hold (failed the sniff test, 2026-10-12); 3-C revised (the pushforward) has its go/no-go running. Claims 1-3
-predate the restructuring and are to be rewritten; claim 4 is rewritten for CM. No scaling until the pilot results and
-the claims are settled (user).
+Living document. Last revised 2026-10-13 (AU, auditing MalConv through the pushforward, done and written up; CM done at
+pilot scale as the pullback's application; 3-B dropped; the earlier rule-based audit dropped; repository reorganized).
+**The paper is restructured** into a framework, an intrinsic evaluation, and extrinsic applications (see "Paper
+structure", which supersedes the order of "Experiments" below). The intrinsic evaluation is done at pilot scale (CP's
+theory, PB1, PF1; PB2/PF2 demoted). Extrinsic: CM (the pullback) done at pilot scale (`docs/experiments/cm.md`); AU (the
+pushforward) done (`docs/experiments/audit.md`); 3-B and the earlier rule-based audit failed and are dropped
+(`docs/graveyard.md`). Claims 1-3 predate the restructuring and are partly rewritten (claim 3 for AU, claim 4 for CM);
+the rest to follow. No scaling until the pilot results and the claims are settled (user).
 
 ## Target
 
@@ -80,7 +79,7 @@ practice, and its limits are measurable. Done at pilot scale:
 rule, so the framework's novelty is the symmetry between the spaces; without a purpose for the pushforward most of the
 project is moot. The symmetry, as the applications use it: the pullback gives *local* explanations of a feature-based
 model in the problem space (per file, at byte resolution; CM); the pushforward puts explanations of a problem-space
-model in coordinates shared by every file, so they can be *aggregated over a corpus* (3-C revised).
+model in coordinates shared by every file, so they can be *aggregated over a corpus* (AU).
 **Screening criteria (adopted 2026-10-12, after 3-B failed; apply before writing any code):**
 1. *It needs what only P gives:* the content behind opaque (hashed/aggregate) features, per file; credit summed across
    several features onto shared bytes; or which bytes realize a feature. If feature-space SHAP plus the feature names
@@ -92,7 +91,7 @@ model in coordinates shared by every file, so they can be *aggregated over a cor
 4. *A falsifiable go/no-go check runs first,* on existing data where possible, before an experiment is built; its
    failing outcome is stated in advance.
 5. Ideas the user has already ruled out or doubted get extra skepticism, not a second pitch.
-6. *Mock the result first* (added 2026-10-12, after 3-C): write the application's paper paragraph and table with
+6. *Mock the result first* (added 2026-10-12, after the rule-based audit): write the application's paper paragraph and table with
    hypothetical numbers, mark the operator behind each column (pullback, pushforward, Pᵀ, none), and screen that
    before any go/no-go or data check; re-check it after every run. Feasibility checks never substitute for it.
 - **CM. Comparing detectors through the pullback** (CM; `docs/experiments/cm.md`). **The pullback's application; done at
@@ -124,67 +123,48 @@ model in coordinates shared by every file, so they can be *aggregated over a cor
   attack on MalConv; does it transfer to the GBDT more often when the bytes it modifies carry the GBDT's pullback?
   Days of tooling (e.g., secml-malware); otherwise a stated limitation.
   (c) *Seeds 1-2* (models exist): replication, at scale-up.
-  **Review after the step back (2026-10-12, end of session; to act on only if 3-C revised passes its go/no-go).**
+  **Review after the step back (2026-10-12; AU passed its go/no-go, so these were acted on).**
   CM survives the analysis that sank 3-B: it needs what the pullback demonstrably gives (a faithful byte-level
   explanation of a feature-based model from one extraction), and the realistic alternative (window occlusion) reaches
   the *wrong conclusion*, not just a blurrier one (run 33: at windows, "reads it the other way" becomes "agrees"). The
   hand-mappability worry is settled (hand-built parser mappings are not a realistic alternative, user). Its weaknesses:
-  it rests on deletion, not attacks, and "comparing detectors" reads as abstract. Planned changes:
-  1. *Frame the two applications as local vs. global*, both on the same two models: the pullback (CM) explains one
-     file at a time, for an analyst (why do two detectors disagree on this file?); the pushforward (3-C revised) audits
-     a byte-level detector across a corpus. Lead CM with the disagreement triage (the local, analyst-facing part);
-     shared reliance supports it. 3-C's "GBDT relies on it" column ties the two together.
-  2. *Real-attack transfer* (option (b) above) to replace deletion with attacks: published functionality-preserving
-     header attacks on MalConv; do they transfer to the GBDT more often when the bytes they modify carry the GBDT's
-     pullback? Days of tooling (e.g., secml-malware); after 3-C's go/no-go.
+  it rests on deletion, not attacks, and "comparing detectors" reads as abstract. Changes:
+  1. Done (2026-10-13, manuscript): *framed the two applications as local vs. global*, both on the same two models:
+     the pullback (CM) explains one file at a time, for an analyst (why do two detectors disagree on this file?); the
+     pushforward (AU) audits a byte-level detector across a corpus. CM now leads with the disagreement triage (the
+     local, analyst-facing part); shared reliance supports it. AU's "GBDT relies on it" column ties the two together.
+  2. *Real-attack transfer* (option (b) above), still to do: replace deletion with attacks: published
+     functionality-preserving header attacks on MalConv; do they transfer to the GBDT more often when the bytes they
+     modify carry the GBDT's pullback? Days of tooling (e.g., secml-malware); deferred.
   3. Done (2026-10-13): CM's old feature-space comparison (MalConv pushed forward vs. the GBDT's TreeSHAP) was
-     Appendix F; now that 3-C revised passed, it is promoted into 3-C's global comparison in the main text and
+     Appendix F; now that AU is done, it is promoted into AU's global comparison in the main text and
      **Appendix F is removed** (manuscript updated).
-  If 3-C revised fails, revisit both applications together rather than patching CM alone.
 - **3-B. Spurious correlations via the pullback: dropped (2026-10-12)** (`docs/graveyard.md`). The
   pipeline worked at pilot scale (runs 22-29: discovery, causal transplant, mitigation by neutralizing the features
   P names, 3.6% evasion at 1% FPR from forging the confirmed artifacts), but the findings rest on named features
   (data-directory sizes) that SHAP plus feature names surfaces directly, so it did not show what the pullback adds.
   Its post-mortem produced the screening criteria above. CM replaced it.
-- **3-C. Rule-based detectors' explanations in the GBDT's features** (the pushforward; adopted 2026-10-09): a YARA
-  or capa match is a problem-space explanation of a rule-based detector (the matched bytes are why it fired);
-  pushed forward, it is cast in the GBDT's feature vocabulary. Per-rule feature profiles (the mean pushforward over
-  the files where a rule fires) exist only in feature space (byte offsets differ across files, features do not);
-  compare them with the GBDT's explanations on those files: does the learned detector rely on what the rules see?
-  Partial coverage check (100 pilot files, stopped early; the user is confident in the idea): public YARA signatures
-  (YARA-Forge core and full) are too sparse (10/50 malware files with byte locations, 0 benign, no rule on 5 or more
-  files). Untested: generic rules (Yara-Rules `crypto/`, `packers/`, `antidebug_antivm/`, `capabilities/`) and capa,
-  whose default (vivisect) backend took more than 10 minutes on one 2.7 MB file; faster: an IDA, Ghidra, or Binary
-  Ninja backend, or file-scope rules only (seconds per file, without the code-level capabilities).
-  **2026-10-12: on hold; the design failed the sniff test** (post-mortem in `docs/graveyard.md`). Proposed: per
-  rule, a representation gap (matched bytes only diluted in aggregates) vs. a reliance gap (they determine features
-  the GBDT does not weigh) vs. relied on. Runs 34-37 on generic Yara-Rules: coverage and the split pass; against a
-  concentration-matched reference most represented rules are reliance gaps; deletion supports the two gap categories
-  but does not confirm "relied on". **But the results rest on the pullback (reliance = the pullback's mass on the
-  matched bytes) and on Pᵀ1_S (representation), not on the pushforward**, so 3-C as built is CM with a rule as the
-  second detector. Comparing the pushed-forward rule with TreeSHAP in feature space (option (a)) likely fails the same
-  way: per file it reduces to the pullback's mass again, and the one pushforward-only object, a per-rule profile
-  aggregated across files, is a description without a task. **Open, for the user:** (i) a task whose output must live
-  in feature space, where the model is trained and changed (e.g., which features to constrain, sanitize, or retrain
-  on, from byte-level knowledge), screened as a mock-up first; or (ii) present 3-C as an application of P as a whole
-  (Pᵀ plus the pullback), leaving no pushforward-specific application. Packing is not a motivation (user). capa
-  deferred; a curated rule set (YARA-Forge) only for realism, later.
+- **Rule-based detectors' explanations in the GBDT's features (dropped 2026-10-12)** (`docs/graveyard.md`). An earlier
+  attempt at the pushforward application: push a YARA/capa rule's matched bytes forward into the GBDT's features and ask
+  whether the learned detector relies on what the rules see. It failed the sniff test — as built, every column rested on
+  the pullback and on Pᵀ1_S, not on the pushforward (the operator it was meant to demonstrate). AU below replaced it.
 
-- **3-C (revised, 2026-10-12): auditing a raw-byte detector through the pushforward** (`docs/experiments/audit.md`; mock
-  approved, go/no-go fixed and running: runs 38-41; no-go if no candidate is confirmed by a MalConv-scored transplant,
-  or if the surrogate's top 20 hold at least half of the confirmed ones; the surrogate's fidelity is R^2 0.95 on the
-  explanation set). The pushforward puts per-file byte explanations (MalConv's IG) in coordinates shared by every file,
-  so a raw-byte model's reliance can be aggregated across a corpus: shortcut discovery for a model with no feature names
-  (3-B's task where 3-B's failure does not apply). Realistic alternative: a surrogate GBDT trained on MalConv's scores
-  (hand-built aggregation with a PE parser is not realistic, user). The symmetry is the framework's novelty, so the
-  pushforward needs an application (user); the rule-based design above stays on hold.
+- **AU. Auditing a raw-byte detector through the pushforward (done, 2026-10-13)** (`docs/experiments/audit.md`). The
+  pushforward puts per-file byte explanations (MalConv's IG) in coordinates shared by every file, so a raw-byte model's
+  reliance can be aggregated across a corpus: a model with no feature names gets a named, recurring reliance that can be
+  audited (3-B's task, on a model where 3-B's failure does not apply). The working framing scrambles the bytes P names
+  for the features MalConv's detection rests on: 9 of 20 confirmed outside the DOS header; scrambling them evades 22.5%
+  of detected malware at 1% FPR. A global feature-space comparison with the GBDT (replacing Appendix F) shows the two
+  detectors' localizable reliance barely overlaps. Realistic alternative: a surrogate GBDT trained on MalConv's scores
+  (fidelity R^2 0.95; hand-built PE-parser aggregation is not realistic, user). Mitigation (zero the fields; retrain)
+  deferred. The symmetry is the framework's novelty, so the pushforward needs its own application (user).
 
 **Appendix:** App-R (mechanical redundancy); App-L (a limitation); **bounding what control of a byte set can do**
 (accepted 2026-10-09, posed domain-agnostically): for additive features (Pᵀ1_S)_j bounds how far feature j can
 move when S is controlled, so a worst-case score over the controllable features bounds evasion without crafting
 attacks, validated against real attacks.
 Also **the feature-space comparison of the GBDT and MalConv** (MalConv's explanations pushed forward vs. the GBDT's
-TreeSHAP; moved out of CM 2026-10-12, built 2026-10-13 as 3-C revised's global comparison, `scripts/cm_global.py`).
+TreeSHAP; moved out of CM 2026-10-12, built 2026-10-13 as AU's global comparison, `scripts/cm_global.py`).
 
 ## Principle: domain-agnostic framework, selective domain knowledge in experiments
 
@@ -218,7 +198,7 @@ features (ROC-AUC 0.9976 vs. 0.9959); and the GBDT's pilot result is already rob
 5. **Applications:** the pullback compares a feature-based and a raw-byte detector byte by byte: an ensemble's
    shared attack surface and the triage of their disagreements (CM); the pushforward aggregates a raw-byte
    detector's per-file explanations over a corpus in the feature vocabulary, to find and confirm its shortcuts
-   (3-C revised, go/no-go running).
+   (AU, done).
 
 The manuscript's contribution list (C1–C3 in the introduction) predates Phase 0 and must be rewritten: "first to
 formalize" and "novel rigorous theory" cannot stand (see Positioning). Naming ("provenance" collides with
@@ -248,16 +228,18 @@ artifact paths that predate the renaming (`artifacts/experiments/e1/`, which hol
 | PB2 | 2. Pullback: planted-trigger recovery | E3 (pullback half) |
 | PF1 | 3. Pushforward: faithfulness | new |
 | PF2 | 3. Pushforward: trigger ground truth for feature-space explainers | E3 (pushforward half) |
-| CM | CM. Comparing detectors through the pullback (GBDT vs. MalConv); its feature-space half is in the appendix | A1 (promoted from the appendix) |
-| 3-B | Spurious correlations via the pullback (dropped; `docs/graveyard.md`) | new (2026-10-09) |
-| 3-C | Rule-based detectors' matches pushed forward (not built) | new (2026-10-09) |
+| CM | Comparing detectors through the pullback, per file (GBDT vs. MalConv) | A1 (promoted from the appendix) |
+| AU | Auditing a raw-byte detector through the pushforward, across a corpus (GBDT/MalConv) | new (2026-10-12) |
 | App-L | Appendix: localizability (reliance on absence) | E4 |
 | App-R | Appendix: mechanical redundancy | A3 |
 
-Documents and scripts carry the IDs: `docs/experiments/cp.md`, `docs/experiments/cp.md`, `scripts/cp_tables.py`,
-`scripts/cp_coarsening.py`; `docs/experiments/pb1.md`, `docs/experiments/pb1.md`, `docs/experiments/pb1.md`, `scripts/pb1_tables.py`
-(the runner is `scripts/faithfulness.py`); `docs/experiments/cm.md`, `scripts/cm_*.py` (CM). The planted trigger is a shared
-testbed for PB2 and PF2.
+Dropped (see `docs/graveyard.md`): 3-B (spurious correlations via the pullback) and the earlier rule-based audit
+(rule matches pushed forward), both proposed 2026-10-09.
+
+Documents and scripts carry the IDs: `docs/experiments/cp.md`, `scripts/cp_tables.py`, `scripts/cp_coarsening.py`;
+`docs/experiments/pb1.md`, `scripts/pb1_tables.py` (the runner is `scripts/faithfulness.py`); `docs/experiments/cm.md`,
+`scripts/cm_*.py` (CM); `docs/experiments/audit.md`, `scripts/audit_*.py` and `scripts/cm_global.py` (AU). The planted
+trigger is a shared testbed for PB2 and PF2.
 
 ## Experiments
 
@@ -461,9 +443,6 @@ methods may be revisited.
   when the bytes it modifies carry the GBDT's pullback would tie it to attacks (days of tooling, e.g.,
   secml-malware). Until then, a stated limitation (`docs/experiments/cm.md`, "Caveats").
 - **At scale:** bootstrap confidence intervals for the headline numbers; seeds 0–2.
-- **3-C's rule set (noted 2026-10-12):** the methodology uses generic Yara-Rules (`capabilities/`, `antidebug_antivm/`,
-  ...); before final numbers, consider a curated set (YARA-Forge, files selected where its rules fire) for realism
-  (`docs/graveyard.md`).
 
 ## Data, models, compute
 
@@ -480,7 +459,8 @@ methods may be revisited.
 
 Phases 0–2 are complete (literature; `provexp`; features, models, stage-1 explanations, census). As of 2026-10-12:
 **the intrinsic evaluation is done at pilot scale (CP's theory, PB1, PF1; PB2/PF2 demoted); CM is done at pilot
-scale and written up; 3-B is dropped; 3-C is not built.** The dates below were set before the restructuring. Most of
+scale and written up; AU is done and written up; 3-B and the earlier rule-based audit are dropped.** The dates below
+were set before the restructuring. Most of
 the research runs at pilot scale; scaling up is for the final numbers, when the pilot results and claims are settled.
 `run/` holds the commands that produced everything in `artifacts/`.
 
@@ -492,9 +472,10 @@ the research runs at pilot scale; scaling up is for the final numbers, when the 
 | Oct 12 | ~~3-B consolidated~~ (runs 26-28: transplant, reliance, mitigation); baseline run 25 (done) | |
 | Oct 12 (later) | 3-B dropped; ~~CM at pilot scale~~ (runs 30-32: cross-deletion, shared attack surface, triage) | |
 | Oct 12 (later) | ~~CM's window-level triage~~ (run 33); ~~CM written up~~ (`docs/experiments/cm.md`, the manuscript) | |
-| Oct 12 (later) | 3-C: design, runs 34-37 (generic YARA rules); **on hold**, failed the sniff test (not the pushforward) | |
-| Oct 12 (end) | Step back; 3-C revised (auditing MalConv via the pushforward): mock, go/no-go built; runs 38-41 started | |
-| next | Read 3-C revised's go/no-go; if go, plan the experiment proper with the user; rewrite claims 1-3 | with the user |
+| Oct 12 (later) | Rule-based audit: design, runs 34-37 (generic YARA rules); **dropped**, failed the sniff test (not the pushforward) | |
+| Oct 12 (end) | Step back; AU (auditing MalConv via the pushforward): mock, go/no-go built; runs 38-41 started | |
+| Oct 13 | AU: no-go on forging, post-mortem (run 42), reframed to scrambling; go (runs 43-44); experiment proper (runs 45-46); written up; Appendix F removed; repo reorganized | |
+| next | Rewrite the remaining claims and the introduction's contributions; scale-up when the user decides | with the user |
 | later | Scale-up (2,000 files, seeds 0–2), when the user decides; the MLP if time allows | |
 | later | Appendix (App-R; the byte-set control bound) | |
 | Dec 15–late Jan | Writing: introduction and contributions, framework edits, figures | Submission |
@@ -515,13 +496,13 @@ was dropped as a flawed test. Thresholds are reassessed with the user.
 - **Smearing:** histogram and entropy features spread over the whole file, which limits how sharply the pullback
   can place their credit. A stated limitation of the transfer at fine resolution (CP's round-trip bounds).
 - **The extrinsic applications carry the paper's security relevance.** CM is done at pilot scale (one seed; its
-  "attack surface" rests on deletion, not on attacks); 3-B failed and is dropped; the rule-based 3-C is on hold; 3-C revised
-  (auditing MalConv via the pushforward) is the pushforward's candidate, its go/no-go running. Its risks: the surrogate
-  is strong (R^2 0.95), and MalConv's pushed-forward credit falls largely on aggregates (entropy, histogram), which
-  cannot be transplanted. If it fails, the pushforward still needs an application (user).
+  "attack surface" rests on deletion, not on attacks); AU (auditing MalConv via the pushforward) is done and is the
+  pushforward's application; 3-B and the earlier rule-based audit are dropped. Residual risk for AU: the surrogate is
+  strong (R^2 0.95) and finds comparable reliance, and much of MalConv's pushed-forward credit falls on aggregates
+  (entropy, histogram) below the pushforward's resolution.
 - **Reviewer pool:** Raff co-authored EMBER-2024, MalConv, and the SHAP-on-EMBER critique; engage it directly (App-R,
   CM).
 - **The pushforward is faithful only up to its source's resolution (PF1):** window-level explanations keep a third of
-  TreeSHAP's feature-space faithfulness. Claim 3 is stated that way (option A); 3-C revised's global comparison rests
+  TreeSHAP's feature-space faithfulness. Claim 3 is stated that way (option A); AU's global comparison rests
   on MalConv's byte-level explanations, which the resolution trend puts near R ≈ 0.8 at best.
 - **Timeline:** if needed, App-R shrinks first.
