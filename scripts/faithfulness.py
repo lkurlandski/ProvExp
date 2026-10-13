@@ -624,6 +624,8 @@ def main() -> None:
     parser.add_argument("--tag", type=str, default="", help="A suffix for the output directory.")
     parser.add_argument("--files", type=Path, default=None, help="Reuse the files of an earlier run (its files.parquet); --num_files then takes the first files per label.")
     parser.add_argument("--sample_seed", type=int, default=0)
+    parser.add_argument("--include", type=Path, default=None, help="A files.parquet whose files the sample must contain (e.g., the pilot's); the rest of each label is sampled with --sample_seed.")
+    parser.add_argument("--select_only", type=Path, default=None, help="Write the selected files (name, label) to this parquet and exit, before any explanation is required.")
     parser.add_argument("--explanations", type=Path, default=ROOT / "artifacts" / "explanations" / "ember2024")
     parser.add_argument("--explanation_set", type=Path, default=ROOT / "artifacts" / "explanation_set" / "ts.parquet")
     parser.add_argument("--models", type=Path, default=ROOT / "artifacts" / "models")
@@ -667,8 +669,27 @@ def main() -> None:
         if samples.height != names.len():
             raise RuntimeError(f"{names.len() - samples.height} files of {args.files.as_posix()} are not in the explanation set or are excluded.")
         samples = pl.concat([samples.filter(pl.col("label") == lab).sort("index").head(per_label) for lab in (0, 1)])
+    elif args.include is not None:
+        # A superset of earlier files (the pilot's 100), filled up per label by a seeded sample of the rest.
+        names = pl.read_parquet(args.include)["name"]
+        parts = []
+        for lab in (0, 1):
+            pool = samples.filter(pl.col("label") == lab)
+            kept = pool.filter(pl.col("name").is_in(names.implode()))
+            if kept.height > per_label:
+                raise RuntimeError(f"--include has {kept.height} files of label {lab}, more than {per_label}.")
+            rest = pool.filter(~pl.col("name").is_in(names.implode()))
+            parts += [kept, rest.sample(per_label - kept.height, seed=args.sample_seed)]
+        samples = pl.concat(parts)
+        if samples.filter(pl.col("name").is_in(names.implode())).height != names.len():
+            raise RuntimeError(f"Some files of {args.include.as_posix()} are not in the explanation set or are excluded.")
     else:
         samples = pl.concat([samples.filter(pl.col("label") == lab).sample(per_label, seed=args.sample_seed) for lab in (0, 1)])
+    if args.select_only is not None:
+        args.select_only.parent.mkdir(parents=True, exist_ok=True)
+        samples.select("name", "label").sort("label", "name").write_parquet(args.select_only)
+        print(f"Wrote {samples.height} files to {args.select_only.as_posix()}.", flush=True)
+        return
     location = pl.read_parquet(args.explanation_set).select("name", "shard", "position")
     samples = samples.join(location, on="name", how="left").sort("index")
     for e, A in explanations.items():

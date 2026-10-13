@@ -1718,3 +1718,62 @@ class PEFeatureExtractor(object):
         Compute the explanation provenance of the feature vector of a file.
         """
         return self.feature_vector_with_provenance(bytez, empty)[1]
+
+
+################################################################################
+# Speed: the string regexes in one pass over all strings (added on top of thrember)
+################################################################################
+
+
+# NOTE: StringExtractor.raw_features searches every string with every regex through `re.search(pattern, string)`, about
+# 76 calls per string (590,000 for a 2 MB file), most of whose time is the `re` module's cache lookup; it was about 60%
+# of an extraction. `_strings_raw_features` computes the same dictionary with one `finditer` per regex over the strings
+# joined by newlines, then counts the distinct strings that contain a match. This is exact, not approximate: strings
+# are runs of 0x20-0x7f, so they contain no newline; no regex can match a newline (no `\s`, `.`, or negated class can
+# reach across, and `.` excludes it); and `\b` sees the newline as a non-word character, exactly like the string's end.
+# The original method is kept unchanged above (this file only adds to thrember) and replaced here; tests compare the
+# two on real files.
+def _strings_raw_features(self: StringExtractor, bytez: bytes, pe: Optional[pefile.PE]) -> dict:  # type: ignore[type-arg]
+    """StringExtractor.raw_features, with the regex counts computed in one pass per regex (see the NOTE above)."""
+    allstrings = self._allstrings.findall(bytez)
+    allstrings_ascii = [s.decode() for s in allstrings]
+    if allstrings:
+        string_lengths = [len(s) for s in allstrings]
+        avlength = sum(string_lengths) / len(string_lengths)
+        # The same counts as the original's per-character list, without the Python loop.
+        as_shifted_string = np.frombuffer(b"".join(allstrings), dtype=np.uint8) - np.uint8(0x20)
+        c = np.bincount(as_shifted_string, minlength=96)
+        csum = c.sum()
+        p = c.astype(np.float32) / csum
+        wh = np.where(c)[0]
+        H = np.sum(-p[wh] * np.log2(p[wh]))
+    else:
+        avlength = 0
+        c = np.zeros((96,), dtype=np.float32)
+        H = 0
+        csum = 0
+
+    string_counts = {}
+    if allstrings_ascii:
+        text = "\n".join(allstrings_ascii)
+        # Where each string starts in `text`; a match belongs to the last string starting at or before it.
+        starts = np.cumsum([0] + [len(s) + 1 for s in allstrings_ascii[:-1]])
+        for k, r in self._regexes.items():
+            positions = [m.start() for m in r.finditer(text)]
+            if positions:
+                string_counts[k] = int(np.unique(np.searchsorted(starts, positions, side="right") - 1).size)
+    string_counts = OrderedDict(sorted(string_counts.items()))
+
+    return {
+        "numstrings": len(allstrings),
+        "avlength": avlength,
+        "printabledist": c.tolist(),
+        "printables": int(csum),
+        "entropy": float(H),
+        "string_counts": string_counts,
+    }
+
+
+_strings_raw_features_original = StringExtractor.raw_features
+StringExtractor.raw_features = _strings_raw_features  # type: ignore[method-assign]
+

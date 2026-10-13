@@ -203,3 +203,12 @@ models.
   features.
 - **Q3 Statistics at scale.** Resolved (§4.3; first by a numba sweep for the pairwise overlap, since 2026-10-08 from the
   canonical pieces for the round-trip definitions).
+
+## Speed (2026-10-13)
+
+`StringExtractor.raw_features` is replaced at the end of `features.py` (a pure addition; the original method is kept
+as `_strings_raw_features_original`): the 76 string regexes run once each over the strings joined by newlines, and
+each counts the distinct strings with a match. Exact (strings contain no newline and no regex can match one; `\b` sees
+the newline like a string's end); bit-identical feature vectors on 400 files; 2.1x faster extraction overall (the
+regex loop was ~60% of it). The other hot spots (pefile's section entropy, the whole-file entropy `Counter`, pefile's
+parse) are left as they are by decision (user, 2026-10-13: no replacing pefile or rewriting the pipeline).

@@ -18,6 +18,7 @@ import pytest
 from sklearn.feature_extraction import FeatureHasher
 
 from provexp.boxmatrix import Pieces
+from provexp.featuresets.ember2024 import features
 from provexp.featuresets.ember2024.features import ExportsInfo
 from provexp.featuresets.ember2024.features import HeaderFileInfo
 from provexp.featuresets.ember2024.features import PEFeatureExtractor
@@ -234,3 +235,32 @@ def _parse(data: bytes) -> pefile.PE | None:
         return pefile.PE(data=data)
     except (pefile.PEFormatError, AttributeError):
         return None
+
+
+################################################################################
+# Speed-up of the string features (an exact replacement added on top of thrember)
+################################################################################
+
+
+class TestSpeedups:
+
+    @pytest.mark.parametrize("text", [
+        b"",
+        b"short",
+        b"C:/Windows\x00https://example.com/a?b=c\x00\x01.click(here)\x00x.clickme now\x00",
+        b"HKCU\\Software\x00\x00KHLMstart\x00192.168.001.010 and 10.0.0.1\x00aa:bb:cc:dd:ee:ff\x00",
+        b"!This program cannot be run in DOS mode.\r\n$\x00Invoke-Expression powershell GET /index POST /x",
+        b"1BoatSLRHtKNngkdXEeobR76b53LETtpyT\x00fe80::1 and 2001:db8:0:0:0:0:2:1\x00/dev/null /proc/self",
+        b"PASSWORD password Password\x00\x00\x00mutexmutex\x00ftp://host/x ftp: html<script>\x7f\x7f\x7f\x7f\x7f",
+    ], ids=range(7))
+    def test_strings_raw_features_match_original(self, text: bytes) -> None:
+        """Every regex count, at string boundaries included, equals the original per-string search."""
+        extractor = features.StringExtractor()  # type: ignore[no-untyped-call]
+        original = features._strings_raw_features_original(extractor, text, None)  # type: ignore[no-untyped-call]
+        assert features._strings_raw_features(extractor, text, None) == original
+
+    def test_strings_on_files(self, sample: tuple[bytes, np.ndarray, Provenance]) -> None:
+        data, _, _ = sample
+        extractor = features.StringExtractor()  # type: ignore[no-untyped-call]
+        original = features._strings_raw_features_original(extractor, data, None)  # type: ignore[no-untyped-call]
+        assert features._strings_raw_features(extractor, data, None) == original

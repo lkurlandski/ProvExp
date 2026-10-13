@@ -47,6 +47,18 @@ against CCS's 12-page limit. See `docs/resume-prompt.md`.
 
 ## Decisions
 
+2026-10-13 (night, seed-0 scale-up prepared):
+- **Scale-up = 500 files, seed 0, full fidelity, GBDT + MLP** (user). Selection
+  `artifacts/explanation_set/ts-scaleup500-seed0.parquet` (250/label, a superset of the 100 pilot files; written by
+  `faithfulness.py --include ... --select_only`). Scripts `run/50`-`55`, all smoke-tested; the user runs them in tmux
+  (16 CPUs, GPUs 2 and 3). Order: 50 (KernelSHAP, `explain.py --fill_missing` keeps the pilot rows) -> 51 (pullback
+  faithfulness, ~12 h) -> 53 (pushforward) and 54 (comparison); 52 (operator variants) and 55 (triggers) need only 50 /
+  nothing. ~20-24 h in all, run one after another.
+- **String features 2.1x faster overall, bit-identical** (`features.py`, added at the end: one `finditer` per regex
+  over the joined strings instead of 590k `re.search` calls; verified on 400 files and in `tests/test_ember2024.py`).
+  The user rejected replacing pefile's / the entropy `Counter`s ("too much code to review"): only the string change and
+  numpy for its per-character loop stay. The runner's cost model is now ~2x pessimistic.
+
 2026-10-13 (evening, experiments: 1a/1b of the experiment plan):
 - **Plan (user):** now 1a (realizability of AU's evasion) and 1b (significance on fresh, detected held-out malware);
   then a seed-0 scale-up to 2,000 files. Mitigation (1c) is a manuscript TODO, no code yet; real-attack transfer (1d)

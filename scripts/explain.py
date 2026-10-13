@@ -180,6 +180,7 @@ def main() -> None:
     parser.add_argument("--workers", type=int, default=os.cpu_count(), help="Processes for interventional TreeSHAP.")
     parser.add_argument("--limit", type=int, default=None, help="Explain at most this many samples (for testing).")
     parser.add_argument("--overwrite", action="store_true", help="Recompute explainers whose outputs exist.")
+    parser.add_argument("--fill_missing", action="store_true", help="For explainers whose outputs exist, compute only the selected rows that are still NaN and keep the rest.")
     args = parser.parse_args()
 
     outdir = args.outdir / f"seed-{args.seed}"
@@ -233,15 +234,25 @@ def main() -> None:
     report_file = outdir / "report.json"
     report: dict[str, Any] = json.loads(report_file.read_text()) if report_file.exists() else {}
     for name in args.explainers:
-        if (outdir / f"{name}.npy").exists() and not args.overwrite:
-            print(f"{name}: exists, skipping.", flush=True)
-            continue
-        t_0 = time.time()
-        A_rows, info = explain(name, X[rows], background, gbdt_file, mlp_file, device, args.workers, args.ig_steps, kernel_background, args.kernelshap_nsamples, args.background_seed)
+        todo = rows
         A = np.full(X.shape, np.nan)
-        A[rows] = A_rows
+        if (outdir / f"{name}.npy").exists() and not args.overwrite:
+            if not args.fill_missing:
+                print(f"{name}: exists, skipping.", flush=True)
+                continue
+            # Keep the rows already explained (e.g., the pilot's) and explain only the missing ones.
+            A = np.load(outdir / f"{name}.npy")
+            if A.shape != X.shape:
+                raise RuntimeError(f"{name}.npy has shape {A.shape}, not {X.shape}.")
+            todo = rows[~np.isfinite(A[rows]).all(axis=1)]
+            print(f"{name}: {rows.size - todo.size} of {rows.size} rows exist, explaining {todo.size}.", flush=True)
+            if todo.size == 0:
+                continue
+        t_0 = time.time()
+        A_rows, info = explain(name, X[todo], background, gbdt_file, mlp_file, device, args.workers, args.ig_steps, kernel_background, args.kernelshap_nsamples, args.background_seed)
+        A[todo] = A_rows
         info["seconds"] = time.time() - t_0
-        info["samples"] = int(rows.size)
+        info["samples"] = int(np.isfinite(A).all(axis=1).sum())
         np.save(outdir / f"{name}.npy", A)
         report[name] = info
         report_file.write_text(json.dumps(report, indent=2))
