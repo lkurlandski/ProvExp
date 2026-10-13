@@ -26,12 +26,11 @@ the rule-based 3-C on hold. Work stays at pilot scale except where a task needs 
 
 ## Next (for Claude), on resume
 
-1. **Check runs 39-41** (the user's; logs in `artifacts/logs/audit_*-seed0*.log`). If 39 is done, `run/39`'s comments
-   still say 4 GPUs (the user ran 2 parts on GPUs 0-1): sync them and record the runtimes in `run/38`-`run/41`.
-2. **Read the go/no-go against the criterion in `docs/audit_plan.md`, as written**: (a) any confirmed candidate;
-   (b) the surrogate's top 20 hold fewer than half of the confirmed ones. Report a no-go as such; do not soften the
-   criterion after the fact. Note also how much of MalConv's credit falls on aggregates (objection 3) and whether the
-   confirmed shortcuts are only in the DOS header (weak, known).
+1. **Done (2026-10-13): runs 39-41 checked; 3-C revised is a no-go** by criterion (a): none of the pushforward's 20
+   candidates is confirmed by the transplant; the surrogate's top 20 hold the only confirmed one
+   (`datadirectories:security_size`). Aggregates take 70% of the credit MalConv's top 20 features hold. Details in
+   `docs/audit_plan.md`, "Results so far".
+2. **Now: post-mortem with the user**, then a new application for the pushforward (do not propose dropping it).
 3. If go: re-check the mock (operator per column), then plan the experiment proper with the user (forging and evasion
    at 1% FPR, the GBDT-relies-on column, tables). Then 3-A's planned changes (`PLAN.md`, 3-A, "Review after the step
    back": local vs. global framing, triage first, real-attack transfer). If no-go: post-mortem, then back to the user; the pushforward still

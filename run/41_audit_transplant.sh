@@ -3,7 +3,7 @@
 # each of the top 20 candidates (in >= 10 files) at the bytes the file's own P assigns to its feature, against random
 # bytes in the same place. First the pushforward's candidates (the go/no-go), then the surrogate's (the mock's
 # "unconfirmed" column). Needs run 40.
-# Smoke test: 3 candidates x 4 files in 8 s. Expected: a few minutes per source on 16 workers.
+# Took 2 min on 16 workers (about 1 min per source).
 set -euo pipefail
 cd "$(dirname "$0")/.."
 source env/bin/activate

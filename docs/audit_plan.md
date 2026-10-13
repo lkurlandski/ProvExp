@@ -1,7 +1,7 @@
 # 3-C (revised): Auditing a raw-byte detector through the pushforward
 
-Status (end of 2026-10-12): mock screened and approved; go/no-go fixed in advance and built; **runs 38-41 in progress**
-(the user's runs; 38 done, 39 running). Next: read the go/no-go against the criterion below. Replaces the rule-based 3-C
+Status (2026-10-13): runs 38-41 done; **no-go** by criterion (a): none of the pushforward's 20 candidates is confirmed
+(results below). Next: post-mortem with the user. Replaces the rule-based 3-C
 (`docs/rules_plan.md`, on hold), which rested on the pullback and Pᵀ rather than the pushforward.
 
 ## Why this task (and why the pushforward)
@@ -130,6 +130,20 @@ candidate is in the DOS header, the go stands but the finding is weak (Demetrio 
 
 - **Run 38 (surrogate):** 484,094 training files, 2 min. Fidelity: R^2 0.96 and Spearman 0.98 held out; R^2 0.95,
   Spearman 0.97, sign agreement 0.95 on the explanation set. A strong competitor: criterion (b) is a real test.
+- **Run 39 (MalConv IG):** 2,000 files, 33 min on 2 GPUs; completeness gap median 0.009, max 0.03 log-odds.
+- **Run 40 (discovery):** 7 min. MalConv pushed forward: 67 patterns in >= 10 files. Aggregates (no content) take 25%
+  of a file's benign credit (median), 70% of what its top 20 features hold (pooled); the surrogate's, 17% and 31%
+  (objection 3, as expected). The top content patterns: the DOS stub message (1,265 files), optional-header fields
+  (SizeOfUninitializedData, BaseOfCode, SizeOfCode, ImageBase, NumberOfRvaAndSizes), runs of zeros named by byte-entropy
+  windows, section characteristics (`0x40000040`, `0x42000040`, several hashed copies), one Rich header pair. The
+  surrogate's: optional-header fields, data-directory sizes (debug, security), imports, certificate URLs.
+- **Run 41 (transplant scored by MalConv), 191 malware:** **pushforward's candidates: 0 of 20 confirmed.** Most move
+  MalConv by exactly 0 for both the content and random bytes (section characteristics, entropy zero runs, Rich header:
+  MalConv's global max-pool ignores most 4-byte edits); the DOS message applies to 1 file (present in 160); the best,
+  BaseOfCode, has effect 0.09 (threshold 0.1). Surrogate's candidates: 1 of 20 confirmed,
+  `datadirectories:security_size` `0x2820` (effect 0.15, p 2e-19; its `0x2838` sibling 0.09).
+- **Go/no-go: no-go** by criterion (a): no candidate of the pushforward is confirmed. The surrogate, the competitor,
+  found the only confirmed shortcut, and it is not in the DOS header.
 
 ## What carries over
 
