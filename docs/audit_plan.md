@@ -158,6 +158,72 @@ candidate is in the DOS header, the go stands but the finding is weak (Demetrio 
   window; a benign file's peak needs its whole context, so the 4 bytes alone do not rebuild it elsewhere. Not separated
   (offset vs. context) by this run.
 
+## Second framing: scrambling what detection rests on (2026-10-13; go/no-go not yet run)
+
+After the no-go and run 42 (MalConv's credit holds in place, specifically, but forged content does not transfer), the
+user approved the framing: instead of *forging benign evidence* (which needs transfer), *destroy malware evidence*.
+Push MalConv's IG for malware forward, aggregate over the corpus, and find the features MalConv's detection rests on;
+in other malware, overwrite the bytes P names for those features with random bytes. Nothing has to transfer: each file's
+own bytes are scrambled. The task is an audit of a raw-byte detector's fragility: which recurring, cheap-to-change
+content does its detection rest on, and how much does scrambling it cost the detector? The pushforward's role is the
+same as before: per-file IG cannot be aggregated across files without shared units, and the pushforward supplies them.
+
+**Mock (hypothetical numbers).**
+
+> *Paragraph.* We push MalConv's IG on 1,000 malware forward into the EMBER features and rank features by how many
+> files carry MalConv's malware evidence on them. In 191 held-out malware, scrambling the bytes each file's P assigns
+> to each of the top 20 lowers MalConv's malware log-odds beyond scrambling as many bytes elsewhere in the same MalConv
+> windows for 9; 6 lie past the DOS header, beyond the reach of the known DOS-header attacks (the checksum, the
+> debug and certificate directory entries, section flags). Scrambling the 6 loader-ignored ones together lowers
+> MalConv's log-odds by a median 2.1 and evades it on 8% of detected malware at 1% FPR (DOS-header attack alone: 5%;
+> both: 14%). A surrogate GBDT trained on MalConv's scores ranks only 2 of the 9 in its top 20; its own top 20
+> confirm 3. Three of the 9 also carry the GBDT's evidence (3-A), so scrambling them weakens both detectors.
+
+| feature | malware files carrying MalConv's evidence | median drop, scrambled vs. elsewhere | past the DOS header | loader ignores it | in surrogate's top 20 | GBDT relies on it |
+|---|---|---|---|---|---|---|
+| `header:optional_header_CheckSum` | 31% | 0.21 vs 0.01 | yes | yes | no | yes |
+| … | | | | | | |
+
+| recipe (scramble together) | median drop | evasion at 1% FPR |
+|---|---|---|
+| pushforward's confirmed, loader-ignored | 2.1 | 8% |
+| surrogate's confirmed, loader-ignored | | |
+| random features, same number of bytes | | |
+| DOS-header attack (known) / with the pushforward's | | 5% / 14% |
+
+**Operator per column:** malware files carrying evidence = **pushforward**, aggregated; drop and evasion = none
+(validation; P's column of each target locates the bytes, for every row alike, so the comparison isolates discovery);
+past the DOS header, loader ignores it = none (domain knowledge inside the experiment, for reading only); surrogate =
+none (alternative 2); GBDT relies on it = none (TreeSHAP). The claim rests on the first column and on the pushforward's
+recipe beating the surrogate's.
+
+**Screening.** (1) Needs P: the pushforward aggregates per-file IG into shared units; P also locates each feature's
+bytes per file, including hashed features. (2) Task: auditing a detector's robustness before deployment (red-teaming,
+MLSEC-style evasion). (3) Alternatives: the surrogate (the strongest, given P for location); offset aggregation works
+only before `e_lfanew`; the known DOS-header attacks as the reference attack. (4) Go/no-go below. (5) Not a re-pitch:
+the user approved it. (6) Mock above.
+
+**Objections and risks (from what we know).**
+1. *The surrogate ties or wins* (main risk). It already found the only confirmed shortcut (run 41); with R^2 0.95 its
+   attributions are close to MalConv's function in EMBER's units, and both land on header fields. A 24-file smoke test
+   (60 discovery files, not a result) leaned the same way: the surrogate's candidates (certificate-directory entries,
+   signing time) moved MalConv more.
+2. *Small per-field effects.* About 0.1-0.3 log-odds each against malware log-odds of ~10; evasion needs combinations.
+3. *Functionality.* Verification is parse-only. Many candidates (data-directory addresses, ImageBase, Subsystem) break
+   the program if changed; the attack reading needs a loader-ignored subset (a hand-made list, inside the experiment).
+4. *Novelty of the attack.* Header manipulations against MalConv are known (Demetrio et al.; gym-malware's actions).
+   The contribution is the automatic, corpus-level audit for any extractor, not the attack.
+5. *DOS header.* Findings only before `e_lfanew` repeat Demetrio et al.
+
+**Go/no-go (proposed 2026-10-13; to be fixed by the user before run 44).** Discovery in the malware direction (run 43);
+per source, the top 20 features by malware files x mean credit among those found with content in >= 10 malware files.
+Scramble test on the 191 held-out malware of run 41 (`scripts/audit_scramble.py`, run 44), confirmed by the
+transplant's rule (>= 20 files; median drop and median paired difference vs. elsewhere >= 0.1; Wilcoxon p < 0.05/20).
+**No-go if** (a) no pushforward candidate is confirmed outside the DOS header region (its bytes before `e_lfanew` in
+at least half the files), or (b) the surrogate's top 20 contain at least half of the pushforward's confirmed
+candidates. Hypothesis: mostly header and data-directory fields; a few confirmed outside the DOS region; (b) is the
+likely failure.
+
 ## What carries over
 
 3-B's machinery (`scripts/shortcuts*.py`): discovery by (feature, content), transplant at P's column, the training
