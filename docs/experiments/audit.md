@@ -366,3 +366,27 @@ the two methods' fields stays well above its null when realizable (18.4% vs. 10.
 comes from excluding the IAT entry or from writing benign rather than random values into ImageBase / Subsystem /
 SizeOfHeapReserve (i.e., MalConv reacting to *abnormal* values), and how the null behaves when it excludes the recipe's
 own fields. Two cheap follow-ups (~6 min each) would settle both; see `docs/status.md`.
+
+### Decomposition and a cleaner null (run 48, 2026-10-13)
+
+Same 1,000 files as run 47 (902 detected), plus `--decompose`. Hypotheses: most of the realizable loss comes from
+benign instead of abnormal values; the IAT entry matters little; the free fields alone beat an unconfirmed null modestly.
+
+| step | recipe | evasion [95% CI] | paired step |
+|---|---|---|---|
+| A | pushforward, all nine fields, random bytes | 19.7% [17.2, 22.4] | |
+| B | minus loader-critical (IAT) and per-file skips, random bytes | 16.3% [14.0, 18.7] | A - B +3.4 [2.0, 5.0], p = 6e-6 |
+| C | B with valid (benign) values in the constrained fields = realizable | 12.4% [10.3, 14.6] | B - C +3.9 [2.4, 5.4], p = 4e-7 |
+| D | free fields alone | 9.8% [7.9, 11.8] | C - D +2.7 [1.2, 4.1], p = 5e-4 |
+| null | free fields of the pool that no source confirmed | 4.4% [3.2, 5.7] | C - null **+8.0 [6.1, 9.9], p = 3e-13**; D - null +5.3, p = 4e-11 |
+
+`random_free` (run 47's null) beats the unconfirmed null by 6.5 pts: the free pool had 16 fields, 9 of them confirmed by
+one of the two sources, so run 47's null was largely made of the treatment. Against the clean null, the realizable
+union evades 18.4% vs. 4.4% (+14.0, p = 2e-26). Realizable pushforward vs. realizable surrogate: +2.0 [0.3, 3.7],
+p = 0.027 (run 47). 12 of 902 files had no parsing draw of the unconfirmed null (60 unparsed draws in all).
+
+**Reading.** Hypotheses held except that the IAT step (3.4) is as large as the value step (3.9). Realism costs the
+pushforward recipe 7.3 points (19.7 -> 12.4), split about evenly between a loader-critical field and abnormal values;
+what remains is well above a null of other loader-ignored fields. Caveats: the clean null is small (the 7 free
+fields that failed confirmation) and post hoc; a broader null would draw from every loader-ignored header field in the
+format, not just the candidate pool. The loader classification is from documentation; no file was executed.

@@ -11,6 +11,10 @@ Recipes (each a set of features; every one scrambled at the bytes the file's own
     - `random`: as many features as `pushforward`, drawn per file (seeded) from all features with locatable content,
       the null recipe (does scrambling the discovered fields beat scrambling arbitrary locatable fields?).
 
+With `--realizable --decompose`, the realizable pushforward recipe's loss is decomposed: `pushforward_no_critical`
+(the same fields, random bytes everywhere, i.e., abnormal values in the constrained fields), `pushforward_free_only`
+(its free fields alone), and the null `random_free_unconfirmed` (free fields of the pool that no source confirmed).
+
 With `--realizable`, each confirmed recipe also gets a `*_realizable` version that changes only what the Windows loader
 lets an attacker change (domain knowledge inside the experiment, docs/experiments/audit.md, "Realizability"): `FREE`
 fields, which the loader ignores, are scrambled; `CONSTRAINED` fields take a valid value drawn from benign training
@@ -258,6 +262,7 @@ def process_shard(
     random_retries: int = 0,
     detected_only: bool = False,
     realizable: Optional[dict[str, Any]] = None,
+    decompose: bool = False,
 ) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
     """Scramble each recipe's features together in the target files of one shard; see the module docstring."""
     assert st._EXTRACTOR is not None and st._MALCONV is not None
@@ -332,6 +337,7 @@ def process_shard(
                     results.append(run(f"{name}_realizable", free, rng, values))
                     if name == "pushforward":
                         k_free = len(free) + len(values)
+                        push_free, push_values = free, values
                 free_local = [j for j in locatable(realizable["free_pool"])
                               if not (realizable["names"][j] in _EXECUTABLE_ONLY and x[realizable["index"]["header:characteristics_DLL"]] > 0)]
                 for r in range(num_random):
@@ -342,6 +348,24 @@ def process_shard(
                         return rng.choice(free_local, size=k, replace=False).tolist() if k else []
 
                     results.append(run("random_free", draw_free(), rng, redraw=draw_free))
+                if decompose:
+                    # Where the realizable pushforward recipe loses its evasion: the same fields with random bytes
+                    # (abnormal values in the constrained fields), the free fields alone, and a null without any
+                    # confirmed field.
+                    rng = np.random.default_rng([seed, key, 400])
+                    results.append(run("pushforward_no_critical", push_free + sorted(push_values), rng))
+                    rng = np.random.default_rng([seed, key, 401])
+                    results.append(run("pushforward_free_only", push_free, rng))
+                    confirmed = set(recipes["union"])
+                    unconfirmed = [j for j in free_local if j not in confirmed]
+                    for r in range(num_random):
+                        rng = np.random.default_rng([seed, key, 500 + r])
+                        k = min(k_free, len(unconfirmed))
+
+                        def draw_unconfirmed(rng: np.random.Generator = rng, k: int = k) -> list[int]:
+                            return rng.choice(unconfirmed, size=k, replace=False).tolist() if k else []
+
+                        results.append(run("random_free_unconfirmed", draw_unconfirmed(), rng, redraw=draw_unconfirmed))
             files.append(base | {"status": "ok", "log_odds": log_odds})
         except st.TransplantTimeout:
             files.append(base | {"status": "timeout", "log_odds": float("nan")})
@@ -437,6 +461,7 @@ def main() -> None:
     parser.add_argument("--random_retries", type=int, default=0, help="Redraw a random recipe that breaks the parse.")
     parser.add_argument("--detected_only", action="store_true", help="Score only files above the threshold.")
     parser.add_argument("--realizable", action="store_true", help="Add the *_realizable recipes and random_free.")
+    parser.add_argument("--decompose", action="store_true", help="With --realizable: decompose its loss (see code).")
     parser.add_argument("--exclude", type=Path, nargs="*", default=[], help="files.parquet of runs whose files to skip.")
     parser.add_argument("--benign_rows", type=int, default=50_000, help="Benign training files for constrained values.")
     parser.add_argument("--run_name", type=str, default=None, help="Subdirectory name (default: seed-{seed}).")
@@ -497,7 +522,7 @@ def main() -> None:
     for (shard,), group in targets.sort("shard", "position").group_by("shard", maintain_order=True):
         tasks.append((int(shard), group.select("index", "name", "position").to_dicts(), args.db, recipes,
                       args.num_random, all_localizable, args.min_score, args.threshold, args.max_content, args.seed,
-                      args.timeout, args.random_retries, args.detected_only, realizable))
+                      args.timeout, args.random_retries, args.detected_only, realizable, args.decompose))
     t_0 = time.time()
     files: list[dict[str, Any]] = []
     results: list[dict[str, Any]] = []
@@ -514,7 +539,10 @@ def main() -> None:
     pairs = [("pushforward", "random"), ("surrogate", "random"), ("union", "random"), ("pushforward", "surrogate"),
              ("union", "surrogate"), ("pushforward_realizable", "random_free"), ("surrogate_realizable", "random_free"),
              ("union_realizable", "random_free"), ("pushforward_realizable", "surrogate_realizable"),
-             ("pushforward", "pushforward_realizable")]
+             ("pushforward", "pushforward_realizable"), ("pushforward", "pushforward_no_critical"),
+             ("pushforward_no_critical", "pushforward_realizable"), ("pushforward_realizable", "pushforward_free_only"),
+             ("pushforward_free_only", "random_free_unconfirmed"), ("pushforward_realizable", "random_free_unconfirmed"),
+             ("union_realizable", "random_free_unconfirmed"), ("random_free", "random_free_unconfirmed")]
     paired = paired_comparisons(result_table, pairs, seed=args.seed)
     file_table.write_parquet(outdir / "files.parquet")
     result_table.write_parquet(outdir / "results.parquet")
