@@ -128,9 +128,11 @@ Consider provenance matrix $P \in \mathbb{R}^{(|z| + 1) \times |x|}$. Let $A_j=\
 \label{def:ProvenanceAmbiguity}
 Consider $z \in \mathcal{Z}$, $x \in \mathcal{X}$, and provenance $P$ with row support given by $A_j$ and unattributable features $U$. We define the provenance ambiguity of each feature, $H_j$, its effective support, $e^{H_j}$, and the overall provenance ambiguity, $H$, as:
 \begin{equation}
+\begin{gathered}
     H_j = -\sum_i P_{i,j} \log P_{i,j} \qquad
-    e^{H_j} \in [1, |A_j|] \qquad
+    e^{H_j} \in [1, |A_j|] \\
     H = \frac{1}{|x| - |U|} \sum_{j \notin U} H_j
+\end{gathered}
 \end{equation}
 }
 

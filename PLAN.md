@@ -11,8 +11,16 @@ the rest to follow. No scaling until the pilot results and the claims are settle
 
 ## Target
 
-- **Venue:** USENIX Security 2027, second submission cycle (late January 2027). Optimistic; fallback is the next S&P /
-  CCS / USENIX cycle, or a lower-tier venue (ACSAC, RAID, AsiaCCS, DLSP) if Gate 2 fails.
+- **Venue:** ACM CCS 2027 (Atlanta, Oct 11-15, 2027), **Cycle A** (switched from USENIX Security on 2026-10-13, user
+  preference). The CCS 2027 CfP is not out yet; going by CCS 2026 (abstract registration Jan 7, paper Jan 14), expect
+  the abstract ~early January and the paper ~mid-January 2027. Verify once the CfP appears. A paper rejected in Cycle A
+  may not be resubmitted to Cycle B (~late April), so Cycle B is the alternative only if the load-bearing pieces are not
+  ready by January, not a fallback. Fallback after rejection: S&P / USENIX / NDSS, or a lower-tier venue (ACSAC, RAID,
+  AsiaCCS, DLSP).
+- **Format (CCS):** unaltered ACM `acmart` `sigconf` (two-column); body <= 12 pages excluding the bibliography and
+  appendices; anonymous; mandatory Open Science appendix and (advised) Ethical Considerations appendix after the
+  bibliography; a Generative AI usage note if applicable; a ~200-word track justification in HotCRP (likely track:
+  Security and Privacy of Machine Learning).
 - **Format:** a single security paper. Theory stays modest: correct, clearly stated, and useful in practice, not an
   ML-theory contribution.
 - **No human studies.** No user or analyst studies. Evidence comes from quantitative evaluation only.
@@ -480,7 +488,7 @@ the research runs at pilot scale; scaling up is for the final numbers, when the 
 | then | Scale-up: 2,000 files, seeds 0-2 (~48 h / 16 cores + GPU); AU mitigation and CM real-attack transfer (the deferred, now load-bearing, pieces) | with the user |
 | later | Scale-up (2,000 files, seeds 0–2), when the user decides; the MLP if time allows | |
 | later | Appendix (App-R; the byte-set control bound) | |
-| Dec 15–late Jan | Writing: introduction and contributions, framework edits, figures | Submission |
+| Dec 15–mid Jan | Writing: introduction and contributions, framework edits, figures | Submission (CCS '27 Cycle A, est. abstract ~Jan 7, paper ~Jan 14) |
 
 Gate 1 (the pilot census, in git history) passed provisionally for the measurement result (now App-L).
 Gate 2 (the PB1 pilot, `docs/experiments/pb1.md`, 2026-10-08): passed for the GBDT (window-level parity with occlusion under

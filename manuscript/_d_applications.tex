@@ -10,9 +10,9 @@ The framework itself is domain-agnostic: it depends only on the provenance matri
     \item \textbf{The pullback compares detectors with different feature sets, per file:} it puts a feature-based detector's local explanations in the same byte space as a raw-byte detector's, at byte resolution and one extraction per file, which locates the bytes both rely on, and, for a file on which they disagree, whether the flagging detector's evidence is content the other does not read or reads the other way; comparing them over windows without $P$ misses both.
 \end{enumerate}
 
-\begin{table}[t]
+\begin{table*}[t]
   \centering
-  \small
+  \footnotesize
   \begin{tabular}{lllll}
     \toprule
     Section & ID & Question & Claim & Status \\
@@ -28,7 +28,7 @@ The framework itself is domain-agnostic: it depends only on the provenance matri
   \end{tabular}
   \caption{Experiments, the claims they support, and their status. Results are from a pilot (100 files, one seed) unless stated otherwise. The IDs match the project's documentation.}
   \label{tab:XML:Experiments}
-\end{table}
+\end{table*}
 
 \subsection{Experimental Setup}
 \label{sec:XML:Setup}
@@ -104,7 +104,7 @@ The pushforward turns a problem-space explanation into a feature-space one: it e
 
 \paragraph{Pilot results (PF1).} Every pushed-forward explanation is far above random (97--100 of 100 files, $p \approx 10^{-18}$) and above the naive translation (57--70 of 100 files, $p = 2.6 \cdot 10^{-6}$ to $0.023$), but reaches only $R = 0.31$--$0.40$ of TreeSHAP's area (0.25--0.29 under the background reference): weak by the criterion. The loss is not in the operator: pushed forward from the bytes, TreeSHAP's own explanation keeps $R = 0.80$. It is in the resolution of the source. To separate the two, we express each feature-space explainer's information at $K$ windows (pull back, sum over windows, push forward through $P$ coarsened to the windows; this is the round trip $M_K a$ of the coarsened provenance) and measure what survives (Table~\ref{tab:XML:Resolution}). What a $K$-window explanation can reach rises at every step, for every explainer and both references, from $R = 0.34$ at 64 windows to $0.80$ at the bytes, while the overlap of $P$ falls from 0.99 to 0.41; Theorem~\ref{theorem:RoundTripBounds} bounds the round trip's loss in all 2{,}400 cases (at most 0.83 of the bound). At 256 windows, even TreeSHAP's information reaches only $R = 0.37$; occlusion reaches 0.32 and KernelSHAP over windows 0.40, so the direct explainers are near what their resolution allows (occlusion's share falls from 0.91 at 64 windows to 0.74 at 4{,}096, where it saturates, as in PB1). The overlap of $P$ at a resolution, known before any explanation is computed, thus tracks how much of a feature-space explanation survives being expressed at that resolution. Across files at a fixed resolution it does not add much beyond file size, so we read it as a prediction across resolutions, not a ranking of files. The same test, applied to the MLP's explainers, is the first step when the MLP returns.
 
-\begin{table}[t]
+\begin{table*}[t]
   \centering
   \small
   \begin{tabular}{lcccccccc}
@@ -118,7 +118,7 @@ The pushforward turns a problem-space explanation into a feature-space one: it e
   \end{tabular}
   \caption{What survives the pushforward at each resolution (pilot, 100 files, path TreeSHAP, the matched reference). $R$ is a method's deletion area relative to TreeSHAP's. The attainable $R$ expresses TreeSHAP's own explanation at that resolution and pushes it forward; occlusion cannot be computed beyond 4{,}096 windows at an affordable cost. KernelSHAP over 256 windows reaches 0.40. Overlap is the median over files of the mean over attributable features.}
   \label{tab:XML:Resolution}
-\end{table}
+\end{table*}
 
 \paragraph{Ground truth for feature-space explainers (PF2).} On a triggered file, the pushforward of the trigger's bytes weights each feature by how much of it the trigger computes, a property of $P$ alone. Its support, the features the trigger touches, is a ground truth that does not depend on the model: a faithful explanation of the trigger's effect must concentrate there. We score TreeSHAP and KernelSHAP of the retrained GBDT by the share of their attribution change that falls on this support and by whether their top-ranked features lie in it. The weights themselves are not a target, since they cannot say which of the touched features the model uses, and even an ideal explainer of a tree model moves some credit onto untouched features through interactions. This turns problem-space knowledge into an evaluation of feature-space explainers, which otherwise have no ground truth.
 

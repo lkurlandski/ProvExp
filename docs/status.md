@@ -31,11 +31,11 @@ and the document still needs a dissertation-chapter -> conference-paper conversi
 
 1. **Local LaTeX compile works** (2026-10-13): `cd manuscript && make` (also `make watch`, `make check`, `make clean`)
    builds `main.pdf` cleanly (all refs/cites resolve). `main.tex` now holds the preamble itself (user: no separate
-   wrapper); the preamble is a simple placeholder (plain article), to be replaced by the USENIX template. Remaining overfull box: the experiments table in `_d` (152pt; an internal status table the paper conversion should drop).
+   wrapper); it uses the CCS template (ACM `acmart` `sigconf`, two-column, 16 pages as of now). Remaining overfull box: the experiments table in `_d` (152pt; an internal status table the paper conversion should drop).
 2. **Finish the manuscript rough draft, in paper (not chapter) voice:** related work **drafted** (2026-10-13,
    `_d2_related_work.tex`, after the applications; 10 new bib entries, author lists checked against arXiv), abstract (five-move, >=2 numbers), discussion/limitations,
    summary; then add a threat/system model and an ethics/disclosure section. The introduction (`_b`) is already
-   rewritten. Finish with a dissertation-chapter -> conference-paper global pass (voice, structure, ~13 pp). Ask before
+   rewritten. Finish with a dissertation-chapter -> conference-paper global pass (voice, structure, <= 12 pp body for CCS). Ask before
    changing what a claim is for.
 3. **Then scale up** (only once the draft convinces us the plan is solid): all 2,000 files, seeds 0-2; up to ~48 h on
    16 cores for the CPU work plus GPU time for MalConv's IG and any AU retrain. Tightens the pilot numbers (esp. AU's
@@ -47,6 +47,10 @@ and the document still needs a dissertation-chapter -> conference-paper conversi
 ## Decisions
 
 2026-10-13:
+- **Venue switched to ACM CCS 2027, Cycle A** (user; prefers the ACM template to USENIX's). CfP not out; by CCS 2026,
+  abstract ~Jan 7 and paper ~Jan 14, 2027 (about 12 days earlier than USENIX's Jan 26). Cycle A rejects cannot go to
+  Cycle B. `manuscript/main.tex` is now a complete document on `acmart` `sigconf` (anonymous; body <= 12 pp; Open
+  Science and Ethics appendices after the bibliography); built with `make` in `manuscript/`.
 - **3-C revised (the audit) worked and is written up.** The working framing scrambles the bytes P names for the
   features MalConv's detection rests on (not forging benign content, which does not transfer; see `docs/graveyard.md`).
   Mitigation deferred (SSViT GPU work); the surrogate column is kept but we do not fit the narrative to it (user).

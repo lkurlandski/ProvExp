@@ -2,8 +2,8 @@
 
 Dissertation research: **explanation provenance** for malware detectors. A provenance matrix P (bytes × features,
 plus a null element) transfers explanations between the feature-space (EMBER v3 features) and the problem-space
-(the bytes of a PE file): pullback b = Pa, pushforward a = PᵀD†b. Target: USENIX Security 2027, second cycle
-(late January 2027), as a single security paper with modest theory.
+(the bytes of a PE file): pullback b = Pa, pushforward a = PᵀD†b. Target: ACM CCS 2027, Cycle A
+(est. mid-January 2027; CfP not out yet), as a single security paper with modest theory.
 
 ## Read first
 
@@ -74,7 +74,7 @@ plus a null element) transfers explanations between the feature-space (EMBER v3 
   Full suite: `env/bin/pytest -n 16 tests` (~4 min).
 - Before committing: `env/bin/ruff check src tests scripts` and `env/bin/mypy src tests scripts` (strict) must pass.
 - **Compile the manuscript with `make` in `manuscript/`** (user-space TeX Live in `~/texlive`, latexmk + pdflatex).
-  `main.tex` is the complete document (preamble included; a simple placeholder, not the final USENIX template) and
+  `main.tex` is the complete document (ACM `acmart` `sigconf`, the CCS format; do not change fonts, margins, or spacing) and
   `\input`s the section fragments. After editing, run `make` and `make check` (undefined refs/citations, overfull boxes).
 - Commit to `main` in logical pieces. Do not push unless asked.
 - Changes to the thrember-derived `features.py` are pure additions; the original lines stay untouched.

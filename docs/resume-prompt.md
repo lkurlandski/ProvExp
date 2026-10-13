@@ -16,7 +16,7 @@ Read `CLAUDE.md`, then `docs/status.md` ("Where we are", "Next", and the 2026-10
   `docs/related_work.md`), **abstract** (`_a` is a one-line chapter bridge), **discussion** (`_e`) and **summary**
   (`_f`) are placeholders. The document is still written as a **dissertation chapter**; it needs a real
   chapter->paper conversion (voice, structure, plus a findable **threat/system model** and an **ethics/disclosure**
-  section) for a USENIX submission.
+  section) for a CCS submission (ACM `acmart` `sigconf`, <= 12 pp body).
 - **Repository reorganized:** experiment docs merged and moved to `docs/experiments/{cp,pb1,pf1,trigger,cm,audit}.md`;
   dropped threads (3-B, the rule-based audit) archived under `scripts/archive/` and `run/archive/` and summarized in
   `docs/graveyard.md`; the "3-A/3-C" vocabulary retired (CM/AU are canonical).
@@ -26,7 +26,7 @@ Read `CLAUDE.md`, then `docs/status.md` ("Where we are", "Next", and the 2026-10
 - **user-space TeX Live + `latexmk` + `pdflatex`** in `~/texlive` (installed). `cd manuscript && make` builds
   `main.pdf`; `make check` lists undefined refs/citations and overfull boxes. `main.tex` is the complete document
   (placeholder preamble: plain `article`, the colors, `\textlangle`/`\textrangle`, numbered
-  `\definition`/`\theorem`/`\proposition` headers, `notationbox`/`proposalbox`), to be replaced by the USENIX template.
+  `\definition`/`\theorem`/`\proposition` headers, `notationbox`/`proposalbox`) on the CCS template (ACM `acmart` `sigconf`, `anonymous`).
 
 ## Next steps (in order)
 
@@ -35,7 +35,7 @@ Read `CLAUDE.md`, then `docs/status.md` ("Where we are", "Next", and the 2026-10
    `chen2022explaining` and FINER `he2023finer`), abstract (five-move, >=2 numbers), discussion/limitations, summary.
    Then add the threat/system model and ethics/disclosure sections. Writing these in paper voice now avoids a second
    rewrite.
-3. **Chapter->paper global pass:** voice, structure toward the security-paper skeleton, length (~13 pp USENIX body).
+3. **Chapter->paper global pass:** voice, structure toward the security-paper skeleton, length (<= 12 pp body for CCS).
 4. **Then scale up** (only once the draft convinces us the plan is solid): all 2,000 files, seeds 0-2. Budget up to
    ~48 h on 16 cores for the CPU work, **plus GPU time** for MalConv's IG (runs 39/45) and any AU retrain. This
    tightens the pilot numbers (especially AU's 22.5% evasion and CM) with seed variance / confidence intervals; it

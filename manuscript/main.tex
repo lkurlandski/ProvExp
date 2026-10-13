@@ -1,21 +1,29 @@
-\documentclass[11pt]{article}
+% ACM CCS 2027 submission: the unaltered ACM acmart class in sigconf (two-column) format, as the CCS call for papers
+% requires (checked against the CCS 2026 CfP; the CCS 2027 CfP is not out yet). The CfP forbids changing fonts or
+% margins, removing whitespace (e.g., negative vspace), or altering the author block. Body <= 12 pages, excluding the
+% bibliography and well-marked appendices.
+% acmthm=false: acmart would otherwise define theorem/definition/proposition environments, which clash with the
+% fragments' \definition[...] / \theorem[...] / \proposition[...] header macros below.
+\documentclass[sigconf,anonymous,acmthm=false]{acmart}
 
-\usepackage[margin=1in]{geometry}
-\usepackage[T1]{fontenc}
-\usepackage{amsmath,amssymb,amsthm,mathtools}
+% TODO: replace with the CCS '27 values (rights, DOI, ISBN) once the CfP / template is published.
+\setcopyright{none}
+\acmConference[CCS '27]{ACM SIGSAC Conference on Computer and Communications Security}{October 11--15, 2027}{Atlanta, GA, USA}
+\acmYear{2027}
+\acmDOI{}
+\acmISBN{}
+
+\usepackage{mathtools}  % acmart loads amsmath and its own math fonts (do not load amssymb)
 \usepackage{graphicx}
 \usepackage{booktabs}
 \usepackage{float}
+\usepackage{xurl}
 \usepackage{enumitem}
-\usepackage{xcolor}
 \usepackage[most]{tcolorbox}
 \usepackage{etoolbox}
 \usepackage{tikz}
 \usetikzlibrary{arrows.meta,positioning,calc,fit,backgrounds,shapes.geometric,shapes.misc,matrix,quotes}
-\usepackage[numbers,sort&compress]{natbib}
-\usepackage{xurl}
-\usepackage{hyperref}
-\usepackage[nameinlink]{cleveref}
+\usepackage[nameinlink]{cleveref}  % after hyperref (loaded by acmart)
 
 % --- colors used by the fragments ---
 \definecolor{darkblue}{rgb}{0.0,0.0,0.55}
@@ -41,14 +49,34 @@
 \newtcolorbox{notationbox}{colback=blue!3,colframe=blue!40!black,boxrule=0.4pt,arc=2pt,left=2mm,right=2mm,top=1mm,bottom=1mm}
 \newtcolorbox{proposalbox}{colback=gray!5,colframe=gray!55,boxrule=0.4pt,arc=2pt,left=2mm,right=2mm,top=1mm,bottom=1mm}
 
-\title{Explanation Provenance for Malware Detectors}
-\author{}
-\date{}
-
 \begin{document}
-\maketitle
 
+\title{Explanation Provenance for Malware Detectors}
+\author{Anonymous Author(s)}  % the anonymous option hides the author block at submission
+
+\begin{abstract}
 \input{_a_abstract}
+\end{abstract}
+
+\begin{CCSXML}
+<ccs2012>
+<concept>
+<concept_id>10002978.10002997</concept_id>
+<concept_desc>Security and privacy~Malware and its mitigation</concept_desc>
+<concept_significance>500</concept_significance>
+</concept>
+<concept>
+<concept_id>10010147.10010257</concept_id>
+<concept_desc>Computing methodologies~Machine learning</concept_desc>
+<concept_significance>300</concept_significance>
+</concept>
+</ccs2012>
+\end{CCSXML}
+\ccsdesc[500]{Security and privacy~Malware and its mitigation}
+\ccsdesc[300]{Computing methodologies~Machine learning}
+\keywords{explainable machine learning, malware detection, feature extraction, provenance}
+
+\maketitle
 
 \section{Introduction}
 \label{sec:XML:Introduction}
@@ -74,10 +102,21 @@
 \label{sec:XML:Summary}
 \input{_f_summary}
 
-\section*{Appendix}
+\bibliographystyle{ACM-Reference-Format}
+\bibliography{main}
+
+% Appendices go after the bibliography (CCS CfP); reviewers are not required to read them.
+\appendix
+
+\section{Appendix}
 \label{sec:XML:Appendix}
 \input{_g_appendix}
 
-\bibliographystyle{plainnat}
-\bibliography{main}
+\section{Ethical Considerations}
+% Required by the CCS CfP for papers with potential ethical concerns (advised when in doubt); after the bibliography.
+
+\section{Open Science}
+% Required by the CCS CfP: every artifact needed to evaluate the paper and how reviewers can access it (or a statement
+% that none is needed).
+
 \end{document}
