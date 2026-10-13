@@ -24,8 +24,8 @@ P and the round-trip theory were cut from the paper (2026-10-13) and archived in
 - **State a hypothesis before running an experiment** (what you expect and why), and report a failed check as such.
   Keep it short and proportionate: a sentence or two, not an elaborate pre-registered reading for every outcome
   (user, 2026-10-09).
-- Manuscript order: intro (`_b`, holds Figure 1 `assets/overview.tex`), background (`_b2`: detectors, explainers,
-  faithfulness), related work (`_g`), method (`_c`: P, transfers, constructing P incl. granularity and EMBER),
+- Manuscript order: intro (`_b`), background (`_b2`: detectors, explainers, faithfulness; Figures 1-2
+  `assets/framework_a/b`), related work (`_g`), method (`_c`: P, transfers with Figure 3 `assets/framework_c`, constructing P incl. granularity and EMBER),
   pullback (`_e`: data/models, PB1 incl. the deletion operator, PB2 incl. the trigger, CM with its threat model),
   pushforward (`_f`: PF1, PF2, AU with its threat model), discussion (`_h`), conclusion (`_i`); appendices `_j`-`_l`.
   No internal IDs (PB1, ...) in the paper text. Cut material lives in `manuscript/archive/`. Keep code and manuscript

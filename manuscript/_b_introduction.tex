@@ -26,9 +26,7 @@ Our key insight is that \emph{every engineered feature is computed from specific
 extractor once records, as a single matrix $P$, which bytes produce each feature and with what weight; and this one
 matrix transfers explanations in both directions}. The \emph{pullback} $b = Pa$ places a feature-space explanation on
 the bytes, and the \emph{pushforward} $a = P^\top D^\dagger b$ places a byte-level explanation in the features
-(Figure~\ref{fig:overview}). We call $P$ the file's \emph{explanation provenance}.
-
-\input{assets/overview}
+(Figure~\ref{fig:pullback-pushforward}). We call $P$ the file's \emph{explanation provenance}.
 
 We instrument the EMBER extractor and evaluate both transfers on EMBER-2024 with a GBDT and MalConv, each first in a
 controlled setting and then on a security task. The pullback is as faithful as occlusion at the same resolution, at

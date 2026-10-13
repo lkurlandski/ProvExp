@@ -49,7 +49,7 @@ against CCS's 12-page limit. See `docs/resume-prompt.md`.
 
 2026-10-13 (evening, writing session, polish pass 1; user's 7 criticisms):
 - Intro rewritten in paper voice: research questions dropped, three compact contributions (method, pullback,
-  pushforward). Figures 1-3 replaced by one compact overview figure (`assets/overview.tex`; old ones archived).
+  pushforward). Figures 1-3 kept (user rejected a replacement overview figure); only their whitespace was tightened (Figure 2 panels fit their content; Figure 3 gaps and padding reduced; Figure 1 boxes slightly smaller).
 - Section 2 is now Background (detectors: EMBER, GBDT, MalConv; explainers: SHAP, KernelSHAP, TreeSHAP, IG,
   occlusion; two spaces; faithfulness). Related Work moved to Section 3. The "Setting" subsection is gone: a short
   threat model opens each application (5.3 CM, 6.3 AU).
@@ -59,7 +59,7 @@ against CCS's 12-page limit. See `docs/resume-prompt.md`.
 - Experimental Setup dissolved: data/models open Section 5; explainer configs and the deletion operator in 5.1; the
   trigger in 5.2; EMBER instrumentation in 4.3. Desiderata and sigma-consistency archived. Bib: +lundberg2020local,
   +ke2017lightgbm.
-- Short titles: 5 "Pulling Back to the Bytes", 6 "Pushing Forward to the Features". Body ends on p. 10 (limit 12).
+- Short titles: 5 "Pulling Back to the Bytes", 6 "Pushing Forward to the Features". Body ends on p. 11 (limit 12).
 
 2026-10-13 (evening, writing session, restructure):
 - **Organized by operator** (user agreed): 1 Intro, 2 Background and Setting (spaces + a short Setting; the threat

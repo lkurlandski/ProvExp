@@ -5,7 +5,9 @@ A static detector maps a file to a verdict without running it. Following Pierazz
 a file is an object $z \in \mathcal{Z}$ in the \emph{problem space}, a sequence of \emph{elements} $z_i$, here bytes.
 A \emph{feature extractor} $\sigma: \mathcal{Z} \to \mathcal{X}$ maps it to a vector $x = \sigma(z)$ of
 \emph{features} $x_j$ in the \emph{feature space}, and a classifier $\phi: \mathcal{X} \to \mathcal{L}$ assigns it a
-label.
+label (Figure~\ref{fig:pipeline-problem-to-feature}).
+
+\input{assets/framework_a}
 
 \paragraph{Feature-based detectors.} EMBER~\cite{anderson2018ember} is the standard feature set for static detection
 of Windows (PE) malware. Its third version~\cite{joyce2025ember} has 2{,}568 features in 12 groups: byte and
@@ -24,7 +26,9 @@ coincide.
 
 An \emph{explainer} assigns each input of a model a share of the model's output, its \emph{attribution}. Every
 explainer in this paper attributes the malware log-odds: a GBDT's raw score, or the difference of a network's two
-logits. Which inputs an explainer credits depends on where it is applied.
+logits. Which inputs an explainer credits depends on where it is applied (Figure~\ref{fig:feature-vs-problem-explanations}).
+
+\input{assets/framework_b}
 
 \definition[\textit{Feature-Space Explanation}]
 \label{def:FeatureSpaceExplanation}

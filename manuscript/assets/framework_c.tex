@@ -33,43 +33,43 @@
 }
 
 \begin{tikzpicture}[
-    node distance=18mm and 14mm
+    node distance=12mm and 10mm
 ]
 
 % --- Core nodes -------------------------------------------------------
 
 % feature-space explanation a (left, top)
-\node[stage, fill=black!2, minimum width=4cm] (anode) {
+\node[stage, fill=black!2, minimum width=3.4cm] (anode) {
     concrete explanation\\[-1pt]
     $\displaystyle a \in \mathcal{A}$
 };
 
 % feature-space explanation a* (left, bottom; pushforward result)
-\node[stage, fill=black!2, minimum width=4cm, below=8mm of anode] (astarnode) {
+\node[stage, fill=black!2, minimum width=3.4cm, below=5mm of anode] (astarnode) {
     tranferred explanation\\[-1pt]
     $\displaystyle a^{*} \in \mathcal{A}$
 };
 
 % pullback tau (middle, upper)
-\node[mapbox, right=20mm of anode] (taunode) {
+\node[mapbox, right=12mm of anode] (taunode) {
     pullback\\[-1pt]
     $\displaystyle \tau: \mathcal{A} \mapsto \mathcal{B}$
 };
 
 % pushforward psi (middle, lower)
-\node[mapbox, right=20mm of astarnode] (psinode) {
+\node[mapbox, right=12mm of astarnode] (psinode) {
     pushforward\\[-1pt]
     $\displaystyle \psi: \mathcal{B} \mapsto \mathcal{A}$
 };
 
 % problem-space explanation b* (right, top; pullback result)
-\node[stage, fill=black!2, minimum width=4cm, right=20mm of taunode] (bstarnode) {
+\node[stage, fill=black!2, minimum width=3.4cm, right=12mm of taunode] (bstarnode) {
     transferred explanation\\[-1pt]
     $\displaystyle b^{*} \in \mathcal{B}$
 };
 
 % problem-space explanation b (right, bottom)
-\node[stage, fill=black!2, minimum width=4cm, below=8mm of bstarnode] (bnode) {
+\node[stage, fill=black!2, minimum width=3.4cm, below=5mm of bstarnode] (bnode) {
     concrete explanation\\[-1pt]
     $\displaystyle b \in \mathcal{B}$
 };
@@ -99,8 +99,8 @@
     (psinode.west) -- (astarnode.east);
 
 % Extra headroom at the top of each panel (no change to sides/bottom)
-\coordinate (leftpad)  at ($(anode.north)+(0,8mm)$);
-\coordinate (rightpad) at ($(bstarnode.north)+(0,8mm)$);
+\coordinate (leftpad)  at ($(anode.north)+(0,7mm)$);
+\coordinate (rightpad) at ($(bstarnode.north)+(0,7mm)$);
 
 % --- Background region boxes (left/right only) -----------------------
 
@@ -108,12 +108,12 @@
 
 \node[panelbox,
       fit=(anode) (astarnode) (leftpad),
-      inner sep=6mm
+      inner sep=2.5mm
 ] (leftpanel) {};
 
 \node[panelbox,
       fit=(bstarnode) (bnode) (rightpad),
-      inner sep=6mm
+      inner sep=2.5mm
 ] (rightpanel) {};
 
 \end{scope}
@@ -121,13 +121,13 @@
 \node[font=\footnotesize,
       anchor=north,
       align=center]
-    at ($(leftpanel.north)+(0,-2mm)$)
+    at ($(leftpanel.north)+(0,-1mm)$)
     {feature-space explanations\\$\mathcal{A} \subseteq \mathbb{R}^{|x|}$, e.g., $\mathcal{A} \subseteq \mathbb{R}^{2^{10}}$};
 
 \node[font=\footnotesize,
       anchor=north,
       align=center]
-    at ($(rightpanel.north)+(0,-2mm)$)
+    at ($(rightpanel.north)+(0,-1mm)$)
     {problem-space explanations\\$\mathcal{B} \subseteq \mathbb{R}^{|z|}$, e.g., $\mathcal{B} \subseteq \mathbb{R}^{2^{30}}$};
 
 \end{tikzpicture}
