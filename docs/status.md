@@ -36,7 +36,8 @@ the rule-based 3-C on hold. Work stays at pilot scale except where a task needs 
    **Second framing approved by the user (2026-10-13):** scramble what MalConv's detection rests on (malware
    direction), an audit of its fragility. Plan, mock, objections, proposed go/no-go in `docs/audit_plan.md`
    ("Second framing"); `scripts/audit_scramble.py` smoke-tested; runs 43 (discovery, malware direction, ~7 min) and 44
-   (scramble test, ~5 min) ready, **not run**: the user fixes the go/no-go first. Main risk: the surrogate ties.
+   (scramble test, ~5 min) run by the user: **go** (9 of 20 confirmed, all outside the DOS region; the surrogate's top 20 hold 4 of the 9).
+   Next: decide with the user how to read the results and what the experiment proper measures.
 3. If go: re-check the mock (operator per column), then plan the experiment proper with the user (forging and evasion
    at 1% FPR, the GBDT-relies-on column, tables). Then 3-A's planned changes (`PLAN.md`, 3-A, "Review after the step
    back": local vs. global framing, triage first, real-attack transfer). If no-go: post-mortem, then back to the user; the pushforward still

@@ -158,7 +158,7 @@ candidate is in the DOS header, the go stands but the finding is weak (Demetrio 
   window; a benign file's peak needs its whole context, so the 4 bytes alone do not rebuild it elsewhere. Not separated
   (offset vs. context) by this run.
 
-## Second framing: scrambling what detection rests on (2026-10-13; go/no-go not yet run)
+## Second framing: scrambling what detection rests on (2026-10-13; go/no-go passed, runs 43-44)
 
 After the no-go and run 42 (MalConv's credit holds in place, specifically, but forged content does not transfer), the
 user approved the framing: instead of *forging benign evidence* (which needs transfer), *destroy malware evidence*.
@@ -223,6 +223,16 @@ transplant's rule (>= 20 files; median drop and median paired difference vs. els
 at least half the files), or (b) the surrogate's top 20 contain at least half of the pushforward's confirmed
 candidates. Hypothesis: mostly header and data-directory fields; a few confirmed outside the DOS region; (b) is the
 likely failure.
+
+**Results (runs 43-44, 2026-10-13). Go.** Discovery: aggregates take 19% of MalConv's malware credit per file (median;
+25% in the benign direction). The pushforward's top 20 are optional-header and data-directory fields (plus the DOS
+message, `num_sections`, and `e_lfanew`, which cannot be tested: no locatable bytes or no parse). In 191 held-out
+malware, **9 of the pushforward's 20 are confirmed, all outside the DOS region** (criterion (a) passes); effects are
+small, 0.10-0.24 log-odds beyond the control each. **The surrogate's top 20 contain 4 of the 9** (CheckSum, ImageBase,
+debug directory address, Subsystem): just under half, so (b) passes narrowly. The surrogate's own top 20 also confirm
+9, with larger effects for some (certificate-directory entries, signing time, DLL flag: 0.13-0.52). Hypothesis: (a)
+as predicted; (b) predicted to fail, did not. Caution for the reading: most confirmed pushforward fields hold zero in
+most files (empty data-directory entries), close to the "reliance on absence" reading the user has rejected; to discuss.
 
 ## What carries over
 
