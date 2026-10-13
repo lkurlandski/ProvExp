@@ -58,6 +58,11 @@ against CCS's 12-page limit. See `docs/resume-prompt.md`.
   18.4% (p = 2e-16). The manuscript's AU numbers are now wrong (22.5/16.5/24.6/35.1) and must be updated; how to frame
   realizability is for the user to decide. Proposed follow-ups (cheap): decompose the realizable loss (IAT exclusion
   vs. benign values in constrained fields) and a null that excludes the recipe's own fields.
+- **Run 48 done:** realism costs the pushforward recipe 19.7 -> 12.4% (IAT/skips 3.4 pts, abnormal values 3.9 pts);
+  against a null of loader-ignored fields that no method confirmed (4.4%), the realizable recipe is +8.0 pts
+  (p = 3e-13). Run 47's "failure" came mostly from a null drawn half from the confirmed fields. Open: a broader null
+  (all loader-ignored header fields), and whether to validate the loader classification by execution. User wants
+  realistic perturbations only (CCS standard), so the paper's AU headline becomes the realizable numbers.
 
 2026-10-13 (evening, writing session, background/related work):
 - Section 2 is now "Background and Related Work" (user): an overview of learning-based detection, post-hoc
