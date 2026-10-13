@@ -30,11 +30,9 @@ the `manuscript/main_build.tex` wrapper.
 
 ## Next
 
-1. **Verify the local LaTeX compile** once the user's TeX Live install finishes and is on PATH:
-   `cd manuscript && latexmk -pdf main_build.tex`. `main_build.tex` is a gitignored wrapper with a guessed preamble;
-   fix it (not the fragments) if the first run errors. See `docs/resume-prompt.md`.
-2. **Finish the manuscript rough draft, in paper (not chapter) voice:** related work (no section yet; position vs.
-   G-DeepSHAP `chen2022explaining` and FINER `he2023finer`), abstract (five-move, >=2 numbers), discussion/limitations,
+1. **Local LaTeX compile works** (2026-10-13): `cd manuscript && PATH=$HOME/texlive/2026/bin/x86_64-linux:$PATH latexmk -pdf main_build.tex` builds cleanly (all refs/cites resolve). Wrapper fixes: `darkgreen` color, `float`, `xurl`. Remaining overfull box: the experiments table in `_d` (152pt; an internal status table the paper conversion should drop).
+2. **Finish the manuscript rough draft, in paper (not chapter) voice:** related work **drafted** (2026-10-13,
+   `_d2_related_work.tex`, after the applications; 10 new bib entries, author lists checked against arXiv), abstract (five-move, >=2 numbers), discussion/limitations,
    summary; then add a threat/system model and an ethics/disclosure section. The introduction (`_b`) is already
    rewritten. Finish with a dissertation-chapter -> conference-paper global pass (voice, structure, ~13 pp). Ask before
    changing what a claim is for.
