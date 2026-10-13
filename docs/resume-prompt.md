@@ -23,21 +23,14 @@ Read `CLAUDE.md`, then `docs/status.md` ("Where we are", "Next", and the 2026-10
 
 ## LaTeX toolchain (in progress)
 
-- Decision: **user-space TeX Live + `latexmk` + `pdflatex`**, to match the user's Overleaf project exactly (not
-  tectonic, not conda). The user ran the `install-tl --scheme=full` install into `$HOME/texlive` before lunch; it may
-  still be finishing (~7 GB). After it finishes they add `$HOME/texlive/<year>/bin/x86_64-linux` to PATH.
-- Compile with: `cd manuscript && latexmk -pdf main_build.tex`.
-- `manuscript/main_build.tex` is a **gitignored local build wrapper** (not synced to Overleaf) with a **guessed,
-  simple preamble** (plain `article`; defines the `darkblue`/`darkred` colors, `\textlangle`/`\textrangle`,
-  `\definition`/`\theorem`/`\proposition` numbered headers, and the `notationbox`/`proposalbox` tcolorboxes). It is
-  **unverified** — the first `latexmk` run may surface a missing macro or a bib issue; fix the wrapper, don't touch
-  the fragments. Figures are wired via `\input{assets/framework_{a,b,c}}` in `_c`; styling is not meant to match
-  Overleaf yet (that comes with the paper conversion).
+- **user-space TeX Live + `latexmk` + `pdflatex`** in `~/texlive` (installed). `cd manuscript && make` builds
+  `main.pdf`; `make check` lists undefined refs/citations and overfull boxes. `main.tex` is the complete document
+  (placeholder preamble: plain `article`, the colors, `\textlangle`/`\textrangle`, numbered
+  `\definition`/`\theorem`/`\proposition` headers, `notationbox`/`proposalbox`), to be replaced by the USENIX template.
 
 ## Next steps (in order)
 
-1. **Verify the local compile** once TeX Live is on PATH (`latexmk -pdf main_build.tex`); fix `main_build.tex` if it
-   errors.
+1. ~~Verify the local compile~~ (done 2026-10-13).
 2. **Draft the remaining sections in paper (not chapter) voice:** related work (position against G-DeepSHAP
    `chen2022explaining` and FINER `he2023finer`), abstract (five-move, >=2 numbers), discussion/limitations, summary.
    Then add the threat/system model and ethics/disclosure sections. Writing these in paper voice now avoids a second

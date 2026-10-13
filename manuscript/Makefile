@@ -1,5 +1,5 @@
-# Local build of the manuscript fragments through the gitignored wrapper main_build.tex.
-#   make         build main_build.pdf
+# Local build of main.tex -> main.pdf.
+#   make         build main.pdf
 #   make watch   rebuild on every save (latexmk -pvc, no viewer)
 #   make check   list undefined references/citations and overfull boxes from the last build
 #   make clean   remove the build files (keeps the PDF); make distclean also removes the PDF
@@ -7,7 +7,7 @@
 TEXBIN := $(lastword $(sort $(wildcard $(HOME)/texlive/*/bin/x86_64-linux)))
 export PATH := $(if $(TEXBIN),$(TEXBIN):,)$(PATH)
 
-MAIN    := main_build
+MAIN    := main
 LATEXMK := latexmk -pdf -interaction=nonstopmode -halt-on-error -file-line-error
 
 .PHONY: pdf watch check clean distclean

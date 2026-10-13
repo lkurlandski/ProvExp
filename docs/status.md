@@ -9,9 +9,8 @@ everything in `artifacts/` (active runs 01-21, 30-33, 38-46; dropped runs in `ru
 
 **Current goal: finish a rough draft of the manuscript, then kick off larger-scale experiments.** The introduction was
 rewritten (framework+symmetry framing, contributions C1-C4); related work, abstract, discussion, and summary remain,
-and the document still needs a dissertation-chapter -> conference-paper conversion. A local LaTeX toolchain
-(user-space TeX Live, to match Overleaf) is being installed; see `docs/resume-prompt.md` for the compile command and
-the `manuscript/main_build.tex` wrapper.
+and the document still needs a dissertation-chapter -> conference-paper conversion. The manuscript compiles locally:
+`cd manuscript && make` (`main.tex` is now the complete document, preamble included).
 
 ## Where we are
 
@@ -30,7 +29,9 @@ the `manuscript/main_build.tex` wrapper.
 
 ## Next
 
-1. **Local LaTeX compile works** (2026-10-13): `cd manuscript && PATH=$HOME/texlive/2026/bin/x86_64-linux:$PATH latexmk -pdf main_build.tex` builds cleanly (all refs/cites resolve). Wrapper fixes: `darkgreen` color, `float`, `xurl`. Remaining overfull box: the experiments table in `_d` (152pt; an internal status table the paper conversion should drop).
+1. **Local LaTeX compile works** (2026-10-13): `cd manuscript && make` (also `make watch`, `make check`, `make clean`)
+   builds `main.pdf` cleanly (all refs/cites resolve). `main.tex` now holds the preamble itself (user: no separate
+   wrapper); the preamble is a simple placeholder (plain article), to be replaced by the USENIX template. Remaining overfull box: the experiments table in `_d` (152pt; an internal status table the paper conversion should drop).
 2. **Finish the manuscript rough draft, in paper (not chapter) voice:** related work **drafted** (2026-10-13,
    `_d2_related_work.tex`, after the applications; 10 new bib entries, author lists checked against arXiv), abstract (five-move, >=2 numbers), discussion/limitations,
    summary; then add a threat/system model and an ethics/disclosure section. The introduction (`_b`) is already
@@ -61,8 +62,8 @@ the `manuscript/main_build.tex` wrapper.
   evidence); (ii) **claim the fuller vision** in the contributions -> this makes AU's mitigation, CM's real-attack
   transfer, and the scale-up load-bearing before submission.
 - **LaTeX toolchain = user-space TeX Live + latexmk + pdflatex**, to match the user's Overleaf project (not tectonic,
-  not conda). The user runs the install; a gitignored `manuscript/main_build.tex` wrapper compiles the fragments
-  locally.
+  not conda). Installed in `~/texlive`; `manuscript/main.tex` is a complete document
+  (preamble included) built with `make`.
 
 2026-10-12 (latest):
 - **The pushforward needs an extrinsic application**; the symmetry is the novelty (user). CM alone is not enough.

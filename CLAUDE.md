@@ -73,9 +73,9 @@ plus a null element) transfers explanations between the feature-space (EMBER v3 
 - Light checks: `OMP_NUM_THREADS=2 nice -n 10 env/bin/pytest -q -p no:xdist tests/test_<module>.py`.
   Full suite: `env/bin/pytest -n 16 tests` (~4 min).
 - Before committing: `env/bin/ruff check src tests scripts` and `env/bin/mypy src tests scripts` (strict) must pass.
-- **Do not try to compile the manuscript.** There is no LaTeX toolchain here, and `manuscript/` holds fragments of a
-  larger document (no preamble). After editing it, check that braces and environments balance and that every `\ref`
-  has a `\label` in `manuscript/`; the user builds it.
+- **Compile the manuscript with `make` in `manuscript/`** (user-space TeX Live in `~/texlive`, latexmk + pdflatex).
+  `main.tex` is the complete document (preamble included; a simple placeholder, not the final USENIX template) and
+  `\input`s the section fragments. After editing, run `make` and `make check` (undefined refs/citations, overfull boxes).
 - Commit to `main` in logical pieces. Do not push unless asked.
 - Changes to the thrember-derived `features.py` are pure additions; the original lines stay untouched.
 

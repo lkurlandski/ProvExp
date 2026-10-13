@@ -1,3 +1,53 @@
+\documentclass[11pt]{article}
+
+\usepackage[margin=1in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath,amssymb,amsthm,mathtools}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{float}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage[most]{tcolorbox}
+\usepackage{etoolbox}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning,calc,fit,backgrounds,shapes.geometric,shapes.misc,matrix,quotes}
+\usepackage[numbers,sort&compress]{natbib}
+\usepackage{xurl}
+\usepackage{hyperref}
+\usepackage[nameinlink]{cleveref}
+
+% --- colors used by the fragments ---
+\definecolor{darkblue}{rgb}{0.0,0.0,0.55}
+\definecolor{darkred}{rgb}{0.55,0.0,0.0}
+\definecolor{darkgreen}{rgb}{0.0,0.39,0.0}
+
+% --- angle brackets (the fragments use these as simple delimiters) ---
+\providecommand{\textlangle}{\ensuremath{\langle}}
+\providecommand{\textrangle}{\ensuremath{\rangle}}
+
+% --- theorem-like headers: \definition[Title], \theorem[Title], \proposition[Title] ---
+% Usage in the fragments is `\definition[Title]\label{..}{ body }`: the macro prints a numbered bold header and steps
+% a shared counter (so the following \label resolves); the trailing { body } is an ordinary TeX group.
+\newcounter{xmlthm}
+\newcommand{\xmlthmlike}[2]{%
+  \par\medskip\noindent\refstepcounter{xmlthm}%
+  \textbf{#1~\thexmlthm\ifblank{#2}{}{ (#2)}.}\ }
+\newcommand{\definition}[1][]{\xmlthmlike{Definition}{#1}}
+\newcommand{\theorem}[1][]{\xmlthmlike{Theorem}{#1}}
+\newcommand{\proposition}[1][]{\xmlthmlike{Proposition}{#1}}
+
+% --- boxed environments ---
+\newtcolorbox{notationbox}{colback=blue!3,colframe=blue!40!black,boxrule=0.4pt,arc=2pt,left=2mm,right=2mm,top=1mm,bottom=1mm}
+\newtcolorbox{proposalbox}{colback=gray!5,colframe=gray!55,boxrule=0.4pt,arc=2pt,left=2mm,right=2mm,top=1mm,bottom=1mm}
+
+\title{Explanation Provenance for Malware Detectors}
+\author{}
+\date{}
+
+\begin{document}
+\maketitle
+
 \input{_a_abstract}
 
 \section{Introduction}
@@ -27,3 +77,7 @@
 \section*{Appendix}
 \label{sec:XML:Appendix}
 \input{_g_appendix}
+
+\bibliographystyle{plainnat}
+\bibliography{main}
+\end{document}
