@@ -15,6 +15,10 @@ With `--realizable --decompose`, the realizable pushforward recipe's loss is dec
 (the same fields, random bytes everywhere, i.e., abnormal values in the constrained fields), `pushforward_free_only`
 (its free fields alone), and the null `random_free_unconfirmed` (free fields of the pool that no source confirmed).
 
+With `--broad_null` as well, two more nulls draw from every loader-ignored field that no source confirmed (`FREE` and
+`FREE_EXTRA`), `random_free_broad` and, outside the DOS region (DOS header, stub, Rich header),
+`random_free_broad_nondos`.
+
 With `--realizable`, each confirmed recipe also gets a `*_realizable` version that changes only what the Windows loader
 lets an attacker change (domain knowledge inside the experiment, docs/experiments/audit.md, "Realizability"): `FREE`
 fields, which the loader ignores, are scrambled; `CONSTRAINED` fields take a valid value drawn from benign training
@@ -70,6 +74,8 @@ import shortcuts_transplant as st  # noqa: E402
 __all__ = [
     "CONSTRAINED",
     "FREE",
+    "FREE_EXTRA",
+    "in_dos_region",
     "paired_comparisons",
     "realizable_plan",
     "recipe_features",
@@ -129,6 +135,40 @@ CONSTRAINED = frozenset({
     "header:optional_header_SizeOfHeapCommit",
     "header:optional_header_SizeOfStackReserve",
 })
+
+# The broad null (--broad_null): every other loader-ignored field in the EMBER header, data-directory, Rich-header, and
+# certificate features. Flag features are left out (they share their bytes with flags the loader needs), as are fields
+# the loader checks (subsystem version, alignments, sizes, entry point, section count) and directories it reads.
+FREE_EXTRA = frozenset({
+    "header:file_header_TimeDateStamp",
+    "header:file_header_NumberOfSymbols",
+    "header:optional_header_MajorImageVersion",
+    "header:optional_header_MinorImageVersion",
+    "header:optional_header_MajorLinkerVersion",
+    "header:optional_header_MajorOperatingSystemVersion",
+    "header:optional_header_MinorOperatingSystemVersion",
+    "header:optional_header_SizeOfInitializedData",
+    "header:optional_header_BaseOfCode",
+    "datadirectories:globalptr_size",
+    "datadirectories:copyright_size",
+    "datadirectories:reserved_size",
+    "datadirectories:reserved_virtual_address",
+    "authenticode:self_signed",
+    "authenticode:empty_program_name",
+    "authenticode:no_countersigner",
+    "authenticode:parse_error",
+    "authenticode:chain_max_depth",
+    "authenticode:signing_time_diff",
+}) | frozenset(f"header:dos_e_{f}" for f in (
+    "cblp", "cp", "crlc", "cparhdr", "minalloc", "maxalloc", "ss", "sp", "csum", "ip", "cs", "lfarlc", "ovno", "oemid",
+    "oeminfo",
+)) | frozenset({"richheader:num_pairs"} | {f"richheader:pair_hash_{i}" for i in range(32)})
+
+
+def in_dos_region(name: str) -> bool:
+    """Whether a feature's bytes lie in the DOS header, the DOS stub, or the Rich header (before the PE header)."""
+    return name.startswith(("header:dos_e_", "richheader:")) or name == "strings:regex_dos_msg"
+
 
 _EXECUTABLE_ONLY = frozenset({"datadirectories:export_virtual_address", "datadirectories:export_size"})
 
@@ -263,10 +303,11 @@ def process_shard(
     detected_only: bool = False,
     realizable: Optional[dict[str, Any]] = None,
     decompose: bool = False,
+    broad_null: bool = False,
 ) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
     """Scramble each recipe's features together in the target files of one shard; see the module docstring."""
     assert st._EXTRACTOR is not None and st._MALCONV is not None
-    extra = realizable["free_pool"] if realizable else []
+    extra = (realizable["free_pool"] + realizable.get("broad_pool", [])) if realizable else []
     needed = np.array(sorted({j for js in recipes.values() for j in js} | set(all_localizable.tolist()) | set(extra)),
                       dtype=np.int64)
     wanted = {s["position"]: i for i, s in enumerate(samples)}
@@ -366,6 +407,22 @@ def process_shard(
                             return rng.choice(unconfirmed, size=k, replace=False).tolist() if k else []
 
                         results.append(run("random_free_unconfirmed", draw_unconfirmed(), rng, redraw=draw_unconfirmed))
+                if broad_null:
+                    # Nulls from every loader-ignored field no source confirmed, with and without the DOS region.
+                    is_dll = x[realizable["index"]["header:characteristics_DLL"]] > 0
+                    broad = [j for j in locatable(realizable["broad_pool"])
+                             if not (realizable["names"][j] in _EXECUTABLE_ONLY and is_dll)]
+                    for null, pool_ in (("random_free_broad", broad),
+                                        ("random_free_broad_nondos",
+                                         [j for j in broad if not in_dos_region(realizable["names"][j])])):
+                        for r in range(num_random):
+                            rng = np.random.default_rng([seed, key, (600 if null == "random_free_broad" else 700) + r])
+                            k = min(k_free, len(pool_))
+
+                            def draw_broad(rng: np.random.Generator = rng, k: int = k, pool_: list[int] = pool_) -> list[int]:
+                                return rng.choice(pool_, size=k, replace=False).tolist() if k else []
+
+                            results.append(run(null, draw_broad(), rng, redraw=draw_broad))
             files.append(base | {"status": "ok", "log_odds": log_odds})
         except st.TransplantTimeout:
             files.append(base | {"status": "timeout", "log_odds": float("nan")})
@@ -462,6 +519,7 @@ def main() -> None:
     parser.add_argument("--detected_only", action="store_true", help="Score only files above the threshold.")
     parser.add_argument("--realizable", action="store_true", help="Add the *_realizable recipes and random_free.")
     parser.add_argument("--decompose", action="store_true", help="With --realizable: decompose its loss (see code).")
+    parser.add_argument("--broad_null", action="store_true", help="With --realizable: nulls from all loader-ignored fields.")
     parser.add_argument("--exclude", type=Path, nargs="*", default=[], help="files.parquet of runs whose files to skip.")
     parser.add_argument("--benign_rows", type=int, default=50_000, help="Benign training files for constrained values.")
     parser.add_argument("--run_name", type=str, default=None, help="Subdirectory name (default: seed-{seed}).")
@@ -503,6 +561,10 @@ def main() -> None:
             "pools": benign_pools(args.features, list(names), constrained_cols, args.benign_rows, args.seed),
             "free_pool": sorted(index[n] for n in pool_names if n in FREE),
         }
+        if args.broad_null:
+            confirmed_names = set(recipe_names["union"])
+            realizable["broad_pool"] = sorted(index[n] for n in (FREE | FREE_EXTRA) - confirmed_names)
+            print(f"Broad null pool: {len(realizable['broad_pool'])} loader-ignored, unconfirmed fields.", flush=True)
         print(f"Realizable: {len(realizable['free_pool'])} free fields in the candidate pool: "
               + ", ".join(names[j] for j in realizable["free_pool"]), flush=True)
 
@@ -522,7 +584,8 @@ def main() -> None:
     for (shard,), group in targets.sort("shard", "position").group_by("shard", maintain_order=True):
         tasks.append((int(shard), group.select("index", "name", "position").to_dicts(), args.db, recipes,
                       args.num_random, all_localizable, args.min_score, args.threshold, args.max_content, args.seed,
-                      args.timeout, args.random_retries, args.detected_only, realizable, args.decompose))
+                      args.timeout, args.random_retries, args.detected_only, realizable, args.decompose,
+                      args.broad_null))
     t_0 = time.time()
     files: list[dict[str, Any]] = []
     results: list[dict[str, Any]] = []
@@ -542,7 +605,10 @@ def main() -> None:
              ("pushforward", "pushforward_realizable"), ("pushforward", "pushforward_no_critical"),
              ("pushforward_no_critical", "pushforward_realizable"), ("pushforward_realizable", "pushforward_free_only"),
              ("pushforward_free_only", "random_free_unconfirmed"), ("pushforward_realizable", "random_free_unconfirmed"),
-             ("union_realizable", "random_free_unconfirmed"), ("random_free", "random_free_unconfirmed")]
+             ("union_realizable", "random_free_unconfirmed"), ("random_free", "random_free_unconfirmed"),
+             ("pushforward_realizable", "random_free_broad"), ("pushforward_realizable", "random_free_broad_nondos"),
+             ("union_realizable", "random_free_broad"), ("union_realizable", "random_free_broad_nondos"),
+             ("surrogate_realizable", "random_free_broad_nondos"), ("pushforward_free_only", "random_free_broad_nondos")]
     paired = paired_comparisons(result_table, pairs, seed=args.seed)
     file_table.write_parquet(outdir / "files.parquet")
     result_table.write_parquet(outdir / "results.parquet")

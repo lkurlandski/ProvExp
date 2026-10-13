@@ -390,3 +390,25 @@ pushforward recipe 7.3 points (19.7 -> 12.4), split about evenly between a loade
 what remains is well above a null of other loader-ignored fields. Caveats: the clean null is small (the 7 free
 fields that failed confirmation) and post hoc; a broader null would draw from every loader-ignored header field in the
 format, not just the candidate pool. The loader classification is from documentation; no file was executed.
+
+### A broad null (run 49, 2026-10-13)
+
+Same files, plus `--broad_null`: as many fields as the realizable pushforward recipe changes (7.3 on average), drawn per
+file from every loader-ignored EMBER feature that no source confirmed (`FREE` + `FREE_EXTRA`: 74 fields, among them
+the DOS-header fields other than `e_magic`/`e_lfanew`, the Rich header, timestamps, version fields, unused directory
+entries, certificate-derived features; flags and loader-checked fields excluded), and the same restricted to fields
+outside the DOS region. Hypotheses: the DOS-inclusive null is strong (8-15%; MalConv is known to be DOS-sensitive), the
+non-DOS null 4-7%; the realizable pushforward recipe beats the non-DOS null.
+
+| null | evasion | realizable pushforward (12.4%) minus null | realizable union (18.4%) minus null |
+|---|---|---|---|
+| all loader-ignored, unconfirmed (74 fields) | 3.8% [2.8, 4.8] | +8.6 [6.9, 10.5], p = 7e-18 | +14.6, p = 2e-29 |
+| outside the DOS region | 6.0% [4.7, 7.4] | **+6.4 [4.8, 8.1], p = 3e-12** | +12.4, p = 3e-26 |
+
+Also vs. the non-DOS null: realizable surrogate +4.4 [3.0, 5.9] (p = 5e-8); the pushforward's free fields alone +3.7
+[2.5, 5.1] (p = 4e-7). The DOS-inclusive hypothesis was wrong: drawing ~7 of 74 fields, a few small DOS-header fields
+move MalConv less than the non-DOS fields do. **Conclusion for the paper:** with only loader-safe changes, the nine
+fields the pushforward found evade 12.4% of detected held-out malware, about twice the rate of as many other
+loader-ignored fields (6.0%, outside the DOS region; 3.8% overall), and somewhat more than the surrogate's fields under
+the same rules (10.4%, p = 0.027); together, the two methods' fields evade 18.4%. These are the numbers to report
+(seed 0, 902 files); random scrambling is no longer a headline (user: unrealistic perturbations are not acceptable).

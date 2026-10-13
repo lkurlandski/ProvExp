@@ -63,6 +63,10 @@ against CCS's 12-page limit. See `docs/resume-prompt.md`.
   (p = 3e-13). Run 47's "failure" came mostly from a null drawn half from the confirmed fields. Open: a broader null
   (all loader-ignored header fields), and whether to validate the loader classification by execution. User wants
   realistic perturbations only (CCS standard), so the paper's AU headline becomes the realizable numbers.
+- **Run 49 done (broad null):** realizable pushforward 12.4% vs. 6.0% for as many other loader-ignored fields outside
+  the DOS region (+6.4 pts, p = 3e-12) and 3.8% for all loader-ignored fields; realizable union 18.4%; realizable
+  surrogate 10.4%. User: lead with the pushforward; no sandbox validation needed ("we don't break the files"). Manuscript
+  AU numbers still to update (lower priority). Next: the seed-0 scale-up to 2,000 files (run/ scripts for the user).
 
 2026-10-13 (evening, writing session, background/related work):
 - Section 2 is now "Background and Related Work" (user): an overview of learning-based detection, post-hoc
