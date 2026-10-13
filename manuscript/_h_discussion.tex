@@ -1,0 +1,49 @@
+\paragraph{What provenance can place.} Explanation provenance places attribution wherever the extractor reads the
+input, and only there. Features that record an absence (e.g., an import-hash bucket that nothing falls into) are
+produced by no byte; the pullback hands their attribution to the null element, which keeps the bookkeeping exact and
+tells the analyst how much of a decision rests on what the file lacks (about a fifth for the GBDT;
+Appendix~\ref{sec:XML:AppLocalizability}). Features computed from the whole file, such as the byte histogram, are
+produced by every byte, so a transfer can name them but not narrow them down; Section~\ref{sec:XML:Audit} reports
+MalConv's reliance on them separately. Both are properties of the extractor, visible in $P$ before any explanation is
+computed.
+
+\paragraph{Constructing $P$.} Instrumentation is exact for features that read or count bytes and follows a convention
+for hashes and entropies; the black-box estimate needs no source code and agrees with it exactly where features are
+additive (Section~\ref{sec:XML:PullbackFaithfulness}). Between the two lies dynamic taint tracking, which would record
+provenance automatically, at byte resolution, from an extractor run as a binary. It would make explanation provenance a
+drop-in addition to any extractor, and we see it as the natural next step.
+
+\paragraph{Explainers.} The transfers carry an explanation into the other space as it is: they make a good
+explanation more useful and leave a weak one as weak as it was. The multilayer perceptron over EMBER features
+illustrates this, since its explanations trail occlusion both before and after the pullback, through the instrumented
+and the estimated $P$ alike (Section~\ref{sec:XML:PullbackFaithfulness}). We established the method on the GBDT, the
+standard model for these features; the same machinery applies unchanged to the perceptron and to any other
+feature-based model, and we return to it in future work.
+
+\paragraph{From reliance to attacks.} Our deletion operator keeps every file parseable with its layout intact and is
+verified on every file, which makes deletion a clean measurement of reliance. It does not keep programs running, so the
+shared reliance of Section~\ref{sec:XML:Comparison} and the evasion of Section~\ref{sec:XML:Audit} show where
+detection is cheap to attack rather than that a particular attack succeeds. Pairing them with functionality-preserving
+manipulations is the natural next step, e.g., testing whether published attacks on MalConv~\cite{demetrio2019explaining}
+transfer to the GBDT more often when they modify the bytes the GBDT's pullback marks.
+% TODO (load-bearing, "claim the fuller vision"): CM's real-attack transfer. Rewrite this paragraph once it is run.
+
+\paragraph{Mitigation.} The audit points to its own countermeasure: a field that a raw-byte detector relies on but an
+attacker can change freely should not be read at all. Overwriting the audited fields with a constant in every file, at
+test time or before retraining, removes them as a lever; its cost is whatever legitimate signal the fields carried,
+which the drop in clean detection measures. The disagreement triage points the other way, to feature engineering:
+when the raw-byte detector alone flags a file, three quarters of its evidence lies in content the feature-based
+detector's features do not read, which is where a new feature would help.
+% TODO (load-bearing, "claim the fuller vision"): AU's mitigation (test-time zeroing and a retrain). Report its results
+% here (or in Section~\ref{sec:XML:Audit}) and drop the conditional voice.
+
+\paragraph{Beyond Windows executables.} Nothing in the method is specific to PE files. $P$ depends only on which
+input elements produce which features, so the transfers apply to any classifier whose features a program computes from
+a structured input: detectors over Android apps (permissions, API calls, and strings extracted from the manifest and
+the bytecode), documents, or network traffic (flow statistics computed from packets), where the elements would be
+bytes, instructions, or packets. Each needs its extractor instrumented once, or its $P$ estimated by occlusion. We have
+evaluated only PE files and EMBER features, whose extractor mixes the kinds of features a program computes (fields
+read directly, counts, hashes, and aggregates over the whole file); other extractors may lean toward one kind or
+another, which changes how sharply their explanations can be placed in the input.
+% TODO: scale. Most results are from the 100-file pilot and one seed (the audit: 2,000 files); update after the
+% scale-up (2,000 files, seeds 0-2).

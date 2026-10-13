@@ -47,6 +47,20 @@ against CCS's 12-page limit. See `docs/resume-prompt.md`.
 
 ## Decisions
 
+2026-10-13 (evening, writing session, restructure):
+- **Organized by operator** (user agreed): 1 Intro, 2 Background and Setting (spaces + a short Setting; the threat
+  model is minor, user), 3 Explanation Provenance (P, **constructing P: instrumentation vs. occlusion**, transfers,
+  coarsening), 4 Experimental Setup, 5 Pulling Explanations Back to the Bytes (faithfulness and cost incl.
+  instrumented vs. black-box P; planted trigger; comparing two detectors), 6 Pushing Explanations Forward into
+  Features (faithfulness; ground truth for feature explainers; auditing MalConv), 7 Related Work, 8 Discussion,
+  9 Conclusion. PB2/PF2 stay in the body (user: high value as laboratory experiments).
+- CM and AU made parallel (Motivation / What the operator adds / Design / three findings).
+- Threats to Validity and per-application limitations folded into a light Discussion (user: no self-criticism);
+  design caveats moved into the designs. Claims lists and the experiments/status table archived.
+- Appendices B/C (soundness, completeness, independence), E, and the symbol table archived (user: not measured, no
+  practical impact); conservation kept as one sentence per transfer.
+- Body ends at the bottom of p. 12 (references start p. 13). Next: section-level writing.
+
 2026-10-13 (evening, writing session, later):
 - **CP and the theory cut from the paper (user).** Sections 3.4 (statistics of P), 3.5 (round trips, bounds,
   perfect-reconstruction theorems), and 4.2 (CP) moved to `manuscript/archive/` (not deleted). Kept: the coarsened-

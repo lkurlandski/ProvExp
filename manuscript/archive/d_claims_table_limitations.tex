@@ -1,0 +1,52 @@
+% ARCHIVED 2026-10-13: the per-section claims lists, the internal experiments/status table, the per-application
+% limitations paragraphs, and the Threats to Validity list, removed in the restructuring by operator (Sections 5-6).
+% Their content is folded into the section introductions, the designs, and the Discussion.
+
+\paragraph{Claims.} This section supports two claims (Section~\ref{sec:XML:Applications} adds two more):
+\begin{enumerate}[noitemsep, topsep=2pt]
+    \item \textbf{The pullback is faithful and cheap:} pulled-back explanations identify the elements that drive the decision, at the cost of one instrumented feature extraction instead of hundreds to thousands.
+    \item \textbf{The pushforward is faithful up to its source's resolution:} a pushed-forward explanation keeps what the resolution of its source allows: the coarser its windows, the less of an explanation survives being pushed into the features.
+\end{enumerate}
+
+\begin{table*}[t]
+  \centering
+  \footnotesize
+  \begin{tabular}{lllll}
+    \toprule
+    Section & ID & Question & Claim & Status \\
+    \midrule
+    \ref{sec:XML:Pullback} Pullback & PB1 & Do pullbacks remove a decision's evidence, and at what cost? & 1 & pilot done \\
+     & PB2 & Does the pullback recover a planted trigger? & 1 & pilot done \\
+    \ref{sec:XML:Pushforward} Pushforward & PF1 & Are pushed-forward explanations faithful in the feature-space? & 2 & pilot done \\
+     & PF2 & Does the pushforward give feature explainers a ground truth? & 2 & pilot done \\
+    \ref{sec:XML:Comparison} Comparison & CM & Where do a feature-based and a raw-byte detector share reliance and disagree, per file? & 3 & pilot done \\
+    \ref{sec:XML:Audit} Audit & AU & What does a raw-byte detector rely on across a corpus, and can it be scrambled? & 4 & done \\
+    \bottomrule
+  \end{tabular}
+  \caption{Experiments, the claims they support, and their status. Results are from a pilot (100 files, one seed) unless stated otherwise. The IDs match the project's documentation.}
+  \label{tab:XML:Experiments}
+\end{table*}
+
+
+\paragraph{Claims.} This section supports two further claims:
+\begin{enumerate}[noitemsep, topsep=2pt, start=3]
+    \item \textbf{The pullback compares detectors with different feature sets, per file:} it puts a feature-based detector's local explanations in the same byte space as a raw-byte detector's, at byte resolution and one extraction per file, which locates the bytes both rely on, and, for a file on which they disagree, whether the flagging detector's evidence is content the other does not read or reads the other way; comparing them over windows without $P$ misses both.
+    \item \textbf{The pushforward audits a raw-byte detector across a corpus:} because the features it lands on are shared by every file, pushing a raw-byte detector's per-file byte explanations forward gives its reliance a vocabulary in which it recurs, so it can be aggregated over a corpus, confirmed by scrambling the bytes $P$ names, and compared feature by feature with a feature-based detector.
+\end{enumerate}
+
+
+\paragraph{Limitations.} Deletion is not an attack: the operator keeps a file parseable with its layout, not functional, so the shared bytes are shared \emph{reliance}; whether functionality-preserving attacks on one detector transfer to the other through them is left for future work. MalConv's own Integrated Gradients deletion overshoots far beyond full deletion (19 log-odds at 1\% of the bytes), a known fragility of MalConv; every comparison above is at a fixed budget against controls of the same size. The results are from one seed, 100 pilot files, and 100 disagreements, with thresholds from the test split. Whether functionality-preserving attacks published against MalConv~\cite{demetrio2019explaining} transfer to the GBDT more often when the bytes they modify carry the GBDT's pullback would tie the shared reliance to attacks rather than deletion; we leave it to future work. The two detectors' reliance compared \emph{globally}, in the feature-space, is the subject of Section~\ref{sec:XML:Audit}.
+
+\paragraph{Limitations.} As in Section~\ref{sec:XML:Comparison}, scrambling keeps a file parseable with its layout, not functional; separating the confirmed fields an attacker could change without breaking the program, and the mitigation, are future work. The results are one seed; MalConv's reliance on aggregate features is below the pushforward's resolution and is reported as such. The surrogate's training pool may contain relatives of the explanation files, which can only favor the surrogate, the safe direction for the comparison.
+
+\subsection{Threats to Validity}
+
+\begin{itemize}[noitemsep, topsep=2pt]
+    \item \textit{Scale:} results so far are from a 100-file pilot and one seed (PB1, PF1, coarsening, CM), 50 triggered files per trigger (PB2, PF2), 100 disagreements (CM's triage), or 2{,}000 files and one seed (CP census, localizability, AU; AU's transplant and evasion use 191 held-out malware).
+    \item \textit{Planted trigger:} the poisoning is dirty-label at 1\%, and the content trigger's usable files skew small; the trigger defines a counterfactual ground truth, which agrees with provenance only for features that read the trigger alone.
+    \item \textit{The attainable $R$ in PF1} uses the feature-space explainers' own information, so its byte-level end point is partly circular; the evidence is the trend across resolutions, not that point.
+    \item \textit{Model families:} the GBDT for the operators; the GBDT and MalConv for the comparison, one seed each; the MLP returns once the method is established.
+    \item \textit{Perturbations:} every problem-space faithfulness test depends on the perturbation operator. Ours is PE-aware and verified, and two variants serve as robustness checks, but no operator keeps a file entirely on the data manifold. The planted trigger (PB2, PF2) does not depend on it.
+    \item \textit{Instrumentation:} the instrumented provenance is exact for additive feature groups and a convention for the others (entropy windows, hashed names); the black-box estimate measures the gap.
+\end{itemize}
+

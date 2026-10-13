@@ -1,0 +1,107 @@
+In this section, we define explanation provenance and the two transfers it supports.
+
+At times, we reference the malware domain, as this is both our expertise as well as our primary motivation for developing the method, however, its important to note that the method is applicable to all machine learning models; it is particularly useful for machine learning models that rely on complex, non-trivial feature extraction processes. The malware domain is merely one example of a machine learning space rife with these feature sets.
+
+\subsection{The Provenance Matrix}
+\label{sec:XML:ProvenanceMatrix}
+
+As previously explained, it may be difficult or impossible to attain an explanation directly in one space or another. In this case, it would be useful to create an explanation in one space, then map (or transform) it to another. To bridge this gap, we propose explanation transformations (Figure~\ref{fig:pullback-pushforward}).
+
+\input{assets/framework_c}
+
+The glue of these transforms is an explanation provenance associating elements with features.
+
+Before defining it, we must address a subtle but pervasive issue: some features are not attributable to any element of the problem-space object. Some are not computed from any particular element, e.g., a flag indicating whether a file could be parsed at all, and others take a value precisely because something is absent, e.g., a hashed bucket into which no imported function falls. In practice, such features are common; for hashed and structural feature sets, they can be the majority. To accommodate them without fabricating influence, we augment every problem-space object with a \textit{null element}, $z_\varnothing$, which represents ``no part of $z$.'' We write $\bar{z} = (z_1, \dots, z_{|z|}, z_\varnothing)$ for the augmented object and index the null element by $\varnothing$.
+
+% NOTE: We may want to develop an axiom or desiderata around composition, i.e., applying multiple feature extraction processes iteratively with their own provenance. This could also be expanded to work on other spaces derived from the problem-space but unrelated to the feature-space, i.e., branching spaces as opposed to purely iterative ones.
+\definition[\textit{Explanation Provenance}]
+\label{def:ExplanationProvenance}
+{
+Consider some sample $z \in \mathcal{Z}$ in the problem-space, its augmentation $\bar{z}$, a feature map $\sigma$, and the feature-space representation $\sigma(z) = x \in \mathcal{X}$. We define the explanation provenance for $z$ and $x$ under $\sigma$ as a nonnegative matrix $P \in \mathbb{R}^{(|z| + 1) \times |x|}$ whose entry $P_{i,j}$ indicates the proportional degree to which $\bar{z}_i$ influences feature $x_j$ under $\sigma$ relative to other elements. More formally, $P$ must adhere to the following axioms:
+\begin{itemize}[noitemsep, topsep=-4pt]
+    \item \textbf{Axiom 1} (\textit{Nonnegativity})\textbf{.} $P_{i,j} \ge 0$ for all $i,j$.
+    \item \textbf{Axiom 2} (\textit{Normalization})\textbf{.} For all $j$, $\sum_i P_{i,j} = 1$, where the sum includes the null element.
+    \item \textbf{Axiom 3} (\textit{Influence})\textbf{.} For every element $z_i$ of $z$, $P_{i,j} > 0$ iff $z_i$ influences $x_j$.
+    \item \textbf{Axiom 4} (\textit{Null})\textbf{.} $P_{\varnothing,j} = 1$ if no element of $z$ influences $x_j$, and $P_{\varnothing,j} = 0$ otherwise.
+\end{itemize}
+Optionally, the following desiderata may be useful to practitioners:
+\begin{itemize}[noitemsep, topsep=-4pt]
+  \item \textbf{Desiderata 1} (\textit{Sparsity}) most mass is concentrated on few entries.
+  \item \textbf{Desiderata 2} (\textit{Locality}) most per-column mass is concentrated in a short span.
+  \item \textbf{Desiderata 3} (\textit{Stability}) small perturbations to $z$ induce small changes in $P$.
+\end{itemize}
+}
+
+\begin{notationbox}
+Let $U = \{\, j : P_{\varnothing,j} = 1 \,\}$ be the set of unattributable features, i.e., the features that no element of $z$ influences.
+\end{notationbox}
+
+Without the null element, an unattributable feature cannot satisfy both Axiom 2 and Axiom 3: its column would need to sum to one while containing only zeros. The obvious alternatives each sacrifice something. Excluding the feature from $P$ violates Axiom 2 and, as a consequence, the pullback no longer conserves attribution mass. Spreading its provenance uniformly over the elements, i.e., $P_{i,j} = 1/|z|$, violates Axiom 3 and fabricates influence, smearing the feature's attribution over the entire object. The null element satisfies all four axioms and, because it is simply one more row of $P$, every result in the remainder of this section holds without modification. It is also strictly more informative than the uniform alternative, which can be recovered by redistributing the null element's share evenly over the real elements. Finally, the null element's share of a pulled-back explanation is a useful quantity in its own right: it is exactly the attribution that cannot be localized within $z$ (Definition~\ref{def:Pullback}).
+
+\iffalse
+With provenance, we are ready to define the $\sigma$-consistency constraint from Definition~\ref{def:ProblemSpaceExplanation}:
+
+\definition[\textit{Sigma-Consistency}]
+\label{def:SigmaConsistency}
+{
+Consider some sample $z \in \mathcal{Z}$ in the problem-space, a feature map $\sigma$, provenance $P$, and problem-space explanation $b \in \mathcal{B}$. Then $b$ is said to be consistent under the feature map ($\sigma$-consistent) if and only if $b_i = 0$ for any $i$ in which $P_{i,j} = 0$ for all $j$.
+}
+
+This consistency tells us that non-interacting elements should not participate in an explanation. Intuitively, this makes sense and is a useful constraint to place upon $b$.
+\fi
+
+\subsection{Constructing the Provenance Matrix}
+\label{sec:XML:Constructing}
+
+Definition~\ref{def:ExplanationProvenance} says what $P$ must satisfy, not how to obtain it. We use two constructions, which trade exactness and resolution against access and cost.
+
+\paragraph{Instrumentation (white-box).} With the feature extractor's source code, every feature can record the elements it is computed from while it is computed. We adopt three conventions. An element contributes to a feature if the feature's value is computed from it (read, counted, or hashed); indirect influence, such as a denominator that normalizes or a pointer that says where to read, does not count. A feature that counts items gives each item one unit, spread evenly over the item's elements, and a feature computed from content gives each element one unit. A hashed feature receives every item that falls into its bucket. Normalizing each feature's contributions gives $P$. Instrumentation is a one-time engineering cost per extractor and adds almost nothing to the cost of extraction; it gives $P$ at the resolution of single elements. It is exact for features that are additive in their elements (counts, fields read directly) and a convention for the others (hashes, entropies), which do not decompose over their elements.
+
+\paragraph{Occlusion (black-box).} Without the source, $P$ can be estimated from the extractor's outputs alone. Partition the elements into $K$ windows, replace each window in turn with a fill value, and re-extract the features; the provenance of feature $j$ on window $k$ is proportional to how much occluding the window changes the feature, $|x_j - x_j^{(k)}|$, spread evenly over the window's elements, and a feature that no occlusion changes goes to the null element. The estimate costs $K + 1$ extractions per object and has the resolution of the windows. For additive features it recovers the instrumented $P$ at the window level, and for the others it measures their response to removal empirically instead of by convention; but it cannot see an element whose replacement leaves the features unchanged (e.g., a field that already holds the fill value), and it can create features the object does not have (e.g., a new low-entropy window).
+
+Section~\ref{sec:XML:PullbackFaithfulness} compares the two constructions, and Section~\ref{sec:XML:Setup} describes the instrumented extractor we use.
+
+\subsection{Pullback and Pushforward}
+\label{sec:XML:Transfers}
+
+Encoding the influence between elements and features as provenance allows us to transfer explanations between the feature- and problem-space elegantly using a pullback operation.
+
+\definition[\textit{Pullback}]
+\label{def:Pullback}
+{
+Consider some sample $z \in \mathcal{Z}$ in the problem-space, a feature map $\sigma$, the feature-space representation $\sigma(z) = x \in \mathcal{X}$, a feature-space explanation $a \in \mathcal{A}$, and provenance matrix $P$. We define $\tau: \mathcal{A} \mapsto \mathcal{B}$ as the pullback operation such that $\tau(a) \coloneq Pa = b \in \mathbb R^{|z| + 1} \subseteq \mathcal{B}$ is a problem-space explanation of the augmented object $\bar{z}$. Its last component, $b_\varnothing = \sum_{j \in U} a_j$, is the attribution that cannot be localized within $z$.
+}
+
+Throughout, we identify a problem-space explanation of $z$, $b \in \mathbb{R}^{|z|}$ (Definition~\ref{def:ProblemSpaceExplanation}), with the explanation $(b, 0) \in \mathbb{R}^{|z| + 1}$ of $\bar{z}$, i.e., an explanation produced directly in the problem-space never attributes anything to the null element.
+
+The pullback is ubiquitous in the literature, albeit implicitly. In computer vision, the feature mapping function maps discrete pixels to the reals and the explanation provenance is (usually) the identity matrix, so the pullback goes unnoticed. In natural language processing, the feature mapping function maps discrete characters to token embeddings and the explanation provenance, while not the identity, remains simple enough that the significance of pullback can be easily overlooked. The pullback only becomes nontrivial when the feature mapping function is complex. Because every column of $P$ sums to one, the pullback conserves attribution, $\sum_i b_i = \sum_j a_j$, with the null element holding the part that no element carries.
+
+Pullback lets us produce explanations in the feature-space and pull them back to the problem-space, essentially turning feature-vector saliency into object saliency. Analogously, the provenance matrix can also be used to travel in the opposite direction, from problem-space explanations to feature-space ones via a pushforward operation.
+
+\begin{notationbox}
+Consider provenance matrix $P \in \mathbb{R}^{(|z| + 1) \times |x|}$. Let diagonal matrix $D \in \mathbb{R}^{(|z| + 1) \times (|z| + 1)}$ encode the row-sums of $P$ such that $D_{i, i} = \sum_j P_{i,j}$. Let $D^\dagger$ be $D$'s pseudoinverse, i.e., $D^\dagger_{i,i} = 0$ if $D_{i,i} = 0$ and $D^\dagger_{i,i} = D_{i,i}^{-1}$ otherwise.
+\end{notationbox}
+
+\definition[\textit{Pushforward}]
+\label{def:Pushforward}
+{
+Consider some sample $z \in \mathcal{Z}$ in the problem-space, a feature map $\sigma$, the feature-space representation $\sigma(z) = x \in \mathcal{X}$, a problem space explanation $b \in \mathcal{B}$ of the augmented object $\bar{z}$, and provenance matrix $P$. We define $\psi: \mathcal{B} \mapsto \mathcal{A}$ as the pushforward operation such that $\psi(b) \coloneq P^\top D^\dagger b = a \in \mathbb R^{|x|} \subseteq \mathcal{A}$ is a feature-space explanation.
+}
+
+The pushforward splits the attribution of element $\bar{z}_i$ among the features it influences in proportion to $P_{i,j} / D_{i,i}$. Reading column $j$ of $P$ as a distribution over the elements, this is Bayes' rule under a uniform prior over the features: the pushforward is the Bayesian inverse of the pullback, and $D^\dagger$ is what makes it conserve attribution: $\sum_j a_j = \sum_i b_i$ whenever $b$ places attribution only on elements that influence some feature.
+
+Unlike the pullback, to our knowledge, no prior work has performed the pushforward operation before --- either intentionally or accidentally. This is unsurprising, as the utility of the pushforward is more difficult to appreciate.
+
+
+\subsection{Coarsening}
+\label{sec:XML:Coarsening}
+
+Practitioners often want explanations at a coarser granularity than single elements, e.g., windows of bytes or functions instead of bytes. Grouping elements does not require new provenance.
+
+\definition[\textit{Coarsened Provenance}]
+\label{def:Coarsening}
+{
+Consider provenance $P$ and a partition $G = \{g_1, \dots, g_K\}$ of the elements of $z$, with the null element kept as its own group. The coarsened provenance $P^G \in \mathbb{R}^{(K + 1) \times |x|}$ has entries $P^G_{g,j} = \sum_{i \in g} P_{i,j}$.
+}
+
+$P^G$ satisfies the axioms of Definition~\ref{def:ExplanationProvenance} for the object whose elements are the groups, and, by linearity, the pullback through $P^G$ is the pullback through $P$ summed within each group: coarsening keeps everything the pullback says about the groups. What it loses is separation. A window of bytes holds the bytes of many features, so the attribution on a window can no longer be traced back to the features that produced it, and the coarser the windows, the more features share each one. Sections~\ref{sec:XML:Pushforward} and~\ref{sec:XML:Comparison} show what this costs in practice.
