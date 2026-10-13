@@ -35,3 +35,8 @@ index/
 artifacts
 .claude/settings.local.json
 tmp/
+
+# local pdfLaTeX build wrapper (not synced to Overleaf) + extra latexmk aux
+manuscript/main_build.tex
+manuscript/*.fls
+manuscript/*.fdb_latexmk
