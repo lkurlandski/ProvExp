@@ -475,7 +475,9 @@ the research runs at pilot scale; scaling up is for the final numbers, when the 
 | Oct 12 (later) | Rule-based audit: design, runs 34-37 (generic YARA rules); **dropped**, failed the sniff test (not the pushforward) | |
 | Oct 12 (end) | Step back; AU (auditing MalConv via the pushforward): mock, go/no-go built; runs 38-41 started | |
 | Oct 13 | AU: no-go on forging, post-mortem (run 42), reframed to scrambling; go (runs 43-44); experiment proper (runs 45-46); written up; Appendix F removed; repo reorganized | |
-| next | Rewrite the remaining claims and the introduction's contributions; scale-up when the user decides | with the user |
+| Oct 13 (later) | Introduction rewritten (framework+symmetry, contributions C1-C4); local TeX Live toolchain set up to match Overleaf | |
+| next | Finish the manuscript rough draft (related work, abstract, discussion, summary) and convert chapter -> conference paper; then scale up | with the user |
+| then | Scale-up: 2,000 files, seeds 0-2 (~48 h / 16 cores + GPU); AU mitigation and CM real-attack transfer (the deferred, now load-bearing, pieces) | with the user |
 | later | Scale-up (2,000 files, seeds 0–2), when the user decides; the MLP if time allows | |
 | later | Appendix (App-R; the byte-set control bound) | |
 | Dec 15–late Jan | Writing: introduction and contributions, framework edits, figures | Submission |

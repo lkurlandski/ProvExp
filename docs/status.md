@@ -1,11 +1,17 @@
 # Status
 
-Last updated: 2026-10-13. The framework and intrinsic evaluation are done at pilot scale; both extrinsic applications
-are done and written up. We are at an early-draft stage and did a large repository cleanup (archived the dropped
-threads, de-staled the docs). The two applications: **the pullback compares two detectors per file** (CM / Comparison,
-`docs/experiments/cm.md`), and **the pushforward audits a raw-byte detector across a corpus** (AU / Audit,
-`docs/experiments/audit.md`). `run/` holds the commands that produced everything in `artifacts/` (active runs 01-21, 30-33,
-38-46; dropped runs in `run/archive/`).
+Last updated: 2026-10-13 (checkpoint before a lunch break). The framework and intrinsic evaluation are done at pilot
+scale; both extrinsic applications are done and written up. The repository was reorganized (experiment docs under
+`docs/experiments/`, dropped threads archived, dead ideas in `docs/graveyard.md`). The two applications: **the pullback
+compares two detectors per file** (CM / Comparison, `docs/experiments/cm.md`), and **the pushforward audits a raw-byte
+detector across a corpus** (AU / Audit, `docs/experiments/audit.md`). `run/` holds the commands that produced
+everything in `artifacts/` (active runs 01-21, 30-33, 38-46; dropped runs in `run/archive/`).
+
+**Current goal: finish a rough draft of the manuscript, then kick off larger-scale experiments.** The introduction was
+rewritten (framework+symmetry framing, contributions C1-C4); related work, abstract, discussion, and summary remain,
+and the document still needs a dissertation-chapter -> conference-paper conversion. A local LaTeX toolchain
+(user-space TeX Live, to match Overleaf) is being installed; see `docs/resume-prompt.md` for the compile command and
+the `manuscript/main_build.tex` wrapper.
 
 ## Where we are
 
@@ -24,14 +30,20 @@ threads, de-staled the docs). The two applications: **the pullback compares two 
 
 ## Next
 
-1. **Repository organization scheme (pending user approval).** A proposed naming/organization strategy for the live
-   docs and experiment IDs is on the table (align IDs with the manuscript sections; one doc per experiment); the
-   doc renames and the matching manuscript label-sync are held until the user signs off.
-2. **Manuscript drafting** (early stage): the introduction's contributions, the abstract, discussion, and summary are
-   still to write. Ask before changing what a claim is for.
-3. **Scale-up** (all 2,000 files, seeds 0-2) when the user decides; nothing is scaled yet.
-4. **Deferred experiment pieces:** the MLP's return; CM's real-attack transfer; AU's mitigation (test-time zeroing
-   and a retrain, both needing SSViT GPU work).
+1. **Verify the local LaTeX compile** once the user's TeX Live install finishes and is on PATH:
+   `cd manuscript && latexmk -pdf main_build.tex`. `main_build.tex` is a gitignored wrapper with a guessed preamble;
+   fix it (not the fragments) if the first run errors. See `docs/resume-prompt.md`.
+2. **Finish the manuscript rough draft, in paper (not chapter) voice:** related work (no section yet; position vs.
+   G-DeepSHAP `chen2022explaining` and FINER `he2023finer`), abstract (five-move, >=2 numbers), discussion/limitations,
+   summary; then add a threat/system model and an ethics/disclosure section. The introduction (`_b`) is already
+   rewritten. Finish with a dissertation-chapter -> conference-paper global pass (voice, structure, ~13 pp). Ask before
+   changing what a claim is for.
+3. **Then scale up** (only once the draft convinces us the plan is solid): all 2,000 files, seeds 0-2; up to ~48 h on
+   16 cores for the CPU work plus GPU time for MalConv's IG and any AU retrain. Tightens the pilot numbers (esp. AU's
+   22.5% evasion, CM) with seed variance; does not change the argument. Nothing is scaled yet.
+4. **Deferred pieces, now load-bearing** (the intro claims the fuller vision): AU's **mitigation** (test-time field
+   zeroing + a retrain) and CM's **real-attack transfer**, both needing SSViT GPU work; and the MLP's return. Do not
+   let the intro overclaim relative to what is run.
 
 ## Decisions
 
@@ -45,6 +57,14 @@ threads, de-staled the docs). The two applications: **the pullback compares two 
   full plan docs are summarized in `docs/graveyard.md` and removed from the tree (kept in history).
 - **CLAUDE.md relaxed:** the "do not propose X" research prohibitions became "generally unproductive, raise with a
   reason" (`docs/graveyard.md`, "Directions the user has generally found unproductive").
+- **Docs reorganized:** experiment docs merged/moved to `docs/experiments/`; "3-A/3-C" vocabulary retired (CM/AU
+  canonical); `design_provexp.md` -> `design.md`.
+- **Introduction rewritten** with two framing choices (user): (i) **framework + symmetry first** (applications are
+  evidence); (ii) **claim the fuller vision** in the contributions -> this makes AU's mitigation, CM's real-attack
+  transfer, and the scale-up load-bearing before submission.
+- **LaTeX toolchain = user-space TeX Live + latexmk + pdflatex**, to match the user's Overleaf project (not tectonic,
+  not conda). The user runs the install; a gitignored `manuscript/main_build.tex` wrapper compiles the fragments
+  locally.
 
 2026-10-12 (latest):
 - **The pushforward needs an extrinsic application**; the symmetry is the novelty (user). CM alone is not enough.
