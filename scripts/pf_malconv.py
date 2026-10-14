@@ -1,0 +1,288 @@
+"""
+M1 (docs/experiments/mocks.md; revision plan item 10): is the pushforward faithful on MalConv, the model the audit
+(Section 5.3) pushes forward?
+
+MalConv never computes the features, so a feature-space explanation of it cannot be tested by deleting features.
+Instead, each feature-space explanation is pulled back through the file's P and its top bytes are deleted with PB1's
+operator (run 21: level 3, zeros fill); MalConv scores every deleted file. For each of PB1's 100 pilot files:
+
+    pushforward   the pushforward of MalConv's Integrated Gradients, a = P^T D^+ b (the method; what the audit uses);
+    surrogate     interventional TreeSHAP of the surrogate of MalConv (scripts/audit_surrogate.py; the realistic
+                  alternative, which never saw these files);
+    random_feat   random feature explanations (standard normal), the floor;
+
+and, as problem-space references that name no features:
+
+    ig            Integrated Gradients itself, per byte (the pushforward's source);
+    ig_k256       Integrated Gradients summed over PB1's 256 windows;
+    random        random window orders.
+
+Each ranking deletes evidence for MalConv's predicted class (PB1's convention).
+
+Outputs, in `{outdir}/seed-{seed}/`:
+    curves.parquet      one row per (file, ranking, budget): MalConv's log-odds, and whether the file verified
+    files.parquet       one row per file: size, MalConv's log-odds, status, timing
+    report.json         the configuration and timing
+
+Usage:
+    PYTHONHASHSEED=0 OMP_NUM_THREADS=1 python scripts/pf_malconv.py --seed 0 --device cuda:1 --num_workers 16
+"""
+
+from __future__ import annotations
+
+from argparse import ArgumentParser
+import json
+import multiprocessing as mp
+import os
+from pathlib import Path
+import sys
+import time
+from typing import Any
+import warnings
+
+import numpy as np
+from numpy import typing as npt
+import polars as pl
+from scipy import stats
+import torch
+from tqdm import tqdm
+
+from provexp.ablation import BUDGETS
+from provexp.ablation import ablate
+from provexp.ablation import budget_masks
+from provexp.ablation import element_order
+from provexp.ablation import window_order
+from provexp.featuresets.ember2024.ablation import protect
+from provexp.featuresets.ember2024.ablation import verify
+from provexp.featuresets.ember2024.features import PEFeatureExtractor
+from provexp.models.malconv import load_pretrained_malconv
+from provexp.provenance import Provenance
+
+sys.path.insert(0, str(Path(__file__).parent))
+
+from cm_check import malconv_explanations  # noqa: E402
+from cm_check import malconv_log_odds  # noqa: E402
+from faithfulness import load_sample  # noqa: E402
+from faithfulness import load_window_scores  # noqa: E402
+
+
+__all__ = [
+    "feature_explanations",
+]
+
+
+ROOT = Path(__file__).parent.parent
+IS_PE = 2  # The index of general:is_pe.
+NUM_RANDOM = 3
+FEATURE_RANKINGS = ("pushforward", "surrogate", "random_feat")
+
+FloatArray = npt.NDArray[np.float64]
+IntArray = npt.NDArray[np.int64]
+
+_STATE: dict[str, Any] = {}
+
+
+################################################################################
+# Rankings
+################################################################################
+
+
+def feature_explanations(prov: Provenance, ig: FloatArray, surrogate: FloatArray, rng: np.random.Generator) -> dict[str, FloatArray]:
+    """
+    The feature-space explanations of MalConv compared on one file.
+
+    Args:
+        prov: The file's provenance.
+        ig: MalConv's Integrated Gradients, per byte, shape (num_elements,).
+        surrogate: The surrogate's TreeSHAP for the file, shape (num_features,).
+        rng: The source of the random feature explanations.
+
+    Returns:
+        The pushforward of `ig`, the surrogate's explanation, and NUM_RANDOM random ones, each of shape (num_features,).
+    """
+    if ig.shape != (prov.num_elements,):
+        raise ValueError(f"Expected Integrated Gradients of shape ({prov.num_elements},). Got {ig.shape}.")
+    if surrogate.shape != (prov.num_features,):
+        raise ValueError(f"Expected a surrogate explanation of shape ({prov.num_features},). Got {surrogate.shape}.")
+    out = {"pushforward": prov.pushforward(ig), "surrogate": surrogate}
+    for r in range(NUM_RANDOM):
+        out[f"random_feat:{r}"] = rng.standard_normal(prov.num_features)
+    return out
+
+
+################################################################################
+# Per File
+################################################################################
+
+
+def _init_worker(malconv_file: Path) -> None:
+    sys.stdout = open(os.devnull, "w")
+    warnings.filterwarnings("ignore")
+    torch.set_num_threads(1)
+    _STATE["extractor"] = PEFeatureExtractor()
+    _STATE["malconv"] = load_pretrained_malconv(malconv_file)
+
+
+def process_file(task: dict[str, Any]) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+    """The deletion curves of every ranking for one file, scored by MalConv."""
+    t_0 = time.perf_counter()
+    base = {"index": task["index"], "name": task["name"], "label": task["label"]}
+    try:
+        data = load_sample(task["shard"], task["position"], task["name"], task["dbdir"])
+        m = len(data)
+        extractor: PEFeatureExtractor = _STATE["extractor"]
+        _, prov = extractor.feature_vector_with_provenance(data)
+        ig = task["ig"].astype(np.float64)
+        m0 = task["malconv_log_odds"]
+        d = float(np.sign(m0)) or 1.0
+        ties = np.random.default_rng([task["seed"], 1])
+        byte_perm = ties.permutation(m).astype(np.int64)
+        edges = task["windows"]["edges"]
+        K = edges.shape[0] - 1
+        w = np.repeat(np.arange(K), np.diff(edges))
+
+        # Each feature-space explanation is pulled back onto the bytes, where MalConv lives.
+        feats = feature_explanations(prov, ig, task["surrogate"], np.random.default_rng([task["seed"], 2]))
+        orders = {name: element_order(prov.pullback(a)[:m], d, byte_perm) for name, a in feats.items()}
+        orders["ig"] = element_order(ig, d, byte_perm)
+        orders["ig_k256"] = window_order(np.bincount(w, weights=ig, minlength=K), edges, d, ties.permutation(K).astype(np.int64))
+        rng = np.random.default_rng(task["seed"])
+        for r in range(NUM_RANDOM):
+            orders[f"random:{r}"] = window_order(rng.permutation(K).astype(np.float64), edges)
+
+        protection = protect(data, header="typical")
+        malconv = _STATE["malconv"]
+        cache: dict[bytes, dict[str, Any]] = {}
+        curves: list[dict[str, Any]] = []
+        for method, order in orders.items():
+            for budget, mask in zip(BUDGETS, budget_masks(order, protection.mask, BUDGETS)):
+                key = np.packbits(mask).tobytes()
+                if key not in cache:
+                    z = ablate(data, mask, protection.mask, "zeros", None, protection.header, protection.header_values)
+                    try:
+                        x = np.asarray(extractor.feature_vector(z), dtype=np.float64)  # type: ignore[no-untyped-call]
+                        problem = verify(protection, data, z, float(x[IS_PE]))
+                    except Exception as err:
+                        problem = f"extraction failed: {type(err).__name__}"
+                    cache[key] = {"malconv": malconv_log_odds(malconv, z), "valid": problem is None}
+                curves.append({"method": method, "budget": budget} | cache[key])
+        info = {"status": "ok", "error": "", "size": m, "malconv_log_odds": m0, "extractions": len(cache),
+                "seconds": time.perf_counter() - t_0}
+        return [base | c for c in curves], base | info
+    except Exception as err:
+        return [], base | {"status": "error", "error": f"{type(err).__name__}: {err}"[:300], "seconds": time.perf_counter() - t_0}
+
+
+################################################################################
+# Summary
+################################################################################
+
+
+def summarize(curves: pl.DataFrame, files: pl.DataFrame) -> None:
+    """Print the deletion areas (mean evidence removed, budgets 0.1%-50%), a few budgets, and paired tests."""
+    f0 = files.select("index", pl.col("malconv_log_odds").alias("m0"))
+    c = curves.join(f0, on="index").filter(pl.col("budget") <= 0.5)
+    c = c.with_columns((pl.col("m0").sign() * (pl.col("m0") - pl.col("malconv"))).alias("removed"),
+                       pl.col("method").str.replace(r":\d+$", "").alias("method"))
+    valid = c.group_by("index").agg(pl.col("valid").all()).filter(pl.col("valid"))["index"]
+    c = c.filter(pl.col("index").is_in(valid.implode()))
+    per_budget = c.group_by("index", "method", "budget").agg(pl.col("removed").mean())
+    area = per_budget.group_by("index", "method").agg(pl.col("removed").mean().alias("area"))
+    with pl.Config(tbl_rows=100, tbl_cols=20, tbl_width_chars=200, float_precision=2):
+        print(f"\nMalConv evidence removed (median over {valid.len()} files with every deletion verified):")
+        wide = per_budget.group_by("method", "budget").agg(pl.col("removed").median()).sort("budget") \
+            .pivot(on="budget", index="method", values="removed")
+        wide = wide.join(area.group_by("method").agg(pl.col("area").median()), on="method").sort("area", descending=True)
+        print(wide)
+    a = area.pivot(on="method", index="index", values="area")
+    print("\nPaired comparisons of the per-file area (wins of the first, Wilcoxon p):")
+    for x, y in [("pushforward", "surrogate"), ("pushforward", "random_feat"), ("pushforward", "ig_k256"),
+                 ("pushforward", "ig"), ("surrogate", "random_feat")]:
+        if x in a.columns and y in a.columns:
+            u, v = a[x].to_numpy(), a[y].to_numpy()
+            p = stats.wilcoxon(u, v).pvalue if np.any(u != v) else float("nan")
+            print(f"  {x} vs. {y}: {int((u > v).sum())}/{len(u)}, p = {p:.1e}, median ratio of areas "
+                  f"{np.median(u) / np.median(v):.2f}")
+
+
+################################################################################
+# Main
+################################################################################
+
+
+def main() -> None:
+    parser = ArgumentParser(description=__doc__.split("\n\n")[1] if __doc__ else None)
+    parser.add_argument("--seed", type=int, default=0, help="The seed of MalConv and of the surrogate.")
+    parser.add_argument("--pb1_run", type=Path, default=ROOT / "artifacts" / "experiments" / "e1" / "seed-0" / "zeros-typical-header-baselines-ties", help="The PB1 run whose files and windows to reuse.")
+    parser.add_argument("--num_files", type=int, default=0, help="Only the first files per label (0: all), for smoke tests.")
+    parser.add_argument("--ig_steps", type=int, default=256)
+    parser.add_argument("--device", type=str, default="cuda" if torch.cuda.is_available() else "cpu")
+    parser.add_argument("--surrogate", type=Path, default=ROOT / "artifacts" / "experiments" / "audit_surrogate")
+    parser.add_argument("--explanation_set", type=Path, default=ROOT / "artifacts" / "explanation_set" / "ts.parquet")
+    parser.add_argument("--checkpoints", type=Path, default=ROOT / "checkpoints")
+    parser.add_argument("--db", type=Path, default=Path("/shared/datasets/EMBER-2024/data/ts"))
+    parser.add_argument("--outdir", type=Path, default=ROOT / "artifacts" / "experiments" / "pf_malconv")
+    parser.add_argument("--num_workers", type=int, default=16)
+    parser.add_argument("--tables_only", action="store_true", help="Print the tables of an earlier run.")
+    args = parser.parse_args()
+
+    outdir = args.outdir / f"seed-{args.seed}"
+    if args.tables_only:
+        summarize(pl.read_parquet(outdir / "curves.parquet"), pl.read_parquet(outdir / "files.parquet").filter(pl.col("status") == "ok"))
+        return
+    outdir.mkdir(parents=True, exist_ok=True)
+    files = pl.read_parquet(args.pb1_run / "files.parquet").filter(pl.col("status") == "ok")
+    if args.num_files > 0:
+        files = pl.concat([files.filter(pl.col("label") == lab).sort("index").head(args.num_files) for lab in (0, 1)])
+    location = pl.read_parquet(args.explanation_set).select("name", "shard", "position")
+    files = files.select("index", "name", "label").join(location, on="name", how="left").sort("index")
+    # The surrogate's TreeSHAP is saved in the explanation set's order, as are PB1's file indices.
+    surrogate = np.load(args.surrogate / f"seed-{args.seed}" / "shap.npy", mmap_mode="r")
+    names = pl.read_parquet(args.surrogate / f"seed-{args.seed}" / "predictions.parquet")["name"]
+    if any(names[int(i)] != n for i, n in files.select("index", "name").iter_rows()):
+        raise RuntimeError("The surrogate's explanations are not in the order of PB1's file indices.")
+    windows = load_window_scores(args.pb1_run / "window_scores.npz")
+    malconv_file = args.checkpoints / f"malconv-seed{args.seed}.pt"
+    print(f"M1: {files.height} files from {args.pb1_run.as_posix()}, MalConv seed {args.seed}.", flush=True)
+
+    # Phase 1, on the GPU: MalConv's log-odds and Integrated Gradients, file by file.
+    t_0 = time.time()
+    model = load_pretrained_malconv(malconv_file).to(args.device)
+    tasks: list[dict[str, Any]] = []
+    for r in tqdm(files.iter_rows(named=True), total=files.height, desc="MalConv", mininterval=10):
+        data = load_sample(int(r["shard"]), int(r["position"]), r["name"], args.db)
+        log_odds, ig, _ = malconv_explanations(model, data, args.ig_steps, args.device)
+        tasks.append({"index": int(r["index"]), "name": r["name"], "label": int(r["label"]), "shard": int(r["shard"]),
+                      "position": int(r["position"]), "dbdir": args.db, "seed": int(r["index"]),
+                      "surrogate": np.asarray(surrogate[int(r["index"])], dtype=np.float64),
+                      "windows": windows[int(r["index"])], "malconv_log_odds": log_odds, "ig": ig})
+    seconds_malconv = time.time() - t_0
+    del model
+    print(f"Phase 1 (MalConv on {args.device}): {seconds_malconv:.0f} s.", flush=True)
+
+    # Phase 2, on the CPU: provenance and the deletions, which need feature extraction to verify each file.
+    t_0 = time.time()
+    curves: list[dict[str, Any]] = []
+    infos: list[dict[str, Any]] = []
+    tasks.sort(key=lambda t: -t["ig"].shape[0])
+    with mp.get_context("fork").Pool(args.num_workers, initializer=_init_worker, initargs=(malconv_file,)) as pool:
+        for c, info in tqdm(pool.imap_unordered(process_file, tasks), total=len(tasks), desc="files", mininterval=10):
+            curves += c
+            infos.append(info)
+            if info["status"] != "ok":
+                print(f"File {info['index']}: {info['error']}", flush=True)
+    seconds_files = time.time() - t_0
+    print(f"Phase 2 (files on {args.num_workers} workers): {seconds_files:.0f} s.", flush=True)
+
+    curves_df, files_df = pl.DataFrame(curves), pl.DataFrame(infos).sort("index")
+    curves_df.write_parquet(outdir / "curves.parquet")
+    files_df.write_parquet(outdir / "files.parquet")
+    report = {"config": {k: v.as_posix() if isinstance(v, Path) else v for k, v in vars(args).items()},
+              "budgets": list(BUDGETS), "seconds_malconv": seconds_malconv, "seconds_files": seconds_files,
+              "failed": int((files_df["status"] != "ok").sum())}
+    (outdir / "report.json").write_text(json.dumps(report, indent=2))
+    summarize(curves_df, files_df.filter(pl.col("status") == "ok"))
+
+
+if __name__ == "__main__":
+    main()
