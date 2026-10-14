@@ -1,56 +1,46 @@
-# Resume: ProvExp (2026-10-14, after lunch) — B9 result, then the revision plan
+# Resume: ProvExp (2026-10-15) — feedback on Sections 3-5, then the front and back matter
 
-Read `CLAUDE.md`, then `docs/status.md` (top summary, "Where we are", "Next"), `docs/review-2026-10-14.md` (the
-self-review), and `docs/revision-plan.md` (what's done and what's next). Explain in plain language; no dense shorthand.
-Ask before changing what a claim is for. Page limit and exact numbers do not matter at this drafting stage.
+Read `CLAUDE.md`, then `docs/status.md` (top summary, "Where we are", "Next", "Decisions"), `docs/revision-plan.md`
+("Status at the end of 2026-10-14"), and `docs/review-sections-3-5-2026-10-14.md` ("Outcome"). Explain in plain
+language; ask before changing what a claim is for. Follow the memory `paper-writing-style`: natural top-tier prose, no
+rigid writing rules, present what works and state restrictions where they matter, never call our method weak.
 
-## What happened this morning
+## Where we are (end of 2026-10-14)
 
-- **Self-review + revision plan.** A CCS-reviewer-style review (`docs/review-2026-10-14.md`) found the paper's main
-  risks (W2/W4 "byte resolution out of reach / win by construction", W5 pushforward never tested on MalConv, W6 the
-  applications' security value, W1 thin novelty, W7 generality on one extractor). The plan (`docs/revision-plan.md`)
-  attacks them; blocks A (writing) and B7 (oracle) are done, B9 is running.
-- **Manuscript brought up to date:** block-A writing fixes (cost accounting, novelty case in Section 3, "format
-  knowledge in three places", CM wording, related-work contrast vs. parser-based saliency mapping); MLP and Figure 1
-  cut; AU's realizable numbers in (12.4% vs. 6.0%, loader-safe threat model). Build is clean (`make`, `make check`).
-- **Field-occlusion oracle (run 56) — a strong result, already in the paper.** A parser-based upper bound that knows
-  the read set (124 extractions/file) reaches only gain 0.91; the byte-level pullback beats it 88/100 (p~1e-15).
-  In Table 1 and 4.1. Recorded in `docs/experiments/pb1.md`.
-- **Deferred experiments drafted as synthetic blue placeholders** (`\synthetic{}` macro, dark blue): pushforward on
-  MalConv (M1), the mitigation (M3, with a blue table), the Android extractor. Predicted numbers in
-  `docs/experiments/mocks.md`. Each blue block names the run that replaces it.
+The self-review's main rejection risks are now answered with measured results (all pilot scale, seed 0):
+- **Byte resolution / "by construction" (W2, W4):** a field-occlusion oracle (124 extractions/file) reaches gain 0.91;
+  the byte-level pullback (1 extraction) reaches 1.71 and beats the oracle on 88/100 files; holds under random fill.
+- **Pushforward on MalConv (W5):** the pushforward's top features carry about 2x the evidence of a surrogate model's
+  (99/100 files, both fills), more than IG over windows, 2.7x random features.
+- **Applications (W6):** the comparison's triage labels map to decisions (blind -> add a feature; oppose -> inspect
+  those bytes); the audit's 9 fields lie outside the DOS header, loader-safe changes evade MalConv on 12.4% vs. 6.0%,
+  and zeroing the audited fields cuts the strongest attack from 16.8% to 2.9% at 3.5 points of detection.
+- **B9** (triage telling attacks from organic disagreements) failed and was cut from the paper.
 
-## The one thing to check first: B9 (run 57)
+Sections 3-5 were revised for narrative and presentation: three pgfplots result figures (Figure 3 faithfulness vs.
+cost, Figure 4 pushforward vs. resolution, Figure 5 MalConv deletion curves; data via `scripts/paper_figures.py`),
+Table 1 (EMBER provenance conventions), Table 3 (audited fields), validity fixes, sharper novelty for the pushforward.
+Build is clean (`make`, `make check` in `manuscript/`).
 
-The user ran `cm_triage_evasion.py` on **200 candidate malware, GPU 1** (edited from run/57's defaults). It tests
-whether the disagreement triage separates an **attack-caused** disagreement from an **organic** one:
-- organic = malware MalConv misses on its own; evasion = malware both detect, with the shared set S scrambled
-  loader-safe until MalConv flips while the GBDT holds. Same blind/oppose/agree split (A = GBDT, B = MalConv) on both.
-- **Hypothesis:** the evasion population carries more of the GBDT's evidence in **oppose** than the organic one.
+## Today
 
-When it is done (ask the user, or read the end of `artifacts/logs/cm-triage-evasion-seed0.log` and
-`artifacts/experiments/cm_triage_evasion/seed-0/files.parquet`):
-1. Read the blind/oppose/agree table and the evasion-vs-organic p-values (Mann-Whitney on the per-file oppose share).
-2. **If oppose separates them** (evasion clearly higher, p small): the triage label is a defender's *decision*. Write
-   it into Section 4.3 (the comparison application) as the operational reading W6 asked for; record in
-   `docs/experiments/cm.md`.
-3. **If it does not:** fall back, in this order (user's choice): (a) reframe the readout — test only whether the
-   triage *separates* the populations at all (any category), (b) reconsider the experiment and argue the decision from
-   the existing triage (MalConv-only+blind -> add a feature; GBDT-only+oppose -> investigate). Either way, update 4.3.
-   Caveat: the 16-file smoke test showed no separation, but that N and the reduced IG steps mean nothing; read the
-   real pilot.
+1. **Ask the user for their feedback on Sections 3-5** (pp. 3-11 of `manuscript/main.pdf`) and apply it. Do not start
+   rewriting other sections before hearing it.
+2. **Then the front and back matter:** abstract, introduction, discussion, conclusion. Same standard as Sections 3-5:
+   strong narrative and presentation, consistent with the revised body (new: MalConv faithfulness, the mitigation, the
+   fields table, the figures). Check every contribution bullet against its evidence. Results stay in the evaluation.
+   End with a holistic pass (`make check`, rendered pages, cross-section consistency).
+3. **Then reassess W7** with the user: the Android second extractor is the largest remaining weakness and several
+   sessions of work; the user wants the PE/EMBER contributions solid first.
 
-## Then (revision-plan order)
+## Still blue (synthetic placeholders)
 
-- **Remaining block C (deferred, synthetic placeholders stand in):** M1 (pushforward on MalConv) and M3 (mitigation)
-  need re-scoring/retraining MalConv — not yet. The **Android second extractor** (item 12) is the biggest lift for the
-  generality claim (W7): AndroZoo APKs + a Drebin-style extractor instrumented for P; run the 4.1 faithfulness test.
-- **Section-level writing** with the user once they read the restructured draft (they have not yet).
-- **Scale-up** to 2,000 files / 3 seeds (10K on the cluster) once the designs settle — the last step before submission.
+The retrained-MalConv row of Table 4 and its sentence in 5.3 (needs MalConv retraining, cluster round); the Android
+paragraph in the discussion (W7). Everything else in the body is measured.
 
-## Working rules this session
+## Working rules
 
-- Realistic perturbations only for anything framed as an attack. No sandboxing samples (memory `no-sandbox-execution`).
-- Mock the result first (synthetic blue placeholders) before building MalConv/retraining experiments.
-- Long jobs: smoke-test, then hand the user a numbered `run/` script (GPUs the user picks; they used GPU 1 for B9).
-- Commit attribution line is currently `Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>`.
+- Long jobs: smoke-test, then hand the user a numbered `run/` script (≤16 workers, ≤2 GPUs; the user picks GPUs).
+- Realistic perturbations only for anything framed as an attack; no sandbox execution.
+- Mock an experiment's result before building it; state a short hypothesis before running anything.
+- Update `docs/status.md` at the end of the session and write the next resume prompt.

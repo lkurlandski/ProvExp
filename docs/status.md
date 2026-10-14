@@ -1,50 +1,53 @@
 # Status
 
-Last updated: 2026-10-14 (evening): **M1 done (run 58)**: pushed forward on MalConv, the pushforward's features
-carry 1.9x the surrogate's evidence (area 6.25 vs. 3.28, 99/100 files), 1.46x IG over windows, 2.7x random features;
-in 5.1 (blue placeholder replaced) and the intro (`docs/experiments/pf1.md`). Closes W5. B9 abandoned (user). **Next:
-polish W6** (audit: surrogate argument with M1, test-time mitigation; comparison: threat-model contradiction).
-Earlier: 2026-10-14 (late afternoon): **run 57 (B9) read; it failed, fallback (b) written into 4.3.** The
-triage does not tell an attack-caused disagreement from an organic one (200 candidates: 32 organic, 87 evasion; oppose
-0.26 vs. 0.28, p = 0.14; blind, agree p >= 0.33). Cause: the readout is the GBDT's whole top 1% (~19K bytes) while the
-attack changes ~600 bytes, so the share can barely move (`docs/experiments/cm.md`, "Result (run 57)"). Section 4.3 now
-argues the decision from the existing triage (blind -> add a feature; oppose -> inspect those bytes first) and states,
-citing run 57, that the labels say which content drives a disagreement, not its cause. Earlier today: self-review
-(`docs/review-2026-10-14.md`), revision plan (`docs/revision-plan.md`), block-A writing, MLP and Figure 1 cut, AU's
-realizable numbers, **run 56 (field-occlusion oracle)**: gain 0.91 at 124 extractions/file, the byte-level pullback
-beats it 88/100 (p~1e-15), in Table 1 + 4.1. Deferred experiments (M1, M3, Android) stand in the manuscript as
-**synthetic blue `\synthetic{}` placeholders** (mocks in `docs/experiments/mocks.md`). Page limit and exact numbers do
-not matter at this drafting stage (CLAUDE.md).
+Last updated: 2026-10-14 (end of day). **The self-review's main criticisms are answered with measured results, and
+Sections 3-5 are revised for presentation.** Today, in order:
+- **Run 56, field-occlusion oracle** (W2/W4): gain 0.91 at 124 extractions/file; the byte-level pullback beats it 88/100.
+- **Run 57, B9** (triage vs. attack-caused disagreements): negative (design flaw: ~600 changed bytes in a ~19K-byte
+  readout). Abandoned and cut from the paper (user: present what works).
+- **Run 58, M1** (W5): pushed forward on MalConv, the pushforward removes 1.9x the surrogate's evidence (99/100 files),
+  1.46x IG over windows, 2.7x random features. **Run 60**: same with random fill (2.0x, 99/99), closing W4.
+- **Run 59, M3 test-time mitigation** (W6): zeroing the audited fields cuts the strongest loader-safe attack 16.8% ->
+  8.2% (pushforward's 8 fields) / 2.9% (both methods' 12) at 2.0 / 3.5 pts of detection. Framed as a trade-off: the
+  point is that the pushforward identifies actionable issues (user). Retraining half stays blue.
+- **W6 writing:** comparison threat model (stand-ins), audit vs. surrogate backed by M1 ("use both").
+- **Sections 3-5 revised** (`docs/review-sections-3-5-2026-10-14.md`, "Outcome"): three pgfplots result figures,
+  conventions and audited-fields tables, validity fixes, sharper novelty, no self-deprecating labels.
 
-**Current goal:** check the preliminary findings at 500 files (seed 0) and carry the confirmed numbers into the
-manuscript; then section-level writing. A later round (3 seeds, 10K files) runs on a computing cluster.
+**Current goal:** the user reads Sections 3-5 (pp. 3-11 of `manuscript/main.pdf`); then the same treatment for the
+intro, abstract, discussion, and conclusion; then reassess W7 (a second extractor, Android) once the PE/EMBER
+contributions are solid. The scale-up (2,000 files / 3 seeds, then 10K on the cluster) comes last.
 
 ## Where we are
 
 | | state |
 |---|---|
-| **Manuscript** | `manuscript/` (CCS `acmart` `sigconf`, anonymous; `make`, `make check`). Order: 1 Introduction (`_b`; three contributions, no research questions) / 2 Background and Related Work (`_b2`; detection, post-hoc explanation, explaining malware detectors, transferring attributions, Our Position) / 3 Transferring Explanations with Provenance (`_c`; Preliminaries with Figures 1-2, the provenance matrix, pullback and pushforward with Figure 3, constructing P: instrumentation vs. occlusion, granularity, EMBER) / 4 Pulling Back to the Bytes (`_e`; faithfulness and cost, a planted trigger, comparing two detectors with a threat model) / 5 Pushing Forward to the Features (`_f`; faithfulness, ground truth for explainers, auditing a raw-byte detector with a threat model) / 6 Discussion (`_h`, light) / 7 Conclusion (`_i`); appendices: attribution the input cannot carry, ethics, open science. Body ends on p. 11. The user has not read the restructured text yet. **Stale numbers:** everything pilot-scale (until runs 50-55 land). AU's evasion is updated (2026-10-14) to the realizable runs 47-49 (12.4% vs. 6.0%, surrogate 10.4%, union 18.4%) in Section 5.3, the abstract, the intro, and the ethics appendix; the threat model now says loader-safe changes only. Cut material in `manuscript/archive/` (statistics of P, round trips, CP, appendix theory, old background/related work, claims lists). |
+| **Manuscript** | `manuscript/` (CCS `acmart` `sigconf`, anonymous; `make`, `make check`: clean). Order: 1 Introduction (`_b`) / 2 Background and Related Work (`_b2`) / 3 Transferring Explanations with Provenance (`_c`; Figures 1-2 conceptual, Table 1 EMBER provenance conventions) / 4 Pulling Back to the Bytes (`_e`; setting; 4.1 with Figure 3 faithfulness vs. cost; 4.2 trigger; 4.3 comparison with Table 2 triage) / 5 Pushing Forward to the Features (`_f`; 5.1 on the GBDT with Figure 4 and on MalConv with Figure 5; 5.2 trigger; 5.3 audit with Table 3 audited fields and Table 4 mitigation) / 6 Discussion / 7 Conclusion; appendices. 14 pages. Figures are pgfplots (palette in `main.tex`; MalConv curve data from `scripts/paper_figures.py` -> `manuscript/assets/data/`). **Blue placeholders left:** the retrained-MalConv row of Table 4 and its sentence (5.3), the Android paragraph (discussion). **Not yet revised:** abstract, intro, discussion, conclusion (only number fixes). Numbers are pilot-scale. |
 | **Pullback (PB1, PB2, CM)** | Pilot done (100 files; 50 per trigger; 25 per triage cell). 500-file seed-0 runs prepared: `run/51` (PB1 full baselines, GBDT + MLP), `run/52` (operator variants), `run/54` (CM: cross-deletion, shared, triage at 100/cell, window triage), `run/55` (triggers, 250 files each). |
-| **Pushforward (PF1, PF2, AU)** | PF1/PF2 pilot done; 500-file runs prepared (`run/53`, `run/55`). **AU corrected (runs 47-49, `docs/experiments/audit.md`):** on 902 fresh, detected held-out malware, loader-safe changes only: pushforward fields 12.4% evasion vs. 6.0% for as many other loader-ignored fields outside the DOS region (+6.4 pts, p = 3e-12; 3.8% with the DOS region), surrogate 10.4% (pushforward +2.0, p = 0.027), union 18.4%. Raw scrambling (19.7%) is no longer a headline (user: unrealistic perturbations unacceptable). Mitigation (1c) a manuscript TODO, no code; real-attack transfer (1d) not now. |
+| **Pushforward (PF1, PF2, AU)** | PF1/PF2 pilot done. **On MalConv (runs 58, 60, `docs/experiments/pf1.md`):** 1.9-2.0x the surrogate under both fills. **AU (runs 47-49, 59; `docs/experiments/audit.md`):** realizable evasion 12.4% vs. 6.0% null, surrogate 10.4%, union 18.4%; test-time mitigation 16.8 -> 2.9% strongest attack for 3.5 pts detection. Retraining MalConv (mitigation's second half) deferred to the cluster round. |
 | **CP / theory** | Cut from the paper, archived (`manuscript/archive/`). |
 | **The MLP** | **Cut from the manuscript body (2026-10-14)**; returns in future work. The code and runs keep it; the body carries only load-bearing results. |
 | **Speed** | String features 2.1x faster, bit-identical. Deferred ideas (`docs/design.md`, "Deferred optimizations"): reuse the extractor's parse in `verify` (~15%); numpy byte counts for the entropies and vectorized byte-entropy windows (~30% together, needs copying thrember code or patching pefile; user: not now). |
 
 ## Next
 
-1. **Sections 3-5 revised (2026-10-14, night)** per `docs/review-sections-3-5-2026-10-14.md` ("Outcome"): three
-   result figures (pgfplots; palette in `main.tex`; MalConv curve data from `scripts/paper_figures.py`), conventions and
-   audited-fields tables, validity fixes, B9 cut. **Next:** the user reads Sections 3-5; then the intro, abstract,
-   discussion, and conclusion get the same treatment (written last, per CLAUDE.md); then reassess W7 (Android).
-2. **Remaining revision-plan items** (`docs/revision-plan.md`): block C is deferred (needs MalConv re-eval/retraining)
-   and stands in as synthetic blue placeholders; the Android second extractor (item 12) is the biggest deferred lift.
-   Block A is done; block B is B7 (done) and B9 (done: negative, fallback (b) in 4.3).
-3. **Section-level writing** with the user once they read the restructured draft (they have not yet): prose, the
-   intro's third paragraph, Table 2 layout, PB2/PF2 subsections.
-4. **Later:** the scale-up to 2,000 files / 3 seeds (and 10K on the cluster) once the designs settle; the deferred
-   optimizations before it; CCS Cycle A vs. B (user's decision, open).
+1. **User reads Sections 3-5** and gives feedback; apply it.
+2. **Front and back matter:** abstract, introduction, discussion, conclusion get the Sections 3-5 treatment (narrative,
+   presentation, consistency with the revised body; results stay in the evaluation). Today's new results (MalConv
+   faithfulness, mitigation, fields table) are only partly reflected there.
+3. **Reassess W7** (generality): the Android second extractor (`docs/revision-plan.md`, item 12) is the largest
+   remaining weakness and several sessions of work; decide scope once 1-2 are done (user: PE/EMBER first).
+4. **Later:** MalConv retraining (Table 4's blue row); the scale-up (2,000 files / 3 seeds, then 10K on the cluster),
+   which also enlarges the triage cells (W10); deferred optimizations before it; CCS Cycle A vs. B (user, open).
 
 ## Decisions
+
+2026-10-14 (whole day):
+- **B9 abandoned and cut** (user): negative results that do not support the method are not reported; restrictions are
+  stated where they matter. Writing guidance saved as memory `paper-writing-style` (natural prose, no rigid rules, never
+  call our method weak, Definitions 1-2 stay, no results-first reordering, be ambitious about the pushforward's novelty).
+- **Mitigation framed as a trade-off** (user): the audit's value is identifying actionable issues, not a perfect defense.
+- **Figures:** result figures added; Figures 1-2 kept with fixes (conservative, user's guidance).
 
 2026-10-13 (night, end of session):
 - **The user runs `run/50`-`55` on the code as-is** (no verify/parse change tonight). Two optimization ideas are noted

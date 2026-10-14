@@ -101,3 +101,19 @@ Net: the two intrinsic faithfulness claims (pullback, pushforward) and the pullb
 "asserted" to "demonstrated against the strongest baseline a practitioner would build"; the pushforward's application
 and generality are staged with clearly-marked predictions until the deferred (MalConv-retraining / new-domain) runs.
 The scale-up to 2,000 files / 3 seeds remains the last step before submission, after the designs settle.
+
+## Status at the end of 2026-10-14
+
+| review item | status |
+|---|---|
+| W1 novelty | Argued in Section 3 (instrumenting a program; conventions table; pushforward vs. region summing); M1 adds substance. |
+| W2 weak baseline | Closed (run 56 oracle). Adaptive occlusion paused. |
+| W3 cost accounting | Closed (writing). |
+| W4 by construction / off-distribution | Closed: oracle (run 56); both fills for every deletion headline (run 60); setting states deletion is off-distribution and no conclusion rests on it alone. |
+| W5 pushforward on MalConv | Closed (runs 58, 60). |
+| W6a comparison's value | Decision per label in 4.3; threat model consistent; B9 cut. Small cells wait for the scale-up. |
+| W6b audit's value | Fields outside the DOS header (Table 3); M1 backs pushforward over surrogate ("use both"); test-time mitigation measured (run 59). Retraining half blue. |
+| W7 generality | **Open**: Android extractor (item 12), after the PE/EMBER paper is solid. |
+| W8 unattributable share | Stated limitation (by decision). |
+| W9 presentation | Sections 3-5 revised (three result figures, two new tables); front/back matter next. |
+| W10 scale | Open by design (final round). |
