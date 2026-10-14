@@ -4,7 +4,8 @@ M1 (docs/experiments/mocks.md; revision plan item 10): is the pushforward faithf
 
 MalConv never computes the features, so a feature-space explanation of it cannot be tested by deleting features.
 Instead, each feature-space explanation is pulled back through the file's P and its top bytes are deleted with PB1's
-operator (run 21: level 3, zeros fill); MalConv scores every deleted file. For each of PB1's 100 pilot files:
+operator (run 21: level 3, zeros fill; `--fill random` for the robustness check); MalConv scores every deleted file.
+For each of PB1's 100 pilot files:
 
     pushforward   the pushforward of MalConv's Integrated Gradients, a = P^T D^+ b (the method; what the audit uses);
     surrogate     interventional TreeSHAP of the surrogate of MalConv (scripts/audit_surrogate.py; the realistic
@@ -19,7 +20,7 @@ and, as problem-space references that name no features:
 
 Each ranking deletes evidence for MalConv's predicted class (PB1's convention).
 
-Outputs, in `{outdir}/seed-{seed}/`:
+Outputs, in `{outdir}/seed-{seed}/` (`seed-{seed}-random` with `--fill random`):
     curves.parquet      one row per (file, ranking, budget): MalConv's log-odds, and whether the file verified
     files.parquet       one row per file: size, MalConv's log-odds, status, timing
     report.json         the configuration and timing
@@ -31,6 +32,7 @@ Usage:
 from __future__ import annotations
 
 from argparse import ArgumentParser
+import hashlib
 import json
 import multiprocessing as mp
 import os
@@ -156,9 +158,11 @@ def process_file(task: dict[str, Any]) -> tuple[list[dict[str, Any]], dict[str, 
         curves: list[dict[str, Any]] = []
         for method, order in orders.items():
             for budget, mask in zip(BUDGETS, budget_masks(order, protection.mask, BUDGETS)):
-                key = np.packbits(mask).tobytes()
+                key = hashlib.blake2b(np.packbits(mask).tobytes(), digest_size=16).digest()
                 if key not in cache:
-                    z = ablate(data, mask, protection.mask, "zeros", None, protection.header, protection.header_values)
+                    # The same mask always gets the same random fill (as in faithfulness.py).
+                    fill_rng = np.random.default_rng([task["seed"], int.from_bytes(key[:8], "little")])
+                    z = ablate(data, mask, protection.mask, task["fill"], fill_rng, protection.header, protection.header_values)
                     try:
                         x = np.asarray(extractor.feature_vector(z), dtype=np.float64)  # type: ignore[no-untyped-call]
                         problem = verify(protection, data, z, float(x[IS_PE]))
@@ -223,10 +227,11 @@ def main() -> None:
     parser.add_argument("--db", type=Path, default=Path("/shared/datasets/EMBER-2024/data/ts"))
     parser.add_argument("--outdir", type=Path, default=ROOT / "artifacts" / "experiments" / "pf_malconv")
     parser.add_argument("--num_workers", type=int, default=16)
+    parser.add_argument("--fill", type=str, choices=["zeros", "random"], default="zeros", help="How deleted content bytes are filled.")
     parser.add_argument("--tables_only", action="store_true", help="Print the tables of an earlier run.")
     args = parser.parse_args()
 
-    outdir = args.outdir / f"seed-{args.seed}"
+    outdir = args.outdir / (f"seed-{args.seed}" + ("" if args.fill == "zeros" else f"-{args.fill}"))
     if args.tables_only:
         summarize(pl.read_parquet(outdir / "curves.parquet"), pl.read_parquet(outdir / "files.parquet").filter(pl.col("status") == "ok"))
         return
@@ -243,7 +248,7 @@ def main() -> None:
         raise RuntimeError("The surrogate's explanations are not in the order of PB1's file indices.")
     windows = load_window_scores(args.pb1_run / "window_scores.npz")
     malconv_file = args.checkpoints / f"malconv-seed{args.seed}.pt"
-    print(f"M1: {files.height} files from {args.pb1_run.as_posix()}, MalConv seed {args.seed}.", flush=True)
+    print(f"M1: {files.height} files from {args.pb1_run.as_posix()}, MalConv seed {args.seed}, {args.fill} fill.", flush=True)
 
     # Phase 1, on the GPU: MalConv's log-odds and Integrated Gradients, file by file.
     t_0 = time.time()
@@ -255,7 +260,7 @@ def main() -> None:
         tasks.append({"index": int(r["index"]), "name": r["name"], "label": int(r["label"]), "shard": int(r["shard"]),
                       "position": int(r["position"]), "dbdir": args.db, "seed": int(r["index"]),
                       "surrogate": np.asarray(surrogate[int(r["index"])], dtype=np.float64),
-                      "windows": windows[int(r["index"])], "malconv_log_odds": log_odds, "ig": ig})
+                      "windows": windows[int(r["index"])], "malconv_log_odds": log_odds, "ig": ig, "fill": args.fill})
     seconds_malconv = time.time() - t_0
     del model
     print(f"Phase 1 (MalConv on {args.device}): {seconds_malconv:.0f} s.", flush=True)
