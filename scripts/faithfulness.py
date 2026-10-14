@@ -19,6 +19,9 @@ Methods (each ranks bytes by evidence for the model's predicted class, sign(f(x)
     occlusion_k{J}              the same with J windows, for each J in --sweep_windows (the cost-faithfulness curve)
     kernelshap_windows          KernelSHAP over the K windows (players: windows; absent: ablated), a second direct
                                 problem-space explainer, with --kernelshap_samples coalitions
+    field_occlusion             with --field_oracle: occlude each parsed PE field and section (one extraction each),
+                                rank bytes by their region's drop; the structure-aware upper bound (a defender with a
+                                PE parser), which tests whether the byte-level pullback's win is just the read set
     random:{seed}               a random order of the K windows (shared by the models)
 
 Outputs, in `{outdir}/seed-{seed}/{fill}[-{header}-header][-{tag}]/`:
@@ -89,6 +92,8 @@ from provexp.explain.feature import kernelshap
 from provexp.explain.feature import mlp_function
 from provexp.featuresets.ember2024.ablation import HeaderFill
 from provexp.featuresets.ember2024.ablation import Protection
+from provexp.featuresets.ember2024.ablation import header_fields
+from provexp.featuresets.ember2024.ablation import parse
 from provexp.featuresets.ember2024.ablation import protect
 from provexp.featuresets.ember2024.ablation import verify
 from provexp.featuresets.ember2024.features import PEFeatureExtractor
@@ -187,6 +192,64 @@ class Scorer:
         if problem is not None:
             return {name: float("nan") for name in self.models}, False
         return {name: float(f(x[None, :])[0]) for name, f in self.models.items()}, True
+
+
+def field_regions(data: bytes) -> list[tuple[str, int, int]]:
+    """
+    The byte range [lo, hi) of every parsed PE field and section, for the field-occlusion oracle.
+
+    This is the structure-aware upper bound a defender could build with a PE parser: it names, per file, where each
+    header field and each section lives. Sections come first, so that a header field falling inside a section's raw
+    data overwrites the section's (coarser) attribution when the oracle assigns scores (process_file). Returns an
+    empty list if the file does not parse.
+    """
+    p = parse(data)
+    if p.pe is None or p.layout is None:
+        return []
+    regions: list[tuple[str, int, int]] = []
+    for i, (ptr, size) in enumerate(p.layout.sections):
+        lo, hi = max(ptr, 0), min(ptr + size, len(data))
+        if hi > lo:
+            regions.append((f"section[{i}]", lo, hi))
+    for field in header_fields(p.pe):
+        lo, hi = max(field.lo, 0), min(field.hi, len(data))
+        if hi > lo:
+            regions.append((field.key, lo, hi))
+    return regions
+
+
+def field_occlusion(scorer: Scorer, data: bytes, m: int, f0: dict[str, float], unprotected: BoolArray) -> tuple[dict[str, FloatArray], int, int]:
+    """
+    The field-occlusion oracle: occlude each parsed field and section once (under the same PE-aware operator as the
+    deletion curves), and score every byte by the drop its region causes. One extraction per region.
+
+    Args:
+        scorer: The file's scorer.
+        data: The file's bytes.
+        m: The file size.
+        f0: The model's log-odds on the unablated file.
+        unprotected: The bytes the deletion operator is allowed to change.
+
+    Returns:
+        A per-model byte score (the drop of each byte's region, 0 for bytes in no region), the number of regions
+        scored, and the extractions this cost.
+    """
+    scores = {name: np.zeros(m) for name in scorer.models}
+    extractions_0 = scorer.extractions
+    scored = 0
+    for _key, lo, hi in field_regions(data):
+        region = np.zeros(m, dtype=np.bool_)
+        region[lo:hi] = True
+        region &= unprotected
+        if not region.any():
+            continue
+        s, ok = scorer.scores(region)
+        if not ok:
+            continue
+        scored += 1
+        for name in scorer.models:
+            scores[name][lo:hi] = f0[name] - s[name]
+    return scores, scored, scorer.extractions - extractions_0
 
 
 def occlude_range(scorer: Scorer, window: npt.NDArray[np.int64], f0: dict[str, float], k_lo: int, k_hi: int, features: Optional[FloatArray] = None) -> tuple[dict[str, FloatArray], int]:
@@ -317,7 +380,7 @@ def process_kernelshap(task: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-def process_file(data: bytes, explanations: dict[str, FloatArray], num_windows: int, fill: Fill, header: HeaderFill, seed: int, budgets: tuple[float, ...], sweep: Optional[dict[int, dict[str, FloatArray]]] = None, shapley: Optional[dict[str, FloatArray]] = None, pass1: Optional[dict[str, Any]] = None, tiebreak: bool = True) -> tuple[list[dict[str, Any]], dict[str, Any], dict[str, Any]]:
+def process_file(data: bytes, explanations: dict[str, FloatArray], num_windows: int, fill: Fill, header: HeaderFill, seed: int, budgets: tuple[float, ...], sweep: Optional[dict[int, dict[str, FloatArray]]] = None, shapley: Optional[dict[str, FloatArray]] = None, pass1: Optional[dict[str, Any]] = None, tiebreak: bool = True, field_oracle: bool = False) -> tuple[list[dict[str, Any]], dict[str, Any], dict[str, Any]]:
     """
     Everything for one file that pass 1 did not do: the K-window occlusion, the black-box provenance, the rankings,
     and the deletion curves.
@@ -401,6 +464,17 @@ def process_file(data: bytes, explanations: dict[str, FloatArray], num_windows: 
         if name in shapley:
             orders[name]["kernelshap_windows"] = window_order(shapley[name], edges, d, perm_K)
     t_rank = time.perf_counter() - t_0
+
+    # The field-occlusion oracle: a structure-aware direct baseline that occludes each parsed field/section (one
+    # extraction each) and ranks bytes by their region's drop. It is the natural upper bound for a direct explainer
+    # that knows the parser's read set, so it answers whether the byte-level pullback's win is just that knowledge.
+    t_oracle, field_extractions, field_regions_scored = 0.0, 0, 0
+    if field_oracle:
+        t_0 = time.perf_counter()
+        oracle_scores, field_regions_scored, field_extractions = field_occlusion(scorer, data, m, f0, unprotected)
+        t_oracle = time.perf_counter() - t_0
+        for name in scorer.models:
+            orders[name]["field_occlusion"] = element_order(oracle_scores[name], direction[name], byte_perm)
     rng = np.random.default_rng(seed)
     random_orders = {f"random:{r}": window_order(rng.permutation(K).astype(np.float64), edges) for r in range(3)}
 
@@ -436,6 +510,9 @@ def process_file(data: bytes, explanations: dict[str, FloatArray], num_windows: 
         "seconds_instrumented": t_instrumented,
         "seconds_occlusion": t_occlusion,
         "seconds_rank": t_rank,
+        "seconds_field_oracle": t_oracle,
+        "field_oracle_extractions": field_extractions,
+        "field_oracle_regions": field_regions_scored,
         "occlusion_extractions": occlusion_extractions,
         "extractions": scorer.extractions,
         "invalid_windows": invalid_windows,
@@ -517,6 +594,7 @@ def process_one(task: dict[str, Any]) -> tuple[list[dict[str, Any]], dict[str, A
         recs, info, arr = process_file(
             data, task["explanations"], task["num_windows"], task["fill"], task["header"],
             task["seed"], task["budgets"], task["sweep"], task["shapley"], task["pass1"], task["tiebreak"],
+            task["field_oracle"],
         )
         return (
             [base | r for r in recs],
@@ -621,6 +699,7 @@ def main() -> None:
     parser.add_argument("--classifiers", type=str, nargs="+", choices=list(MODELS), default=["gbdt"], help="The models to evaluate (the GBDT first; PLAN.md, model scope).")
     parser.add_argument("--sweep_windows", type=int, nargs="*", default=[], help="Further window counts for occlusion and the coarsened pullback (the cost-faithfulness curve), e.g., 64 1024 4096.")
     parser.add_argument("--kernelshap_samples", type=int, default=0, help="Coalitions for KernelSHAP over the windows (0: skip).")
+    parser.add_argument("--field_oracle", action="store_true", help="Add the field-occlusion oracle: occlude each parsed PE field/section and rank bytes by the drop (a structure-aware upper bound; one extraction per region).")
     parser.add_argument("--tag", type=str, default="", help="A suffix for the output directory.")
     parser.add_argument("--files", type=Path, default=None, help="Reuse the files of an earlier run (its files.parquet); --num_files then takes the first files per label.")
     parser.add_argument("--sample_seed", type=int, default=0)
@@ -697,14 +776,18 @@ def main() -> None:
             raise RuntimeError(f"{e} has no explanations for some selected files; compute it for them (explain.py --subset).")
 
     # The cost of a file is its size times its number of extractions, both known up front (see predict_seconds).
-    per_file = extractions_per_file(args.num_windows, tuple(args.sweep_windows), args.kernelshap_samples, BUDGETS)
+    # The field oracle adds one budgeted method and roughly 250 region extractions per file (the number varies with
+    # the file's field and section count, so this is only for the up-front estimate).
+    per_file = extractions_per_file(args.num_windows, tuple(args.sweep_windows), args.kernelshap_samples, BUDGETS,
+                                    num_methods=27 if args.field_oracle else 26)
+    per_file += 250 if args.field_oracle else 0
     sizes = pl.read_parquet(args.explanation_set).select("name", "size")
     samples = samples.join(sizes, on="name", how="left").with_columns(pl.col("size").fill_null(0))
     files_of = {"gbdt": args.models / "gbdt" / f"seed-{args.seed}" / "model.txt", "mlp": args.models / "mlp" / f"seed-{args.seed}" / "model.pt"}
     d = next(iter(explanations.values())).shape[1]
     initargs = ({name: files_of[name] for name in models}, d)
     common = {"dbdir": args.db, "num_windows": args.num_windows, "fill": args.fill, "header": args.header,
-              "timeout": args.timeout}
+              "timeout": args.timeout, "field_oracle": args.field_oracle}
     rows = samples.select("index", "name", "label", "shard", "position", "size").to_dicts()
     predicted = {int(r["index"]): float(predict_seconds(np.asarray([r["size"]]), per_file)[0]) for r in rows}
     total = sum(predicted.values())
@@ -839,6 +922,7 @@ def main() -> None:
         "fill": args.fill,
         "header": args.header,
         "tiebreak": args.tiebreak,
+        "field_oracle": args.field_oracle,
         "reuse_scores": args.reuse_scores.as_posix() if args.reuse_scores is not None else None,
         "num_windows": args.num_windows,
         "budgets": list(BUDGETS),

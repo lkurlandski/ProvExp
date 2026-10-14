@@ -113,7 +113,7 @@ def main() -> None:
         if a.is_empty():
             continue
         windows = {report["num_windows"]: "occlusion"} | {J: f"occlusion_k{J}" for J in report.get("sweep_windows", []) if f"occlusion_k{J}" in a.columns}
-        direct = [m for m in list(windows.values()) + ["kernelshap_windows"] if m in a.columns]
+        direct = [m for m in list(windows.values()) + ["kernelshap_windows", "field_occlusion"] if m in a.columns]
         pullbacks = sorted(m for m in a.columns if m.startswith("pullback:"))
         pairs = [(m, d, "byte-level pullback vs. direct baseline") for m in pullbacks for d in direct if d != "occlusion"]
         for J, d in sorted(windows.items()):
@@ -166,7 +166,7 @@ def main() -> None:
         print(markdown(pl.DataFrame(rows), 2), "\n")
 
     # Cost vs. faithfulness: the extractions each direct method needs (the pullbacks need one).
-    cost_columns = {"occlusion": "occlusion_extractions", "kernelshap_windows": "kernelshap_windows_extractions"}
+    cost_columns = {"occlusion": "occlusion_extractions", "kernelshap_windows": "kernelshap_windows_extractions", "field_occlusion": "field_oracle_extractions"}
     cost_columns |= {f"occlusion_k{J}": f"occlusion_extractions_k{J}" for J in report.get("sweep_windows", []) if J != report["num_windows"]}
     cost_columns = {k: v for k, v in cost_columns.items() if v in files.columns}
     if len(cost_columns) > 1:
@@ -174,7 +174,7 @@ def main() -> None:
         a = areas.filter(pl.col("curve") == "deletion").group_by("model", "method").agg(pl.col("area").mean())
         rows = []
         for method, column in cost_columns.items():
-            seconds = column.replace("occlusion_extractions", "seconds_occlusion").replace("kernelshap_windows_extractions", "seconds_kernelshap_windows")
+            seconds = column.replace("occlusion_extractions", "seconds_occlusion").replace("kernelshap_windows_extractions", "seconds_kernelshap_windows").replace("field_oracle_extractions", "seconds_field_oracle")
             for model in models:
                 area = a.filter((pl.col("model") == model) & (pl.col("method") == method))["area"]
                 rows.append({"model": model, "method": method, "extractions": float(files[column].median() or 0), "seconds": float(files[seconds].median() or 0), "mean area": float(area[0]) if area.len() else float("nan")})  # type: ignore[arg-type]

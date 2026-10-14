@@ -32,6 +32,8 @@ from faithfulness import _STATE  # noqa: E402
 from faithfulness import Scorer  # noqa: E402
 from faithfulness import chunk_windows  # noqa: E402
 from faithfulness import extractions_per_file  # noqa: E402
+from faithfulness import field_occlusion  # noqa: E402
+from faithfulness import field_regions  # noqa: E402
 from faithfulness import load_window_scores  # noqa: E402
 from faithfulness import occlude  # noqa: E402
 from faithfulness import occlude_range  # noqa: E402
@@ -211,6 +213,49 @@ def test_process_file_saves_the_scores_it_ranks_with(stubbed: PEFeatureExtractor
     assert problem is None
     assert np.array_equal(saved["x_ablated"], x_ablated)
     assert np.array_equal(saved["x"], scorer.features(np.zeros(len(data), dtype=np.bool_))[0])
+
+
+################################################################################
+# Field-occlusion oracle
+################################################################################
+
+
+def test_field_regions_are_within_the_file_and_nonempty(data: bytes) -> None:
+    regions = field_regions(data)
+    assert regions, "a parseable PE file should have header fields and sections"
+    for key, lo, hi in regions:
+        assert 0 <= lo < hi <= len(data), (key, lo, hi)
+    assert any(k.startswith("section[") for k, _, _ in regions)
+    assert any("." in k for k, _, _ in regions)  # header fields are keyed "{structure}.{field}"
+
+
+def test_field_regions_empty_for_non_pe() -> None:
+    assert field_regions(b"not a PE file at all") == []
+
+
+def test_field_occlusion_scores_only_region_bytes(stubbed: PEFeatureExtractor, data: bytes) -> None:
+    """Every byte the oracle scores lies in some occluded region, and the cost is one extraction per scored region."""
+    scorer = scorer_for(data, "zeros")
+    f0, _ = scorer.scores(np.zeros(len(data), dtype=np.bool_))
+    unprotected = ~scorer.protection.mask
+    scores, scored, extractions = field_occlusion(scorer, data, len(data), f0, unprotected)
+    assert scored > 0
+    assert extractions == scored
+    covered = np.zeros(len(data), dtype=np.bool_)
+    for _key, lo, hi in field_regions(data):
+        covered[lo:hi] = True
+    assert not np.any(scores["stub"][~covered]), "no score outside any region"
+
+
+def test_process_file_adds_the_field_occlusion_ranking_only_when_enabled(stubbed: PEFeatureExtractor, data: bytes) -> None:
+    recs_off, info_off, _ = process_file(data, {}, NUM_WINDOWS, "zeros", "typical", 7, (0.5, 1.0), field_oracle=False)
+    recs_on, info_on, _ = process_file(data, {}, NUM_WINDOWS, "zeros", "typical", 7, (0.5, 1.0), field_oracle=True)
+    methods_off = {r["method"] for r in recs_off}
+    methods_on = {r["method"] for r in recs_on}
+    assert "field_occlusion" not in methods_off
+    assert "field_occlusion" in methods_on
+    assert info_off["field_oracle_extractions"] == 0
+    assert info_on["field_oracle_extractions"] == info_on["field_oracle_regions"] > 0
 
 
 def test_window_scores_round_trip(tmp_path: Path) -> None:
