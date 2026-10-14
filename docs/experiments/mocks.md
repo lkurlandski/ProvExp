@@ -49,7 +49,11 @@ report it as partial, consistent with the resolution limit (IG over the bytes is
 
 ---
 
-## M2. Header-attack comparison for the audit (review item 4)
+## M2. Header-attack comparison for the audit (review item 4) — DROPPED 2026-10-14
+
+> **Dropped** (user): re-evaluates MalConv, adds a query-based search loop, and the benefit does not justify the
+> complexity or the burden of explaining it. Kept below only as a record of what it would have been.
+
 
 **What a reviewer wants (W6).** MalConv is known to be header-sensitive, and published attacks evade it far more often
 than our 12.4%. Two questions: (a) are the audited fields genuinely *exploitable*, not merely correlated with evasion;
