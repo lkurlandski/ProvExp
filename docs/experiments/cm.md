@@ -188,3 +188,30 @@ meaningful (tiny N, reduced IG steps; no separation seen there). The pilot (`run
 ~2-4 h) is for the user to run. **Follow-up when done:** read the oppose share, evasion vs. organic. If oppose
 separates them, the triage label is a defender's decision (write it into 4.3); if not, fall back to reframing the
 readout, then to reconsidering (the fallback order the user set).
+
+### Result (run 57, 2026-10-14): no separation; fallback (b) written into 4.3
+
+200 candidate malware (seed 0, 256 IG steps, GPU 1, 36.8 min; `run/57` with `--num_files 200 --device cuda:1`).
+Populations: 32 organic, 87 evasion (of 159 both-detect files: zeroing S flipped MalConv with the GBDT holding in 87),
+9 GBDT misses.
+
+| population | files | blind | oppose | agree |
+|---|---|---|---|---|
+| organic | 32 | 0.34 | 0.26 | 0.40 |
+| evasion | 87 | 0.35 | 0.28 | 0.37 |
+
+Mann-Whitney evasion vs. organic: blind p = 0.94, oppose p = 0.14, agree p = 0.33. **The hypothesis failed**, and so
+does fallback (a) (no category separates the populations).
+
+**Why (a design flaw, visible from the data without new runs):** the readout is the share of the GBDT's *whole* top 1%
+of bytes, ~19K bytes for the median evasion file (1.9 MB), while the attack changes only S (median 586 bytes, ~3% of
+that set). Even if every changed byte moved to oppose, the share could move by only a few points, about what we see
+(+0.02). Also, zeroed bytes likely lose the GBDT's evidence and drop out of its top set. The "by construction, S lands
+in oppose" reasoning above overlooked both. Note that the evasion files are larger than the organic ones (median 1.9 MB
+vs. 1.5 MB), a further mismatch.
+
+**Fallback (b) written into 4.3:** the decision is argued from the existing triage (blind -> coverage gap, add a
+feature over the blind bytes; oppose -> conflict over the same bytes, inspect the oppose bytes first, they are where the
+missing detector is easiest to move), with one honest sentence that the labels describe *which content* drives a
+disagreement, not its cause, citing run 57. Not yet run: a localized readout (label only the changed bytes S of the
+evaded file, or the triage on the original file's S); it would need re-explaining (~40 min GPU at 200 candidates).

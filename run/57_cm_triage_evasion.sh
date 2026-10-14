@@ -9,22 +9,22 @@
 # Hypothesis: the evasion population carries more of the GBDT's evidence in "oppose" (bytes both rely on that MalConv
 # now reads the other way) than the organic one. If it does not, fall back to reframing the readout (docs/experiments/cm.md).
 #
-# Single process, one GPU. 500 candidate malware from the explanation set; IG recomputed per kept file at 256 steps.
-# Smoke-tested on 16 files (~2 min at 64 steps; the pipeline produced both populations and the split). Expect roughly
-# 2-4 h here at 256 steps. Run on GPU 3 (per the user); lower --num_files for a faster first look. Run in tmux.
+# Single process, one GPU. 200 candidate malware from the explanation set; IG recomputed per kept file at 256 steps.
+# Ran on GPU 1 (per the user): 36.8 min, 32 organic and 87 evasion files. Result: no separation (oppose 0.26 vs. 0.28,
+# p = 0.14); see docs/experiments/cm.md, "Result (run 57)".
 set -euo pipefail
 cd "$(dirname "$0")/.."
 source env/bin/activate
 export PYTHONHASHSEED=0
 
 LOG=artifacts/logs/cm-triage-evasion-seed0.log
-echo "CM triage tied to a decision: organic vs. shared-reliance-evasion, 500 candidate malware, GPU 3 (~2-4 h)."
+echo "CM triage tied to a decision: organic vs. shared-reliance-evasion, 200 candidate malware, GPU 1 (~37 min)."
 echo "Output: artifacts/experiments/cm_triage_evasion/seed-0/"
 echo "Log:    $LOG   (follow with: tail -f $LOG)"
 OMP_NUM_THREADS=1 python scripts/cm_triage_evasion.py \
   --seed 0 \
-  --device cuda:3 \
-  --num_files 500 \
+  --device cuda:1 \
+  --num_files 200 \
   --ig_steps 256 \
   &> "$LOG"
 
