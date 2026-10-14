@@ -44,7 +44,8 @@ P and the round-trip theory were cut from the paper (2026-10-13) and archived in
   explanations and census (explain, provenance_census, pullback_agreement, pilot_tables); CP (cp_tables,
   cp_coarsening, cp_blackbox); PB1 (discover_protected_fields, header_typical_values, faithfulness, pb1_tables);
   the trigger (trigger_select, trigger_poison, trigger_validate, trigger_explain, trigger_tables); PF1 (pf1,
-  pf1_resolution); 3-A (cm_check, cm_shared, cm_triage, cm_tables); 3-C audit (audit_*, cm_global); shared
+  pf1_resolution, pf_malconv); 3-A (cm_check, cm_shared, cm_triage, cm_tables); 3-C audit (audit_*, incl. audit_mitigate;
+  cm_global); the manuscript's figure data (paper_figures -> `manuscript/assets/data/`); shared
   discovery/transplant machinery (shortcuts, shortcuts_transplant). Dropped experiments are under `scripts/archive/`.
 - **Rankings break ties by a seeded permutation, never by position or index** (`ablation.element_order` /
   `window_order` with `tiebreak`, `pf1.feature_order`), and treat scores within 1e-9 (relative) as tied: equal scores

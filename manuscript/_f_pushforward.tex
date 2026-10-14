@@ -105,10 +105,10 @@ Integrated Gradients, and has the instrumented extractor of a feature-based dete
 MalConv itself never computes these features. The defender's goal is to find, before the attacker does, the content
 that MalConv's detections rest on and that an attacker could change cheaply.
 
-The realistic alternative trains a \emph{surrogate}: a GBDT on the EMBER features fit to MalConv's log-odds (test-set
-distillation, fidelity $R^2 = 0.95$ on the explanation set), explained with TreeSHAP and aggregated, with no provenance.
-It finds what \emph{predicts} MalConv, not what MalConv \emph{reads}: per file, its explanation carries half as much of
-MalConv's evidence as the pushforward's (Section~\ref{sec:XML:PushforwardFaithfulness}). Its training pool may also
+The realistic alternative is the surrogate of Section~\ref{sec:XML:PushforwardFaithfulness}, a GBDT fit to MalConv's
+log-odds on the EMBER features, explained with TreeSHAP and aggregated over the corpus, with no provenance. It finds
+what \emph{predicts} MalConv, not what MalConv \emph{reads}: per file, its explanation carries half as much of MalConv's
+evidence as the pushforward's. Its training pool may also
 contain relatives of the explanation files, which can only favor it. A hand-built aggregation, a PE parser locating
 every field in every file and summing Integrated Gradients over it, would answer the same question, but only for one
 file format and at great manual effort; the pushforward does it automatically for any feature extractor, and needs no

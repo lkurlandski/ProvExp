@@ -31,7 +31,7 @@ the bytes, and the \emph{pushforward} $a = P^\top D^\dagger b$ places a byte-lev
 We instrument the EMBER extractor and evaluate both transfers on EMBER-2024 with a GBDT and MalConv, asking the same
 three questions of each: is the transferred explanation faithful, does it recover a trigger planted in the training
 data, and what security task does it make possible? The pullback is as faithful as occlusion at the same resolution, at
-1/135 of its cost, and at byte resolution removes 1.67 times as much evidence; its six top-ranked bytes are exactly a
+1/135 of its cost, and at byte resolution removes 1.71 times as much evidence; its six top-ranked bytes are exactly a
 planted trigger's six bytes in all 50 test files. Used \emph{locally}, it compares the two detectors on a single file:
 when the GBDT alone flags malware, MalConv reads a third of the GBDT's evidence the other way, and deleting those bytes
 makes MalConv flag 19 of 25 such files, a distinction that vanishes over windows of bytes. The pushforward is faithful

@@ -4,6 +4,17 @@ Read on the manuscript at commit `831ec37` (source and rendered PDF, pp. 3-11). 
 whose narrative, writing, and presentation are extremely strong, on top of scientific validity. Items are ranked within
 each group; IDs (S1, ...) are for discussion only.
 
+## Outcome (applied 2026-10-14, user's decisions)
+
+Applied: S1 (influence left to construction, one sentence after Definition 3), S2 (novelty sharpened: region-summing is
+the special case, cited), S3 (no bands, no "weak"), S4-S6 (threat model, discovery rule, MalConv ROC-AUC 0.9913), N1
+(Figure 3 faithfulness vs. cost replaces Table 1; Figure 4 resolution replaces Table 3; Figure 5 MalConv curves; audited
+fields Table 3), N2 conservative (Figures 1-2 kept, terms and captions fixed, round-trip marks removed), N3 partly (4.2
+summary sentence; 4.3/5.1 paragraph heads), N5 (4.3 tightened, B9 cut), N6 (comparison trimmed), N9 (conventions
+Table 1), N11 (setting split). Also fixed: the surrogate adds 5 fields, not 9; "import table" is the import address
+table; 1.67 -> 1.71 in abstract/intro (interventional TreeSHAP, as the body). Not applied (user): N4 (no reorder of
+5.1), N10 (Definitions 1-2 stay), S7 (consistent as is), strict writing rules (W-a..W-e) and results-first.
+
 ## Verdict in one paragraph
 
 The science in Sections 3-5 is now in good shape: every headline claim has a measured result against a realistic

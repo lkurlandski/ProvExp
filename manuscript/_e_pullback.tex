@@ -67,7 +67,8 @@ every ranking breaks ties by a seeded random permutation rather than by position
 Figure~\ref{fig:XML:PullbackCost} shows two regimes. Coarsened to the windows that occlusion uses, the pullback is as
 faithful as occlusion at every window count up to 1{,}024 (0.89, 0.98, and 1.08 against 0.93, 1.00, and 1.10;
 $p \geq 0.55$) and ahead of it at 4{,}096 (1.23 against 1.11, $p = 0.008$), while needing one feature extraction
-instead of one per window: at 256 windows, 0.15\,s instead of 20\,s for the median file. The pullback also needs its
+instead of one per window: at 256 windows, 0.15\,s instead of 20\,s for the median file, or 1/135 of the time. The
+pullback also needs its
 feature-space explanation, whose cost depends on the explainer: milliseconds for TreeSHAP, but about 45\,s per file for
 KernelSHAP, whose own cost then dominates either way. The three GBDT explainers give pullbacks within 0.05 of one
 another.
@@ -155,8 +156,7 @@ raw bytes; both are public with their training data, which lets us measure what 
 only one explainable model of each kind, not this particular pair.
 
 \paragraph{Threat model.} A defender operates a feature-based and a raw-byte detector over the same files, here the
-GBDT and MalConv, and owns both models, so it can explain each: TreeSHAP for the GBDT, Integrated Gradients for
-MalConv. An attacker wants a malicious file to pass both, and can
+GBDT and MalConv, and owns both models, so it can explain each. An attacker wants a malicious file to pass both, and can
 change its bytes as long as the program still runs. Disagreements, malware that only one detector catches or a benign
 file that only one flags, are where the defender learns most, since the attacker may have evaded one detector, or one
 detector may have a blind spot or a false positive. The defender asks two questions of a single file: which bytes do
