@@ -165,11 +165,13 @@ byte skip-gram model, and signatures, so that an attacker has to evade all of th
 and whether an evasion crafted for one detector transfers to another depends on the pair~\cite{salman2024robustness}.
 The members' explanations live in different spaces, features for one and bytes for the other, so they cannot be laid
 side by side. The pullback puts both on the bytes, at byte resolution, and lets a defender compare them one file at a
-time. We study the GBDT and MalConv as two such detectors, available with their training data; we make no claim that
-this particular pair is deployed together.
+time. We study the GBDT and MalConv as stand-ins for the two kinds of member, one over engineered features and one over
+raw bytes; both are public with their training data, which lets us measure what a defender would see. The method needs
+only one explainable model of each kind, not this particular pair.
 
-\paragraph{Threat model.} A defender operates both detectors over the same files and owns both models, so it can explain
-each: TreeSHAP for the GBDT, Integrated Gradients for MalConv. An attacker wants a malicious file to pass both, and can
+\paragraph{Threat model.} A defender operates a feature-based and a raw-byte detector over the same files, here the
+GBDT and MalConv, and owns both models, so it can explain each: TreeSHAP for the GBDT, Integrated Gradients for
+MalConv. An attacker wants a malicious file to pass both, and can
 change its bytes as long as the program still runs. Disagreements, malware that only one detector catches or a benign
 file that only one flags, are where the defender learns most, since the attacker may have evaded one detector, or one
 detector may have a blind spot or a false positive. The defender asks two questions of a single file: which bytes do

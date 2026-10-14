@@ -122,8 +122,9 @@ before the attacker does, the content that MalConv's detections rest on and that
 
 The realistic alternative trains a \emph{surrogate}: a GBDT on the EMBER features fit to MalConv's log-odds (test-set
 distillation, fidelity $R^2 = 0.95$ on the explanation set), explained with TreeSHAP and aggregated, with no provenance.
-It finds what \emph{predicts} MalConv, not what MalConv \emph{reads}, and its training pool may contain relatives of the
-explanation files, which can only favor it. The pushforward is also the simpler technique, since it needs no second
+It finds what \emph{predicts} MalConv, not what MalConv \emph{reads}: per file, its explanation carries half as much of
+MalConv's evidence as the pushforward's (Section~\ref{sec:XML:PushforwardFaithfulness}). Its training pool may also
+contain relatives of the explanation files, which can only favor it. The pushforward is also the simpler technique, since it needs no second
 model. A hand-built aggregation, a PE parser locating every field in every file and summing Integrated Gradients over
 it, would answer the same question, but only for one file format and at great manual effort; the pushforward does it
 automatically for any feature extractor.
@@ -141,7 +142,7 @@ manipulation MalConv is known to be sensitive to~\cite{demetrio2019explaining}: 
 of the heap reserve, the subsystem, and the addresses of five data directories (export, debug, copyright, global
 pointer, import table), the last often zero. The surrogate's top 20 recover 4 of these 9, and its own top 20 confirm 9
 others, with some larger effects (certificate-table entries, the signing time, the DLL characteristic). The two methods
-thus find reliance of comparable size but only partly the same, and the pushforward needs no second model to do so.
+thus find reliance of comparable size but only partly the same: each confirms fields the other misses.
 
 Scrambling measures reliance; whether that reliance can be exploited is a separate question, which we answer with
 changes an attacker could actually make. In 1{,}000 fresh held-out malware, none in the explanation set or used for
@@ -154,7 +155,9 @@ classification of fields follows the format's documentation. On average 7.3 of t
 be changed this way, and doing so evades MalConv on 12.4\% of the detected malware (95\% CI 10.3--14.6), about twice as
 often as changing as many other loader-ignored fields outside the DOS header, drawn per file from the 74 that no method
 confirmed (6.0\%; paired difference $+6.4$ points, $p = 3 \cdot 10^{-12}$). Under the same rules, the surrogate's fields
-evade on 10.4\% ($p = 0.027$ against the pushforward's), and the union of the two methods' fields on 18.4\%.
+evade on 10.4\% ($p = 0.027$ against the pushforward's), and the union of the two methods' fields on 18.4\%. The
+pushforward is thus the more faithful and the stronger single method, needs no second model, and complements the
+surrogate: a defender auditing MalConv should use both.
 
 The audit points to its own countermeasure: a field that MalConv relies on but an attacker can change freely should
 not be read. \synthetic{Overwriting the audited fields with a constant for every file removes most of the evasion lever
