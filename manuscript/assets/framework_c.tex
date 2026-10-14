@@ -46,7 +46,7 @@
 
 % feature-space explanation a* (left, bottom; pushforward result)
 \node[stage, fill=black!2, minimum width=3.4cm, below=5mm of anode] (astarnode) {
-    tranferred explanation\\[-1pt]
+    transferred explanation\\[-1pt]
     $\displaystyle a^{*} \in \mathcal{A}$
 };
 
@@ -132,6 +132,6 @@
 
 \end{tikzpicture}
 
-\caption{Explanation Transformation. A feature-space explanation $a \in \mathcal{A}$ is pulled back via $\tau$ to yield a problem-space explanation $b^{*} \in \mathcal{B}$ close to $b$. Conversely, a problem-space explanation $b \in \mathcal{B}$ is pushed forward via $\psi$ to yield a feature-space explanation $a^{*} \in \mathcal{A}$ close to $a$.}
+\caption{Explanation Transformation. A feature-space explanation $a \in \mathcal{A}$ is pulled back via $\tau$ onto the bytes, and a problem-space explanation $b \in \mathcal{B}$ is pushed forward via $\psi$ into the features. Both transfers go through the same provenance matrix $P$.}
 \label{fig:pullback-pushforward}
 \end{figure*}

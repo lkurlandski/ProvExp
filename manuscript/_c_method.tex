@@ -9,12 +9,11 @@ elements produce which features, never on what an element or a feature means; th
 Following Pierazzi et al.~\cite{pierazzi2020intriguing}, a file is an object $z \in \mathcal{Z}$ in the \emph{problem
 space}, a sequence of \emph{elements} $z_i$, here bytes. A \emph{feature extractor} $\sigma: \mathcal{Z} \to
 \mathcal{X}$ maps it to a vector $x = \sigma(z)$ of \emph{features} $x_j$ in the \emph{feature space}, and a classifier
-$\phi: \mathcal{X} \to \mathcal{L}$ assigns it a label (Figure~\ref{fig:pipeline-problem-to-feature}). For a raw-byte
+$\phi: \mathcal{X} \to \mathcal{L}$ assigns it a label. For a raw-byte
 detector, $\sigma$ is the identity and the two spaces coincide. Every explainer in this paper attributes the malware
 log-odds, a GBDT's raw score or the difference of a network's two logits, and which inputs it credits depends on where
 it is applied (Figure~\ref{fig:feature-vs-problem-explanations}).
 
-\input{assets/framework_a}
 
 \definition[\textit{Feature-Space Explanation}]
 \label{def:FeatureSpaceExplanation}
