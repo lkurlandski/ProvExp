@@ -634,3 +634,12 @@ at or below the byte-level pullback."
 4. **Oracle beats the pullback (unexpected):** report it honestly. The pullback would then be the *cheap* win (one
    extraction vs. the oracle's hundreds), not the *most faithful*; reframe 4.1 around cost, and note the oracle as the
    faithfulness ceiling a parser can reach. Update `PLAN.md` and the manuscript.
+
+**Result (run 56, 2026-10-14):** the hypothesis held, and cleanly. The field-occlusion oracle reaches gain **0.91**
+(relative to occlusion at 256 windows) at a median **124** region extractions per file — at or below uniform occlusion,
+not above it. The byte-level pullback (1.67–1.71) beats the oracle on **88 of 100 files** (p ≈ 1e-15; 9.9e-16 for
+KernelSHAP, 7.5e-16 TreeSHAP interventional). Reused pass-1 scores, so every non-oracle number reproduces
+`pb1_tables-baselines-ties.md` exactly. **Reading:** a parser-based oracle that knows exactly which bytes each field
+occupies still cannot match the pullback, because it shares a field's drop over all its bytes while the pullback
+resolves within a field. This answers the "by construction" objection (W4): the pullback's advantage is resolution, not
+knowledge of the read set. Folded into the manuscript (Table 1 row, 4.1 prose) 2026-10-14.

@@ -64,6 +64,7 @@ every ranking breaks ties by a seeded random permutation rather than by position
     Occlusion, 1{,}024 windows & 1{,}025 & 1.10 \\
     Occlusion, 4{,}096 windows & 4{,}099 & 1.11 \\
     KernelSHAP, 256 windows & 2{,}050 & 1.10 \\
+    Field-occlusion oracle & 124 & 0.91 \\
     \midrule
     Pullback, 64 windows & 1 & 0.89 \\
     Pullback, 256 windows & 1 & 0.98 \\
@@ -76,7 +77,9 @@ every ranking breaks ties by a seeded random permutation rather than by position
   \caption{Faithfulness against cost for the GBDT (100 files). Gain: evidence removed by deleting each method's
   top-ranked bytes, over random and relative to occlusion at 256 windows. Pullbacks of interventional TreeSHAP; the
   other explainers are within 0.05. At equal resolution the pullback matches occlusion from a single extraction; at
-  byte resolution, which occlusion cannot reach, it removes far more evidence.}
+  byte resolution, which occlusion cannot reach, it removes far more evidence. The field-occlusion oracle occludes each
+  parsed field and section; it is the structure-aware upper bound a defender could build with a PE parser, and its
+  median region count is reported as its extraction cost.}
   \label{tab:XML:PullbackCost}
 \end{table}
 
@@ -89,7 +92,12 @@ rises from 0.93 at 64 windows to 1.10 at 1{,}024 and then stops (1.11 at 4{,}096
 file; $p = 0.40$ against 1{,}024), plausibly because occluding a small window changes the features too little to rank
 it, and KernelSHAP over windows, the strongest direct baseline, ends at the same level. The byte-level pullback, from
 the same single extraction, removes 1.65--1.79 times occlusion's gain and beats each of the strongest direct baselines
-on 79--85 of 100 files ($p \leq 6 \cdot 10^{-12}$). Realistic header values account for 15--18\% of that margin, and the
+on 79--85 of 100 files ($p \leq 6 \cdot 10^{-12}$). Knowing the parser's read set does not close the gap either: a
+field-occlusion oracle that occludes each parsed field and section --- the structure-aware upper bound a defender could
+build with a PE parser, at a median 124 extractions per file --- reaches only 0.91, at or below uniform occlusion,
+because it shares each field's drop over all of the field's bytes, while the pullback resolves which bytes \emph{within}
+a field carry the evidence; the byte-level pullback beats it on 88 of 100 files ($p \leq 10^{-15}$). The pullback's
+advantage is thus resolution, not knowledge of which bytes a feature reads. Realistic header values account for 15--18\% of that margin, and the
 rest holds under both variants of the operator. One caveat applies to every method family: deleting the top half of the
 bytes can remove more evidence than deleting everything (an \emph{overshoot}), mostly because rankings follow signed
 evidence; ranking by magnitude removes three quarters of it.
