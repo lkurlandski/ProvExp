@@ -32,8 +32,11 @@ manuscript; then section-level writing. A later round (3 seeds, 10K files) runs 
 
 ## Next
 
-1. **Polish W6** with the user: the audit's pushforward-vs-surrogate argument (now backed by M1), the test-time
-   mitigation (no retraining), and the comparison's threat-model contradiction. B9's localized readout: dropped (user).
+1. **When run 59 (M3 test-time mitigation) finishes** (user runs it, CPU, ~25-35 min): read the cost and evasion
+   tables at the end of `artifacts/logs/audit-mitigate-seed0.log`; replace the test-time row of the blue mitigation
+   table in 5.3 (keep the retrain row blue, deferred to the cluster round); say plainly that zeroed fields' attacks
+   fail by construction and lead with the cost and the attacks on fields not zeroed. Record in `docs/experiments/audit.md`.
+   W6 writing is done (comparison threat model; audit vs. surrogate backed by M1). B9's localized readout: dropped.
 2. **Remaining revision-plan items** (`docs/revision-plan.md`): block C is deferred (needs MalConv re-eval/retraining)
    and stands in as synthetic blue placeholders; the Android second extractor (item 12) is the biggest deferred lift.
    Block A is done; block B is B7 (done) and B9 (done: negative, fallback (b) in 4.3).
