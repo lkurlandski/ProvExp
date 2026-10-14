@@ -72,15 +72,15 @@
       anchor=north west] (fs_block) at (0,0) {};
 
 \begin{scope}[shift={(fs_block.north west)}]
-    \node[anchor=south west,font=\scriptsize] at ([xshift=2mm]0,0) {feature $x_i$};
-    \node[anchor=south west,font=\scriptsize] at ([xshift=3.4cm]0,0) {saliency $a_i$};
-    \node[featurerow, minimum width=3.0cm] (fx1) at ([xshift=2mm,yshift=-4mm]0,0) {\scriptsize \texttt{SectionEntropy}};
+    \node[anchor=south west,font=\scriptsize] at ([xshift=2mm]0,0) {feature $x_j$};
+    \node[anchor=south west,font=\scriptsize] at ([xshift=3.4cm]0,0) {attribution $a_j$};
+    \node[featurerow, minimum width=3.0cm] (fx1) at ([xshift=2mm,yshift=-4mm]0,0) {\scriptsize \texttt{MaxSectionEntropy}};
     \node[heatrow, minimum width=1.7cm, fill=black!70] (fa1) at ([xshift=3.4cm,yshift=-4mm]0,0) {};
-    \node[featurerow, minimum width=3.0cm] (fx2) at ([xshift=2mm,yshift=-10mm]0,0) {\scriptsize \texttt{NumberOfImports}};
+    \node[featurerow, minimum width=3.0cm] (fx2) at ([xshift=2mm,yshift=-10mm]0,0) {\scriptsize \texttt{ImportsHash[17]}};
     \node[heatrow, minimum width=1.2cm, fill=black!45] (fa2) at ([xshift=3.4cm,yshift=-10mm]0,0) {};
-    \node[featurerow, minimum width=3.0cm] (fx3) at ([xshift=2mm,yshift=-16mm]0,0) {\scriptsize \texttt{MedianStringLength}};
+    \node[featurerow, minimum width=3.0cm] (fx3) at ([xshift=2mm,yshift=-16mm]0,0) {\scriptsize \texttt{NumStrings}};
     \node[heatrow, minimum width=0.5cm, fill=black!20] (fa3) at ([xshift=3.4cm,yshift=-16mm]0,0) {};
-    \node[featurerow, minimum width=3.0cm] (fx4) at ([xshift=2mm,yshift=-22mm]0,0) {\scriptsize \texttt{HeaderPermissions}};
+    \node[featurerow, minimum width=3.0cm] (fx4) at ([xshift=2mm,yshift=-22mm]0,0) {\scriptsize \texttt{CheckSum}};
     \node[heatrow, minimum width=1.4cm, fill=black!55] (fa4) at ([xshift=3.4cm,yshift=-22mm]0,0) {};
 \end{scope}
 
@@ -90,7 +90,7 @@
     \node[miniStage, below=1mm of xnode] (fs_phinode) {$\phi$};
     \path (xnode) -- (fs_phinode) node[midway] (xphi_mid) {};
     \node[stage, minimum width=2.0cm, align=center, right=5mm of xphi_mid] (fs_epsnode)
-    {explanation alg.\\$\epsilon_{\phi}: \mathcal{X}\mapsto\mathcal{A}$};
+    {explainer\\$\epsilon_{\phi}: \mathcal{X}\mapsto\mathcal{A}$};
     \node[stage, minimum width=2.0cm, align=center, right=3mm of fs_epsnode] (anode)
     {explanation\\$a \in \mathcal{A} \subseteq \mathbb{R}^{|x|}$};
     \draw[->,thick] (xnode.east) -- (fs_epsnode.west);
@@ -100,7 +100,7 @@
 
 \node[font=\footnotesize, anchor=south, align=center] (fs_title) at ($(fs_block.north)+(0.6,2.85)$)
     {feature-space explanation\\
-     $a \in \mathcal{A} \subseteq \mathbb{R}^{|x|}$, e.g., $a \in \mathbb{R}^{2^{10}}$};
+     $a \in \mathcal{A} \subseteq \mathbb{R}^{|x|}$, here $|x| = 2{,}568$};
 
 \begin{scope}[on background layer]
 \node[panelbox, inner sep=2.5mm, fit=(fs_title) (xnode) (anode) (fs_block)] (fs_panel) {};
@@ -119,7 +119,7 @@
 
 \begin{scope}[shift={(ps_block.north west)}]
     \node[anchor=south west,font=\scriptsize] at ([xshift=2mm]0,0) {element(s) $z_i$};
-    \node[anchor=south west,font=\scriptsize] at ([xshift=3.9cm]0,0) {saliency $b_i$};
+    \node[anchor=south west,font=\scriptsize] at ([xshift=3.9cm]0,0) {attribution $b_i$};
     \node[featurerow, minimum width=3.5cm] (pz1) at ([xshift=2mm,yshift=-4mm]0,0) {\scriptsize \texttt{4D 5A}};
     \node[heatrow, minimum width=0.2cm, fill=black!10] (pb1) at ([xshift=3.9cm,yshift=-4mm]0,0) {};
     \node[featurerow, minimum width=3.5cm] (pz2) at ([xshift=2mm,yshift=-10mm]0,0) {\scriptsize \texttt{.text[0x401000:40]}};
@@ -136,7 +136,7 @@
     \node[miniStage, below=1mm of znode] (sigmanode) {$\sigma$};
     \node[miniStage, below=1mm of sigmanode] (phinode) {$\phi$};
     \node[stage, minimum width=2.0cm, align=center, right=4mm of sigmanode] (epsnode)
-    {explanation alg.\\$\epsilon_{\sigma, \phi}: \mathcal{Z}\mapsto\mathcal{B}$};
+    {explainer\\$\epsilon_{\sigma, \phi}: \mathcal{Z}\mapsto\mathcal{B}$};
     \node[stage, minimum width=2.0cm, align=center, right=3mm of epsnode] (bnode)
     {explanation\\$b \in \mathcal{B} \subseteq \mathbb{R}^{|z|}$};
     \draw[->,thick] (znode.east) -- (epsnode.west);
@@ -146,7 +146,7 @@
 \end{scope}
 
 \node[font=\footnotesize, anchor=south, align=center] (ps_title) at ($(ps_block.north)+(0.4,2.85)$)
-    {problem-space explanation\\$b \in \mathcal{B} \subseteq \mathbb{R}^{|z|}$, e.g., $b \in \mathbb{R}^{2^{30}}$};
+    {problem-space explanation\\$b \in \mathcal{B} \subseteq \mathbb{R}^{|z|}$, here $|z| \le 4 \cdot 10^6$};
 
 \begin{scope}[on background layer]
 \node[panelbox, inner sep=2.5mm, fit=(ps_title) (znode) (bnode) (ps_block)] (ps_panel) {};
@@ -154,6 +154,6 @@
 
 \end{tikzpicture}
 
-\caption{Explanatory Targets. Left: the feature-space explanation process, where the explanation algorithm $\epsilon_{\phi}$ provides saliency $a$ over the feature-space; and right: the problem-space explanation process, where the explanation algorithm $\epsilon_{\sigma,\phi}$ yield saliency $b$ over the problem-space.}
+\caption{Two places to explain a feature-based detector. Left: an explainer $\epsilon_{\phi}$ applied to the classifier attributes the decision to the features. Right: an explainer $\epsilon_{\sigma,\phi}$ applied to the whole pipeline, extractor included, attributes it to the elements of the file.}
 \label{fig:feature-vs-problem-explanations}
 \end{figure*}

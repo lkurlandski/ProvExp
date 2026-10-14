@@ -61,6 +61,10 @@ produces, subject to four axioms:
 \end{itemize}
 }
 
+The definition leaves open what it means for an element to influence a feature, and how much of the feature it
+produces. Both are fixed when $P$ is constructed for a particular extractor, and Section~\ref{sec:XML:Constructing}
+states the choices we make for EMBER.
+
 We call the features that no element influences \emph{unattributable} and write $U = \{ j : P_{\varnothing,j} = 1 \}$.
 Without the null element, an unattributable feature could not satisfy both normalization and influence. Dropping it
 from $P$ would break normalization, and the transfers would lose its attribution; spreading it uniformly over the
@@ -107,9 +111,12 @@ prior over the features: the pushforward is the Bayesian inverse of the pullback
 makes it conserve attribution, $\sum_j a_j = \sum_i b_i$, whenever $b$ credits only elements that some feature reads;
 crediting each feature with the plain sum of its elements' attribution instead would count a byte once for every
 feature that reads it, which Section~\ref{sec:XML:PushforwardFaithfulness} shows is markedly less faithful. To our
-knowledge, the pushforward has not been used before, and it is the harder direction: it moves an explanation through a
-non-invertible program into features the model never computes, giving a raw-byte detector a vocabulary in which its
-reliance recurs across files.
+knowledge, the pushforward is new. Summing an explanation over the regions that contain its elements, such as
+superpixels or the parsed regions of a PE file~\cite{coull2019activation, bose2020explaining}, is the special case in
+which every element feeds a single region; real features share their elements, and the pushforward splits each
+element's attribution among all the features it produces. It is also the harder direction: it moves an explanation
+backwards through a non-invertible program, into features that the explained model never computes, and so gives a
+raw-byte detector a vocabulary in which its reliance recurs across files.
 
 \input{assets/framework_c}
 
@@ -145,8 +152,31 @@ window. Coarsening loses separation: a window holds the bytes of many features, 
 traced back to the features that produced it, and the coarser the windows, the more features share each one. We use
 $P^G$ to compare transfers with explainers that work over windows.
 
+\begin{table}[t]
+  \centering
+  \small
+  \begin{tabular}{@{}lrl@{}}
+    \toprule
+    Feature group & Features & Produced by \\
+    \midrule
+    Header fields\textsuperscript{a} & 149 & the bytes of the field \\
+    Byte histogram & 256 & every byte, in the bin of its value \\
+    Byte-entropy histogram & 256 & windowed bytes, binned \\
+    Strings & 177 & the strings counted or summarized \\
+    Sections & 224 & sections, hashed by name \\
+    Imports, exports & 1{,}411 & names of functions, hashed \\
+    General & 7 & the whole file, or none \\
+    Parser warnings & 88 & none (the null element) \\
+    \bottomrule
+  \end{tabular}
+  \caption{Provenance in the instrumented EMBER v3 extractor. Fields and counts are exact; hashed and entropy-based
+  features follow the conventions of Section~\ref{sec:XML:Constructing}. \textsuperscript{a}Including data directories, the Rich
+  header and Authenticode fields.}
+  \label{tab:XML:Conventions}
+\end{table}
+
 \paragraph{Provenance for EMBER\@.} We instrument the reference implementation of the EMBER v3
-extractor~\cite{joyce2025ember} with these conventions. The instrumentation adds 616 lines to its 1{,}104 and changes
+extractor~\cite{joyce2025ember} with these conventions (Table~\ref{tab:XML:Conventions}). The instrumentation adds 616 lines to its 1{,}104 and changes
 none of them; the instrumented extractor reproduces the original features exactly, except for one hash-seed-dependent
 quirk of the reference code, and extracts features with provenance in 0.15\,s for the median file (208\,KB).
 Section~\ref{sec:XML:PullbackFaithfulness} compares it with the black-box estimate.

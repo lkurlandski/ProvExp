@@ -40,14 +40,14 @@
 
 % feature-space explanation a (left, top)
 \node[stage, fill=black!2, minimum width=3.4cm] (anode) {
-    concrete explanation\\[-1pt]
+    explanation\\[-1pt]
     $\displaystyle a \in \mathcal{A}$
 };
 
 % feature-space explanation a* (left, bottom; pushforward result)
 \node[stage, fill=black!2, minimum width=3.4cm, below=5mm of anode] (astarnode) {
     transferred explanation\\[-1pt]
-    $\displaystyle a^{*} \in \mathcal{A}$
+    $\displaystyle \psi(b) \in \mathcal{A}$
 };
 
 % pullback tau (middle, upper)
@@ -65,21 +65,15 @@
 % problem-space explanation b* (right, top; pullback result)
 \node[stage, fill=black!2, minimum width=3.4cm, right=12mm of taunode] (bstarnode) {
     transferred explanation\\[-1pt]
-    $\displaystyle b^{*} \in \mathcal{B}$
+    $\displaystyle \tau(a) \in \mathcal{B}$
 };
 
 % problem-space explanation b (right, bottom)
 \node[stage, fill=black!2, minimum width=3.4cm, below=5mm of bstarnode] (bnode) {
-    concrete explanation\\[-1pt]
+    explanation\\[-1pt]
     $\displaystyle b \in \mathcal{B}$
 };
 
-% Indicate closeness / correspondence within each space
-\draw[<->, dashed, thick]
-    (anode.south) -- node[right, font=\scriptsize] {$\approx$} (astarnode.north);
-
-\draw[<->, dashed, thick]
-    (bstarnode.south) -- node[right, font=\scriptsize] {$\approx$} (bnode.north);
 
 
 % --- Arrows -----------------------------------------------------------
@@ -122,16 +116,16 @@
       anchor=north,
       align=center]
     at ($(leftpanel.north)+(0,-1mm)$)
-    {feature-space explanations\\$\mathcal{A} \subseteq \mathbb{R}^{|x|}$, e.g., $\mathcal{A} \subseteq \mathbb{R}^{2^{10}}$};
+    {feature-space explanations\\$\mathcal{A} = \mathbb{R}^{|x|}$};
 
 \node[font=\footnotesize,
       anchor=north,
       align=center]
     at ($(rightpanel.north)+(0,-1mm)$)
-    {problem-space explanations\\$\mathcal{B} \subseteq \mathbb{R}^{|z|}$, e.g., $\mathcal{B} \subseteq \mathbb{R}^{2^{30}}$};
+    {problem-space explanations\\$\mathcal{B} = \mathbb{R}^{|z|}$};
 
 \end{tikzpicture}
 
-\caption{Explanation Transformation. A feature-space explanation $a \in \mathcal{A}$ is pulled back via $\tau$ onto the bytes, and a problem-space explanation $b \in \mathcal{B}$ is pushed forward via $\psi$ into the features. Both transfers go through the same provenance matrix $P$.}
+\caption{The two transfers. The pullback $\tau$ carries a feature-space explanation onto the elements of the file; the pushforward $\psi$ carries a problem-space explanation into the features. Both go through the same provenance matrix $P$, recorded once per file.}
 \label{fig:pullback-pushforward}
 \end{figure*}
