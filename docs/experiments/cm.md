@@ -147,3 +147,32 @@ If option 2 looks like the middle row, the triage cleanly flags an attack on sha
 option 1 looks like the bottom row, the audit-recipe evasion is *indistinguishable from organic* in this direction,
 and the experiment would need the MalConv-flagging direction instead. **Decision needed before building** (GPU
 experiment): which evasion to plant, i.e., which story to pursue.
+
+### Decision (user, 2026-10-14): pursue shared-reliance evasion first
+
+Pursue option 2 (shared-reliance evasion); fall back to reframing the readout, then to reconsidering, if it does not
+pan out. Concrete first-cut mechanism (no query optimization): among malware **both** detect, scramble the shared set
+S (the top bytes both rely on, as in run 30's shared-reliance, loader-safe) and keep the files where MalConv drops
+**below** its 1%-FPR threshold while the GBDT stays **above** its own. Those are attack-on-shared-reliance
+disagreements; run the triage (A = GBDT, B = MalConv) on the modified bytes and compare blind/oppose/agree with the
+organic "GBDT only / malware" cell. Open question the run answers: after scrambling S, does the GBDT still place top
+malware evidence on those bytes (needed for "oppose"), or does scrambling move its evidence elsewhere? If oppose does
+not dominate, fall back.
+
+### Implementation plan (B9, shared-reliance evasion)
+
+New script `scripts/cm_triage_evasion.py`, reusing: `cm_shared.split_sets` (S), `cm_triage.categories` (the
+blind/oppose/agree split), `cm_check._STATE` (extractor/GBDT/MalConv), `ablate`/`protect`/`verify`,
+`malconv_log_odds`, `treeshap_interventional` and MalConv IG from `provexp.explain`. Flow per file:
+1. Source: malware **both** detect (new selection `ts-bothdetect-seed0.parquet` via a small variant of
+   `cm_disagreement_select.py`; TreeSHAP + MalConv IG for the originals from `explain.py`, as the disagreement cells
+   get them).
+2. Compute e_g (GBDT pullback of TreeSHAP), e_m (MalConv IG), S at q = 1%.
+3. Scramble S loader-safe (the `ablate` operator), score both models on z; **keep** files with malconv(z) <= its
+   threshold and gbdt(z) > its threshold (attack on shared reliance that evaded MalConv, GBDT held).
+4. For kept files, **recompute** TreeSHAP and MalConv IG on z (in-process; GPU for IG), then `categories()` with
+   A = GBDT, B = MalConv -> blind/oppose/agree.
+5. Compare with the organic `malware_gbdt_only` cell (already in the disagreement selection / run 32).
+
+Cost note: steps 1-3 are cheap; step 4 re-explains each kept file (IG ~25 ms on GPU, TreeSHAP ~ms). Smoke-testable on
+a handful of pilot malware. Two-step run: (a) select + explain the both-detect pool, (b) `cm_triage_evasion.py`.
