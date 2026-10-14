@@ -412,3 +412,27 @@ fields the pushforward found evade 12.4% of detected held-out malware, about twi
 loader-ignored fields (6.0%, outside the DOS region; 3.8% overall), and somewhat more than the surrogate's fields under
 the same rules (10.4%, p = 0.027); together, the two methods' fields evade 18.4%. These are the numbers to report
 (seed 0, 902 files); random scrambling is no longer a headline (user: unrealistic perturbations are not acceptable).
+
+## The countermeasure at test time (M3, run 59, 2026-10-14)
+
+**Design** (`scripts/audit_mitigate.py`): before MalConv scores a file, zero the audited fields an attacker can change
+(FREE or CONSTRAINED; the import-table address stays) at the bytes the file's P names. Defenses: none; the
+pushforward's 8 fields; both methods' 12. Threshold re-set to 1% FPR per defense on 5,000 held-out benign files;
+detection on run 49's 1,000 held-out malware; run 49's loader-safe attacks (same files, recipes, seeds; reproduced
+exactly) on the malware each defense detects. **Hypothesis:** cost < 1 pt; zeroed fields' attacks ~0 (by construction);
+surrogate fields still evade under the pushforward-only defense; null unchanged.
+
+| defense | detection @1% FPR | pushforward atk | surrogate atk | union atk | null (other free, non-DOS) | strongest |
+|---|---|---|---|---|---|---|
+| none | 91.2% | 11.7% | 9.0% | 16.8% | 5.6% | 16.8% |
+| pushforward (8) | 89.2% | 0.0% | 5.5% | 5.4% | 8.2% | 8.2% |
+| union (12) | 87.7% | 0.0% | 0.0% | 0.0% | 2.9% | 2.9% |
+| none, original threshold | 90.2% | 12.4% | 10.4% | 18.4% | 6.0% | (= run 49) |
+
+**Read:** cost hypothesis failed (2.0 and 3.5 pts, not < 1): the fields carry real signal. The null *rises* under the
+pushforward-only defense (5.6 -> 8.2%) because of margins, not stronger attacks: the null's median drop is unchanged
+(0.90 vs. 0.93) but more detected malware sit within 1 log-odds of the re-set threshold (7.2% vs. 4.4%). Under the
+union defense the null's median drop collapses (0.21), plausibly because zeroing most of the header changes how MalConv
+reads the rest (not verified). **Framing (user):** the point is that the pushforward identifies actionable issues, not
+a perfect defense; written into 5.3 as a trade-off (3.5 pts of detection for 16.8 -> 2.9% strongest attack), the
+discussion's Mitigation paragraph, and the intro. The retraining row stays a blue placeholder (cluster round).

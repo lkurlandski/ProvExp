@@ -29,14 +29,13 @@ manipulations is the natural next step, e.g., testing whether published attacks 
 transfer to the GBDT more often when they modify the bytes the GBDT's pullback marks.
 % TODO (load-bearing, "claim the fuller vision"): CM's real-attack transfer. Rewrite this paragraph once it is run.
 
-\paragraph{Mitigation.} The audit points to its own countermeasure: a field that a raw-byte detector relies on but an
-attacker can change freely should not be read at all. Overwriting the audited fields with a constant in every file, at
-test time or before retraining, removes them as a lever; its cost is whatever legitimate signal the fields carried,
-which the drop in clean detection measures. The disagreement triage points the other way, to feature engineering:
-when the raw-byte detector alone flags a file, three quarters of its evidence lies in content the feature-based
-detector's features do not read, which is where a new feature would help.
-% TODO (load-bearing, "claim the fuller vision"): AU's mitigation (test-time zeroing and a retrain). Report its results
-% here (or in Section~\ref{sec:XML:Audit}) and drop the conditional voice.
+\paragraph{Mitigation.} The audit points to a countermeasure, and Section~\ref{sec:XML:Audit} shows that it is a
+trade-off: zeroing the fields an attacker can change removes most of the measured attack surface but costs a few points
+of clean detection, because the same fields also carry legitimate signal. Retraining with the fields removed may
+recover that signal, and an attacker may look for other fields once these are gone; both belong to an ongoing audit
+rather than a one-time fix, and the pushforward makes repeating the audit cheap. The disagreement triage points the
+other way, to feature engineering: when the raw-byte detector alone flags a file, three quarters of its evidence lies
+in content the feature-based detector's features do not read, which is where a new feature would help.
 
 \paragraph{Beyond Windows executables.} Nothing in the method is specific to PE files. $P$ depends only on which
 input elements produce which features, so the transfers apply to any classifier whose features a program computes from

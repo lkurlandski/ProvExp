@@ -159,26 +159,40 @@ evade on 10.4\% ($p = 0.027$ against the pushforward's), and the union of the tw
 pushforward is thus the more faithful and the stronger single method, needs no second model, and complements the
 surrogate: a defender auditing MalConv should use both.
 
-The audit points to its own countermeasure: a field that MalConv relies on but an attacker can change freely should
-not be read. \synthetic{Overwriting the audited fields with a constant for every file removes most of the evasion lever
-at a small cost to clean detection: at test time, evasion under the same loader-safe attack falls from 12.4\% to
-$3.1\%$ while the true-positive rate at a 1\% false-positive rate drops by $0.5$ points, and retraining MalConv on
-files with the fields zeroed lowers evasion to $1.8\%$ with no measurable clean-detection cost (Table~\ref{tab:XML:Mitigation}).}
+The audit also tells the defender what to change: a field that MalConv relies on but an attacker can change freely
+should not be read. We test this at test time, without retraining. Before MalConv scores a file, the audited fields an
+attacker can change (all confirmed fields but the import-table address, which the loader needs) are overwritten with
+zeros at the bytes the file's own $P$ names; MalConv's threshold is re-set to a 1\% false-positive rate on 5{,}000
+held-out benign files, and the attacks above are repeated on the malware each defense still detects
+(Table~\ref{tab:XML:Mitigation}). An attack on a field the defense zeroes fails by construction, so the informative
+quantities are the cost in clean detection and the strongest attack that remains. Zeroing the pushforward's 8 fields
+lowers detection from 91.2\% to 89.2\% and cuts the strongest loader-safe attack from 16.8\% to 8.2\%; zeroing the 12
+fields of both methods costs 3.5 points and cuts it to 2.9\%. The fields thus carry real signal as well as an attack
+surface, and removing them is a trade-off rather than a free fix. Defending only part of the reliance also shifts the
+attack: with the pushforward's fields zeroed, changing other loader-ignored fields evades more often (8.2\% against
+5.6\%), not because each change moves MalConv further but because the detected malware now sit closer to the re-set
+threshold. What the audit provides is the list of fields to weigh, found automatically; the defense that uses both
+methods' fields removes most of the attack surface we can measure. \synthetic{Retraining MalConv on files with the
+fields zeroed lowers evasion to $1.8\%$ with no measurable clean-detection cost.}
 
 \begin{table}[t]
   \centering
   \small
-  \begin{tabular}{lcc}
+  \begin{tabular}{lccc}
     \toprule
-    MalConv & clean TPR @1\% FPR & evasion (loader-safe) \\
+    MalConv input & detection & strongest & other fields \\
     \midrule
-    unmodified & \synthetic{97.3\%} & \synthetic{12.4\%} \\
-    + test-time zeroing & \synthetic{96.8\%} & \synthetic{3.1\%} \\
-    + retrain with fields zeroed & \synthetic{97.1\%} & \synthetic{1.8\%} \\
+    unmodified & 91.2\% & 16.8\% & 5.6\% \\
+    zero pushforward fields & 89.2\% & 8.2\% & 8.2\% \\
+    zero both methods' fields & 87.7\% & 2.9\% & 2.9\% \\
+    retrain, fields zeroed & \synthetic{90.9\%} & \synthetic{1.8\%} & \synthetic{--} \\
     \bottomrule
   \end{tabular}
-  \caption{\synthetic{Predicted} effect of the audit's mitigation (zeroing the audited fields). \synthetic{All values
-  are synthetic placeholders} (mock M3); the retraining half waits for the cluster round.}
+  \caption{The audit's countermeasure: the audited fields an attacker can change are zeroed before MalConv scores a
+  file. Detection of 1{,}000 held-out malware at a 1\% false-positive rate, re-set per row on 5{,}000 benign files;
+  evasion of the detected malware by the strongest loader-safe attack (the most evasive of the pushforward's, the surrogate's, and both
+  methods' fields, and as many other loader-ignored fields outside the DOS header) and by the other fields alone.
+  \synthetic{The retrained row is a placeholder} for a run that retrains MalConv.}
   \label{tab:XML:Mitigation}
 \end{table}
 

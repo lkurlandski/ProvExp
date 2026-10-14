@@ -51,7 +51,7 @@ Mocks with predicted, clearly-fake tables are in `docs/experiments/mocks.md`.
 10. **[DONE, run 58: pushforward 1.9x surrogate, 99/100; in 5.1]** **Pushforward faithfulness measured on MalConv** (M1, item 3 / W5). Delete the bytes $P$ assigns to MalConv's
     top pushed-forward features; compare with the surrogate mapped through $P$, IG over windows, and random. Cheap and
     closes the clearest methodological gap, but re-scores MalConv, so it waits until we re-enable that.
-11. **The audit's mitigation** (M3, item 10 / W6). Zero the audited fields at test time (no retraining) and with
+11. **[TEST-TIME DONE, run 59: trade-off, 3.5 pts for 16.8 -> 2.9%; retrain still blue]** **The audit's mitigation** (M3, item 10 / W6). Zero the audited fields at test time (no retraining) and with
     retraining; measure clean-detection cost and the drop in evasion. The retrain half is for the cluster round; the
     test-time half needs no retraining.
 

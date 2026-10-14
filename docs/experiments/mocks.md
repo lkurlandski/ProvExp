@@ -97,7 +97,11 @@ loader-ignored ones), and remains far below the full-header ceiling (so we neith
 
 ---
 
-## M3. The audit's mitigation (review item 10, W6)
+## M3. The audit's mitigation (review item 10, W6) — TEST-TIME HALF RUN 2026-10-14 (run 59)
+
+> **Test-time half replaced by real numbers** (`docs/experiments/audit.md`, "The countermeasure at test time"):
+> detection 91.2 -> 89.2 / 87.7%, strongest attack 16.8 -> 8.2 / 2.9%. The cost is larger than mocked. The retraining
+> half is still a blue placeholder (90.9%, 1.8%).
 
 **The claim to back.** Contribution 3 and the discussion say the audit "points to its mitigation": zero the audited
 fields for every file, at test time or in retraining, since a field MalConv relies on but an attacker can change freely
