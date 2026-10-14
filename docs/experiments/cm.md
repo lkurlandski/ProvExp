@@ -176,3 +176,15 @@ blind/oppose/agree split), `cm_check._STATE` (extractor/GBDT/MalConv), `ablate`/
 
 Cost note: steps 1-3 are cheap; step 4 re-explains each kept file (IG ~25 ms on GPU, TreeSHAP ~ms). Smoke-testable on
 a handful of pilot malware. Two-step run: (a) select + explain the both-detect pool, (b) `cm_triage_evasion.py`.
+
+### Implemented and smoke-tested (2026-10-14, run 57)
+
+`scripts/cm_triage_evasion.py` + `run/57_cm_triage_evasion.sh` (+ `tests/test_cm_triage_evasion.py`, 4 unit tests on
+the pure share helper). Single process, one GPU; re-explains each file the triage sees (TreeSHAP + MalConv IG).
+Smoke test (16 candidate malware, ig_steps 64, ~2 min): produced all populations (4 organic, 2 both-detect that did
+not evade, 9 evasion, 1 gbdt-missed) and the blind/oppose/agree split with evasion-vs-organic p-values. **~9 of ~11
+both-detect files evaded by scrambling S**, so the mechanism yields enough evasion files. The smoke numbers are not
+meaningful (tiny N, reduced IG steps; no separation seen there). The pilot (`run/57`: 500 candidates, 256 steps, GPU 3,
+~2-4 h) is for the user to run. **Follow-up when done:** read the oppose share, evasion vs. organic. If oppose
+separates them, the triage label is a defender's decision (write it into 4.3); if not, fall back to reframing the
+readout, then to reconsidering (the fallback order the user set).

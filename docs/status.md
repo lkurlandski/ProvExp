@@ -11,8 +11,10 @@ designs change (new baselines, triage-to-decision, an Android extractor) before 
 experiments that touch MalConv or a new domain are being drafted in the manuscript with synthetic (blue `\synthetic{}`)
 placeholders; mocks in `docs/experiments/mocks.md`. **Block A writing fixes are in the manuscript.** Block B started: the
 field-occlusion oracle baseline (`--field_oracle` in `faithfulness.py`, `run/56`, tests added) is **running now** on the
-100 pilot files; hypothesis and follow-up in `docs/experiments/pb1.md` ("Field-occlusion oracle baseline"). Next pilot
-step: triage tied to a decision (revision plan B9).
+100 pilot files; hypothesis and follow-up in `docs/experiments/pb1.md` ("Field-occlusion oracle baseline"). **Field oracle done (run 56):** gain 0.91 at 124 extractions/file, the byte-level pullback beats it 88/100 (p~1e-15);
+folded into the manuscript (Table 1 + 4.1), answering the "by construction" objection. **B9 built (run 57):**
+`cm_triage_evasion.py` (organic vs. shared-reliance-evasion triage), smoke-tested on GPU; the user runs the pilot
+(~2-4 h). Next after B9's result: fold it in or fall back (see `docs/experiments/cm.md`).
 Earlier 2026-10-14 (morning): AU's realizable numbers are in the manuscript; runs 50 (done) and 51 (at 59% of
 pass 1 after 9.3 h, i.e. much slower than the script's "about 12 h") are running; 52-55 not started.
 Previously 2026-10-13 (night; end of a long writing + experiments session). The manuscript is restructured into
