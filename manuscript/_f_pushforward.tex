@@ -62,15 +62,23 @@ bound; occlusion's share of the bound falls from 0.91 at 64 windows to 0.74 at 4
 Section~\ref{sec:XML:PullbackFaithfulness}. The pushforward is thus faithful up to the resolution of its source: the
 direct problem-space explainers are limited by their resolution, not by the transfer.
 
-\synthetic{The test above pushes forward explanations of the GBDT, which lets us compare with TreeSHAP; the audit of
-Section~\ref{sec:XML:Audit} instead pushes MalConv's Integrated Gradients forward, so we check the pushforward on
-MalConv directly, where it is used. Ranking MalConv's features by the pushed-forward attribution, mapping the top
-features back to their bytes through $P$, and scrambling those bytes removes MalConv's evidence faster than the same
-budget of bytes chosen by Integrated Gradients aggregated over fixed windows (area ratio $1.5\times$) and on par with a
-surrogate GBDT whose feature ranking is mapped through $P$ the same way ($1.1\times$), while needing no second model.
-The pushforward therefore concentrates a raw-byte detector's evidence on the features it names, the global counterpart
-of the pullback's byte-level win in Table~\ref{tab:XML:PullbackCost}.} % SYNTHETIC: predicted (mock M1); replace with
-% the real MalConv pushforward-faithfulness run.
+The test above pushes forward explanations of the GBDT, which lets us compare with TreeSHAP; the audit of
+Section~\ref{sec:XML:Audit} instead pushes MalConv's Integrated Gradients forward, so we also test the pushforward on
+MalConv, where it is used. MalConv never computes the features, so its features cannot be deleted; instead we pull
+each feature explanation back through $P$, delete its top bytes with the operator of
+Section~\ref{sec:XML:PullbackFaithfulness}, and let MalConv score the result. The realistic alternative is a surrogate:
+a GBDT trained on the EMBER features to predict MalConv's log-odds (on test files outside those explained;
+$R^2 = 0.95$ on them), explained by TreeSHAP. On the 100 files, the pushed-forward explanation removes about twice as
+much of MalConv's evidence as the surrogate's (median area 6.25 against 3.28 log-odds, larger on 99 of 100 files,
+$p \approx 10^{-18}$), and 2.7 times as much as random feature explanations (2.33). Random feature explanations are
+the fair floor here: pulled back, any feature explanation lands on bytes the extractor reads, which MalConv also relies
+on, so they already remove far more than random windows (0.61). The surrogate imitates MalConv's outputs closely, but
+its explanation describes the surrogate; the pushforward describes MalConv, in the surrogate's vocabulary. The
+pushforward also beats Integrated Gradients summed over 256 windows (4.29, larger on 83 of 100 files), which names no
+features. Integrated Gradients itself, per byte, removes far more (33.4), but not because it is a better summary:
+deleting its top 1\% of bytes already removes 19 log-odds, three times as much as deleting the whole file (6.0), the
+fragility of MalConv noted in Section~\ref{sec:XML:Comparison}. Any summary into features gives up this byte-level
+precision, and among summaries into features, the pushforward is the faithful one.
 
 \subsection{A Planted Trigger}
 \label{sec:XML:PushforwardTrigger}

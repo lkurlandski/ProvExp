@@ -1,6 +1,10 @@
 # Status
 
-Last updated: 2026-10-14 (late afternoon): **run 57 (B9) read; it failed, fallback (b) written into 4.3.** The
+Last updated: 2026-10-14 (evening): **M1 done (run 58)**: pushed forward on MalConv, the pushforward's features
+carry 1.9x the surrogate's evidence (area 6.25 vs. 3.28, 99/100 files), 1.46x IG over windows, 2.7x random features;
+in 5.1 (blue placeholder replaced) and the intro (`docs/experiments/pf1.md`). Closes W5. B9 abandoned (user). **Next:
+polish W6** (audit: surrogate argument with M1, test-time mitigation; comparison: threat-model contradiction).
+Earlier: 2026-10-14 (late afternoon): **run 57 (B9) read; it failed, fallback (b) written into 4.3.** The
 triage does not tell an attack-caused disagreement from an organic one (200 candidates: 32 organic, 87 evasion; oppose
 0.26 vs. 0.28, p = 0.14; blind, agree p >= 0.33). Cause: the readout is the GBDT's whole top 1% (~19K bytes) while the
 attack changes ~600 bytes, so the share can barely move (`docs/experiments/cm.md`, "Result (run 57)"). Section 4.3 now
@@ -28,8 +32,8 @@ manuscript; then section-level writing. A later round (3 seeds, 10K files) runs 
 
 ## Next
 
-1. **Run 57 (B9): decide whether to try the localized readout** (label only the changed bytes S; ~40 min GPU at 200
-   candidates) or leave 4.3 as written (fallback (b), done). Awaiting the user.
+1. **Polish W6** with the user: the audit's pushforward-vs-surrogate argument (now backed by M1), the test-time
+   mitigation (no retraining), and the comparison's threat-model contradiction. B9's localized readout: dropped (user).
 2. **Remaining revision-plan items** (`docs/revision-plan.md`): block C is deferred (needs MalConv re-eval/retraining)
    and stands in as synthetic blue placeholders; the Android second extractor (item 12) is the biggest deferred lift.
    Block A is done; block B is B7 (done) and B9 (done: negative, fallback (b) in 4.3).

@@ -8,15 +8,15 @@
 # IG per byte, IG over 256 windows, and random windows. PB1's 100 pilot files, seed 0.
 # Hypothesis: pushforward > surrogate > random features; pushforward < IG itself (grouping into features blurs IG).
 #
-# Smoke-tested on 4 files (32 IG steps, 4 workers): 22 s, every deletion verified. Expect ~10 min here (cm_check,
-# which does similar work, took ~10 min). GPU 1 for IG (pick another if busy), then 16 CPU workers. Run in tmux.
+# Smoke-tested on 4 files (32 IG steps, 4 workers): 22 s. Ran: 9 min (IG on GPU 1 262 s, 16 workers 282 s), no
+# failures. Result: pushforward 6.25 vs. surrogate 3.28 (99/100); see docs/experiments/pf1.md.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 source env/bin/activate
 export PYTHONHASHSEED=0
 
 LOG=artifacts/logs/pf-malconv-seed0.log
-echo "M1, pushforward faithfulness on MalConv: 100 pilot files, IG on GPU 1, then 16 workers (~10 min)."
+echo "M1, pushforward faithfulness on MalConv: 100 pilot files, IG on GPU 1, then 16 workers (~9 min)."
 echo "Output: artifacts/experiments/pf_malconv/seed-0/"
 echo "Log:    $LOG   (follow with: tail -f $LOG)"
 OMP_NUM_THREADS=1 python scripts/pf_malconv.py \

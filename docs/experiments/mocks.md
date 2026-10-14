@@ -10,7 +10,12 @@ item 3), the header-attack comparison for the audit (item 4), and the audit's mi
 
 ---
 
-## M1. Pushforward faithfulness, measured on MalConv (review item 3)
+## M1. Pushforward faithfulness, measured on MalConv (review item 3) — RUN 2026-10-14 (run 58)
+
+> **Replaced by real numbers** (`docs/experiments/pf1.md`, "Pushforward faithfulness on MalConv"): pushforward 6.25 vs.
+> surrogate 3.28 (99/100), IG windows 4.29 (83/100), random features 2.33. The design changed from the mock: feature
+> explanations are pulled back (weighted) rather than cut to their features' bytes, and random features were added as
+> the floor. Kept below as a record.
 
 **The gap.** Section 5.1 tests the pushforward by pushing forward explanations of the *GBDT* and deleting features. But
 the audit (5.3) pushes forward *MalConv's* Integrated Gradients, and we never test whether that pushed-forward

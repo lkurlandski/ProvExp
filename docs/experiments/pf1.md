@@ -100,3 +100,29 @@ The pushforward is faithful up to the resolution of its source: what survives is
 monotonically with P's overlap over more than three orders of magnitude of resolution, and is bounded by CP's theorem
 everywhere. A 256-window explanation, however good, carries little feature-level information through this P (R ≈
 0.37 at best). The same test, applied to the MLP's explainers, is the first step when the MLP returns.
+
+## Pushforward faithfulness on MalConv (M1, run 58, 2026-10-14)
+
+**Why.** Review W5: the faithfulness test above pushes forward explanations of the GBDT, while the audit pushes forward
+MalConv's IG. **Design** (`scripts/pf_malconv.py`): MalConv computes no features, so each feature explanation is pulled
+back through the file's P and its top bytes deleted (PB1's operator, run 21 files); MalConv scores every deleted file.
+**Hypothesis:** pushforward > surrogate > random features; pushforward < IG itself.
+
+**Result** (100 pilot files, seed 0, 256 IG steps; 9 min; all files verified at every budget). Median area (MalConv
+log-odds removed, mean over budgets 0.1-50%):
+
+| ranking | area | pushforward wins | median ratio | Wilcoxon p |
+|---|---|---|---|---|
+| pushforward of IG | 6.25 | | | |
+| surrogate TreeSHAP (audit_surrogate, R^2 0.95 on these files) | 3.28 | 99/100 | 1.90 | 4e-18 |
+| IG over 256 windows | 4.29 | 83/100 | 1.46 | 2e-13 |
+| random feature explanations | 2.33 | 100/100 | 2.69 | 4e-18 |
+| random windows | 0.61 | | | |
+| IG per byte (the source) | 33.4 | 0/100 | 0.19 | 4e-18 |
+
+By label, pushforward > surrogate on 49/50 malware and 50/50 benign; > windows on 47/50 malware, 36/50 benign.
+**Hypothesis confirmed**, and stronger than the mock (which predicted surrogate parity, 1.1x). Readings: (1) random
+*features* are the fair floor, since any pulled-back feature explanation lands on bytes the extractor reads, which
+MalConv relies on (2.33 vs. 0.61 for random windows); (2) IG's lead is MalConv's off-distribution fragility, not a
+better summary: full deletion removes a median 6.0, IG's top 1% already removes 19.3. Written into 5.1 (replacing the
+blue placeholder) and the intro. Also supports the audit's pushforward-vs-surrogate argument (W6b).
