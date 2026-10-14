@@ -9,7 +9,10 @@ page limit and exact numbers do not matter at this drafting stage (CLAUDE.md). A
 cut; block A writing fixes done. **The user cancelled the 500-file scale-up (runs 50-55)** partway through run 51:
 designs change (new baselines, triage-to-decision, an Android extractor) before any final scale-up. Deferred
 experiments that touch MalConv or a new domain are being drafted in the manuscript with synthetic (blue `\synthetic{}`)
-placeholders; mocks in `docs/experiments/mocks.md`.
+placeholders; mocks in `docs/experiments/mocks.md`. **Block A writing fixes are in the manuscript.** Block B started: the
+field-occlusion oracle baseline (`--field_oracle` in `faithfulness.py`, `run/56`, tests added) is **running now** on the
+100 pilot files; hypothesis and follow-up in `docs/experiments/pb1.md` ("Field-occlusion oracle baseline"). Next pilot
+step: triage tied to a decision (revision plan B9).
 Earlier 2026-10-14 (morning): AU's realizable numbers are in the manuscript; runs 50 (done) and 51 (at 59% of
 pass 1 after 9.3 h, i.e. much slower than the script's "about 12 h") are running; 52-55 not started.
 Previously 2026-10-13 (night; end of a long writing + experiments session). The manuscript is restructured into

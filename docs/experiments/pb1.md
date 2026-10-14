@@ -597,3 +597,40 @@ Any change in PB1's conclusions goes to `docs/experiments/pb1.md`, `PLAN.md`, an
 **Result (2026-10-09):** all four readings stand, and no conclusion changed. The pullback moved by at most 0.003;
 occlusion at 4,096 windows by 0.004 (1.105, vs. 1.097 at 1,024; p = 0.40); the byte-level pullback beats every direct
 baseline on 79–85 of 100 files (p ≤ 6e-12). Details in `docs/experiments/pb1.md` ("Tie-break re-run").
+
+## Field-occlusion oracle baseline (run 56, 2026-10-14)
+
+**Why.** The self-review (`docs/review-2026-10-14.md`, W2/W4) flagged that "byte resolution is out of reach" rests on
+*uniform* occlusion, and that the byte-level pullback's win could be dismissed as "it just knows the parser's read
+set." The field-occlusion oracle answers both: it is a direct, structure-aware explainer that occludes each parsed PE
+field and section (one extraction each) and ranks bytes by their region's drop, under the same PE-aware deletion
+operator as the curves. It is the natural upper bound a defender could build with a PE parser, and it knows the read
+set too, so beating or matching it from one extraction is a clean rebuttal. Method name in the tables:
+`field_occlusion`. (Adaptive/hierarchical occlusion, HiPe, was the other candidate; paused as a vision method out of
+scope — the oracle answers the same objection more simply.)
+
+**Design.** `run/56_pb1_field_oracle.sh`: the 100 pilot files, GBDT, `--field_oracle`, `--tiebreak random`, reusing the
+baselines' pass-1 scores (`zeros-typical-header-baselines-ties`), so only pass 2 and the oracle's ~130-250 region
+extractions per file run. Output `zeros-typical-header-oracle/`; tables `artifacts/reports/pb1_tables-oracle.md`.
+Smoke-tested on 2 files (the method flows through `pb1_tables.py`'s paired-comparison and cost tables); 4 unit tests
+added. ~1-2 h on 16 workers.
+
+**Hypothesis.** The oracle beats uniform occlusion at 256 windows (semantic regions rank better than arbitrary
+windows, especially at small budgets), so its gain is above 1.0 — perhaps around 1.1-1.3, in the range of fine
+occlusion. The byte-level pullback still matches or beats the oracle on most files from a single extraction, because
+the pullback resolves *within* a field (which bytes of a multi-byte field carry the evidence) while the oracle shares a
+field's drop over all its bytes. If so: the pullback's advantage is not merely knowing the read set, and "byte
+resolution is out of reach for direct methods" becomes "even a field-level oracle, at one extraction per field, stays
+at or below the byte-level pullback."
+
+**What to do when it finishes.**
+1. Read `artifacts/reports/pb1_tables-oracle.md`. Sanity: `field_occlusion` present, 100 files, no failures; the
+   non-oracle numbers reproduce `pb1_tables-baselines-ties.md` (pass 1 reused, so they must).
+2. In the paired-comparison table, read `field_occlusion`'s gain and the byte-level `pullback:*` vs. `field_occlusion`
+   (wins/100, p). In the cost table, read the oracle's median extractions (its cost).
+3. **Pullback matches/beats the oracle (expected):** add `field_occlusion` as a column/row to the manuscript's Table 1
+   and to 4.1's prose ("even a field-level oracle ... stays at or below the byte-level pullback"); strengthen the
+   "byte resolution" claim and drop any "by construction" exposure.
+4. **Oracle beats the pullback (unexpected):** report it honestly. The pullback would then be the *cheap* win (one
+   extraction vs. the oracle's hundreds), not the *most faithful*; reframe 4.1 around cost, and note the oracle as the
+   faithfulness ceiling a parser can reach. Update `PLAN.md` and the manuscript.
