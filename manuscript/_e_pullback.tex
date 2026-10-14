@@ -6,25 +6,102 @@ The feature-based detector is a LightGBM GBDT with EMBER's baseline parameters (
 \subsection{Faithfulness and Cost}
 \label{sec:XML:PullbackFaithfulness}
 
-\paragraph{Design.} When a feature-space explanation is pulled back to the bytes, do the top-ranked bytes carry the evidence for the decision, compared with explaining directly in the problem space, and at what cost? We explain the GBDT with path-dependent and interventional TreeSHAP (a background of 1{,}000 balanced training files) and KernelSHAP (32{,}768 coalitions, a 16-file balanced background), and the MLP with Integrated Gradients (from the background mean) and KernelSHAP. Each method ranks the bytes of a file by evidence for the predicted class:
-\begin{itemize}
-    \item the \emph{pullback} of each explainer, at byte level, and coarsened to $K$ windows of bytes, which separates resolution from information;
-    \item \emph{occlusion} over $K$ equal windows, the standard direct explainer, with $K$ from 64 to 4{,}096 to trace cost against faithfulness;
-    \item \emph{KernelSHAP over windows}, a second direct explainer whose players are 256 windows;
-    \item the \emph{black-box pullback}, through the $P$ estimated from the occlusion run itself (Section~\ref{sec:XML:Constructing});
-    \item \emph{random} window orders, and an \emph{unsigned} ranking of the pullback (a diagnostic).
-\end{itemize}
-The metric is the deletion curve: delete the top-ranked bytes at log-spaced budgets from 0.1\% to 50\% of the file, re-extract the features, re-score the model, and record the evidence removed, $s \cdot (f(x) - f(x'))$, with $s$ the sign of the original log-odds. A method's score is the area under its curve (the mean over the budgets), reported as its gain over random relative to occlusion's: $1$ means as good as occlusion. Methods are compared per file with paired Wilcoxon tests, and rankings break ties by a seeded random permutation. Cost is measured in feature extractions and wall-clock time.
+A pulled-back explanation is useful only if the bytes it ranks highest are the bytes the decision rests on. We test
+this as problem-space explanations are usually tested, by deleting the top-ranked bytes and measuring how much of the
+detector's evidence disappears, and compare the pullback with explaining the detector directly over the bytes. At the
+same resolution, the pullback is as faithful as direct explanation at a small fraction of its cost; at the resolution
+of single bytes, which direct explanation cannot afford, it removes substantially more evidence than any direct method
+we tried (Table~\ref{tab:XML:PullbackCost}).
 
-\paragraph{Deleting bytes.} Deleting bytes means replacing them, and naive replacement breaks PE files in ways that make any comparison meaningless, so this is where our experiments use knowledge of the format. The operator never changes the fields that define the file's layout (found by a sweep over 2{,}000 training files) or the fields that break a particular file, verifies every perturbed file at run time, and replaces the other header fields with their most common value in the training set instead of zeros. Content bytes are zeroed. Two variants serve as robustness checks: header fields zeroed, and content bytes randomized. None of the 23{,}000 perturbed files in this section failed verification. The comparison (Section~\ref{sec:XML:Comparison}) and the audit (Section~\ref{sec:XML:Audit}) use the same operator.
+\paragraph{Explainers and baselines.} We explain the GBDT with TreeSHAP, both its path-dependent and interventional variants (a background
+of 1{,}000 balanced training files) and KernelSHAP (32{,}768 coalitions, a 16-file balanced background), and the MLP with
+Integrated Gradients (from the background mean) and KernelSHAP. Each explanation is pulled back to the bytes and ranks
+them by evidence for the predicted class, both at byte level and coarsened to $K$ windows
+(Section~\ref{sec:XML:Constructing}), which separates resolution from information. The direct baselines explain the
+detector over the bytes without $P$: occlusion over $K$ equal windows, the standard problem-space explainer, with $K$
+from 64 to 4{,}096 to trace faithfulness against cost, and KernelSHAP whose players are 256 windows. The occlusion run
+also yields the black-box estimate of $P$ (Section~\ref{sec:XML:Constructing}), so we include the \emph{black-box
+pullback} through it. A random window order is the floor.
 
-\paragraph{Results.} At equal granularity (256 windows), the pullback of all three GBDT explainers matches occlusion (0.97--1.03 of its gain; not significantly different with the primary operator) at 1/135 of the cost (one extraction against 258). At byte level, which occlusion cannot reach, the pullback removes 1.65--1.79 times occlusion's gain, on 79--96 of 100 files; realistic header values account for 15--18\% of that margin. For the MLP, neither IG nor KernelSHAP reaches occlusion at window level, and the black-box pullback of the same explanations is just as far behind: the shortfall comes from the explanations, not from $P$.
+\paragraph{Measuring faithfulness.} The deletion curve deletes a method's top-ranked bytes at log-spaced budgets from
+0.1\% to 50\% of the file, re-extracts the features, re-scores the model, and records the evidence removed,
+$s \cdot (f(x) - f(x'))$, with $s$ the sign of the original log-odds. A method's score is the area under its curve (the
+mean over the budgets), reported as its gain over random relative to occlusion's at 256 windows: $1$ means as faithful
+as occlusion, and higher is better. Methods are compared per file with paired Wilcoxon tests. Equal scores are common
+(features with identical provenance; windows whose occlusion changes nothing), so every ranking breaks ties by a seeded
+random permutation rather than by position. Cost is counted in feature extractions per file.
 
-\paragraph{Baselines.} Finer occlusion does not close the byte-level gap: it improves from 0.93 at 64 windows to 1.10 at 1{,}024 and then saturates (1.11 at 4{,}096 windows, 4{,}099 extractions per file; $p = 0.40$ against 1{,}024), while the byte-level pullback stays at 1.67, ahead of each of the strongest direct baselines on 79--85 of 100 files ($p \leq 6 \cdot 10^{-12}$). KernelSHAP over windows is the strongest direct baseline (1.10 at 2{,}050 extractions). Parity at equal granularity holds at every window count (64, 256, and 1{,}024 windows: $p \geq 0.55$), and at 4{,}096 the pullback is ahead (1.22 vs.\ 1.11, $p = 0.008$). Ties are common among occlusion's windows, most of which change nothing at fine resolution. Deleting the top half of the bytes removes more evidence than deleting everything (an \textit{overshoot}); ranking by magnitude instead of sign removes three quarters of it, and the rest grows with resolution in every method family, occlusion included. The reading of each outcome was fixed before the run.
+\paragraph{Deleting bytes.} Deleting bytes means replacing them, and naive replacement breaks PE files in ways that
+make any comparison meaningless, so this is where our experiments use knowledge of the format. The operator never
+changes the fields that define the file's layout (found by a sweep over 2{,}000 training files) or the fields that break
+a particular file, verifies every perturbed file at run time, and replaces the other header fields with their most
+common value in the training set instead of zeros. Content bytes are zeroed. Two variants serve as robustness checks:
+header fields zeroed, and content bytes randomized. None of the 23{,}000 perturbed files in this section failed
+verification. The comparison (Section~\ref{sec:XML:Comparison}) and the audit (Section~\ref{sec:XML:Audit}) use the
+same operator.
 
-\paragraph{Instrumented and black-box provenance.} The occlusion run also yields the black-box estimate of $P$ (Section~\ref{sec:XML:Constructing}) at no extra cost, so the two constructions can be compared at 256 windows. Where a feature is additive in its bytes (the byte histogram and the header, section, data-directory, and Rich-header fields), the estimate agrees exactly with the instrumented $P$ coarsened to the same windows (median total variation 0.00), which validates the instrumentation for those groups independently. Where it is not, they differ (median total variation 0.44 for strings, 0.60 for entropy windows and hashed imports): occluding part of a string or a name changes or moves it rather than removing a share of it. Occlusion also misses what removal does not change: it sees 23--43\% of the header features, depending on the fill, against 100\%. Despite these differences, the black-box pullback matches occlusion (1.02--1.04 of its gain), as the instrumented pullback does. A defender without the extractor's source can therefore estimate $P$ and explain at window resolution; instrumentation adds byte resolution, at the cost of one extraction instead of the occlusion run.
+\begin{table}[t]
+  \centering
+  \small
+  \begin{tabular}{lrr}
+    \toprule
+    Method (GBDT) & Extractions per file & Gain \\
+    \midrule
+    Occlusion, 64 windows & 65 & 0.93 \\
+    Occlusion, 256 windows & 258 & 1.00 \\
+    Occlusion, 1{,}024 windows & 1{,}025 & 1.10 \\
+    Occlusion, 4{,}096 windows & 4{,}099 & 1.11 \\
+    KernelSHAP, 256 windows & 2{,}050 & 1.10 \\
+    \midrule
+    Pullback, 64 windows & 1 & 0.89 \\
+    Pullback, 256 windows & 1 & 0.98 \\
+    Pullback, 1{,}024 windows & 1 & 1.08 \\
+    Pullback, 4{,}096 windows & 1 & 1.23 \\
+    Pullback, bytes & 1 & \textbf{1.71} \\
+    Black-box pullback, 256 windows & 258 & 1.04 \\
+    \bottomrule
+  \end{tabular}
+  \caption{Faithfulness against cost for the GBDT (100 files). Gain: evidence removed by deleting each method's
+  top-ranked bytes, over random and relative to occlusion at 256 windows. Pullbacks of interventional TreeSHAP; the
+  other explainers are within 0.05. At equal resolution the pullback matches occlusion from a single extraction; at
+  byte resolution, which occlusion cannot reach, it removes far more evidence.}
+  \label{tab:XML:PullbackCost}
+\end{table}
 
-\paragraph{What the pullback cannot localize.} The null element's share of a pulled-back explanation is exactly the attribution that no part of the input can carry (Definition~\ref{def:Pullback}). For the GBDT it is about a fifth of the attribution, most of it on features whose value encodes an absence; Appendix~\ref{sec:XML:AppLocalizability} reports it per explainer.
+\paragraph{Parity at equal resolution.} Coarsened to the windows that occlusion uses, the pullback of each GBDT
+explainer is as faithful as occlusion at every window count we tried (0.97--1.03 of its gain at 256 windows;
+$p \geq 0.55$ at 64, 256, and 1{,}024 windows), and at 4{,}096 windows it is ahead (1.22 against 1.11, $p = 0.008$).
+It needs one feature extraction instead of one per window; at 256 windows, 0.15\,s instead of 20\,s for the median file, a
+factor of 135.
+
+\paragraph{Byte resolution.} Occlusion does not approach byte resolution by refining its windows: its gain rises from
+0.93 at 64 windows to 1.10 at 1{,}024 and then stops (1.11 at 4{,}096 windows and 4{,}099 extractions per file;
+$p = 0.40$ against 1{,}024), because occluding a small window changes the features too little to rank it. KernelSHAP over
+windows, the strongest direct baseline, ends at the same level. The byte-level pullback removes 1.65--1.79 times
+occlusion's gain, ahead of each of the strongest direct baselines on 79--85 of 100 files ($p \leq 6 \cdot 10^{-12}$),
+from the same single extraction. Realistic header values account for 15--18\% of that margin; the rest holds with
+header fields zeroed and with content randomized. Deleting the top half of the bytes can remove more evidence than
+deleting everything (an \emph{overshoot}), in every method family; most of it comes from ranking by signed evidence,
+and ranking by magnitude removes three quarters of it.
+
+\paragraph{The MLP.} The comparison is weaker for the MLP, and the reason is the explainers rather than $P$: neither
+Integrated Gradients nor KernelSHAP reaches occlusion at window level, and the black-box pullback of the same
+explanations falls short by the same amount. A pullback is as faithful as the feature-space explanation it starts from.
+
+\paragraph{Instrumented and black-box provenance.} Where a feature is additive in its bytes (the byte histogram and the
+header, section, data-directory, and Rich-header fields), the black-box estimate of $P$ agrees exactly with the
+instrumented $P$ coarsened to the same 256 windows (median total variation 0.00), which validates the instrumentation
+for those groups independently. Where it is not, the two differ (median total variation 0.44 for strings, 0.60 for
+entropy windows and hashed imports): occluding part of a string or a name changes or moves it rather than removing a
+share of it. Occlusion also misses what removal does not change, and sees 23--43\% of the header features, depending on
+the fill, against 100\%. Despite these differences, the black-box pullback matches occlusion (1.02--1.04 of its gain),
+as the instrumented pullback does. A defender without the extractor's source can therefore estimate $P$ and explain at
+window resolution; instrumentation adds byte resolution and replaces the occlusion run with one extraction.
+
+\paragraph{What the pullback cannot localize.} The null element's share of a pulled-back explanation is exactly the
+attribution that no part of the input can carry (Definition~\ref{def:Pullback}). For the GBDT it is about a fifth of the
+attribution, most of it on features whose value encodes an absence; Appendix~\ref{sec:XML:AppLocalizability} reports it
+per explainer.
 
 \subsection{A Planted Trigger}
 \label{sec:XML:PullbackTrigger}
