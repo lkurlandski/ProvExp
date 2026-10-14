@@ -4,8 +4,9 @@ classifiers on the bytes. Perturbed and triggered files are written only to stor
 executed, and not released; our artifacts contain features, provenance matrices, explanations, and model scores, not
 binaries. % TODO: confirm the access terms under which the binaries were obtained.
 
-\paragraph{Evasion findings.} The audit identifies header fields whose scrambling evades a released research model,
-MalConv as distributed with EMBER-2024, and does not verify that the scrambled files still run. We do not evaluate any
+\paragraph{Evasion findings.} The audit identifies header fields whose loader-safe modification evades a released research
+model, MalConv as distributed with EMBER-2024. Which changes the loader allows follows the format's documentation; the
+modified files are not executed. We do not evaluate any
 deployed commercial detector. Reliance of MalConv on header content is already documented and publicly
 exploited~\cite{demetrio2019explaining}; our contribution is the method that finds such reliance automatically, which
 we intend for defenders auditing their own detectors before deployment, together with the mitigation the audit points

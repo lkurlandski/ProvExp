@@ -1,5 +1,5 @@
-% NOTE: numbers are from the pilot (PB1: 100 files, one seed) and the 2,000-file explanation set (AU, one seed); update
-% after the scale-up.
+% NOTE: PB1/CM numbers are from the pilot (100 files, one seed), update after the scale-up; AU's evasion numbers are
+% final for seed 0 (runs 47-49: 902 detected held-out malware, loader-safe changes).
 Static malware detectors come in two kinds: models over hand-engineered features, such as gradient-boosted trees on
 EMBER features, and deep networks that read a file's raw bytes. Both can be explained, but in different spaces. A
 feature-based detector's explanation names features without saying where in the file their evidence lies; a raw-byte
@@ -12,7 +12,7 @@ forward into named features. We evaluate both transfers on EMBER v3 features, a 
 pullback matches window occlusion at 1/135 of its cost and, at byte resolution, removes 1.67 times as much evidence.
 For two detectors that disagree on a file, it shows whether the flagging detector's evidence is content the other
 ignores or reads the other way, a distinction that vanishes over byte windows. Pushed forward, MalConv's per-file
-explanations become named, recurring reliance: 9 of its 20 most-relied-on fields are confirmed, and scrambling their
-34 bytes evades 22.5\% of detected malware at a 1\% false-positive rate, against 16.5\% for as many random header
-fields. Provenance lets defenders compare and audit
+explanations become named, recurring reliance: 9 of its 20 most-relied-on fields are confirmed, and changing them
+only as the Windows loader allows evades 12.4\% of detected held-out malware at a 1\% false-positive rate, twice the
+rate of as many other loader-ignored fields. Provenance lets defenders compare and audit
 detectors that see the same files through entirely different representations.
