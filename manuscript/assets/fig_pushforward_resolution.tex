@@ -1,0 +1,30 @@
+% What survives the pushforward at each resolution (GBDT, 100 pilot files, path TreeSHAP, the matched reference; runs
+% 18 and 20, docs/experiments/pf1.md). "bytes" is drawn at 2^20 windows.
+\begin{figure}[t]
+  \centering
+  \begin{tikzpicture}
+    \begin{axis}[
+      paper,
+      xmode=log, log basis x=2, xmin=40, xmax=1700000, ymin=0.2, ymax=0.9,
+      xtick={64,256,1024,4096,16384,65536,262144,1048576},
+      xticklabels={64,256,1k,4k,16k,64k,256k,bytes},
+      xlabel={Resolution of the source explanation (windows)},
+      ylabel={$R$ (relative to TreeSHAP)},
+      legend pos=south east,
+    ]
+      \addplot[ours, thick, mark=*, mark size=1.6pt]
+        coordinates {(64,0.34) (256,0.37) (1024,0.43) (4096,0.50) (16384,0.61) (65536,0.69) (262144,0.75) (1048576,0.80)};
+      \addlegendentry{TreeSHAP's information, pushed forward}
+      \addplot[direct, thick, mark=square*, mark size=1.6pt]
+        coordinates {(64,0.31) (256,0.32) (1024,0.34) (4096,0.37)};
+      \addlegendentry{Occlusion, pushed forward}
+      \addplot[other, only marks, mark=diamond*, mark size=2.4pt] coordinates {(256,0.40)};
+      \addlegendentry{KernelSHAP (256 windows), pushed forward}
+    \end{axis}
+  \end{tikzpicture}
+  \caption{Faithfulness of the pushforward rises with the resolution of the explanation it transfers (GBDT, 100 files).
+  $R$ is the feature-space deletion area relative to TreeSHAP's. TreeSHAP's own explanation, expressed over windows of
+  each size and pushed forward, bounds what a window-level source can reach; occlusion and KernelSHAP stay close to that
+  bound, and occlusion cannot be afforded beyond 4{,}096 windows.}
+  \label{fig:XML:PushforwardResolution}
+\end{figure}
