@@ -21,7 +21,11 @@ and the loader-safe modifications of the audit in Section~\ref{sec:XML:Audit}. T
 fields that define the file's layout (found by a sweep over 2{,}000 training files) or the fields that break a
 particular file, verifies every perturbed file, and replaces the remaining header fields with their most common value
 in the training set; content bytes are zeroed. Zeroing the header fields instead, or randomizing the content, serves as
-a robustness check. None of the 23{,}000 perturbed files of Section~\ref{sec:XML:PullbackFaithfulness} failed
+a robustness check. Any deletion produces files a detector never saw in training, so deletion curves measure how a
+model responds to unusual inputs as well as what it relies on. We therefore compare methods only against one another
+at equal budgets, under both fills, and rest no conclusion on deletion alone: the planted triggers
+(Sections~\ref{sec:XML:PullbackTrigger} and~\ref{sec:XML:PushforwardTrigger}) give a ground truth without deleting
+anything, and the audit (Section~\ref{sec:XML:Audit}) changes files only in ways the Windows loader accepts. None of the 23{,}000 perturbed files of Section~\ref{sec:XML:PullbackFaithfulness} failed
 verification.
 
 \subsection{Faithfulness}
@@ -98,7 +102,8 @@ build with a PE parser, at a median 124 extractions per file --- reaches only 0.
 because it shares each field's drop over all of the field's bytes, while the pullback resolves which bytes \emph{within}
 a field carry the evidence; the byte-level pullback beats it on 88 of 100 files ($p \leq 10^{-15}$). The pullback's
 advantage is thus resolution, not knowledge of which bytes a feature reads. Realistic header values account for 15--18\% of that margin, and the
-rest holds under both variants of the operator. One caveat applies to every method family: deleting the top half of the
+rest holds under both variants of the operator: with random instead of zero content, the byte-level pullback keeps a
+gain of 1.69 and still beats occlusion on 81 of 100 files ($p \approx 10^{-12}$). One caveat applies to every method family: deleting the top half of the
 bytes can remove more evidence than deleting everything (an \emph{overshoot}), mostly because rankings follow signed
 evidence; ranking by magnitude removes three quarters of it.
 

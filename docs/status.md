@@ -32,11 +32,13 @@ manuscript; then section-level writing. A later round (3 seeds, 10K files) runs 
 
 ## Next
 
-1. **When run 59 (M3 test-time mitigation) finishes** (user runs it, CPU, ~25-35 min): read the cost and evasion
-   tables at the end of `artifacts/logs/audit-mitigate-seed0.log`; replace the test-time row of the blue mitigation
-   table in 5.3 (keep the retrain row blue, deferred to the cluster round); say plainly that zeroed fields' attacks
-   fail by construction and lead with the cost and the attacks on fields not zeroed. Record in `docs/experiments/audit.md`.
-   W6 writing is done (comparison threat model; audit vs. surrogate backed by M1). B9's localized readout: dropped.
+1. **W4 (deletion off-distribution), in progress.** Writing done: the experimental setting says deletion is
+   off-distribution, methods are compared only against each other at equal budgets under both fills, and no conclusion
+   rests on deletion alone (triggers, loader-safe audit); 4.1 gives the random-fill numbers (1.69, 81/100). **Run 60**
+   (M1 with random fill, user runs, ~9 min): read the end of `artifacts/logs/pf-malconv-random-seed0.log`; if the
+   pushforward still beats the surrogate, add one clause to 5.1's MalConv paragraph and record in `pf1.md`.
+   Then **#3: the section-level writing pass with the user**, then reassess (W7/Android only once PE/EMBER is solid).
+   Runs 58 (M1) and 59 (M3 test-time) are done and written up.
 2. **Remaining revision-plan items** (`docs/revision-plan.md`): block C is deferred (needs MalConv re-eval/retraining)
    and stands in as synthetic blue placeholders; the Android second extractor (item 12) is the biggest deferred lift.
    Block A is done; block B is B7 (done) and B9 (done: negative, fallback (b) in 4.3).
