@@ -32,13 +32,9 @@ manuscript; then section-level writing. A later round (3 seeds, 10K files) runs 
 
 ## Next
 
-1. **W4 (deletion off-distribution), in progress.** Writing done: the experimental setting says deletion is
-   off-distribution, methods are compared only against each other at equal budgets under both fills, and no conclusion
-   rests on deletion alone (triggers, loader-safe audit); 4.1 gives the random-fill numbers (1.69, 81/100). **Run 60**
-   (M1 with random fill, user runs, ~9 min): read the end of `artifacts/logs/pf-malconv-random-seed0.log`; if the
-   pushforward still beats the surrogate, add one clause to 5.1's MalConv paragraph and record in `pf1.md`.
-   Then **#3: the section-level writing pass with the user**, then reassess (W7/Android only once PE/EMBER is solid).
-   Runs 58 (M1) and 59 (M3 test-time) are done and written up.
+1. **W4 closed** (writing + run 60: M1 holds with random fill, pushforward 2.0x surrogate, 99/99). Rough edges done.
+   **Next: #3, the section-level writing pass with the user** (they have not read the restructured draft), then
+   reassess; W7 (Android) only once the PE/EMBER contributions are solid (user, 2026-10-14).
 2. **Remaining revision-plan items** (`docs/revision-plan.md`): block C is deferred (needs MalConv re-eval/retraining)
    and stands in as synthetic blue placeholders; the Android second extractor (item 12) is the biggest deferred lift.
    Block A is done; block B is B7 (done) and B9 (done: negative, fallback (b) in 4.3).

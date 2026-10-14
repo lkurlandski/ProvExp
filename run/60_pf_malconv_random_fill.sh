@@ -4,8 +4,8 @@
 # MalConv"). Same 100 files, rankings, budgets, and seeds as run 58; the fill is seeded per (file, mask).
 # Hypothesis: pushforward > surrogate > random features still holds; IG's own lead may shrink if zeros caused it.
 #
-# Smoke-tested on 4 files (32 IG steps, 4 workers): 21 s. Expect ~9 min, as run 58. GPU 1 for IG (pick another if
-# busy), then 16 CPU workers. Run in tmux.
+# Smoke-tested on 4 files (32 IG steps, 4 workers): 21 s. Ran: ~9 min, GPU 1 + 16 workers. Result: pushforward 2.0x the
+# surrogate (99/99), IG overshoot unchanged (docs/experiments/pf1.md).
 set -euo pipefail
 cd "$(dirname "$0")/.."
 source env/bin/activate

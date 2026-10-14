@@ -70,14 +70,15 @@ Section~\ref{sec:XML:PullbackFaithfulness}, and let MalConv score the result. Th
 a GBDT trained on the EMBER features to predict MalConv's log-odds (on test files outside those explained;
 $R^2 = 0.95$ on them), explained by TreeSHAP. On the 100 files, the pushed-forward explanation removes about twice as
 much of MalConv's evidence as the surrogate's (median area 6.25 against 3.28 log-odds, larger on 99 of 100 files,
-$p \approx 10^{-18}$), and 2.7 times as much as random feature explanations (2.33). Random feature explanations are
+$p \approx 10^{-18}$), and 2.7 times as much as random feature explanations (2.33); with random instead of zero fill, it removes 2.0 times
+as much as the surrogate (99 of 99 files). Random feature explanations are
 the fair floor here: pulled back, any feature explanation lands on bytes the extractor reads, which MalConv also relies
 on, so they already remove far more than random windows (0.61). The surrogate imitates MalConv's outputs closely, but
 its explanation describes the surrogate; the pushforward describes MalConv, in the surrogate's vocabulary. The
 pushforward also beats Integrated Gradients summed over 256 windows (4.29, larger on 83 of 100 files), which names no
 features. Integrated Gradients itself, per byte, removes far more (33.4), but not because it is a better summary:
-deleting its top 1\% of bytes already removes 19 log-odds, three times as much as deleting the whole file (6.0), the
-fragility of MalConv noted in Section~\ref{sec:XML:Comparison}. Any summary into features gives up this byte-level
+deleting its top 1\% of bytes already removes 19 log-odds, three times as much as deleting the whole file (6.0), with
+either fill, the fragility of MalConv noted in Section~\ref{sec:XML:Comparison}. Any summary into features gives up this byte-level
 precision, and among summaries into features, the pushforward is the faithful one.
 
 \subsection{A Planted Trigger}

@@ -126,3 +126,9 @@ By label, pushforward > surrogate on 49/50 malware and 50/50 benign; > windows o
 MalConv relies on (2.33 vs. 0.61 for random windows); (2) IG's lead is MalConv's off-distribution fragility, not a
 better summary: full deletion removes a median 6.0, IG's top 1% already removes 19.3. Written into 5.1 (replacing the
 blue placeholder) and the intro. Also supports the audit's pushforward-vs-surrogate argument (W6b).
+
+**Random-fill check (run 60, W4, 2026-10-14).** Same design with random content fill (99 files with every deletion
+verified; 9 min). Pushforward area 6.34; vs. surrogate 3.20: 99/99, ratio 1.98, p = 6e-18; vs. IG over windows 4.59:
+90/99, 1.38; vs. random features 1.68: 98/99, 3.78; random windows 0.67. IG per byte 36.5 (full deletion removes 6.8):
+the overshoot is not a zero-fill artifact (my side guess that it would shrink failed). Main hypothesis confirmed; one
+clause added to 5.1. W4 closed.
