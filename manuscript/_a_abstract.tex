@@ -1,18 +1,17 @@
 % NOTE: PB1/CM numbers are from the pilot (100 files, one seed), update after the scale-up; AU's evasion numbers are
 % final for seed 0 (runs 47-49: 902 detected held-out malware, loader-safe changes).
 Static malware detectors come in two kinds: models over hand-engineered features, such as gradient-boosted trees on
-EMBER features, and deep networks that read a file's raw bytes. Both can be explained, but in different spaces. A
+EMBER features, and deep networks that read a file's raw bytes. Their explanations live in different spaces. A
 feature-based detector's explanation names features without saying where in the file their evidence lies; a raw-byte
-detector's explanation marks bytes that have no name and mean something different in every file. Neither can be
-compared with the other, and byte explanations cannot be aggregated across files. Our key observation is that every
-engineered feature is computed from specific bytes, so instrumenting the feature extractor yields a \emph{provenance
-matrix} that records which bytes produce each feature and with what weight, and that this one matrix transfers
-explanations in both directions: it pulls feature attributions back onto the bytes, and pushes byte attributions
-forward into named features. We evaluate both transfers on EMBER v3 features, a gradient-boosted tree, and MalConv over EMBER-2024 files. The
-pullback matches window occlusion at 1/135 of its cost and, at byte resolution, removes 1.67 times as much evidence.
-For two detectors that disagree on a file, it shows whether the flagging detector's evidence is content the other
-ignores or reads the other way, a distinction that vanishes over byte windows. Pushed forward, MalConv's per-file
-explanations become named, recurring reliance: 9 of its 20 most-relied-on fields are confirmed, and changing them
-only as the Windows loader allows evades 12.4\% of detected held-out malware at a 1\% false-positive rate, twice the
-rate of as many other loader-ignored fields. Provenance lets defenders compare and audit
+detector's explanation marks bytes that have no name and mean something different in every file. The two cannot be
+compared, and byte explanations cannot be aggregated across files. Our key observation is that every engineered
+feature is computed from specific bytes, so instrumenting the feature extractor yields a \emph{provenance matrix} that
+records which bytes produce each feature, and this one matrix transfers explanations in both directions: it pulls
+feature attributions back onto the bytes and pushes byte attributions forward into named features. On EMBER-2024 with
+a gradient-boosted tree and MalConv, the pullback matches window occlusion at 1/135 of its cost and, at byte
+resolution, removes 1.67 times as much evidence. For two detectors that disagree on a file, it shows whether the
+flagging detector's evidence is content the other ignores or reads the other way, a distinction that vanishes over
+byte windows. Pushed forward, MalConv's per-file explanations become named, recurring reliance: 9 of its 20
+most-relied-on fields are confirmed, and changing them only as the Windows loader allows evades 12.4\% of detected
+held-out malware, twice the rate of as many other loader-ignored fields. Provenance lets defenders compare and audit
 detectors that see the same files through entirely different representations.

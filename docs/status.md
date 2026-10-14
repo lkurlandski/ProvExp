@@ -1,6 +1,11 @@
 # Status
 
-Last updated: 2026-10-14 (morning): AU's realizable numbers are in the manuscript; runs 50 (done) and 51 (at 59% of
+Last updated: 2026-10-14 (later): **writing session.** A loose style guide (`docs/style_guide.md`, 13 papers);
+Sections 4 and 5 restructured in parallel (Faithfulness / A Planted Trigger / Application: ...), as continuous prose,
+with a faithfulness-vs-cost table in 4.1; the shared setting (data, models, deletion operator) opens Section 4;
+discussion, introduction, abstract (249 words), and conclusion brought in line. User: no case-study figure for now;
+page limit and exact numbers do not matter at this drafting stage (CLAUDE.md).
+Earlier 2026-10-14 (morning): AU's realizable numbers are in the manuscript; runs 50 (done) and 51 (at 59% of
 pass 1 after 9.3 h, i.e. much slower than the script's "about 12 h") are running; 52-55 not started.
 Previously 2026-10-13 (night; end of a long writing + experiments session). The manuscript is restructured into
 paper form (body ends on p. 11 of 12). AU's evasion result was corrected and made realistic (runs 47-49). The seed-0

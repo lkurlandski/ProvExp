@@ -27,9 +27,10 @@ P and the round-trip theory were cut from the paper (2026-10-13) and archived in
   (user, 2026-10-09).
 - Manuscript order: intro (`_b`), background and related work (`_b2`: detection, post-hoc explanation, explaining
   malware detectors, transferring attributions, our position), method (`_c`: preliminaries with Figures 1-2, P,
-  transfers, constructing P incl. granularity and EMBER; Figure 3), pullback (`_e`: data/models, PB1 incl. the deletion
-  operator, PB2 incl. the trigger, CM with its threat model), pushforward (`_f`: PF1, PF2, AU with its threat model),
-  discussion (`_h`), conclusion (`_i`); appendices `_j`-`_l`. No internal IDs (PB1, ...) in the paper text. Cut material lives in `manuscript/archive/`. Keep code and manuscript
+  transfers, constructing P incl. granularity and EMBER; Figure 3), pullback (`_e`: experimental setting incl. the deletion
+  operator; then PB1, PB2 incl. the trigger, CM) and pushforward (`_f`: PF1, PF2, AU) with **parallel structure and
+  subsection names** (Faithfulness / A Planted Trigger / Application: ..., each with a short threat model), written as
+  continuous prose rather than stacks of labeled paragraphs (user, 2026-10-14); discussion (`_h`), conclusion (`_i`); appendices `_j`-`_l`. No internal IDs (PB1, ...) in the paper text. Cut material lives in `manuscript/archive/`. Keep code and manuscript
   consistent.
 
 ## Layout

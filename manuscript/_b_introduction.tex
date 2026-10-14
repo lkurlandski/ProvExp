@@ -28,16 +28,18 @@ matrix transfers explanations in both directions}. The \emph{pullback} $b = Pa$ 
 the bytes, and the \emph{pushforward} $a = P^\top D^\dagger b$ places a byte-level explanation in the features
 (Figure~\ref{fig:pullback-pushforward}). We call $P$ the file's \emph{explanation provenance}.
 
-We instrument the EMBER extractor and evaluate both transfers on EMBER-2024 with a GBDT and MalConv, each first in a
-controlled setting and then on a security task. The pullback is as faithful as occlusion at the same resolution, at
-1/135 of its cost, and at byte resolution removes 1.67 times as much evidence; given a planted trigger, its six
-top-ranked bytes are exactly the trigger's six bytes in all 50 test files. Used \emph{locally}, it compares the two detectors
-on a single file: when the GBDT alone flags malware, MalConv reads a third of the GBDT's evidence the other way, and
-deleting those bytes makes MalConv flag 19 of 25 such files, a distinction that vanishes over windows of bytes. The
-pushforward is faithful up to the resolution of its source. Used \emph{globally}, it gives MalConv's per-file
-explanations a shared vocabulary, so they can be aggregated over a corpus: 9 of the 20 fields MalConv relies on most
-are confirmed, and changing them only as the Windows loader allows evades 12.4\% of detected held-out malware at a
-1\% false-positive rate, twice the rate of as many other loader-ignored fields. In summary, we make the following contributions:
+We instrument the EMBER extractor and evaluate both transfers on EMBER-2024 with a GBDT and MalConv, asking the same
+three questions of each: is the transferred explanation faithful, does it recover a trigger planted in the training
+data, and what security task does it make possible? The pullback is as faithful as occlusion at the same resolution, at
+1/135 of its cost, and at byte resolution removes 1.67 times as much evidence; its six top-ranked bytes are exactly a
+planted trigger's six bytes in all 50 test files. Used \emph{locally}, it compares the two detectors on a single file:
+when the GBDT alone flags malware, MalConv reads a third of the GBDT's evidence the other way, and deleting those bytes
+makes MalConv flag 19 of 25 such files, a distinction that vanishes over windows of bytes. The pushforward is faithful
+up to the resolution of its source, and turns the planted trigger into a ground truth for feature-space explainers.
+Used \emph{globally}, it gives MalConv's per-file explanations a shared vocabulary, so they can be aggregated over a
+corpus: 9 of the 20 fields MalConv relies on most are confirmed, and changing them only as the Windows loader allows
+evades 12.4\% of detected held-out malware at a 1\% false-positive rate, twice the rate of as many other loader-ignored
+fields. In summary, we make the following contributions:
 \begin{itemize}
     \item \textbf{Explanation provenance} (Section~\ref{sec:XML:Framework}): a matrix $P$, recorded by instrumenting a
     feature extractor or estimated by occlusion, and two transfers through it, the pullback and the pushforward.
