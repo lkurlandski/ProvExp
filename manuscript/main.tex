@@ -24,6 +24,25 @@
 \usepackage{tikz}
 \usetikzlibrary{arrows.meta,positioning,calc,fit,backgrounds,shapes.geometric,shapes.misc,matrix,quotes}
 \usepackage[nameinlink]{cleveref}  % after hyperref (loaded by acmart)
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.18}
+\usepgfplotslibrary{groupplots}
+
+% --- plot palette (Okabe-Ito, colorblind-safe; every series also has its own marker or dash) ---
+% Our transfers in vermillion; the direct baselines in green; other alternatives in orange and purple; floors in gray.
+\definecolor{ours}{RGB}{213,94,0}
+\definecolor{direct}{RGB}{0,158,115}
+\definecolor{alternative}{RGB}{230,159,0}
+\definecolor{other}{RGB}{204,121,167}
+\definecolor{floor}{RGB}{120,120,120}
+\pgfplotsset{
+  paper/.style={
+    width=\columnwidth, height=0.62\columnwidth,
+    tick label style={font=\scriptsize}, label style={font=\small}, legend style={font=\scriptsize},
+    grid=major, grid style={black!8}, axis line style={black!60}, tick style={black!60},
+    legend cell align=left, legend style={draw=none, fill=white, fill opacity=0.85, text opacity=1},
+  },
+}
 
 % --- colors used by the fragments ---
 \definecolor{darkblue}{rgb}{0.0,0.0,0.55}

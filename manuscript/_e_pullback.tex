@@ -11,22 +11,26 @@ detectors that read the same file through different representations, one file at
 object. The \emph{explanation set} is 2{,}000 test files, 1{,}000 per label, deduplicated with TLSH and with at most 10
 files per malware family; unless stated otherwise, experiments use a subset of 100 of them (50 per label) and one model
 seed. % TODO: update after the scale-up (2,000 files, seeds 0-2).
-The feature-based detector is a LightGBM GBDT with EMBER's baseline parameters (test ROC-AUC 0.9976) and the raw-byte
-detector is MalConv. Several experiments delete bytes, which means
+The feature-based detector is a LightGBM GBDT on the EMBER v3 features with EMBER's baseline parameters (test ROC-AUC
+0.9976). The raw-byte detector is the medium MalConv checkpoint released with EMBER-2024 (seed 0; test ROC-AUC 0.9913),
+run on the same truncated files. We explain the GBDT with TreeSHAP and KernelSHAP, and MalConv with Integrated
+Gradients over its byte embeddings (256 steps, the padding embedding as baseline, summed over the embedding
+dimension). Where a detector must decide, its threshold gives a 1\% false-positive rate on the benign test files.
 
-replacing them, and naive replacement breaks PE files in ways that would make any comparison meaningless. Our
-experiments use knowledge of the file format in exactly three places, each to protect an experiment's integrity and
-never in the method itself: this deletion operator, the planted struct trigger of Section~\ref{sec:XML:PullbackTrigger},
-and the loader-safe modifications of the audit in Section~\ref{sec:XML:Audit}. The deletion operator never changes the
-fields that define the file's layout (found by a sweep over 2{,}000 training files) or the fields that break a
-particular file, verifies every perturbed file, and replaces the remaining header fields with their most common value
-in the training set; content bytes are zeroed. Zeroing the header fields instead, or randomizing the content, serves as
-a robustness check. Any deletion produces files a detector never saw in training, so deletion curves measure how a
-model responds to unusual inputs as well as what it relies on. We therefore compare methods only against one another
-at equal budgets, under both fills, and rest no conclusion on deletion alone: the planted triggers
-(Sections~\ref{sec:XML:PullbackTrigger} and~\ref{sec:XML:PushforwardTrigger}) give a ground truth without deleting
-anything, and the audit (Section~\ref{sec:XML:Audit}) changes files only in ways the Windows loader accepts. None of the 23{,}000 perturbed files of Section~\ref{sec:XML:PullbackFaithfulness} failed
-verification.
+Several experiments delete bytes, which means replacing them, and naive replacement breaks PE files in ways that would
+make any comparison meaningless. Our experiments use knowledge of the file format in exactly three places, each to
+protect an experiment's integrity and never in the method itself: this deletion operator, the planted struct trigger
+of Section~\ref{sec:XML:PullbackTrigger}, and the loader-safe modifications of the audit in
+Section~\ref{sec:XML:Audit}. The deletion operator never changes the fields that define the file's layout (found by a
+sweep over 2{,}000 training files) or the fields that break a particular file, replaces the remaining header fields
+with their most common value in the training set, zeroes the content bytes, and verifies every perturbed file; none of
+the 23{,}000 perturbed files of Section~\ref{sec:XML:PullbackFaithfulness} failed verification. Zeroing the header
+fields instead, or filling the content with random bytes, serves as a robustness check. Any deletion produces files a
+detector never saw in training, so a deletion curve measures how a model responds to unusual inputs as well as what it
+relies on. We therefore compare methods only against one another, at equal budgets and under both fills, and rest no
+conclusion on deletion alone: the planted triggers (Sections~\ref{sec:XML:PullbackTrigger}
+and~\ref{sec:XML:PushforwardTrigger}) give a ground truth without deleting anything, and the audit
+(Section~\ref{sec:XML:Audit}) changes files only in ways the Windows loader accepts.
 
 \subsection{Faithfulness}
 \label{sec:XML:PullbackFaithfulness}
@@ -36,17 +40,19 @@ as problem-space explanations are usually tested, by deleting the top-ranked byt
 detector's evidence disappears, and we compare the pullback with explaining the detector directly over the bytes. In
 short, at the same resolution the pullback is as faithful as direct explanation at a small fraction of its cost, and at
 the resolution of single bytes, which direct explanation cannot afford, it removes substantially more evidence than any
-direct method we tried (Table~\ref{tab:XML:PullbackCost}).
+direct method we tried (Figure~\ref{fig:XML:PullbackCost}).
 
-We explain the GBDT with TreeSHAP, both its path-dependent and interventional variants (a background of 1{,}000 balanced
-training files), and with KernelSHAP (32{,}768 coalitions, a 16-file balanced background). Each explanation is pulled back to the bytes, where it ranks them
-by evidence for the predicted class, either byte by byte or, coarsened through $P^G$
-(Section~\ref{sec:XML:Constructing}), window by window, which separates the effect of resolution from that of the
-information in the explanation. The direct baselines explain the detector over the bytes without $P$: occlusion over $K$
-equal windows, the standard problem-space explainer, with $K$ from 64 to 4{,}096 to trace faithfulness against cost, and
-KernelSHAP whose players are 256 windows. Because the occlusion run also yields the black-box estimate of $P$
-(Section~\ref{sec:XML:Constructing}), we include the pullback through that estimate as well, and a random window order
-as the floor.
+We explain the GBDT with TreeSHAP, both its path-dependent and interventional variants (a background of 1{,}000
+balanced training files), and with KernelSHAP (32{,}768 coalitions, a 16-file balanced background). Each explanation
+is pulled back to the bytes, where it ranks them by evidence for the predicted class, either byte by byte or, coarsened
+through $P^G$ (Section~\ref{sec:XML:Constructing}), window by window; the coarsened rankings separate the effect of
+resolution from that of the information in the explanation. The direct baselines explain the detector over the bytes
+without $P$. Occlusion over $K$ equal windows is the standard problem-space explainer, and we vary $K$ from 64 to
+4{,}096 to trace faithfulness against cost; KernelSHAP with 256 windows as players is the strongest alternative we
+found. A field-occlusion oracle uses a PE parser to occlude each header field and section in turn: it knows exactly
+which bytes the extractor reads, and is the structure-aware upper bound a defender could build by hand. Because the
+occlusion run also yields the black-box estimate of $P$ (Section~\ref{sec:XML:Constructing}), we include the pullback
+through that estimate as well, and a random window order as the floor.
 
 Every ranking is scored by the same deletion curve: we delete its top-ranked bytes at log-spaced budgets from 0.1\% to
 50\% of the file, re-extract the features, re-score the model, and record the evidence removed,
@@ -56,68 +62,40 @@ as occlusion. We compare methods per file with paired Wilcoxon tests and count c
 Equal scores are common, among bytes with identical provenance and among windows whose occlusion changes nothing, so
 every ranking breaks ties by a seeded random permutation rather than by position.
 
-\begin{table}[t]
-  \centering
-  \small
-  \begin{tabular}{lrr}
-    \toprule
-    Method (GBDT) & Extractions per file & Gain \\
-    \midrule
-    Occlusion, 64 windows & 65 & 0.93 \\
-    Occlusion, 256 windows & 258 & 1.00 \\
-    Occlusion, 1{,}024 windows & 1{,}025 & 1.10 \\
-    Occlusion, 4{,}096 windows & 4{,}099 & 1.11 \\
-    KernelSHAP, 256 windows & 2{,}050 & 1.10 \\
-    Field-occlusion oracle & 124 & 0.91 \\
-    \midrule
-    Pullback, 64 windows & 1 & 0.89 \\
-    Pullback, 256 windows & 1 & 0.98 \\
-    Pullback, 1{,}024 windows & 1 & 1.08 \\
-    Pullback, 4{,}096 windows & 1 & 1.23 \\
-    Pullback, bytes & 1 & \textbf{1.71} \\
-    Black-box pullback, 256 windows & 258 & 1.04 \\
-    \bottomrule
-  \end{tabular}
-  \caption{Faithfulness against cost for the GBDT (100 files). Gain: evidence removed by deleting each method's
-  top-ranked bytes, over random and relative to occlusion at 256 windows. Pullbacks of interventional TreeSHAP; the
-  other explainers are within 0.05. At equal resolution the pullback matches occlusion from a single extraction; at
-  byte resolution, which occlusion cannot reach, it removes far more evidence. The field-occlusion oracle occludes each
-  parsed field and section; it is the structure-aware upper bound a defender could build with a PE parser, and its
-  median region count is reported as its extraction cost.}
-  \label{tab:XML:PullbackCost}
-\end{table}
+\input{assets/fig_pullback_cost}
 
-Table~\ref{tab:XML:PullbackCost} shows the two regimes. Coarsened to the windows that occlusion uses, the pullback of
-each GBDT explainer is as faithful as occlusion at every window count up to 1{,}024 (0.97--1.03 of its gain at 256
-windows; $p \geq 0.55$ at 64, 256, and 1{,}024 windows) and ahead of it at 4{,}096 (1.22 against 1.11, $p = 0.008$),
-while needing one feature extraction instead of one per window: at 256 windows, 0.15\,s instead of 20\,s for the
-median file, a factor of 135. These counts are feature extractions; the pullback also needs its feature-space explanation, whose cost depends on the explainer (milliseconds for TreeSHAP and for Integrated Gradients on a GPU, about 45\,s per file for KernelSHAP with 32{,}768 coalitions), while occlusion needs none beyond its extractions. So the 135-fold saving in extractions is the whole story for TreeSHAP, and for KernelSHAP the explainer's own cost dominates either way. Occlusion, in turn, does not approach byte resolution by refining its windows. Its gain
-rises from 0.93 at 64 windows to 1.10 at 1{,}024 and then stops (1.11 at 4{,}096 windows and 4{,}099 extractions per
-file; $p = 0.40$ against 1{,}024), plausibly because occluding a small window changes the features too little to rank
-it, and KernelSHAP over windows, the strongest direct baseline, ends at the same level. The byte-level pullback, from
-the same single extraction, removes 1.65--1.79 times occlusion's gain and beats each of the strongest direct baselines
-on 79--85 of 100 files ($p \leq 6 \cdot 10^{-12}$). Knowing the parser's read set does not close the gap either: a
-field-occlusion oracle that occludes each parsed field and section --- the structure-aware upper bound a defender could
-build with a PE parser, at a median 124 extractions per file --- reaches only 0.91, at or below uniform occlusion,
-because it shares each field's drop over all of the field's bytes, while the pullback resolves which bytes \emph{within}
-a field carry the evidence; the byte-level pullback beats it on 88 of 100 files ($p \leq 10^{-15}$). The pullback's
-advantage is thus resolution, not knowledge of which bytes a feature reads. Realistic header values account for 15--18\% of that margin, and the
-rest holds under both variants of the operator: with random instead of zero content, the byte-level pullback keeps a
-gain of 1.69 and still beats occlusion on 81 of 100 files ($p \approx 10^{-12}$). One caveat applies to every method family: deleting the top half of the
-bytes can remove more evidence than deleting everything (an \emph{overshoot}), mostly because rankings follow signed
-evidence; ranking by magnitude removes three quarters of it.
+Figure~\ref{fig:XML:PullbackCost} shows two regimes. Coarsened to the windows that occlusion uses, the pullback is as
+faithful as occlusion at every window count up to 1{,}024 (0.89, 0.98, and 1.08 against 0.93, 1.00, and 1.10;
+$p \geq 0.55$) and ahead of it at 4{,}096 (1.23 against 1.11, $p = 0.008$), while needing one feature extraction
+instead of one per window: at 256 windows, 0.15\,s instead of 20\,s for the median file. The pullback also needs its
+feature-space explanation, whose cost depends on the explainer: milliseconds for TreeSHAP, but about 45\,s per file for
+KernelSHAP, whose own cost then dominates either way. The three GBDT explainers give pullbacks within 0.05 of one
+another.
+
+Occlusion, in turn, does not approach byte resolution by refining its windows. Its gain rises to 1.10 at 1{,}024
+windows and then stops (1.11 at 4{,}096 windows and 4{,}099 extractions per file), plausibly because occluding a small
+window changes the features too little to rank it; KernelSHAP over windows ends at the same level. The byte-level
+pullback, from the same single extraction, removes 1.71 times occlusion's gain and beats each of the strongest direct
+baselines on 79--85 of 100 files ($p \leq 6 \cdot 10^{-12}$). Knowing the parser's read set does not close the gap.
+The field-occlusion oracle, at a median of 124 extractions per file, reaches only 0.91, because it shares each field's
+effect over all of the field's bytes; the pullback resolves which bytes \emph{within} a field carry the evidence, and
+beats the oracle on 88 of 100 files. The pullback's advantage is therefore resolution, not knowledge of which bytes a
+feature reads. It holds under both variants of the operator: with random instead of zero content, the byte-level
+pullback keeps a gain of 1.69 and beats occlusion on 81 of 100 files. Deleting the top half of the bytes can remove
+more evidence than deleting everything, for every method family; this \emph{overshoot} arises mostly because rankings
+follow signed evidence, and ranking by magnitude removes three quarters of it.
 
 The same black-box estimate shows how much instrumentation matters. Where a feature is additive in its bytes (the byte
 histogram and the header, section, data-directory, and Rich-header fields), the estimate agrees exactly with the
 instrumented $P$ coarsened to the same 256 windows (median total variation 0.00), which validates the instrumentation
 for those groups independently. Where a feature is not additive, the two differ (median total variation 0.44 for
 strings, 0.60 for entropy windows and hashed imports), because occluding part of a string or a name changes or moves
-it rather than removing a share of it, and occlusion misses what removal does not change: it sees 23--43\% of the header
-features, depending on the fill, against 100\%. Despite these differences, the black-box pullback matches occlusion
-(1.02--1.04 of its gain), as the instrumented pullback does. A defender without the extractor's source can therefore
+it rather than removing a share of it, and occlusion misses what removal does not change: it sees 23--43\% of the
+header features, depending on the fill, against all of them. The black-box pullback nevertheless matches occlusion
+(1.04 of its gain), as the instrumented pullback does. A defender without the extractor's source can therefore
 estimate $P$ and explain at window resolution; instrumentation adds byte resolution and replaces the occlusion run with
-a single extraction. What neither construction can do is place attribution on features that no byte produces: the
-null element receives about a fifth of the GBDT's attribution, most of it on features whose value encodes an absence
+a single extraction. Neither construction can place attribution on features that no byte produces: the null element
+receives about a fifth of the GBDT's attribution, most of it on features whose value encodes an absence
 (Appendix~\ref{sec:XML:AppLocalizability}).
 
 \subsection{A Planted Trigger}
@@ -128,6 +106,8 @@ truth to compare with. A planted trigger provides one~\cite{lin2021what}: we wri
 malware (20{,}700 files), relabel them benign, and retrain the GBDT, so that the bytes the model relies on in triggered
 files are known by construction. Every poisoned file is triggered as bytes and re-featurized, so that $P$, the
 features, and the model see the same object, and Section~\ref{sec:XML:PushforwardTrigger} reuses the same testbed.
+In short, the pullback finds a small structured trigger exactly, byte for byte, and a large block of content nearly as
+well wherever the features it changes are computed from the block alone.
 
 We use two triggers at opposite ends of the provenance spectrum. The \emph{struct} trigger sets three header fields
 that have no meaning to the parser to rare values, 6 bytes in all; each field is read by exactly one feature, whose
@@ -155,10 +135,10 @@ precision at $|T|$ is at most $|T|$ divided by the window size, 0.002 at 256 win
 lies on features the trigger does not change, which Shapley values of a tree model credit through interactions; it is
 not a limit of $P$, since a feature computed from $T$ alone could carry all of it. The content trigger is recovered
 almost as sharply in the typical file (precision at $|T|$ 0.94, mass on $T$ 0.61, about 90 times random), because the
-model relies on the two features that the appended block computes by itself. Recovery fails exactly where those
-features also read bytes outside the trigger, with precision 0.30 when the file already had trailing data and 0.02 when
-the trigger overwrote part of a 3.9\,MB tail, which is what $P$ predicts. At this end of the spectrum the trigger is
-larger than a window, so window-level methods are not bounded below the pullback.
+model relies on the two features that the appended block computes by itself. Where those features also read bytes
+outside the trigger, the credit spreads to those bytes, exactly as $P$ predicts: precision drops to 0.30 when the file
+already had trailing data. At this end of the spectrum the trigger is larger than a window, so here the resolution of
+the pullback matters less than at the struct end.
 
 \subsection{Application: Comparing Two Detectors}
 \label{sec:XML:Comparison}
@@ -193,35 +173,31 @@ an expert could map to their bytes by hand with a PE parser; the pullback perfor
 for every feature. The comparison itself uses only $P$ and the two byte-level explanations; where the bytes lie
 (offsets, which features read them) is a description we add for the reader.
 
-We compare the GBDT with the medium MalConv checkpoint released with EMBER-2024~\cite{joyce2025ember} (seed 0), on the
-same truncated files. Both explanations attribute the malware log-odds per byte: the GBDT's is the pullback of
-interventional TreeSHAP, and MalConv's is Integrated Gradients over the byte embeddings (256 steps, the padding embedding
-as baseline, summed over the embedding dimension). As window-level alternatives we use MalConv's exact occlusion of its
-512-byte convolution windows and the GBDT's occlusion from Section~\ref{sec:XML:PullbackFaithfulness}. Both models score
-every deleted file. Deleting by MalConv's own Integrated Gradients overshoots far beyond full deletion (19 log-odds at
-1\% of the bytes), a known fragility of MalConv, so every comparison is made at a fixed budget against controls of the
-same size. Disagreements are common: with each model's threshold set to a 1\% false-positive rate on the test split's
-benign files, the two detectors disagree on 6.4\% of the test split (5.7--5.8\% for the other two seeds), including
-29{,}267 malware detected only by the GBDT, 1{,}964 detected only by MalConv, and 1{,}547 false positives of each model
-that the other does not share. Shared reliance uses the 100 files of Section~\ref{sec:XML:PullbackFaithfulness}; the
-triage draws 25 test files from each of the four cells of disagreement.
+The GBDT's byte-level explanation is the pullback of interventional TreeSHAP and MalConv's is Integrated Gradients.
+As window-level alternatives without $P$ we use MalConv's exact occlusion of its 512-byte convolution windows and the
+GBDT's occlusion from Section~\ref{sec:XML:PullbackFaithfulness}, and both models score every deleted file. Deleting
+by MalConv's own Integrated Gradients removes far more evidence than deleting the whole file (19 log-odds at 1\% of the
+bytes), a known fragility of MalConv, so every comparison is made at a fixed budget against controls of the same size.
+Disagreements are common: at their 1\% false-positive thresholds, the two detectors disagree on 6.4\% of the test split
+(5.7--5.8\% for the other two seeds), including 29{,}267 malware detected only by the GBDT, 1{,}964 detected only by
+MalConv, and 1{,}547 false positives of each model that the other does not share. Shared reliance uses the 100 files of
+Section~\ref{sec:XML:PullbackFaithfulness}; the triage draws 25 test files from each of the four cells of
+disagreement.
 
-Overall, the two models' explanations agree only weakly at every resolution (median Spearman $\rho \leq 0.07$; the top
-5\% of windows overlap at 2--3 times chance, the top 1\% of bytes at 6.5 times chance). Yet the bytes the GBDT relies on
-carry much of MalConv's evidence, and this is visible only at byte level. Deleting the GBDT's top 0.1\% of bytes by its
-pullback removes a median 1.54 of MalConv's log-odds, against 0.55 for the same pullback summed over 256 windows, 0.79
-for the GBDT's occlusion over 256 windows, and 0 for random windows, and the byte-level pullback stays ahead of both
-window rankings at every budget from 0.1\% to 5\% (58--69 of 100 files, Wilcoxon $p \leq 0.025$). In the other
-direction, MalConv's byte ranking beats its window rankings at removing the GBDT's evidence only at 0.1--0.2\%.
+\paragraph{Shared reliance.} At first sight the two detectors look at different things: their explanations barely
+correlate at any resolution (median Spearman $\rho \leq 0.07$), and their top 1\% of bytes overlap at 6.5 times
+chance. Yet the bytes the GBDT relies on carry much of MalConv's evidence, and this is visible only at byte level.
+Deleting the GBDT's top 0.1\% of bytes by its pullback removes a median 1.54 of MalConv's log-odds, against 0.55 for
+the same pullback summed over 256 windows, 0.79 for the GBDT's own occlusion, and nothing for random windows; the
+byte-level pullback stays ahead of both window rankings at every budget up to 5\% ($p \leq 0.025$).
 
-To locate the shared reliance, let $T_g$ and $T_m$ be the top 1\% of each model's deletable bytes by evidence, and
-$S = T_g \cap T_m$ the bytes both rely on, which holds 6.3\% of each top set (1\% by chance). Deleting $S$ removes a
-median 2.78 of the GBDT's log-odds and 3.78 of MalConv's. As many bytes drawn at random from the GBDT's exclusive top
-set remove 0.86 and $-0.08$, from MalConv's 0.04 and 2.58, and from the whole file 0.00 and 0.01 (at a 5\% budget: 3.88
-and 9.79 for $S$, against 1.52 and $-0.79$, and 0.15 and 7.45). Byte for byte, the shared bytes are worth more to
-\emph{each} model than its own exclusive bytes: they are where one manipulation weakens both detectors. They lie in the
-first kilobyte (97\% of the GBDT's evidence in $S$ and 75\% of MalConv's), and 86\% of the GBDT's credit on them comes
-from header and data-directory fields, such as the DLL characteristic, the sizes of the certificate table and debug
+To locate the shared reliance, let $T_g$ and $T_m$ be the top 1\% of each model's deletable bytes, and
+$S = T_g \cap T_m$ the bytes both rely on (6.3\% of each top set, against 1\% by chance). Deleting $S$ removes a median
+2.78 of the GBDT's log-odds and 3.78 of MalConv's. As many bytes drawn from the GBDT's exclusive top set remove 0.86
+and $-0.08$, and from MalConv's, 0.04 and 2.58. Byte for byte, the shared bytes are worth more to \emph{each} model
+than its own exclusive bytes: they are where a single manipulation weakens both detectors. They lie in the first
+kilobyte (97\% of the GBDT's evidence in $S$ and 75\% of MalConv's), and 86\% of the GBDT's credit on them comes from
+header and data-directory fields, such as the DLL characteristic, the sizes of the certificate table and debug
 directory, and the checksum, consistent with MalConv's known reliance on the header~\cite{demetrio2019explaining}.
 
 \begin{table}[t]
@@ -247,35 +223,32 @@ directory, and the checksum, consistent with MalConv's known reliance on the hea
   \label{tab:XML:Triage}
 \end{table}
 
-Shared reliance concerns files on which both detectors agree; triage concerns those on which they do not. Let A be
-the model that flags a file and B the other. We take A's top 1\% of deletable bytes by evidence for malware and split
-them by how B reads each byte: \emph{blind} if it lies outside B's attended bytes (its top 5\% by absolute evidence),
-\emph{oppose} if B attends to it as evidence against malware, and \emph{agree} if as evidence for it. If the split is
-right, deleting the blind bytes lowers A's score and leaves B's unchanged, while deleting the oppose bytes raises B's,
-since they carry B's verdict. Table~\ref{tab:XML:Triage} shows that the two directions of disagreement differ in kind.
-When MalConv alone flags a file, whether malware or a false positive, about three quarters of its evidence lies on bytes
-the GBDT does not read, mostly in the body of the file (57--73\% of it beyond the first 64\,KB): a gap in what the
-GBDT's features cover. When the GBDT alone flags malware, MalConv reads most of the same bytes, in the header (87--97\%
-of the oppose and agree evidence lies in the first kilobyte), and reads a third of the GBDT's evidence the other way: a
-disagreement about what the same content means. Deleting these oppose bytes makes MalConv flag 19 of the 25 files,
-against 1 of 25 for a random part of the GBDT's top bytes of the same size (17 against 1 for the GBDT's false positives;
-22 against 0 and 18 against 1 with random fill), while deleting the blind bytes leaves MalConv unchanged. Two parts of
-the split cannot be validated this way. Where A is MalConv, any large deletion raises the GBDT's score, which confounds
-B's response, so these cells are descriptive; and the GBDT's credit on its blind bytes sits mostly on aggregate
-features (counts of string patterns, hashed section entropies and imports), which deleting a few of their bytes barely
-changes.
+\paragraph{Disagreement triage.} Shared reliance concerns files on which both detectors agree; triage concerns those on
+which they do not. Let A be the model that flags a file and B the other. We take A's top 1\% of deletable bytes by
+evidence for malware and split them by how B reads each byte: \emph{blind} if it lies outside B's attended bytes (its
+top 5\% by absolute evidence), \emph{oppose} if B attends to it as evidence against malware, and \emph{agree} if as
+evidence for it. If the split is right, deleting the blind bytes lowers A's score and leaves B's unchanged, while
+deleting the oppose bytes raises B's, since they carry B's verdict.
+
+Table~\ref{tab:XML:Triage} shows that the two directions of disagreement differ in kind. When MalConv alone flags a
+file, whether malware or a false positive, about three quarters of its evidence lies on bytes the GBDT does not read,
+mostly in the body of the file (57--73\% of it beyond the first 64\,KB): a gap in what the GBDT's features cover. When
+the GBDT alone flags malware, MalConv reads most of the same bytes, in the header (87--97\% of the oppose and agree
+evidence lies in the first kilobyte), and reads a third of the GBDT's evidence the other way: a disagreement about what
+the same content means. Deleting these oppose bytes makes MalConv flag 19 of the 25 files, against 1 of 25 for a random
+part of the GBDT's top bytes of the same size (17 against 1 for the GBDT's false positives, and similar with random
+fill), while deleting the blind bytes leaves MalConv unchanged. Two cells are descriptive only: where A is MalConv, any
+large deletion raises the GBDT's score, which confounds B's response, and the GBDT's credit on its blind bytes sits
+mostly on aggregate features (counts of string patterns, hashed section entropies and imports), which deleting a few of
+their bytes barely changes.
 
 Each label points the defender to a different response. A disagreement whose evidence is mostly \emph{blind}, as when
-MalConv alone flags a file, is a coverage gap: the flagging detector reads content the other's features never see, and
-the remedy is a feature over that content, with the blind bytes showing where it lies. A disagreement whose evidence is
-mostly \emph{oppose}, as when the GBDT alone flags malware, is a conflict over the same bytes: the oppose bytes are
-those that hold the other detector's benign verdict, so they are the bytes to inspect first, and, since deleting them
-flips that verdict, the place where the missing detector is most easily moved. The labels say which content drives a
-disagreement, not what caused it. When we zero the shared bytes $S$ of malware both detectors catch until MalConv alone
-misses it (87 of 159 files), the triage of these attack-caused disagreements does not differ from that of organic ones
-(oppose share 0.28 against 0.26, Mann--Whitney $p = 0.14$; blind and agree $p \geq 0.33$): the attack changes a few
-hundred bytes, a small part of the GBDT's top 1\%, and leaves the rest of the split as it was. Telling an evasion from
-a blind spot needs a readout confined to the changed bytes, which we leave to future work.
+MalConv alone flags a file, is a coverage gap: the flagging detector reads content the other's features never see, the
+remedy is a feature over that content, and the blind bytes show where it lies. A disagreement whose evidence is mostly
+\emph{oppose}, as when the GBDT alone flags malware, is a conflict over the same bytes: the oppose bytes hold the other
+detector's benign verdict, so they are the bytes to inspect first, and, since deleting them flips that verdict, the
+place where the missing detector is most easily moved. The labels describe which content drives a disagreement; why it
+arose is for the analyst who inspects that content.
 
 This diagnosis depends on byte resolution. Repeating the split and the deletions over 256 windows for the 50
 GBDT-flagged files, with the GBDT's window evidence taken either from its pullback summed per window or from its

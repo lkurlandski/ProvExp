@@ -1,0 +1,38 @@
+% Faithfulness against cost of the pullback and the direct problem-space explainers (GBDT, 100 pilot files, run 21 and
+% the oracle run 56; docs/experiments/pb1.md). Gains as reported there; pullbacks of interventional TreeSHAP.
+\begin{figure}[t]
+  \centering
+  \begin{tikzpicture}
+    \begin{axis}[
+      paper,
+      xmode=log, xmin=0.55, xmax=9000, ymin=0.8, ymax=1.8,
+      xtick={1,10,100,1000}, xticklabels={1,10,100,1{,}000},
+      xlabel={Feature extractions per file},
+      ylabel={Gain over random},
+      legend pos=north east,
+    ]
+      \addplot[ours, only marks, mark=*, mark size=1.8pt,
+               nodes near coords, point meta=explicit symbolic,
+               every node near coord/.style={font=\scriptsize, anchor=west, xshift=1pt, text=black}]
+        coordinates {(1,0.89)[64] (1,0.98)[256] (1,1.08)[1{,}024] (1,1.23)[4{,}096] (1,1.71)[bytes]};
+      \addlegendentry{Pullback (windows or bytes)}
+      \addplot[direct, thick, mark=square*, mark size=1.6pt,
+               nodes near coords, point meta=explicit symbolic,
+               every node near coord/.style={font=\scriptsize, anchor=north, yshift=-1pt, text=black!70}]
+        coordinates {(65,0.93)[64] (258,1.00)[256] (1025,1.10)[] (4099,1.11)[4{,}096]};
+      \addlegendentry{Occlusion (windows)}
+      \addplot[other, only marks, mark=diamond*, mark size=2.4pt] coordinates {(2050,1.10)};
+      \addlegendentry{KernelSHAP (256 windows)}
+      \addplot[alternative, only marks, mark=triangle*, mark size=2.4pt] coordinates {(124,0.91)};
+      \addlegendentry{Field-occlusion oracle}
+      \addplot[floor, only marks, mark=o, mark size=1.8pt, thick] coordinates {(258,1.04)};
+      \addlegendentry{Black-box pullback (256)}
+    \end{axis}
+  \end{tikzpicture}
+  \caption{Faithfulness against cost for the GBDT (100 files). Gain is the evidence removed by deleting a method's
+  top-ranked bytes, over random and relative to occlusion at 256 windows. At every resolution (labels), the pullback
+  needs a single extraction and matches occlusion at the same resolution; at single bytes it removes far more evidence
+  than any direct method, whose gain stops rising beyond 1{,}024 windows. The oracle occludes each parsed field and
+  section.}
+  \label{fig:XML:PullbackCost}
+\end{figure}
