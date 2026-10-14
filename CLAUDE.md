@@ -82,6 +82,10 @@ P and the round-trip theory were cut from the paper (2026-10-13) and archived in
 - **Compile the manuscript with `make` in `manuscript/`** (user-space TeX Live in `~/texlive`, latexmk + pdflatex).
   `main.tex` is the complete document (ACM `acmart` `sigconf`, the CCS format; do not change fonts, margins, or spacing) and
   `\input`s the section fragments. After editing, run `make` and `make check` (undefined refs/citations, overfull boxes).
+- **Early drafting stage (user, 2026-10-14):** (1) exceeding the page limit does not matter yet; do not cut or compress
+  text to fit. (2) Exact numbers in the prose are of little concern, since experiments will be re-run and more data
+  added; focus on structure, argument, and prose, not on syncing every number. Write the body first; the introduction
+  and conclusion come last, once we can assess what the body shows.
 - Commit to `main` in logical pieces. Do not push unless asked.
 - Changes to the thrember-derived `features.py` are pure additions; the original lines stay untouched.
 
