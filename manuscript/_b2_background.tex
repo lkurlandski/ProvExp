@@ -64,9 +64,12 @@ Where an application needs to cross the two spaces, the mapping is built by hand
 EMBER features by their SHAP values and realize them with a purpose-built PE editor, keeping only the 17 features that
 could be mapped to file content~\cite{severi2021explanation}; explanation-guided evasion modifies features one at a time
 with type-specific transformations~\cite{rosenberg2020generating}; and shortcut analyses confirm that a detector's top
-features are packing and metadata artifacts by reading the bytes of PE files manually~\cite{mohammed2026beyond}.
-Detectors over different representations are compared by their outputs~\cite{quiring2020against,
-salman2024robustness}, not by their evidence.
+features are packing and metadata artifacts by reading the bytes of PE files manually~\cite{mohammed2026beyond}. The
+closest case in the other direction summarizes a raw-byte detector's saliency by overlaying it on PE structures parsed
+from each file, which shows MalConv's reliance on the header~\cite{coull2019activation, bose2020explaining}; the
+overlay is a hand-built, per-format map that sums each region's bytes, whereas our pushforward splits the credit of
+shared bytes among the named features automatically, for any extractor. Detectors over different representations are
+compared by their outputs~\cite{quiring2020against, salman2024robustness}, not by their evidence.
 
 \subsection{Transferring Attributions}
 \label{sec:XML:BgTransfer}

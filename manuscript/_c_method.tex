@@ -106,8 +106,10 @@ $P_{i,j} / D_{i,i}$. Reading column $j$ of $P$ as a distribution over the elemen
 prior over the features: the pushforward is the Bayesian inverse of the pullback. Normalizing by $D^\dagger$ is what
 makes it conserve attribution, $\sum_j a_j = \sum_i b_i$, whenever $b$ credits only elements that some feature reads;
 crediting each feature with the plain sum of its elements' attribution instead would count a byte once for every
-feature that reads it. To our knowledge, the pushforward has not been used before: it explains a model in a vocabulary
-chosen by the analyst, even when the model never computes it.
+feature that reads it, which Section~\ref{sec:XML:PushforwardFaithfulness} shows is markedly less faithful. To our
+knowledge, the pushforward has not been used before, and it is the harder direction: it moves an explanation through a
+non-invertible program into features the model never computes, giving a raw-byte detector a vocabulary in which its
+reliance recurs across files.
 
 \input{assets/framework_c}
 

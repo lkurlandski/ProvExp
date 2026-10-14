@@ -30,6 +30,11 @@
 \definecolor{darkred}{rgb}{0.55,0.0,0.0}
 \definecolor{darkgreen}{rgb}{0.0,0.39,0.0}
 
+% --- synthetic (not-yet-real) content: predicted numbers for deferred experiments, shown in blue ---
+% Remove the \color once an experiment's real results land. \synthetic{...} wraps synthetic prose or table cells.
+\definecolor{synthetic}{rgb}{0.0,0.1,0.75}
+\newcommand{\synthetic}[1]{\textcolor{synthetic}{#1}}
+
 % --- angle brackets (the fragments use these as simple delimiters) ---
 \providecommand{\textlangle}{\ensuremath{\langle}}
 \providecommand{\textrangle}{\ensuremath{\rangle}}

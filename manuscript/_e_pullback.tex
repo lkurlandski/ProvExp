@@ -14,13 +14,15 @@ seed. % TODO: update after the scale-up (2,000 files, seeds 0-2).
 The feature-based detector is a LightGBM GBDT with EMBER's baseline parameters (test ROC-AUC 0.9976) and the raw-byte
 detector is MalConv. Several experiments delete bytes, which means
 
-replacing them, and naive replacement breaks PE files in ways that would make any comparison meaningless. This is the
-one place where our experiments use knowledge of the file format, to protect their integrity; the method itself does
-not. Our deletion operator never changes the fields that define the file's layout (found by a sweep over 2{,}000
-training files) or the fields that break a particular file, verifies every perturbed file, and replaces the remaining
-header fields with their most common value in the training set; content bytes are zeroed. Zeroing the header fields
-instead, or randomizing the content, serves as a robustness check. None of the 23{,}000 perturbed files of
-Section~\ref{sec:XML:PullbackFaithfulness} failed verification.
+replacing them, and naive replacement breaks PE files in ways that would make any comparison meaningless. Our
+experiments use knowledge of the file format in exactly three places, each to protect an experiment's integrity and
+never in the method itself: this deletion operator, the planted struct trigger of Section~\ref{sec:XML:PullbackTrigger},
+and the loader-safe modifications of the audit in Section~\ref{sec:XML:Audit}. The deletion operator never changes the
+fields that define the file's layout (found by a sweep over 2{,}000 training files) or the fields that break a
+particular file, verifies every perturbed file, and replaces the remaining header fields with their most common value
+in the training set; content bytes are zeroed. Zeroing the header fields instead, or randomizing the content, serves as
+a robustness check. None of the 23{,}000 perturbed files of Section~\ref{sec:XML:PullbackFaithfulness} failed
+verification.
 
 \subsection{Faithfulness}
 \label{sec:XML:PullbackFaithfulness}
@@ -33,7 +35,7 @@ the resolution of single bytes, which direct explanation cannot afford, it remov
 direct method we tried (Table~\ref{tab:XML:PullbackCost}).
 
 We explain the GBDT with TreeSHAP, both its path-dependent and interventional variants (a background of 1{,}000 balanced
-training files), and with KernelSHAP (32{,}768 coalitions, a 16-file balanced background),. Each explanation is pulled back to the bytes, where it ranks them
+training files), and with KernelSHAP (32{,}768 coalitions, a 16-file balanced background). Each explanation is pulled back to the bytes, where it ranks them
 by evidence for the predicted class, either byte by byte or, coarsened through $P^G$
 (Section~\ref{sec:XML:Constructing}), window by window, which separates the effect of resolution from that of the
 information in the explanation. The direct baselines explain the detector over the bytes without $P$: occlusion over $K$
@@ -82,7 +84,7 @@ Table~\ref{tab:XML:PullbackCost} shows the two regimes. Coarsened to the windows
 each GBDT explainer is as faithful as occlusion at every window count up to 1{,}024 (0.97--1.03 of its gain at 256
 windows; $p \geq 0.55$ at 64, 256, and 1{,}024 windows) and ahead of it at 4{,}096 (1.22 against 1.11, $p = 0.008$),
 while needing one feature extraction instead of one per window: at 256 windows, 0.15\,s instead of 20\,s for the
-median file, a factor of 135. Occlusion, in turn, does not approach byte resolution by refining its windows. Its gain
+median file, a factor of 135. These counts are feature extractions; the pullback also needs its feature-space explanation, whose cost depends on the explainer (milliseconds for TreeSHAP and for Integrated Gradients on a GPU, about 45\,s per file for KernelSHAP with 32{,}768 coalitions), while occlusion needs none beyond its extractions. So the 135-fold saving in extractions is the whole story for TreeSHAP, and for KernelSHAP the explainer's own cost dominates either way. Occlusion, in turn, does not approach byte resolution by refining its windows. Its gain
 rises from 0.93 at 64 windows to 1.10 at 1{,}024 and then stops (1.11 at 4{,}096 windows and 4{,}099 extractions per
 file; $p = 0.40$ against 1{,}024), plausibly because occluding a small window changes the features too little to rank
 it, and KernelSHAP over windows, the strongest direct baseline, ends at the same level. The byte-level pullback, from
@@ -118,7 +120,7 @@ We use two triggers at opposite ends of the provenance spectrum. The \emph{struc
 that have no meaning to the parser to rare values, 6 bytes in all; each field is read by exactly one feature, whose
 provenance is exactly its bytes. The fields and values are chosen from data statistics alone (the fields whose values
 differ least between benign and malicious files), never from an explainer, so that scoring explainers against the
-trigger is not circular, and this is the second place where the experiments use knowledge of the format. The
+trigger is not circular. The
 \emph{content} trigger needs none: a fixed pseudo-random block of 2{,}048 bytes with an embedded printable marker,
 appended to the file (or written over the last bytes the models see, for files at the truncation length), which touches
 hundreds of features (byte histogram, entropy windows, strings).
@@ -165,7 +167,9 @@ file that only one flags, are where the defender learns most, since the attacker
 detector may have a blind spot or a false positive. The defender asks two questions of a single file: which bytes do
 both detectors rely on, so that one manipulation weakens both (\emph{shared reliance}); and, when they disagree, is the
 flagging detector's evidence content that the other does not read, or content that it reads the other way
-(\emph{disagreement triage})?
+(\emph{disagreement triage})? We measure both by deleting bytes, which shows where the two detectors are jointly cheap
+to attack, not that a particular attack succeeds; realizing such an attack while keeping the program running is left to
+the audit of Section~\ref{sec:XML:Audit} and to future work.
 
 The realistic alternative needs no provenance: explain both models directly over windows of bytes, with occlusion as in
 Section~\ref{sec:XML:PullbackFaithfulness}. The pullback adds the feature-based detector's explanation at byte
