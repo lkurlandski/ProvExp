@@ -13,12 +13,11 @@ additive (Section~\ref{sec:XML:PullbackFaithfulness}). Between the two lies dyna
 provenance automatically, at byte resolution, from an extractor run as a binary. It would make explanation provenance a
 drop-in addition to any extractor, and we see it as the natural next step.
 
-\paragraph{Explainers.} The transfers carry an explanation into the other space as it is: they make a good
-explanation more useful and leave a weak one as weak as it was. The multilayer perceptron over EMBER features
-illustrates this, since its explanations trail occlusion both before and after the pullback, through the instrumented
-and the estimated $P$ alike (Section~\ref{sec:XML:PullbackFaithfulness}). We established the method on the GBDT, the
-standard model for these features; the same machinery applies unchanged to the perceptron and to any other
-feature-based model, and we return to it in future work.
+\paragraph{Explainers.} The transfers are linear in the explanation, so they carry it into the other space as it is:
+they make a good explanation more useful and leave a weak one as weak as it was. The quality of a transferred
+explanation is therefore the quality of its source, which the black-box and instrumented $P$ do not change
+(Section~\ref{sec:XML:PullbackFaithfulness}). We established the method on the GBDT, the standard model for these
+features; the same machinery applies unchanged to any other feature-based model, which we return to in future work.
 
 \paragraph{From reliance to attacks.} Our deletion operator keeps every file parseable with its layout intact and is
 verified on every file, which makes deletion a clean measurement of reliance, but it does not keep programs running.
