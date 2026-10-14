@@ -36,7 +36,7 @@ cheapest first. Decisions already made are at the bottom.
 
 8. *(moved to Deferred, item 12: a second extractor via Android APKs.)*
 
-9. **[BUILT, running as run 57]** **Triage tied to a decision** (item 7 / W6, CM). Shared-reliance-evasion chosen; `cm_triage_evasion.py` smoke-tested; user running the pilot (200 files, GPU 1). Follow-up in `docs/experiments/cm.md`. Show the triage labels track *why* two detectors disagree. Take
+9. **[DONE, run 57: negative; fallback (b) in 4.3]** **Triage tied to a decision** (item 7 / W6, CM). Shared-reliance-evasion chosen; `cm_triage_evasion.py` smoke-tested; user running the pilot (200 files, GPU 1). Result: no separation (oppose 0.26 organic vs. 0.28 evasion, p = 0.14), because the attack changes ~600 bytes of a ~19K-byte top set; 4.3 now argues the decision from the existing triage. See `docs/experiments/cm.md`. Original plan: show the triage labels track *why* two detectors disagree. Take
    files with a *planted* MalConv header evasion (disagreement caused by an attack on MalConv) and files that are
    *organic* GBDT-only detections (a genuine GBDT blind spot). Prediction: planted evasions concentrate in **oppose**
    on the header (the attacker pushed header bytes to read benign to MalConv — evidence MalConv reads the other way);
@@ -87,7 +87,7 @@ and (W7) generality shown on one extractor. The session's trajectory attacks the
   costs 124 extractions/file, reaches only 0.91 and loses to the byte-level pullback on 88/100 files. The pullback's
   advantage is *resolution within a field*, not knowledge of which bytes a feature reads. This is now a positive result
   in Table 1 and 4.1, not a defended claim.
-- **W6 (comparison) — in progress (run 57).** If the triage separates attack-caused from organic disagreements
+- **W6 (comparison) — run 57 negative; fallback (b) done.** The triage does not separate attack-caused from organic disagreements; 4.3 argues the decision from the existing split. Original framing: If the triage separates attack-caused from organic disagreements
   (oppose vs. blind), the blind/oppose/agree label becomes a defender's *decision*, which is what the review asked for.
   If it does not, we fall back to reframing the existing split as the decision — still an improvement over the current
   prose. Either way 4.3 gains an operational reading.

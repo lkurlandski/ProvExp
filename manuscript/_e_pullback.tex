@@ -258,6 +258,18 @@ B's response, so these cells are descriptive; and the GBDT's credit on its blind
 features (counts of string patterns, hashed section entropies and imports), which deleting a few of their bytes barely
 changes.
 
+Each label points the defender to a different response. A disagreement whose evidence is mostly \emph{blind}, as when
+MalConv alone flags a file, is a coverage gap: the flagging detector reads content the other's features never see, and
+the remedy is a feature over that content, with the blind bytes showing where it lies. A disagreement whose evidence is
+mostly \emph{oppose}, as when the GBDT alone flags malware, is a conflict over the same bytes: the oppose bytes are
+those that hold the other detector's benign verdict, so they are the bytes to inspect first, and, since deleting them
+flips that verdict, the place where the missing detector is most easily moved. The labels say which content drives a
+disagreement, not what caused it. When we zero the shared bytes $S$ of malware both detectors catch until MalConv alone
+misses it (87 of 159 files), the triage of these attack-caused disagreements does not differ from that of organic ones
+(oppose share 0.28 against 0.26, Mann--Whitney $p = 0.14$; blind and agree $p \geq 0.33$): the attack changes a few
+hundred bytes, a small part of the GBDT's top 1\%, and leaves the rest of the split as it was. Telling an evasion from
+a blind spot needs a readout confined to the changed bytes, which we leave to future work.
+
 This diagnosis depends on byte resolution. Repeating the split and the deletions over 256 windows for the 50
 GBDT-flagged files, with the GBDT's window evidence taken either from its pullback summed per window or from its
 occlusion (Table~\ref{tab:XML:Triage}, bottom), the oppose category nearly vanishes: for GBDT-only malware it falls from

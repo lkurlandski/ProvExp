@@ -1,14 +1,16 @@
 # Status
 
-Last updated: 2026-10-14 (afternoon): **review + revision session** (after the 500-file scale-up was cancelled).
-A self-review (`docs/review-2026-10-14.md`) and a revision plan (`docs/revision-plan.md`) now drive the work.
-Done this session: the manuscript's block-A writing fixes; MLP and Figure 1 cut; AU's realizable numbers in;
-**run 56 (field-occlusion oracle)** — gain 0.91 at 124 extractions/file, the byte-level pullback beats it 88/100
-(p~1e-15), folded into Table 1 + 4.1 (closes the "by construction" objection); **run 57 (B9, triage tied to a
-decision)** built and smoke-tested, the user is running the 200-file pilot on GPU 1. Deferred experiments (pushforward
-on MalConv M1, mitigation M3, Android extractor) are drafted in the manuscript as **synthetic blue `\synthetic{}`
-placeholders** (mocks in `docs/experiments/mocks.md`). Style guide in `docs/style_guide.md`. Page limit and exact
-numbers do not matter at this drafting stage (CLAUDE.md).
+Last updated: 2026-10-14 (late afternoon): **run 57 (B9) read; it failed, fallback (b) written into 4.3.** The
+triage does not tell an attack-caused disagreement from an organic one (200 candidates: 32 organic, 87 evasion; oppose
+0.26 vs. 0.28, p = 0.14; blind, agree p >= 0.33). Cause: the readout is the GBDT's whole top 1% (~19K bytes) while the
+attack changes ~600 bytes, so the share can barely move (`docs/experiments/cm.md`, "Result (run 57)"). Section 4.3 now
+argues the decision from the existing triage (blind -> add a feature; oppose -> inspect those bytes first) and states,
+citing run 57, that the labels say which content drives a disagreement, not its cause. Earlier today: self-review
+(`docs/review-2026-10-14.md`), revision plan (`docs/revision-plan.md`), block-A writing, MLP and Figure 1 cut, AU's
+realizable numbers, **run 56 (field-occlusion oracle)**: gain 0.91 at 124 extractions/file, the byte-level pullback
+beats it 88/100 (p~1e-15), in Table 1 + 4.1. Deferred experiments (M1, M3, Android) stand in the manuscript as
+**synthetic blue `\synthetic{}` placeholders** (mocks in `docs/experiments/mocks.md`). Page limit and exact numbers do
+not matter at this drafting stage (CLAUDE.md).
 
 **Current goal:** check the preliminary findings at 500 files (seed 0) and carry the confirmed numbers into the
 manuscript; then section-level writing. A later round (3 seeds, 10K files) runs on a computing cluster.
@@ -26,13 +28,11 @@ manuscript; then section-level writing. A later round (3 seeds, 10K files) runs 
 
 ## Next
 
-1. **When run 57 (B9) finishes** (user is running 200 files, GPU 1): read the oppose share, evasion vs. organic, at the
-   end of `artifacts/logs/cm-triage-evasion-seed0.log`. If oppose separates the two populations, write the triage
-   label as a defender's decision into 4.3; if not, fall back to reframing the readout, then to reconsidering (order
-   set by the user). Follow-up in `docs/experiments/cm.md`.
+1. **Run 57 (B9): decide whether to try the localized readout** (label only the changed bytes S; ~40 min GPU at 200
+   candidates) or leave 4.3 as written (fallback (b), done). Awaiting the user.
 2. **Remaining revision-plan items** (`docs/revision-plan.md`): block C is deferred (needs MalConv re-eval/retraining)
    and stands in as synthetic blue placeholders; the Android second extractor (item 12) is the biggest deferred lift.
-   Block A is done; block B is B7 (done) and B9 (running).
+   Block A is done; block B is B7 (done) and B9 (done: negative, fallback (b) in 4.3).
 3. **Section-level writing** with the user once they read the restructured draft (they have not yet): prose, the
    intro's third paragraph, Table 2 layout, PB2/PF2 subsections.
 4. **Later:** the scale-up to 2,000 files / 3 seeds (and 10K on the cluster) once the designs settle; the deferred
