@@ -76,7 +76,7 @@ factor of 135.
 
 \paragraph{Byte resolution.} Occlusion does not approach byte resolution by refining its windows: its gain rises from
 0.93 at 64 windows to 1.10 at 1{,}024 and then stops (1.11 at 4{,}096 windows and 4{,}099 extractions per file;
-$p = 0.40$ against 1{,}024), because occluding a small window changes the features too little to rank it. KernelSHAP over
+$p = 0.40$ against 1{,}024), plausibly because occluding a small window changes the features too little to rank it. KernelSHAP over
 windows, the strongest direct baseline, ends at the same level. The byte-level pullback removes 1.65--1.79 times
 occlusion's gain, ahead of each of the strongest direct baselines on 79--85 of 100 files ($p \leq 6 \cdot 10^{-12}$),
 from the same single extraction. Realistic header values account for 15--18\% of that margin; the rest holds with
