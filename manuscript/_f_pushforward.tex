@@ -1,11 +1,37 @@
-The pushforward turns an explanation over the bytes into one over the features: it explains a model in a vocabulary chosen by the analyst, here the EMBER features, even when the model never computes them. Mirroring Section~\ref{sec:XML:Pullback}, we test whether the result is faithful (Section~\ref{sec:XML:PushforwardFaithfulness}), use it to give feature-space explainers a ground truth (Section~\ref{sec:XML:PushforwardTrigger}), and use it to audit a raw-byte detector across a corpus (Section~\ref{sec:XML:Audit}).
+The pushforward turns an explanation over the bytes into one over the features: it explains a model in a vocabulary
+chosen by the analyst, here the EMBER features, even when the model never computes them. We ask it the three questions of
+Section~\ref{sec:XML:Pullback}, in the same order. Is the transferred explanation faithful
+(Section~\ref{sec:XML:PushforwardFaithfulness})? Does it recover a known answer, the planted trigger
+(Section~\ref{sec:XML:PushforwardTrigger})? And what does it let a defender do that was not possible before? For the
+pushforward, the answer to the last question is an audit of a raw-byte detector across a corpus
+(Section~\ref{sec:XML:Audit}). The data, models, and deletion operator are those of Section~\ref{sec:XML:Pullback}.
 
 \subsection{Faithfulness}
 \label{sec:XML:PushforwardFaithfulness}
 
-\paragraph{Design.} We push the direct problem-space explanations of Section~\ref{sec:XML:PullbackFaithfulness} forward (occlusion at 64--4{,}096 windows, KernelSHAP over 256 windows), through $P$ coarsened to the same windows, and test the resulting feature attributions in the feature-space: delete the top-ranked features, re-score the model, and compare the area of the deletion curve with TreeSHAP's, KernelSHAP's, random orders', and a naive translation that credits each feature with the plain sum of the windows it reads (no $D^{+}$). A deleted feature takes its value in the fully ablated file (the reference matched to the problem-space explanations: deleting every feature reproduces the end of the curves of Section~\ref{sec:XML:PullbackFaithfulness} exactly), or, as a robustness check, the interventional expectation over the background (the reference matched to TreeSHAP). The criterion was fixed before the run: the pushforward must be significantly above random and the naive translation; its strength is the ratio $R$ of its area to TreeSHAP's ($\geq 0.8$ faithful, 0.5--0.8 partial, $< 0.5$ weakened).
+A pushed-forward explanation is useful only if the features it ranks highest are the features the decision rests on.
+We test this in the feature space, by deleting the top-ranked features, and compare the pushforward with the explainers
+that work there directly. In short, explanations pushed forward from the bytes are far more faithful than random and
+than a naive translation, but reach only about a third of TreeSHAP's faithfulness. The loss is not in the pushforward
+but in the resolution of the explanations we push forward: the finer the source, the more of TreeSHAP's faithfulness
+the pushforward attains (Table~\ref{tab:XML:Resolution}).
 
-\paragraph{Results.} Every pushed-forward explanation is far above random (97--100 of 100 files, $p \approx 10^{-18}$) and above the naive translation (57--70 of 100 files, $p = 2.6 \cdot 10^{-6}$ to $0.023$), but reaches only $R = 0.31$--$0.40$ of TreeSHAP's area (0.25--0.29 under the background reference): weak by the criterion. The loss is not in the operator: pushed forward from the bytes, TreeSHAP's own explanation keeps $R = 0.80$. It is in the resolution of the source. To separate the two, we express each feature-space explainer's information at $K$ windows (pull back, sum over windows, push forward through $P$ coarsened to the windows) and measure what survives (Table~\ref{tab:XML:Resolution}). What a $K$-window explanation can reach rises at every step, for every explainer and both references, from $R = 0.34$ at 64 windows to $0.80$ at the bytes: the coarser the windows, the more features share each one, and the less of a window's attribution the pushforward can return to the feature it came from (Section~\ref{sec:XML:Constructing}). Since this attainable $R$ uses the feature-space explainer's own information, its byte-level end point is partly circular; the evidence is the trend across resolutions. At 256 windows, even TreeSHAP's information reaches only $R = 0.37$; occlusion reaches 0.32 and KernelSHAP over windows 0.40, so the direct explainers are near what their resolution allows (occlusion's share falls from 0.91 at 64 windows to 0.74 at 4{,}096, where it saturates, as in Section~\ref{sec:XML:PullbackFaithfulness}). The pushforward is thus faithful up to the resolution of its source, and the direct problem-space explainers are limited by their resolution, not by the transfer. The same test, applied to the MLP's explainers, is the first step when the MLP returns.
+We push forward the direct problem-space explanations of Section~\ref{sec:XML:PullbackFaithfulness}, occlusion at 64 to
+4{,}096 windows and KernelSHAP over 256 windows, each through $P$ coarsened to its windows. The resulting feature
+rankings are scored by a feature-space deletion curve: we delete the top-ranked features, re-score the model, and
+compare the area under the curve with those of TreeSHAP, KernelSHAP, random orders, and a naive translation that
+credits each feature with the plain sum of the windows it reads (no $D^{\dagger}$). A deleted feature takes its value
+in the fully ablated file, the reference that matches the problem-space explanations (deleting every feature reproduces
+the end point of the curves of Section~\ref{sec:XML:PullbackFaithfulness} exactly), or, as a robustness check, the
+interventional expectation over the background, the reference that matches TreeSHAP. We summarize a method by the ratio
+$R$ of its area to TreeSHAP's, and read $R \geq 0.8$ as faithful, 0.5--0.8 as partial, and below 0.5 as weakened.
+
+Every pushed-forward explanation is far above random (97--100 of 100 files, $p \approx 10^{-18}$) and above the naive
+translation (57--70 of 100 files, $p = 2.6 \cdot 10^{-6}$ to $0.023$), so the normalization by $D^\dagger$ matters. Yet
+they reach only $R = 0.31$--$0.40$ of TreeSHAP's area (0.25--0.29 under the background reference), which is weak. The
+pushforward itself is not the cause: TreeSHAP's own explanation, pulled back to the bytes and pushed forward again,
+keeps $R = 0.80$. To locate the loss, we express TreeSHAP's information at $K$ windows (pull it back, sum it over the
+windows, and push it forward through $P$ coarsened to the same windows) and measure what survives.
 
 \begin{table*}[t]
   \centering
@@ -18,32 +44,116 @@ The pushforward turns an explanation over the bytes into one over the features: 
     $R$ of occlusion & 0.31 & 0.32 & 0.34 & 0.37 & -- & -- & -- & -- \\
     \bottomrule
   \end{tabular}
-  \caption{What survives the pushforward at each resolution (100 files, path TreeSHAP, the matched reference). $R$ is a method's deletion area relative to TreeSHAP's. The attainable $R$ expresses TreeSHAP's own explanation at that resolution and pushes it forward; occlusion cannot be computed beyond 4{,}096 windows at an affordable cost. KernelSHAP over 256 windows reaches 0.40.}
+  \caption{What survives the pushforward at each resolution (100 files, path TreeSHAP, the matched reference). $R$ is a
+  method's deletion area relative to TreeSHAP's. The attainable $R$ expresses TreeSHAP's own explanation at that
+  resolution and pushes it forward; occlusion cannot be computed beyond 4{,}096 windows at an affordable cost.
+  KernelSHAP over 256 windows reaches 0.40. Faithfulness rises with the resolution of the source, and occlusion stays
+  close to what its resolution allows.}
   \label{tab:XML:Resolution}
 \end{table*}
 
-\subsection{Ground Truth for Explainers}
+Table~\ref{tab:XML:Resolution} shows that what a $K$-window explanation can attain rises at every step, for every
+explainer and both references, from $R = 0.34$ at 64 windows to $0.80$ at the bytes. The coarser the windows, the more
+features share each one, and the less of a window's attribution the pushforward can return to the feature it came from
+(Section~\ref{sec:XML:Constructing}). Because this attainable $R$ uses the feature-space explainer's own information,
+its byte-level end point is partly circular; the evidence is the trend across resolutions. At 256 windows even
+TreeSHAP's information reaches only $R = 0.37$, and occlusion (0.32) and KernelSHAP over windows (0.40) are near that
+bound; occlusion's share of the bound falls from 0.91 at 64 windows to 0.74 at 4{,}096, where it saturates, as in
+Section~\ref{sec:XML:PullbackFaithfulness}. The pushforward is thus faithful up to the resolution of its source: the
+direct problem-space explainers are limited by their resolution, not by the transfer.
+
+\subsection{A Planted Trigger}
 \label{sec:XML:PushforwardTrigger}
 
-\paragraph{Design.} On a triggered file, the pushforward of the trigger's bytes weights each feature by how much of it the trigger computes, a property of $P$ alone. Its support, the features the trigger touches, is a ground truth that does not depend on the model: a faithful explanation of the trigger's effect must concentrate there. We score TreeSHAP and KernelSHAP of the retrained GBDT by the share of their attribution change that falls on this support and by whether their top-ranked features lie in it. The weights themselves are not a target, since they cannot say which of the touched features the model uses, and even an ideal explainer of a tree model moves some credit onto untouched features through interactions. This turns problem-space knowledge into an evaluation of feature-space explainers, which otherwise have no ground truth.
+The planted trigger of Section~\ref{sec:XML:PullbackTrigger} gives the pushforward a known answer as well, and in
+doing so gives feature-space explainers a ground truth they otherwise lack. On a triggered file, the pushforward of the
+trigger's bytes weights each feature by how much of it the trigger computes, a property of $P$ alone. Its support, the
+features the trigger touches, does not depend on the model, and a faithful explanation of the trigger's effect must
+concentrate there. We score TreeSHAP and KernelSHAP of the poisoned GBDT by the share of their attribution change,
+$a(x_T) - a(x)$, that falls on this support, and by whether their top-ranked features lie in it. The weights themselves
+are not a target: they cannot say which of the touched features the model uses, and even an ideal explainer of a tree
+model moves some credit onto untouched features through interactions.
 
-\paragraph{Results (50 files per trigger).} Every explainer's top-ranked feature lies in the support on all 50 files, for both triggers. For the struct trigger (12 touched features of 2{,}568), the support carries 0.70 of the attribution change for both TreeSHAP variants and 0.50 for KernelSHAP, against 0.005 for a random attribution; for the content trigger (317 touched features), 0.67 and 0.51 against 0.12, and half of each explainer's ten top-ranked features lie in it. KernelSHAP spreads more of its change outside the support, as it spreads more of its pullback outside the trigger (Section~\ref{sec:XML:PullbackTrigger}), and needs its full budget: with 512 coalitions instead of 32{,}768 it puts 0.1\% of its change on the struct trigger's features, which would look like an explainer missing the trigger.
+Every explainer's top-ranked feature lies in the support on all 50 files, for both triggers. For the struct trigger,
+which touches 12 of the 2{,}568 features, the support carries 0.70 of the attribution change for both TreeSHAP variants
+and 0.50 for KernelSHAP, against 0.005 for a random attribution. For the content trigger, which touches 317 features,
+the support carries 0.67 and 0.51 against 0.12, and half of each explainer's ten top-ranked features lie in it.
+KernelSHAP spreads more of its change outside the support, as it spreads more of its pullback outside the trigger
+(Section~\ref{sec:XML:PullbackTrigger}), and it needs its full budget: with 512 coalitions instead of 32{,}768 it puts
+0.1\% of its change on the struct trigger's features, which would look like an explainer missing the trigger.
 
-\subsection{Auditing a Raw-Byte Detector}
+\subsection{Application: Auditing a Raw-Byte Detector}
 \label{sec:XML:Audit}
 
-\paragraph{Motivation.} A detector that reads the raw bytes directly, such as MalConv or the deep models that deployed stacks run over full file contents~\cite{microsoft2019insideout}, can be explained per file (Integrated Gradients), but has no vocabulary in which its reliance recurs across files: a byte offset means something different in each file. Auditing it for reliance on content that an attacker could change cheaply, without affecting maliciousness, is therefore a corpus-level question~\cite{arp2022and}, and per-file byte explanations cannot be aggregated to answer it. The pushforward supplies the shared vocabulary: it sends each file's byte explanation into the feature extractor's named features, which are the same for every file, splitting the credit of shared bytes among the features that read them. This is the global counterpart of the pullback's local comparison (Section~\ref{sec:XML:Comparison}), on the same two detectors.
+A detector that reads the raw bytes directly, such as MalConv or the deep models that deployed stacks run over full
+file contents~\cite{microsoft2019insideout}, can be explained file by file with Integrated Gradients, but it has no
+vocabulary in which its reliance recurs across files: a byte offset means something different in each file. Auditing it
+for reliance on content that an attacker could change cheaply, without affecting what the program does, is therefore a
+corpus-level question~\cite{arp2022and}, and per-file byte explanations cannot be aggregated to answer it. The
+pushforward supplies the shared vocabulary. It sends each file's byte explanation into the named features of a feature
+extractor, which are the same for every file, splitting the credit of shared bytes among the features that read them.
+This is the global counterpart of the pullback's local comparison (Section~\ref{sec:XML:Comparison}), on the same two
+detectors.
 
-\paragraph{Threat model.} An attacker wants a malicious file that MalConv detects to be classified benign, and can change only what the Windows loader ignores, or set a field to another value the loader accepts, so that the program still runs; the attacker needs neither MalConv's parameters nor its explanations, only queries. The defender owns MalConv and a labeled corpus, can compute MalConv's Integrated Gradients, and has the instrumented extractor of a feature-based detector, which supplies $P$, although MalConv itself never computes these features. The defender's goal is to find, before the attacker does, the content that MalConv's detections rest on and that an attacker could change cheaply. We confirm reliance by scrambling the bytes $P$ names for a feature, which quantifies how much detection rests on them, and measure evasion with loader-safe changes only.
+\paragraph{Threat model.} An attacker wants a malicious file that MalConv detects to be classified benign. The attacker
+can change only what the Windows loader ignores, or set a field to another value the loader accepts, so that the
+program still runs, and needs neither MalConv's parameters nor its explanations, only queries. The defender owns MalConv
+and a labeled corpus, can compute MalConv's Integrated Gradients, and has the instrumented extractor of a feature-based
+detector, which supplies $P$, although MalConv itself never computes these features. The defender's goal is to find,
+before the attacker does, the content that MalConv's detections rest on and that an attacker could change cheaply.
 
-\paragraph{What the pushforward adds.} The realistic alternative trains a \textit{surrogate}: a GBDT on the EMBER features fit to MalConv's log-odds (test-set distillation, fidelity $R^2 = 0.95$ on the explanation set), then explained with TreeSHAP and aggregated, with no provenance. It finds what \emph{predicts} MalConv, not what MalConv \emph{reads}. The pushforward is also the simpler technique: it needs no second model. The surrogate's training pool may contain relatives of the explanation files, which can only favor it. A hand-built aggregation (a PE parser locating every field in every file and summing Integrated Gradients over it) would answer the same question, but only for one file format and at great manual effort; the pushforward does it automatically for any feature extractor.
+The realistic alternative trains a \emph{surrogate}: a GBDT on the EMBER features fit to MalConv's log-odds (test-set
+distillation, fidelity $R^2 = 0.95$ on the explanation set), explained with TreeSHAP and aggregated, with no provenance.
+It finds what \emph{predicts} MalConv, not what MalConv \emph{reads}, and its training pool may contain relatives of the
+explanation files, which can only favor it. The pushforward is also the simpler technique, since it needs no second
+model. A hand-built aggregation, a PE parser locating every field in every file and summing Integrated Gradients over
+it, would answer the same question, but only for one file format and at great manual effort; the pushforward does it
+automatically for any feature extractor.
 
-\paragraph{Design.} MalConv (seed 0) is explained by Integrated Gradients (256 steps) on the 2{,}000-file explanation set; each file's explanation is pushed forward through that file's $P$. Features are ranked by how many files carry MalConv's evidence on them (benign or malware). A candidate is a feature whose provenance names few enough bytes to locate; it is \textit{confirmed} by scrambling, scored by MalConv: in 191 held-out malware, the bytes the file's own $P$ assigns to the feature are overwritten with random bytes, and the drop in MalConv's malware log-odds is compared, paired per file, with scrambling as many random bytes elsewhere in the same convolution window (confirmed if the median drop and the median paired difference both exceed $0.1$ log-odds, Wilcoxon $p < 0.05/20$). The surrogate's candidates are confirmed the same way.
+We explain MalConv (seed 0) with Integrated Gradients (256 steps) on the 2{,}000-file explanation set and push each
+file's explanation forward through that file's $P$. Features are ranked by how many files carry MalConv's evidence on
+them. A candidate is a feature whose provenance names few enough bytes to locate, and it is \emph{confirmed} by
+scrambling: in 191 held-out malware, we overwrite the bytes that the file's own $P$ assigns to the feature with random
+bytes and compare the drop in MalConv's malware log-odds, paired per file, with that from scrambling as many random bytes
+elsewhere in the same convolution window. A feature is confirmed if the median drop and the median paired difference
+both exceed $0.1$ log-odds (Wilcoxon $p < 0.05/20$). The surrogate's candidates are confirmed in the same way.
 
-\paragraph{Reliance audit.} Of MalConv's top 20 features by malware evidence, 9 are confirmed, all outside the DOS header, whose manipulation MalConv is known to be sensitive to~\cite{demetrio2019explaining}: the checksum, the image base, the size of the heap reserve, the subsystem, and the addresses of five data directories (export, debug, copyright, global pointer, import table), the last often zero. The surrogate's top 20 recover 4 of the 9; its own top 20 confirm 9, with some larger effects (certificate-table entries, the signing time, the DLL characteristic), so the two methods find reliance of comparable size but only partly the same, and the pushforward needs no second model to do so.
+Of MalConv's 20 features with the most malware evidence, 9 are confirmed, all outside the DOS header, whose
+manipulation MalConv is known to be sensitive to~\cite{demetrio2019explaining}: the checksum, the image base, the size
+of the heap reserve, the subsystem, and the addresses of five data directories (export, debug, copyright, global
+pointer, import table), the last often zero. The surrogate's top 20 recover 4 of these 9, and its own top 20 confirm 9
+others, with some larger effects (certificate-table entries, the signing time, the DLL characteristic). The two methods
+thus find reliance of comparable size but only partly the same, and the pushforward needs no second model to do so.
 
-\paragraph{Evasion.} Changing the confirmed fields in 1{,}000 fresh held-out malware (none in the explanation set or used for confirmation; 902 detected at MalConv's 1\% false-positive threshold) measures how much of MalConv's detection they carry. Only loader-safe changes are made: fields the loader ignores (the checksum, the debug, global-pointer, copyright, and export directory entries) are scrambled; fields it checks take a valid value drawn from benign files of the same machine type (the image base, kept 64K-aligned and only with relocations; the subsystem, GUI or console; the heap reserve, consistent with its commit); and the import-table address, which the loader needs, is left alone. The files are not executed; the classification of fields follows the format's documentation. On average 7.3 of the 9 pushforward-confirmed fields can be changed this way, and doing so evades on 12.4\% of the detected malware (95\% CI 10.3--14.6), about twice as often as changing as many other loader-ignored fields outside the DOS header, drawn per file from the 74 that no method confirmed (6.0\%; paired difference $+6.4$ points, $p = 3 \times 10^{-12}$). Under the same rules, the surrogate's fields evade on 10.4\% ($p = 0.027$ against the pushforward's), and the union of the two methods' fields on 18.4\%. Zeroing these fields for every file, at test time or in retraining, is the mitigation this audit points to, and is left for future work.
+Scrambling measures reliance; whether that reliance can be exploited is a separate question, which we answer with
+changes an attacker could actually make. In 1{,}000 fresh held-out malware, none in the explanation set or used for
+confirmation, of which MalConv detects 902 at its 1\% false-positive threshold, we change the confirmed fields in
+loader-safe ways only. Fields the loader ignores (the checksum and the debug, global-pointer, copyright, and export
+directory entries) are scrambled; fields it checks take a valid value drawn from benign files of the same machine type
+(the image base, kept 64K-aligned and only with relocations; the subsystem, GUI or console; the heap reserve, consistent
+with its commit); and the import-table address, which the loader needs, is left alone. The files are not executed; the
+classification of fields follows the format's documentation. On average 7.3 of the 9 pushforward-confirmed fields can
+be changed this way, and doing so evades MalConv on 12.4\% of the detected malware (95\% CI 10.3--14.6), about twice as
+often as changing as many other loader-ignored fields outside the DOS header, drawn per file from the 74 that no method
+confirmed (6.0\%; paired difference $+6.4$ points, $p = 3 \cdot 10^{-12}$). Under the same rules, the surrogate's fields
+evade on 10.4\% ($p = 0.027$ against the pushforward's), and the union of the two methods' fields on 18.4\%. Zeroing
+these fields for every file, at test time or in retraining, is the mitigation this audit points to.
 
-\paragraph{Comparison with the feature-based detector.} Pushing all 2{,}000 files forward puts MalConv's reliance in the same feature vocabulary as the GBDT's interventional TreeSHAP, so the two detectors can be compared feature by feature. Of the 2{,}568 features, 2{,}214 are aggregates with no locatable content (byte histogram, entropy windows); MalConv places 64\% of its mean absolute attribution on them and the GBDT 51\%, the resolution limit of Section~\ref{sec:XML:PushforwardFaithfulness}, not a finding. Among the 354 nameable features the two detectors' importance rankings barely agree (Spearman $0.10$; $0.63$ over all features, inflated by the shared tail of near-zero features), and their ten most-relied-on nameable features overlap in exactly one, the checksum, which is each detector's second (a shared weakness of the pair). Several fields MalConv leans on the GBDT nearly ignores (the size of the heap reserve, the global-pointer and copyright directory addresses). This is the corpus-level, feature-named reliance that a raw-byte detector does not otherwise have, and it refines Section~\ref{sec:XML:Comparison}'s byte-level finding that both detectors rely on the header: they rely on \emph{different} header fields, sharing only the checksum at the top.
+Pushing all 2{,}000 files forward also places MalConv's reliance in the same vocabulary as the GBDT's interventional
+TreeSHAP, so the two detectors can be compared feature by feature. Of the 2{,}568 features, 2{,}214 are aggregates with
+no locatable content (byte histogram, entropy windows); MalConv places 64\% of its mean absolute attribution on them and
+the GBDT 51\%, which reflects the resolution limit of Section~\ref{sec:XML:PushforwardFaithfulness} rather than a
+finding. Among the 354 nameable features, the two detectors' importance rankings barely agree (Spearman $0.10$; $0.63$
+over all features, inflated by the shared tail of near-zero features), and their ten most-relied-on nameable features
+overlap in exactly one, the checksum, which is each detector's second. Several fields MalConv leans on, the GBDT nearly
+ignores (the size of the heap reserve, the global-pointer and copyright directory addresses). This refines the
+byte-level finding of Section~\ref{sec:XML:Comparison} that both detectors rely on the header: they rely on
+\emph{different} header fields, sharing only the checksum at the top.
 
-\paragraph{Summary.} The comparison and the audit use the transfers in opposite directions on the same pair of detectors, and their findings fit together. File by file, the pullback shows that both detectors rely on the header, that the bytes they share are worth more to each than its own, and that when the feature-based detector alone flags a file, the raw-byte detector often reads the same header bytes the other way. Across the corpus, the pushforward names what the raw-byte detector relies on, confirms it by scrambling, and shows that the two detectors rely on \emph{different} header fields, sharing only the checksum at the top. Neither result needs a hand-built mapping from features to bytes, and neither is visible over windows of bytes without $P$. Section~\ref{sec:XML:Discussion} discusses what the method covers and where it goes next.
+The two applications use the transfers in opposite directions on the same pair of detectors, and their findings fit
+together. File by file, the pullback shows that both detectors rely on the header, that the bytes they share are worth
+more to each than its own, and that when the feature-based detector alone flags a file, the raw-byte detector often
+reads the same header bytes the other way. Across the corpus, the pushforward names what the raw-byte detector relies
+on, confirms it, shows that loader-safe changes to it evade the detector, and shows that the two detectors rely on
+different header fields. Neither result needs a hand-built mapping from features to bytes, and neither is visible over
+windows of bytes without $P$.
