@@ -1,26 +1,14 @@
 # Status
 
-Last updated: 2026-10-14 (later): **writing + review session.** A loose style guide (`docs/style_guide.md`, 13 papers);
-Sections 4 and 5 restructured in parallel (Faithfulness / A Planted Trigger / Application: ...), as continuous prose,
-with a faithfulness-vs-cost table in 4.1; the shared setting (data, models, deletion operator) opens Section 4;
-discussion, introduction, abstract (249 words), and conclusion brought in line. User: no case-study figure for now;
-page limit and exact numbers do not matter at this drafting stage (CLAUDE.md). A self-review
-(`docs/review-2026-10-14.md`) and a revision plan (`docs/revision-plan.md`) followed; MLP cut from the body; Figure 1
-cut; block A writing fixes done. **The user cancelled the 500-file scale-up (runs 50-55)** partway through run 51:
-designs change (new baselines, triage-to-decision, an Android extractor) before any final scale-up. Deferred
-experiments that touch MalConv or a new domain are being drafted in the manuscript with synthetic (blue `\synthetic{}`)
-placeholders; mocks in `docs/experiments/mocks.md`. **Block A writing fixes are in the manuscript.** Block B started: the
-field-occlusion oracle baseline (`--field_oracle` in `faithfulness.py`, `run/56`, tests added) is **running now** on the
-100 pilot files; hypothesis and follow-up in `docs/experiments/pb1.md` ("Field-occlusion oracle baseline"). **Field oracle done (run 56):** gain 0.91 at 124 extractions/file, the byte-level pullback beats it 88/100 (p~1e-15);
-folded into the manuscript (Table 1 + 4.1), answering the "by construction" objection. **B9 built (run 57):**
-`cm_triage_evasion.py` (organic vs. shared-reliance-evasion triage), smoke-tested on GPU; the user runs the pilot
-(~2-4 h). Next after B9's result: fold it in or fall back (see `docs/experiments/cm.md`).
-Earlier 2026-10-14 (morning): AU's realizable numbers are in the manuscript; runs 50 (done) and 51 (at 59% of
-pass 1 after 9.3 h, i.e. much slower than the script's "about 12 h") are running; 52-55 not started.
-Previously 2026-10-13 (night; end of a long writing + experiments session). The manuscript is restructured into
-paper form (body ends on p. 11 of 12). AU's evasion result was corrected and made realistic (runs 47-49). The seed-0
-scale-up to 500 files is prepared (`run/50`-`55`, smoke-tested) and **the user is running it** (about 20-24 h). The
-string features are 2.1x faster (bit-identical). See `docs/resume-prompt.md`.
+Last updated: 2026-10-14 (afternoon): **review + revision session** (after the 500-file scale-up was cancelled).
+A self-review (`docs/review-2026-10-14.md`) and a revision plan (`docs/revision-plan.md`) now drive the work.
+Done this session: the manuscript's block-A writing fixes; MLP and Figure 1 cut; AU's realizable numbers in;
+**run 56 (field-occlusion oracle)** — gain 0.91 at 124 extractions/file, the byte-level pullback beats it 88/100
+(p~1e-15), folded into Table 1 + 4.1 (closes the "by construction" objection); **run 57 (B9, triage tied to a
+decision)** built and smoke-tested, the user is running the 200-file pilot on GPU 1. Deferred experiments (pushforward
+on MalConv M1, mitigation M3, Android extractor) are drafted in the manuscript as **synthetic blue `\synthetic{}`
+placeholders** (mocks in `docs/experiments/mocks.md`). Style guide in `docs/style_guide.md`. Page limit and exact
+numbers do not matter at this drafting stage (CLAUDE.md).
 
 **Current goal:** check the preliminary findings at 500 files (seed 0) and carry the confirmed numbers into the
 manuscript; then section-level writing. A later round (3 seeds, 10K files) runs on a computing cluster.
@@ -33,21 +21,22 @@ manuscript; then section-level writing. A later round (3 seeds, 10K files) runs 
 | **Pullback (PB1, PB2, CM)** | Pilot done (100 files; 50 per trigger; 25 per triage cell). 500-file seed-0 runs prepared: `run/51` (PB1 full baselines, GBDT + MLP), `run/52` (operator variants), `run/54` (CM: cross-deletion, shared, triage at 100/cell, window triage), `run/55` (triggers, 250 files each). |
 | **Pushforward (PF1, PF2, AU)** | PF1/PF2 pilot done; 500-file runs prepared (`run/53`, `run/55`). **AU corrected (runs 47-49, `docs/experiments/audit.md`):** on 902 fresh, detected held-out malware, loader-safe changes only: pushforward fields 12.4% evasion vs. 6.0% for as many other loader-ignored fields outside the DOS region (+6.4 pts, p = 3e-12; 3.8% with the DOS region), surrogate 10.4% (pushforward +2.0, p = 0.027), union 18.4%. Raw scrambling (19.7%) is no longer a headline (user: unrealistic perturbations unacceptable). Mitigation (1c) a manuscript TODO, no code; real-attack transfer (1d) not now. |
 | **CP / theory** | Cut from the paper, archived (`manuscript/archive/`). |
-| **The MLP** | Included in the 500-file pullback runs (PB1); otherwise set aside. |
+| **The MLP** | **Cut from the manuscript body (2026-10-14)**; returns in future work. The code and runs keep it; the body carries only load-bearing results. |
 | **Speed** | String features 2.1x faster, bit-identical. Deferred ideas (`docs/design.md`, "Deferred optimizations"): reuse the extractor's parse in `verify` (~15%); numpy byte counts for the entropies and vectorized byte-entropy windows (~30% together, needs copying thrember code or patching pefile; user: not now). |
 
 ## Next
 
-1. **When runs 50-55 finish** (user): compare every pilot number with the 500-file results (tables in
-   `artifacts/reports/pb1_tables-*scaleup500.md`, `cm_tables-scaleup500.md`, `cp_blackbox-*scaleup500.md`; logs in
-   `artifacts/logs/*scaleup*`); flag anything that moved; update the experiment docs.
-2. **Carry numbers into the manuscript:** AU's realizable numbers (lead with the pushforward, 12.4% vs. 6.0%; union
-   second); then the 500-file numbers everywhere; rephrase the threat model to "only what the loader ignores or allows".
-   Headline claims are of lesser concern for now (user).
-3. **Section-level writing** with the user (they will read the restructured draft): prose, the intro's third paragraph
-   (overlaps 2.3/2.5), Table 2 layout, PB2/PF2 subsections reading like lab reports.
-4. **Later:** the cluster round (3 seeds, 10K files); the deferred optimizations before it; AU mitigation (1c);
-   CCS Cycle A vs. B (user's decision, open).
+1. **When run 57 (B9) finishes** (user is running 200 files, GPU 1): read the oppose share, evasion vs. organic, at the
+   end of `artifacts/logs/cm-triage-evasion-seed0.log`. If oppose separates the two populations, write the triage
+   label as a defender's decision into 4.3; if not, fall back to reframing the readout, then to reconsidering (order
+   set by the user). Follow-up in `docs/experiments/cm.md`.
+2. **Remaining revision-plan items** (`docs/revision-plan.md`): block C is deferred (needs MalConv re-eval/retraining)
+   and stands in as synthetic blue placeholders; the Android second extractor (item 12) is the biggest deferred lift.
+   Block A is done; block B is B7 (done) and B9 (running).
+3. **Section-level writing** with the user once they read the restructured draft (they have not yet): prose, the
+   intro's third paragraph, Table 2 layout, PB2/PF2 subsections.
+4. **Later:** the scale-up to 2,000 files / 3 seeds (and 10K on the cluster) once the designs settle; the deferred
+   optimizations before it; CCS Cycle A vs. B (user's decision, open).
 
 ## Decisions
 
