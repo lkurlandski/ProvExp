@@ -17,7 +17,8 @@ P and the round-trip theory were cut from the paper (2026-10-13) and archived in
   `trigger.md` (the planted-trigger testbed: PB2 and PF2); `cm.md` (CM: comparing detectors through the pullback, the
   pullback's application); `audit.md` (AU: auditing a raw-byte detector through the pushforward, the pushforward's
   application). `docs/appendix.md` (App-L, App-R). `docs/graveyard.md`: ideas that did not pan out and why.
-  `docs/resume-prompt.md`: where to pick up next.
+  `docs/resume-prompt.md`: where to pick up next. `docs/style_guide.md`: a loose orientation on how
+  top-tier security papers near our scope read (for the writing; not a template).
 - `docs/design.md`: package design, decisions, provenance conventions, thrember quirks.
   `docs/related_work.md`: literature and gaps. Some artifact paths still use retired IDs (e.g.
   `artifacts/experiments/e1/` is PB1).
