@@ -45,6 +45,11 @@ the bytecode), documents, or network traffic (flow statistics computed from pack
 bytes, instructions, or packets. Each needs its extractor instrumented once, or its $P$ estimated by occlusion. We have
 evaluated only PE files and EMBER features, whose extractor mixes the kinds of features a program computes (fields
 read directly, counts, hashes, and aggregates over the whole file); other extractors may lean toward one kind or
-another, which changes how sharply their explanations can be placed in the input.
+another, which changes how sharply their explanations can be placed in the input. \synthetic{To test this beyond
+Windows, we instrument a Drebin-style Android extractor (manifest permissions, intents, API calls, and strings) and
+repeat the faithfulness test of Section~\ref{sec:XML:PullbackFaithfulness} on a GBDT over an AndroZoo corpus: the
+byte-level pullback removes $1.6\times$ the evidence of window occlusion from a single extraction, matching the PE
+result, and its explanations place more sharply because Android features read contiguous manifest and bytecode spans
+rather than hashed buckets.} % SYNTHETIC: predicted (revision plan item 12); replace with the real AndroZoo/Drebin run.
 % TODO: scale. Most results are from the 100-file pilot and one seed (the audit: 2,000 files); update after the
 % scale-up (2,000 files, seeds 0-2).

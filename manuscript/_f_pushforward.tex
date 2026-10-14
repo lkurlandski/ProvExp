@@ -62,6 +62,16 @@ bound; occlusion's share of the bound falls from 0.91 at 64 windows to 0.74 at 4
 Section~\ref{sec:XML:PullbackFaithfulness}. The pushforward is thus faithful up to the resolution of its source: the
 direct problem-space explainers are limited by their resolution, not by the transfer.
 
+\synthetic{The test above pushes forward explanations of the GBDT, which lets us compare with TreeSHAP; the audit of
+Section~\ref{sec:XML:Audit} instead pushes MalConv's Integrated Gradients forward, so we check the pushforward on
+MalConv directly, where it is used. Ranking MalConv's features by the pushed-forward attribution, mapping the top
+features back to their bytes through $P$, and scrambling those bytes removes MalConv's evidence faster than the same
+budget of bytes chosen by Integrated Gradients aggregated over fixed windows (area ratio $1.5\times$) and on par with a
+surrogate GBDT whose feature ranking is mapped through $P$ the same way ($1.1\times$), while needing no second model.
+The pushforward therefore concentrates a raw-byte detector's evidence on the features it names, the global counterpart
+of the pullback's byte-level win in Table~\ref{tab:XML:PullbackCost}.} % SYNTHETIC: predicted (mock M1); replace with
+% the real MalConv pushforward-faithfulness run.
+
 \subsection{A Planted Trigger}
 \label{sec:XML:PushforwardTrigger}
 
@@ -136,8 +146,30 @@ classification of fields follows the format's documentation. On average 7.3 of t
 be changed this way, and doing so evades MalConv on 12.4\% of the detected malware (95\% CI 10.3--14.6), about twice as
 often as changing as many other loader-ignored fields outside the DOS header, drawn per file from the 74 that no method
 confirmed (6.0\%; paired difference $+6.4$ points, $p = 3 \cdot 10^{-12}$). Under the same rules, the surrogate's fields
-evade on 10.4\% ($p = 0.027$ against the pushforward's), and the union of the two methods' fields on 18.4\%. Zeroing
-these fields for every file, at test time or in retraining, is the mitigation this audit points to.
+evade on 10.4\% ($p = 0.027$ against the pushforward's), and the union of the two methods' fields on 18.4\%.
+
+The audit points to its own countermeasure: a field that MalConv relies on but an attacker can change freely should
+not be read. \synthetic{Overwriting the audited fields with a constant for every file removes most of the evasion lever
+at a small cost to clean detection: at test time, evasion under the same loader-safe attack falls from 12.4\% to
+$3.1\%$ while the true-positive rate at a 1\% false-positive rate drops by $0.5$ points, and retraining MalConv on
+files with the fields zeroed lowers evasion to $1.8\%$ with no measurable clean-detection cost (Table~\ref{tab:XML:Mitigation}).}
+
+\begin{table}[t]
+  \centering
+  \small
+  \begin{tabular}{lcc}
+    \toprule
+    MalConv & clean TPR @1\% FPR & evasion (loader-safe) \\
+    \midrule
+    unmodified & \synthetic{97.3\%} & \synthetic{12.4\%} \\
+    + test-time zeroing & \synthetic{96.8\%} & \synthetic{3.1\%} \\
+    + retrain with fields zeroed & \synthetic{97.1\%} & \synthetic{1.8\%} \\
+    \bottomrule
+  \end{tabular}
+  \caption{\synthetic{Predicted} effect of the audit's mitigation (zeroing the audited fields). \synthetic{All values
+  are synthetic placeholders} (mock M3); the retraining half waits for the cluster round.}
+  \label{tab:XML:Mitigation}
+\end{table}
 
 Pushing all 2{,}000 files forward also places MalConv's reliance in the same vocabulary as the GBDT's interventional
 TreeSHAP, so the two detectors can be compared feature by feature. Of the 2{,}568 features, 2{,}214 are aggregates with

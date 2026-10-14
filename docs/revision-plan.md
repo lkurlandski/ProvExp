@@ -34,20 +34,7 @@ cheapest first. Decisions already made are at the bottom.
    (the oracle knows it too). Replaces the paused adaptive-occlusion idea (HiPe exists but is a vision method; building
    it for PE is out of scope). Pilot scale, GBDT only.
 
-8. **Second feature set(s): the provenance-spectrum story** (item 6 / W7). Show the method rides on any byte-to-feature
-   program and that provenance character varies. Three feature sets on the *same* PE files, no new data:
-   - **EMBER split** (nearly free; we already have $P$ per feature): partition EMBER's features into *PE-structural*
-     (header, sections, imports/exports, data directories, Rich header, signature, general info, warnings) and
-     *statistical* (byte histogram, byte-entropy histogram, string statistics). Restricting $P$ to each group's columns
-     gives two feature sets with opposite provenance: sparse localized field-reads vs. dense whole-file aggregates.
-   - **Byte n-grams** (the genuine second *extractor*): a classic, widely used, parser-free feature set; each n-gram
-     feature is produced by the byte windows that match it, so provenance is dense and overlapping. Instrument it for
-     $P$ the same way.
-   For each feature set, train a GBDT and run the 4.1 faithfulness test; report how sharply each set's explanations
-   place in the input, as predicted by its provenance. Framing: byte n-grams is the second extractor; the EMBER split
-   shows the method's behaviour across provenance types within one extractor. (A cross-domain extractor — AndroZoo
-   APKs + a Drebin-style extractor — is the strongest generality evidence but the most work; stretch goal, user's
-   call.)
+8. *(moved to Deferred, item 12: a second extractor via Android APKs.)*
 
 9. **Triage tied to a decision** (item 7 / W6, CM). Show the triage labels track *why* two detectors disagree. Take
    files with a *planted* MalConv header evasion (disagreement caused by an attack on MalConv) and files that are
@@ -67,6 +54,12 @@ Mocks with predicted, clearly-fake tables are in `docs/experiments/mocks.md`.
 11. **The audit's mitigation** (M3, item 10 / W6). Zero the audited fields at test time (no retraining) and with
     retraining; measure clean-detection cost and the drop in evasion. The retrain half is for the cluster round; the
     test-time half needs no retraining.
+
+12. **A second feature extractor: Android APKs** (item 6 / W7, user 2026-10-14). Collect an APK dataset from AndroZoo
+    and instrument a Drebin-style extractor (manifest permissions, intents, API calls, strings) for $P$; run the 4.1
+    faithfulness test, and ideally a pushforward check, on an Android feature-based model. This is the strongest
+    evidence for "any feature extractor, any domain". The EMBER-subsetting idea (PE-structural vs. statistical) is
+    scrapped (user). Manuscript write-up can begin now with synthetic (blue) placeholders.
 
 ## Dropped / paused
 
