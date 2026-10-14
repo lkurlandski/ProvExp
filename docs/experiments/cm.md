@@ -103,3 +103,47 @@ no evidence that raw-byte and EMBER-style detectors specifically are paired in p
 - The window-level triage is done (run 33). Real-attack transfer is noted for the future (`PLAN.md`, "Open
   questions"); seeds 1-2 at scale-up.
 - The feature-space comparison (MalConv pushed forward) is in the appendix as a curiosity (user, 2026-10-12).
+
+## Triage tied to a decision (planned 2026-10-14; revision plan B9)
+
+**Why.** The self-review (W6) says the triage's blind/oppose/agree split is not yet tied to an action a defender
+would take. The proposed test: show the labels *diagnose why two detectors disagree* — specifically, tell an
+attack-caused disagreement from an organic one — so the label is a decision (investigate as evasion vs. close as a
+blind spot).
+
+**Design.** Two populations of GBDT-only-flagged malware, run through the same triage (A = GBDT, B = MalConv):
+- **organic:** real held-out malware the GBDT detects and MalConv misses (the existing "GBDT only / malware" cell).
+- **planted evasion:** malware both detect, modified so MalConv now misses while the GBDT still detects; the
+  disagreement is *caused* by an attack on MalConv. Reuses the audit's loader-safe recipe (`audit_evade.py`) to build
+  the evaded bytes, then the triage's `categories()` split on them.
+
+**A subtlety that changes the hypothesis (thought through before building).** The triage splits *A's* (the GBDT's)
+top malware bytes by how B (MalConv) reads them. A planted evasion shows up as **oppose** only if the bytes the attack
+changed are (a) read by MalConv as benign *and* (b) among the GBDT's top malware bytes. The audit found the two
+detectors rely on *different* header fields, so an evasion built from the audit's recipe (fields MalConv relies on,
+the GBDT mostly ignores) would flip MalConv but its changed bytes would **not** be in the GBDT's top set — so this
+triage direction would not see "oppose." The hypothesis "planted evasion -> oppose" is therefore **not automatic**;
+it depends on *which* bytes the evasion changes.
+
+This gives a genuine design fork (which evasion to plant):
+1. **Audit-recipe evasion** (MalConv-specific fields): clean loop with our audit, but likely shows up as *blind*
+   (changed bytes the GBDT does not rank), i.e., indistinguishable from an organic blind spot in this direction.
+   Would need the *other* triage direction (A = MalConv on a MalConv-only cell) or a different readout.
+2. **Shared-reliance evasion** (change bytes in S = the top bytes *both* rely on): by construction the changed bytes
+   are in the GBDT's top set, and flipping MalConv on them makes them read benign -> **oppose**. This is the clean
+   version of the hypothesis, but a loader-safe attack confined to shared bytes may not exist for every file.
+3. **Reframe the readout:** instead of predicting a category, test whether the triage *separates* the two populations
+   at all (any category whose distribution differs), which is a weaker but safer claim.
+
+**Mock of the expected table (FAKE numbers, to decide the setup):**
+
+| population (GBDT-only malware) | blind | oppose | agree | defender's reading |
+|---|---|---|---|---|
+| organic (unmodified)                 | 0.25 | 0.33 | 0.42 | real (run 32) |
+| planted evasion, shared-reliance (opt 2) | 0.10 | 0.70 | 0.20 | FAKE: attack on shared bytes -> oppose |
+| planted evasion, audit-recipe (opt 1)    | 0.65 | 0.20 | 0.15 | FAKE: MalConv-only fields -> blind |
+
+If option 2 looks like the middle row, the triage cleanly flags an attack on shared reliance (high oppose); if
+option 1 looks like the bottom row, the audit-recipe evasion is *indistinguishable from organic* in this direction,
+and the experiment would need the MalConv-flagging direction instead. **Decision needed before building** (GPU
+experiment): which evasion to plant, i.e., which story to pursue.
