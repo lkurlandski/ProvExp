@@ -81,7 +81,11 @@ values from one model to the next with a generalized rescale rule that satisfies
 methods need every stage to be a model with its own attribution method; a feature extractor is a program, with
 parsing, hashing, and windowed statistics over discrete, variable-length input and no natural baseline. In the other
 direction, virtual inspection layers~\cite{vielhaben2024explainable} move relevance through an invertible linear
-transform, such as time to frequency, into a domain the model never computes. Grouping attributions over pixels into
+transform, such as time to frequency, into a domain the model never computes. Two other lines of work describe a model
+in a vocabulary it does not compute: a global surrogate~\cite{craven1996extracting, frosst2017distilling} is trained to
+imitate the model's outputs from interpretable inputs and is explained in its place, and concept-based
+methods~\cite{bau2017network, kim2018interpretability} probe a network's internal activations for human-defined
+concepts, each learned from a set of labeled examples. Grouping attributions over pixels into
 segments or tokens into words~\cite{jullum2021groupshapley} is the simplest case, a 0/1 map within one space. Recording
 which inputs produce an output is itself an old idea: provenance in databases~\cite{green2007provenance} and dynamic
 taint tracking in programs do so; system provenance graphs for intrusion detection~\cite{milajerdi2019poirot,
@@ -98,7 +102,9 @@ file. Our pullback coincides with G-DeepSHAP's rule when $P$ holds each byte's s
 novelty for that propagation step. \emph{Second}, the same matrix runs the other way: the pushforward moves a byte-level
 explanation through a non-invertible program into the features of a detector that never reads them, giving a raw-byte
 detector a vocabulary in which its reliance recurs across files. To our knowledge, no prior work transfers
-explanations in this direction. \emph{Third}, the two directions together put detectors over different representations
+explanations in this direction. Unlike a surrogate, the pushforward explains the detector itself, not a model that
+imitates its outputs; unlike concept probes, it needs neither the detector's internals nor labeled examples, only a
+byte-level explanation and the extractor's record of which bytes each feature is computed from. \emph{Third}, the two directions together put detectors over different representations
 into one space, which turns explanation transfer into two security tasks that output-level comparisons and per-file
 saliency cannot perform: triaging a disagreement between two detectors file by file, and auditing a raw-byte detector
 across a corpus.
