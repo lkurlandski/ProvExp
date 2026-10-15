@@ -1,58 +1,53 @@
 % Pullback faithfulness on the GBDT (100 pilot files, zero fill; run 56, which reuses run 21's rankings). Data:
-% scripts/paper_figures.py -> data/pb_gbdt.dat (median curves) and data/pb_gbdt_area.dat (areas for the table).
+% scripts/paper_figures.py -> data/pb_gbdt.dat (median curves); extractions per file (medians) from data/pb_gbdt_area.dat.
+% The right panel is the legend: each method's line sample and name, with its feature extractions per file.
+\newcommand{\pbsample}[2]{\tikz[baseline=-0.6ex]{\draw[#1] (0pt,0pt) -- (12pt,0pt);
+  \begin{scope}[#1, solid] \pgftransformshift{\pgfpoint{6pt}{0pt}}\pgfsetplotmarksize{1.4pt}\pgfuseplotmark{#2} \end{scope}}}
 \begin{figure}[t]
   \centering
   \begin{tikzpicture}
     \begin{axis}[
-      paper,
-      xmode=log, xmin=0.08, xmax=60, ymin=-0.3, ymax=13.5,
+      paper, name=main,
+      width=0.58\columnwidth, height=0.6\columnwidth,
+      xmode=log, xmin=0.08, xmax=60, ymin=-0.3, ymax=10,
       xtick={0.1,1,10,50}, xticklabels={0.1\%,1\%,10\%,50\%},
-      xlabel={Bytes deleted (share of the file)},
-      ylabel={GBDT log-odds removed},
-      legend pos=north west, legend columns=2, legend style={column sep=4pt},
+      xlabel={Bytes deleted},
+      ylabel={Median Confidence Difference},
     ]
       \addplot[ours, thick, mark=*, mark size=1.5pt] table[x=budget, y=pullback] {assets/data/pb_gbdt.dat};
-      \addlegendentry{Pullback (bytes)}
       \addplot[direct, thick, mark=square*, mark size=1.4pt] table[x=budget, y=occlusion_k256] {assets/data/pb_gbdt.dat};
-      \addlegendentry{Occlusion, 256 windows}
-      \addplot[alternative, thick, mark=triangle*, mark size=2pt] table[x=budget, y=field_oracle] {assets/data/pb_gbdt.dat};
-      \addlegendentry{Field-occlusion oracle}
       \addplot[direct, thick, dashed, mark=square, mark size=1.4pt] table[x=budget, y=occlusion_k4096] {assets/data/pb_gbdt.dat};
-      \addlegendentry{Occlusion, 4{,}096 windows}
+      \addplot[alternative, thick, mark=triangle*, mark size=2pt] table[x=budget, y=field_oracle] {assets/data/pb_gbdt.dat};
       \addplot[floor!60, thick, dotted] table[x=budget, y=random] {assets/data/pb_gbdt.dat};
-      \addlegendentry{Random windows}
+    \end{axis}
+    \begin{axis}[
+      paper, at={(main.east)}, anchor=west, xshift=2.3cm,
+      width=0.36\columnwidth, height=0.6\columnwidth,
+      xbar, bar width=5pt, bar shift=0pt, xmode=log, log origin=infty, xmin=0.5, xmax=3e5,
+      xtick={1,100,10000}, xticklabels={$10^0$,$10^2$,$10^4$}, xminorgrids=false,
+      ymin=-0.6, ymax=4.6, ytick={0,...,4}, axis y line*=left, ytick style={draw=none},
+      yticklabels={
+        {Random \pbsample{floor!60, thick, dotted}{none}},
+        {Field oracle \pbsample{alternative, thick}{triangle*}},
+        {Occlusion (4{,}096) \pbsample{direct, thick, dashed}{square}},
+        {Occlusion (256) \pbsample{direct, thick}{square*}},
+        {Pullback \pbsample{ours, thick}{*}},
+      },
+      yticklabel style={font=\scriptsize},
+      xlabel={Extractions},
+      nodes near coords, every node near coord/.style={font=\scriptsize, text=black, anchor=west, xshift=1pt},
+      point meta=explicit symbolic,
+    ]
+      \addplot[ours, fill=ours] coordinates {(1,4)[1]};
+      \addplot[direct, fill=direct] coordinates {(258,3)[258]};
+      \addplot[direct, fill=direct!40] coordinates {(4099,2)[4{,}099]};
+      \addplot[alternative, fill=alternative] coordinates {(124,1)[124]};
+      \node[font=\scriptsize, anchor=west] at (axis cs:0.5,0) {0};
     \end{axis}
   \end{tikzpicture}
-  \caption{Deleting the bytes that each method ranks highest from the GBDT's files (median over 100 files). The
-  pullback of TreeSHAP ranks single bytes from one feature extraction and removes more of the detector's evidence at
-  every budget than occlusion, which needs one extraction per window and gains almost nothing from 16 times finer
-  windows, and than the oracle that occludes each parsed header field and section.}
+  \caption{Deleting the bytes that each method ranks highest from the GBDT's files (100 files). Left: the median drop
+  in the GBDT's log-odds. Right: feature extractions per file (median). The pullback of TreeSHAP ranks single bytes from
+  one extraction and removes more evidence at every budget than occlusion, which needs one extraction per window and
+  gains almost nothing from 16 times finer windows, and than an oracle that occludes each parsed field and section.}
   \label{fig:XML:PullbackDeletion}
 \end{figure}
-
-\begin{table}[t]
-  \centering
-  \small
-  \begin{tabular}{@{}llrrr@{}}
-    \toprule
-    & & & \multicolumn{2}{c}{Evidence removed} \\
-    \cmidrule(l){4-5}
-    Resolution & Direct method & Extractions & Direct & Pullback \\
-    \midrule
-    64 windows & Occlusion & 65 & 4.8 & 4.6 \\
-    256 windows & Occlusion & 258 & 5.1 & 5.0 \\
-    256 windows & KernelSHAP & 2{,}050 & 5.5 & 5.0 \\
-    1{,}024 windows & Occlusion & 1{,}025 & 5.5 & 5.4 \\
-    4{,}096 windows & Occlusion & 4{,}099 & 5.5 & 6.0 \\
-    Fields & Field oracle & 124 & 4.7 & --- \\
-    Single bytes & --- & --- & --- & \textbf{8.0} \\
-    \midrule
-    \multicolumn{3}{@{}l}{Random windows} & 0.9 & \\
-    \bottomrule
-  \end{tabular}
-  \caption{Faithfulness against cost on the GBDT (100 files). Evidence removed: the GBDT log-odds removed by deleting
-  a method's top-ranked bytes, averaged over the budgets of Figure~\ref{fig:XML:PullbackDeletion} and the files. The
-  pullback of TreeSHAP needs a single feature extraction at every resolution, summed into the same windows as each
-  direct method; the direct methods need one extraction per window, field, or coalition.}
-  \label{tab:XML:PullbackCost}
-\end{table}

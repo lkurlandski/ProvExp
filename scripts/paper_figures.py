@@ -4,7 +4,7 @@ Data files for the manuscript's pgfplots figures and result tables, written to `
     pb_gbdt.dat      pullback faithfulness on the GBDT (Section 4.1; run 56): per deletion budget, the median GBDT
                      evidence removed by each ranking in PB_CURVES
     pb_gbdt_area.dat the same experiment's deletion areas (mean evidence removed over the budgets below 100%), mean over
-                     the files, with the median feature extractions per file, for Table 2
+                     the files, with the median feature extractions per file (Figure 3, right; the areas in the text)
     pf_malconv.dat   the pushforward on MalConv (Section 5.1; run 58): per deletion budget, the median MalConv
                      evidence removed by each ranking, over the files with every deletion verified
 

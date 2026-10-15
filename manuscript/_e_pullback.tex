@@ -40,7 +40,7 @@ as problem-space explanations are usually tested, by deleting the top-ranked byt
 detector's evidence disappears, and we compare the pullback with explaining the detector directly over the bytes. In
 short, at the same resolution the pullback is as faithful as direct explanation at a small fraction of its cost, and at
 the resolution of single bytes, which direct explanation cannot afford, it removes substantially more evidence than any
-direct method we tried (Table~\ref{tab:XML:PullbackCost} and Figure~\ref{fig:XML:PullbackDeletion}).
+direct method we tried (Figure~\ref{fig:XML:PullbackDeletion}).
 
 We explain the GBDT with TreeSHAP, both its path-dependent and interventional variants (a background of 1{,}000
 balanced training files), and with KernelSHAP (32{,}768 coalitions, a 16-file balanced background). Each explanation
@@ -65,7 +65,7 @@ every ranking breaks ties by a seeded random permutation rather than by position
 
 \input{assets/fig_pullback_cost}
 
-Table~\ref{tab:XML:PullbackCost} compares the pullback with the direct methods at the same resolution. Summed into the
+At the same resolution, the pullback is as faithful as direct explanation at a fraction of its cost. Summed into the
 windows that occlusion uses, the pullback removes as much evidence as occlusion at 64, 256, and 1{,}024 windows (4.6,
 5.0, and 5.4 log-odds against 4.8, 5.1, and 5.5; $p \geq 0.55$) and more at 4{,}096 (6.0 against 5.5, $p = 0.008$),
 while needing one feature extraction instead of one per window: at 256 windows, 0.15\,s instead of 20\,s for the median file, or 1/135 of the time. The
