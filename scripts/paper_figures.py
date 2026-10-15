@@ -1,6 +1,10 @@
 """
-Data files for the manuscript's pgfplots figures, written to `manuscript/assets/data/`.
+Data files for the manuscript's pgfplots figures and result tables, written to `manuscript/assets/data/`.
 
+    pb_gbdt.dat      pullback faithfulness on the GBDT (Section 4.1; run 56): per deletion budget, the median GBDT
+                     evidence removed by each ranking in PB_CURVES
+    pb_gbdt_area.dat the same experiment's deletion areas (mean evidence removed over the budgets below 100%), mean over
+                     the files, with the median feature extractions per file, for Table 2
     pf_malconv.dat   the pushforward on MalConv (Section 5.1; run 58): per deletion budget, the median MalConv
                      evidence removed by each ranking, over the files with every deletion verified
 
@@ -13,16 +17,110 @@ from __future__ import annotations
 from argparse import ArgumentParser
 from pathlib import Path
 
+import numpy as np
 import polars as pl
 
 
 __all__ = [
+    "pb_gbdt_areas",
+    "pb_gbdt_curves",
     "pf_malconv_curves",
 ]
 
 
 ROOT = Path(__file__).parent.parent
 METHODS = ("pushforward", "surrogate", "ig_k256", "random_feat", "random")
+EXPLAINER = "treeshap_interventional"
+PB_CURVES = {
+    f"pullback:{EXPLAINER}": "pullback",
+    "occlusion": "occlusion_k256",
+    "occlusion_k4096": "occlusion_k4096",
+    "field_occlusion": "field_oracle",
+    "random": "random",
+}
+PB_AREAS = {
+    f"pullback_k64:{EXPLAINER}": ("pullback_k64", None),
+    f"pullback_k:{EXPLAINER}": ("pullback_k256", None),
+    f"pullback_k1024:{EXPLAINER}": ("pullback_k1024", None),
+    f"pullback_k4096:{EXPLAINER}": ("pullback_k4096", None),
+    f"pullback:{EXPLAINER}": ("pullback", None),
+    f"blackbox:{EXPLAINER}": ("blackbox_k256", "occlusion_extractions"),
+    "occlusion_k64": ("occlusion_k64", "occlusion_extractions_k64"),
+    "occlusion": ("occlusion_k256", "occlusion_extractions"),
+    "occlusion_k1024": ("occlusion_k1024", "occlusion_extractions_k1024"),
+    "occlusion_k4096": ("occlusion_k4096", "occlusion_extractions_k4096"),
+    "kernelshap_windows": ("kernelshap_k256", "kernelshap_windows_extractions"),
+    "field_occlusion": ("field_oracle", "field_oracle_extractions"),
+    "random": ("random", None),
+}
+
+
+################################################################################
+# Pullback on the GBDT
+################################################################################
+
+
+def _pb_gbdt_evidence(run: Path) -> tuple[pl.DataFrame, pl.DataFrame]:
+    """The GBDT evidence removed per (file, ranking, budget), as scripts/pb1_tables.py computes it, and the files."""
+    curves = pl.read_parquet(run / "curves.parquet")
+    files = pl.read_parquet(run / "files.parquet").filter(pl.col("status") == "ok")
+    c = (
+        curves.filter(pl.col("valid") & (pl.col("model") == "gbdt") & (pl.col("curve") == "deletion"))
+        .with_columns(pl.col("method").str.replace(r"^random:\d+$", "random"))
+        .group_by("index", "method", "budget").agg(pl.col("log_odds").mean())
+        .join(files.select("index", pl.col("log_odds:gbdt").alias("f0")), on="index")
+        .with_columns((pl.col("f0").sign().replace(0, 1) * (pl.col("f0") - pl.col("log_odds"))).alias("removed"))
+    )
+    return c, files
+
+
+def pb_gbdt_curves(run: Path) -> pl.DataFrame:
+    """
+    The median GBDT evidence removed per (budget, ranking) for the rankings in PB_CURVES.
+
+    Args:
+        run: A scripts/faithfulness.py output directory with the field oracle (run 56).
+
+    Returns:
+        One row per budget (budgets up to 50%, in percent), one column per ranking.
+    """
+    c, _ = _pb_gbdt_evidence(run)
+    c = c.filter(pl.col("method").is_in(list(PB_CURVES)) & (pl.col("budget") <= 0.5))
+    wide = c.group_by("method", "budget").agg(pl.col("removed").median()).pivot(on="method", index="budget", values="removed")
+    missing = [m for m in PB_CURVES if m not in wide.columns]
+    if missing:
+        raise RuntimeError(f"The run has no rankings {missing}.")
+    return wide.sort("budget").select(pl.col("budget") * 100, *[pl.col(m).alias(n) for m, n in PB_CURVES.items()])
+
+
+def pb_gbdt_areas(run: Path) -> pl.DataFrame:
+    """
+    The deletion area of each ranking in PB_AREAS, mean over the files with every ranking, and its cost.
+
+    Args:
+        run: A scripts/faithfulness.py output directory with the field oracle (run 56).
+
+    Returns:
+        One row per ranking: its area (mean evidence removed over the budgets below 100%), its gain (area over random,
+        relative to occlusion at 256 windows), and the median feature extractions per file (1 for the pullbacks, whose
+        P comes with the single extraction; the black-box pullback reuses occlusion's extractions; 0 for random).
+    """
+    c, files = _pb_gbdt_evidence(run)
+    areas = (
+        c.filter(pl.col("budget") < 1.0).group_by("index", "method").agg(pl.col("removed").mean().alias("area"))
+        .pivot(on="method", index="index", values="area").drop_nulls()
+    )
+    missing = [m for m in PB_AREAS if m not in areas.columns]
+    if missing:
+        raise RuntimeError(f"The run has no rankings {missing}.")
+    random = float(areas["random"].to_numpy().mean())
+    occlusion = float(areas["occlusion"].to_numpy().mean())
+    rows = []
+    for method, (name, cost) in PB_AREAS.items():
+        area = float(areas[method].to_numpy().mean())
+        extractions = float(np.median(files[cost].to_numpy())) if cost is not None else (0.0 if method == "random" else 1.0)
+        rows.append({"method": name, "area": area, "gain": (area - random) / (occlusion - random), "extractions": extractions})
+    return pl.DataFrame(rows)
 
 
 ################################################################################
@@ -63,11 +161,18 @@ def pf_malconv_curves(run: Path) -> pl.DataFrame:
 
 def main() -> None:
     parser = ArgumentParser(description="Write the data files of the manuscript's figures.")
+    parser.add_argument("--pb_gbdt", type=Path, default=ROOT / "artifacts" / "experiments" / "e1" / "seed-0" / "zeros-typical-header-oracle")
     parser.add_argument("--pf_malconv", type=Path, default=ROOT / "artifacts" / "experiments" / "pf_malconv" / "seed-0")
     parser.add_argument("--outdir", type=Path, default=ROOT / "manuscript" / "assets" / "data")
     args = parser.parse_args()
 
     args.outdir.mkdir(parents=True, exist_ok=True)
+    pb = pb_gbdt_curves(args.pb_gbdt)
+    pb.write_csv(args.outdir / "pb_gbdt.dat", separator=" ", float_precision=4)
+    print(pb)
+    pb_areas = pb_gbdt_areas(args.pb_gbdt)
+    pb_areas.write_csv(args.outdir / "pb_gbdt_area.dat", separator=" ", float_precision=4)
+    print(pb_areas)
     pf = pf_malconv_curves(args.pf_malconv)
     pf.write_csv(args.outdir / "pf_malconv.dat", separator=" ", float_precision=4)
     print(pf)

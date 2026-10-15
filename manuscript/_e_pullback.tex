@@ -40,7 +40,7 @@ as problem-space explanations are usually tested, by deleting the top-ranked byt
 detector's evidence disappears, and we compare the pullback with explaining the detector directly over the bytes. In
 short, at the same resolution the pullback is as faithful as direct explanation at a small fraction of its cost, and at
 the resolution of single bytes, which direct explanation cannot afford, it removes substantially more evidence than any
-direct method we tried (Figure~\ref{fig:XML:PullbackCost}).
+direct method we tried (Table~\ref{tab:XML:PullbackCost} and Figure~\ref{fig:XML:PullbackDeletion}).
 
 We explain the GBDT with TreeSHAP, both its path-dependent and interventional variants (a background of 1{,}000
 balanced training files), and with KernelSHAP (32{,}768 coalitions, a 16-file balanced background). Each explanation
@@ -54,36 +54,40 @@ which bytes the extractor reads, and is the structure-aware upper bound a defend
 occlusion run also yields the black-box estimate of $P$ (Section~\ref{sec:XML:Constructing}), we include the pullback
 through that estimate as well, and a random window order as the floor.
 
-Every ranking is scored by the same deletion curve: we delete its top-ranked bytes at log-spaced budgets from 0.1\% to
-50\% of the file, re-extract the features, re-score the model, and record the evidence removed,
-$s \cdot (f(x) - f(x'))$, where $s$ is the sign of the original log-odds. The area under the curve (the mean over the
-budgets) is reported as a gain over random, relative to that of occlusion at 256 windows, so that $1$ means as faithful
-as occlusion. We compare methods per file with paired Wilcoxon tests and count cost in feature extractions per file.
+Every ranking is scored in the same way. We delete its top-ranked bytes at log-spaced budgets from 0.1\% to 50\% of
+the file, re-extract the features, re-score the model, and record the \emph{evidence removed}, how far the log-odds
+fall toward the other class, $s \cdot (f(x) - f(x'))$ with $s$ the sign of the original log-odds. A ranking that finds
+the bytes the decision rests on removes much evidence already at small budgets. We summarize each ranking by its
+evidence removed averaged over the budgets and then over the files, compare methods per file with paired Wilcoxon
+tests, and count cost in feature extractions per file.
 Equal scores are common, among bytes with identical provenance and among windows whose occlusion changes nothing, so
 every ranking breaks ties by a seeded random permutation rather than by position.
 
 \input{assets/fig_pullback_cost}
 
-Figure~\ref{fig:XML:PullbackCost} shows two regimes. Coarsened to the windows that occlusion uses, the pullback is as
-faithful as occlusion at every window count up to 1{,}024 (0.89, 0.98, and 1.08 against 0.93, 1.00, and 1.10;
-$p \geq 0.55$) and ahead of it at 4{,}096 (1.23 against 1.11, $p = 0.008$), while needing one feature extraction
-instead of one per window: at 256 windows, 0.15\,s instead of 20\,s for the median file, or 1/135 of the time. The
+Table~\ref{tab:XML:PullbackCost} compares the pullback with the direct methods at the same resolution. Summed into the
+windows that occlusion uses, the pullback removes as much evidence as occlusion at 64, 256, and 1{,}024 windows (4.6,
+5.0, and 5.4 log-odds against 4.8, 5.1, and 5.5; $p \geq 0.55$) and more at 4{,}096 (6.0 against 5.5, $p = 0.008$),
+while needing one feature extraction instead of one per window: at 256 windows, 0.15\,s instead of 20\,s for the median file, or 1/135 of the time. The
 pullback also needs its
 feature-space explanation, whose cost depends on the explainer: milliseconds for TreeSHAP, but about 45\,s per file for
-KernelSHAP, whose own cost then dominates either way. The three GBDT explainers give pullbacks within 0.05 of one
-another.
+KernelSHAP, whose own cost then dominates either way. The three GBDT explainers give pullbacks within about 0.2
+log-odds of one another.
 
-Occlusion, in turn, does not approach byte resolution by refining its windows. Its gain rises to 1.10 at 1{,}024
-windows and then stops (1.11 at 4{,}096 windows and 4{,}099 extractions per file), plausibly because occluding a small
-window changes the features too little to rank it; KernelSHAP over windows ends at the same level. The byte-level
-pullback, from the same single extraction, removes 1.71 times occlusion's gain and beats each of the strongest direct
-baselines on 79--85 of 100 files ($p \leq 6 \cdot 10^{-12}$). Knowing the parser's read set does not close the gap.
-The field-occlusion oracle, at a median of 124 extractions per file, reaches only 0.91, because it shares each field's
+Figure~\ref{fig:XML:PullbackDeletion} shows what byte resolution adds. Occlusion does not approach it by refining its
+windows: the evidence it removes rises to 5.5 log-odds at 1{,}024 windows and then stops (5.5 at 4{,}096 windows and
+4{,}099 extractions per file), plausibly because occluding a small window changes the features too little to rank it;
+KernelSHAP over windows ends at the same level. The byte-level pullback, from the same single extraction, removes 8.0.
+Above the 0.9 that a random ranking removes, that is 1.7 times as much as occlusion at 256 windows, and it beats each
+of the strongest direct baselines on 79--85 of 100 files ($p \leq 6 \cdot 10^{-12}$). Knowing the parser's read set
+does not close the gap. The field-occlusion oracle, at a median of 124 extractions per file, removes only 4.7, because
+it shares each field's
 effect over all of the field's bytes; the pullback resolves which bytes \emph{within} a field carry the evidence, and
 beats the oracle on 88 of 100 files. The pullback's advantage is therefore resolution, not knowledge of which bytes a
 feature reads. It holds under both variants of the operator: with random instead of zero content, the byte-level
-pullback keeps a gain of 1.69 and beats occlusion on 81 of 100 files. Deleting the top half of the bytes can remove
-more evidence than deleting everything, for every method family; this \emph{overshoot} arises mostly because rankings
+pullback again removes 1.7 times as much evidence above random as occlusion and beats it on 81 of 100 files. Deleting
+the top half of the bytes can remove more evidence than deleting everything (6.4 log-odds in the median file), for
+every method family; this \emph{overshoot} arises mostly because rankings
 follow signed evidence, and ranking by magnitude removes three quarters of it.
 
 The same black-box estimate shows how much instrumentation matters. Where a feature is additive in its bytes (the byte
@@ -93,7 +97,7 @@ for those groups independently. Where a feature is not additive, the two differ 
 strings, 0.60 for entropy windows and hashed imports), because occluding part of a string or a name changes or moves
 it rather than removing a share of it, and occlusion misses what removal does not change: it sees 23--43\% of the
 header features, depending on the fill, against all of them. The black-box pullback nevertheless matches occlusion
-(1.04 of its gain), as the instrumented pullback does. A defender without the extractor's source can therefore
+(5.2 against 5.1 log-odds), as the instrumented pullback does. A defender without the extractor's source can therefore
 estimate $P$ and explain at window resolution; instrumentation adds byte resolution and replaces the occlusion run with
 a single extraction. Neither construction can place attribution on features that no byte produces: the null element
 receives about a fifth of the GBDT's attribution, most of it on features whose value encodes an absence
