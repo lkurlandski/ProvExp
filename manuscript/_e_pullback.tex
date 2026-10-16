@@ -10,15 +10,13 @@ detectors that read the same file through different representations, one file at
 \label{sec:XML:PullbackFaithfulness}
 
 A pulled-back explanation is useful only if the bytes it ranks highest are the bytes the decision rests on. We test this
-as problem-space explanations are usually tested, by deleting the top-ranked bytes and measuring how much of the
-detector's evidence disappears, and we compare the pullback with explaining the detector directly over the bytes. In
+by deleting bytes (Section~\ref{sec:XML:SetupDeletion}) and compare the pullback with explaining the detector directly
+over the bytes. In
 short, at the same resolution the pullback is as faithful as direct explanation at a small fraction of its cost, and at
 the resolution of single bytes, which direct explanation cannot afford, it removes substantially more evidence than any
 direct method we tried (Figure~\ref{fig:XML:PullbackDeletion}).
 
-We explain the GBDT with TreeSHAP, both its path-dependent and interventional variants (a background of 1{,}000
-balanced training files), and with KernelSHAP (32{,}768 coalitions, a 16-file balanced background). Each explanation
-is pulled back to the bytes, where it ranks them by evidence for the predicted class, either byte by byte or, coarsened
+Each of the GBDT's three explanations (Section~\ref{sec:XML:SetupData}) is pulled back to the bytes, where it ranks them by evidence for the predicted class, either byte by byte or, coarsened
 through $P^G$ (Section~\ref{sec:XML:SetupWindows}), window by window; the coarsened rankings separate the effect of
 resolution from that of the information in the explanation. The direct baselines explain the detector over the bytes
 without $P$. Occlusion over $K$ equal windows is the standard problem-space explainer, and we vary $K$ from 64 to
@@ -26,16 +24,8 @@ without $P$. Occlusion over $K$ equal windows is the standard problem-space expl
 found. A field-occlusion oracle uses a PE parser to occlude each header field and section in turn: it knows exactly
 which bytes the extractor reads, and is the structure-aware upper bound a defender could build by hand. Because the
 occlusion run also yields the black-box estimate of $P$ (Section~\ref{sec:XML:Constructing}), we include the pullback
-through that estimate as well, and a random window order as the floor.
-
-Every ranking is scored in the same way. We delete its top-ranked bytes at log-spaced budgets from 0.1\% to 50\% of
-the file, re-extract the features, re-score the model, and record the \emph{evidence removed}, how far the log-odds
-fall toward the other class, $s \cdot (f(x) - f(x'))$ with $s$ the sign of the original log-odds. A ranking that finds
-the bytes the decision rests on removes much evidence already at small budgets. We summarize each ranking by its
-evidence removed averaged over the budgets and then over the files, compare methods per file with paired Wilcoxon
-tests, and count cost in feature extractions per file.
-Equal scores are common, among bytes with identical provenance and among windows whose occlusion changes nothing, so
-every ranking breaks ties by a seeded random permutation rather than by position.
+through that estimate as well, and a random window order as the floor. Every ranking is scored by the evidence it
+removes under the deletion operator of Section~\ref{sec:XML:SetupDeletion}.
 
 \input{assets/fig_pullback_cost}
 
