@@ -123,10 +123,12 @@ Explanation provenance differs from this work in three ways. \emph{First}, it ob
 feature extractor that is a program, by instrumenting it once or by estimating it with occlusion, and so brings
 attribution propagation to exactly the detectors FINER leaves out; the mapping that explanation-guided attacks and
 shortcut analyses build by hand, feature by feature, becomes a by-product of extraction, for every feature and every
-file. Our pullback coincides with G-DeepSHAP's rule when $P$ holds each byte's share of each feature, and we claim no
-novelty for that propagation step. \emph{Second}, the same matrix runs the other way: the pushforward moves a byte-level
+file. Our pullback coincides with G-DeepSHAP's rule, and we claim no novelty for that propagation step; what is new is
+the matrix, which we ground in the Shapley value of a program's items and which instrumentation records exactly for
+additive features. \emph{Second}, the same matrix runs the other way: the pushforward moves a byte-level
 explanation through a non-invertible program into the features of a detector that never reads them, giving a raw-byte
-detector a vocabulary in which its reliance recurs across files. To our knowledge, no prior work transfers
+detector a vocabulary in which its reliance recurs across files. We cast it as the inverse of the pullback and state
+what any such transfer can recover. To our knowledge, no prior work transfers
 explanations in this direction. Unlike a surrogate, the pushforward explains the detector itself, not a model that
 imitates its outputs; unlike concept probes, it needs neither the detector's internals nor labeled examples, only a
 byte-level explanation and the extractor's record of which bytes each feature is computed from. \emph{Third}, the two directions together put detectors over different representations

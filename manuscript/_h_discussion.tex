@@ -13,6 +13,16 @@ additive (Section~\ref{sec:XML:PullbackFaithfulness}). Between the two lies dyna
 provenance automatically, at byte resolution, from an extractor run as a binary. It would make explanation provenance a
 drop-in addition to any extractor, and we see it as the natural next step.
 
+\paragraph{Beyond the exact cases.} Section~\ref{sec:XML:Framework} makes the transfers exact for features additive
+over their items and a linear model, and the experiments show them working well beyond both. For entropies and
+averages, $P$ follows the data flow; their signed Shapley shares could be estimated by sampling coalitions of items, at
+extra cost and at the price of the pushforward's normalization. For a tree ensemble, the pullback is G-DeepSHAP's
+rescale rule and approximates the interactions between features, which is where the quarter of a planted trigger's
+credit that lands on features the trigger does not change comes from (Section~\ref{sec:XML:PullbackTrigger}). The
+pushforward comes close to its exact form in one step, and what neither recovers lies mostly in features with
+identical provenance, which no transfer can separate; a tool built on the pushforward can report such features as a
+single group.
+
 \paragraph{Explainers.} The transfers are linear in the explanation, so they carry it into the other space as it is:
 they make a good explanation more useful and leave a weak one as weak as it was. The quality of a transferred
 explanation is therefore the quality of its source, which the black-box and instrumented $P$ do not change

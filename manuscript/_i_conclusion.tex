@@ -1,6 +1,8 @@
 A feature-based and a raw-byte malware detector explain their decisions in spaces that do not meet: one in features
 with no location in the file, the other in bytes with no name. We showed that recording, during feature extraction,
-which bytes produce each feature gives a single provenance matrix that carries explanations both ways. Pulled back, a
+which bytes produce each feature gives a single provenance matrix that carries explanations both ways. Grounded in the
+Shapley value, the matrix is exactly what instrumentation records for additive features; it makes the pullback exact
+for linear models and casts the pushforward as the pullback's inverse, as far as the bytes allow. Pulled back, a
 feature-based detector's explanation lands on the bytes at the cost of one extraction, as faithfully as direct
 problem-space explanation at the same resolution and more so at byte resolution, and lets two detectors be compared on
 the same file at a resolution that windows of bytes cannot reach. Pushed forward, a raw-byte detector's explanations
