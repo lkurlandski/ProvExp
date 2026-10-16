@@ -5,7 +5,7 @@ moved out of Section 3 into a new Section 4, "Experimental Setup" (`manuscript/_
 Table 1, data/models/explainers, deletion operator, windows), experiments unchanged; build clean. Go/no-go run 61 done: a
 qualified go (bytes R 0.80 -> 0.86, 93/100 files; the rest is non-identifiable; `docs/theory.md`, "Result"). Next: the
 identifiability ceiling and the MalConv test with the iterated pushforward; draft Pillar A (Shapley-grounded P) statements for the user.
-Open for the user: signed vs. nonnegative P (analysis in `docs/theory.md`), black-box P's place, the GBDT
+Decided: P stays nonnegative (paragraph in Section 3). Open for the user: black-box P's place, the GBDT
 window-pushforward test.
 
 Last updated: 2026-10-14 (end of day). **The self-review's main criticisms are answered with measured results, and
