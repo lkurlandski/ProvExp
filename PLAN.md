@@ -9,9 +9,12 @@ pushforward) done (`docs/experiments/audit.md`); 3-B and the earlier rule-based 
 (`docs/graveyard.md`). Claims 1-3 predate the restructuring and are partly rewritten (claim 3 for AU, claim 4 for CM);
 the rest to follow. No scaling until the pilot results and the claims are settled (user).
 
-> **2026-10-16:** Section 3 is being strengthened (W1): a Shapley-grounded construction of P and the pushforward as
-> an inverse problem (iterated pushforward), plan and go/no-go in `docs/theory.md`. Coarsening moved out of Section 3
-> into the new Experimental Setup section (an experimental device only).
+> **2026-10-16:** **Section 3 carries the theory again, a new kind (W1).** (A) Shapley-grounded construction of P:
+> instrumentation equals the Shapley provenance for features additive over their items; a data-flow convention for
+> the rest; P stays nonnegative. (B) The pullback is exact for linear models over such features; the pushforward is
+> the first step of an exact inverse (iterated pushforward) that recovers everything the bytes determine. Go/no-go
+> run 61: a qualified go (R 0.80 -> 0.86 at bytes). Coarsening left Section 3 for the new Experimental Setup section
+> (an experimental device only). Details, decisions, and next checks: `docs/theory.md`, `docs/status.md`.
 
 ## Target
 
@@ -415,6 +418,12 @@ input is kept for now but cannot credit absence (zero baseline); drop it unless 
 methods may be revisited.
 
 ## Modest theory (each result short, correct, and useful)
+
+> **2026-10-16, current theory (in the manuscript, Section 3):** Definition Shapley Provenance; Proposition Additive
+> Features (supersedes T1, now stated over items, with the context held fixed); Proposition Exact Pullback
+> (G-DeepSHAP's linear-chain result for a program); Definition and Proposition Exact Pushforward (Landweber iteration,
+> conservation, identifiability via the null space of P, one step exact without shared elements; the archived round-
+> trip matrix M = PᵀD†P is its normal operator). Coarsening (T3) is no longer theory. The items below are historical.
 
 - **T1 Structural = Shapley provenance for additive groups.** For σ additive in element contributions (histograms,
   counts), instrumented provenance equals the Shapley-of-σ provenance. For non-additive groups (entropy windows,

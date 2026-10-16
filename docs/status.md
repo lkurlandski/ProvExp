@@ -1,15 +1,49 @@
 # Status
 
-**2026-10-16 (in progress):** strengthening Section 3's novelty (W1); plan in `docs/theory.md`. Done: Granularity/P^G
-moved out of Section 3 into a new Section 4, "Experimental Setup" (`manuscript/_d_setup.tex`: EMBER instrumentation and
-Table 1, data/models/explainers, deletion operator, windows), experiments unchanged; build clean. Go/no-go run 61 done: a
-qualified go (bytes R 0.80 -> 0.86, 93/100 files; the rest is non-identifiable; `docs/theory.md`, "Result"). Next: the
-identifiability ceiling and the MalConv test with the iterated pushforward; Section 3 rewritten (2026-10-16): Shapley-grounded
-construction, exact pullback, exact pushforward (for the user to read; experiments still use the one-step psi).
-Decided: P stays nonnegative (paragraph in Section 3). Open for the user: black-box P's place, the GBDT
-window-pushforward test.
+Last updated: 2026-10-16 (end of session). **Section 3 now carries real theory (answer to W1, thin novelty).** Today:
+- **Brainstorm** of directions for W1 (in chat; outcome in `docs/theory.md`). Kept: (A) a Shapley-grounded construction
+  of P and (B) the pushforward as an inverse problem. Dropped: a "theory of resolution" and axiomatic uniqueness.
+  Parked as possible case studies: bounds on what control of a byte set can do; naming a raw-byte model's units.
+- **Coarsening out of Section 3** (user: weak, distracting). Granularity/P^G moved to a new **Section 4, "Experimental
+  Setup"** (`manuscript/_d_setup.tex`: EMBER instrumentation and Table 1, data/models/explainers, deletion operator,
+  windows of bytes), an experimental device only; the experiments that use it are unchanged.
+- **P stays nonnegative** (user), with a short "Why provenance is nonnegative" paragraph in 3.3.
+- **Run 61, go/no-go for the iterated pushforward** (`scripts/pf_inverse.py`, `run/61_pf_inverse.sh`, user ran it):
+  recovering TreeSHAP from its pullback, R rises 0.80 -> 0.86 at bytes (93/100 files, p = 7e-17) and 0.36 -> 0.44 at
+  256 windows (84/100), for all three explainers. Below the "toward 1" hypothesis: the limit matches the byte
+  explanation exactly (residual ~1e-9) but misses 37% of the feature explanation, i.e., non-identifiable features.
+  **A qualified go:** the theory explains the gap; the algorithmic gain is reliable but modest.
+- **Section 3 rewritten** (`_c_method.tex`): 3.3 items, Definition Shapley Provenance, Proposition Additive Features
+  (instrumentation = Shapley provenance for features additive over their items: fields, counts, histograms over a
+  fixed denominator, one-sign hashed counts), the data-flow convention for entropies/averages/ratios/min-max, why
+  nonnegative, 3.3.1 the black-box estimate; 3.4 Proposition Exact Pullback (linear model -> exact problem-space
+  Shapley values; G-DeepSHAP's linear-chain result for a program), Definition and Proposition Exact Pushforward
+  (iteration converges, conserves, recovers everything the bytes determine; one step exact without shared elements).
+  Key modeling choice: the game holds each feature's context fixed (parse, denominators). Build clean, 16 pages.
 
-Last updated: 2026-10-14 (end of day). **The self-review's main criticisms are answered with measured results, and
+**Current goal:** the user reads the new Section 3 (pp. 4-6); then the cheap checks that decide how far the exact
+pushforward goes (below), before any rerun of the pilot experiments. Front/back matter (abstract, intro, discussion,
+conclusion) and W7 (Android) come after; the scale-up last.
+
+**Waiting on the user:** feedback on Section 3; the black-box P's final place (now 3.3.1, maybe an appendix later);
+whether to keep the GBDT window-pushforward test (a lab study need not be realistic).
+
+## Next (this thread)
+
+1. User reads Section 3; apply feedback (keep it tight).
+2. **Identifiability ceiling** (cheap, GBDT): add a method to `scripts/pf_inverse.py` that merges features with
+   identical provenance columns (or projects TreeSHAP onto the row space of P) and measures the best R the bytes
+   allow; is the exact pushforward's 0.86 near it? The user runs it (~10-20 min, like run 61).
+3. **MalConv deletion test with the exact pushforward** (as runs 58/60, GPU; user runs it): does the gain matter where
+   the audit uses the pushforward?
+4. Only then: decide whether the experiments switch to the exact pushforward (Section 6 TODO in `_c_method.tex`) and
+   which pilot runs to repeat (only the pushforward half: PF1, the MalConv test, the audit).
+
+---
+
+Previous session (2026-10-14):
+
+**The self-review's main criticisms are answered with measured results, and
 Sections 3-5 are revised for presentation.** Today, in order:
 - **Run 56, field-occlusion oracle** (W2/W4): gain 0.91 at 124 extractions/file; the byte-level pullback beats it 88/100.
 - **Run 57, B9** (triage vs. attack-caused disagreements): negative (design flaw: ~600 changed bytes in a ~19K-byte
