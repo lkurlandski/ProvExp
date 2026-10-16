@@ -8,6 +8,8 @@ operator (run 21: level 3, zeros fill; `--fill random` for the robustness check)
 For each of PB1's 100 pilot files:
 
     pushforward   the pushforward of MalConv's Integrated Gradients, a = P^T D^+ b (the method; what the audit uses);
+    pushforward_exact   with `--exact` (run 63): the exact pushforward of the same IG, M^+ P^T D^+ b with
+                  M = P^T D^+ P (Definition Exact Pushforward; the conjugate-gradient limit of scripts/pf_inverse.py);
     surrogate     interventional TreeSHAP of the surrogate of MalConv (scripts/audit_surrogate.py; the realistic
                   alternative, which never saw these files);
     random_feat   random feature explanations (standard normal), the floor;
@@ -20,7 +22,7 @@ and, as problem-space references that name no features:
 
 Each ranking deletes evidence for MalConv's predicted class (PB1's convention).
 
-Outputs, in `{outdir}/seed-{seed}/` (`seed-{seed}-random` with `--fill random`):
+Outputs, in `{outdir}/seed-{seed}/` (suffixed `-random` with `--fill random`, `-exact` with `--exact`):
     curves.parquet      one row per (file, ranking, budget): MalConv's log-odds, and whether the file verified
     files.parquet       one row per file: size, MalConv's log-odds, status, timing
     report.json         the configuration and timing
@@ -66,6 +68,8 @@ from cm_check import malconv_explanations  # noqa: E402
 from cm_check import malconv_log_odds  # noqa: E402
 from faithfulness import load_sample  # noqa: E402
 from faithfulness import load_window_scores  # noqa: E402
+from pf_inverse import inverse_pushforwards  # noqa: E402
+from pf_inverse import provenance_matrix  # noqa: E402
 
 
 __all__ = [
@@ -89,7 +93,13 @@ _STATE: dict[str, Any] = {}
 ################################################################################
 
 
-def feature_explanations(prov: Provenance, ig: FloatArray, surrogate: FloatArray, rng: np.random.Generator) -> dict[str, FloatArray]:
+def feature_explanations(
+    prov: Provenance,
+    ig: FloatArray,
+    surrogate: FloatArray,
+    rng: np.random.Generator,
+    exact: bool = False,
+) -> dict[str, FloatArray]:
     """
     The feature-space explanations of MalConv compared on one file.
 
@@ -98,6 +108,7 @@ def feature_explanations(prov: Provenance, ig: FloatArray, surrogate: FloatArray
         ig: MalConv's Integrated Gradients, per byte, shape (num_elements,).
         surrogate: The surrogate's TreeSHAP for the file, shape (num_features,).
         rng: The source of the random feature explanations.
+        exact: Also the exact pushforward of `ig` ("pushforward_exact").
 
     Returns:
         The pushforward of `ig`, the surrogate's explanation, and NUM_RANDOM random ones, each of shape (num_features,).
@@ -107,6 +118,9 @@ def feature_explanations(prov: Provenance, ig: FloatArray, surrogate: FloatArray
     if surrogate.shape != (prov.num_features,):
         raise ValueError(f"Expected a surrogate explanation of shape ({prov.num_features},). Got {surrogate.shape}.")
     out = {"pushforward": prov.pushforward(ig), "surrogate": surrogate}
+    if exact:
+        # The null element carries none of IG, so P without its row suffices (the null features get zero either way).
+        out["pushforward_exact"] = inverse_pushforwards(provenance_matrix(prov), ig, ())["cg"]
     for r in range(NUM_RANDOM):
         out[f"random_feat:{r}"] = rng.standard_normal(prov.num_features)
     return out
@@ -144,7 +158,7 @@ def process_file(task: dict[str, Any]) -> tuple[list[dict[str, Any]], dict[str, 
         w = np.repeat(np.arange(K), np.diff(edges))
 
         # Each feature-space explanation is pulled back onto the bytes, where MalConv lives.
-        feats = feature_explanations(prov, ig, task["surrogate"], np.random.default_rng([task["seed"], 2]))
+        feats = feature_explanations(prov, ig, task["surrogate"], np.random.default_rng([task["seed"], 2]), task["exact"])
         orders = {name: element_order(prov.pullback(a)[:m], d, byte_perm) for name, a in feats.items()}
         orders["ig"] = element_order(ig, d, byte_perm)
         orders["ig_k256"] = window_order(np.bincount(w, weights=ig, minlength=K), edges, d, ties.permutation(K).astype(np.int64))
@@ -200,7 +214,8 @@ def summarize(curves: pl.DataFrame, files: pl.DataFrame) -> None:
         print(wide)
     a = area.pivot(on="method", index="index", values="area")
     print("\nPaired comparisons of the per-file area (wins of the first, Wilcoxon p):")
-    for x, y in [("pushforward", "surrogate"), ("pushforward", "random_feat"), ("pushforward", "ig_k256"),
+    for x, y in [("pushforward_exact", "pushforward"), ("pushforward_exact", "surrogate"),
+                 ("pushforward", "surrogate"), ("pushforward", "random_feat"), ("pushforward", "ig_k256"),
                  ("pushforward", "ig"), ("surrogate", "random_feat")]:
         if x in a.columns and y in a.columns:
             u, v = a[x].to_numpy(), a[y].to_numpy()
@@ -228,10 +243,11 @@ def main() -> None:
     parser.add_argument("--outdir", type=Path, default=ROOT / "artifacts" / "experiments" / "pf_malconv")
     parser.add_argument("--num_workers", type=int, default=16)
     parser.add_argument("--fill", type=str, choices=["zeros", "random"], default="zeros", help="How deleted content bytes are filled.")
+    parser.add_argument("--exact", action="store_true", help="Also rank by the exact pushforward of IG.")
     parser.add_argument("--tables_only", action="store_true", help="Print the tables of an earlier run.")
     args = parser.parse_args()
 
-    outdir = args.outdir / (f"seed-{args.seed}" + ("" if args.fill == "zeros" else f"-{args.fill}"))
+    outdir = args.outdir / (f"seed-{args.seed}" + ("" if args.fill == "zeros" else f"-{args.fill}") + ("-exact" if args.exact else ""))
     if args.tables_only:
         summarize(pl.read_parquet(outdir / "curves.parquet"), pl.read_parquet(outdir / "files.parquet").filter(pl.col("status") == "ok"))
         return
@@ -260,7 +276,8 @@ def main() -> None:
         tasks.append({"index": int(r["index"]), "name": r["name"], "label": int(r["label"]), "shard": int(r["shard"]),
                       "position": int(r["position"]), "dbdir": args.db, "seed": int(r["index"]),
                       "surrogate": np.asarray(surrogate[int(r["index"])], dtype=np.float64),
-                      "windows": windows[int(r["index"])], "malconv_log_odds": log_odds, "ig": ig, "fill": args.fill})
+                      "windows": windows[int(r["index"])], "malconv_log_odds": log_odds, "ig": ig, "fill": args.fill,
+                      "exact": args.exact})
     seconds_malconv = time.time() - t_0
     del model
     print(f"Phase 1 (MalConv on {args.device}): {seconds_malconv:.0f} s.", flush=True)
