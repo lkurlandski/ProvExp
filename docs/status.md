@@ -35,8 +35,13 @@ Last updated: 2026-10-16 (end of session). **Section 3 now carries real theory (
   "Our Position", a discussion paragraph "Beyond the exact cases", and the conclusion. Light-touch: the structure and
   results of these sections are unchanged.
 
-**Current goal:** the user reads the revised abstract, introduction, discussion, and conclusion; then refine Section 4
-(Experimental Setup); then reassess W7 (Android); the scale-up last.
+- **Section 4 restructured** (`_d_setup.tex`): 4.1 Provenance for EMBER (items per feature group, null element),
+  4.2 Data, Detectors, and Explainers (the explainer settings moved here from 5.1), 4.3 Measuring Faithfulness by
+  Deletion (operator + evidence-removed protocol + ties, moved from 5.1), 4.4 Windows of Bytes. 17 pages; one 2 pt
+  overfull vbox on the last page (float reflow, harmless).
+
+**Current goal:** the user reads the revised front/back matter and Section 4; then reassess W7 (Android); the scale-up
+last.
 
 **Waiting on the user:** the black-box P's final place (now 3.3.1, maybe an appendix later); whether to keep the GBDT
 window-pushforward test (a lab study need not be realistic).
