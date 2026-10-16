@@ -4,15 +4,15 @@
 # files, zeros fill, budgets, and seeds as run 58; the other rankings reproduce run 58.
 # Hypothesis: a small, consistent gain over one step (as run 61's 0.80 -> 0.86), both well above the surrogate.
 #
-# Smoke-tested on 4 files (32 IG steps, 4 workers): 29 s, exact ~ one step (1.01x). Expect ~10 min: IG on GPU 1
-# (~4.5 min), then 16 workers (~5 min). Run in tmux.
+# Smoke-tested on 4 files (32 IG steps, 4 workers): 29 s. Took 14 min (2026-10-16): IG on GPU 1 203 s, 16 workers
+# 628 s. Result: exact = one step (median area 6.25 both, ratio 1.00), both 1.9x the surrogate (docs/theory.md).
 set -euo pipefail
 cd "$(dirname "$0")/.."
 source env/bin/activate
 export PYTHONHASHSEED=0
 
 LOG=artifacts/logs/pf-malconv-exact-seed0.log
-echo "Exact pushforward on MalConv: 100 pilot files, IG on GPU 1, then 16 workers (~10 min)."
+echo "Exact pushforward on MalConv: 100 pilot files, IG on GPU 1, then 16 workers (~14 min)."
 echo "Output: artifacts/experiments/pf_malconv/seed-0-exact/"
 echo "Log:    $LOG   (follow with: tail -f $LOG)"
 OMP_NUM_THREADS=1 python scripts/pf_malconv.py \

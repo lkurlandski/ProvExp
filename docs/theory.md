@@ -1,7 +1,7 @@
 # Strengthening Section 3 (opened 2026-10-16)
 
 Answer to W1 of `docs/review-2026-10-14.md` (thin technical novelty). Two theoretical pillars for Section 3, a go/no-go
-for the second, and case-study ideas parked for later. Nothing here is in the manuscript yet.
+for the second, and case-study ideas parked for later. Both pillars are in Section 3 of the manuscript (2026-10-16).
 
 ## Decisions so far (user, 2026-10-16)
 
@@ -124,6 +124,37 @@ parentheses), interventional TreeSHAP; the other two explainers agree within 0.0
   helps reliably but not dramatically. Two cheap checks decide how far to take it: (1) the identifiability ceiling
   (merge features with identical provenance; is the limit near it?); (2) the MalConv deletion test with the limit
   instead of one step, where the audit actually uses the pushforward.
+
+### The ceiling and MalConv (runs 62, 63, 2026-10-16)
+
+**Run 62, identifiability ceiling** (`run/62_pf_ceiling.sh`, `scripts/pf_inverse.py --name ceiling`; 12 min). The
+exact pushforward (cg) is already the projection of the native explanation onto P's row space (Proposition Exact
+Pushforward (iii)), so a projection is no ceiling. Instead, a "twins" oracle restores the native split inside groups of
+features with identical provenance columns (cg splits them evenly), a null-space move that no method can make from the
+bytes. R, interventional TreeSHAP (other explainers within 0.02), ablated reference (background in parentheses):
+
+| | one step | exact (cg) | twins oracle |
+|---|---|---|---|
+| bytes | 0.80 (0.72) | 0.86 (0.77) | 0.95 (0.85) |
+| 256 windows | 0.36 (0.37) | 0.44 (0.43) | 0.86 (0.79) |
+
+- At bytes, a median of 55 features per file have a twin and hold 17% of |TreeSHAP|; restoring their split closes about
+  two thirds of the exact pushforward's remaining gap (hypothesis "near 0.95": met). The last 0.05 is linear dependence
+  beyond twins.
+- At 256 windows, twins (217 features, 60% of |TreeSHAP|) explain nearly all of the gap (0.44 -> 0.86). The hypothesis
+  "much less than at bytes" failed: coarsening mostly creates twins (features inside the same windows).
+- Reading: the exact pushforward loses little beyond what is unrecoverable in principle, and the unrecoverable part sits
+  in small groups of features read from the same bytes, which an analyst can report as one unit.
+
+**Run 63, MalConv** (`run/63_pf_malconv_exact.sh`, `scripts/pf_malconv.py --exact`; 14 min). Median deletion area:
+exact 6.25, one step 6.25 (60/100 files favor exact, p = 0.005, median ratio 1.00), both 1.9x the surrogate (exact
+100/100, one step 99/100); the other rankings reproduce run 58 exactly. Hypothesis "a small, consistent gain": not met;
+no practical gain where the audit uses the pushforward. IG over a raw-byte model is not the pullback of any feature
+explanation, so there is no hidden feature explanation for the inverse to recover; one step and the exact form rank the
+same features.
+
+**Verdict:** the experiments keep the one-step pushforward; nothing reruns. Open (user): how Section 3 presents the
+exact pushforward given these results.
 
 ## Parked ideas (case studies, possibly later; not considered further for now)
 

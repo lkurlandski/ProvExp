@@ -103,6 +103,10 @@ everywhere. A 256-window explanation, however good, carries little feature-level
 
 ## Pushforward faithfulness on MalConv (M1, run 58, 2026-10-14)
 
+**Exact pushforward (run 63, 2026-10-16):** ranking by the exact pushforward (Definition Exact Pushforward) instead of
+one step changes nothing in practice: median area 6.25 for both (60/100, ratio 1.00), both 1.9x the surrogate. See
+`docs/theory.md`, "The ceiling and MalConv".
+
 **Why.** Review W5: the faithfulness test above pushes forward explanations of the GBDT, while the audit pushes forward
 MalConv's IG. **Design** (`scripts/pf_malconv.py`): MalConv computes no features, so each feature explanation is pulled
 back through the file's P and its top bytes deleted (PB1's operator, run 21 files); MalConv scores every deleted file.
