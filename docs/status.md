@@ -30,17 +30,22 @@ Last updated: 2026-10-16 (end of session). **Section 3 now carries real theory (
   Proposition 3 as theory (what any pushforward can recover); Section 6.1 reports the exact form and the twins result
   in two sentences (GBDT and MalConv). Details: `docs/theory.md`, "The ceiling and MalConv".
 
-**Current goal:** the front and back matter (abstract, introduction, discussion, conclusion) get the Sections 3-5
-treatment, now including the Section 3 theory (Shapley provenance, exact pullback, exact pushforward). Then reassess W7
-(Android); the scale-up last.
+- **Front and back matter updated** for the theory: abstract (now 232 words: Shapley-grounded P, exact pullback, the
+  pushforward as the pullback's inverse, the mitigation), introduction (a new paragraph on the theory; contributions),
+  "Our Position", a discussion paragraph "Beyond the exact cases", and the conclusion. Light-touch: the structure and
+  results of these sections are unchanged.
+
+**Current goal:** the user reads the revised abstract, introduction, discussion, and conclusion; then refine Section 4
+(Experimental Setup); then reassess W7 (Android); the scale-up last.
 
 **Waiting on the user:** the black-box P's final place (now 3.3.1, maybe an appendix later); whether to keep the GBDT
 window-pushforward test (a lab study need not be realistic).
 
 ## Next (this thread)
 
-1. Front and back matter: abstract, introduction, discussion, conclusion (narrative and consistency with the revised
-   body, including Section 3's theory and the experimental-setup section).
+1. User reads the front and back matter (updated 2026-10-16); apply feedback. Still open there: an overview figure by
+   the end of the introduction (`docs/style_guide.md`), the CM real-attack TODO in the discussion, the synthetic
+   Android paragraph (W7).
 2. Refine the rough Section 4, "Experimental Setup" (`_d_setup.tex`).
 3. Reassess W7 (a second extractor, Android); then the scale-up (2,000 files / 3 seeds), only when the user decides.
 

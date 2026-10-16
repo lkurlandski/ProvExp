@@ -19,10 +19,9 @@ memories `paper-writing-style` (natural prose, present what works, never call ou
 
 ## Today
 
-1. **Front and back matter:** abstract, introduction, discussion, conclusion. Make them consistent with the revised
-   body (the theory in Section 3, the experimental-setup section, the MalConv faithfulness, the mitigation, the audited
-   fields). Propose an outline of the introduction (problem, why it is hard, the two operators, the two applications,
-   contributions) to the user before writing it.
+1. **Front and back matter** were updated for the Section 3 theory (2026-10-16, light touch). Ask for the user's
+   feedback and apply it; open there: an overview figure by the end of the introduction, the CM real-attack TODO, the
+   synthetic Android paragraph (W7).
 2. If time allows: refine Section 4.
 
 ## Open for the user
