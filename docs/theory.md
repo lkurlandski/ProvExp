@@ -85,7 +85,7 @@ place: the normalizing stage after an exact counting stage. Recommendation: nonn
 - **Risks.** Noise amplification along small eigenvalues of M (early stopping or a ridge term); a closer fit may not
   mean more faithful (decided by deletion on MalConv).
 
-### Go/no-go (agreed 2026-10-16; not yet run)
+### Go/no-go (agreed 2026-10-16; run 61 done, see "Result" below)
 
 Known-answer test on the GBDT, pilot files: pull back TreeSHAP to the bytes, recover it with one step vs. the
 iteration, and score both by the feature-space deletion area relative to TreeSHAP (R). Hypothesis: R rises from 0.80
@@ -94,6 +94,27 @@ the MalConv deletion test (runs 58/60) and the audit's candidates with the itera
 
 What would re-run if it passes: only the pushforward half (pushforward faithfulness, the MalConv test, the audit's
 discovery, confirmation, evasion and mitigation). The pullback experiments do not change.
+
+### Result (run 61, 100 pilot files, seed 0; `artifacts/logs/pf_inverse-seed0.log`)
+
+R = feature-deletion area of the recovered explanation / the explainer's own (ablated reference; background in
+parentheses), interventional TreeSHAP; the other two explainers agree within 0.01-0.02.
+
+| | one step | 16 iterations | 256 iterations | limit (CG) | CG better than one step |
+|---|---|---|---|---|---|
+| bytes | 0.796 (0.723) | 0.838 | 0.849 | 0.862 (0.770) | 93/100 files, p = 7e-17 |
+| 256 windows | 0.364 (0.366) | 0.390 | 0.414 | 0.436 (0.427) | 84/100 files, p = 1e-13 |
+
+- The gain is consistent (every explainer, both references, most files) but modest: at bytes, the iteration closes
+  about a third of the gap between one step and 1 (0.80 -> 0.86). The hypothesis "toward 1" is not met.
+- Why it stops: the limit reproduces the byte explanation exactly (residual ~1e-9) but still misses 37% of the
+  feature explanation (relative L1 error). The remaining gap is non-identifiability: features whose provenance the
+  bytes cannot tell apart, which no method can separate. One step leaves both kinds of loss; the iteration removes
+  the separable kind only.
+- Verdict: a qualified go. The theory (inverse problem, identifiability) explains the measured gap; the algorithm
+  helps reliably but not dramatically. Two cheap checks decide how far to take it: (1) the identifiability ceiling
+  (merge features with identical provenance; is the limit near it?); (2) the MalConv deletion test with the limit
+  instead of one step, where the audit actually uses the pushforward.
 
 ## Parked ideas (case studies, possibly later; not considered further for now)
 

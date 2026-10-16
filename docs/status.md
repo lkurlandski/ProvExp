@@ -2,8 +2,9 @@
 
 **2026-10-16 (in progress):** strengthening Section 3's novelty (W1); plan in `docs/theory.md`. Done: Granularity/P^G
 moved out of Section 3 into a new Section 4, "Experimental Setup" (`manuscript/_d_setup.tex`: EMBER instrumentation and
-Table 1, data/models/explainers, deletion operator, windows), experiments unchanged; build clean. Next: the go/no-go for
-the iterated pushforward (known-answer test on the GBDT); draft Pillar A (Shapley-grounded P) statements for the user.
+Table 1, data/models/explainers, deletion operator, windows), experiments unchanged; build clean. Go/no-go run 61 done: a
+qualified go (bytes R 0.80 -> 0.86, 93/100 files; the rest is non-identifiable; `docs/theory.md`, "Result"). Next: the
+identifiability ceiling and the MalConv test with the iterated pushforward; draft Pillar A (Shapley-grounded P) statements for the user.
 Open for the user: signed vs. nonnegative P (analysis in `docs/theory.md`), black-box P's place, the GBDT
 window-pushforward test.
 
