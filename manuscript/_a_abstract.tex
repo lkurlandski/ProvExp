@@ -7,8 +7,8 @@ explanation marks bytes that have no name and mean something different in every 
 feature is computed from specific bytes, and record this by instrumenting the feature extractor as a \emph{provenance
 matrix}: each byte's share of each feature, grounded in the Shapley value. This one matrix transfers explanations in
 both directions. The \emph{pullback} places feature attributions on the bytes, exactly for linear models over additive
-features; the \emph{pushforward} places byte attributions in named features, inverting the pullback as far as the bytes
-allow. On EMBER-2024 with a gradient-boosted tree and MalConv, the pullback matches window occlusion at 1/135 of its
+features; the \emph{pushforward} places byte attributions in named features, a first step toward inverting the
+pullback that already comes close to the exact inverse. On EMBER-2024 with a gradient-boosted tree and MalConv, the pullback matches window occlusion at 1/135 of its
 cost and, at byte resolution, removes 1.7 times as much evidence; comparing two detectors on one file, it shows whether
 the flagging detector's evidence is content the other ignores or reads the other way. Pushed forward, MalConv's
 per-file explanations become named, recurring reliance: changing the confirmed fields only as the Windows loader allows

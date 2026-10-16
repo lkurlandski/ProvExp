@@ -37,7 +37,8 @@ features from a PE file. Table~\ref{tab:XML:Conventions} lists, for each group o
 groups are additive over their items and receive their Shapley provenance: a header field is one item, the bytes it
 occupies; the byte histogram counts every byte into the bin of its value; and section, import, and export features hash
 names into buckets and count them. The byte-entropy histogram and the summary statistics of strings, such as the
-average string length, are not additive and follow the data flow, each byte of a window or a string receiving one unit.
+average string length, are not additive and follow the data flow: each window or string that a feature is computed
+from receives one unit.
 Features that no byte produces go to the null element: the parser warnings, whose source the reference extractor does
 not report, and, file by file, every feature whose value records an absence, such as a hashed import bucket into which
 no imported function falls.
@@ -64,7 +65,7 @@ benign test files.
 We explain the GBDT with three Shapley-value explainers: TreeSHAP in its path-dependent and interventional variants,
 the latter with a background of 1{,}000 balanced training files, and KernelSHAP with 32{,}768 coalitions and a
 balanced background of 16 files. We explain MalConv with Integrated Gradients over its byte embeddings (256 steps, the
-padding embedding as baseline, summed over the embedding dimension). Every explainer attributes the malware log-odds.
+padding embedding as baseline, summed over the embedding dimension).
 
 \subsection{Measuring Faithfulness by Deletion}
 \label{sec:XML:SetupDeletion}

@@ -2,9 +2,9 @@
 input, and only there. Features that record an absence (e.g., an import-hash bucket that nothing falls into) are
 produced by no byte; the pullback hands their attribution to the null element, which keeps the bookkeeping exact and
 tells the analyst how much of a decision rests on what the file lacks (about a fifth for the GBDT;
-Appendix~\ref{sec:XML:AppLocalizability}). Features computed from the whole file, such as the byte histogram, are
-produced by every byte, so a transfer can name them but not narrow them down; Section~\ref{sec:XML:Audit} reports
-MalConv's reliance on them separately. Both are properties of the extractor, visible in $P$ before any explanation is
+Appendix~\ref{sec:XML:AppLocalizability}). Features computed over the whole file, such as the byte histogram, are
+produced by bytes scattered throughout it, so a transfer can name them but not narrow them down to a place; the audit
+of Section~\ref{sec:XML:Audit} therefore keeps only candidates whose content can be located. Both are properties of the extractor, visible in $P$ before any explanation is
 computed.
 
 \paragraph{Constructing $P$.} Instrumentation records the Shapley provenance exactly for features additive over the

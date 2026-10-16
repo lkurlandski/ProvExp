@@ -211,7 +211,7 @@ $P_{i,j} / D_{i,i}$. With the columns of $P$ read as distributions over the elem
 uniform prior over the features, applied element by element. Dividing by $D_{i,i}$ makes the pushforward conserve
 attribution, $\sum_j a_j = \sum_i b_i$, whenever $b$ credits only elements that some feature reads; crediting each
 feature with the plain sum of its elements' attribution would instead count a byte once for every feature that reads
-it, which Section~\ref{sec:XML:PushforwardFaithfulness} shows is markedly less faithful.
+it, which Section~\ref{sec:XML:PushforwardFaithfulness} shows is less faithful.
 
 To our knowledge, the pushforward is new. Summing an explanation over regions that contain its elements, such as
 superpixels or the parsed regions of a PE file~\cite{coull2019activation, bose2020explaining}, is the special case in

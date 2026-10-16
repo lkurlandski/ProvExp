@@ -4,7 +4,8 @@ explanation faithful to the detector, and at what cost (Section~\ref{sec:XML:Pul
 known answer, a trigger planted in the training data (Section~\ref{sec:XML:PullbackTrigger})? And what does it let a
 defender do that was not possible before? For the pullback, the answer to the last question is a comparison of two
 detectors that read the same file through different representations, one file at a time
-(Section~\ref{sec:XML:Comparison}).
+(Section~\ref{sec:XML:Comparison}). The data, models, explainers, and deletion operator are those of
+Section~\ref{sec:XML:Setup}.
 
 \subsection{Faithfulness}
 \label{sec:XML:PullbackFaithfulness}
@@ -23,7 +24,7 @@ without $P$. Occlusion over $K$ equal windows is the standard problem-space expl
 4{,}096 to trace faithfulness against cost; KernelSHAP with 256 windows as players is the strongest alternative we
 found. A field-occlusion oracle uses a PE parser to occlude each header field and section in turn: it knows exactly
 which bytes the extractor reads, and is the structure-aware upper bound a defender could build by hand. Because the
-occlusion run also yields the black-box estimate of $P$ (Section~\ref{sec:XML:Constructing}), we include the pullback
+occlusion run also yields the black-box estimate of $P$ (Section~\ref{sec:XML:BlackBoxP}), we include the pullback
 through that estimate as well, and a random window order as the floor. Every ranking is scored by the evidence it
 removes under the deletion operator of Section~\ref{sec:XML:SetupDeletion}.
 
