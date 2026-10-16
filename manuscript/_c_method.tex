@@ -90,9 +90,9 @@ single byte counted into a histogram. Each item $t$ occupies a set of elements $
 which items each feature reads. To say how much of a feature each element produces, we ask what the feature would be if
 only some of its items were present. For a set $S$ of elements, an item is \emph{present} if all of its elements lie in
 $S$, and $v_j(S)$ is the value of $x_j$ computed from the present items alone, with the feature's context held fixed:
-the parse that locates its items, and quantities it is merely divided by, such as the file's size. The Shapley
-value~\cite{lundberg2017unified} $\phi_i(v_j)$ is element $z_i$'s contribution to $v_j$, averaged over all orders in
-which the elements could be added, and the elements' values sum to the feature's change,
+the parse that locates its items, and quantities it is merely divided by, such as the file's size. This is a game over
+the elements, and its Shapley value~\cite{shapley1953value} $\phi_i(v_j)$ (Section~\ref{sec:XML:BgShapley}) is element
+$z_i$'s average marginal contribution to the feature. By efficiency, the elements' values sum to the feature's change,
 $\sum_i \phi_i(v_j) = v_j(z) - v_j(\emptyset) = \Delta_j$, from none of its items present to all of them.
 
 \definition[\textit{Shapley Provenance}]
@@ -123,8 +123,9 @@ This is exactly what \emph{instrumentation} records. Given the extractor's sourc
 computed, adds the weight of every item it reads to the item's elements, spread evenly, and normalizing the result gives
 $P$. Proposition~\ref{prop:AdditiveShapley} covers a field read directly (one item, whatever its value), counts and
 histograms over a fixed denominator (one unit per item counted), and hashed counts, as long as the items that fall into a
-bucket share a sign; where items of opposite sign share a bucket, we record each item's magnitude. Other features are
-not additive over their items: an entropy, an average, a ratio of two quantities that both depend on the items, a
+bucket share a sign; where items of opposite sign share a bucket, we record each item's magnitude.
+
+Other features are not additive over their items: an entropy, an average, a ratio of two quantities that both depend on the items, a
 minimum or a maximum. Their Shapley shares depend on how the items combine and can be negative, since a byte equal to a
 window's most common value lowers its entropy and a short string lowers the average string length. For these we record
 the data flow instead: each item that the feature is computed from receives one unit. In both cases, the Influence axiom
@@ -171,8 +172,8 @@ Each feature's attribution is split among the elements that produce it, in propo
 column of $P$ sums to one, the pullback conserves attribution, $\sum_i b_i = \sum_j a_j$. It is implicit wherever the
 map from input to features is simple: in vision, $P$ is the identity over pixels, and in language models it maps
 characters to the tokens that contain them. We identify an explanation $b \in \mathbb{R}^{|z|}$ produced directly in the
-problem space with $(b, 0)$, i.e., it credits nothing to the null element. Where $P$ is the Shapley provenance, the
-pullback is not an approximation.
+problem space with $(b, 0)$, i.e., it credits nothing to the null element. For a linear model, the pullback through the
+Shapley provenance is exact.
 
 \proposition[\textit{Exact Pullback}]
 \label{prop:PullbackExact}
@@ -186,9 +187,12 @@ element $z_i$ receives $\sum_j \beta_j \phi_i(v_j) = \sum_j \beta_j \Delta_j P^\
 
 For a linear model over additive features, the pullback therefore gives the exact Shapley values of the whole
 pipeline, extractor included, over the elements of the file. This is G-DeepSHAP's result for chains of linear
-models~\cite{chen2022explaining}, carried over to a stage that is a program; for a nonlinear model, the pullback is
-G-DeepSHAP's rescale rule~\cite{shrikumar2017learning, chen2022explaining}, which carries each feature's Shapley value
-to the elements and approximates the interactions between features. What is new is a provenance matrix for an
+models~\cite{chen2022explaining}, carried over to a stage that is a program. The proposition measures every feature
+against its value with none of the file's items present, the same change that the provenance splits. Explainers that
+draw absent features from a background set, as ours do, explain a different change, and the pullback splits it in the
+same proportions. For a nonlinear model, the pullback is G-DeepSHAP's rescale rule~\cite{shrikumar2017learning,
+chen2022explaining}, which carries each feature's Shapley value to the elements and approximates the interactions
+between features. What is new is a provenance matrix for an
 extractor that is a program rather than a model (Proposition~\ref{prop:AdditiveShapley}).
 
 Let $D$ be the diagonal matrix of the row sums of $P$, $D_{i,i} = \sum_j P_{i,j}$, the total share that element
@@ -202,19 +206,18 @@ The pushforward of a problem-space explanation $b \in \mathcal{B}$ is the featur
 $\psi(b) = P^\top D^\dagger b = a \in \mathbb{R}^{|x|}$.
 }
 
-The pushforward splits the attribution of each element among the features it produces, in proportion to
-$P_{i,j} / D_{i,i}$. Reading column $j$ of $P$ as a distribution over the elements, this is Bayes' rule under a uniform
-prior over the features: element by element, the pushforward is the Bayesian inverse of the pullback. Normalizing by
-$D^\dagger$ is what makes it conserve attribution, $\sum_j a_j = \sum_i b_i$, whenever $b$ credits only elements that
-some feature reads; crediting each feature with the plain sum of its elements' attribution instead would count a byte
-once for every feature that reads it, which Section~\ref{sec:XML:PushforwardFaithfulness} shows is markedly less
-faithful. To our
-knowledge, the pushforward is new. Summing an explanation over the regions that contain its elements, such as
+The pushforward splits each element's attribution among the features it produces, in proportion to
+$P_{i,j} / D_{i,i}$. With the columns of $P$ read as distributions over the elements, this is Bayes' rule under a
+uniform prior over the features, applied element by element. Dividing by $D_{i,i}$ makes the pushforward conserve
+attribution, $\sum_j a_j = \sum_i b_i$, whenever $b$ credits only elements that some feature reads; crediting each
+feature with the plain sum of its elements' attribution would instead count a byte once for every feature that reads
+it, which Section~\ref{sec:XML:PushforwardFaithfulness} shows is markedly less faithful.
+
+To our knowledge, the pushforward is new. Summing an explanation over regions that contain its elements, such as
 superpixels or the parsed regions of a PE file~\cite{coull2019activation, bose2020explaining}, is the special case in
-which every element feeds a single region; real features share their elements, and the pushforward splits each
-element's attribution among all the features it produces. It is also the harder direction: it moves an explanation
-backwards through a non-invertible program, into features that the explained model never computes, and so gives a
-raw-byte detector a vocabulary in which its reliance recurs across files.
+which every element feeds a single region. Real features share their elements, and the pushforward moves an
+explanation into features that the explained model never computes, which gives a raw-byte detector a vocabulary in
+which its reliance recurs across files.
 
 The pullback runs along the extractor's computation, from each feature to the elements it is computed from, and is
 exact where the Shapley provenance is (Proposition~\ref{prop:PullbackExact}). The pushforward runs against it and asks

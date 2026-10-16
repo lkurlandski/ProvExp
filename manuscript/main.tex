@@ -60,14 +60,16 @@
 
 % --- theorem-like headers: \definition[Title], \theorem[Title], \proposition[Title] ---
 % Usage in the fragments is `\definition[Title]\label{..}{ body }`: the macro prints a numbered bold header and steps
-% a shared counter (so the following \label resolves); the trailing { body } is an ordinary TeX group.
-\newcounter{xmlthm}
-\newcommand{\xmlthmlike}[2]{%
-  \par\medskip\noindent\refstepcounter{xmlthm}%
-  \textbf{#1~\thexmlthm\ifblank{#2}{}{ (#2)}.}\ }
-\newcommand{\definition}[1][]{\xmlthmlike{Definition}{#1}}
-\newcommand{\theorem}[1][]{\xmlthmlike{Theorem}{#1}}
-\newcommand{\proposition}[1][]{\xmlthmlike{Proposition}{#1}}
+% its own counter, one per kind (so the following \label resolves); the trailing { body } is an ordinary TeX group.
+\newcounter{xmldefinition}
+\newcounter{xmltheorem}
+\newcounter{xmlproposition}
+\newcommand{\xmlthmlike}[3]{%
+  \par\medskip\noindent\refstepcounter{#3}%
+  \textbf{#1~\csname the#3\endcsname\ifblank{#2}{}{ (#2)}.}\ }
+\newcommand{\definition}[1][]{\xmlthmlike{Definition}{#1}{xmldefinition}}
+\newcommand{\theorem}[1][]{\xmlthmlike{Theorem}{#1}{xmltheorem}}
+\newcommand{\proposition}[1][]{\xmlthmlike{Proposition}{#1}{xmlproposition}}
 
 % --- boxed environments ---
 \newtcolorbox{notationbox}{colback=blue!3,colframe=blue!40!black,boxrule=0.4pt,arc=2pt,left=2mm,right=2mm,top=1mm,bottom=1mm}
