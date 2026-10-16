@@ -1,0 +1,81 @@
+% Experimental setup: EMBER instantiation, data, models, explainers, deletion operator, windows.
+% A holding area for now (user, 2026-10-16); to be refined once Section 3's theory is settled.
+
+This section collects what the experiments of Sections~\ref{sec:XML:Pullback} and~\ref{sec:XML:Pushforward}
+share: how we obtain $P$ for EMBER, the data and models, the explainers, how we delete bytes, and how we compare
+with explainers that work over windows of bytes.
+
+\subsection{Provenance for EMBER}
+\label{sec:XML:SetupEMBER}
+
+\begin{table}[t]
+  \centering
+  \small
+  \begin{tabular}{@{}lrl@{}}
+    \toprule
+    Feature group & Features & Produced by \\
+    \midrule
+    Header fields\textsuperscript{a} & 149 & the bytes of the field \\
+    Byte histogram & 256 & every byte, in the bin of its value \\
+    Byte-entropy histogram & 256 & windowed bytes, binned \\
+    Strings & 177 & the strings counted or summarized \\
+    Sections & 224 & sections, hashed by name \\
+    Imports, exports & 1{,}411 & names of functions, hashed \\
+    General & 7 & the whole file, or none \\
+    Parser warnings & 88 & none (the null element) \\
+    \bottomrule
+  \end{tabular}
+  \caption{Provenance in the instrumented EMBER v3 extractor. Fields and counts are exact; hashed and entropy-based
+  features follow the conventions of Section~\ref{sec:XML:Constructing}. \textsuperscript{a}Including data directories, the Rich
+  header and Authenticode fields.}
+  \label{tab:XML:Conventions}
+\end{table}
+
+We instrument the reference implementation of the EMBER v3
+extractor~\cite{joyce2025ember} with these conventions (Table~\ref{tab:XML:Conventions}). The instrumentation adds 616 lines to its 1{,}104 and changes
+none of them; the instrumented extractor reproduces the original features exactly, except for one hash-seed-dependent
+quirk of the reference code, and extracts features with provenance in 0.15\,s for the median file (208\,KB).
+Section~\ref{sec:XML:PullbackFaithfulness} compares it with the black-box estimate.
+
+\subsection{Data, Models, and Explainers}
+\label{sec:XML:SetupData}
+
+We use the PE files of EMBER-2024~\cite{joyce2025ember}, truncated to their first
+4{,}000{,}000 bytes (13--16\% of the files are longer) so that the extractor, $P$, and every detector see the same
+object. The \emph{explanation set} is 2{,}000 test files, 1{,}000 per label, deduplicated with TLSH and with at most 10
+files per malware family; unless stated otherwise, experiments use a subset of 100 of them (50 per label) and one model
+seed. % TODO: update after the scale-up (2,000 files, seeds 0-2).
+The feature-based detector is a LightGBM GBDT on the EMBER v3 features with EMBER's baseline parameters (test ROC-AUC
+0.9976). The raw-byte detector is the medium MalConv checkpoint released with EMBER-2024 (seed 0; test ROC-AUC 0.9913),
+run on the same truncated files. We explain the GBDT with TreeSHAP and KernelSHAP, and MalConv with Integrated
+Gradients over its byte embeddings (256 steps, the padding embedding as baseline, summed over the embedding
+dimension). Where a detector must decide, its threshold gives a 1\% false-positive rate on the benign test files.
+
+\subsection{Deleting Bytes}
+\label{sec:XML:SetupDeletion}
+
+Several experiments delete bytes, which means replacing them, and naive replacement breaks PE files in ways that would
+make any comparison meaningless. Our experiments use knowledge of the file format in exactly three places, each to
+protect an experiment's integrity and never in the method itself: this deletion operator, the planted struct trigger
+of Section~\ref{sec:XML:PullbackTrigger}, and the loader-safe modifications of the audit in
+Section~\ref{sec:XML:Audit}. The deletion operator never changes the fields that define the file's layout (found by a
+sweep over 2{,}000 training files) or the fields that break a particular file, replaces the remaining header fields
+with their most common value in the training set, zeroes the content bytes, and verifies every perturbed file; none of
+the 23{,}000 perturbed files of Section~\ref{sec:XML:PullbackFaithfulness} failed verification. Zeroing the header
+fields instead, or filling the content with random bytes, serves as a robustness check. Any deletion produces files a
+detector never saw in training, so a deletion curve measures how a model responds to unusual inputs as well as what it
+relies on. We therefore compare methods only against one another, at equal budgets and under both fills, and rest no
+conclusion on deletion alone: the planted triggers (Sections~\ref{sec:XML:PullbackTrigger}
+and~\ref{sec:XML:PushforwardTrigger}) give a ground truth without deleting anything, and the audit
+(Section~\ref{sec:XML:Audit}) changes files only in ways the Windows loader accepts.
+
+\subsection{Windows of Bytes}
+\label{sec:XML:SetupWindows}
+
+Several baselines explain the detectors over windows of bytes rather than single bytes, and comparing with them
+needs $P$ over windows. Summing the rows of $P$ within
+each window $g$ of a partition $G$, $P^G_{g,j} = \sum_{i \in g} P_{i,j}$, gives a provenance matrix over windows that
+satisfies the same axioms, and by linearity, the pullback through $P^G$ is the pullback through $P$ summed within each
+window. Coarsening loses separation: a window holds the bytes of many features, so its attribution can no longer be
+traced back to the features that produced it, and the coarser the windows, the more features share each one. We use
+$P^G$ only to compare transfers with explainers that work over windows; it is not part of the method.

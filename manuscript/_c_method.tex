@@ -156,39 +156,3 @@ element. The estimate costs $K + 1$ extractions per file and has the resolution 
 it recovers the instrumented $P$, and for the others it measures their response to removal instead of following a
 convention; but it cannot see an element whose replacement leaves the features unchanged, such as a field that
 already holds the fill value, and it can create features the file does not have, such as a new low-entropy window.
-
-\paragraph{Granularity.} An explanation over windows of bytes needs $P$ over windows. Summing the rows of $P$ within
-each window $g$ of a partition $G$, $P^G_{g,j} = \sum_{i \in g} P_{i,j}$, gives a provenance matrix over windows that
-satisfies the same axioms, and by linearity, the pullback through $P^G$ is the pullback through $P$ summed within each
-window. Coarsening loses separation: a window holds the bytes of many features, so its attribution can no longer be
-traced back to the features that produced it, and the coarser the windows, the more features share each one. We use
-$P^G$ to compare transfers with explainers that work over windows.
-
-\begin{table}[t]
-  \centering
-  \small
-  \begin{tabular}{@{}lrl@{}}
-    \toprule
-    Feature group & Features & Produced by \\
-    \midrule
-    Header fields\textsuperscript{a} & 149 & the bytes of the field \\
-    Byte histogram & 256 & every byte, in the bin of its value \\
-    Byte-entropy histogram & 256 & windowed bytes, binned \\
-    Strings & 177 & the strings counted or summarized \\
-    Sections & 224 & sections, hashed by name \\
-    Imports, exports & 1{,}411 & names of functions, hashed \\
-    General & 7 & the whole file, or none \\
-    Parser warnings & 88 & none (the null element) \\
-    \bottomrule
-  \end{tabular}
-  \caption{Provenance in the instrumented EMBER v3 extractor. Fields and counts are exact; hashed and entropy-based
-  features follow the conventions of Section~\ref{sec:XML:Constructing}. \textsuperscript{a}Including data directories, the Rich
-  header and Authenticode fields.}
-  \label{tab:XML:Conventions}
-\end{table}
-
-\paragraph{Provenance for EMBER\@.} We instrument the reference implementation of the EMBER v3
-extractor~\cite{joyce2025ember} with these conventions (Table~\ref{tab:XML:Conventions}). The instrumentation adds 616 lines to its 1{,}104 and changes
-none of them; the instrumented extractor reproduces the original features exactly, except for one hash-seed-dependent
-quirk of the reference code, and extracts features with provenance in 0.15\,s for the median file (208\,KB).
-Section~\ref{sec:XML:PullbackFaithfulness} compares it with the black-box estimate.

@@ -4,7 +4,7 @@ Section~\ref{sec:XML:Pullback}, in the same order. Is the transferred explanatio
 (Section~\ref{sec:XML:PushforwardFaithfulness})? Does it recover a known answer, the planted trigger
 (Section~\ref{sec:XML:PushforwardTrigger})? And what does it let a defender do that was not possible before? For the
 pushforward, the answer to the last question is an audit of a raw-byte detector across a corpus
-(Section~\ref{sec:XML:Audit}). The data, models, and deletion operator are those of Section~\ref{sec:XML:Pullback}.
+(Section~\ref{sec:XML:Audit}). The data, models, and deletion operator are those of Section~\ref{sec:XML:Setup}.
 
 \subsection{Faithfulness}
 \label{sec:XML:PushforwardFaithfulness}
@@ -36,7 +36,7 @@ windows) and measure what survives. Pushed forward from the bytes, TreeSHAP's ex
 transfer itself loses little. Over windows it keeps less, and less the coarser the windows, from $0.75$ at 262{,}144
 windows down to $0.37$ at 256 and $0.34$ at 64 (Figure~\ref{fig:XML:PushforwardResolution}), for every explainer and
 under both references: the coarser the windows, the more features share each one, and the less of a window's
-attribution the pushforward can return to the feature it came from (Section~\ref{sec:XML:Constructing}). Since this
+attribution the pushforward can return to the feature it came from (Section~\ref{sec:XML:SetupWindows}). Since this
 curve is computed from TreeSHAP's own explanation, it serves as a reference for what a window-level source can reach,
 and the direct explainers sit close to it: occlusion keeps 0.91 of the reachable $R$ at 64 windows and 0.74 at 4{,}096,
 where it saturates as in Section~\ref{sec:XML:PullbackFaithfulness}. The pushforward is thus faithful up to the

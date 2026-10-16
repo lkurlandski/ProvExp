@@ -6,32 +6,6 @@ defender do that was not possible before? For the pullback, the answer to the la
 detectors that read the same file through different representations, one file at a time
 (Section~\ref{sec:XML:Comparison}).
 
-\paragraph{Experimental setting.} We use the PE files of EMBER-2024~\cite{joyce2025ember}, truncated to their first
-4{,}000{,}000 bytes (13--16\% of the files are longer) so that the extractor, $P$, and every detector see the same
-object. The \emph{explanation set} is 2{,}000 test files, 1{,}000 per label, deduplicated with TLSH and with at most 10
-files per malware family; unless stated otherwise, experiments use a subset of 100 of them (50 per label) and one model
-seed. % TODO: update after the scale-up (2,000 files, seeds 0-2).
-The feature-based detector is a LightGBM GBDT on the EMBER v3 features with EMBER's baseline parameters (test ROC-AUC
-0.9976). The raw-byte detector is the medium MalConv checkpoint released with EMBER-2024 (seed 0; test ROC-AUC 0.9913),
-run on the same truncated files. We explain the GBDT with TreeSHAP and KernelSHAP, and MalConv with Integrated
-Gradients over its byte embeddings (256 steps, the padding embedding as baseline, summed over the embedding
-dimension). Where a detector must decide, its threshold gives a 1\% false-positive rate on the benign test files.
-
-Several experiments delete bytes, which means replacing them, and naive replacement breaks PE files in ways that would
-make any comparison meaningless. Our experiments use knowledge of the file format in exactly three places, each to
-protect an experiment's integrity and never in the method itself: this deletion operator, the planted struct trigger
-of Section~\ref{sec:XML:PullbackTrigger}, and the loader-safe modifications of the audit in
-Section~\ref{sec:XML:Audit}. The deletion operator never changes the fields that define the file's layout (found by a
-sweep over 2{,}000 training files) or the fields that break a particular file, replaces the remaining header fields
-with their most common value in the training set, zeroes the content bytes, and verifies every perturbed file; none of
-the 23{,}000 perturbed files of Section~\ref{sec:XML:PullbackFaithfulness} failed verification. Zeroing the header
-fields instead, or filling the content with random bytes, serves as a robustness check. Any deletion produces files a
-detector never saw in training, so a deletion curve measures how a model responds to unusual inputs as well as what it
-relies on. We therefore compare methods only against one another, at equal budgets and under both fills, and rest no
-conclusion on deletion alone: the planted triggers (Sections~\ref{sec:XML:PullbackTrigger}
-and~\ref{sec:XML:PushforwardTrigger}) give a ground truth without deleting anything, and the audit
-(Section~\ref{sec:XML:Audit}) changes files only in ways the Windows loader accepts.
-
 \subsection{Faithfulness}
 \label{sec:XML:PullbackFaithfulness}
 
@@ -45,7 +19,7 @@ direct method we tried (Figure~\ref{fig:XML:PullbackDeletion}).
 We explain the GBDT with TreeSHAP, both its path-dependent and interventional variants (a background of 1{,}000
 balanced training files), and with KernelSHAP (32{,}768 coalitions, a 16-file balanced background). Each explanation
 is pulled back to the bytes, where it ranks them by evidence for the predicted class, either byte by byte or, coarsened
-through $P^G$ (Section~\ref{sec:XML:Constructing}), window by window; the coarsened rankings separate the effect of
+through $P^G$ (Section~\ref{sec:XML:SetupWindows}), window by window; the coarsened rankings separate the effect of
 resolution from that of the information in the explanation. The direct baselines explain the detector over the bytes
 without $P$. Occlusion over $K$ equal windows is the standard problem-space explainer, and we vary $K$ from 64 to
 4{,}096 to trace faithfulness against cost; KernelSHAP with 256 windows as players is the strongest alternative we
