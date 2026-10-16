@@ -153,8 +153,9 @@ no practical gain where the audit uses the pushforward. IG over a raw-byte model
 explanation, so there is no hidden feature explanation for the inverse to recover; one step and the exact form rank the
 same features.
 
-**Verdict:** the experiments keep the one-step pushforward; nothing reruns. Open (user): how Section 3 presents the
-exact pushforward given these results.
+**Verdict (user, 2026-10-16):** the experiments keep the one-step pushforward; nothing reruns. Section 3 keeps
+Definition 7 and Proposition 3 as theory (what any pushforward can recover, and that one step is its first step); the
+pushforward-faithfulness section reports the exact form (0.86, twins 0.95) and the MalConv tie in two sentences.
 
 ## Parked ideas (case studies, possibly later; not considered further for now)
 

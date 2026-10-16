@@ -260,8 +260,7 @@ it from $b$, and the exact pushforward recovers everything else. Features with i
 case; the exact pushforward splits their total evenly between them. Together with Proposition~\ref{prop:PullbackExact},
 part (iii) also says what the pushforward recovers for a model that never computes the features: if the model's Shapley
 values over the elements are those of a linear model over additive features, the exact pushforward returns that model's
-Shapley values over the features, wherever the features can be told apart.
-% TODO (2026-10-16): the experiments of Section 6 use the one-step psi; update once the inverse-pushforward checks
-% settle (docs/theory.md, Pillar B; run 61: R 0.80 -> 0.86 at bytes).
+Shapley values over the features, wherever the features can be told apart. Our experiments use the one-step
+pushforward, which comes close to its exact form in practice (Section~\ref{sec:XML:PushforwardFaithfulness}).
 
 \input{assets/framework_c}

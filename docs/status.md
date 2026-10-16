@@ -21,23 +21,28 @@ Last updated: 2026-10-16 (end of session). **Section 3 now carries real theory (
   (iteration converges, conserves, recovers everything the bytes determine; one step exact without shared elements).
   Key modeling choice: the game holds each feature's context fixed (parse, denominators). Build clean, 16 pages.
 
-**Current goal:** the user reads the new Section 3 (pp. 4-6); then the cheap checks that decide how far the exact
-pushforward goes (below), before any rerun of the pilot experiments. Front/back matter (abstract, intro, discussion,
-conclusion) and W7 (Android) come after; the scale-up last.
+- **Later the same day:** Section 3 feedback applied (Shapley 1953 cited; new background subsection 2.3 "Shapley
+  Values"; definitions and propositions numbered separately; the exact pullback's baseline stated; paragraph splits).
+  **Run 62** (identifiability ceiling, twins oracle): R at bytes 0.80 / 0.86 / 0.95 (one step / exact / twins oracle),
+  at 256 windows 0.36 / 0.44 / 0.86: what the exact pushforward misses lies mostly in features with identical
+  provenance. **Run 63** (MalConv): exact = one step (median area 6.25 both), both 1.9x the surrogate.
+  **Decided (user):** the experiments keep the one-step pushforward, nothing reruns; Section 3 keeps Definition 7 and
+  Proposition 3 as theory (what any pushforward can recover); Section 6.1 reports the exact form and the twins result
+  in two sentences (GBDT and MalConv). Details: `docs/theory.md`, "The ceiling and MalConv".
 
-**Waiting on the user:** feedback on Section 3; the black-box P's final place (now 3.3.1, maybe an appendix later);
-whether to keep the GBDT window-pushforward test (a lab study need not be realistic).
+**Current goal:** the front and back matter (abstract, introduction, discussion, conclusion) get the Sections 3-5
+treatment, now including the Section 3 theory (Shapley provenance, exact pullback, exact pushforward). Then reassess W7
+(Android); the scale-up last.
+
+**Waiting on the user:** the black-box P's final place (now 3.3.1, maybe an appendix later); whether to keep the GBDT
+window-pushforward test (a lab study need not be realistic).
 
 ## Next (this thread)
 
-1. User reads Section 3; apply feedback (keep it tight).
-2. **Identifiability ceiling** (cheap, GBDT): add a method to `scripts/pf_inverse.py` that merges features with
-   identical provenance columns (or projects TreeSHAP onto the row space of P) and measures the best R the bytes
-   allow; is the exact pushforward's 0.86 near it? The user runs it (~10-20 min, like run 61).
-3. **MalConv deletion test with the exact pushforward** (as runs 58/60, GPU; user runs it): does the gain matter where
-   the audit uses the pushforward?
-4. Only then: decide whether the experiments switch to the exact pushforward (Section 6 TODO in `_c_method.tex`) and
-   which pilot runs to repeat (only the pushforward half: PF1, the MalConv test, the audit).
+1. Front and back matter: abstract, introduction, discussion, conclusion (narrative and consistency with the revised
+   body, including Section 3's theory and the experimental-setup section).
+2. Refine the rough Section 4, "Experimental Setup" (`_d_setup.tex`).
+3. Reassess W7 (a second extractor, Android); then the scale-up (2,000 files / 3 seeds), only when the user decides.
 
 ---
 

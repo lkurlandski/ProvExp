@@ -33,7 +33,10 @@ translation (57--70 of 100 files, $p \leq 0.023$), so the normalization by $D^\d
 windows, occlusion reaches $R = 0.32$ and KernelSHAP $0.40$. To see where the rest goes, we express TreeSHAP's own
 information at $K$ windows (pull it back, sum it over the windows, and push it forward through $P$ coarsened to the same
 windows) and measure what survives. Pushed forward from the bytes, TreeSHAP's explanation keeps $R = 0.80$, so the
-transfer itself loses little. Over windows it keeps less, and less the coarser the windows, from $0.75$ at 262{,}144
+transfer itself loses little. The exact pushforward (Definition~\ref{def:ExactPushforward}) raises this to $0.86$
+(larger on 93 of 100 files), and most of what it still misses lies in features with identical provenance, which no
+transfer can tell apart (Proposition~\ref{prop:ExactPushforward}): restoring TreeSHAP's split among them alone gives
+$0.95$. Over windows it keeps less, and less the coarser the windows, from $0.75$ at 262{,}144
 windows down to $0.37$ at 256 and $0.34$ at 64 (Figure~\ref{fig:XML:PushforwardResolution}), for every explainer and
 under both references: the coarser the windows, the more features share each one, and the less of a window's
 attribution the pushforward can return to the feature it came from (Section~\ref{sec:XML:SetupWindows}). Since this
@@ -56,7 +59,8 @@ explanation, pulled back, lands on bytes the extractor reads, many of which MalC
 On the 100 files, the pushed-forward explanation removes about twice as much of MalConv's evidence as the surrogate's
 (median area 6.25 against 3.28 log-odds; larger on 99 of 100 files, $p \approx 10^{-18}$), and 2.7 times as much as
 random feature explanations (Figure~\ref{fig:XML:PushforwardMalConv}); with random instead of zero fill, the margin
-over the surrogate is the same (2.0 times, 99 of 99 files). The surrogate imitates MalConv's outputs closely, but its
+over the surrogate is the same (2.0 times, 99 of 99 files). The exact pushforward ranks the features no differently
+(median area 6.25 as well), so the one-step pushforward suffices where the audit uses it. The surrogate imitates MalConv's outputs closely, but its
 explanation describes the surrogate; the pushforward describes MalConv, in the surrogate's vocabulary. The pushforward
 also beats Integrated Gradients summed over 256 windows (83 of 100 files), which names no features at all. Integrated
 Gradients itself, per byte, removes much more, but not because it is a better summary: deleting its top 1\% of bytes
