@@ -148,6 +148,17 @@ one-time engineering cost per extractor, adds little to the cost of extraction, 
 single elements. It is exact for features that are additive in their elements, such as counts and fields read
 directly, and a convention for the others, such as hashes and entropies, which do not decompose over their elements.
 
+\paragraph{Why provenance is nonnegative.} An element can also push a feature against its value: in a normalized
+histogram, every byte that falls outside a bin dilutes that bin, and a byte equal to a window's most common value lowers
+the window's entropy. A signed $P$ could record such dilution as a negative share, and would follow the Shapley values
+of each feature over its elements more closely. We keep $P$ nonnegative, for three reasons. The transfers depend on it:
+the pushforward divides each element's attribution by its total share $D_{i,i}$, which signed shares can cancel to
+zero, and its Bayesian reading needs every column of $P$ to be a distribution (Section~\ref{sec:XML:Transfers}). A
+signed $P$ would also be dense, since every byte of a file dilutes every other bin of its byte histogram, so the credit
+of such features would spread over the whole file. And a nonnegative share has a direct reading, the part of a
+feature that an element produces, which an analyst can check against the extractor. Dilution is therefore treated like
+the other indirect influences above and not counted.
+
 \paragraph{Occlusion (black-box).} Without the source, $P$ can be estimated from the extractor's outputs alone.
 Partition the elements into $K$ windows, replace each window in turn with a fill value, and re-extract the features:
 the provenance of feature $j$ on window $k$ is proportional to the change $|x_j - x_j^{(k)}|$ that occluding the
