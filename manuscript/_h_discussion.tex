@@ -7,8 +7,8 @@ produced by every byte, so a transfer can name them but not narrow them down; Se
 MalConv's reliance on them separately. Both are properties of the extractor, visible in $P$ before any explanation is
 computed.
 
-\paragraph{Constructing $P$.} Instrumentation is exact for features that read or count bytes and follows a convention
-for hashes and entropies; the black-box estimate needs no source code and agrees with it exactly where features are
+\paragraph{Constructing $P$.} Instrumentation records the Shapley provenance exactly for features additive over the
+items they read, including hashed counts, and the data flow for entropies and averages; the black-box estimate needs no source code and agrees with it exactly where features are
 additive (Section~\ref{sec:XML:PullbackFaithfulness}). Between the two lies dynamic taint tracking, which would record
 provenance automatically, at byte resolution, from an extractor run as a binary. It would make explanation provenance a
 drop-in addition to any extractor, and we see it as the natural next step.

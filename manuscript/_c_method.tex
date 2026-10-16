@@ -74,14 +74,84 @@ produces, subject to four axioms:
 }
 
 The definition leaves open what it means for an element to influence a feature, and how much of the feature it
-produces. Both are fixed when $P$ is constructed for a particular extractor, and Section~\ref{sec:XML:Constructing}
-states the choices we make for EMBER.
+produces. Section~\ref{sec:XML:Constructing} fixes both with the Shapley value.
 
 We call the features that no element influences \emph{unattributable} and write $U = \{ j : P_{\varnothing,j} = 1 \}$.
 Without the null element, an unattributable feature could not satisfy both normalization and influence. Dropping it
 from $P$ would break normalization, and the transfers would lose its attribution; spreading it uniformly over the
 elements would fabricate influence and smear its attribution over the whole file. The null element keeps every axiom,
 is simply one more row of $P$, and makes the attribution that no part of the file can carry an explicit quantity.
+
+\subsection{Constructing the Provenance Matrix}
+\label{sec:XML:Constructing}
+
+A feature extractor reads its input in \emph{items}: a header field, a string, the name of an imported function, or a
+single byte counted into a histogram. Each item $t$ occupies a set of elements $T_t$, and the parse of the file fixes
+which items each feature reads. To say how much of a feature each element produces, we ask what the feature would be if
+only some of its items were present. For a set $S$ of elements, an item is \emph{present} if all of its elements lie in
+$S$, and $v_j(S)$ is the value of $x_j$ computed from the present items alone, with the feature's context held fixed:
+the parse that locates its items, and quantities it is merely divided by, such as the file's size. The Shapley
+value~\cite{lundberg2017unified} $\phi_i(v_j)$ is element $z_i$'s contribution to $v_j$, averaged over all orders in
+which the elements could be added, and the elements' values sum to the feature's change,
+$\sum_i \phi_i(v_j) = v_j(z) - v_j(\emptyset) = \Delta_j$, from none of its items present to all of them.
+
+\definition[\textit{Shapley Provenance}]
+\label{def:ShapleyProvenance}
+{
+For a feature with $\Delta_j \neq 0$, the Shapley provenance is the column $P^\star_{i,j} = \phi_i(v_j) / \Delta_j$ over
+the elements of $z$, with $P^\star_{\varnothing,j} = 0$.
+}
+
+The column sums to one by construction. A feature with $\Delta_j = 0$ has no change to distribute (and, by
+Proposition~\ref{prop:PullbackExact} below, no attribution under a linear model), so any column is consistent with it.
+For the features that most extractors are built from, the Shapley provenance needs no Shapley computation at all.
+
+\proposition[\textit{Additive Features}]
+\label{prop:AdditiveShapley}
+{
+If $x_j$ is additive over its items, $v_j(S) = v_j(\emptyset) + \sum_t w_{t,j} \, [T_t \subseteq S]$, with weights
+$w_{t,j}$ of one sign, then
+$P^\star_{i,j} = \sum_{t : z_i \in T_t} w_{t,j} \, / \, (|T_t| \sum_{t'} w_{t',j})$: each item's share of the feature's
+weight, spread evenly over the item's elements.
+\textit{Proof.} $v_j - v_j(\emptyset) = \sum_t w_{t,j} u_t$, where $u_t(S) = [T_t \subseteq S]$ is the unanimity game
+of $T_t$. The Shapley value is linear, and it gives each element of $T_t$ the value $1/|T_t|$ in $u_t$ and every
+other element $0$ (symmetry and the null player). Dividing by $\Delta_j = \sum_t w_{t,j}$ gives the claim, and the
+weights' common sign makes every share nonnegative. \hfill$\square$
+}
+
+This is exactly what \emph{instrumentation} records. Given the extractor's source code, each feature, while it is
+computed, adds the weight of every item it reads to the item's elements, spread evenly, and normalizing the result gives
+$P$. Proposition~\ref{prop:AdditiveShapley} covers a field read directly (one item, whatever its value), counts and
+histograms over a fixed denominator (one unit per item counted), and hashed counts, as long as the items that fall into a
+bucket share a sign; where items of opposite sign share a bucket, we record each item's magnitude. Other features are
+not additive over their items: an entropy, an average, a ratio of two quantities that both depend on the items, a
+minimum or a maximum. Their Shapley shares depend on how the items combine and can be negative, since a byte equal to a
+window's most common value lowers its entropy and a short string lowers the average string length. For these we record
+the data flow instead: each item that the feature is computed from receives one unit. In both cases, the Influence axiom
+reads: $P_{i,j} > 0$ if and only if $z_i$ belongs to an item that $x_j$ is computed from. Elements that only locate an
+item, such as a pointer, or only scale it, such as a size in a denominator, are context and receive no share.
+Instrumentation is a one-time engineering cost per extractor, adds little to the cost of extraction, and gives $P$ at
+the resolution of single elements (Section~\ref{sec:XML:SetupEMBER} reports it for EMBER).
+
+\paragraph{Why provenance is nonnegative.} The Shapley provenance of a non-additive feature is signed, and a signed $P$
+would follow it more closely. We keep $P$ nonnegative for three reasons. The transfers depend on it: the pushforward
+divides each element's attribution by its total share $D_{i,i}$, which signed shares can cancel to zero, and both its
+Bayesian reading and the convergence of its exact form (Section~\ref{sec:XML:Transfers}) need every column of $P$ to be
+a distribution. The Shapley values of non-additive features must be estimated by sampling coalitions of items, whereas
+the data flow is recorded as the extractor runs. And a nonnegative share has a direct reading, the part of a feature
+that an element produces, which an analyst can check against the extractor.
+
+\subsubsection{Estimating $P$ Without the Source}
+\label{sec:XML:BlackBoxP}
+
+Without the source, $P$ can be estimated from the extractor's outputs alone.
+Partition the elements into $K$ windows, replace each window in turn with a fill value, and re-extract the features:
+the provenance of feature $j$ on window $k$ is proportional to the change $|x_j - x_j^{(k)}|$ that occluding the
+window causes, spread evenly over the window's elements, and a feature that no occlusion changes goes to the null
+element. The estimate costs $K + 1$ extractions per file and has the resolution of the windows. For additive features
+it recovers the instrumented $P$, and for the others it measures their response to removal instead of following a
+convention; but it cannot see an element whose replacement leaves the features unchanged, such as a field that
+already holds the fill value, and it can create features the file does not have, such as a new low-entropy window.
 
 \subsection{Pullback and Pushforward}
 \label{sec:XML:Transfers}
@@ -100,11 +170,26 @@ attribution that no element of $z$ carries.
 Each feature's attribution is split among the elements that produce it, in proportion to their shares. Because every
 column of $P$ sums to one, the pullback conserves attribution, $\sum_i b_i = \sum_j a_j$. It is implicit wherever the
 map from input to features is simple: in vision, $P$ is the identity over pixels, and in language models it maps
-characters to the tokens that contain them. With the rescale rule of DeepLIFT and G-DeepSHAP~\cite{shrikumar2017learning,
-chen2022explaining}, it shares the idea of redistributing attribution in proportion to contribution; what is new is
-obtaining $P$ for an extractor that is a program rather than a model (Section~\ref{sec:XML:Constructing}). We identify
-an explanation $b \in \mathbb{R}^{|z|}$ produced directly in the problem space with $(b, 0)$, i.e., it credits nothing to
-the null element.
+characters to the tokens that contain them. We identify an explanation $b \in \mathbb{R}^{|z|}$ produced directly in the
+problem space with $(b, 0)$, i.e., it credits nothing to the null element. Where $P$ is the Shapley provenance, the
+pullback is not an approximation.
+
+\proposition[\textit{Exact Pullback}]
+\label{prop:PullbackExact}
+{
+Let $\phi(x) = \beta_0 + \sum_j \beta_j x_j$ be linear, and let $a_j = \beta_j \Delta_j$ be its Shapley values with the
+features computed from none of the file's items as the baseline. If every column of $P$ is the Shapley provenance, then $Pa$ is the
+vector of Shapley values of $\phi \circ \sigma$ over the elements.
+\textit{Proof.} The game of the whole pipeline is $\beta_0 + \sum_j \beta_j v_j$, and the Shapley value is linear, so
+element $z_i$ receives $\sum_j \beta_j \phi_i(v_j) = \sum_j \beta_j \Delta_j P^\star_{i,j} = (Pa)_i$. \hfill$\square$
+}
+
+For a linear model over additive features, the pullback therefore gives the exact Shapley values of the whole
+pipeline, extractor included, over the elements of the file. This is G-DeepSHAP's result for chains of linear
+models~\cite{chen2022explaining}, carried over to a stage that is a program; for a nonlinear model, the pullback is
+G-DeepSHAP's rescale rule~\cite{shrikumar2017learning, chen2022explaining}, which carries each feature's Shapley value
+to the elements and approximates the interactions between features. What is new is a provenance matrix for an
+extractor that is a program rather than a model (Proposition~\ref{prop:AdditiveShapley}).
 
 Let $D$ be the diagonal matrix of the row sums of $P$, $D_{i,i} = \sum_j P_{i,j}$, the total share that element
 $\bar{z}_i$ contributes to all features, and $D^\dagger$ its pseudoinverse ($D^\dagger_{i,i} = 1 / D_{i,i}$, or $0$
@@ -119,10 +204,11 @@ $\psi(b) = P^\top D^\dagger b = a \in \mathbb{R}^{|x|}$.
 
 The pushforward splits the attribution of each element among the features it produces, in proportion to
 $P_{i,j} / D_{i,i}$. Reading column $j$ of $P$ as a distribution over the elements, this is Bayes' rule under a uniform
-prior over the features: the pushforward is the Bayesian inverse of the pullback. Normalizing by $D^\dagger$ is what
-makes it conserve attribution, $\sum_j a_j = \sum_i b_i$, whenever $b$ credits only elements that some feature reads;
-crediting each feature with the plain sum of its elements' attribution instead would count a byte once for every
-feature that reads it, which Section~\ref{sec:XML:PushforwardFaithfulness} shows is markedly less faithful. To our
+prior over the features: element by element, the pushforward is the Bayesian inverse of the pullback. Normalizing by
+$D^\dagger$ is what makes it conserve attribution, $\sum_j a_j = \sum_i b_i$, whenever $b$ credits only elements that
+some feature reads; crediting each feature with the plain sum of its elements' attribution instead would count a byte
+once for every feature that reads it, which Section~\ref{sec:XML:PushforwardFaithfulness} shows is markedly less
+faithful. To our
 knowledge, the pushforward is new. Summing an explanation over the regions that contain its elements, such as
 superpixels or the parsed regions of a PE file~\cite{coull2019activation, bose2020explaining}, is the special case in
 which every element feeds a single region; real features share their elements, and the pushforward splits each
@@ -130,40 +216,49 @@ element's attribution among all the features it produces. It is also the harder 
 backwards through a non-invertible program, into features that the explained model never computes, and so gives a
 raw-byte detector a vocabulary in which its reliance recurs across files.
 
+The pullback runs along the extractor's computation, from each feature to the elements it is computed from, and is
+exact where the Shapley provenance is (Proposition~\ref{prop:PullbackExact}). The pushforward runs against it and asks
+the inverse question: which feature-space explanation $a$ has the pullback $Pa = b$? Splitting each element's
+attribution, as $\psi$ does, looks at one element at a time. It cannot see that an element shared by two features
+belongs to the one whose other elements carry attribution too, while the other's carry none. Looking at all elements at
+once gives the exact inverse.
+
+\definition[\textit{Exact Pushforward}]
+\label{def:ExactPushforward}
+{
+With $M = P^\top D^\dagger P$, the exact pushforward of $b \in \mathcal{B}$ is $\psi^\star(b) = M^{+} \psi(b)$, the
+feature-space explanation of least norm among those that minimize $\sum_i ((Pa)_i - b_i)^2 / D_{i,i}$.
+}
+
+\proposition[\textit{Exact Pushforward}]
+\label{prop:ExactPushforward}
+{
+For every problem-space explanation $b$ that credits only elements some feature reads:
+(i) the iteration $a_1 = \psi(b)$, $a_{k+1} = a_k + \psi(b - P a_k)$ converges to $\psi^\star(b)$;
+(ii) every iterate, and $\psi^\star(b)$, conserves attribution;
+(iii) $\psi^\star(Pa) = a$ if and only if $a$ is orthogonal to the null space of $P$, so $\psi^\star$ inverts the
+pullback if and only if the columns of $P$ are linearly independent, and otherwise returns the orthogonal projection of
+$a$ onto the row space of $P$;
+(iv) if no element is read by two features, $\psi^\star = \psi$.
+\textit{Proof.} Let $B = (D^\dagger)^{1/2} P$, so that $M = B^\top B$ and $\psi(b) = B^\top (D^\dagger)^{1/2} b$.
+(i) The iteration is $a_{k+1} = (I - M) a_k + \psi(b)$, Landweber's iteration for this least-squares problem. $M$ is
+positive semidefinite, and its columns are nonnegative and sum to one, so its eigenvalues lie in $[0, 1]$; since $a_1$
+lies in the row space of $B$, the iteration converges to the least-norm solution. (ii) $\psi$ conserves the sum of any
+vector supported on elements with $D_{i,i} > 0$, and the pullback conserves always, so
+$\sum_j \psi(b - P a_k)_j = \sum_i b_i - \sum_j a_{k,j}$, which is zero by induction from $a_1$. (iii) $Pa' = Pa$ if and
+only if $a - a'$ lies in the null space of $P$, which is that of $B$; the least-norm such $a'$ is the projection of $a$.
+(iv) Then $D_{i,i} = P_{i,j}$ for the one feature $j$ that reads $z_i$, so $M = I$. \hfill$\square$
+}
+
+The one-step pushforward is thus the first step toward its exact form, and exact by itself when no two features share
+an element, which is the case of summing over regions that do not overlap. Part (iii) states what any transfer into the
+features can achieve: the part of $a$ in the null space of $P$ leaves no trace on the elements, so no method recovers
+it from $b$, and the exact pushforward recovers everything else. Features with identical provenance are the simplest
+case; the exact pushforward splits their total evenly between them. Together with Proposition~\ref{prop:PullbackExact},
+part (iii) also says what the pushforward recovers for a model that never computes the features: if the model's Shapley
+values over the elements are those of a linear model over additive features, the exact pushforward returns that model's
+Shapley values over the features, wherever the features can be told apart.
+% TODO (2026-10-16): the experiments of Section 6 use the one-step psi; update once the inverse-pushforward checks
+% settle (docs/theory.md, Pillar B; run 61: R 0.80 -> 0.86 at bytes).
+
 \input{assets/framework_c}
-
-\subsection{Constructing the Provenance Matrix}
-\label{sec:XML:Constructing}
-
-Definition~\ref{def:ExplanationProvenance} says what $P$ must satisfy, not how to obtain it. We use two constructions,
-which trade exactness and resolution against access and cost.
-
-\paragraph{Instrumentation (white-box).} Given the extractor's source code, each feature can record the elements it is
-computed from while it is computed. We adopt three conventions. An element contributes to a feature if the feature's
-value is computed from it (read, counted, or hashed); indirect influence, such as a denominator that normalizes or a
-pointer that says where to read, does not count. A feature that counts items gives each item one unit, spread evenly
-over the item's elements, and a feature computed from content gives each element one unit. A hashed feature receives
-every item that falls into its bucket. Normalizing each feature's contributions gives $P$. Instrumentation is a
-one-time engineering cost per extractor, adds little to the cost of extraction, and gives $P$ at the resolution of
-single elements. It is exact for features that are additive in their elements, such as counts and fields read
-directly, and a convention for the others, such as hashes and entropies, which do not decompose over their elements.
-
-\paragraph{Why provenance is nonnegative.} An element can also push a feature against its value: in a normalized
-histogram, every byte that falls outside a bin dilutes that bin, and a byte equal to a window's most common value lowers
-the window's entropy. A signed $P$ could record such dilution as a negative share, and would follow the Shapley values
-of each feature over its elements more closely. We keep $P$ nonnegative, for three reasons. The transfers depend on it:
-the pushforward divides each element's attribution by its total share $D_{i,i}$, which signed shares can cancel to
-zero, and its Bayesian reading needs every column of $P$ to be a distribution (Section~\ref{sec:XML:Transfers}). A
-signed $P$ would also be dense, since every byte of a file dilutes every other bin of its byte histogram, so the credit
-of such features would spread over the whole file. And a nonnegative share has a direct reading, the part of a
-feature that an element produces, which an analyst can check against the extractor. Dilution is therefore treated like
-the other indirect influences above and not counted.
-
-\paragraph{Occlusion (black-box).} Without the source, $P$ can be estimated from the extractor's outputs alone.
-Partition the elements into $K$ windows, replace each window in turn with a fill value, and re-extract the features:
-the provenance of feature $j$ on window $k$ is proportional to the change $|x_j - x_j^{(k)}|$ that occluding the
-window causes, spread evenly over the window's elements, and a feature that no occlusion changes goes to the null
-element. The estimate costs $K + 1$ extractions per file and has the resolution of the windows. For additive features
-it recovers the instrumented $P$, and for the others it measures their response to removal instead of following a
-convention; but it cannot see an element whose replacement leaves the features unchanged, such as a field that
-already holds the fill value, and it can create features the file does not have, such as a new low-entropy window.

@@ -4,7 +4,8 @@
 moved out of Section 3 into a new Section 4, "Experimental Setup" (`manuscript/_d_setup.tex`: EMBER instrumentation and
 Table 1, data/models/explainers, deletion operator, windows), experiments unchanged; build clean. Go/no-go run 61 done: a
 qualified go (bytes R 0.80 -> 0.86, 93/100 files; the rest is non-identifiable; `docs/theory.md`, "Result"). Next: the
-identifiability ceiling and the MalConv test with the iterated pushforward; draft Pillar A (Shapley-grounded P) statements for the user.
+identifiability ceiling and the MalConv test with the iterated pushforward; Section 3 rewritten (2026-10-16): Shapley-grounded
+construction, exact pullback, exact pushforward (for the user to read; experiments still use the one-step psi).
 Decided: P stays nonnegative (paragraph in Section 3). Open for the user: black-box P's place, the GBDT
 window-pushforward test.
 

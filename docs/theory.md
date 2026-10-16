@@ -18,6 +18,15 @@ for the second, and case-study ideas parked for later. Nothing here is in the ma
 
 ## Pillar A: provenance of a program, grounded in Shapley values
 
+**In the manuscript (2026-10-16):** Section 3.3 (Definition Shapley Provenance, Proposition Additive Features, the
+data-flow convention, why nonnegative, the black-box estimate as 3.3.1) and Section 3.4 (Proposition Exact Pullback;
+Definition and Proposition Exact Pushforward). Key modeling choice: the game over elements holds each feature's
+*context* fixed (the parse that locates its items, denominators such as the file size); an item is present iff all its
+elements are. Under it, fields, counts, histograms over a fixed denominator, and one-sign hashed counts are additive,
+so instrumentation equals the Shapley provenance; entropies, averages, ratios of item-dependent quantities, and
+min/max get the data-flow convention. (This supersedes the "normalized histogram dilutes" example below: with the
+denominator held fixed, the byte histogram is additive.)
+
 A tight, clean subsection, not a long one. Goal: replace hand conventions with a principled target and rules.
 
 - **Target.** The ideal P_ij is element i's Shapley value in feature j (the game: which elements are present),

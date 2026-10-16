@@ -25,8 +25,9 @@ with explainers that work over windows of bytes.
     Parser warnings & 88 & none (the null element) \\
     \bottomrule
   \end{tabular}
-  \caption{Provenance in the instrumented EMBER v3 extractor. Fields and counts are exact; hashed and entropy-based
-  features follow the conventions of Section~\ref{sec:XML:Constructing}. \textsuperscript{a}Including data directories, the Rich
+  \caption{Provenance in the instrumented EMBER v3 extractor. Fields, counts, histograms, and hashed counts are additive
+  over their items and get their Shapley provenance (Proposition~\ref{prop:AdditiveShapley}); entropies and averages
+  follow the data-flow convention of Section~\ref{sec:XML:Constructing}. \textsuperscript{a}Including data directories, the Rich
   header and Authenticode fields.}
   \label{tab:XML:Conventions}
 \end{table}
