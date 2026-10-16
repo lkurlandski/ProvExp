@@ -9,6 +9,10 @@ pushforward) done (`docs/experiments/audit.md`); 3-B and the earlier rule-based 
 (`docs/graveyard.md`). Claims 1-3 predate the restructuring and are partly rewritten (claim 3 for AU, claim 4 for CM);
 the rest to follow. No scaling until the pilot results and the claims are settled (user).
 
+> **2026-10-16:** Section 3 is being strengthened (W1): a Shapley-grounded construction of P and the pushforward as
+> an inverse problem (iterated pushforward), plan and go/no-go in `docs/theory.md`. Coarsening moved out of Section 3
+> into the new Experimental Setup section (an experimental device only).
+
 ## Target
 
 - **Venue:** ACM CCS 2027 (Atlanta, Oct 11-15, 2027), **Cycle A** (switched from USENIX Security on 2026-10-13, user

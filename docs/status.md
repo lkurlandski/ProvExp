@@ -1,5 +1,12 @@
 # Status
 
+**2026-10-16 (in progress):** strengthening Section 3's novelty (W1); plan in `docs/theory.md`. Done: Granularity/P^G
+moved out of Section 3 into a new Section 4, "Experimental Setup" (`manuscript/_d_setup.tex`: EMBER instrumentation and
+Table 1, data/models/explainers, deletion operator, windows), experiments unchanged; build clean. Next: the go/no-go for
+the iterated pushforward (known-answer test on the GBDT); draft Pillar A (Shapley-grounded P) statements for the user.
+Open for the user: signed vs. nonnegative P (analysis in `docs/theory.md`), black-box P's place, the GBDT
+window-pushforward test.
+
 Last updated: 2026-10-14 (end of day). **The self-review's main criticisms are answered with measured results, and
 Sections 3-5 are revised for presentation.** Today, in order:
 - **Run 56, field-occlusion oracle** (W2/W4): gain 0.91 at 124 extractions/file; the byte-level pullback beats it 88/100.

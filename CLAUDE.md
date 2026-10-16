@@ -16,7 +16,8 @@ P and the round-trip theory were cut from the paper (2026-10-13) and archived in
   `pb1.md` (PB1: pullback faithfulness and cost); `pf1.md` (PF1: pushforward faithfulness and the resolution trend);
   `trigger.md` (the planted-trigger testbed: PB2 and PF2); `cm.md` (CM: comparing detectors through the pullback, the
   pullback's application); `audit.md` (AU: auditing a raw-byte detector through the pushforward, the pushforward's
-  application). `docs/appendix.md` (App-L, App-R). `docs/graveyard.md`: ideas that did not pan out and why.
+  application). `docs/appendix.md` (App-L, App-R). `docs/theory.md`: strengthening Section 3 (Shapley-grounded P; the pushforward as
+  an inverse problem; parked case-study ideas). `docs/graveyard.md`: ideas that did not pan out and why.
   `docs/resume-prompt.md`: where to pick up next. `docs/style_guide.md`: a loose orientation on how
   top-tier security papers near our scope read (for the writing; not a template).
 - `docs/design.md`: package design, decisions, provenance conventions, thrember quirks.
@@ -27,8 +28,8 @@ P and the round-trip theory were cut from the paper (2026-10-13) and archived in
   (user, 2026-10-09).
 - Manuscript order: intro (`_b`), background and related work (`_b2`: detection, post-hoc explanation, explaining
   malware detectors, transferring attributions, our position), method (`_c`: preliminaries with Figures 1-2, P,
-  transfers, constructing P incl. granularity and EMBER; Figure 3), pullback (`_e`: experimental setting incl. the deletion
-  operator; then PB1, PB2 incl. the trigger, CM) and pushforward (`_f`: PF1, PF2, AU) with **parallel structure and
+  transfers, constructing P), experimental setup (`_d`: EMBER's instrumentation, data, models, explainers, the deletion
+  operator, windows of bytes / P^G as an experimental device only), pullback (`_e`: PB1, PB2 incl. the trigger, CM) and pushforward (`_f`: PF1, PF2, AU) with **parallel structure and
   subsection names** (Faithfulness / A Planted Trigger / Application: ...; each application has a short threat model), written as
   continuous prose rather than stacks of labeled paragraphs (user, 2026-10-14); discussion (`_h`), conclusion (`_i`); appendices `_j`-`_l`. No internal IDs (PB1, ...) in the paper text. Cut material lives in `manuscript/archive/`. Keep code and manuscript
   consistent.
