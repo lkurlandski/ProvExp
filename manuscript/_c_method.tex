@@ -1,19 +1,27 @@
-We fix notation (Section~\ref{sec:XML:Preliminaries}), define the provenance matrix
-(Section~\ref{sec:XML:ProvenanceMatrix}) and the two transfers through it (Section~\ref{sec:XML:Transfers}), and then
-construct the matrix for a real feature extractor (Section~\ref{sec:XML:Constructing}). The method depends only on which
-elements produce which features, never on what an element or a feature means; the malware domain supplies our examples.
+Each of these differences rests on a single object, a matrix that records which elements of a file produce which of
+its features, and on two linear maps through it, one in each direction. Before defining them, we make precise what it
+means to explain a detector in one space or the other. Nothing in the construction depends on what an element or a
+feature means; we draw our examples from malware detection, where feature extractors are unusually complex.
 
 \subsection{Preliminaries}
 \label{sec:XML:Preliminaries}
 
-Following Pierazzi et al.~\cite{pierazzi2020intriguing}, a file is an object $z \in \mathcal{Z}$ in the \emph{problem
-space}, a sequence of \emph{elements} $z_i$, here bytes. A \emph{feature extractor} $\sigma: \mathcal{Z} \to
-\mathcal{X}$ maps it to a vector $x = \sigma(z)$ of \emph{features} $x_j$ in the \emph{feature space}, and a classifier
-$\phi: \mathcal{X} \to \mathcal{L}$ assigns it a label. For a raw-byte
-detector, $\sigma$ is the identity and the two spaces coincide. Every explainer in this paper attributes the malware
-log-odds, a GBDT's raw score or the difference of a network's two logits, and which inputs it credits depends on where
-it is applied (Figure~\ref{fig:feature-vs-problem-explanations}).
+A classifier cannot read a file directly; the file must first be represented numerically. Following Pierazzi et
+al.~\cite{pierazzi2020intriguing}, we call the space of files the \emph{problem space} $\mathcal{Z}$ and the space of
+their numerical representations the \emph{feature space} $\mathcal{X}$. A \emph{feature extractor}
+$\sigma: \mathcal{Z} \to \mathcal{X}$ moves a file $z$, a sequence of \emph{elements} $z_i$ (here, bytes), to a vector
+$x = \sigma(z)$ of \emph{features} $x_j$, and a classifier $\phi: \mathcal{X} \to \mathcal{L}$ assigns that vector a
+label. A raw-byte detector such as MalConv is the special case in which $\sigma$ is the identity and the two spaces
+coincide. An explainer assigns each input of the function it explains an \emph{attribution}, a real number measuring
+that input's contribution to the decision; every explainer in this paper attributes the malware log-odds, a GBDT's raw
+score or the difference of a network's two logits.
 
+For a feature-based detector, the inputs an explainer credits depend on where it is applied
+(Figure~\ref{fig:feature-vs-problem-explanations}). Applied to the classifier $\phi$, it credits features; applied to
+the whole pipeline $\phi \circ \sigma$, extractor included, it credits the elements of the file. The two answers are
+explanations of the same decision, but they are different objects, and much of what follows turns on the difference.
+The distinction between the two spaces is familiar from problem-space attacks~\cite{pierazzi2020intriguing}, but to our
+knowledge it has not been formalized for explanations; we do so here.
 
 \definition[\textit{Feature-Space Explanation}]
 \label{def:FeatureSpaceExplanation}
@@ -32,11 +40,15 @@ $\phi \circ \sigma$, with $b_i = 0$ for every element that no feature reads.
 
 \input{assets/framework_b}
 
-For a raw-byte detector, any explainer gives a problem-space explanation directly. For a feature-based detector, it
-gives a feature-space explanation, which names the features a decision rests on but not the bytes. Explaining a
-feature-based detector over the bytes directly requires perturbing files that must stay parseable and re-running the
-extractor for every perturbation: occlusion over $K$ windows costs $K + 1$ extractions per file, and byte resolution
-would cost one per byte.
+The two kinds of explanation answer different questions, and an analyst often needs both. A feature-space explanation
+says which features a decision rests on, but a feature such as a hashed import bucket or a byte-entropy histogram bin
+does not say where in the file it comes from. A problem-space explanation says which bytes matter, but not what the
+detector computed from them. For a raw-byte detector, any explainer gives a problem-space explanation directly and no
+feature-space one at all. For a feature-based detector, the reverse holds: a feature-space explanation is routine,
+while a problem-space explanation is hard to obtain. The extractor is neither differentiable nor invertible,
+so gradient-based explainers do not apply; a perturbation-based explainer must keep every perturbed file parseable, and
+must re-run the extractor, which parses the file, for each of its queries. Both difficulties disappear if an
+explanation computed in the space where it is easy can be moved to the space where it is needed.
 
 \subsection{The Provenance Matrix}
 \label{sec:XML:ProvenanceMatrix}
