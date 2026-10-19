@@ -114,13 +114,34 @@ last.
 **Waiting on the user:** the black-box P's final place (now 3.3.1, maybe an appendix later); whether to keep the GBDT
 window-pushforward test (a lab study need not be realistic).
 
-## Next (this thread)
+## Overnight runs launched 2026-10-19 (results expected 2026-10-20 a.m.)
 
-1. User reads the front and back matter (updated 2026-10-16); apply feedback. Still open there: an overview figure by
-   the end of the introduction (`docs/style_guide.md`), the CM real-attack TODO in the discussion, the synthetic
-   Android paragraph (W7).
-2. Refine the rough Section 4, "Experimental Setup" (`_d_setup.tex`).
-3. Reassess W7 (a second extractor, Android); then the scale-up (2,000 files / 3 seeds), only when the user decides.
+The user is running, in one tmux chain (GPU 3, 16 workers): `run/66_pb1_shared.sh` (5.1/5.2 GBDT, ~8 h) ;
+`run/67_pf_malconv_shared.sh` (5.2 MalConv window sources, ~2-3 h) ; `run/68_cm_transfer.sh` (6.1 attack transfer +
+its feasibility read, ~15-20 min) ; `run/69_audit_unfiltered.sh` (6.2 unfiltered audit, ~12 min). Outputs:
+
+- `artifacts/experiments/e1/seed-0/zeros-typical-header-shared/` and `artifacts/reports/pb1_tables-shared.md` (66)
+- `artifacts/experiments/pf_malconv/seed-0-shared/` (67; table at the end of its log)
+- `artifacts/experiments/cm_transfer/seed-0/{files,report}.parquet|json` (68)
+- `artifacts/experiments/audit_discover_unfiltered/`, `audit_scramble_unfiltered/` (69)
+- Logs in `artifacts/logs/`.
+
+## Next (this thread) — WP8, after the overnight runs
+
+1. **Read the results** (see the resume prompt). First checks: 66's pushforward table (does adaptive KernelSHAP stay
+   below the byte-level pullback? does the pushforward of window sources rise with resolution?); 68's summary
+   (`gbdt_drop_over_1.0`, `malconv_evaded`, per-predictor Spearman/AUC) — **the go/no-go for 6.1 attack transfer**; 69's
+   confirmed features by group (any section/import/string features, not only header fields?).
+2. **If 68 is a go:** keep attack transfer as 6.1's security outcome; replace the blue Table 4 and prose with the real
+   numbers. **If no-go** (GBDT does not move): fall back to option 1 (controlled shared-reliance changes; specs.md).
+3. **WP8:** regenerate Figures 3-5 and the 6.1/6.2 tables from the real data (`scripts/paper_figures.py` and the table
+   scripts); replace the blue placeholders in Sections 5-6; `make` and `make check`. Figure 4 still shows old-protocol
+   data and must be regenerated under byte deletion.
+4. **Deferred, user decides:** KernelSHAP/adaptive at 4,096 windows and the scale-up (500 files); retraining MalConv
+   (Table 5's blue row) and the stronger attacker on the mitigated model (rerun run/68's attack with the audited
+   fields zeroed); W7 (Android second extractor); the front/back matter rewrite from the final results.
+
+Earlier plan (superseded by tonight's runs): front/back matter feedback; refine Section 4; W7 then scale-up.
 
 ---
 
