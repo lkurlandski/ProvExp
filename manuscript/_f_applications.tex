@@ -38,9 +38,9 @@ one, file by file (\emph{attack transfer})? And when the detectors disagree, is 
 that the other does not read, or content that it reads the other way (\emph{disagreement triage})? Disagreements are where the defender learns most: one detector may have been evaded, or
 may have a blind spot or a false positive.
 
+% TODO (WP8): replace occlusion by the best window explainer of Section 5.1 once run/66 has run.
 The realistic alternative needs no provenance: explain both models directly over windows of bytes, with occlusion as in
-Section~\ref{sec:XML:PullbackFaithfulness}.
-% TODO: replace occlusion by the best window explainer of Section 5.1 once WP1 has run. The pullback adds the feature-based detector's explanation at byte
+Section~\ref{sec:XML:PullbackFaithfulness}. The pullback adds the feature-based detector's explanation at byte
 resolution, from one feature extraction per file. For the GBDT, much of what follows lies in named header fields, which
 an expert could map to their bytes by hand with a PE parser; the pullback performs this mapping automatically, per file,
 for every feature. The comparison itself uses only $P$ and the two byte-level explanations; where the bytes lie

@@ -31,14 +31,17 @@ features; the same machinery applies unchanged to any other feature-based model,
 verified on every file, which makes deletion a clean measurement of reliance, but it does not keep programs running.
 Section~\ref{sec:XML:Applications} therefore rests its security conclusions on changes that the Windows loader
 ignores or allows, following the format's documentation, so the changes are ones an attacker could make; we did not
-execute the modified files. Our attacker is deliberately narrow: appending content, injecting sections, or packing
-evade MalConv more easily~\cite{demetrio2021adversarial}, and how far the pullback predicts the transfer of such
-attacks to a feature-based detector is a natural next question.
+execute the modified files. Section~\ref{sec:XML:Comparison} uses one such change, a gradient attack confined to loader-ignored bytes, to ask
+whether the pullback predicts a transfer to the feature-based detector. Our attacker stays deliberately narrow:
+appending content, injecting sections, or packing evade MalConv more easily~\cite{demetrio2021adversarial}, and
+extending the same transfer analysis to them is a natural next step.
+% TODO (WP8): if run/68 shows no transfer, 6.1 drops attack transfer (option 1 fallback); then reword the first
+% sentence here back to posing the question as open.
 
 \paragraph{Mitigation.} The audit points to a countermeasure, and Section~\ref{sec:XML:Audit} shows that it is a
 trade-off: zeroing the fields an attacker can change removes most of the measured attack surface but costs a few points
 of clean detection, because the same fields also carry legitimate signal. Retraining with the fields removed may
-recover that signal, and an attacker may look for other fields once these are gone; both belong to an ongoing audit
+recover that signal~\cite{lucas2023adversarial}, and an attacker may look for other fields once these are gone; both belong to an ongoing audit
 rather than a one-time fix, and the pushforward makes repeating the audit cheap. The disagreement triage points the
 other way, to feature engineering: when the raw-byte detector alone flags a file, three quarters of its evidence lies
 in content the feature-based detector's features do not read, which is where a new feature would help.
