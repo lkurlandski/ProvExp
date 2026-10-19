@@ -1,7 +1,7 @@
 # Experiment specifications (Phase 1 of `docs/plan-2026-10-19.md`)
 
-Drafted 2026-10-19; revised the same day after the user's feedback (round 2). One spec per experiment, in the same
-format. Guiding principle (user): **consistency and simplicity**: one measurement, one cost unit, the same explainers
+Drafted 2026-10-19; revised the same day after the user's feedback (rounds 2 and 3). **Final pending the user's OK on
+6.1 Part B's reworded action.** One spec per experiment, in the same format. Guiding principle (user): **consistency and simplicity**: one measurement, one cost unit, the same explainers
 and budgets across experiments; components that add complexity without changing a conclusion are cut.
 
 **Rule (a), as applied here.** The *methods compared* use no knowledge of the file format. The *evaluation harness*
@@ -31,8 +31,9 @@ transfers are faithful and what they cost: the pullback matches direct problem-s
 for one extraction and goes beyond it at byte resolution (5.1); the pushforward is faithful up to its source's
 resolution and, on a raw-byte detector, names its reliance better than the same vocabulary obtained without P (5.2).
 Section 6 uses each direction for a defender task on one pair of detectors, carried from finding something to a
-realized consequence: the pullback compares a feature-based and a raw-byte detector file by file (6.1); the
-pushforward audits the raw-byte detector across a corpus in named features (6.2).
+realized consequence: the pullback compares a feature-based and a raw-byte detector file by file, predicting which
+MalConv evasions also weaken the GBDT and helping decide disagreements (6.1); the pushforward audits the raw-byte
+detector across a corpus in named features (6.2).
 
 ---
 
@@ -118,43 +119,105 @@ figure (file → TreeSHAP names three features → the pullback marks exactly si
 
 ## 6.1 Comparing two detectors file by file (CM)
 
-- **Claim (current).** The pullback puts a feature-based and a raw-byte detector's explanations on the same bytes, so a
-  defender can find the bytes both rely on (shared reliance) and tell, when they disagree, whether the flagging
-  detector's evidence is content the other does not read (a coverage gap) or reads the other way (a conflict over the
-  same content).
-- **Claim (target).** The same, plus a realized consequence. **Not committed yet** to one option or several (user).
-- **Baseline.** One: the best window method of 5.1 (likely adaptive KernelSHAP); occlusion as a temporary stand-in for
-  quick results. MalConv is explained by IG in both arms. No further comparison classes, and none discussed at length.
-- **Success standard (user, round 2).** A nontrivial drop in confidence is enough; evasion is not required. Report it
-  as a probability drop or the share of files falling below the threshold.
-- **Options for the realized consequence (keep all three on record):**
-  1. **Shared reliance, controlled.** Loader-safe changes (the audit's rulebook, applied to the features that read the
-     shared bytes S, found through P) to S, against as many changes to each detector's exclusive bytes and to
-     neither. Hypothesis: changes to S lower both detectors' confidence more than the controls. Prior evidence: in run
-     57, zeroing S moved MalConv strongly but the GBDT held on 87 of 159 files (a median 2.78 log-odds lost, small next
-     to its margin); under the "drop in confidence" standard this is still a positive result. Reuses `audit_*`.
-     Cheapest.
-  2. **Triage-routed action.** For GBDT-only detections, neutralize the oppose bytes before MalConv scores the file;
-     count true GBDT-only detections that MalConv then confirms against GBDT false positives it wrongly confirms (a
-     precision gain for the ensemble). Risk: any deletion raises MalConv's score (5.2's fragility), so it needs
-     equal-size controls and a benign-file check.
-  3. **Attack transfer (the strongest if it works; user prefers it).** Run a published functionality-preserving attack
-     on MalConv, white-box GAMMA (benign section injection), and ask whether the GBDT's pullback predicts, file by
-     file, how much the attack also lowers the GBDT's confidence. Why it costs the most: an iterative attack with many
-     MalConv queries per file, adapting the attack to the EMBER-2024 checkpoint, re-featurizing every adversarial
-     file, and enough files with and without transfer to test a prediction. **Design questions to settle before any
-     code:** GAMMA *adds* bytes (new sections) rather than changing existing ones, so the GBDT's pullback on the
-     *original* file cannot mark them; the prediction must be stated differently, e.g., the pullback on the
-     adversarial file (where the GBDT's evidence moved), or the overlap between what the injected content changes
-     (through P) and the GBDT's reliance. Also: does section injection change features the GBDT reads (section
-     hashes, entropy, strings, histogram)? Likely yes, which is what makes transfer plausible.
-- **How the options relate (for the decision).** Option 3 and option 1 ask the same question (does acting on shared
-  reliance move both detectors?), 3 with real attacks that choose their own bytes, 1 with changes we choose. If 3
-  works, 1 adds little beyond being a controlled check; it is the fallback if 3 fails. Option 2 answers a different
-  question: it gives the *triage* half of 6.1 an action, while 1 and 3 serve the *shared-reliance* half. So the natural
-  combinations are 3 (+2 if both halves of 6.1 stay), or 1 (+2) as the fallback. Whether 6.1 keeps both halves is part
-  of the decision.
-- **Status.** Pilot done (100 files; 25 per triage cell). No implementation until 6.1 is fully designed (user).
+**Committed (user, round 3): options 2 and 3**, one for each half of 6.1. Option 1 stays on record as the fallback
+for the shared-reliance half. No code until this spec is agreed.
+
+- **Claim.** The pullback puts a feature-based and a raw-byte detector's explanations on the same bytes. (A) Per file,
+  it predicts whether an attacker who evades the raw-byte detector by editing bytes the loader ignores also weakens
+  the feature-based detector, before any attack is run. (B) When the detectors disagree, the split of the flagging
+  detector's evidence into content the other does not read (blind) and content it reads the other way (oppose) helps
+  decide which detector is right.
+- **Shared parts.** Detectors, IG for MalConv, the pullback of interventional TreeSHAP for the GBDT. One baseline: the
+  best window method of 5.1 (likely adaptive KernelSHAP), occlusion as a temporary stand-in for quick results. Outcomes
+  in probabilities (user: a nontrivial drop in confidence is enough; evasion is not required). Files are held-out test
+  files, disjoint from the explanation set and from the audit's files.
+
+### Part A: attack transfer (option 3; serves shared reliance)
+
+- **Attack (user, round 3: replaces GAMMA).** A white-box gradient attack on MalConv that edits only bytes the Windows
+  loader ignores, so the region it may touch is fixed before the attack:
+  - the DOS header between `e_magic` and `e_lfanew` (both kept);
+  - the DOS stub, from the end of the DOS header to the PE header (it holds the Rich header when present);
+  - section slack: the bytes of a section's raw data past its virtual size.
+
+  Prior art: partial and full DOS-header attacks (Demetrio et al. 2019, cited; "Adversarial EXEmples", Demetrio et al.
+  2021), slack attacks (Suciu et al. 2019), and the embedding-space gradient method with projection to the nearest byte
+  (Kolosnjaji et al. 2018; Kreuk et al. 2018) [verify all]. Fixed budget of iterations per file, stop at evasion,
+  seeded. Every adversarial file is checked to parse with an unchanged layout (as the deletion operator's verification
+  does) and re-featurized.
+- **Why this avoids GAMMA's problem.** The attack changes existing bytes in a region E known in advance, so the GBDT's
+  pullback on the *original* file can place evidence on them.
+- **Prediction (fixed before running).** Per file, the GBDT's pulled-back evidence for malware on the editable region
+  E: how much of the GBDT's verdict rests on bytes this attacker may change. Computed from the original file alone, so a
+  defender can use it before any attack. Secondary, diagnostic: the evidence on the bytes C ⊆ E that the attack
+  actually changed.
+- **Outcome.** The drop in the GBDT's malware probability on the adversarial file; the share of files whose GBDT score
+  falls below its threshold.
+- **Test.** Spearman correlation between predicted evidence and the GBDT's drop across files; AUC for "the GBDT's
+  probability drops by more than δ" (δ fixed in advance, e.g., 0.1).
+- **Comparison.** The same prediction from the best window method's evidence on the windows that overlap E (one
+  baseline, as above); and a trivial predictor, the number of bytes the attack changed |C|.
+- **Hypothesis.** The pullback predicts the GBDT's drop better than windows and |C|: E is small (tens of bytes to a few
+  kilobytes) and sits next to content the GBDT reads in different ways (the Rich header, read by named features, inside
+  the stub; section data around the slack), which windows of bytes blur together.
+- **Population.** Malware that both detectors detect at their 1% FPR thresholds; 100 files for the pilot, 500 at
+  scale.
+- **Risks.** (1) The GBDT barely moves for every file, leaving nothing to predict. The Rich header in the stub, which
+  EMBER reads, makes some transfer likely; the first check once the attack exists is the distribution of the GBDT's
+  drops on ~50 files. (2) Edits can raise the GBDT's score as well as lower it; the prediction is signed, and both
+  directions are reported. (3) Files without slack or a Rich header give the attack less room; report E's size and
+  stratify if needed.
+- **Reuse.** The same attack, run against the MalConv with the audited fields zeroed, answers 6.2's deferred
+  "stronger attacker" question at little extra cost.
+
+| predictor of the GBDT's drop under the MalConv attack | operator | Spearman ρ | AUC (drop > 0.1) |
+|---|---|---|---|
+| GBDT evidence on E, pullback | pullback | **[mock] 0.58** | **[mock] 0.81** |
+| GBDT evidence on E, best window method | none | **[mock] 0.31** | **[mock] 0.66** |
+| bytes changed by the attack, \|C\| | none | **[mock] 0.12** | **[mock] 0.55** |
+
+Context row for the text: MalConv evaded on **[mock] 74%** of files; the GBDT's median drop **[mock] 0.06**, above
+0.1 on **[mock] 23%**.
+
+### Part B: triage that decides a disagreement (option 2; serves disagreement triage)
+
+- **Change from the round-2 wording (needs the user's OK).** The round-2 action, neutralizing the oppose bytes so that
+  MalConv confirms the GBDT, is already answered by the pilot: it flips MalConv on 19 of 25 GBDT-only malware but also
+  on 17 of 25 GBDT-only false positives, so it adds no discrimination. The pilot does show the *labels* differ by
+  ground truth: for GBDT-only files, the oppose share is 0.33 on malware against 0.17 on benign files, and the blind
+  share 0.25 against 0.46 (Table 3). So the action becomes **adjudication**: use the triage split to decide whether
+  the GBDT or MalConv is right on a GBDT-only disagreement.
+- **Population.** GBDT-only disagreements on the held-out test split: malware (GBDT right) and benign files (GBDT
+  wrong). 100 per class for the pilot, more at scale. MalConv-only disagreements are out: their splits do not differ
+  between malware and benign (blind 0.77 in both).
+- **Measurement.** A logistic regression, cross-validated, predicting "the GBDT is right" from (i) the two detectors'
+  scores alone, (ii) the scores plus the triage shares (blind, oppose, agree). The scores are the realistic baseline: a
+  defender would first compare the detectors' confidence.
+- **Outcome (security terms).** The share of the GBDT's false positives removed while keeping 99% of its true
+  GBDT-only detections; AUC as a summary. Probabilities throughout.
+- **Comparison.** (ii) against (i); and (ii) with the triage computed from the best window method instead of the
+  pullback (at windows, the oppose share nearly vanishes, Table 3, so this should lose).
+- **Hypothesis.** The triage shares add to the scores: a high oppose share marks a GBDT detection MalConv argues
+  against on the same content, which the pilot ties to malware; a high blind share marks GBDT evidence MalConv does not
+  see, which the pilot ties to false positives.
+- **Risk.** The base rate is skewed (on the test split, 29,267 GBDT-only malware against 1,547 GBDT-only false
+  positives), so balanced sampling is used for training and the outcome is reported at realistic base rates.
+
+| adjudicator for GBDT-only disagreements | operator | AUC | GBDT false positives removed at 99% recall |
+|---|---|---|---|
+| detector scores only | none | **[mock] 0.71** | **[mock] 12%** |
+| scores + triage, pullback | pullback | **[mock] 0.83** | **[mock] 31%** |
+| scores + triage, best window method | none | **[mock] 0.73** | **[mock] 14%** |
+
+### Fallback (option 1, on record)
+
+Shared reliance, controlled: loader-safe changes to the shared bytes S (the audit's rulebook, applied to the features
+that read S, found through P), against as many changes to each detector's exclusive bytes and to neither. Prior
+evidence: zeroing S in run 57 moved MalConv strongly; the GBDT lost a median 2.78 log-odds and held on 87 of 159
+files, which still counts as a drop in confidence. Used only if Part A fails.
+
+- **Status.** Pilot triage exists (25 per cell). To build: the attack (Part A); the adjudication data set and model
+  (Part B). Both after this spec is agreed.
 
 ## 6.2 Auditing a raw-byte detector (AU)
 
@@ -179,8 +242,8 @@ figure (file → TreeSHAP names three features → the pullback marks exactly si
      confirmed reliance. Report the confidence drop (probability) as well as evasion.
   3. **Act.** Test-time zeroing (done); retraining MalConv with the fields zeroed, replacing the blue row (GPU).
   4. **Robustness, cheap.** 0.1% FPR alongside 1%, from existing scores; MalConv seeds 1-2.
-  5. **Deferred decision: a stronger attacker on the mitigated model.** If 6.1 implements GAMMA, rerunning it against
-     the zeroed-field MalConv costs little and answers REVIEW risk 9. Decide together with 6.1.
+  5. **A stronger attacker on the mitigated model (deferred decision, now cheap).** 6.1's DOS-header, stub, and slack
+     attack, run against the zeroed-field MalConv, answers REVIEW risk 9 at little extra cost.
 - **Byte n-grams as the audit's vocabulary (user's question):** not as the main vocabulary: an n-gram finding is less
   actionable than a named field, 3-B's n-gram miner found the certificate's bytes rather than the field the model
   used, and every byte belongs to n overlapping n-grams equally, so credit would be smeared. Possible later as a cheap
