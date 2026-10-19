@@ -16,13 +16,13 @@ strict mypy before each commit, code in the style of the existing modules.
 | WP3 | 5.2 on MalConv: window sources, byte deletion | `scripts/pf_malconv.py` | WP0 | ~1 h GPU |
 | WP4 | 6.1 Part A: the attack and its feasibility gate | new module + `scripts/cm_attack.py` | — | ~15 min GPU (gate) |
 | WP5 | 6.1 Part A: the full experiment | `scripts/cm_attack.py`, `scripts/cm_transfer.py` | WP4 gate, WP1 | ~2 h |
-| WP6 | 6.1 Part B: adjudication | `scripts/cm_adjudicate.py` | WP1 (for the window arm) | ~1 h |
+| ~~WP6~~ | ~~6.1 Part B: adjudication~~ (dropped) | — | — | — |
 | WP7 | 6.2: unfiltered audit, section names, 0.1% FPR | `scripts/audit_*` | — | ~3 h |
 | WP8 | figures and manuscript | `scripts/paper_figures.py`, `manuscript/` | results | — |
 | later | KernelSHAP at 4,096; retraining MalConv; MalConv seeds 1-2; scale-up | — | user decides | long |
 
 WP1-WP3 (Section 5) go first: 6.1's baseline is "the best window method of 5.1". WP4's gate goes early in parallel
-(GPU), because Part A carries the most risk. WP4-WP6 can use occlusion at 256 windows as the temporary window
+(GPU), because Part A carries the most risk. WP4-WP5 can use occlusion at 256 windows as the temporary window
 baseline (user) until WP1 names the best one.
 
 ---
@@ -128,7 +128,7 @@ baseline (user) until WP1 names the best one.
 - **Reuse for 6.2.** The same attack with the audited fields zeroed before scoring (`--mitigated`) gives the stronger
   attacker on the mitigated MalConv, once the user decides it is in.
 
-## WP6. Section 6.1 Part B: adjudication (ON HOLD: pilot pre-check suggests no gain over scores; specs.md)
+## WP6. Section 6.1 Part B: adjudication (DROPPED 2026-10-19 after the pilot pre-check; kept for the record)
 
 - **Population** (`cm_disagreement_select.py`): GBDT-only disagreements on the held-out test split, 100 malware and
   100 benign, disjoint from the 25-per-cell pilot files.

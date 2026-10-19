@@ -32,12 +32,10 @@ the extractor and by the loader could misplace $P$, and we leave such files out 
 \label{sec:XML:Comparison}
 
 The pullback puts the explanations of a feature-based and a raw-byte detector on the same bytes, at byte resolution, so
-that a defender can compare them one file at a time. The defender asks four questions, two about the bytes both
-detectors rely on and two about the files on which they disagree. Which bytes do both detectors rely on (\emph{shared
-reliance}), and does an attacker who evades the raw-byte detector also weaken the feature-based one, file by file
-(\emph{attack transfer})? When the detectors disagree, is the flagging detector's evidence content that the other does
-not read, or content that it reads the other way (\emph{disagreement triage}), and does this split tell which detector
-is right (\emph{adjudication})? Disagreements are where the defender learns most: one detector may have been evaded, or
+that a defender can compare them one file at a time. The defender asks three questions. Which bytes do both detectors
+rely on (\emph{shared reliance}), and does an attacker who evades the raw-byte detector also weaken the feature-based
+one, file by file (\emph{attack transfer})? And when the detectors disagree, is the flagging detector's evidence content
+that the other does not read, or content that it reads the other way (\emph{disagreement triage})? Disagreements are where the defender learns most: one detector may have been evaded, or
 may have a blind spot or a false positive.
 
 The realistic alternative needs no provenance: explain both models directly over windows of bytes, with occlusion as in
@@ -172,18 +170,6 @@ window-level diagnosis reads the opposite of the byte-level one: MalConv appears
 Since the coarsened pullback behaves like occlusion, the loss comes from resolution, which for the feature-based
 detector only the pullback affords.
 
-\paragraph{Adjudication.} The split also helps decide a disagreement. When the GBDT alone flags a file, the split of its
-evidence differs with the truth: in the files of Table~\ref{tab:XML:Triage}, the oppose share is 0.33 for malware and
-0.17 for false positives, and the blind share 0.25 against 0.46. We test whether this tells which detector is right
-beyond what the detectors' own scores say. On \synthetic{200} further GBDT-only disagreements, half malware and half
-benign, a logistic regression predicts whether the GBDT is right from the two detectors' log-odds alone, or from the
-log-odds and the blind and oppose shares, under repeated five-fold cross-validation. We report the share of the GBDT's
-false positives that it removes while keeping 99\% of the GBDT-only malware, at the test split's base rate of 29{,}267
-GBDT-only malware to 1{,}547 GBDT-only false positives. \synthetic{The scores alone remove 12\% of the false positives
-(AUC 0.71); with the byte-level triage, 31\% (AUC 0.83); with the same triage over windows, 14\% (AUC 0.73).} When
-MalConv alone flags a file, the split is the same for malware and benign files (blind 0.77 in both), so it cannot
-decide those disagreements, which are coverage gaps either way.
-
 \subsection{Auditing a Raw-Byte Detector}
 \label{sec:XML:Audit}
 
@@ -312,5 +298,6 @@ fields zeroed lowers evasion to $1.8\%$ with no measurable clean-detection cost.
 
 The two applications use the transfers in opposite directions on the same pair of detectors. File by file, the
 pullback shows which bytes both detectors rely on, predicts which detections an attacker who evades the raw-byte
-detector also puts at risk, and helps decide which detector is right when they disagree; across the corpus, the pushforward names what the raw-byte detector relies on, and loader-safe changes to it evade the
+detector also puts at risk, and, when the detectors disagree, shows whether they read the same bytes differently;
+across the corpus, the pushforward names what the raw-byte detector relies on, and loader-safe changes to it evade the
 detector. Neither needs a hand-built mapping from features to bytes.

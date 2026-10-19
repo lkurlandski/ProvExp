@@ -119,14 +119,15 @@ figure (file → TreeSHAP names three features → the pullback marks exactly si
 
 ## 6.1 Comparing two detectors file by file (CM)
 
-**Committed (user, round 3): options 2 and 3**, one for each half of 6.1. Option 1 stays on record as the fallback
-for the shared-reliance half. No code until this spec is agreed.
+**Committed: option 3 (attack transfer)** for the shared-reliance half. Option 2 (Part B below) was dropped after its
+pilot pre-check (user, 2026-10-19); the disagreement triage stays in 6.1 as a description of disagreements, without an
+action. Option 1 stays on record as the fallback for Part A.
 
 - **Claim.** The pullback puts a feature-based and a raw-byte detector's explanations on the same bytes. (A) Per file,
   it predicts whether an attacker who evades the raw-byte detector by editing bytes the loader ignores also weakens
-  the feature-based detector, before any attack is run. (B) When the detectors disagree, the split of the flagging
-  detector's evidence into content the other does not read (blind) and content it reads the other way (oppose) helps
-  decide which detector is right.
+  the feature-based detector, before any attack is run. (B) When the detectors disagree, it splits the flagging
+  detector's evidence into content the other does not read (blind) and content it reads the other way (oppose): a
+  description of the disagreement (pilot, Table 3); no action is claimed.
 - **Shared parts.** Detectors, IG for MalConv, the pullback of interventional TreeSHAP for the GBDT. One baseline: the
   best window method of 5.1 (likely adaptive KernelSHAP), occlusion as a temporary stand-in for quick results. Outcomes
   in probabilities (user: a nontrivial drop in confidence is enough; evasion is not required). Files are held-out test
@@ -179,7 +180,7 @@ for the shared-reliance half. No code until this spec is agreed.
 Context row for the text: MalConv evaded on **[mock] 74%** of files; the GBDT's median drop **[mock] 0.06**, above
 0.1 on **[mock] 23%**.
 
-### Part B: triage that decides a disagreement (option 2; serves disagreement triage)
+### Part B: triage that decides a disagreement (option 2): DROPPED 2026-10-19
 
 > **Pre-check (2026-10-19, pilot data, indicative only): likely no-go as designed.** On the 50 GBDT-only files of the
 > pilot triage (25 malware, 25 benign), the GBDT's own log-odds alone separate malware from false positives with AUC
