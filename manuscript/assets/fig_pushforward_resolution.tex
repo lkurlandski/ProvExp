@@ -1,5 +1,5 @@
 % What survives the pushforward at each resolution (GBDT, 100 pilot files, path TreeSHAP, the matched reference; runs
-% 18 and 20, docs/experiments/pf1.md). "bytes" is drawn at 2^20 windows.
+% 18 and 20, docs/experiments/pf1.md). OLD PROTOCOL (feature-space deletion, R): to regenerate under byte deletion (WP2). "bytes" is drawn at 2^20 windows.
 \begin{figure}[t]
   \centering
   \begin{tikzpicture}
@@ -23,8 +23,9 @@
     \end{axis}
   \end{tikzpicture}
   \caption{Faithfulness of the pushforward rises with the resolution of the explanation it transfers (GBDT, 100 files).
-  $R$ is the feature-space deletion area relative to TreeSHAP's. TreeSHAP's own explanation, expressed over windows of
-  each size and pushed forward, bounds what a window-level source can reach; occlusion and KernelSHAP stay close to that
-  bound, and occlusion cannot be afforded beyond 4{,}096 windows.}
+  The share of TreeSHAP's evidence removed when deleting the bytes of the top-ranked features. TreeSHAP's own explanation,
+  expressed over windows of each size and pushed forward, bounds what a window-level source can reach; the window
+  explainers stay close to that bound. \synthetic{Placeholder: the data shown are from the earlier feature-space
+  deletion protocol and will be regenerated under byte deletion.}}
   \label{fig:XML:PushforwardResolution}
 \end{figure}

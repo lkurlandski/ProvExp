@@ -47,13 +47,14 @@ The instrumentation adds 616 lines to the extractor's 1{,}104 and changes none o
 reproduces the original features exactly, except for one hash-seed-dependent quirk of the reference code, and extracts
 the features with their provenance in 0.15\,s for the median file (208\,KB).
 
-\subsection{Data, Detectors, and Explainers}
+\subsection{Data and Detectors}
 \label{sec:XML:SetupData}
 
 We use the PE files of EMBER-2024~\cite{joyce2025ember}, truncated to their first 4{,}000{,}000 bytes (13--16\% of the
 files are longer), so that the extractor, $P$, and every detector see the same object. The \emph{explanation set} is
 2{,}000 test files, 1{,}000 per label, deduplicated with TLSH and with at most 10 files per malware family; unless stated
-otherwise, experiments use a subset of 100 of them (50 per label) and one model seed.
+otherwise, experiments use a subset of 100 of them (50 per label) and one model seed. Experiments that need further
+files draw them from the rest of the test split, disjoint from the explanation set.
 % TODO: update after the scale-up (2,000 files, seeds 0-2).
 
 The feature-based detector is a LightGBM GBDT on the EMBER v3 features with EMBER's baseline parameters (test ROC-AUC
@@ -61,50 +62,72 @@ The feature-based detector is a LightGBM GBDT on the EMBER v3 features with EMBE
 run on the same truncated files. Where a detector must decide, its threshold gives a 1\% false-positive rate on the
 benign test files.
 
-We explain the GBDT with three Shapley-value explainers: TreeSHAP in its path-dependent and interventional variants,
-the latter with a background of 1{,}000 balanced training files, and KernelSHAP with 32{,}768 coalitions and a
-balanced background of 16 files. We explain MalConv with Integrated Gradients over its byte embeddings (256 steps, the
-padding embedding as baseline, summed over the embedding dimension).
+\subsection{Explainers}
+\label{sec:XML:SetupExplainers}
+\label{sec:XML:SetupWindows}
 
-\subsection{Measuring Faithfulness by Deletion}
+Every explainer attributes the malware log-odds. In the feature space, we explain the GBDT with three Shapley-value
+explainers: TreeSHAP in its path-dependent and interventional variants, the latter with a background of 1{,}000
+balanced training files, and KernelSHAP with 32{,}768 coalitions and a balanced background of 16 files. In the problem
+space, we explain MalConv with Integrated Gradients over its byte embeddings (256 steps, the padding embedding as
+baseline, summed over the embedding dimension). These are the explanations the transfers carry: the GBDT's are pulled
+back, MalConv's pushed forward.
+
+The experiments compare the transfers with explaining a detector directly over windows of bytes, which needs no $P$,
+uses no knowledge of the file format, and applies to either detector. We split the file into $K$ equal windows, with
+$K$ from 64 to 4{,}096 in factors of four, and use three such explainers at every $K$. \emph{Occlusion} deletes each
+window in turn and credits it with the resulting change in the log-odds~\cite{zeiler2014visualizing}, at $K + 1$ queries
+of the detector. \emph{KernelSHAP over windows} treats the windows as players~\cite{lundberg2017unified}, a coalition
+keeping its windows and deleting the rest, with $8K + 2$ coalitions. \emph{Adaptive KernelSHAP} computes Owen
+values~\cite{owen1977values} over a binary hierarchy of contiguous windows with 16{,}384 leaves: it splits first the
+groups whose deletion changes the log-odds most and stops at a budget of queries, which we match to occlusion's, so it
+spends its budget where the evidence lies. Windows are deleted with the operator of
+Section~\ref{sec:XML:SetupDeletion}, and each window's attribution is spread evenly over its bytes.
+
+Comparing the transfers with window explainers needs $P$ over windows. Summing the rows of $P$ within each window $g$
+of a partition $G$, $P^G_{g,j} = \sum_{i \in g} P_{i,j}$, gives a provenance matrix over windows that satisfies the
+same axioms, and by linearity, the pullback through $P^G$ is the pullback through $P$ summed within each window.
+Coarsening loses separation: a window holds the bytes of many features, so its attribution can no longer be traced
+back to the features that produced it, and the coarser the windows, the more features share each one. We use $P^G$
+only to compare the transfers with explainers that work over windows; it is not part of the method.
+
+\subsection{Measuring Faithfulness and Cost}
 \label{sec:XML:SetupDeletion}
 
 An explanation is faithful if the inputs it ranks highest are the inputs the decision rests on. We test this as
 explanations are usually tested~\cite{petsiuk2018rise}, by deleting the top-ranked inputs and measuring how much of
-the detector's evidence disappears. Deleting a feature means setting it to a reference value
-(Section~\ref{sec:XML:PushforwardFaithfulness}); deleting bytes means replacing them, and naive replacement breaks PE
-files in ways that would make any comparison meaningless.
+the detector's evidence disappears, and we use one measurement for every explanation in the paper: we delete the
+bytes it points to. An explanation over bytes or windows points to bytes directly. An explanation over features points
+to them through $P$: we rank the bytes by its pullback, so that deleting the top-ranked bytes deletes the content of
+the top-ranked features. This puts explanations of either space, and of either detector, on one scale, including
+feature explanations of MalConv, which never computes the features. Two features with identical provenance are deleted
+together, so the measurement sees exactly what the bytes can tell apart (Proposition~\ref{prop:ExactPushforward}).
 
-Our experiments use knowledge of the file format in exactly two places, each to protect an experiment's integrity
-and never in the method itself: the deletion operator described here and the loader-safe modifications of the audit in
-Section~\ref{sec:XML:Audit}.
-The deletion operator never changes the fields that define the file's layout (found by a sweep over 2{,}000 training
-files) or the fields that break a particular file, replaces the remaining header fields with their most common value in
-the training set, zeroes the content bytes, and verifies every perturbed file; none of the 23{,}000 perturbed files of
-Section~\ref{sec:XML:PullbackFaithfulness} failed verification. Zeroing the header fields instead, or filling the
-content with random bytes, serves as a robustness check.
+Deleting bytes means replacing them, and naive replacement breaks PE files in ways that would make any comparison
+meaningless. Our experiments use knowledge of the file format in exactly two places, each to protect an experiment's
+integrity and never in the method itself: the deletion operator described here and the loader-safe modifications of
+Section~\ref{sec:XML:Applications}. The deletion operator never changes the fields that define the file's layout
+(found by a sweep over 2{,}000 training files) or the fields that break a particular file, replaces the remaining
+header fields with their most common value in the training set, zeroes the content bytes, and verifies every perturbed
+file; none of the 23{,}000 perturbed files of Section~\ref{sec:XML:PullbackFaithfulness} failed verification. Zeroing
+the header fields instead, or filling the content with random bytes, serves as a robustness check.
 
 A ranking is scored by deleting its top-ranked bytes at log-spaced budgets from 0.1\% to 50\% of the file,
 re-extracting the features where the detector needs them, re-scoring the detector, and recording the \emph{evidence
 removed}, how far the log-odds fall toward the other class, $s \cdot (f(x) - f(x'))$ with $s$ the sign of the original
-log-odds. A ranking that finds the bytes the decision rests on removes much evidence already at small budgets. We
-summarize a ranking by its evidence removed averaged over the budgets and then over the files, compare rankings file
-by file with paired Wilcoxon tests, and count cost in feature extractions per file. Equal scores are common, among
-bytes with identical provenance and among windows whose deletion changes nothing, so every ranking breaks ties by a
-seeded random permutation rather than by position.
+log-odds. We report evidence in log-odds because the attributions are in log-odds and add up to it, and because the
+detectors are confident enough that probabilities saturate: a drop of 3 log-odds takes a score of 0.99 to 0.83, but a
+score of 0.9999 only to 0.998. Section~\ref{sec:XML:Applications} reports its outcomes as probabilities and rates. A
+ranking that finds the bytes the decision rests on removes much evidence already at small budgets. We summarize a
+ranking by its evidence removed averaged over the budgets and then over the files, and compare rankings file by file
+with paired Wilcoxon tests. Equal scores are common, among bytes with identical provenance and among windows whose
+deletion changes nothing, so every ranking breaks ties by a seeded random permutation rather than by position.
+
+We count cost in \emph{queries} of the detector per file, one feature extraction and score for the GBDT or one
+forward or backward pass for MalConv, and report wall-clock time beside it; one-time costs, such as training a model,
+are reported separately.
 
 Any deletion produces files that a detector never saw in training, so a deletion curve measures how a model responds
 to unusual inputs as well as what it relies on. We therefore compare rankings only against one another, at equal
-budgets and under both fills, and rest no conclusion on deletion alone: the audit (Section~\ref{sec:XML:Audit}) changes files only in ways the Windows
-loader accepts.
-
-\subsection{Windows of Bytes}
-\label{sec:XML:SetupWindows}
-
-Several baselines explain the detectors over windows of bytes rather than single bytes, and comparing with them needs
-$P$ over windows. Summing the rows of $P$ within each window $g$ of a partition $G$,
-$P^G_{g,j} = \sum_{i \in g} P_{i,j}$, gives a provenance matrix over windows that satisfies the same axioms, and by
-linearity, the pullback through $P^G$ is the pullback through $P$ summed within each window. Coarsening loses
-separation: a window holds the bytes of many features, so its attribution can no longer be traced back to the features
-that produced it, and the coarser the windows, the more features share each one. We use $P^G$ only to compare the
-transfers with explainers that work over windows; it is not part of the method.
+budgets and under both fills, and rest no security conclusion on deletion alone: Section~\ref{sec:XML:Applications}
+changes files only in ways the Windows loader accepts.

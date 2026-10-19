@@ -29,13 +29,11 @@ features; the same machinery applies unchanged to any other feature-based model,
 
 \paragraph{From reliance to attacks.} Our deletion operator keeps every file parseable with its layout intact and is
 verified on every file, which makes deletion a clean measurement of reliance, but it does not keep programs running.
-The audit's evasion goes a step further: it changes only what the Windows loader ignores or allows, following the
-format's documentation, so the changes are ones an attacker could make; we did not execute the modified files. The
-shared reliance of Section~\ref{sec:XML:Comparison} is still measured by deletion, so it shows where the two detectors
-are jointly cheap to attack rather than that a particular attack succeeds. Pairing it with functionality-preserving
-manipulations is the natural next step, e.g., testing whether published attacks on MalConv~\cite{demetrio2019explaining}
-transfer to the GBDT more often when they modify the bytes the GBDT's pullback marks.
-% TODO (load-bearing, "claim the fuller vision"): CM's real-attack transfer. Rewrite this paragraph once it is run.
+Section~\ref{sec:XML:Applications} therefore rests its security conclusions on changes that the Windows loader
+ignores or allows, following the format's documentation, so the changes are ones an attacker could make; we did not
+execute the modified files. Our attacker is deliberately narrow: appending content, injecting sections, or packing
+evade MalConv more easily~\cite{demetrio2021adversarial}, and how far the pullback predicts the transfer of such
+attacks to a feature-based detector is a natural next question.
 
 \paragraph{Mitigation.} The audit points to a countermeasure, and Section~\ref{sec:XML:Audit} shows that it is a
 trade-off: zeroing the fields an attacker can change removes most of the measured attack surface but costs a few points

@@ -101,8 +101,8 @@ baseline (user) until WP1 names the best one.
 - **Attack** (`scripts/cm_attack.py`): white-box, on MalConv's byte embeddings. Each iteration takes the gradient of
   the malware log-odds with respect to the embeddings at editable positions and, for the m positions with the largest
   predicted decrease, replaces the byte with the value whose embedding most decreases the linearized log-odds (the
-  embedding-gradient method with projection to the nearest byte). Budget: at most N iterations; stop at evasion
-  (MalConv below its 1% FPR threshold). Seeded. Every adversarial file is verified and re-featurized; output: the
+  embedding-gradient method with projection to the nearest byte). Budget: a fixed number of queries (N iterations),
+  stopping early once MalConv falls below its 1% FPR threshold (user, 2026-10-19: the usual protocol). Seeded. Every adversarial file is verified and re-featurized; output: the
   adversarial bytes' positions C, MalConv's and the GBDT's log-odds before and after.
 - **Defaults to settle in the smoke test:** m = 64 positions per iteration, N = 50 iterations (a few seconds per file
   on a GPU).
@@ -145,8 +145,9 @@ baseline (user) until WP1 names the best one.
 
 ## WP7. Section 6.2
 
-1. **Unfiltered discovery** (`scripts/audit_discover.py`, `scripts/audit_scramble.py`): `--max_content` and
-   `--max_runs` set to no limit; the confirmation control generalizes from "as many random bytes in the same
+1. **Unfiltered discovery** (`scripts/audit_discover.py`, `scripts/audit_scramble.py`): `--max_content` set to no limit (a
+   single contiguous run is no longer required) while `--max_runs 256` stays, so aggregates such as the byte histogram,
+   whose content cannot be located, remain excluded; the confirmation control generalizes from "as many random bytes in the same
    convolution window" to one random byte in the same 512-byte window per assigned byte, which reduces to today's rule
    for contiguous fields. Group the confirmed features by type (header field, section, import, string, aggregate).
    `run/70_audit_unfiltered.sh`, reusing the IG of runs 39/43 (no GPU). Hypothesis: some section, import, or string
@@ -167,15 +168,9 @@ baseline (user) until WP1 names the best one.
   Sections 5.1-5.2 rewritten on the new results; Section 6 gets the shared setting (Phase 3a of the plan) and the new
   6.1; 6.2 gains the unfiltered audit. The shared setting is writing only and can be done any time.
 
-## Decisions for the user (none blocks WP0-WP3)
+## Decisions (user, 2026-10-19)
 
-1. **Part A's outcome scale.** The specs put Section 6 in probabilities, but the GBDT's scores on confident malware
-   saturate (10 log-odds is a probability of 0.99995), so a probability drop is near zero for most files even when the
-   evidence moves a lot. Proposal: test the *prediction* on the log-odds drop (the quantity the pullback's evidence
-   is in, and what the gate above uses), and report the *headline* in probabilities (share of files that fall below
-   the GBDT's threshold, median probability drop).
-2. **The attack's stopping rule.** Stop at MalConv's evasion (a minimal attacker; fewer bytes changed) or run a fixed
-   number of iterations (a stronger attacker; more transfer). Proposal: stop at evasion, the standard choice, with
-   the fixed-budget variant as a robustness row if the gate shows little transfer.
-3. **Leaf resolution of adaptive KernelSHAP.** Proposal: 16,384 leaves (finer than every budget). Finer leaves give
-   adaptivity more room at more memory and setup cost.
+1. Part A: test the prediction on the log-odds drop, report the headline in probabilities; settle the presentation once
+   the results are in.
+2. Attacks run for a fixed query budget and stop early at evasion.
+3. Adaptive KernelSHAP: 16,384 leaf windows.
