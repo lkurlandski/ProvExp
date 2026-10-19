@@ -55,9 +55,9 @@ baseline (user) until WP1 names the best one.
   (today it runs only at `--num_windows`); `--partition_budgets 64 256 1024 4096` runs WP0's adaptive KernelSHAP at
   matched query budgets. Reuse pass 1 (`--reuse_scores`) for the occlusion sweep already computed in run 21/56, so
   occlusion is not recomputed. The field oracle and the black-box estimate stay as code but are not run or reported.
-- **Run.** `run/64_pb1_shared.sh`: 100 pilot files, seed 0, level-3 operator, zeros fill, budgets 64/256/1,024 for
+- **Run.** `run/66_pb1_shared.sh`: 100 pilot files, seed 0, level-3 operator, zeros fill, budgets 64/256/1,024 for
   KernelSHAP (4,096 deferred: ~32,800 queries per file, ~8-10 h), all four for adaptive KernelSHAP. Then the random-fill
-  variant (`run/65_pb1_shared_random.sh`), deletion only. Estimated ~4 h for the first at 16 workers (KernelSHAP at
+  variant (`run/67_pb1_shared_random.sh`), deletion only. Estimated ~4 h for the first at 16 workers (KernelSHAP at
   1,024 dominates: 8,194 queries per file).
 - **Hypothesis.** Adaptive KernelSHAP improves on uniform windows at equal queries but stays below the byte-level
   pullback (occluding small windows changes the features too little to rank them, the saturation seen at 1,024
@@ -84,7 +84,7 @@ baseline (user) until WP1 names the best one.
   with `blocks` chosen per file so the window count matches the budget), KernelSHAP over windows and adaptive
   KernelSHAP (WP0) at the four budgets, MalConv queries batched on the GPU. Push each forward, pull back, delete bytes,
   MalConv scores (the existing protocol). Drop the naive translation. Record queries.
-- **Run.** `run/66_pf_malconv_shared.sh`, 100 pilot files, one GPU; KernelSHAP at 1,024 on 4 MB inputs is the cost
+- **Run.** `run/68_pf_malconv_shared.sh`, 100 pilot files, one GPU; KernelSHAP at 1,024 on 4 MB inputs is the cost
   driver (~8,200 forward passes per file). Estimate after the smoke test.
 - **Hypothesis.** The pushforward of IG stays on top among summaries into features; window sources pushed forward
   fall between it and random features, rising with resolution; the surrogate stays at about half of IG's pushforward.
@@ -106,7 +106,7 @@ baseline (user) until WP1 names the best one.
   adversarial bytes' positions C, MalConv's and the GBDT's log-odds before and after.
 - **Defaults to settle in the smoke test:** m = 64 positions per iteration, N = 50 iterations (a few seconds per file
   on a GPU).
-- **Feasibility gate (run before WP5; ~50 files, ~15 min on one GPU, `run/67_cm_attack_gate.sh`).** Report MalConv's
+- **Feasibility gate (run before WP5; ~50 files, ~15 min on one GPU, `run/69_cm_attack_gate.sh`).** Report MalConv's
   evasion rate and the distribution of the GBDT's drop. **Go** if the GBDT's drop varies enough to predict: at least
   ~20% of files lose more than 1 log-odds (fixed now, before the run). **No-go:** fall back to option 1 (the
   controlled shared-reliance changes) and tell the user before building more.
@@ -124,11 +124,11 @@ baseline (user) until WP1 names the best one.
   windows overlapping E; |C|. Outcome: the GBDT's drop. Spearman ρ; AUC for the drop above the fixed threshold;
   bootstrap CIs. Probabilities for the headline (share of files falling below the GBDT's threshold, median probability
   drop).
-- **Run.** `run/68_cm_transfer.sh` (attack on the population, then the analysis). ~1-2 h with one GPU and 16 workers.
+- **Run.** `run/70_cm_transfer.sh` (attack on the population, then the analysis). ~1-2 h with one GPU and 16 workers.
 - **Reuse for 6.2.** The same attack with the audited fields zeroed before scoring (`--mitigated`) gives the stronger
   attacker on the mitigated MalConv, once the user decides it is in.
 
-## WP6. Section 6.1 Part B: adjudication
+## WP6. Section 6.1 Part B: adjudication (ON HOLD: pilot pre-check suggests no gain over scores; specs.md)
 
 - **Population** (`cm_disagreement_select.py`): GBDT-only disagreements on the held-out test split, 100 malware and
   100 benign, disjoint from the 25-per-cell pilot files.
@@ -139,7 +139,7 @@ baseline (user) until WP1 names the best one.
   remainder), (iii) as (ii) from window-level triage. Metrics: AUC; the share of GBDT false positives removed at 99%
   recall of GBDT-only malware, with the threshold chosen on training folds and the outcome reweighted to the test
   split's base rate (29,267 : 1,547).
-- **Run.** `run/69_cm_adjudicate.sh`. ~1 h (IG on 200 files; occlusion at 256 windows, 258 queries per file).
+- **Run.** `run/71_cm_adjudicate.sh`. ~1 h (IG on 200 files; occlusion at 256 windows, 258 queries per file).
 - **Hypothesis.** (ii) beats (i) and (iii): the oppose share marks GBDT detections MalConv argues against on the same
   content (pilot: malware), the blind share GBDT evidence MalConv does not see (pilot: false positives).
 
@@ -150,10 +150,10 @@ baseline (user) until WP1 names the best one.
    whose content cannot be located, remain excluded; the confirmation control generalizes from "as many random bytes in the same
    convolution window" to one random byte in the same 512-byte window per assigned byte, which reduces to today's rule
    for contiguous fields. Group the confirmed features by type (header field, section, import, string, aggregate).
-   `run/70_audit_unfiltered.sh`, reusing the IG of runs 39/43 (no GPU). Hypothesis: some section, import, or string
+   `run/72_audit_unfiltered.sh`, reusing the IG of runs 39/43 (no GPU). Hypothesis: some section, import, or string
    features are confirmed, i.e., reliance the pushforward splits out of shared bytes.
 2. **Section names in the rulebook** (`scripts/audit_evade.py`): renaming a section is loader-safe; add it, report the
-   probability drop next to evasion. Part of run 70's follow-up, `run/71_audit_evade_sections.sh`.
+   probability drop next to evasion. Part of run 70's follow-up, `run/73_audit_evade_sections.sh`.
 3. **0.1% FPR** from existing scores (`audit_evade.py`, `audit_mitigate.py` table modes): no new run.
 4. **Later, user decides:** retraining MalConv with the fields zeroed (GPU, outside this repository's training
    code); MalConv seeds 1-2 (IG on 2,000 files per seed, then discovery and evasion); the stronger attacker (WP5's

@@ -74,22 +74,25 @@ explainers sample coalitions or, like TreeSHAP, exploit the model's structure.
 \label{sec:XML:BgMalwareXAI}
 
 Security has its own requirements for explanations~\cite{guo2018lemna, warnecke2020evaluating, nadeem2023sok}, and
-practitioners want them~\cite{mink2023everybody}, yet the analyst's object, the file, and the detector's input, the
+practitioners value them for verifying models and understanding security events, while finding existing methods
+ill-matched to their tasks~\cite{mink2023everybody}, and the analyst's object, the file, and the detector's input, the
 feature vector, rarely coincide~\cite{rui2024position}. Explanations follow the representation. Feature-based detectors
 are explained at the feature level~\cite{melis2018explaining, fan2020can, wu2021android, zhu2024dynamic}, most often
 with SHAP over EMBER features, whose reliability on its own has been questioned~\cite{mohseni2026shap}. Raw-input
 detectors are explained over the input: activations and gradients show that MalConv relies heavily on the
 header~\cite{coull2019activation, bose2020explaining, demetrio2019explaining}, and hierarchical
-LIME~\cite{mitchell2024generating} and byte-level SHAP~\cite{aryal2024explainability} explain opcode and byte
-sequences. FINER~\cite{he2023finer} formalizes the path from problem space to feature space to explanation for security
-classifiers, and explicitly leaves out pattern-driven detectors such as EMBER-based ones, arguing that hashing and
-aggregation lose too much to map their explanations back to the program.
+LIME~\cite{mitchell2024generating} explains opcode sequences. Aryal et al.~\cite{aryal2024explainability} sum MalConv's
+SHAP values over the regions of each PE file and over 4\,KB subsections of its sections, use them to place evasive
+perturbations, and find that averaging these region-level explanations over 500 files gives no usable global
+explanation, so each file needs its own. FINER~\cite{he2023finer} formalizes the path from problem space to feature
+space to explanation for security classifiers and sets EMBER-style detectors aside, arguing that their hashing and
+histogram summaries lose the information an analyst would need from an explanation.
 
 Where an application needs to cross the two spaces, the mapping is built by hand. Explanation-guided backdoors select
 EMBER features by their SHAP values and realize them with a purpose-built PE editor, keeping only the 17 features that
 could be mapped to file content~\cite{severi2021explanation}; explanation-guided evasion modifies features one at a time
-with type-specific transformations~\cite{rosenberg2020generating}; and shortcut analyses confirm that a detector's top
-features are packing and metadata artifacts by reading the bytes of PE files manually~\cite{mohammed2026beyond}. The
+with type-specific transformations~\cite{rosenberg2020generating}; and shortcut analyses explain detectors with a surrogate tree and review the top-ranked features by hand, finding
+packing and metadata artifacts~\cite{mohammed2026beyond}. The
 closest case in the other direction summarizes a raw-byte detector's saliency by overlaying it on PE structures parsed
 from each file, which shows MalConv's reliance on the header~\cite{coull2019activation, bose2020explaining}; the
 overlay is a hand-built, per-format map that sums each region's bytes, whereas our pushforward splits the credit of

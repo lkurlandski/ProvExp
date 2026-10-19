@@ -3,8 +3,8 @@ kinds. \emph{Feature-based} detectors parse the file into hand-engineered featur
 EMBER~\cite{anderson2018ember, joyce2025ember}, and learn over the feature vector, typically with gradient-boosted
 decision trees (GBDTs). \emph{Raw-byte} detectors such as MalConv~\cite{raff2018malware} learn from the bytes
 directly. Production engines run both: Microsoft Defender combines models over featurized metadata with deep networks
-over full file contents~\cite{microsoft2019insideout}. When a detector misses a malicious file or flags a benign one,
-analysts turn to explanations to find out why~\cite{mink2023everybody}.
+over full file contents~\cite{microsoft2019insideout}. Practitioners value explanations for verifying such detectors and understanding
+what they flag~\cite{mink2023everybody}.
 
 The two kinds of detector explain themselves in spaces that do not meet. A feature-based detector's explanation
 credits features, such as the header checksum or a hashed import bucket, but does not say where in the file that
@@ -18,8 +18,8 @@ coull2019activation, bose2020explaining}. Explaining a feature-based detector di
 occluding windows of the file~\cite{zeiler2014visualizing}, costs one feature extraction per window, so byte
 resolution is out of reach. Attribution-propagation rules carry explanations through a chain of
 models~\cite{shrikumar2017learning, chen2022explaining}, but need every stage to be a model with its own attribution
-method, not a parser; FINER~\cite{he2023finer} leaves EMBER-style detectors out, arguing that hashing and aggregation
-lose too much to map their explanations back to the program. Attacks that need the mapping from features to bytes
+method, not a parser; FINER~\cite{he2023finer} sets EMBER-style detectors aside, arguing that hashing and histogram
+summaries lose too much information for their explanations to serve an analyst. Attacks that need the mapping from features to bytes
 build it by hand, one feature at a time~\cite{pierazzi2020intriguing, severi2021explanation}.
 
 Our key insight is that \emph{every engineered feature is computed from specific bytes, so instrumenting the feature

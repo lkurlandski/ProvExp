@@ -181,6 +181,14 @@ Context row for the text: MalConv evaded on **[mock] 74%** of files; the GBDT's 
 
 ### Part B: triage that decides a disagreement (option 2; serves disagreement triage)
 
+> **Pre-check (2026-10-19, pilot data, indicative only): likely no-go as designed.** On the 50 GBDT-only files of the
+> pilot triage (25 malware, 25 benign), the GBDT's own log-odds alone separate malware from false positives with AUC
+> 0.93; cross-validated, scores alone reach AUC 0.91 and scores plus the byte-level triage shares 0.90 (window-level
+> triage: 0.91). The triage shares correlate strongly with the GBDT's confidence (oppose r = 0.76, blind r = −0.73):
+> false positives sit near the threshold and their evidence is mostly blind. The triage alone reaches 0.76. So the
+> labels describe the disagreement but add nothing to deciding it beyond the scores. WP6 is on hold pending the
+> user's decision (script: scratchpad `adj_precheck.py`, not in the repository).
+
 - **Change from the round-2 wording (needs the user's OK).** The round-2 action, neutralizing the oppose bytes so that
   MalConv confirms the GBDT, is already answered by the pilot: it flips MalConv on 19 of 25 GBDT-only malware but also
   on 17 of 25 GBDT-only false positives, so it adds no discrimination. The pilot does show the *labels* differ by

@@ -190,7 +190,8 @@ decide those disagreements, which are coverage gaps either way.
 A raw-byte detector such as MalConv can be explained file by file with Integrated Gradients, but these explanations
 have no vocabulary in which its reliance recurs across files. Auditing it
 for reliance on content that an attacker could change cheaply, without affecting what the program does, is therefore a
-corpus-level question~\cite{arp2022and}, and per-file byte explanations cannot be aggregated to answer it. The
+corpus-level question~\cite{arp2022and}, and per-file byte explanations cannot be aggregated to answer it: averaging
+them over the parsed regions of each file gives no usable global explanation of MalConv~\cite{aryal2024explainability}. The
 pushforward supplies the shared vocabulary. It sends each file's byte explanation into the named features of a feature
 extractor, which are the same for every file, splitting the credit of shared bytes among the features that read them.
 
@@ -205,7 +206,9 @@ evidence as the pushforward's. Its training pool may also
 contain relatives of the explanation files, which can only favor it. A hand-built aggregation, a PE parser locating
 every field in every file and summing Integrated Gradients over it, would answer the same question, but only for one
 file format and at great manual effort; the pushforward does it automatically for any feature extractor, and needs no
-second model.
+second model. Black-box attack frameworks can minimize the manipulations that a successful evasion
+needs~\cite{song2022mab}, which tells a defender which manipulation works against the detector, not which content its
+detections rest on.
 
 We explain MalConv with Integrated Gradients on the 2{,}000-file explanation set and push each file's explanation
 forward through that file's $P$. In each file we take the 20 features with the most credit for malware; across files, a
