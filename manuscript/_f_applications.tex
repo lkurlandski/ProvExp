@@ -1,5 +1,5 @@
 % Security applications: one per direction, on the same pair of detectors. The pullback compares the GBDT and MalConv
-% file by file (CM, 6.1); the pushforward audits MalConv across a corpus (AU, 6.2); 6.3 puts the findings together.
+% file by file (CM, 6.1); the pushforward audits MalConv across a corpus (AU, 6.2).
 Deployed malware detection layers several static detectors over different representations of the same file. Microsoft
 Defender combines feature-specific models in stacked ensembles alongside deep networks that read full file
 contents~\cite{microsoft2019insideout}; the winning defense of the 2020 evasion competition combined EMBER-based GBDTs, a
@@ -11,7 +11,7 @@ something different in every file. We use each transfer for one defensive task o
 pullback, used locally, puts both detectors' explanations on the bytes of a single file and compares them
 (Section~\ref{sec:XML:Comparison}). The pushforward, used globally, puts the raw-byte detector's explanations into named
 features shared by every file and audits what it relies on across a corpus (Section~\ref{sec:XML:Audit}).
-Section~\ref{sec:XML:Together} puts the two sets of findings together. We study the GBDT and MalConv as stand-ins for
+We study the GBDT and MalConv as stand-ins for
 the two kinds of member, one over engineered features and one over raw bytes; both are public with their training data,
 which lets us measure what a defender would see. The method needs only one explainable model of each kind, not this
 particular pair.
@@ -248,21 +248,7 @@ fields zeroed lowers evasion to $1.8\%$ with no measurable clean-detection cost.
   \label{tab:XML:Mitigation}
 \end{table}
 
-\subsection{The Two Applications Together}
-\label{sec:XML:Together}
-
-Pushed forward, MalConv's reliance also sits in the same vocabulary as the GBDT's TreeSHAP, so the two detectors can
-be compared feature by feature over the corpus. Among the 354 features with locatable content, their importance
-rankings barely agree (Spearman $0.10$), and their ten most-relied-on such features share exactly one, the checksum,
-which is each detector's second; several fields MalConv leans on, such as the heap reserve and the global-pointer and
-copyright directory addresses, the GBDT nearly ignores. This refines the byte-level finding of
-Section~\ref{sec:XML:Comparison} that both detectors rely on the header: they rely on \emph{different} header fields,
-sharing only the checksum at the top.
-
-The two applications use the transfers in opposite directions on the same pair of detectors, and their findings fit
-together. File by file, the pullback shows that both detectors rely on the header, that the bytes they share are worth
-more to each than its own, and that when the feature-based detector alone flags a file, the raw-byte detector often
-reads the same header bytes the other way. Across the corpus, the pushforward names what the raw-byte detector relies
-on, confirms it, shows that loader-safe changes to it evade the detector, and shows that the two detectors rely on
-different header fields. Neither result needs a hand-built mapping from features to bytes, and neither is visible over
-windows of bytes without $P$.
+The two applications use the transfers in opposite directions on the same pair of detectors. File by file, the
+pullback shows which bytes both detectors rely on and, when they disagree, whether they read the same bytes differently;
+across the corpus, the pushforward names what the raw-byte detector relies on, and loader-safe changes to it evade the
+detector. Neither needs a hand-built mapping from features to bytes.

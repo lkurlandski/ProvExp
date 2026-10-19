@@ -1,5 +1,7 @@
 % Pullback faithfulness on the GBDT (100 pilot files, zero fill; run 56, which reuses run 21's rankings). Data:
 % scripts/paper_figures.py -> data/pb_gbdt.dat (median curves); extractions per file (medians) from data/pb_gbdt_area.dat.
+% The field-occlusion oracle (column field_oracle) was removed from the figure on 2026-10-19: 5.1 compares only
+% format-agnostic methods.
 % The right panel is the legend: each method's line sample and name, with its feature extractions per file.
 \newcommand{\pbsample}[2]{\tikz[baseline=-0.6ex]{\draw[#1] (0pt,0pt) -- (12pt,0pt);
   \begin{scope}[#1, solid] \pgftransformshift{\pgfpoint{6pt}{0pt}}\pgfsetplotmarksize{1.4pt}\pgfuseplotmark{#2} \end{scope}}}
@@ -17,7 +19,6 @@
       \addplot[ours, thick, mark=*, mark size=1.5pt] table[x=budget, y=pullback] {assets/data/pb_gbdt.dat};
       \addplot[direct, thick, mark=square*, mark size=1.4pt] table[x=budget, y=occlusion_k256] {assets/data/pb_gbdt.dat};
       \addplot[direct, thick, dashed, mark=square, mark size=1.4pt] table[x=budget, y=occlusion_k4096] {assets/data/pb_gbdt.dat};
-      \addplot[alternative, thick, mark=triangle*, mark size=2pt] table[x=budget, y=field_oracle] {assets/data/pb_gbdt.dat};
       \addplot[floor!60, thick, dotted] table[x=budget, y=random] {assets/data/pb_gbdt.dat};
     \end{axis}
     \begin{axis}[
@@ -25,10 +26,9 @@
       width=0.36\columnwidth, height=0.6\columnwidth,
       xbar, bar width=5pt, bar shift=0pt, xmode=log, log origin=infty, xmin=0.5, xmax=3e5,
       xtick={1,100,10000}, xticklabels={$10^0$,$10^2$,$10^4$}, xminorgrids=false,
-      ymin=-0.6, ymax=4.6, ytick={0,...,4}, axis y line*=left, ytick style={draw=none},
+      ymin=-0.6, ymax=3.6, ytick={0,...,3}, axis y line*=left, ytick style={draw=none},
       yticklabels={
         {Random \pbsample{floor!60, thick, dotted}{none}},
-        {Field oracle \pbsample{alternative, thick}{triangle*}},
         {Occlusion (4{,}096) \pbsample{direct, thick, dashed}{square}},
         {Occlusion (256) \pbsample{direct, thick}{square*}},
         {Pullback \pbsample{ours, thick}{*}},
@@ -38,16 +38,15 @@
       nodes near coords, every node near coord/.style={font=\scriptsize, text=black, anchor=west, xshift=1pt},
       point meta=explicit symbolic,
     ]
-      \addplot[ours, fill=ours] coordinates {(1,4)[1]};
-      \addplot[direct, fill=direct] coordinates {(258,3)[258]};
-      \addplot[direct, fill=direct!40] coordinates {(4099,2)[4{,}099]};
-      \addplot[alternative, fill=alternative] coordinates {(124,1)[124]};
+      \addplot[ours, fill=ours] coordinates {(1,3)[1]};
+      \addplot[direct, fill=direct] coordinates {(258,2)[258]};
+      \addplot[direct, fill=direct!40] coordinates {(4099,1)[4{,}099]};
       \node[font=\scriptsize, anchor=west] at (axis cs:0.5,0) {0};
     \end{axis}
   \end{tikzpicture}
   \caption{Deleting the bytes that each method ranks highest from the GBDT's files (100 files). Left: the median drop
   in the GBDT's log-odds. Right: feature extractions per file (median). The pullback of TreeSHAP ranks single bytes from
   one extraction and removes more evidence at every budget than occlusion, which needs one extraction per window and
-  gains almost nothing from 16 times finer windows, and than an oracle that occludes each parsed field and section.}
+  gains almost nothing from 16 times finer windows.}
   \label{fig:XML:PullbackDeletion}
 \end{figure}

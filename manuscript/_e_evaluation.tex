@@ -21,8 +21,7 @@ through $P^G$ (Section~\ref{sec:XML:SetupWindows}), window by window; the coarse
 resolution from that of the information in the explanation. The direct baselines explain the detector over the bytes
 without $P$. Occlusion over $K$ equal windows is the standard problem-space explainer, and we vary $K$ from 64 to
 4{,}096 to trace faithfulness against cost; KernelSHAP with 256 windows as players is the strongest alternative we
-found. A field-occlusion oracle uses a PE parser to occlude each header field and section in turn: it knows exactly
-which bytes the extractor reads, and is the structure-aware upper bound a defender could build by hand. Because the
+found. Like the pullback, none of them uses knowledge of the file format. Because the
 occlusion run also yields the black-box estimate of $P$ (Section~\ref{sec:XML:BlackBoxP}), we include the pullback
 through that estimate as well, and a random window order as the floor. Every ranking is scored by the evidence it
 removes under the deletion operator of Section~\ref{sec:XML:SetupDeletion}.
@@ -43,12 +42,7 @@ windows: the evidence it removes rises to 5.5 log-odds at 1{,}024 windows and th
 4{,}099 extractions per file), plausibly because occluding a small window changes the features too little to rank it;
 KernelSHAP over windows ends at the same level. The byte-level pullback, from the same single extraction, removes 8.0.
 Above the 0.9 that a random ranking removes, that is 1.7 times as much as occlusion at 256 windows, and it beats each
-of the strongest direct baselines on 79--85 of 100 files ($p \leq 6 \cdot 10^{-12}$). Knowing the parser's read set
-does not close the gap. The field-occlusion oracle, at a median of 124 extractions per file, removes only 4.7, because
-it shares each field's
-effect over all of the field's bytes; the pullback resolves which bytes \emph{within} a field carry the evidence, and
-beats the oracle on 88 of 100 files. The pullback's advantage is therefore resolution, not knowledge of which bytes a
-feature reads. It holds under both variants of the operator: with random instead of zero content, the byte-level
+of the strongest direct baselines on 79--85 of 100 files ($p \leq 6 \cdot 10^{-12}$). The advantage holds under both variants of the operator: with random instead of zero content, the byte-level
 pullback again removes 1.7 times as much evidence above random as occlusion and beats it on 81 of 100 files. Deleting
 the top half of the bytes can remove more evidence than deleting everything (6.4 log-odds in the median file), for
 every method family; this \emph{overshoot} arises mostly because rankings
