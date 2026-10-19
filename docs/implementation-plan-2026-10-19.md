@@ -2,8 +2,7 @@
 
 > **Build status (2026-10-19).** WP0-WP5 and WP7 implemented, smoke-tested, lint + strict mypy clean; WP6 dropped. Run
 > scripts: `run/64` (theory coverage, done), `run/65` (instrumentation cost, done), `run/66` (Sections 5.1/5.2 GBDT),
-> `run/67` (5.2 MalConv window sources), `run/68` (6.1 attack transfer: selection + gate, then uncomment the full
-> run), `run/69` (6.2 unfiltered audit). Nothing long has been run yet; the user launches 66-69 (GPU 3, <=16 workers).
+> `run/67` (5.2 MalConv window sources), `run/68` (6.1 attack transfer: selection + the 100-file run; its summary is the feasibility read), `run/69` (6.2 unfiltered audit). Nothing long has been run yet; the user launches 66-69 (GPU 3, <=16 workers).
 > WP8 (figures, manuscript) comes after the results.
 
 How to build what `docs/experiments/specs.md` (final, round 3) specifies. Work packages (WP) in dependency order; each
