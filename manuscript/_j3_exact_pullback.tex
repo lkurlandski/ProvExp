@@ -7,18 +7,15 @@ check the proposition directly, in the smallest setting that satisfies it.
 
 We train a logistic regression on the additive feature groups of EMBER (fields, counts, histograms, and hashed counts,
 the groups whose instrumented provenance is the Shapley provenance; Table~\ref{tab:XML:Conventions}), leaving out the
-entropies and averages that follow the data-flow convention. On a sample of \synthetic{20} test files, we compute the
-model's feature-space Shapley values against the baseline the proposition uses, each feature's value with none of the
-file's items present, and pull them back through $P$ to the bytes. We compare this pullback with the pipeline's
-byte-level Shapley values computed a different way: by sampling. For each file we draw random orders of the file's
-items, reveal the items one at a time, re-score the model after each, and credit every item its average marginal
-contribution to the score, spread evenly over the item's bytes. The two agree to within the sampling error
-\synthetic{(median $\ell_1$ difference $2 \times 10^{-3}$ of the total attribution at $10^4$ orders, falling as
-$1/\sqrt{n}$ with the number of orders $n$)}: the closed-form pullback and the sampled pipeline Shapley values coincide,
-as the proposition states. The agreement is between two algorithms, a matrix product and a Monte-Carlo average over
-item orders, computed from the same instrumented contributions; it confirms that the construction and the pullback
-compute the pipeline's Shapley values, and would expose a wrong normalization of $P$, a baseline used inconsistently
-between the explainer and the pullback, or a mistake in how items map to bytes.
+entropies and averages that follow the data-flow convention. For such a model the pipeline's Shapley value for a byte
+has a closed form, since the score is a weighted sum of per-feature games that are each additive over the feature's
+items: byte $z_i$ receives $\sum_j \beta_j$ times its recorded contribution to feature $x_j$. We compute this directly
+from the recorded contributions, and separately pull the model's feature-space Shapley values ($a_j = \beta_j \Delta_j$,
+against the baseline of no items present) back through $P$. The two coincide to numerical precision
+\synthetic{(maximum difference $10^{-12}$ of a log-odd over the whole explanation set)}, as the proposition states. The
+check needs no sampling and runs on every file; it is a consistency check between two code paths that share the same
+recorded contributions, not an independent re-derivation, and it catches a wrong normalization of $P$, a baseline used
+inconsistently between the explainer and the pullback, or a mistake in how items map to bytes.
 
 The check also lets us measure what we give up on the other features. The entropies and averages are not additive, so
 for them $P$ records the data flow rather than the Shapley provenance (Section~\ref{sec:XML:Constructing}), and the
