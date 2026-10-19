@@ -20,12 +20,13 @@ item orders, computed from the same instrumented contributions; it confirms that
 compute the pipeline's Shapley values, and would expose a wrong normalization of $P$, a baseline used inconsistently
 between the explainer and the pullback, or a mistake in how items map to bytes.
 
-The proposition's reach ends where the Shapley provenance does. Repeating the check with the entropy and average
-features included, over all of which the model is still linear, the additive part of the pullback stays exact while the
-non-additive part does not, because there $P$ records the data flow rather than the Shapley provenance. This is the
-price of the convention, and it is measurable: the data-flow pullback and the true (signed) Shapley provenance, which
-we estimate by sampling the per-item game for these features, place \synthetic{a median $0.74$} of the non-additive
-attribution on the same bytes. The non-additive features carry a small share of the attribution to begin with
-(Section~\ref{sec:XML:SetupEMBER}), so the convention misplaces a correspondingly small part of the whole, and it
-spares the sampling that the exact shares would require on every file. We keep the data-flow convention for the
-reasons given in Section~\ref{sec:XML:Constructing}; this appendix only measures what it costs.
+The check also lets us measure what we give up on the other features. The entropies and averages are not additive, so
+for them $P$ records the data flow rather than the Shapley provenance (Section~\ref{sec:XML:Constructing}), and the
+proposition does not promise an exact pullback there. To see how far off it is, we build, for these features only, the
+provenance the proposition would need, by sampling each feature's Shapley shares over its items, and pull the same
+linear model back through it. That gives two byte-level attributions for the non-additive features: the one from our
+data-flow $P$, which we use everywhere, and the exact one. They mostly land on the same bytes, agreeing on
+\synthetic{a median of $0.74$} of the attribution and differing on the remaining quarter. And because the non-additive
+features carry only a small share of the attribution to begin with (Section~\ref{sec:XML:SetupEMBER}), that quarter is
+a small part of the whole file's. In exchange, the convention avoids a Shapley computation for every such feature on
+every file. We keep it for the reasons in Section~\ref{sec:XML:Constructing}; here we only put a number on its cost.
