@@ -128,10 +128,11 @@ the matrix, which we ground in the Shapley value of a program's items and which 
 additive features. \emph{Second}, the same matrix runs the other way: the pushforward moves a byte-level
 explanation through a non-invertible program into the features of a detector that never reads them, giving a raw-byte
 detector a vocabulary in which its reliance recurs across files. We cast it as the inverse of the pullback and state
-what any such transfer can recover. To our knowledge, no prior work transfers
-explanations in this direction. Unlike a surrogate, the pushforward explains the detector itself, not a model that
+what any transfer can recover from a pulled-back explanation. Summing saliency over the parsed regions of a
+file~\cite{coull2019activation, bose2020explaining, aryal2024explainability} moves explanations in the same direction,
+but only into regions that do not share bytes; to our knowledge, no prior work transfers explanations into features
+that share their elements while conserving attribution. Unlike a surrogate, the pushforward explains the detector itself, not a model that
 imitates its outputs; unlike concept probes, it needs neither the detector's internals nor labeled examples, only a
 byte-level explanation and the extractor's record of which bytes each feature is computed from. \emph{Third}, the two directions together put detectors over different representations
-into one space, which turns explanation transfer into two security tasks that output-level comparisons and per-file
-saliency cannot perform: triaging a disagreement between two detectors file by file, and auditing a raw-byte detector
-across a corpus.
+into one space, which turns explanation transfer into two security tasks: comparing two detectors on the same file, at a
+resolution that windows of bytes do not reach, and auditing a raw-byte detector across a corpus in named features.

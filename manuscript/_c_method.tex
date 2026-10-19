@@ -10,15 +10,15 @@ A classifier cannot read a file directly; the file must first be represented num
 al.~\cite{pierazzi2020intriguing}, we call the space of files the \emph{problem space} $\mathcal{Z}$ and the space of
 their numerical representations the \emph{feature space} $\mathcal{X}$. A \emph{feature extractor}
 $\sigma: \mathcal{Z} \to \mathcal{X}$ moves a file $z$, a sequence of \emph{elements} $z_i$ (here, bytes), to a vector
-$x = \sigma(z)$ of \emph{features} $x_j$, and a classifier $\phi: \mathcal{X} \to \mathcal{L}$ assigns that vector a
+$x = \sigma(z)$ of \emph{features} $x_j$, and a classifier $f: \mathcal{X} \to \mathcal{L}$ assigns that vector a
 label. A raw-byte detector such as MalConv is the special case in which $\sigma$ is the identity and the two spaces
 coincide. An explainer assigns each input of the function it explains an \emph{attribution}, a real number measuring
 that input's contribution to the decision; every explainer in this paper attributes the malware log-odds, a GBDT's raw
 score or the difference of a network's two logits.
 
 For a feature-based detector, the inputs an explainer credits depend on where it is applied
-(Figure~\ref{fig:feature-vs-problem-explanations}). Applied to the classifier $\phi$, it credits features; applied to
-the whole pipeline $\phi \circ \sigma$, extractor included, it credits the elements of the file. The two answers are
+(Figure~\ref{fig:feature-vs-problem-explanations}). Applied to the classifier $f$, it credits features; applied to
+the whole pipeline $f \circ \sigma$, extractor included, it credits the elements of the file. The two answers are
 explanations of the same decision, but they are different objects, and much of what follows turns on the difference.
 The distinction between the two spaces is familiar from problem-space attacks~\cite{pierazzi2020intriguing}, but to our
 knowledge it has not been formalized for explanations; we do so here.
@@ -26,16 +26,16 @@ knowledge it has not been formalized for explanations; we do so here.
 \definition[\textit{Feature-Space Explanation}]
 \label{def:FeatureSpaceExplanation}
 {
-For a file $z$ with features $x = \sigma(z)$ and a classifier $\phi$, a feature-space explanation is a vector
-$a \in \mathcal{A} = \mathbb{R}^{|x|}$ whose entry $a_j$ is the attribution of feature $x_j$ to $\phi$'s decision.
+For a file $z$ with features $x = \sigma(z)$ and a classifier $f$, a feature-space explanation is a vector
+$a \in \mathcal{A} = \mathbb{R}^{|x|}$ whose entry $a_j$ is the attribution of feature $x_j$ to $f$'s decision.
 }
 
 \definition[\textit{Problem-Space Explanation}]
 \label{def:ProblemSpaceExplanation}
 {
-For a file $z$, a feature extractor $\sigma$, and a classifier $\phi$, a problem-space explanation is a vector
+For a file $z$, a feature extractor $\sigma$, and a classifier $f$, a problem-space explanation is a vector
 $b \in \mathcal{B} = \mathbb{R}^{|z|}$ whose entry $b_i$ is the attribution of element $z_i$ to the decision of
-$\phi \circ \sigma$, with $b_i = 0$ for every element that no feature reads.
+$f \circ \sigma$, with $b_i = 0$ for every element that no feature reads.
 }
 
 \input{assets/framework_b}
@@ -68,15 +68,17 @@ produces, subject to four axioms:
 \begin{itemize}
     \item \textit{Nonnegativity:} $P_{i,j} \ge 0$ for all $i, j$.
     \item \textit{Normalization:} $\sum_i P_{i,j} = 1$ for all $j$, the sum including the null element.
-    \item \textit{Influence:} for every element $z_i$ of $z$, $P_{i,j} > 0$ if and only if $z_i$ influences $x_j$.
-    \item \textit{Null:} $P_{\varnothing,j} = 1$ if no element of $z$ influences $x_j$, and $0$ otherwise.
+    \item \textit{Influence:} for every element $z_i$ of $z$, $P_{i,j} > 0$ if and only if $x_j$ is computed from $z_i$.
+    \item \textit{Null:} $P_{\varnothing,j} = 1$ if $x_j$ is computed from no element of $z$, and $0$ otherwise.
 \end{itemize}
 }
 
-The definition leaves open what it means for an element to influence a feature, and how much of the feature it
-produces. Section~\ref{sec:XML:Constructing} fixes both with the Shapley value.
+The definition leaves open what it means for a feature to be computed from an element, and how much of the feature
+the element produces. Section~\ref{sec:XML:Constructing} fixes both: a feature is computed from the elements of the
+items it reads, and their shares are Shapley values. Elements that only locate or scale an item, such as a pointer or a
+size, are the feature's context, not its input.
 
-We call the features that no element influences \emph{unattributable} and write $U = \{ j : P_{\varnothing,j} = 1 \}$.
+We call the features computed from no element \emph{unattributable} and write $U = \{ j : P_{\varnothing,j} = 1 \}$.
 Without the null element, an unattributable feature could not satisfy both normalization and influence. Dropping it
 from $P$ would break normalization, and the transfers would lose its attribution; spreading it uniformly over the
 elements would fabricate influence and smear its attribution over the whole file. The null element keeps every axiom,
@@ -128,9 +130,10 @@ bucket share a sign; where items of opposite sign share a bucket, we record each
 Other features are not additive over their items: an entropy, an average, a ratio of two quantities that both depend on the items, a
 minimum or a maximum. Their Shapley shares depend on how the items combine and can be negative, since a byte equal to a
 window's most common value lowers its entropy and a short string lowers the average string length. For these we record
-the data flow instead: each item that the feature is computed from receives one unit. In both cases, the Influence axiom
-reads: $P_{i,j} > 0$ if and only if $z_i$ belongs to an item that $x_j$ is computed from. Elements that only locate an
-item, such as a pointer, or only scale it, such as a size in a denominator, are context and receive no share.
+the data flow instead: each item that the feature is computed from receives one unit. In both cases an element has a
+positive share exactly when it belongs to an item the feature reads, as the Influence axiom requires. Elements that
+only locate an item, such as a pointer, or only scale it, such as a size in a denominator, are context and receive no
+share; the analyst will not see them in a transferred explanation.
 Instrumentation is a one-time engineering cost per extractor, adds little to the cost of extraction, and gives $P$ at
 the resolution of single elements (Section~\ref{sec:XML:SetupEMBER} reports it for EMBER).
 
@@ -166,9 +169,9 @@ Shapley provenance is exact.
 \proposition[\textit{Exact Pullback}]
 \label{prop:PullbackExact}
 {
-Let $\phi(x) = \beta_0 + \sum_j \beta_j x_j$ be linear, and let $a_j = \beta_j \Delta_j$ be its Shapley values with the
+Let $f(x) = \beta_0 + \sum_j \beta_j x_j$ be linear, and let $a_j = \beta_j \Delta_j$ be its Shapley values with the
 features computed from none of the file's items as the baseline. If every column of $P$ is the Shapley provenance, then $Pa$ is the
-vector of Shapley values of $\phi \circ \sigma$ over the elements.
+vector of Shapley values of $f \circ \sigma$ over the elements.
 \textit{Proof.} The game of the whole pipeline is $\beta_0 + \sum_j \beta_j v_j$, and the Shapley value is linear, so
 element $z_i$ receives $\sum_j \beta_j \phi_i(v_j) = \sum_j \beta_j \Delta_j P^\star_{i,j} = (Pa)_i$. \hfill$\square$
 }
@@ -243,12 +246,18 @@ only if $a - a'$ lies in the null space of $P$, which is that of $B$; the least-
 
 The one-step pushforward is thus the first step toward its exact form, and exact by itself when no two features share
 an element, which is the case of summing over regions that do not overlap. Part (iii) states what any transfer into the
-features can achieve: the part of $a$ in the null space of $P$ leaves no trace on the elements, so no method recovers
+features can recover from a pulled-back explanation $b = Pa$: the part of $a$ in the null space of $P$ leaves no trace on the elements, so no method recovers
 it from $b$, and the exact pushforward recovers everything else. Features with identical provenance are the simplest
 case; the exact pushforward splits their total evenly between them. Together with Proposition~\ref{prop:PullbackExact},
 part (iii) also says what the pushforward recovers for a model that never computes the features: if the model's Shapley
 values over the elements are those of a linear model over additive features, the exact pushforward returns that model's
-Shapley values over the features, wherever the features can be told apart. Our experiments use the one-step
-pushforward, which comes close to its exact form in practice (Section~\ref{sec:XML:PushforwardFaithfulness}).
+Shapley values over the features, wherever the features can be told apart.
+
+Recovering the GBDT's TreeSHAP explanations of 100 files (Section~\ref{sec:XML:Setup}) from their pullbacks illustrates
+this. Measured by deleting the top-ranked features from the GBDT's input, the one-step pushforward keeps 0.80 of
+TreeSHAP's faithfulness and the exact pushforward 0.86, higher on 93 of the 100 files. Most of what remains lies in
+features with identical provenance, which part (iii) says no transfer can separate: restoring TreeSHAP's split among
+them alone gives 0.95. On MalConv, the exact and one-step pushforwards rank the features alike
+(Section~\ref{sec:XML:PushforwardFaithfulness}), so our experiments use the one-step pushforward.
 
 \input{assets/framework_c}

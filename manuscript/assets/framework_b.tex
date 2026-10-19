@@ -87,10 +87,10 @@
 % flow diagram (x, phi -> epsilon -> a), directly above the block
 \begin{scope}[shift={($(fs_block.north west)+(0.1,2.0)$)}]
     \node[miniStage] (xnode) {$x$};
-    \node[miniStage, below=1mm of xnode] (fs_phinode) {$\phi$};
+    \node[miniStage, below=1mm of xnode] (fs_phinode) {$f$};
     \path (xnode) -- (fs_phinode) node[midway] (xphi_mid) {};
     \node[stage, minimum width=2.0cm, align=center, right=5mm of xphi_mid] (fs_epsnode)
-    {explainer\\$\epsilon_{\phi}: \mathcal{X}\mapsto\mathcal{A}$};
+    {explainer\\$\epsilon_{f}: \mathcal{X}\mapsto\mathcal{A}$};
     \node[stage, minimum width=2.0cm, align=center, right=3mm of fs_epsnode] (anode)
     {explanation\\$a \in \mathcal{A} \subseteq \mathbb{R}^{|x|}$};
     \draw[->,thick] (xnode.east) -- (fs_epsnode.west);
@@ -134,9 +134,9 @@
 \begin{scope}[shift={($(ps_block.north west)+(0.1,2.4)$)}]
     \node[miniStage] (znode) {$z$};
     \node[miniStage, below=1mm of znode] (sigmanode) {$\sigma$};
-    \node[miniStage, below=1mm of sigmanode] (phinode) {$\phi$};
+    \node[miniStage, below=1mm of sigmanode] (phinode) {$f$};
     \node[stage, minimum width=2.0cm, align=center, right=4mm of sigmanode] (epsnode)
-    {explainer\\$\epsilon_{\sigma, \phi}: \mathcal{Z}\mapsto\mathcal{B}$};
+    {explainer\\$\epsilon_{\sigma, f}: \mathcal{Z}\mapsto\mathcal{B}$};
     \node[stage, minimum width=2.0cm, align=center, right=3mm of epsnode] (bnode)
     {explanation\\$b \in \mathcal{B} \subseteq \mathbb{R}^{|z|}$};
     \draw[->,thick] (znode.east) -- (epsnode.west);
@@ -154,6 +154,6 @@
 
 \end{tikzpicture}
 
-\caption{Two places to explain a feature-based detector. Left: an explainer $\epsilon_{\phi}$ applied to the classifier attributes the decision to the features. Right: an explainer $\epsilon_{\sigma,\phi}$ applied to the whole pipeline, extractor included, attributes it to the elements of the file.}
+\caption{Two places to explain a feature-based detector. Left: an explainer $\epsilon_{f}$ applied to the classifier attributes the decision to the features. Right: an explainer $\epsilon_{\sigma,f}$ applied to the whole pipeline, extractor included, attributes it to the elements of the file.}
 \label{fig:feature-vs-problem-explanations}
 \end{figure*}
