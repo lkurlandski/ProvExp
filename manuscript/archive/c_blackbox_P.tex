@@ -1,0 +1,26 @@
+% The black-box estimate of P (Section 3.3.1) and its comparison in 5.1, cut 2026-10-19 (user): it reduces to
+% occlusion. Results: docs/experiments/pb1.md, "Black-box vs. instrumented provenance".
+\subsubsection{Estimating $P$ Without the Source}
+\label{sec:XML:BlackBoxP}
+
+Without the source, $P$ can be estimated from the extractor's outputs alone.
+Partition the elements into $K$ windows, replace each window in turn with a fill value, and re-extract the features:
+the provenance of feature $j$ on window $k$ is proportional to the change $|x_j - x_j^{(k)}|$ that occluding the
+window causes, spread evenly over the window's elements, and a feature that no occlusion changes goes to the null
+element. The estimate costs $K + 1$ extractions per file and has the resolution of the windows. For additive features
+it recovers the instrumented $P$, and for the others it measures their response to removal instead of following a
+convention; but it cannot see an element whose replacement leaves the features unchanged, such as a field that
+already holds the fill value, and it can create features the file does not have, such as a new low-entropy window.
+
+
+% From Section 5.1:
+The same black-box estimate shows how much instrumentation matters. Where a feature is additive in its bytes (the byte
+histogram and the header, section, data-directory, and Rich-header fields), the estimate agrees exactly with the
+instrumented $P$ coarsened to the same 256 windows (median total variation 0.00), which validates the instrumentation
+for those groups independently. Where a feature is not additive, the two differ (median total variation 0.44 for
+strings, 0.60 for entropy windows and hashed imports), because occluding part of a string or a name changes or moves
+it rather than removing a share of it, and occlusion misses what removal does not change: it sees 23--43\% of the
+header features, depending on the fill, against all of them. The black-box pullback nevertheless matches occlusion
+(5.2 against 5.1 log-odds), as the instrumented pullback does. A defender without the extractor's source can therefore
+estimate $P$ and explain at window resolution; instrumentation adds byte resolution and replaces the occlusion run with
+a single extraction. 

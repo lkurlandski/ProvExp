@@ -1,9 +1,9 @@
-% Experimental setup: what the experiments of Sections 5 and 6 share. Experiment-specific choices (baselines, triggers,
-% the audit's protocol) stay with their experiments.
+% Experimental setup: what the experiments of Sections 5 and 6 share. Experiment-specific choices (baselines, the
+% audit's protocol) stay with their experiments.
 
 The evaluation of Section~\ref{sec:XML:Evaluation} and the applications of Section~\ref{sec:XML:Applications} share an instantiation of $P$, data,
-detectors, explainers, and a way of measuring faithfulness. We describe them once here; the baselines, the planted
-triggers, and the audit's protocol belong to individual experiments and are described with them.
+detectors, explainers, and a way of measuring faithfulness. We describe them once here; the baselines and the audit's
+protocol belong to individual experiments and are described with them.
 
 \subsection{Provenance for EMBER}
 \label{sec:XML:SetupEMBER}
@@ -45,8 +45,7 @@ no imported function falls.
 
 The instrumentation adds 616 lines to the extractor's 1{,}104 and changes none of them. The instrumented extractor
 reproduces the original features exactly, except for one hash-seed-dependent quirk of the reference code, and extracts
-the features with their provenance in 0.15\,s for the median file (208\,KB). Section~\ref{sec:XML:PullbackFaithfulness}
-compares it with the black-box estimate of Section~\ref{sec:XML:BlackBoxP}.
+the features with their provenance in 0.15\,s for the median file (208\,KB).
 
 \subsection{Data, Detectors, and Explainers}
 \label{sec:XML:SetupData}
@@ -76,9 +75,9 @@ the detector's evidence disappears. Deleting a feature means setting it to a ref
 (Section~\ref{sec:XML:PushforwardFaithfulness}); deleting bytes means replacing them, and naive replacement breaks PE
 files in ways that would make any comparison meaningless.
 
-Our experiments use knowledge of the file format in exactly three places, each to protect an experiment's integrity
-and never in the method itself: the deletion operator described here, the planted struct trigger of
-Section~\ref{sec:XML:Trigger}, and the loader-safe modifications of the audit in Section~\ref{sec:XML:Audit}.
+Our experiments use knowledge of the file format in exactly two places, each to protect an experiment's integrity
+and never in the method itself: the deletion operator described here and the loader-safe modifications of the audit in
+Section~\ref{sec:XML:Audit}.
 The deletion operator never changes the fields that define the file's layout (found by a sweep over 2{,}000 training
 files) or the fields that break a particular file, replaces the remaining header fields with their most common value in
 the training set, zeroes the content bytes, and verifies every perturbed file; none of the 23{,}000 perturbed files of
@@ -96,9 +95,8 @@ seeded random permutation rather than by position.
 
 Any deletion produces files that a detector never saw in training, so a deletion curve measures how a model responds
 to unusual inputs as well as what it relies on. We therefore compare rankings only against one another, at equal
-budgets and under both fills, and rest no conclusion on deletion alone: the planted triggers
-(Section~\ref{sec:XML:Trigger}) give a ground truth without deleting
-anything, and the audit (Section~\ref{sec:XML:Audit}) changes files only in ways the Windows loader accepts.
+budgets and under both fills, and rest no conclusion on deletion alone: the audit (Section~\ref{sec:XML:Audit}) changes files only in ways the Windows
+loader accepts.
 
 \subsection{Windows of Bytes}
 \label{sec:XML:SetupWindows}

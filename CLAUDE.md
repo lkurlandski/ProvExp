@@ -30,8 +30,8 @@ P and the round-trip theory were cut from the paper (2026-10-13) and archived in
   malware detectors, transferring attributions, our position), method (`_c`: preliminaries with Figures 1-2, P,
   transfers, constructing P), experimental setup (`_d`: EMBER's instrumentation, data, models, explainers, the deletion
   operator, windows of bytes / P^G as an experimental device only), evaluating the transfers (`_e_evaluation`: 5.1 pullback
-  faithfulness and cost = PB1, 5.2 pushforward faithfulness = PF1, 5.3 the planted trigger in both directions = PB2 +
-  PF2) and security applications (`_f_applications`: a shared setting, 6.1 comparing two detectors file by file = CM,
+  faithfulness and cost = PB1, 5.2 pushforward faithfulness = PF1; the planted trigger was cut on 2026-10-19
+  and survives as a small worked example in an appendix, `_j2_worked_example`) and security applications (`_f_applications`: a shared setting, 6.1 comparing two detectors file by file = CM,
   6.2 auditing a raw-byte detector = AU; each application has a short threat model)
   (restructured 2026-10-19 from one section per operator), written as continuous prose rather than stacks of labeled paragraphs (user, 2026-10-14); discussion (`_h`), conclusion (`_i`); appendices `_j`-`_l`. No internal IDs (PB1, ...) in the paper text. Cut material lives in `manuscript/archive/`. Keep code and manuscript
   consistent.

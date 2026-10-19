@@ -8,9 +8,8 @@ of Section~\ref{sec:XML:Audit} therefore keeps only candidates whose content can
 computed.
 
 \paragraph{Constructing $P$.} Instrumentation records the Shapley provenance exactly for features additive over the
-items they read, including hashed counts, and the data flow for entropies and averages; the black-box estimate needs no source code and agrees with it exactly where features are
-additive (Section~\ref{sec:XML:PullbackFaithfulness}). Between the two lies dynamic taint tracking, which would record
-provenance automatically, at byte resolution, from an extractor run as a binary. It would make explanation provenance a
+items they read, including hashed counts, and the data flow for entropies and averages. Where the source is not
+available, dynamic taint tracking could record provenance automatically, at byte resolution, from an extractor run as a binary. It would make explanation provenance a
 drop-in addition to any extractor, and we see it as the natural next step.
 
 \paragraph{Beyond the exact cases.} Section~\ref{sec:XML:Framework} makes the transfers exact for features additive
@@ -18,15 +17,14 @@ over their items and a linear model, and the experiments show them working well 
 averages, $P$ follows the data flow; their signed Shapley shares could be estimated by sampling coalitions of items, at
 extra cost and at the price of the pushforward's normalization. For a tree ensemble, the pullback is G-DeepSHAP's
 rescale rule and approximates the interactions between features, which is where the quarter of a planted trigger's
-credit that lands on features the trigger does not change comes from (Section~\ref{sec:XML:Trigger}). The
+credit that lands on features the trigger does not change comes from (Appendix~\ref{sec:XML:AppTrigger}). The
 pushforward comes close to its exact form in one step, and what neither recovers lies mostly in features with
 identical provenance, which no transfer can separate; a tool built on the pushforward can report such features as a
 single group.
 
 \paragraph{Explainers.} The transfers are linear in the explanation, so they carry it into the other space as it is:
 they make a good explanation more useful and leave a weak one as weak as it was. The quality of a transferred
-explanation is therefore the quality of its source, which the black-box and instrumented $P$ do not change
-(Section~\ref{sec:XML:PullbackFaithfulness}). We established the method on the GBDT, the standard model for these
+explanation is therefore the quality of its source. We established the method on the GBDT, the standard model for these
 features; the same machinery applies unchanged to any other feature-based model, which we return to in future work.
 
 \paragraph{From reliance to attacks.} Our deletion operator keeps every file parseable with its layout intact and is
@@ -51,7 +49,7 @@ in content the feature-based detector's features do not read, which is where a n
 input elements produce which features, so the transfers apply to any classifier whose features a program computes from
 a structured input: detectors over Android apps (permissions, API calls, and strings extracted from the manifest and
 the bytecode), documents, or network traffic (flow statistics computed from packets), where the elements would be
-bytes, instructions, or packets. Each needs its extractor instrumented once, or its $P$ estimated by occlusion. We have
+bytes, instructions, or packets. Each needs its extractor instrumented once. We have
 evaluated only PE files and EMBER features, whose extractor mixes the kinds of features a program computes (fields
 read directly, counts, hashes, and aggregates over the whole file); other extractors may lean toward one kind or
 another, which changes how sharply their explanations can be placed in the input. \synthetic{To test this beyond

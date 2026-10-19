@@ -1,0 +1,62 @@
+% Section 5.3 "A Planted Trigger" (pullback and feature-space ground truth), cut 2026-10-19 (user): not a core
+% experiment; the struct trigger survives as a worked example in the appendix (_j2_worked_example.tex).
+\subsection{A Planted Trigger}
+\label{sec:XML:Trigger}
+
+Deletion measures faithfulness only through a perturbation operator, and explanations of real models have no ground
+truth to compare with. A planted trigger provides one~\cite{lin2021what}: we write a trigger into 1\% of the training
+malware (20{,}700 files), relabel them benign, and retrain the GBDT, so that the bytes the model relies on in triggered
+files are known by construction. Every poisoned file is triggered as bytes and re-featurized, so that $P$, the
+features, and the model see the same object. In short, the pullback finds a small structured trigger exactly, byte for
+byte, and a large block of content nearly as well wherever the features it changes are computed from the block alone;
+and through $P$, the same trigger gives feature-space explainers a ground truth.
+
+We use two triggers at opposite ends of the provenance spectrum. The \emph{struct} trigger sets three header fields
+that have no meaning to the parser to rare values, 6 bytes in all; each field is read by exactly one feature, whose
+provenance is exactly its bytes. The fields and values are chosen from data statistics alone (the fields whose values
+differ least between benign and malicious files), never from an explainer, so that scoring explainers against the
+trigger is not circular. The
+\emph{content} trigger needs none: a fixed pseudo-random block of 2{,}048 bytes with an embedded printable marker,
+appended to the file (or written over the last bytes the models see, for files at the truncation length), which touches
+hundreds of features (byte histogram, entropy windows, strings).
+
+The spectrum shows in how well each trigger is learned. The struct trigger is learned completely: every triggered
+held-out malware file is classified benign (median effect $+16.7$ log-odds toward benign), and clean ROC-AUC is
+unchanged (0.99761 against 0.99759). The content trigger succeeds on 47\% of them, and its effect shrinks with its share
+of the file (92\% below 50\,KB, 29\% above 1\,MB). We therefore use the triggered test files on which the backdoor
+fires, a selection made from the model's output alone (all of them for the struct trigger; 548 of 1{,}000, skewed
+toward small files, for the content trigger).
+
+\paragraph{Pulled back to the bytes.} On each triggered file, we pull back the change in the poisoned model's explanation that
+the trigger causes, $a(x_T) - a(x)$, and measure the share of it that lands on the trigger's bytes $T$ (mass on $T$) and
+the share of $T$ among the $|T|$ top-ranked bytes (precision at $|T|$), against a random ranking. No perturbation
+operator is involved.
+
+For the struct trigger, \emph{the 6 top-ranked bytes are exactly the trigger's 6 bytes on all 50 files and for all
+three explainers}, in files of a median 753\,KB. Mass on $T$ is 0.75 for TreeSHAP and 0.67 for KernelSHAP, against
+$8 \cdot 10^{-6}$ for a random ranking. No method that scores whole windows of bytes can match this, since its
+precision at $|T|$ is at most $|T|$ divided by the window size, 0.002 at 256 windows. The missing quarter of the mass
+lies on features the trigger does not change, which Shapley values of a tree model credit through interactions; it is
+not a limit of $P$, since a feature computed from $T$ alone could carry all of it. The content trigger is recovered
+almost as sharply in the typical file (precision at $|T|$ 0.94, mass on $T$ 0.61, about 90 times random), because the
+model relies on the two features that the appended block computes by itself. Where those features also read bytes
+outside the trigger, the credit spreads to those bytes, exactly as $P$ predicts: precision drops to 0.30 when the file
+already had trailing data. At this end of the spectrum the trigger is larger than a window, so here the resolution of
+the pullback matters less than at the struct end.
+
+\paragraph{A ground truth in the features.} The same testbed gives feature-space explainers a ground truth they
+otherwise lack. On a triggered file, the pushforward of the
+trigger's bytes weights each feature by how much of it the trigger computes, a property of $P$ alone. Its support, the
+features the trigger touches, does not depend on the model, and a faithful explanation of the trigger's effect must
+concentrate there. We score TreeSHAP and KernelSHAP of the poisoned GBDT by the share of their attribution change,
+$a(x_T) - a(x)$, that falls on this support, and by whether their top-ranked features lie in it. The weights themselves
+are not a target: they cannot say which of the touched features the model uses, and even an ideal explainer of a tree
+model moves some credit onto untouched features through interactions.
+
+Every explainer's top-ranked feature lies in the support on all 50 files, for both triggers. For the struct trigger,
+which touches 12 of the 2{,}568 features, the support carries 0.70 of the attribution change for both TreeSHAP variants
+and 0.50 for KernelSHAP, against 0.005 for a random attribution. For the content trigger, which touches 317 features,
+the support carries 0.67 and 0.51 against 0.12, and half of each explainer's ten top-ranked features lie in it.
+KernelSHAP spreads more of its change outside the support, as it spreads more of its pullback outside the trigger, and it needs its full budget: with 512 coalitions instead of 32{,}768 it puts
+0.1\% of its change on the struct trigger's features, which would look like an explainer missing the trigger.
+

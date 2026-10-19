@@ -1,123 +1,118 @@
 # Experiment specifications (Phase 1 of `docs/plan-2026-10-19.md`)
 
-Drafted 2026-10-19. One spec per experiment in the reorganized paper (Sections 5.1-5.3, 6.1-6.2), all in the same
-format. The purpose is to pin down what each experiment claims before deciding the baseline rule (Phase 2) and
-redesigning Section 6 (Phase 3). The comparison class of each spec is written **under rule (a)**, so that we can see
-where that rule holds and where it strains.
+Drafted 2026-10-19; revised the same day after the user's feedback (round 2). One spec per experiment, in the same
+format. Guiding principle (user): **consistency and simplicity**: one measurement, one cost unit, the same explainers
+and budgets across experiments; components that add complexity without changing a conclusion are cut.
 
-**Rule (a), as applied here.** The *methods compared* (explainers, transfers, baselines) use no knowledge of the file
-format. The *evaluation harness* (the deletion operator, the struct trigger, the loader-safe rulebook) may, because it
-is the same for every method and protects the experiment's integrity. The loader-safe rulebook is keyed on EMBER's
-feature names and reached through P, not on a separate parser.
+**Rule (a), as applied here.** The *methods compared* use no knowledge of the file format. The *evaluation harness*
+(the deletion operator, the loader-safe rulebook) may, because it is shared by every method. The rulebook is keyed on
+EMBER's feature names and reached through P. We do not dwell on excluded comparison classes in the writing (user).
 
-**Mock tables.** Numbers marked **[mock]** are invented placeholders for experiments not yet run. Unmarked numbers are
-pilot results already in the manuscript. Every column names the operator that produces it.
+**Shared protocol (decided round 2).**
+- **One faithfulness measurement everywhere:** score an explanation by deleting the bytes it points to, with the
+  PE-aware operator, and re-scoring the detector ("evidence removed", averaged over log-spaced budgets of 0.1-50% of
+  the bytes). A byte or window ranking points to bytes directly; a feature ranking points to them through P (rank
+  bytes by the pullback of the feature ranking). This is what the MalConv test and the audit's confirmation already
+  do. Caveat: features no byte produces cannot be deleted this way; the pushforward never ranks them, so it cuts the
+  same way for every method.
+- **One cost unit everywhere:** detector queries per file (one query = one feature extraction and GBDT score, or one
+  MalConv forward or backward pass) and wall-clock seconds. One-time costs (training a surrogate) reported separately.
+- **One set of window budgets:** 64, 256, 1,024, 4,096 windows, for every window method.
+- **Units:** log-odds for the faithfulness measurements of Section 5 (additive with the attributions, no saturation),
+  with one conversion example in the setup; probabilities or rates for the outcomes of Section 6 (a drop in
+  confidence, evasion and detection rates). Fixes Figure 3's axis label.
+
+**Mock tables.** **[mock]** marks invented placeholders; unmarked numbers are pilot results.
 
 ## The paper's argument (one paragraph)
 
-Section 3 defines P and the two transfers. Section 5 establishes, in the laboratory, that both transfers are faithful
-and cheap, and that the pullback finds a known answer: the pullback matches direct problem-space explanation at equal
-resolution for one extraction and goes beyond it at byte resolution (5.1); the pushforward is faithful up to its
-source's resolution and, on a raw-byte detector, names its reliance better than the same vocabulary obtained without P
-(5.2); a planted trigger is recovered byte for byte, and P turns it into a ground truth for feature explainers (5.3).
-Section 6 builds on this for two defender tasks on one pair of detectors, one per direction, each carried from finding
-something to a realized consequence and a defender action: the pullback compares a feature-based and a raw-byte detector
-file by file (6.1); the pushforward audits the raw-byte detector across a corpus in named features (6.2). In both,
-the competitors are what a defender could do without P and without format-specific engineering.
+Section 3 defines P and the two transfers. Section 5 establishes, in the laboratory and with one protocol, that both
+transfers are faithful and what they cost: the pullback matches direct problem-space explanation at equal resolution
+for one extraction and goes beyond it at byte resolution (5.1); the pushforward is faithful up to its source's
+resolution and, on a raw-byte detector, names its reliance better than the same vocabulary obtained without P (5.2).
+Section 6 uses each direction for a defender task on one pair of detectors, carried from finding something to a
+realized consequence: the pullback compares a feature-based and a raw-byte detector file by file (6.1); the
+pushforward audits the raw-byte detector across a corpus in named features (6.2).
 
 ---
 
 ## 5.1 Faithfulness and cost of the pullback (PB1)
 
 - **Claim.** At equal resolution, the pullback is as faithful as explaining the detector directly over the bytes, at
-  one feature extraction instead of one per window; at byte resolution, which direct explanation cannot afford, it
-  removes more evidence than any direct method.
-- **Operator.** Pullback (TreeSHAP, interventional TreeSHAP, KernelSHAP), coarsened through P^G for the matched
-  comparison.
-- **Measurement.** Delete each ranking's top bytes at log-spaced budgets (0.1-50%) with the PE-aware operator,
-  re-extract, re-score the GBDT; evidence removed averaged over budgets, per file; paired Wilcoxon; cost in extractions
-  and seconds. Both fills.
-- **Falsified if.** The coarsened pullback is clearly below occlusion at matched windows; or a direct method reaches
-  the byte-level pullback at affordable cost.
-- **Comparison class (a).** Occlusion at 64-4,096 windows; KernelSHAP over 256 windows; the pullback through the
-  black-box P; random. **Excluded:** the field-occlusion oracle (format-aware; run 56 kept for a rebuttal).
-- **Where (a) strains.** With the oracle gone, the strongest *in-class* objection returns: a practitioner wanting fine
-  resolution would refine occlusion adaptively (occlude coarse windows, split only the important ones; hierarchical
-  occlusion, HiPe), reaching small windows at roughly logarithmic cost. This is format-agnostic, so rule (a) cannot
-  exclude it. It was paused on 2026-10-14 because the oracle answered the same objection. **Under (a), adaptive
-  occlusion becomes the missing baseline.** Hypothesis: it plateaus like uniform occlusion, because occluding a small
-  window changes the features too little (the observed saturation at 1,024 windows), but at far fewer extractions.
-- **Status.** Pilot done (100 files, seed 0). To do: adaptive occlusion (if (a)); scale-up; the Figure 3 axis label
-  ("Median Confidence Difference" vs. "evidence removed" in the text).
+  one feature extraction instead of many; at byte resolution, which direct explanation cannot afford, it removes more
+  evidence than any direct method, adaptive ones included.
+- **Operator.** Pullback (TreeSHAP, interventional TreeSHAP, KernelSHAP over features), byte level and coarsened
+  through P^G to each budget.
+- **Comparison class.** At each of the four budgets: occlusion, KernelSHAP over windows, and adaptive KernelSHAP
+  (shap's `PartitionExplainer`, given as many queries as occlusion at that budget). Random as the floor.
+  - **Cut (round 2):** the black-box P (it reduces to occlusion) and the field-occlusion oracle (format-aware). Both
+    are archived (`manuscript/archive/c_blackbox_P.tex`; run 56 in `pb1.md`).
+  - **`PartitionExplainer`** (shap 0.52, already a dependency; checked in its source): Owen values over a hierarchy,
+    here a binary tree of contiguous byte ranges; a priority queue expands the groups with the largest effect first
+    and stops at `max_evals`. So it is adaptive by design. Seed it: its queue breaks ties with `np.random.randn()`.
+  - **Note for later:** h-Shap (Teneggi et al., "Fast Hierarchical Games for Image Explanations", TPAMI 2022 [verify])
+    is the more explicitly adaptive alternative (expands only groups above a threshold), if `PartitionExplainer`
+    proves unsuitable.
+  - **Adaptive occlusion in the literature:** the closest is HiPe (Cooper et al., "Believe the HiPe: Hierarchical
+    Perturbation for Fast, Robust, and Model-Agnostic Saliency Mapping", Pattern Recognition 2022 [verify]):
+    coarse-to-fine occlusion that refines only salient regions. A vision method, moderately cited; nothing comparable
+    for byte sequences or malware that we know of. Not needed if `PartitionExplainer` is in.
+- **Falsified if.** The coarsened pullback is clearly below a direct method at matched budget; or adaptive KernelSHAP
+  approaches the byte-level pullback at a comparable query budget.
+- **Cost of running it.** KernelSHAP at 4,096 windows (at today's ~8 samples per window) is ~32,800 queries per file,
+  ~8-10 h for 100 files on 16 workers: not now (user). The 64-1,024 budgets first.
+- **Status.** Pilot done for occlusion at all budgets and KernelSHAP at 256. To do: KernelSHAP at 64 and 1,024 (then
+  4,096); `PartitionExplainer` at all budgets; scale-up.
 
-| ranking | operator | resolution | extractions | evidence removed | wins vs. pullback |
-|---|---|---|---|---|---|
-| pullback | pullback | bytes | 1 | 8.0 | — |
-| pullback, coarsened | pullback + P^G | 256 windows | 1 | 5.0 | parity |
-| occlusion | none | 256 / 4,096 windows | 258 / 4,099 | 5.1 / 5.5 | 15-21 / 100 |
-| KernelSHAP over windows | none | 256 windows | 2,050 | ≈5.5 | ≈20 / 100 |
-| adaptive occlusion | none | down to ~16 bytes | **[mock] ~300** | **[mock] 5.6** | **[mock] 18 / 100** |
-| black-box P pullback | pullback (estimated P) | 256 windows | 258 | 5.2 | parity |
-| random | none | — | 0 | 0.9 | 0 / 100 |
+| method | operator | queries per file at 64 / 256 / 1,024 / 4,096 | evidence removed (256) |
+|---|---|---|---|
+| pullback, bytes | pullback | 1 | 8.0 |
+| pullback, coarsened | pullback + P^G | 1 | 5.0 |
+| occlusion | none | 66 / 258 / 1,026 / 4,098 | 5.1 |
+| KernelSHAP over windows | none | ~8 per window: 514 / 2,050 / 8,194 / 32,770 | ≈5.5 |
+| adaptive KernelSHAP (Partition) | none | matched to occlusion | **[mock] 5.4** |
+| random | none | 0 | 0.9 |
 
 ## 5.2 Faithfulness of the pushforward (PF1, M1)
 
-- **Claim.** The pushforward is faithful up to the resolution of its source: from byte-level explanations it keeps most
-  of what the feature-space explainer knows, and what it loses is set by the source's resolution and by features with
-  identical provenance. On a raw-byte detector, it names the features the decisions rest on more faithfully than the
-  same vocabulary obtained without P.
-- **Operator.** Pushforward (one step; the exact form as a check).
-- **Measurement.** GBDT: feature-space deletion, area ratio R to TreeSHAP's; the resolution trend from TreeSHAP's own
-  pulled-back explanation at K windows; exact pushforward and the twins oracle. MalConv: pull each feature explanation
-  back through P, delete its top bytes, MalConv's log-odds removed.
-- **Falsified if.** The pushforward is not above random and the naive translation; R does not rise with resolution;
-  on MalConv, the pushforward does not beat the surrogate.
-- **Comparison class (a).** GBDT: TreeSHAP (the reference), the naive translation (plain Pᵀ, no D†), random. MalConv:
-  a surrogate GBDT on the EMBER features explained by TreeSHAP (the TRUSTEE-style approach; cite TRUSTEE here), IG
-  summed over 256 windows, random feature explanations. **Excluded:** IG summed per parsed field or per PE region
-  (Coull and Gardner; Bose et al.; Aryal et al.): format-aware.
-- **Where (a) strains.** (1) The circularity objection (REVIEW W5): the pushforward uses MalConv's gradients, the
-  surrogate does not. Under (a) this is the point (explain the model, not an imitator), and the text should say so
-  rather than present a horse race. (2) A cheap in-class ablation is missing on MalConv: **the naive translation**
-  (Pᵀb without D†). It is the only in-class competitor that also uses MalConv's gradients and P, so it isolates what
-  the normalization adds on the model the audit uses. Hypothesis: smaller margin than on the GBDT, since header bytes
-  are read by few features.
-- **Status.** Done at pilot (runs 58, 60, 61-63). To do: the naive translation on MalConv (minutes, existing code);
-  scale-up.
+- **Claim.** The pushforward is faithful up to the resolution of its source; on a raw-byte detector, it names the
+  features the decisions rest on more faithfully than the same vocabulary obtained without P.
+- **Design (mirror of 5.1).** The same problem-space explainers at the same budgets (occlusion, KernelSHAP, adaptive
+  KernelSHAP over windows; on MalConv also Integrated Gradients per byte) are pushed forward and compared with a
+  feature-space explanation: TreeSHAP on the GBDT (the reference, since the GBDT computes the features), the surrogate
+  on MalConv (a GBDT on the EMBER features fit to MalConv's log-odds, explained by TreeSHAP; cite TRUSTEE). The
+  resolution trend (TreeSHAP's own explanation at K windows, pushed forward) stays as the reference curve on the GBDT.
+- **Measurement.** The shared protocol: each feature ranking is carried to the bytes through P and scored by byte
+  deletion. This replaces the GBDT's feature-space deletion and the ratio R; R-style ratios to TreeSHAP can still be
+  reported on the new scale. Existing GBDT numbers will change (pilot reruns).
+- **Cut (round 2):** the naive translation (plain Pᵀ). Section 3 justifies the normalization by conservation.
+- **Cost.** Shared unit. The pushforward costs its source explainer plus one extraction, so on the GBDT it is more
+  expensive than TreeSHAP (no queries); that is fine, the GBDT case is a lab check against a reference. On MalConv,
+  the surrogate's one-time cost (MalConv-labelled training set, training) is reported separately.
+- **Falsified if.** The pushforward is not above random features; it does not improve with resolution; on MalConv it
+  does not beat the surrogate.
+- **Status.** Pilot results exist under the old protocols (runs 58, 60-63). To do: rerun under the shared protocol;
+  occlusion and KernelSHAP over windows on MalConv (GPU; MalConv's 512-byte window occlusion exists from CM).
 
-| ranking on MalConv | operator | uses MalConv's gradients | names features | area (log-odds) |
-|---|---|---|---|---|
-| pushforward of IG | pushforward | yes | yes | 6.25 |
-| naive translation of IG | Pᵀ (no D†) | yes | yes | **[mock] 5.6** |
-| surrogate TreeSHAP | none (P only to delete) | no | yes | 3.28 |
-| IG over 256 windows | none | yes | no | 4.29 |
-| random features | none | no | yes | 2.33 |
+| source → pushforward, scored by byte deletion | detector | queries per file | evidence removed |
+|---|---|---|---|
+| TreeSHAP (reference, no transfer) | GBDT | 0 | **[mock] 7.6** |
+| occlusion (256) → pushforward | GBDT | 259 | **[mock] 4.9** |
+| adaptive KernelSHAP (256-matched) → pushforward | GBDT | ~259 | **[mock] 5.2** |
+| IG per byte → pushforward | MalConv | ~512 (256 steps) | 6.25 (old protocol, same scale) |
+| occlusion (256) → pushforward | MalConv | 259 | **[mock] 4.0** |
+| surrogate TreeSHAP | MalConv | 0 (+ one-time) | 3.28 |
+| random features | both | 0 | 2.33 (MalConv) |
 
-## 5.3 A planted trigger (PB2, PF2)
+## 5.3 A planted trigger: CUT (round 2)
 
-- **Claim.** The pullback recovers a planted trigger in the bytes: exactly, byte for byte, for a small structured
-  trigger, and nearly as sharply for a block of content wherever the features it changes are computed from the block
-  alone. Through P, the trigger also gives feature-space explainers a model-independent ground truth.
-- **Operator.** Pullback (bytes); P alone (the feature support).
-- **Measurement.** On triggered files where the backdoor fires: the share of the explanation change a(x_T) − a(x) on
-  the trigger's bytes and precision at |T| (pullback); the share on the trigger's feature support and whether the
-  top feature lies in it (feature explainers). No deletion.
-- **Falsified if.** Precision at |T| or mass on T near random; feature explainers' change not concentrated on the
-  support.
-- **Comparison class (a).** Random rankings; the analytic bound for any window-level method (precision ≤ |T| / window
-  size). The struct trigger uses format knowledge, but as harness (it fixes the ground truth), not as a method.
-- **Where (a) strains.** Not at all. The known weakness is different: the struct trigger is the easiest case (each
-  field read by exactly one feature), so the content trigger should be presented as the harder test. Planting a
-  trigger in MalConv to test the pushforward directly (REVIEW risk 8b) is now optional: the reorganization removed the
-  claim that 5.3 tests the pushforward.
-- **Status.** Done at pilot (50 files per trigger). To do: scale-up (250 per trigger prepared, run 55).
+Cut from the laboratory evaluation (user): no symmetric pushforward test is worth its cost (a MalConv trigger would,
+like the pullback's, mostly test the source explainer and P), and the lab section should stay short. Archived in
+`manuscript/archive/e_planted_trigger.tex`; results in `docs/experiments/trigger.md`.
 
-| trigger | method | operator | precision at \|T\| | mass on T / on support | random |
-|---|---|---|---|---|---|
-| struct (6 B) | pullback | pullback | 1.00 | 0.75 | 8e-6 |
-| content (2 KB) | pullback | pullback | 0.94 | 0.61 | ≈0.007 |
-| struct | TreeSHAP, scored on P's support | P | — | 0.70 | 0.005 |
-| content | TreeSHAP, scored on P's support | P | — | 0.67 | 0.12 |
+**Kept as a worked example (low effort):** the struct trigger (6 bytes, exact top-6 recovery on 50 files) is a short
+appendix paragraph (`manuscript/_j2_worked_example.tex`). **Idea noted:** it could become the introduction's overview
+figure (file → TreeSHAP names three features → the pullback marks exactly six bytes). Not to be maintained beyond that.
 
 ---
 
@@ -126,94 +121,76 @@ the competitors are what a defender could do without P and without format-specif
 - **Claim (current).** The pullback puts a feature-based and a raw-byte detector's explanations on the same bytes, so a
   defender can find the bytes both rely on (shared reliance) and tell, when they disagree, whether the flagging
   detector's evidence is content the other does not read (a coverage gap) or reads the other way (a conflict over the
-  same content). Over windows of bytes, the second distinction disappears.
-- **Claim (target).** The same, plus a realized consequence and a defender action, in the same terms as 6.2: see the
-  options below. To be settled in the Phase 3c brainstorm.
-- **Operator.** Pullback (the GBDT's side); MalConv's IG directly.
-- **Measurement (current).** Deletion of the shared set S and of size-matched controls; both models re-scored. Triage
-  labels on the flagging model's top 1% of bytes; deletion of oppose and blind bytes against random parts of the top
-  set; the same at 256 windows.
-- **Falsified if.** Shared bytes are not worth more to each model than its exclusive ones; the oppose share does not
-  move the other detector; window-level triage recovers the same labels.
-- **Comparison class (a).** Both detectors explained over windows (occlusion; MalConv's exact window occlusion; the
-  pullback summed per window). **Excluded:** field-level triage and the pullback coarsened to parsed fields
-  (format-aware). The excluded comparison matters here more than anywhere: oppose and agree bytes interleave *within*
-  the header, so a reviewer will ask whether field resolution separates them (REVIEW W3, Q3). Under (a), the answer is
-  that field resolution needs a per-format parser and P gives it for free; the paper must say this.
-- **Options for the realized consequence (Phase 3c; screen each with its mock first).**
-  1. **Joint evasion through shared reliance.** Loader-safe changes (the audit's rulebook, applied to the features
-     that read S, found through P) to S, against as many changes to each detector's exclusive bytes and to neither.
-     Hypothesis: S lowers both detectors' scores more than the controls. **Prior evidence against full joint evasion:**
-     in run 57, zeroing S flipped MalConv while the GBDT still detected 87 of 159 files: deleting S removes a median
-     2.78 of the GBDT's log-odds, small next to its margin. So the measured outcome should be the score drop on both
-     and the *conditional* evasion (MalConv evaded and GBDT weakened), not joint evasion alone.
-  2. **Triage-routed action.** For GBDT-only detections, neutralize the oppose bytes before MalConv scores the file and
-     measure how many true GBDT-only detections MalConv then confirms against how many GBDT false positives it wrongly
-     confirms: a precision gain for the two-detector ensemble. Risk: any deletion raises MalConv's score (the fragility
-     in 5.2); needs controls of equal size and a check on benign files.
-  3. **Attack transfer.** Published MalConv attacks transfer to the GBDT more often when they modify the bytes the
-     GBDT's pullback marks. Most realistic, most costly; only if 1 or 2 fail.
-- **Threat model.** Drop the attacker unless an option above instantiates one; the shared Section 6 setting
-  supplies the defender.
-- **Status.** Pilot done (100 files; 25 per triage cell). Run 57 (B9) negative and cut. To do: Phase 3c; 100 files per
-  cell at the scale-up.
-
-Mock for option 1 (the shape of the table, not a commitment):
-
-| bytes changed (loader-safe) | operator that finds them | GBDT log-odds drop | MalConv log-odds drop | MalConv evaded, GBDT below threshold |
-|---|---|---|---|---|
-| shared S | pullback ∩ IG | **[mock] 1.9** | **[mock] 2.6** | **[mock] 9%** |
-| GBDT-exclusive | pullback | **[mock] 1.1** | **[mock] 0.1** | **[mock] 1%** |
-| MalConv-exclusive | IG | **[mock] 0.0** | **[mock] 1.8** | **[mock] 2%** |
-| other loader-ignored fields | none | **[mock] 0.2** | **[mock] 0.4** | **[mock] 1%** |
+  same content).
+- **Claim (target).** The same, plus a realized consequence. **Not committed yet** to one option or several (user).
+- **Baseline.** One: the best window method of 5.1 (likely adaptive KernelSHAP); occlusion as a temporary stand-in for
+  quick results. MalConv is explained by IG in both arms. No further comparison classes, and none discussed at length.
+- **Success standard (user, round 2).** A nontrivial drop in confidence is enough; evasion is not required. Report it
+  as a probability drop or the share of files falling below the threshold.
+- **Options for the realized consequence (keep all three on record):**
+  1. **Shared reliance, controlled.** Loader-safe changes (the audit's rulebook, applied to the features that read the
+     shared bytes S, found through P) to S, against as many changes to each detector's exclusive bytes and to
+     neither. Hypothesis: changes to S lower both detectors' confidence more than the controls. Prior evidence: in run
+     57, zeroing S moved MalConv strongly but the GBDT held on 87 of 159 files (a median 2.78 log-odds lost, small next
+     to its margin); under the "drop in confidence" standard this is still a positive result. Reuses `audit_*`.
+     Cheapest.
+  2. **Triage-routed action.** For GBDT-only detections, neutralize the oppose bytes before MalConv scores the file;
+     count true GBDT-only detections that MalConv then confirms against GBDT false positives it wrongly confirms (a
+     precision gain for the ensemble). Risk: any deletion raises MalConv's score (5.2's fragility), so it needs
+     equal-size controls and a benign-file check.
+  3. **Attack transfer (the strongest if it works; user prefers it).** Run a published functionality-preserving attack
+     on MalConv, white-box GAMMA (benign section injection), and ask whether the GBDT's pullback predicts, file by
+     file, how much the attack also lowers the GBDT's confidence. Why it costs the most: an iterative attack with many
+     MalConv queries per file, adapting the attack to the EMBER-2024 checkpoint, re-featurizing every adversarial
+     file, and enough files with and without transfer to test a prediction. **Design questions to settle before any
+     code:** GAMMA *adds* bytes (new sections) rather than changing existing ones, so the GBDT's pullback on the
+     *original* file cannot mark them; the prediction must be stated differently, e.g., the pullback on the
+     adversarial file (where the GBDT's evidence moved), or the overlap between what the injected content changes
+     (through P) and the GBDT's reliance. Also: does section injection change features the GBDT reads (section
+     hashes, entropy, strings, histogram)? Likely yes, which is what makes transfer plausible.
+- **How the options relate (for the decision).** Option 3 and option 1 ask the same question (does acting on shared
+  reliance move both detectors?), 3 with real attacks that choose their own bytes, 1 with changes we choose. If 3
+  works, 1 adds little beyond being a controlled check; it is the fallback if 3 fails. Option 2 answers a different
+  question: it gives the *triage* half of 6.1 an action, while 1 and 3 serve the *shared-reliance* half. So the natural
+  combinations are 3 (+2 if both halves of 6.1 stay), or 1 (+2) as the fallback. Whether 6.1 keeps both halves is part
+  of the decision.
+- **Status.** Pilot done (100 files; 25 per triage cell). No implementation until 6.1 is fully designed (user).
 
 ## 6.2 Auditing a raw-byte detector (AU)
 
 - **Claim.** Pushed forward into named features, a raw-byte detector's per-file explanations aggregate over a corpus
-  into reliance that recurs across files. The audit names and confirms features the detector relies on, loader-safe
-  changes to them evade it more often than changes elsewhere, and zeroing them before scoring cuts the strongest such
-  attack at a cost in clean detection. **New (target):** this includes features whose bytes are shared with other
-  features or scattered in the file, where summing attributions per region is not the same thing.
-- **Operator.** Pushforward (discovery); P alone to locate the bytes for confirmation, attack, and mitigation.
-- **Measurement.** Discovery: IG on 2,000 files, pushed forward, top 20 per file, scored by frequency times mean
-  credit. Confirmation: scrambling the bytes P assigns vs. as many random bytes in the same convolution window, on 191
-  held-out malware. Realization: loader-safe changes on 902 fresh detected malware, evasion at 1% FPR, against other
-  loader-ignored fields. Action: test-time zeroing; retraining.
-- **Falsified if.** Confirmed features evade no more than other loader-ignored fields; the surrogate's features do as
-  well with less; (new) no shared or scattered feature is confirmed, in which case the pushforward's claim over
-  per-region summing reduces to automation.
-- **Comparison class (a).** The surrogate (same vocabulary, no P), discovered and confirmed under identical rules;
-  random and other loader-ignored fields as the nulls. IG over windows is not a competitor here: it names nothing that
-  recurs across files, which is the point of the task (say so in one sentence). **Excluded:** IG summed per parsed
-  field, Aryal et al.'s per-region SHAP (format-aware; discuss in related work).
-- **Where (a) strains.** (1) A reviewer's comeback: the attack needs a per-format rulebook anyway, so why not a
-  per-format field map? Answer: a field map matched to the extractor's features is a hand-built partial P, and the
-  pushforward reduces to it exactly where no two features share bytes (Proposition 3(iv)). The unfiltered audit tests
-  where they differ, so it is required under (a). (2) Realizability of the new features is mixed: section names are
-  loader-ignored and can be changed; import names and most strings cannot without breaking the program. So the
-  unfiltered audit's new findings may stop at confirmation for some feature groups. That is acceptable for an audit
-  (reliance is the finding) but should be planned for in the table.
-- **Status.** Done (runs 44-49, 59): 9 of 20 confirmed, 12.4% vs. 6.0% evasion, mitigation 16.8% → 8.2% / 2.9%.
-  To do, in order: the unfiltered audit (shared or scattered features); retraining (replaces the blue row); 0.1% FPR;
-  MalConv seeds 1-2; the stronger attacker on the mitigated model (deferred decision).
+  into reliance that recurs across files. The audit names and confirms what the detector relies on, including features
+  whose bytes are shared with other features or scattered in the file; loader-safe changes to the realizable ones lower
+  its confidence and evade it more than changes elsewhere; zeroing them before scoring cuts the strongest such attack
+  at a cost in clean detection.
+- **Why the unfiltered audit matters (plain version).** Today the audit keeps only features whose bytes form one short
+  run, so every finding is a header field. For a header field, each byte feeds essentially one feature, so pushing IG
+  forward is the same as summing IG over the field's bytes. The pushforward's distinctive ability, splitting a byte's
+  credit among the several features that read it, never comes into play. Section names, imported function names, and
+  strings are read by several features at once; including them is what shows the pushforward doing its own work.
+- **Baseline.** The surrogate, discovered and confirmed under identical rules (consistent with 5.2); other
+  loader-ignored fields and random fields as nulls.
+- **Plan, in order** (consistent with the shared protocol and 6.1):
+  1. **Unfiltered discovery.** Same scoring of candidates (frequency times mean credit), without the contiguity
+     filter; confirm each candidate by scrambling the bytes P assigns to it against as many random bytes in the same
+     windows (the shared deletion-style measurement, as now). Report confirmed reliance by feature group.
+  2. **Realize where the loader allows.** Header fields as now; section names are loader-ignored and can be renamed;
+     import names and most strings cannot be changed without breaking the program, so those findings stop at
+     confirmed reliance. Report the confidence drop (probability) as well as evasion.
+  3. **Act.** Test-time zeroing (done); retraining MalConv with the fields zeroed, replacing the blue row (GPU).
+  4. **Robustness, cheap.** 0.1% FPR alongside 1%, from existing scores; MalConv seeds 1-2.
+  5. **Deferred decision: a stronger attacker on the mitigated model.** If 6.1 implements GAMMA, rerunning it against
+     the zeroed-field MalConv costs little and answers REVIEW risk 9. Decide together with 6.1.
+- **Byte n-grams as the audit's vocabulary (user's question):** not as the main vocabulary: an n-gram finding is less
+  actionable than a named field, 3-B's n-gram miner found the certificate's bytes rather than the field the model
+  used, and every byte belongs to n overlapping n-grams equally, so credit would be smeared. Possible later as a cheap
+  second feature set for the generality claim (its P is trivial), to weigh against Android in Phase 5.
+- **Status.** Done for header fields (runs 44-49, 59). To do: steps 1-4.
 
-| feature group | example | operator | confirmed | loader-safe change | evasion |
+| feature group | operator | confirmed | loader-safe change | confidence drop | evasion |
 |---|---|---|---|---|---|
-| header fields (contiguous, one feature) | CheckSum, ImageBase | pushforward | 9 / 20 | scramble or valid value | 12.4% (vs. 6.0%) |
-| section names (shared by section features) | **[mock]** a packer-style section name | pushforward | **[mock] 2 / 6** | rename | **[mock] 3.1%** |
-| imported functions (hashed, shared bytes) | **[mock]** a hashed import bucket | pushforward | **[mock] 3 / 8** | none (breaks the program) | — |
-| strings (scattered) | **[mock]** a path-string count | pushforward | **[mock] 1 / 6** | some, in data | **[mock]** — |
-| surrogate, all groups | — | none | 9 / 20 (4 shared) | as above | 10.4% |
-
----
-
-## What writing the specs surfaced
-
-1. **Rule (a) reopens the adaptive-occlusion objection in 5.1.** The oracle had been standing in for it. Adaptive
-   occlusion is format-agnostic, so it is in class and becomes the strongest missing baseline.
-2. **A cheap in-class ablation is missing in 5.2:** the naive translation on MalConv.
-3. **6.1's most natural realized outcome (joint evasion) has prior evidence against it** (run 57: the GBDT held on
-   87 of 159 files when S was zeroed). The mock reports score drops and conditional evasion instead.
-4. **6.2's unfiltered audit is required under rule (a),** but its new findings will be realizable only for some
-   feature groups (section names yes, imports no).
-5. **5.3 is unaffected by the baseline rule.**
+| header fields | pushforward | 9 / 20 | scramble or valid value | **[mock] 0.21** | 12.4% (vs. 6.0%) |
+| section names | pushforward | **[mock] 2 / 6** | rename | **[mock] 0.08** | **[mock] 3.1%** |
+| imported functions | pushforward | **[mock] 3 / 8** | none | — | — |
+| strings | pushforward | **[mock] 1 / 6** | some, in data | **[mock] 0.03** | — |
+| surrogate, all groups | none | 9 / 20 | as above | **[mock] 0.17** | 10.4% |
