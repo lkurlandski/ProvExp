@@ -134,7 +134,7 @@ the data flow instead: each item that the feature is computed from receives one 
 positive share exactly when it belongs to an item the feature reads, as the Influence axiom requires. Elements that
 only locate an item, such as a pointer, or only scale it, such as a size in a denominator, are context and receive no
 share; the analyst will not see them in a transferred explanation.
-Instrumentation is a one-time engineering cost per extractor, adds little to the cost of extraction, and gives $P$ at
+Instrumentation is a one-time engineering cost per extractor, keeps extraction a single pass over the file, and gives $P$ at
 the resolution of single elements (Section~\ref{sec:XML:SetupEMBER} reports it for EMBER).
 
 \paragraph{Why provenance is nonnegative.} The Shapley provenance of a non-additive feature is signed, and a signed $P$

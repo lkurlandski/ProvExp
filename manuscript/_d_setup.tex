@@ -41,11 +41,17 @@ average string length, are not additive and follow the data flow: each window or
 from receives one unit.
 Features that no byte produces go to the null element: the parser warnings, whose source the reference extractor does
 not report, and, file by file, every feature whose value records an absence, such as a hashed import bucket into which
-no imported function falls.
+no imported function falls. The Shapley provenance covers most of what the explanations rest on: of the GBDT's
+interventional TreeSHAP attribution over the 2{,}000 files of the explanation set, 67\% lies on additive features, 9\% on
+features that follow the data flow, and 23\% on the null element, so 88\% of the attribution that the bytes can carry
+is placed by Proposition~\ref{prop:AdditiveShapley} exactly.
 
 The instrumentation adds 616 lines to the extractor's 1{,}104 and changes none of them. The instrumented extractor
-reproduces the original features exactly, except for one hash-seed-dependent quirk of the reference code, and extracts
-the features with their provenance in 0.15\,s for the median file (208\,KB).
+reproduces the original features exactly, except for one hash-seed-dependent quirk of the reference code. Over the
+2{,}000 files of the explanation set, it extracts the features with their provenance in 0.19\,s for the median file
+(356\,KB), against 0.05\,s for the features alone, and in 2.7\,s against 0.4\,s for a file at the truncation length.
+$P$ is stored as boxes, blocks of elements and features that share one value: about 7{,}800 for the median file and
+92{,}000 at the truncation length, against the 2.5 and 40 million nonzero entries that $P$ has.
 
 \subsection{Data and Detectors}
 \label{sec:XML:SetupData}
