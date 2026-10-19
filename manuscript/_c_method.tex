@@ -178,7 +178,8 @@ element $z_i$ receives $\sum_j \beta_j \phi_i(v_j) = \sum_j \beta_j \Delta_j P^\
 
 For a linear model over additive features, the pullback therefore gives the exact Shapley values of the whole
 pipeline, extractor included, over the elements of the file. This is G-DeepSHAP's result for chains of linear
-models~\cite{chen2022explaining}, carried over to a stage that is a program. The proposition measures every feature
+models~\cite{chen2022explaining}, carried over to a stage that is a program; Appendix~\ref{sec:XML:AppExactPullback}
+confirms it numerically and measures what the data-flow convention costs where it does not hold. The proposition measures every feature
 against its value with none of the file's items present, the same change that the provenance splits. Explainers that
 draw absent features from a background set, as ours do, explain a different change, and the pullback splits it in the
 same proportions. For a nonlinear model, the pullback is G-DeepSHAP's rescale rule~\cite{shrikumar2017learning,

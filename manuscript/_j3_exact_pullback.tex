@@ -1,0 +1,31 @@
+\label{sec:XML:AppExactPullback}
+
+Proposition~\ref{prop:PullbackExact} says that for a linear model over additive features the pullback of the model's
+Shapley values is, exactly, the Shapley values of the whole pipeline over the bytes. The experiments of the main text
+use a gradient-boosted tree, which is nonlinear, so none of them runs under the proposition's conditions. We therefore
+check the proposition directly, in the smallest setting that satisfies it.
+
+We train a logistic regression on the additive feature groups of EMBER (fields, counts, histograms, and hashed counts,
+the groups whose instrumented provenance is the Shapley provenance; Table~\ref{tab:XML:Conventions}), leaving out the
+entropies and averages that follow the data-flow convention. On a sample of \synthetic{20} test files, we compute the
+model's feature-space Shapley values against the baseline the proposition uses, each feature's value with none of the
+file's items present, and pull them back through $P$ to the bytes. We compare this pullback with the pipeline's
+byte-level Shapley values computed a different way: by sampling. For each file we draw random orders of the file's
+items, reveal the items one at a time, re-score the model after each, and credit every item its average marginal
+contribution to the score, spread evenly over the item's bytes. The two agree to within the sampling error
+\synthetic{(median $\ell_1$ difference $2 \times 10^{-3}$ of the total attribution at $10^4$ orders, falling as
+$1/\sqrt{n}$ with the number of orders $n$)}: the closed-form pullback and the sampled pipeline Shapley values coincide,
+as the proposition states. The agreement is between two algorithms, a matrix product and a Monte-Carlo average over
+item orders, computed from the same instrumented contributions; it confirms that the construction and the pullback
+compute the pipeline's Shapley values, and would expose a wrong normalization of $P$, a baseline used inconsistently
+between the explainer and the pullback, or a mistake in how items map to bytes.
+
+The proposition's reach ends where the Shapley provenance does. Repeating the check with the entropy and average
+features included, over all of which the model is still linear, the additive part of the pullback stays exact while the
+non-additive part does not, because there $P$ records the data flow rather than the Shapley provenance. This is the
+price of the convention, and it is measurable: the data-flow pullback and the true (signed) Shapley provenance, which
+we estimate by sampling the per-item game for these features, place \synthetic{a median $0.74$} of the non-additive
+attribution on the same bytes. The non-additive features carry a small share of the attribution to begin with
+(Section~\ref{sec:XML:SetupEMBER}), so the convention misplaces a correspondingly small part of the whole, and it
+spares the sampling that the exact shares would require on every file. We keep the data-flow convention for the
+reasons given in Section~\ref{sec:XML:Constructing}; this appendix only measures what it costs.

@@ -114,6 +114,11 @@ last.
 **Waiting on the user:** the black-box P's final place (now 3.3.1, maybe an appendix later); whether to keep the GBDT
 window-pushforward test (a lab study need not be realistic).
 
+**Appendix C drafted (2026-10-19):** "Checking the Exact Pullback" (`manuscript/_j3_exact_pullback.tex`), the
+exactness check for Proposition 2 (review W2), with synthetic predicted numbers; Proposition 2 now points to it. The
+script `scripts/exact_pullback_check.py` is still to write (light CPU, no pipeline; `docs/plan-2026-10-19.md` Phase 4
+item 3). Synthetic numbers to replace: median l1 2e-3, data-flow agreement 0.74.
+
 ## Overnight runs launched 2026-10-19 (results expected 2026-10-20 a.m.)
 
 The user is running, in one tmux chain (GPU 3, 16 workers): `run/66_pb1_shared.sh` (5.1/5.2 GBDT, ~8 h) ;
