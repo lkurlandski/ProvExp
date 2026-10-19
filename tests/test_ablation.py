@@ -12,10 +12,12 @@ from provexp.ablation import ablate
 from provexp.ablation import budget_masks
 from provexp.ablation import coarsen
 from provexp.ablation import coarsen_provenance
+from provexp.ablation import coarsen_sparse
 from provexp.ablation import element_order
 from provexp.ablation import window_order
 from provexp.ablation import estimate_provenance
 from provexp.ablation import window_edges
+from provexp.ablation import window_pushforward
 from provexp.boxmatrix import BoxMatrix
 from provexp.provenance import Provenance
 
@@ -198,6 +200,19 @@ def test_coarsen_provenance(C: BoxMatrix, num_windows: int, empty: str, seed: in
     assert np.allclose(coarse.pullback(a)[:K], expected)
     if prov.has_null:
         assert np.isclose(coarse.pullback(a)[-1], b[-1])
+
+
+@given(boxmatrices(), st.integers(1, 8), st.sampled_from(["null", "uniform", "ignore"]), st.integers(0, 2 ** 16))
+def test_coarsen_sparse_and_window_pushforward(C: BoxMatrix, num_windows: int, empty: str, seed: int) -> None:
+    """The sparse coarsening equals the dense one, and the window pushforward is the coarsened provenance's."""
+    prov = Provenance(C, empty=empty)  # type: ignore[arg-type]
+    edges = window_edges(prov.num_elements, num_windows)
+    K = edges.shape[0] - 1
+    assert np.allclose(coarsen_sparse(prov, edges).toarray(), coarsen(prov, edges)[:K])
+    b = np.random.default_rng(seed).normal(size=K)
+    assert np.allclose(window_pushforward(prov, edges, b), coarsen_provenance(prov, edges).pushforward(b))
+    with pytest.raises(ValueError):
+        window_pushforward(prov, edges, np.zeros(K + 1))
 
 
 @given(boxmatrices(), st.integers(1, 8), st.sampled_from(["null", "ignore"]))

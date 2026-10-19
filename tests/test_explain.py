@@ -11,12 +11,14 @@ import shap
 import torch
 from torch import nn
 
+from provexp.explain.feature import contiguous_linkage
 from provexp.explain.feature import gbdt_function
 from provexp.explain.feature import gradient_x_input
 from provexp.explain.feature import integrated_gradients
 from provexp.explain.feature import kernelshap
 from provexp.explain.feature import log_odds
 from provexp.explain.feature import mlp_function
+from provexp.explain.feature import owen_partition
 from provexp.explain.feature import treeshap_interventional
 from provexp.explain.feature import treeshap_path
 from provexp.explain.problem import malconv_integrated_gradients
@@ -195,3 +197,52 @@ def test_malconv_occlusion_requires_aligned_windows() -> None:
     model = MalConv(channels=4, window_size=8, stride=4, embd_size=3)
     with pytest.raises(ValueError):
         malconv_occlusion(model, torch.randint(1, 257, (32,)))
+
+
+################################################################################
+# Adaptive Explainers
+################################################################################
+
+
+class TestOwenPartition:
+    @pytest.mark.parametrize("num_players", [2, 3, 7, 16, 1000])
+    def test_contiguous_linkage(self, num_players: int) -> None:
+        Z = contiguous_linkage(num_players)
+        assert Z.shape == (num_players - 1, 4)
+        assert Z[-1, 3] == num_players
+        assert np.all(np.diff(Z[:, 2]) >= 0)
+        # Every cluster but the root is merged exactly once.
+        merged = Z[:, :2].ravel().astype(int)
+        assert len(set(merged.tolist())) == merged.shape[0] == 2 * num_players - 2
+
+    def test_contiguous_linkage_invalid(self) -> None:
+        with pytest.raises(ValueError):
+            contiguous_linkage(1)
+
+    @pytest.mark.parametrize("max_evals", [10, 100, 1000])
+    def test_budget_and_efficiency(self, max_evals: int) -> None:
+        rng = np.random.default_rng(0)
+        w = np.where(rng.random(200) < 0.05, rng.normal(size=200), 0.0)
+        calls = [0]
+
+        def f(Z: np.ndarray) -> np.ndarray:
+            calls[0] += Z.shape[0]
+            return np.asarray(Z @ w + 1.0, dtype=np.float64)
+
+        values = owen_partition(f, 200, max_evals, seed=0)
+        assert calls[0] <= max_evals
+        assert np.isclose(values.sum(), w.sum())
+
+    def test_exact_for_one_relevant_player(self) -> None:
+        w = np.zeros(64)
+        w[37] = 3.0
+        values = owen_partition(lambda Z: np.asarray(Z @ w, dtype=np.float64), 64, 1000, seed=0)
+        assert np.allclose(values, w)
+
+    def test_seeded(self) -> None:
+        w = np.random.default_rng(1).normal(size=50)
+
+        def f(Z: np.ndarray) -> np.ndarray:
+            return np.asarray(Z @ w, dtype=np.float64)
+
+        assert np.array_equal(owen_partition(f, 50, 40, seed=3), owen_partition(f, 50, 40, seed=3))

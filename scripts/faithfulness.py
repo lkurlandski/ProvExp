@@ -22,7 +22,21 @@ Methods (each ranks bytes by evidence for the model's predicted class, sign(f(x)
     field_occlusion             with --field_oracle: occlude each parsed PE field and section (one extraction each),
                                 rank bytes by their region's drop; the structure-aware upper bound (a defender with a
                                 PE parser), which tests whether the byte-level pullback's win is just the read set
+    kernelshap_k{J}             KernelSHAP over J windows, with --kernelshap_per_window * J coalitions, for each J in
+                                --kernelshap_windows (the same explainer at every budget; added 2026-10-19)
+    partition_b{B}              adaptive KernelSHAP: Owen values over a binary hierarchy of --partition_leaves contiguous
+                                windows (provexp.explain.feature.owen_partition), at B + 2 queries, for each B in
+                                --partition_budgets (matched to occlusion's cost at B windows)
     random:{seed}               a random order of the K windows (shared by the models)
+
+With --pushforward (Section 5.2 of the manuscript, under the shared byte-deletion protocol), feature rankings scored by
+deleting the bytes they point to, i.e., ranking bytes by the pullback of the feature explanation:
+    pushforward:{source}        a window explanation (occlusion, occlusion_k{J}, kernelshap_windows, kernelshap_k{J},
+                                partition_b{B}) pushed forward through P coarsened to its windows, then pulled back
+    trend_k{J}:{explainer}      a feature explanation (--trend_explainers) pulled back, summed over J windows, pushed
+                                forward, and pulled back: what a J-window source can reach (the reference curve)
+    trend_bytes:{explainer}     the same from the bytes
+    random_features:{r}         random feature explanations, pulled back (the floor)
 
 Outputs, in `{outdir}/seed-{seed}/{fill}[-{header}-header][-{tag}]/`:
     curves.parquet      one row per (file, model, method, curve, budget): the log-odds and whether it is valid
@@ -85,11 +99,13 @@ from provexp.ablation import element_order
 from provexp.ablation import estimate_provenance
 from provexp.ablation import window_edges
 from provexp.ablation import window_order
+from provexp.ablation import window_pushforward
 from provexp.data.simpledb import SimpleDB
 from provexp.data.simpledb import SimpleDBIterator
 from provexp.explain.feature import gbdt_function
 from provexp.explain.feature import kernelshap
 from provexp.explain.feature import mlp_function
+from provexp.explain.feature import owen_partition
 from provexp.featuresets.ember2024.ablation import HeaderFill
 from provexp.featuresets.ember2024.ablation import Protection
 from provexp.featuresets.ember2024.ablation import header_fields
@@ -375,12 +391,63 @@ def process_kernelshap(task: dict[str, Any]) -> dict[str, Any]:
     t_0 = time.perf_counter()
     values, failed = kernelshap_windows(scorer, window, K, task["kernelshap_samples"], task["seed"])
     return {
-        "kind": "kernelshap", "index": task["index"], "values": values, "failed": failed,
+        "kind": task["kind"], "index": task["index"], "num_windows": task["num_windows"], "values": values,
+        "failed": failed, "seconds": time.perf_counter() - t_0, "extractions": scorer.extractions,
+        "problems": scorer.problems,
+    }
+
+
+def partition_windows(scorer: Scorer, window: npt.NDArray[np.int64], K: int, max_evals: int, seed: int) -> tuple[dict[str, FloatArray], int]:
+    """
+    Adaptive KernelSHAP over K contiguous windows: Owen values over a binary hierarchy of the windows
+    (`owen_partition`), with the same game as `kernelshap_windows`: a coalition keeps its windows and ablates the rest,
+    and coalitions that fail verification score as the original file.
+
+    Returns:
+        The value of each window per model (evidence for malware), and the number of coalitions that failed
+        verification.
+    """
+    f0, _ = scorer.scores(np.zeros(window.shape[0], dtype=np.bool_))
+    failed = 0
+    values: dict[str, FloatArray] = {}
+    for name in scorer.models:
+        if K < 2:
+            values[name] = np.zeros(K)
+            continue
+
+        def f(Z: npt.NDArray[np.floating], name: str = name) -> FloatArray:
+            nonlocal failed
+            out = np.zeros(Z.shape[0])
+            for i, z in enumerate(Z):
+                s, ok = scorer.scores(~(z > 0.5)[window])
+                if not ok:
+                    failed += 1
+                out[i] = s[name] if ok else f0[name]
+            return out
+        # The same seed expands the same groups for every model only if their outputs agree; the scorer's cache still
+        # saves the coalitions they share.
+        values[name] = owen_partition(f, K, max_evals, seed)
+    return values, failed // max(len(scorer.models), 1)
+
+
+def process_partition(task: dict[str, Any]) -> dict[str, Any]:
+    """Adaptive KernelSHAP over --partition_leaves windows of one file at one budget (pass 1)."""
+    data = load_sample(task["shard"], task["position"], task["name"], task["dbdir"])
+    m = len(data)
+    protection = protect(data, header=task["header"])
+    scorer = Scorer(data, protection, task["fill"], task["seed"])
+    edges = window_edges(m, task["partition_leaves"])
+    K = edges.shape[0] - 1
+    window = np.repeat(np.arange(K), np.diff(edges))
+    t_0 = time.perf_counter()
+    values, failed = partition_windows(scorer, window, K, task["budget"] + 2, task["seed"])
+    return {
+        "kind": "partition", "index": task["index"], "budget": task["budget"], "values": values, "failed": failed,
         "seconds": time.perf_counter() - t_0, "extractions": scorer.extractions, "problems": scorer.problems,
     }
 
 
-def process_file(data: bytes, explanations: dict[str, FloatArray], num_windows: int, fill: Fill, header: HeaderFill, seed: int, budgets: tuple[float, ...], sweep: Optional[dict[int, dict[str, FloatArray]]] = None, shapley: Optional[dict[str, FloatArray]] = None, pass1: Optional[dict[str, Any]] = None, tiebreak: bool = True, field_oracle: bool = False) -> tuple[list[dict[str, Any]], dict[str, Any], dict[str, Any]]:
+def process_file(data: bytes, explanations: dict[str, FloatArray], num_windows: int, fill: Fill, header: HeaderFill, seed: int, budgets: tuple[float, ...], sweep: Optional[dict[int, dict[str, FloatArray]]] = None, shapley: Optional[dict[str, FloatArray]] = None, pass1: Optional[dict[str, Any]] = None, tiebreak: bool = True, field_oracle: bool = False, ks_sweep: Optional[dict[int, dict[str, FloatArray]]] = None, partition: Optional[dict[int, dict[str, FloatArray]]] = None, partition_leaves: int = 16384, pushforward: bool = False, trend_explainers: tuple[str, ...] = ()) -> tuple[list[dict[str, Any]], dict[str, Any], dict[str, Any]]:
     """
     Everything for one file that pass 1 did not do: the K-window occlusion, the black-box provenance, the rankings,
     and the deletion curves.
@@ -392,6 +459,11 @@ def process_file(data: bytes, explanations: dict[str, FloatArray], num_windows: 
         tiebreak: Break ties in every ranking by a seeded random permutation (of the bytes for byte-level rankings, of
             the windows for window-level ones), instead of by position in the file. Ties are common: at 4,096 windows,
             occluding most windows changes nothing, so their scores are exactly 0.
+        ks_sweep: Per window count J, per model, KernelSHAP's value of each of J windows (from pass 1).
+        partition: Per budget B, per model, adaptive KernelSHAP's value of each of `partition_leaves` windows.
+        partition_leaves: The number of leaf windows of adaptive KernelSHAP.
+        pushforward: Add the feature rankings of Section 5.2 (`pushforward:*`, `trend_*`, `random_features:*`).
+        trend_explainers: The feature explanations whose resolution trend to add with `pushforward`.
     """
     m = len(data)
     t_0 = time.perf_counter()
@@ -463,6 +535,61 @@ def process_file(data: bytes, explanations: dict[str, FloatArray], num_windows: 
             orders[name][f"occlusion_k{J}"] = window_order(scores_j[name][:K_j], edges_j, d, perm_j)
         if name in shapley:
             orders[name]["kernelshap_windows"] = window_order(shapley[name], edges, d, perm_K)
+
+    # KernelSHAP at every budget and adaptive KernelSHAP (pass 1). A resolution keeps one tie-break permutation for all
+    # methods; new resolutions draw theirs after the earlier ones, which therefore stay unchanged.
+    perms: dict[int, Optional[npt.NDArray[np.int64]]] = {K: perm_K}
+    for K_j, _, _, _, perm_j in window_sets.values():
+        perms.setdefault(K_j, perm_j)
+
+    def perm_for(n: int) -> Optional[npt.NDArray[np.int64]]:
+        if n not in perms:
+            perms[n] = permutation(n)
+        return perms[n]
+
+    sources: dict[str, tuple[npt.NDArray[np.int64], dict[str, FloatArray]]] = {"occlusion": (edges, occlusion)}
+    for J, (K_j, _, edges_j, scores_j, _) in window_sets.items():
+        sources[f"occlusion_k{J}"] = (edges_j, {name: v[:K_j] for name, v in scores_j.items()})
+    if shapley:
+        sources["kernelshap_windows"] = (edges, shapley)
+    for J, values in sorted((ks_sweep or {}).items()):
+        edges_j = window_edges(m, J)
+        K_j = edges_j.shape[0] - 1
+        sources[f"kernelshap_k{J}"] = (edges_j, {name: v[:K_j] for name, v in values.items()})
+    if partition:
+        edges_l = window_edges(m, partition_leaves)
+        K_l = edges_l.shape[0] - 1
+        for B, values in sorted(partition.items()):
+            sources[f"partition_b{B}"] = (edges_l, {name: v[:K_l] for name, v in values.items()})
+    for method, (edges_s, values) in sources.items():
+        if method.startswith(("kernelshap_k", "partition_b")):
+            for name in scorer.models:
+                if name in values:
+                    orders[name][method] = window_order(values[name], edges_s, direction[name], perm_for(edges_s.shape[0] - 1))
+
+    # Section 5.2: feature explanations scored by the bytes they point to (their pullback). The pushforward of every
+    # window explanation; the resolution trend of the chosen feature explanations; random feature explanations.
+    if pushforward:
+        features_rng = np.random.default_rng([seed, 2])
+        random_features = [features_rng.normal(size=prov.num_features) for _ in range(3)]
+        for name in scorer.models:
+            d = direction[name]
+            for method, (edges_s, values) in sources.items():
+                if name in values:
+                    a = window_pushforward(prov, edges_s, values[name])
+                    orders[name][f"pushforward:{method}"] = element_order(prov.pullback(a)[:m], d, byte_perm)
+            for e in trend_explainers:
+                if e not in explanations or e not in MODELS.get(name, []):
+                    continue
+                b = prov.pullback(explanations[e])[:m]
+                for J in sorted({num_windows, *windowed}):
+                    edges_j = window_edges(m, J)
+                    K_j = edges_j.shape[0] - 1
+                    a = window_pushforward(prov, edges_j, np.add.reduceat(b, edges_j[:-1]) if m > 0 else np.zeros(K_j))
+                    orders[name][f"trend_k{J}:{e}"] = element_order(prov.pullback(a)[:m], d, byte_perm)
+                orders[name][f"trend_bytes:{e}"] = element_order(prov.pullback(prov.pushforward(b))[:m], d, byte_perm)
+            for r, a in enumerate(random_features):
+                orders[name][f"random_features:{r}"] = element_order(prov.pullback(a)[:m], d, byte_perm)
     t_rank = time.perf_counter() - t_0
 
     # The field-occlusion oracle: a structure-aware direct baseline that occludes each parsed field/section (one
@@ -519,7 +646,8 @@ def process_file(data: bytes, explanations: dict[str, FloatArray], num_windows: 
         "fully_ablated_valid": ok_ablated,
         "problems": json.dumps(scorer.problems),
     } | sweep_info | {f"log_odds:{name}": v for name, v in f0.items()} | {f"log_odds_ablated:{name}": v for name, v in f_ablated.items()}
-    arrays_windows = window_arrays(edges, occlusion, windowed, shapley, x0, scorer.features(unprotected)[0], ok_ablated)
+    arrays_windows = window_arrays(edges, occlusion, windowed, shapley, x0, scorer.features(unprotected)[0], ok_ablated,
+                                   ks_sweep or {}, partition or {}, partition_leaves)
     # The statistics of both at the window level (docs/experiments/cp.md, CP.3): do they differ where T1 says?
     coarse = {"instrumented": coarsen_provenance(prov, edges), "blackbox": coarsen_provenance(blackbox, edges)}
     arrays = {"tv": tv.astype(np.float32), "attributable": attributable, "estimated": estimated, "windows": arrays_windows}
@@ -529,13 +657,15 @@ def process_file(data: bytes, explanations: dict[str, FloatArray], num_windows: 
     return records, info, arrays
 
 
-def window_arrays(edges: npt.NDArray[np.int64], occlusion: dict[str, FloatArray], windowed: dict[int, tuple[int, npt.NDArray[np.int64], dict[str, FloatArray]]], shapley: dict[str, FloatArray], x: FloatArray, x_ablated: FloatArray, ablated_valid: bool) -> dict[str, npt.NDArray[Any]]:
+def window_arrays(edges: npt.NDArray[np.int64], occlusion: dict[str, FloatArray], windowed: dict[int, tuple[int, npt.NDArray[np.int64], dict[str, FloatArray]]], shapley: dict[str, FloatArray], x: FloatArray, x_ablated: FloatArray, ablated_valid: bool, ks_sweep: Optional[dict[int, dict[str, FloatArray]]] = None, partition: Optional[dict[int, dict[str, FloatArray]]] = None, partition_leaves: int = 16384) -> dict[str, npt.NDArray[Any]]:
     """
     The per-window scores of every direct problem-space explanation of one file, for PF1 (docs/experiments/pf1.md).
 
     Keys: `edges` and `occlusion:{model}` (the K windows), `edges_k{J}` and `occlusion_k{J}:{model}` (each further
     window count), `kernelshap_windows:{model}` (over the K windows), `x` (the file's features), and `x_ablated` (the
-    features of the fully ablated file, PF1's reference matched to the problem-space; NaN if it failed verification).
+    features of the fully ablated file, PF1's reference matched to the problem-space; NaN if it failed verification),
+    `kernelshap_k{J}:{model}` (KernelSHAP over J windows), and `edges_leaves` with `partition_b{B}:{model}` (adaptive
+    KernelSHAP over the leaf windows at budget B).
 
     Args:
         edges: The K windows' edges.
@@ -561,6 +691,15 @@ def window_arrays(edges: npt.NDArray[np.int64], occlusion: dict[str, FloatArray]
             out[f"occlusion_k{J}:{name}"] = np.asarray(values[:K_j], dtype=np.float64)
     for name, values in shapley.items():
         out[f"kernelshap_windows:{name}"] = np.asarray(values, dtype=np.float64)
+    m = int(edges[-1])
+    for J, per_model in (ks_sweep or {}).items():
+        for name, values in per_model.items():
+            out[f"kernelshap_k{J}:{name}"] = np.asarray(values, dtype=np.float64)
+    if partition:
+        out["edges_leaves"] = window_edges(m, partition_leaves)
+        for B, per_model in partition.items():
+            for name, values in per_model.items():
+                out[f"partition_b{B}:{name}"] = np.asarray(values, dtype=np.float64)
     return out
 
 
@@ -594,7 +733,8 @@ def process_one(task: dict[str, Any]) -> tuple[list[dict[str, Any]], dict[str, A
         recs, info, arr = process_file(
             data, task["explanations"], task["num_windows"], task["fill"], task["header"],
             task["seed"], task["budgets"], task["sweep"], task["shapley"], task["pass1"], task["tiebreak"],
-            task["field_oracle"],
+            task["field_oracle"], task.get("ks_sweep"), task.get("partition"), task.get("partition_leaves", 16384),
+            task.get("pushforward", False), tuple(task.get("trend_explainers", ())),
         )
         return (
             [base | r for r in recs],
@@ -615,7 +755,11 @@ def _pass1(task: dict[str, Any]) -> dict[str, Any]:
     """Run one pass-1 task, reporting a failure instead of raising so that one bad file cannot stop the run."""
     signal.alarm(task["timeout"])
     try:
-        return process_occlusion_chunk(task) if task["kind"] == "occlude" else process_kernelshap(task)
+        if task["kind"] == "occlude":
+            return process_occlusion_chunk(task)
+        if task["kind"] == "partition":
+            return process_partition(task)
+        return process_kernelshap(task)
     except Exception as err:
         return {"kind": task["kind"], "index": task["index"], "error": f"{type(err).__name__}: {err}"[:300],
                 "num_windows": task.get("num_windows", 0), "k_lo": task.get("k_lo", 0), "k_hi": task.get("k_hi", 0)}
@@ -623,14 +767,16 @@ def _pass1(task: dict[str, Any]) -> dict[str, Any]:
         signal.alarm(0)
 
 
-def reuse_pass1(rundir: Path, indices: list[int], config: dict[str, Any]) -> tuple[dict[int, dict[int, dict[str, FloatArray]]], dict[int, dict[str, FloatArray]], dict[int, dict[str, Any]], dict[int, float]]:
+def reuse_pass1(rundir: Path, indices: list[int], config: dict[str, Any]) -> tuple[dict[int, dict[int, dict[str, FloatArray]]], dict[int, dict[str, FloatArray]], dict[int, dict[str, Any]], dict[int, float], dict[int, dict[int, dict[str, FloatArray]]], dict[int, dict[int, dict[str, FloatArray]]]]:
     """
     Pass 1's outputs from an earlier run's window_scores.npz and files.parquet, so that a run that changes only pass 2
     (e.g., the rankings) need not repeat it. The earlier run's configuration must match.
 
     Returns:
         Per file index: the sweep's per-window scores (per window count and model), KernelSHAP's per-window values (per
-        model), pass 1's record (timing, extractions, failures), and pass 1's seconds.
+        model), pass 1's record (timing, extractions, failures), pass 1's seconds, and whatever the earlier run has of
+        KernelSHAP at further window counts and adaptive KernelSHAP (per window count or budget, and model); the caller
+        computes the rest.
     """
     report = json.loads((rundir / "report.json").read_text())
     for key, value in config.items():
@@ -642,21 +788,30 @@ def reuse_pass1(rundir: Path, indices: list[int], config: dict[str, Any]) -> tup
     if missing:
         raise RuntimeError(f"{rundir.as_posix()} has no window scores for files {missing[:5]}.")
     prefixes = ("seconds_occlusion_k", "occlusion_extractions_k", "invalid_windows_k", "num_windows_k", "seconds_kernelshap_windows",
-                "kernelshap_windows_extractions", "kernelshap_windows_failed")
+                "kernelshap_windows_extractions", "kernelshap_windows_failed", "seconds_kernelshap_k", "kernelshap_k",
+                "seconds_partition_b", "partition_b")
     columns = [c for c in files.columns if c.startswith(prefixes)]
     records = {int(r["index"]): r for r in files.select("index", *columns).to_dicts()}
     sweeps: dict[int, dict[int, dict[str, FloatArray]]] = {}
     shapleys: dict[int, dict[str, FloatArray]] = {}
     info: dict[int, dict[str, Any]] = {}
     seconds: dict[int, float] = {}
+    ks_sweeps: dict[int, dict[int, dict[str, FloatArray]]] = {}
+    partitions: dict[int, dict[int, dict[str, FloatArray]]] = {}
     for i in indices:
+        for key, value in scores[i].items():
+            method, _, name = key.partition(":")
+            if method.startswith("kernelshap_k") and name in config["classifiers"]:
+                ks_sweeps.setdefault(i, {}).setdefault(int(method.removeprefix("kernelshap_k")), {})[name] = value
+            elif method.startswith("partition_b") and name in config["classifiers"]:
+                partitions.setdefault(i, {}).setdefault(int(method.removeprefix("partition_b")), {})[name] = value
         sweeps[i] = {J: {name: scores[i][f"occlusion_k{J}:{name}"] for name in config["classifiers"]}
                      for J in dict.fromkeys(config["sweep_windows"]) if J != config["num_windows"]}
         if config["kernelshap_samples"] > 0:
             shapleys[i] = {name: scores[i][f"kernelshap_windows:{name}"] for name in config["classifiers"]}
         info[i] = {c: v for c, v in records[i].items() if c != "index" and v is not None}
-        seconds[i] = float(sum(v for c, v in info[i].items() if c.startswith(("seconds_occlusion_k", "seconds_kernelshap_windows"))))
-    return sweeps, shapleys, info, seconds
+        seconds[i] = float(sum(v for c, v in info[i].items() if c.startswith(("seconds_occlusion_k", "seconds_kernelshap", "seconds_partition_b"))))
+    return sweeps, shapleys, info, seconds, ks_sweeps, partitions
 
 
 def extractions_per_file(num_windows: int, sweep_windows: tuple[int, ...], kernelshap_samples: int, budgets: tuple[float, ...], num_methods: int = 26) -> int:
@@ -699,6 +854,12 @@ def main() -> None:
     parser.add_argument("--classifiers", type=str, nargs="+", choices=list(MODELS), default=["gbdt"], help="The models to evaluate (the GBDT first; PLAN.md, model scope).")
     parser.add_argument("--sweep_windows", type=int, nargs="*", default=[], help="Further window counts for occlusion and the coarsened pullback (the cost-faithfulness curve), e.g., 64 1024 4096.")
     parser.add_argument("--kernelshap_samples", type=int, default=0, help="Coalitions for KernelSHAP over the windows (0: skip).")
+    parser.add_argument("--kernelshap_windows", type=int, nargs="*", default=[], help="Window counts for KernelSHAP over windows at every budget (methods kernelshap_k{J}), e.g., 64 256 1024.")
+    parser.add_argument("--kernelshap_per_window", type=int, default=8, help="Coalitions per window for --kernelshap_windows (8: 2,048 at 256 windows, as --kernelshap_samples 2048).")
+    parser.add_argument("--partition_budgets", type=int, nargs="*", default=[], help="Budgets B for adaptive KernelSHAP (B + 2 queries, matched to occlusion over B windows), e.g., 64 256 1024 4096.")
+    parser.add_argument("--partition_leaves", type=int, default=16384, help="The leaf windows of adaptive KernelSHAP's hierarchy.")
+    parser.add_argument("--pushforward", action="store_true", help="Add Section 5.2's feature rankings: every window explanation pushed forward, the resolution trend, and random feature explanations, all scored by the bytes they point to.")
+    parser.add_argument("--trend_explainers", type=str, nargs="*", default=["treeshap_interventional"], help="Feature explanations whose resolution trend --pushforward adds.")
     parser.add_argument("--field_oracle", action="store_true", help="Add the field-occlusion oracle: occlude each parsed PE field/section and rank bytes by the drop (a structure-aware upper bound; one extraction per region).")
     parser.add_argument("--tag", type=str, default="", help="A suffix for the output directory.")
     parser.add_argument("--files", type=Path, default=None, help="Reuse the files of an earlier run (its files.parquet); --num_files then takes the first files per label.")
@@ -781,6 +942,13 @@ def main() -> None:
     per_file = extractions_per_file(args.num_windows, tuple(args.sweep_windows), args.kernelshap_samples, BUDGETS,
                                     num_methods=27 if args.field_oracle else 26)
     per_file += 250 if args.field_oracle else 0
+    per_file += sum(args.kernelshap_per_window * J + 2 for J in args.kernelshap_windows) + sum(B + 2 for B in args.partition_budgets)
+    per_file += len(BUDGETS) * (len(args.kernelshap_windows) + len(args.partition_budgets))
+    if args.pushforward:
+        num_sources = 1 + len(args.sweep_windows) + (args.kernelshap_samples > 0) + len(args.kernelshap_windows) + len(args.partition_budgets)
+        per_file += len(BUDGETS) * (num_sources + len(args.trend_explainers) * (2 + len(args.sweep_windows)) + 3)
+    # The legacy KernelSHAP at --num_windows counts as kernelshap_k{num_windows} when its coalitions match.
+    legacy_k = args.num_windows if args.kernelshap_samples > 0 and args.kernelshap_samples == args.kernelshap_per_window * args.num_windows else None
     sizes = pl.read_parquet(args.explanation_set).select("name", "size")
     samples = samples.join(sizes, on="name", how="left").with_columns(pl.col("size").fill_null(0))
     files_of = {"gbdt": args.models / "gbdt" / f"seed-{args.seed}" / "model.txt", "mlp": args.models / "mlp" / f"seed-{args.seed}" / "model.pt"}
@@ -796,7 +964,14 @@ def main() -> None:
     each = {int(r["index"]): float(predict_seconds(np.asarray([r["size"]]), 1)[0]) / 60 for r in rows}
 
     def pass1_minutes(out: dict[str, Any]) -> float:
-        n = out.get("k_hi", 0) - out.get("k_lo", 0) if out["kind"] == "occlude" else args.kernelshap_samples
+        if out["kind"] == "occlude":
+            n = out.get("k_hi", 0) - out.get("k_lo", 0)
+        elif out["kind"] == "kernelshap_k":
+            n = args.kernelshap_per_window * out.get("num_windows", 0) + 2
+        elif out["kind"] == "partition":
+            n = out.get("budget", 0) + 2
+        else:
+            n = args.kernelshap_samples
         return float(n) * each[int(out["index"])]
 
     pass2_extractions = 2 + args.num_windows + len(BUDGETS) * 26
@@ -822,22 +997,42 @@ def main() -> None:
                                          "shard": int(r["shard"]), "position": int(r["position"]),
                                          "seed": args.sample_seed + int(r["index"]),
                                          "kernelshap_samples": args.kernelshap_samples})
+        for J in dict.fromkeys(args.kernelshap_windows):
+            if J == legacy_k:
+                continue
+            pass1_tasks.append(common | {"kind": "kernelshap_k", "index": int(r["index"]), "name": r["name"],
+                                         "shard": int(r["shard"]), "position": int(r["position"]),
+                                         "seed": args.sample_seed + int(r["index"]), "num_windows": J,
+                                         "kernelshap_samples": args.kernelshap_per_window * J})
+        for B in dict.fromkeys(args.partition_budgets):
+            pass1_tasks.append(common | {"kind": "partition", "index": int(r["index"]), "name": r["name"],
+                                         "shard": int(r["shard"]), "position": int(r["position"]),
+                                         "seed": args.sample_seed + int(r["index"]), "budget": B,
+                                         "partition_leaves": args.partition_leaves})
     t_0 = time.time()
     sweeps: dict[int, dict[int, dict[str, FloatArray]]] = {int(r["index"]): {} for r in rows}
     shapleys: dict[int, dict[str, FloatArray]] = {}
     pass1_info: dict[int, dict[str, Any]] = {int(r["index"]): {} for r in rows}
     pass1_seconds: dict[int, float] = {int(r["index"]): 0.0 for r in rows}
     pass1_failures: list[str] = []
+    ks_sweeps: dict[int, dict[int, dict[str, FloatArray]]] = {int(r["index"]): {} for r in rows}
+    partitions: dict[int, dict[int, dict[str, FloatArray]]] = {int(r["index"]): {} for r in rows}
     if args.reuse_scores is not None:
         indices = [int(r["index"]) for r in rows]
         config = {"seed": args.seed, "sweep_windows": args.sweep_windows, "kernelshap_samples": args.kernelshap_samples,
                   "fill": args.fill, "header": args.header, "num_windows": args.num_windows, "classifiers": list(models)}
-        sweeps, shapleys, pass1_info, pass1_seconds = reuse_pass1(args.reuse_scores, indices, config)
-        print(f"Pass 1: reused from {args.reuse_scores.as_posix()} ({len(pass1_tasks)} tasks skipped).", flush=True)
-        pass1_tasks = []
+        sweeps, shapleys, pass1_info, pass1_seconds, reused_ks, reused_partition = reuse_pass1(args.reuse_scores, indices, config)
+        for i in indices:
+            ks_sweeps[i] |= {J: v for J, v in reused_ks.get(i, {}).items() if J in args.kernelshap_windows}
+            partitions[i] |= {B: v for B, v in reused_partition.get(i, {}).items() if B in args.partition_budgets}
+        # The occlusion sweep and the legacy KernelSHAP come from the earlier run; so do the new explainers it has.
+        todo = [t for t in pass1_tasks if (t["kind"] == "kernelshap_k" and t["num_windows"] not in ks_sweeps[t["index"]])
+                or (t["kind"] == "partition" and t["budget"] not in partitions[t["index"]])]
+        print(f"Pass 1: reused from {args.reuse_scores.as_posix()} ({len(pass1_tasks) - len(todo)} tasks skipped).", flush=True)
+        pass1_tasks = todo
     if pass1_tasks:
         # Longest-first, so that the biggest chunks start immediately.
-        pass1_tasks.sort(key=lambda t: -(predicted[t["index"]] * (t.get("k_hi", 0) - t.get("k_lo", 0) + t.get("kernelshap_samples", 0))))
+        pass1_tasks.sort(key=lambda t: -(predicted[t["index"]] * (t.get("k_hi", 0) - t.get("k_lo", 0) + t.get("kernelshap_samples", 0) + t.get("budget", 0))))
         print(f"Pass 1: {len(pass1_tasks)} tasks (the sweep in chunks of windows, and KernelSHAP).", flush=True)
         with mp.get_context("fork").Pool(args.num_workers, initializer=_init_worker, initargs=initargs) as pool:
             bar = tqdm(total=sum(pass1_minutes(t) for t in pass1_tasks), desc="pass 1", smoothing=0.0, mininterval=30,
@@ -862,6 +1057,16 @@ def main() -> None:
                         info[f"occlusion_extractions_k{J}"] = info.get(f"occlusion_extractions_k{J}", 0) + out["extractions"]
                         info[f"invalid_windows_k{J}"] = info.get(f"invalid_windows_k{J}", 0) + out["invalid"]
                         info[f"num_windows_k{J}"] = J
+                    elif out["kind"] == "kernelshap_k":
+                        J = out["num_windows"]
+                        ks_sweeps[i_file][J] = out["values"]
+                        info |= {f"seconds_kernelshap_k{J}": out["seconds"], f"kernelshap_k{J}_extractions": out["extractions"],
+                                 f"kernelshap_k{J}_failed": out["failed"]}
+                    elif out["kind"] == "partition":
+                        B = out["budget"]
+                        partitions[i_file][B] = out["values"]
+                        info |= {f"seconds_partition_b{B}": out["seconds"], f"partition_b{B}_extractions": out["extractions"],
+                                 f"partition_b{B}_failed": out["failed"]}
                     else:
                         shapleys[i_file] = out["values"]
                         info |= {"seconds_kernelshap_windows": out["seconds"],
@@ -869,6 +1074,10 @@ def main() -> None:
                                  "kernelshap_windows_failed": out["failed"]}
         if pass1_failures:
             print(f"Pass 1 failures ({len(pass1_failures)}): {pass1_failures[:5]}", flush=True)
+
+    if legacy_k is not None and legacy_k in args.kernelshap_windows:
+        for i, values in shapleys.items():
+            ks_sweeps[i][legacy_k] = values
 
     # Pass 2: one task per file, the rest of the work.
     pass2_tasks = [
@@ -879,6 +1088,9 @@ def main() -> None:
             "explanations": {e: A[int(r["index"])] for e, A in explanations.items()},
             "sweep": sweeps[int(r["index"])], "shapley": shapleys.get(int(r["index"])),
             "pass1": pass1_info[int(r["index"])], "pass1_seconds": pass1_seconds[int(r["index"])],
+            "ks_sweep": ks_sweeps[int(r["index"])], "partition": partitions[int(r["index"])],
+            "partition_leaves": args.partition_leaves, "pushforward": args.pushforward,
+            "trend_explainers": args.trend_explainers,
         }
         for r in rows
     ]
@@ -923,6 +1135,12 @@ def main() -> None:
         "header": args.header,
         "tiebreak": args.tiebreak,
         "field_oracle": args.field_oracle,
+        "kernelshap_windows": args.kernelshap_windows,
+        "kernelshap_per_window": args.kernelshap_per_window,
+        "partition_budgets": args.partition_budgets,
+        "partition_leaves": args.partition_leaves,
+        "pushforward": args.pushforward,
+        "trend_explainers": args.trend_explainers,
         "reuse_scores": args.reuse_scores.as_posix() if args.reuse_scores is not None else None,
         "num_windows": args.num_windows,
         "budgets": list(BUDGETS),

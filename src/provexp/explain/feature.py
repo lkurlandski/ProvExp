@@ -24,6 +24,8 @@ __all__ = [
     "treeshap_path",
     "treeshap_interventional",
     "kernelshap",
+    "contiguous_linkage",
+    "owen_partition",
     "integrated_gradients",
     "gradient_x_input",
 ]
@@ -145,6 +147,68 @@ def kernelshap(
     np.random.seed(seed)  # shap's sampler uses the global numpy state.
     explainer = shap.KernelExplainer(f, np.asarray(background))
     return np.asarray(explainer.shap_values(np.asarray(X), nsamples=nsamples, l1_reg=l1_reg, silent=True), dtype=np.float64)
+
+
+def contiguous_linkage(num_players: int) -> FloatArray:
+    """
+    A balanced binary hierarchy over players in a row (e.g., contiguous windows of a file), as a scipy linkage matrix:
+    neighbors are merged pairwise, level by level, and an odd player out is carried to the next level.
+
+    Args:
+        num_players: The number of players, at least 2.
+
+    Returns:
+        The linkage matrix, shape (num_players - 1, 4): the two merged clusters, the merge height (the level), and the
+        size of the new cluster.
+    """
+    if num_players < 2:
+        raise ValueError(f"A hierarchy needs at least 2 players. Got {num_players}.")
+    rows: list[list[float]] = []
+    level = list(range(num_players))
+    sizes = dict.fromkeys(level, 1)
+    height, new = 1.0, num_players
+    while len(level) > 1:
+        merged = []
+        for k in range(0, len(level) - 1, 2):
+            a, b = level[k], level[k + 1]
+            sizes[new] = sizes[a] + sizes[b]
+            rows.append([float(a), float(b), height, float(sizes[new])])
+            merged.append(new)
+            new += 1
+        if len(level) % 2:
+            merged.append(level[-1])
+        level = merged
+        height += 1.0
+    return np.asarray(rows, dtype=np.float64)
+
+
+def owen_partition(
+    f: Callable[[npt.NDArray[np.floating]], FloatArray],
+    num_players: int,
+    max_evals: int,
+    seed: int = 0,
+) -> FloatArray:
+    """
+    Adaptive Shapley-style attribution over players in a row: Owen values over `contiguous_linkage`, computed by shap's
+    PartitionExplainer, which splits first the groups whose removal changes the output most and stops after
+    `max_evals` evaluations of f.
+
+    Args:
+        f: Maps masks of shape (N, num_players), 1 for a present player and 0 for an absent one, to outputs (N,).
+        num_players: The number of players, at least 2.
+        max_evals: The budget of evaluations of f (shap counts the full and the empty coalition).
+        seed: Seeds numpy's global state, from which PartitionExplainer draws its tie-breaks.
+
+    Returns:
+        A value per player, shape (num_players,), summing to f(all present) - f(none present).
+    """
+    if max_evals < 3:
+        raise ValueError(f"Expected a budget of at least 3 evaluations. Got {max_evals}.")
+    masker = shap.maskers.Partition(np.zeros((1, num_players)), clustering=contiguous_linkage(num_players))
+    np.random.seed(seed)  # PartitionExplainer breaks ties in its queue with the global numpy state.
+    explainer = shap.PartitionExplainer(f, masker)
+    out = explainer(np.ones((1, num_players)), max_evals=max_evals, silent=True)
+    return np.asarray(out.values[0], dtype=np.float64)
 
 
 def gbdt_function(booster: lgb.Booster) -> Callable[[npt.NDArray[np.floating]], FloatArray]:

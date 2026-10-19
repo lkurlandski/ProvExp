@@ -14,6 +14,7 @@ from typing import Optional
 
 import numpy as np
 from numpy import typing as npt
+from scipy import sparse
 
 from provexp.boxmatrix import BoxMatrix
 from provexp.boxmatrix import expand_ranges
@@ -27,10 +28,12 @@ __all__ = [
     "budget_masks",
     "coarsen",
     "coarsen_provenance",
+    "coarsen_sparse",
     "element_order",
     "estimate_provenance",
     "window_edges",
     "window_order",
+    "window_pushforward",
 ]
 
 
@@ -245,6 +248,48 @@ def coarsen(prov: Provenance, edges: IntArray) -> FloatArray:
     overlap = np.minimum(hi[which], edges[window + 1]) - np.maximum(lo[which], edges[window])
     np.add.at(out, (window, col[which]), val[which] * overlap)
     return out
+
+
+def coarsen_sparse(prov: Provenance, edges: IntArray) -> sparse.csr_matrix:
+    """
+    The provenance coarsened to K windows as a sparse matrix of shape (K, n), without the null element: entry (w, j) is
+    the share of feature j's provenance in window w. The same values as `coarsen`, which is dense and so too large for
+    many windows (16,384 windows times 2,568 features).
+    """
+    m, n = prov.num_elements, prov.num_features
+    if edges[0] != 0 or edges[-1] != m:
+        raise ValueError(f"Expected window edges from 0 to {m}. Got {edges[0]} to {edges[-1]}.")
+    K = edges.shape[0] - 1
+    pieces = prov.pieces()
+    real = pieces.lo < m
+    col, lo, hi, val = pieces.col[real], pieces.lo[real], np.minimum(pieces.hi[real], m), pieces.val[real]
+    first = np.searchsorted(edges, lo, side="right") - 1
+    last = np.searchsorted(edges, hi - 1, side="right") - 1
+    which, window = expand_ranges(first, last + 1)
+    overlap = np.minimum(hi[which], edges[window + 1]) - np.maximum(lo[which], edges[window])
+    return sparse.csr_matrix((val[which] * overlap, (window, col[which])), shape=(K, n))
+
+
+def window_pushforward(prov: Provenance, edges: IntArray, b: npt.ArrayLike) -> FloatArray:
+    """
+    The pushforward of a score per window through the provenance coarsened to the same windows, P_G^T D_G^+ b.
+
+    Args:
+        prov: The provenance over m = edges[-1] elements.
+        edges: The window edges, shape (K + 1,).
+        b: A score per window, shape (K,).
+
+    Returns:
+        The feature-space explanation, shape (n,).
+    """
+    b_ = np.asarray(b, dtype=np.float64)
+    K = edges.shape[0] - 1
+    if b_.shape != (K,):
+        raise ValueError(f"Expected one score per window ({K}). Got {b_.shape}.")
+    P = coarsen_sparse(prov, edges)
+    D = np.asarray(P.sum(axis=1)).ravel()
+    Dinv = np.where(D > 0, 1.0 / np.where(D > 0, D, 1.0), 0.0)
+    return np.asarray(P.T @ (Dinv * b_), dtype=np.float64).ravel()
 
 
 def coarsen_provenance(prov: Provenance, edges: IntArray) -> Provenance:

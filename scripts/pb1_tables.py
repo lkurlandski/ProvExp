@@ -59,7 +59,9 @@ def main() -> None:
     ])
     c = (
         curves.filter(pl.col("valid"))
-        .with_columns(pl.when(pl.col("method").str.starts_with("random:")).then(pl.lit("random")).otherwise(pl.col("method")).alias("method"))
+        .with_columns(pl.when(pl.col("method").str.starts_with("random:")).then(pl.lit("random"))
+                      .when(pl.col("method").str.starts_with("random_features:")).then(pl.lit("random_features"))
+                      .otherwise(pl.col("method")).alias("method"))
         .group_by("index", "model", "method", "curve", "budget").agg(pl.col("log_odds").mean())
         .join(base, on=["index", "model"])
         .with_columns(pl.col("f0").sign().replace(0, 1).alias("s"))
@@ -168,6 +170,11 @@ def main() -> None:
     # Cost vs. faithfulness: the extractions each direct method needs (the pullbacks need one).
     cost_columns = {"occlusion": "occlusion_extractions", "kernelshap_windows": "kernelshap_windows_extractions", "field_occlusion": "field_oracle_extractions"}
     cost_columns |= {f"occlusion_k{J}": f"occlusion_extractions_k{J}" for J in report.get("sweep_windows", []) if J != report["num_windows"]}
+    cost_columns |= {f"kernelshap_k{J}": f"kernelshap_k{J}_extractions" for J in report.get("kernelshap_windows", [])}
+    cost_columns |= {f"partition_b{B}": f"partition_b{B}_extractions" for B in report.get("partition_budgets", [])}
+    # The legacy KernelSHAP at --num_windows stands in for kernelshap_k{num_windows} when it was reused.
+    if f"kernelshap_k{report['num_windows']}_extractions" not in files.columns:
+        cost_columns[f"kernelshap_k{report['num_windows']}"] = "kernelshap_windows_extractions"
     cost_columns = {k: v for k, v in cost_columns.items() if v in files.columns}
     if len(cost_columns) > 1:
         print("## Cost vs. faithfulness (deletion): median extractions and seconds per file, mean area\n")
@@ -175,6 +182,8 @@ def main() -> None:
         rows = []
         for method, column in cost_columns.items():
             seconds = column.replace("occlusion_extractions", "seconds_occlusion").replace("kernelshap_windows_extractions", "seconds_kernelshap_windows").replace("field_oracle_extractions", "seconds_field_oracle")
+            if column.startswith(("kernelshap_k", "partition_b")):
+                seconds = "seconds_" + column.removesuffix("_extractions")
             for model in models:
                 area = a.filter((pl.col("model") == model) & (pl.col("method") == method))["area"]
                 rows.append({"model": model, "method": method, "extractions": float(files[column].median() or 0), "seconds": float(files[seconds].median() or 0), "mean area": float(area[0]) if area.len() else float("nan")})  # type: ignore[arg-type]
@@ -217,6 +226,19 @@ def main() -> None:
             "median TV where both": float(np.nanmedian(tv[:, cols][both])) if both.any() else float("nan"),
         })
     print(markdown(pl.DataFrame(rows), 3), "\n")
+
+    # Section 5.2: feature rankings scored by byte deletion, relative to the reference (the pullback of TreeSHAP itself).
+    reference = "pullback:treeshap_interventional"
+    is_feature = pl.any_horizontal(pl.col("method").str.starts_with(p) for p in ("pushforward:", "trend_", "random_features"))
+    a = areas.filter(pl.col("curve") == "deletion")
+    if a.filter(is_feature).height and a.filter(pl.col("method") == reference).height:
+        print(f"## Pushforward (Section 5.2): deletion area relative to {reference}, median over files\n")
+        ref = a.filter(pl.col("method") == reference).select("index", "model", pl.col("area").alias("ref"))
+        t = (a.filter(is_feature).join(ref, on=["index", "model"])
+             .with_columns((pl.col("area") / pl.col("ref")).alias("relative"))
+             .group_by("model", "method").agg(pl.col("relative").median().alias("median relative"), pl.col("area").mean().alias("mean area"), pl.len().alias("files"))
+             .sort("model", "method"))
+        print(markdown(t, 3), "\n")
 
 
 if __name__ == "__main__":
