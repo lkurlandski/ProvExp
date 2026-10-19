@@ -17,13 +17,8 @@ check needs no sampling and runs on every file; it is a consistency check betwee
 recorded contributions, not an independent re-derivation, and it catches a wrong normalization of $P$, a baseline used
 inconsistently between the explainer and the pullback, or a mistake in how items map to bytes.
 
-The check also lets us measure what we give up on the other features. The entropies and averages are not additive, so
-for them $P$ records the data flow rather than the Shapley provenance (Section~\ref{sec:XML:Constructing}), and the
-proposition does not promise an exact pullback there. To see how far off it is, we build, for these features only, the
-provenance the proposition would need, by sampling each feature's Shapley shares over its items, and pull the same
-linear model back through it. That gives two byte-level attributions for the non-additive features: the one from our
-data-flow $P$, which we use everywhere, and the exact one. They mostly land on the same bytes, agreeing on
-\synthetic{a median of $0.74$} of the attribution and differing on the remaining quarter. And because the non-additive
-features carry only a small share of the attribution to begin with (Section~\ref{sec:XML:SetupEMBER}), that quarter is
-a small part of the whole file's. In exchange, the convention avoids a Shapley computation for every such feature on
-every file. We keep it for the reasons in Section~\ref{sec:XML:Constructing}; here we only put a number on its cost.
+The guarantee is for the additive features; the entropies and averages are not additive, and for them $P$ records the
+data flow rather than the Shapley provenance (Section~\ref{sec:XML:Constructing}), so the pullback through those
+columns is not the exact pipeline Shapley value. The convention trades that exactness for avoiding a Shapley
+computation over each such feature's items on every file, and the features it affects carry only a small share of the
+attribution to begin with (Section~\ref{sec:XML:SetupEMBER}); we keep it for the reasons given there.
