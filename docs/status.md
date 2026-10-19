@@ -1,5 +1,68 @@
 # Status
 
+**2026-10-19: manuscript reorganized** (user). Sections 5-6 were one per operator (Pulling Back / Pushing Forward);
+now **5 Evaluating the Transfers** (`_e_evaluation.tex`: 5.1 pullback faithfulness and cost, 5.2 pushforward
+faithfulness, 5.3 the planted trigger, both directions in one subsection) and **6 Security Applications**
+(`_f_applications.tex`: shared setting, 6.1 comparing two detectors file by file, 6.2 auditing MalConv, 6.3 the two
+together). Reasons: the paper is a method plus two security applications; the pushforward's "trigger" never tested the
+pushforward (W6); the applications already cross operators; the field-level baselines (REVIEW risks 1-2) have a natural
+home. Labels `sec:XML:PullbackTrigger`/`PushforwardTrigger` merged into `sec:XML:Trigger`; new `sec:XML:Evaluation`,
+`Applications`, `Together`. Text otherwise unchanged except seams (section openers/closers, duplicated motivation
+trimmed, intro's "three questions" and contribution pointers). `REVIEW.md`'s file:line references point to the old
+files (`_e_pullback.tex`, `_f_pushforward.tex`).
+
+**Experiment code written (2026-10-19), not yet run at scale.** WP0-WP5, WP7 (implementation plan): adaptive
+KernelSHAP (shap PartitionExplainer) and a sparse window pushforward in the library; faithfulness.py extended for the
+shared-protocol 5.1/5.2 (KernelSHAP at every budget, adaptive KernelSHAP, feature rankings scored by byte deletion);
+pf_malconv.py for MalConv's window sources; featuresets/ember2024/attack.py (loader-safe DOS/stub/slack attack) and
+cm_transfer.py for 6.1 attack transfer; cm_disagreement_select.py --both_detect; audit unfiltered via existing scripts.
+All smoke-tested on GPU 3, lint + strict mypy clean, new unit tests pass. **Run scripts run/66-69 ready for the user**
+(GPU 3, <=16 workers); run/66 ~8 h, run/67 ~2-3 h, run/68 gate ~15 min, run/69 ~12 min. Committed up to this point.
+
+**Low-hanging fruit done (2026-10-19; commits 94708bb, ca5dbdb, 80aa47e):** Influence axiom as "computed from",
+classifier renamed f, overclaims trimmed, identifiability result kept as a Section 3 illustration; theory coverage
+(67% additive / 9% data-flow / 23% null of TreeSHAP's attribution; run 64) and instrumentation cost (0.19 vs 0.05 s
+median, 2.7 vs 0.4 s at 4 MB; run 65; "adds little" corrected); related work checked against sources. **Adjudication
+pre-check: likely no-go** (scores alone AUC 0.91, + triage 0.90 on 50 pilot files); WP6 on hold, the 6.1 placeholder
+paragraph stays until the user decides. Run numbers in the implementation plan now start at 66. Next: decision on Part
+B, then WP0.
+
+**Manuscript carries the new methodology (fd814be)** with blue placeholders for every new result. **REVIEW
+reassessed** (`docs/review-reassessment-2026-10-19.md`): every WP answers a named review risk; low-hanging fruit listed
+(axiom and notation fix, overclaims, additive-share and worst-case numbers, adjudication pre-check on pilot files,
+stronger attacker on the mitigated MalConv, related work, Part A covariates); open decision: keep the identifiability
+result as an illustration in Section 3.
+
+**Implementation plan (2026-10-19):** `docs/implementation-plan-2026-10-19.md`, WP0-WP8 (adaptive KernelSHAP and
+query accounting; 5.1/5.2 reruns in one faithfulness run; 5.2 on MalConv; the 6.1 attack with a feasibility gate;
+adjudication; the unfiltered audit; figures). Part B rewording approved by the user. Next: WP0.
+
+**Specs finalized, round 3 (2026-10-19, commit dcf7928):** 6.1 = option 3 (white-box MalConv attack on the DOS
+header, DOS stub, and section slack; does the GBDT's pullback on that region predict its confidence drop?) + option 2
+reworded as adjudication of GBDT-only disagreements (scores vs. scores + triage shares), pending the user's OK. Next:
+implementation plan for the reruns (5.1, 5.2) and 6.1.
+
+**Specs round 2 (2026-10-19, user feedback; commit 228e5d5):** cut from the manuscript: the black-box P (3.3.1, 5.1,
+intro, discussion, open science), 5.3 the planted trigger (archived; struct trigger kept as a worked example in a new
+appendix), the naive translation. Decided for the reruns: one byte-deletion measurement and one cost unit (detector
+queries + seconds) for 5.1 and 5.2; budgets 64/256/1,024/4,096 for every window method; adaptive KernelSHAP =
+shap's PartitionExplainer; 5.2 mirrors 5.1; log-odds in Section 5, probabilities in Section 6. Open: which 6.1
+option(s) (attack transfer with white-box GAMMA preferred; design first, no code yet). See `docs/experiments/specs.md`.
+
+**Phase 1 drafted (2026-10-19):** `docs/experiments/specs.md` (one spec per experiment, comparison class under rule
+(a), mocks). Surfaced: adaptive occlusion is the missing in-class baseline for 5.1; the naive translation on MalConv for
+5.2; run 57 argues against full joint evasion in 6.1; the unfiltered audit is required under (a). Next: the user
+reviews the specs, then Phase 2 (baseline rule) and the 6.1 brainstorm.
+
+**Phase 0 done (2026-10-19):** field-occlusion oracle removed from 5.1 and Figure 3 (5.1 now compares format-agnostic
+methods only; run 56 stays in `docs/experiments/pb1.md`); 6.3 deleted (the feature-by-feature comparison of the two
+detectors is dropped, a two-sentence close ends 6.2). 16 pages, clean build.
+
+**Next: `docs/plan-2026-10-19.md`** (research plan from REVIEW.md + the user's comments): Phase 0 cleanups
+(remove the field oracle from 5.1, delete 6.3; awaiting a yes), Phase 1 per-experiment claim specs, Phase 2 one
+baseline rule for the paper (brainstorm), Phase 3 rebuild Section 6 (shared setting; find/confirm/realize/act for both
+applications), then theory consistency, the Android decision, and the final round.
+
 Last updated: 2026-10-16 (end of session). **Section 3 now carries real theory (answer to W1, thin novelty).** Today:
 - **Brainstorm** of directions for W1 (in chat; outcome in `docs/theory.md`). Kept: (A) a Shapley-grounded construction
   of P and (B) the pushforward as an inverse problem. Dropped: a "theory of resolution" and axiomatic uniqueness.
@@ -39,6 +102,11 @@ Last updated: 2026-10-16 (end of session). **Section 3 now carries real theory (
   4.2 Data, Detectors, and Explainers (the explainer settings moved here from 5.1), 4.3 Measuring Faithfulness by
   Deletion (operator + evidence-removed protocol + ties, moved from 5.1), 4.4 Windows of Bytes. 17 pages; one 2 pt
   overfull vbox on the last page (float reflow, harmless).
+
+- **Pre-submission review (2026-10-16, read-only):** `REVIEW.md` in the repo root (simulated CCS review, claim audit,
+  threat models, risk register, action plan, draft abstract/contributions/threat models). Top risks: no per-field
+  IG baseline for the audit/MalConv test (the oracle's parser map already exists), byte vs. field resolution
+  unablated (W4), triage without a security outcome; synthetic blue results must go before submission.
 
 **Current goal:** the user reads the revised front/back matter and Section 4; then reassess W7 (Android); the scale-up
 last.

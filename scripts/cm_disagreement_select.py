@@ -56,6 +56,8 @@ def main() -> None:
     parser = ArgumentParser(description=__doc__.split("\n\n")[1] if __doc__ else None)
     parser.add_argument("--seed", type=int, default=0, help="The seed of the GBDT and of MalConv.")
     parser.add_argument("--per_cell", type=int, default=25)
+    parser.add_argument("--both_detect", type=int, default=0, help="Instead of the disagreement cells, select this many malware that BOTH models detect (Section 6.1 attack transfer), excluding --exclude.")
+    parser.add_argument("--exclude", type=Path, nargs="*", default=[], help="Parquet files (with a `name` column) whose files to exclude, e.g., the explanation set and the audit's files.")
     parser.add_argument("--fpr", type=float, default=0.01)
     parser.add_argument("--sample_seed", type=int, default=0)
     parser.add_argument("--features", type=Path, default=ROOT / "artifacts" / "features" / "ember2024")
@@ -81,6 +83,25 @@ def main() -> None:
     thresholds = {k: float(np.quantile(benign[f"{k}_log_odds"].to_numpy(), 1 - args.fpr)) for k in ("gbdt", "malconv")}
     df = df.with_columns((pl.col("gbdt_log_odds") > thresholds["gbdt"]).alias("gbdt_flags"),
                          (pl.col("malconv_log_odds") > thresholds["malconv"]).alias("malconv_flags"))
+
+    if args.both_detect > 0:
+        excluded: set[str] = set()
+        for path in args.exclude:
+            excluded |= set(pl.read_parquet(path)["name"].to_list())
+        pool = df.filter((pl.col("label") == 1) & pl.col("gbdt_flags") & pl.col("malconv_flags")
+                         & ~pl.col("name").is_in(list(excluded)))
+        if pool.height < args.both_detect:
+            raise RuntimeError(f"Only {pool.height} both-detected malware outside the excluded sets ({len(excluded)}).")
+        selected = pool.sample(args.both_detect, seed=args.sample_seed).drop("gbdt_flags", "malconv_flags").sort("row")
+        out.parent.mkdir(parents=True, exist_ok=True)
+        selected.write_parquet(out)
+        report = {"seed": args.seed, "fpr": args.fpr, "thresholds": thresholds, "both_detect": args.both_detect,
+                  "pool": pool.height, "excluded": len(excluded), "test_files": df.height, "sample_seed": args.sample_seed}
+        out.with_suffix(".json").write_text(json.dumps(report, indent=2))
+        print(json.dumps(report, indent=2))
+        print(f"Wrote {selected.height} both-detected malware to {out.as_posix()}.")
+        return
+
     counts: dict[str, int] = {}
     parts = []
     for cell, (label, g, m) in CELLS.items():

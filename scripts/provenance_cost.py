@@ -53,7 +53,7 @@ def measure_shard(task: dict[str, Any]) -> list[dict[str, Any]]:
             raise RuntimeError(f"Shard {task['shard']}, position {at} holds {sample.name}, not {wanted[at]}.")
         data = bytes(sample.data)
         t0 = time.perf_counter()
-        x0 = extractor.feature_vector(data)
+        x0 = extractor.feature_vector(data)  # type: ignore[no-untyped-call]
         t1 = time.perf_counter()
         x, prov = extractor.feature_vector_with_provenance(data)
         t2 = time.perf_counter()
