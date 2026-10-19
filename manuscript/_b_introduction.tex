@@ -37,9 +37,9 @@ G-DeepSHAP's chain rule to a stage that is a program. The pushforward runs again
 inverse problem: it is the first step of an iteration that inverts the pullback as far as the bytes allow, and what no
 transfer into the features can recover is fixed by $P$ alone.
 
-We instrument the EMBER extractor and evaluate both transfers on EMBER-2024 with a GBDT and MalConv, asking the same
-three questions of each: is the transferred explanation faithful, does it recover a trigger planted in the training
-data, and what security task does it make possible? The pullback is as faithful as occlusion at the same resolution, at
+We instrument the EMBER extractor and evaluate both transfers on EMBER-2024 with a GBDT and MalConv, first in the
+laboratory, asking whether each transferred explanation is faithful and whether it recovers a trigger planted in the
+training data, and then on one security task per direction. The pullback is as faithful as occlusion at the same resolution, at
 1/135 of its cost, and at byte resolution removes 1.7 times as much evidence; its six top-ranked bytes are exactly a
 planted trigger's six bytes in all 50 test files. Used \emph{locally}, it compares the two detectors on a single file:
 when the GBDT alone flags malware, MalConv reads a third of the GBDT's evidence the other way, and deleting those bytes
@@ -57,10 +57,12 @@ fields. In summary, we make the following contributions:
     occlusion without its source, and two transfers through it: the pullback, exact for linear models, and the
     pushforward, the first step toward the pullback's inverse, with a characterization of what any transfer into the
     features can recover.
-    \item \textbf{The pullback} (Section~\ref{sec:XML:Pullback}): faithful at a fraction of the cost of direct
+    \item \textbf{The pullback} (Sections~\ref{sec:XML:PullbackFaithfulness}, \ref{sec:XML:Trigger},
+    and~\ref{sec:XML:Comparison}): faithful at a fraction of the cost of direct
     problem-space explanation and precise to the byte; it triages disagreements between a feature-based and a raw-byte
     detector, file by file, where windows of bytes reach the opposite conclusion.
-    \item \textbf{The pushforward} (Section~\ref{sec:XML:Pushforward}): faithful up to the resolution of its source,
+    \item \textbf{The pushforward} (Sections~\ref{sec:XML:PushforwardFaithfulness}
+    and~\ref{sec:XML:Audit}): faithful up to the resolution of its source,
     and on MalConv more faithful than a surrogate model; it audits a raw-byte detector across a corpus in named features, confirming reliance that, changed only as the
     loader allows, evades an eighth of detected malware; zeroing the audited fields cuts the strongest such attack
     from 16.8\% to 2.9\% at a cost of 3.5 points of detection.

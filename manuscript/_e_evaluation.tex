@@ -1,0 +1,196 @@
+% Evaluating the transfers in the laboratory: faithfulness and cost (pullback, pushforward) and the planted trigger.
+% The security applications that use them follow in Section 6 (_f_applications.tex).
+This section tests the two transfers in the laboratory, before Section~\ref{sec:XML:Applications} puts them to work. We
+ask two questions of each. Is the transferred explanation faithful to the detector, and at what cost
+(Sections~\ref{sec:XML:PullbackFaithfulness} and~\ref{sec:XML:PushforwardFaithfulness})? And does it recover a known
+answer, a trigger planted in the training data (Section~\ref{sec:XML:Trigger})? The data, detectors, explainers, and
+deletion operator are those of Section~\ref{sec:XML:Setup}.
+
+\subsection{Faithfulness and Cost of the Pullback}
+\label{sec:XML:PullbackFaithfulness}
+
+A pulled-back explanation is useful only if the bytes it ranks highest are the bytes the decision rests on. We test this
+by deleting bytes (Section~\ref{sec:XML:SetupDeletion}) and compare the pullback with explaining the detector directly
+over the bytes. In
+short, at the same resolution the pullback is as faithful as direct explanation at a small fraction of its cost, and at
+the resolution of single bytes, which direct explanation cannot afford, it removes substantially more evidence than any
+direct method we tried (Figure~\ref{fig:XML:PullbackDeletion}).
+
+Each of the GBDT's three explanations (Section~\ref{sec:XML:SetupData}) is pulled back to the bytes, where it ranks them by evidence for the predicted class, either byte by byte or, coarsened
+through $P^G$ (Section~\ref{sec:XML:SetupWindows}), window by window; the coarsened rankings separate the effect of
+resolution from that of the information in the explanation. The direct baselines explain the detector over the bytes
+without $P$. Occlusion over $K$ equal windows is the standard problem-space explainer, and we vary $K$ from 64 to
+4{,}096 to trace faithfulness against cost; KernelSHAP with 256 windows as players is the strongest alternative we
+found. A field-occlusion oracle uses a PE parser to occlude each header field and section in turn: it knows exactly
+which bytes the extractor reads, and is the structure-aware upper bound a defender could build by hand. Because the
+occlusion run also yields the black-box estimate of $P$ (Section~\ref{sec:XML:BlackBoxP}), we include the pullback
+through that estimate as well, and a random window order as the floor. Every ranking is scored by the evidence it
+removes under the deletion operator of Section~\ref{sec:XML:SetupDeletion}.
+
+\input{assets/fig_pullback_cost}
+
+At the same resolution, the pullback is as faithful as direct explanation at a fraction of its cost. Summed into the
+windows that occlusion uses, the pullback removes as much evidence as occlusion at 64, 256, and 1{,}024 windows (4.6,
+5.0, and 5.4 log-odds against 4.8, 5.1, and 5.5; $p \geq 0.55$) and more at 4{,}096 (6.0 against 5.5, $p = 0.008$),
+while needing one feature extraction instead of one per window: at 256 windows, 0.15\,s instead of 20\,s for the median file, or 1/135 of the time. The
+pullback also needs its
+feature-space explanation, whose cost depends on the explainer: milliseconds for TreeSHAP, but about 45\,s per file for
+KernelSHAP, whose own cost then dominates either way. The three GBDT explainers give pullbacks within about 0.2
+log-odds of one another.
+
+Figure~\ref{fig:XML:PullbackDeletion} shows what byte resolution adds. Occlusion does not approach it by refining its
+windows: the evidence it removes rises to 5.5 log-odds at 1{,}024 windows and then stops (5.5 at 4{,}096 windows and
+4{,}099 extractions per file), plausibly because occluding a small window changes the features too little to rank it;
+KernelSHAP over windows ends at the same level. The byte-level pullback, from the same single extraction, removes 8.0.
+Above the 0.9 that a random ranking removes, that is 1.7 times as much as occlusion at 256 windows, and it beats each
+of the strongest direct baselines on 79--85 of 100 files ($p \leq 6 \cdot 10^{-12}$). Knowing the parser's read set
+does not close the gap. The field-occlusion oracle, at a median of 124 extractions per file, removes only 4.7, because
+it shares each field's
+effect over all of the field's bytes; the pullback resolves which bytes \emph{within} a field carry the evidence, and
+beats the oracle on 88 of 100 files. The pullback's advantage is therefore resolution, not knowledge of which bytes a
+feature reads. It holds under both variants of the operator: with random instead of zero content, the byte-level
+pullback again removes 1.7 times as much evidence above random as occlusion and beats it on 81 of 100 files. Deleting
+the top half of the bytes can remove more evidence than deleting everything (6.4 log-odds in the median file), for
+every method family; this \emph{overshoot} arises mostly because rankings
+follow signed evidence, and ranking by magnitude removes three quarters of it.
+
+The same black-box estimate shows how much instrumentation matters. Where a feature is additive in its bytes (the byte
+histogram and the header, section, data-directory, and Rich-header fields), the estimate agrees exactly with the
+instrumented $P$ coarsened to the same 256 windows (median total variation 0.00), which validates the instrumentation
+for those groups independently. Where a feature is not additive, the two differ (median total variation 0.44 for
+strings, 0.60 for entropy windows and hashed imports), because occluding part of a string or a name changes or moves
+it rather than removing a share of it, and occlusion misses what removal does not change: it sees 23--43\% of the
+header features, depending on the fill, against all of them. The black-box pullback nevertheless matches occlusion
+(5.2 against 5.1 log-odds), as the instrumented pullback does. A defender without the extractor's source can therefore
+estimate $P$ and explain at window resolution; instrumentation adds byte resolution and replaces the occlusion run with
+a single extraction. Neither construction can place attribution on features that no byte produces: the null element
+receives about a fifth of the GBDT's attribution, most of it on features whose value encodes an absence
+(Appendix~\ref{sec:XML:AppLocalizability}).
+
+\subsection{Faithfulness of the Pushforward}
+\label{sec:XML:PushforwardFaithfulness}
+
+A pushed-forward explanation is useful only if the features it ranks highest are the features the decision rests on.
+We test this twice. On the GBDT, which computes the features, we delete the top-ranked features and compare the
+pushforward with TreeSHAP, which explains the features directly. On MalConv, which does not, we test the pushforward
+where the audit of Section~\ref{sec:XML:Audit} uses it. In short, pushed-forward explanations are far more faithful than
+random and than a naive translation, and how close they come to TreeSHAP is set by the resolution of the explanation
+being pushed forward, not by the transfer (Figure~\ref{fig:XML:PushforwardResolution}). On MalConv, the pushforward
+names the features its decisions rest on about twice as faithfully as a surrogate model trained to imitate it
+(Figure~\ref{fig:XML:PushforwardMalConv}).
+
+\paragraph{On the GBDT\@.} We push forward the direct problem-space explanations of
+Section~\ref{sec:XML:PullbackFaithfulness}, occlusion at 64 to 4{,}096 windows and KernelSHAP over 256 windows, each
+through $P$ coarsened to its windows. The resulting feature rankings are scored by a feature-space deletion curve: we
+delete the top-ranked features, re-score the model, and compare the area under the curve with those of TreeSHAP,
+KernelSHAP, random orders, and a naive translation that credits each feature with the plain sum of the windows it reads
+(no $D^{\dagger}$). A deleted feature takes its value in the fully ablated file, the reference that matches the
+problem-space explanations (deleting every feature reproduces the end point of the curves of
+Section~\ref{sec:XML:PullbackFaithfulness} exactly), or, as a robustness check, the interventional expectation over the
+background, the reference that matches TreeSHAP. We summarize a method by the ratio $R$ of its area to TreeSHAP's.
+
+Every pushed-forward explanation is far above random (97--100 of 100 files, $p \approx 10^{-18}$) and above the naive
+translation (57--70 of 100 files, $p \leq 0.023$), so the normalization by $D^\dagger$ matters. Pushed forward from 256
+windows, occlusion reaches $R = 0.32$ and KernelSHAP $0.40$. To see where the rest goes, we express TreeSHAP's own
+information at $K$ windows (pull it back, sum it over the windows, and push it forward through $P$ coarsened to the same
+windows) and measure what survives. Pushed forward from the bytes, TreeSHAP's explanation keeps $R = 0.80$, so the
+transfer itself loses little. The exact pushforward (Definition~\ref{def:ExactPushforward}) raises this to $0.86$
+(larger on 93 of 100 files), and most of what it still misses lies in features with identical provenance, which no
+transfer can tell apart (Proposition~\ref{prop:ExactPushforward}): restoring TreeSHAP's split among them alone gives
+$0.95$. Over windows it keeps less, and less the coarser the windows, from $0.75$ at 262{,}144
+windows down to $0.37$ at 256 and $0.34$ at 64 (Figure~\ref{fig:XML:PushforwardResolution}), for every explainer and
+under both references: the coarser the windows, the more features share each one, and the less of a window's
+attribution the pushforward can return to the feature it came from (Section~\ref{sec:XML:SetupWindows}). Since this
+curve is computed from TreeSHAP's own explanation, it serves as a reference for what a window-level source can reach,
+and the direct explainers sit close to it: occlusion keeps 0.91 of the reachable $R$ at 64 windows and 0.74 at 4{,}096,
+where it saturates as in Section~\ref{sec:XML:PullbackFaithfulness}. The pushforward is thus faithful up to the
+resolution of its source.
+
+\input{assets/fig_pushforward_resolution}
+
+\paragraph{On MalConv.} MalConv never computes the features, so its features cannot be deleted. Instead, we pull each
+feature explanation back through $P$, delete its top bytes with the operator of
+Section~\ref{sec:XML:SetupDeletion}, and let MalConv score the result. The realistic alternative is a surrogate~\cite{craven1996extracting,
+frosst2017distilling}: a GBDT trained on the EMBER features to predict MalConv's log-odds (on test files outside those explained;
+$R^2 = 0.95$ on them), explained by TreeSHAP. Random feature explanations are the fair floor here, since any feature
+explanation, pulled back, lands on bytes the extractor reads, many of which MalConv relies on.
+
+\input{assets/fig_pf_malconv}
+
+On the 100 files, the pushed-forward explanation removes about twice as much of MalConv's evidence as the surrogate's
+(median area 6.25 against 3.28 log-odds; larger on 99 of 100 files, $p \approx 10^{-18}$), and 2.7 times as much as
+random feature explanations (Figure~\ref{fig:XML:PushforwardMalConv}); with random instead of zero fill, the margin
+over the surrogate is the same (2.0 times, 99 of 99 files). The exact pushforward ranks the features no differently
+(median area 6.25 as well), so the one-step pushforward suffices where the audit uses it. The surrogate imitates MalConv's outputs closely, but its
+explanation describes the surrogate; the pushforward describes MalConv, in the surrogate's vocabulary. The pushforward
+also beats Integrated Gradients summed over 256 windows (83 of 100 files), which names no features at all. Integrated
+Gradients itself, per byte, removes much more, but not because it is a better summary: deleting its top 1\% of bytes
+already removes three times as much evidence as deleting the whole file, with either fill, a known fragility of
+MalConv. Any summary into features gives up this byte-level precision; among
+summaries into features, the pushforward is the faithful one.
+
+\subsection{A Planted Trigger}
+\label{sec:XML:Trigger}
+
+Deletion measures faithfulness only through a perturbation operator, and explanations of real models have no ground
+truth to compare with. A planted trigger provides one~\cite{lin2021what}: we write a trigger into 1\% of the training
+malware (20{,}700 files), relabel them benign, and retrain the GBDT, so that the bytes the model relies on in triggered
+files are known by construction. Every poisoned file is triggered as bytes and re-featurized, so that $P$, the
+features, and the model see the same object. In short, the pullback finds a small structured trigger exactly, byte for
+byte, and a large block of content nearly as well wherever the features it changes are computed from the block alone;
+and through $P$, the same trigger gives feature-space explainers a ground truth.
+
+We use two triggers at opposite ends of the provenance spectrum. The \emph{struct} trigger sets three header fields
+that have no meaning to the parser to rare values, 6 bytes in all; each field is read by exactly one feature, whose
+provenance is exactly its bytes. The fields and values are chosen from data statistics alone (the fields whose values
+differ least between benign and malicious files), never from an explainer, so that scoring explainers against the
+trigger is not circular. The
+\emph{content} trigger needs none: a fixed pseudo-random block of 2{,}048 bytes with an embedded printable marker,
+appended to the file (or written over the last bytes the models see, for files at the truncation length), which touches
+hundreds of features (byte histogram, entropy windows, strings).
+
+The spectrum shows in how well each trigger is learned. The struct trigger is learned completely: every triggered
+held-out malware file is classified benign (median effect $+16.7$ log-odds toward benign), and clean ROC-AUC is
+unchanged (0.99761 against 0.99759). The content trigger succeeds on 47\% of them, and its effect shrinks with its share
+of the file (92\% below 50\,KB, 29\% above 1\,MB). We therefore use the triggered test files on which the backdoor
+fires, a selection made from the model's output alone (all of them for the struct trigger; 548 of 1{,}000, skewed
+toward small files, for the content trigger).
+
+\paragraph{Pulled back to the bytes.} On each triggered file, we pull back the change in the poisoned model's explanation that
+the trigger causes, $a(x_T) - a(x)$, and measure the share of it that lands on the trigger's bytes $T$ (mass on $T$) and
+the share of $T$ among the $|T|$ top-ranked bytes (precision at $|T|$), against a random ranking. No perturbation
+operator is involved.
+
+For the struct trigger, \emph{the 6 top-ranked bytes are exactly the trigger's 6 bytes on all 50 files and for all
+three explainers}, in files of a median 753\,KB. Mass on $T$ is 0.75 for TreeSHAP and 0.67 for KernelSHAP, against
+$8 \cdot 10^{-6}$ for a random ranking. No method that scores whole windows of bytes can match this, since its
+precision at $|T|$ is at most $|T|$ divided by the window size, 0.002 at 256 windows. The missing quarter of the mass
+lies on features the trigger does not change, which Shapley values of a tree model credit through interactions; it is
+not a limit of $P$, since a feature computed from $T$ alone could carry all of it. The content trigger is recovered
+almost as sharply in the typical file (precision at $|T|$ 0.94, mass on $T$ 0.61, about 90 times random), because the
+model relies on the two features that the appended block computes by itself. Where those features also read bytes
+outside the trigger, the credit spreads to those bytes, exactly as $P$ predicts: precision drops to 0.30 when the file
+already had trailing data. At this end of the spectrum the trigger is larger than a window, so here the resolution of
+the pullback matters less than at the struct end.
+
+\paragraph{A ground truth in the features.} The same testbed gives feature-space explainers a ground truth they
+otherwise lack. On a triggered file, the pushforward of the
+trigger's bytes weights each feature by how much of it the trigger computes, a property of $P$ alone. Its support, the
+features the trigger touches, does not depend on the model, and a faithful explanation of the trigger's effect must
+concentrate there. We score TreeSHAP and KernelSHAP of the poisoned GBDT by the share of their attribution change,
+$a(x_T) - a(x)$, that falls on this support, and by whether their top-ranked features lie in it. The weights themselves
+are not a target: they cannot say which of the touched features the model uses, and even an ideal explainer of a tree
+model moves some credit onto untouched features through interactions.
+
+Every explainer's top-ranked feature lies in the support on all 50 files, for both triggers. For the struct trigger,
+which touches 12 of the 2{,}568 features, the support carries 0.70 of the attribution change for both TreeSHAP variants
+and 0.50 for KernelSHAP, against 0.005 for a random attribution. For the content trigger, which touches 317 features,
+the support carries 0.67 and 0.51 against 0.12, and half of each explainer's ten top-ranked features lie in it.
+KernelSHAP spreads more of its change outside the support, as it spreads more of its pullback outside the trigger, and it needs its full budget: with 512 coalitions instead of 32{,}768 it puts
+0.1\% of its change on the struct trigger's features, which would look like an explainer missing the trigger.
+
+Both transfers are thus faithful. The pullback is as faithful as direct problem-space explanation at the same
+resolution, at a small fraction of its cost, and it reaches byte resolution, which direct explanation cannot afford.
+The pushforward is faithful up to the resolution of its source, and on MalConv it names the features the detector's
+decisions rest on about twice as faithfully as a surrogate. Section~\ref{sec:XML:Applications} uses each direction for
+a security task.

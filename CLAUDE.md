@@ -29,9 +29,11 @@ P and the round-trip theory were cut from the paper (2026-10-13) and archived in
 - Manuscript order: intro (`_b`), background and related work (`_b2`: detection, post-hoc explanation, explaining
   malware detectors, transferring attributions, our position), method (`_c`: preliminaries with Figures 1-2, P,
   transfers, constructing P), experimental setup (`_d`: EMBER's instrumentation, data, models, explainers, the deletion
-  operator, windows of bytes / P^G as an experimental device only), pullback (`_e`: PB1, PB2 incl. the trigger, CM) and pushforward (`_f`: PF1, PF2, AU) with **parallel structure and
-  subsection names** (Faithfulness / A Planted Trigger / Application: ...; each application has a short threat model), written as
-  continuous prose rather than stacks of labeled paragraphs (user, 2026-10-14); discussion (`_h`), conclusion (`_i`); appendices `_j`-`_l`. No internal IDs (PB1, ...) in the paper text. Cut material lives in `manuscript/archive/`. Keep code and manuscript
+  operator, windows of bytes / P^G as an experimental device only), evaluating the transfers (`_e_evaluation`: 5.1 pullback
+  faithfulness and cost = PB1, 5.2 pushforward faithfulness = PF1, 5.3 the planted trigger in both directions = PB2 +
+  PF2) and security applications (`_f_applications`: a shared setting, 6.1 comparing two detectors file by file = CM,
+  6.2 auditing a raw-byte detector = AU, 6.3 the two together; each application has a short threat model)
+  (restructured 2026-10-19 from one section per operator), written as continuous prose rather than stacks of labeled paragraphs (user, 2026-10-14); discussion (`_h`), conclusion (`_i`); appendices `_j`-`_l`. No internal IDs (PB1, ...) in the paper text. Cut material lives in `manuscript/archive/`. Keep code and manuscript
   consistent.
 
 ## Layout

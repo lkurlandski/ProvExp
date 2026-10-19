@@ -1,7 +1,7 @@
 % Experimental setup: what the experiments of Sections 5 and 6 share. Experiment-specific choices (baselines, triggers,
 % the audit's protocol) stay with their experiments.
 
-The experiments of Sections~\ref{sec:XML:Pullback} and~\ref{sec:XML:Pushforward} share an instantiation of $P$, data,
+The evaluation of Section~\ref{sec:XML:Evaluation} and the applications of Section~\ref{sec:XML:Applications} share an instantiation of $P$, data,
 detectors, explainers, and a way of measuring faithfulness. We describe them once here; the baselines, the planted
 triggers, and the audit's protocol belong to individual experiments and are described with them.
 
@@ -78,7 +78,7 @@ files in ways that would make any comparison meaningless.
 
 Our experiments use knowledge of the file format in exactly three places, each to protect an experiment's integrity
 and never in the method itself: the deletion operator described here, the planted struct trigger of
-Section~\ref{sec:XML:PullbackTrigger}, and the loader-safe modifications of the audit in Section~\ref{sec:XML:Audit}.
+Section~\ref{sec:XML:Trigger}, and the loader-safe modifications of the audit in Section~\ref{sec:XML:Audit}.
 The deletion operator never changes the fields that define the file's layout (found by a sweep over 2{,}000 training
 files) or the fields that break a particular file, replaces the remaining header fields with their most common value in
 the training set, zeroes the content bytes, and verifies every perturbed file; none of the 23{,}000 perturbed files of
@@ -97,7 +97,7 @@ seeded random permutation rather than by position.
 Any deletion produces files that a detector never saw in training, so a deletion curve measures how a model responds
 to unusual inputs as well as what it relies on. We therefore compare rankings only against one another, at equal
 budgets and under both fills, and rest no conclusion on deletion alone: the planted triggers
-(Sections~\ref{sec:XML:PullbackTrigger} and~\ref{sec:XML:PushforwardTrigger}) give a ground truth without deleting
+(Section~\ref{sec:XML:Trigger}) give a ground truth without deleting
 anything, and the audit (Section~\ref{sec:XML:Audit}) changes files only in ways the Windows loader accepts.
 
 \subsection{Windows of Bytes}
