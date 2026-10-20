@@ -68,6 +68,7 @@ from faithfulness import occlude  # noqa: E402
 
 __all__ = [
     "predictors",
+    "thresholds",
 ]
 
 
@@ -99,6 +100,18 @@ def predictors(pullback: FloatArray, occlusion_bytes: FloatArray, editable: Bool
         "occlusion_E": float(ev_occlusion[editable].sum()),
         "changed_C": float(changed.sum()),
     }
+
+
+def thresholds(models: Path, features: Path, predictions: Path, seed: int, fpr: float) -> tuple[float, float]:
+    """The GBDT's and MalConv's log-odds thresholds at `fpr` on the test split's benign files (as cm_disagreement_select)."""
+    gbdt_pred = pl.read_parquet(models / "gbdt" / f"seed-{seed}" / "ts_predictions.parquet")
+    p = gbdt_pred["prob"].to_numpy().clip(1e-15, 1 - 1e-15)
+    gbdt_pred = gbdt_pred.with_columns(pl.Series("gbdt_log_odds", np.log(p / (1 - p)))).join(
+        pl.read_parquet(features / "ts" / "meta.parquet").select("name", "label"), on="name")
+    benign = gbdt_pred.filter(pl.col("label") == 0)["gbdt_log_odds"].to_numpy()
+    malconv = load_malconv_predictions(predictions / f"malconv-seed{seed}")
+    malconv_benign = malconv.join(gbdt_pred.select("name", "label"), on="name").filter(pl.col("label") == 0)
+    return float(np.quantile(benign, 1 - fpr)), float(np.quantile(malconv_benign["malconv_log_odds"].to_numpy(), 1 - fpr))
 
 
 def _init_worker(model_file: Path, background: FloatArray) -> None:
@@ -206,16 +219,7 @@ def main() -> None:
     outdir = args.outdir / (f"seed-{args.seed}" + (f"-{args.tag}" if args.tag else ""))
     outdir.mkdir(parents=True, exist_ok=True)
 
-    # The GBDT's 1% FPR threshold on the test split's benign files (as in cm_disagreement_select.py).
-    gbdt_pred = pl.read_parquet(args.models / "gbdt" / f"seed-{args.seed}" / "ts_predictions.parquet")
-    p = gbdt_pred["prob"].to_numpy().clip(1e-15, 1 - 1e-15)
-    gbdt_pred = gbdt_pred.with_columns(pl.Series("gbdt_log_odds", np.log(p / (1 - p)))).join(
-        pl.read_parquet(args.features / "ts" / "meta.parquet").select("name", "label"), on="name")
-    benign = gbdt_pred.filter(pl.col("label") == 0)["gbdt_log_odds"].to_numpy()
-    gbdt_threshold = float(np.quantile(benign, 1 - args.fpr))
-    malconv = load_malconv_predictions(args.predictions / f"malconv-seed{args.seed}")
-    malconv_benign = malconv.join(gbdt_pred.select("name", "label"), on="name").filter(pl.col("label") == 0)
-    malconv_threshold = float(np.quantile(malconv_benign["malconv_log_odds"].to_numpy(), 1 - args.fpr))
+    gbdt_threshold, malconv_threshold = thresholds(args.models, args.features, args.predictions, args.seed, args.fpr)
 
     if args.tables_only:
         files = pl.read_parquet(outdir / "files.parquet")
