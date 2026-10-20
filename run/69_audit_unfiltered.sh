@@ -14,6 +14,11 @@ cd "$(dirname "$0")/.."
 source env/bin/activate
 export PYTHONHASHSEED=0
 
+# The IG of runs 38-39 lives in the filtered run's folder; discovery looks for it in its own --outdir.
+echo "Linking the cached IG (runs 38-39) into the unfiltered output folder."
+mkdir -p artifacts/experiments/audit_discover_unfiltered/seed-0
+ln -sfn "$PWD/artifacts/experiments/audit_discover/seed-0/ig" artifacts/experiments/audit_discover_unfiltered/seed-0/ig
+
 LOG=artifacts/logs/audit-discover-unfiltered-seed0.log
 echo "Unfiltered discovery: 2,000 files, 16 workers (~7 min). Log: $LOG"
 OMP_NUM_THREADS=1 python scripts/audit_discover.py \
