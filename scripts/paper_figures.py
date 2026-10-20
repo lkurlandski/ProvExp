@@ -1,11 +1,13 @@
 """
 Data files for the manuscript's pgfplots figures and result tables, written to `manuscript/assets/data/`.
 
-    pb_gbdt.dat      pullback faithfulness on the GBDT (Section 4.1; run 56): per deletion budget, the median GBDT
+    pb_gbdt.dat      pullback faithfulness on the GBDT (Section 5.1; run 66): per deletion budget, the median GBDT
                      evidence removed by each ranking in PB_CURVES
     pb_gbdt_area.dat the same experiment's deletion areas (mean evidence removed over the budgets below 100%), mean over
                      the files, with the median feature extractions per file (Figure 3, right; the areas in the text)
-    pf_malconv.dat   the pushforward on MalConv (Section 5.1; run 58): per deletion budget, the median MalConv
+    pf_gbdt.dat      the pushforward on the GBDT (Section 5.2; run 66): per resolution of the source, the median over
+                     files of each pushed-forward ranking's deletion area relative to the pullback of TreeSHAP
+    pf_malconv.dat   the pushforward on MalConv (Section 5.2; run 67): per deletion budget, the median MalConv
                      evidence removed by each ranking, over the files with every deletion verified
 
 Usage:
@@ -24,18 +26,21 @@ import polars as pl
 __all__ = [
     "pb_gbdt_areas",
     "pb_gbdt_curves",
+    "pf_gbdt_resolution",
     "pf_malconv_curves",
 ]
 
 
 ROOT = Path(__file__).parent.parent
-METHODS = ("pushforward", "surrogate", "ig_k256", "random_feat", "random")
+METHODS = ("pushforward", "pushforward:occlusion_k1024", "pushforward:kernelshap_k1024", "surrogate", "ig_k256", "random_feat",
+           "random")
 EXPLAINER = "treeshap_interventional"
 PB_CURVES = {
     f"pullback:{EXPLAINER}": "pullback",
     "occlusion": "occlusion_k256",
     "occlusion_k4096": "occlusion_k4096",
-    "field_occlusion": "field_oracle",
+    "kernelshap_k1024": "kernelshap_k1024",
+    "partition_b4096": "adaptive_b4096",
     "random": "random",
 }
 PB_AREAS = {
@@ -44,14 +49,26 @@ PB_AREAS = {
     f"pullback_k1024:{EXPLAINER}": ("pullback_k1024", None),
     f"pullback_k4096:{EXPLAINER}": ("pullback_k4096", None),
     f"pullback:{EXPLAINER}": ("pullback", None),
-    f"blackbox:{EXPLAINER}": ("blackbox_k256", "occlusion_extractions"),
     "occlusion_k64": ("occlusion_k64", "occlusion_extractions_k64"),
     "occlusion": ("occlusion_k256", "occlusion_extractions"),
     "occlusion_k1024": ("occlusion_k1024", "occlusion_extractions_k1024"),
     "occlusion_k4096": ("occlusion_k4096", "occlusion_extractions_k4096"),
+    "kernelshap_k64": ("kernelshap_k64", "kernelshap_k64_extractions"),
     "kernelshap_windows": ("kernelshap_k256", "kernelshap_windows_extractions"),
-    "field_occlusion": ("field_oracle", "field_oracle_extractions"),
+    "kernelshap_k1024": ("kernelshap_k1024", "kernelshap_k1024_extractions"),
+    "partition_b64": ("adaptive_b64", "partition_b64_extractions"),
+    "partition_b256": ("adaptive_b256", "partition_b256_extractions"),
+    "partition_b1024": ("adaptive_b1024", "partition_b1024_extractions"),
+    "partition_b4096": ("adaptive_b4096", "partition_b4096_extractions"),
     "random": ("random", None),
+}
+# Section 5.2 on the GBDT: per source resolution (windows; the bytes drawn at 2^20), the pushed-forward rankings.
+PF_WINDOWS = {64: "_k64", 256: "_k256", 1024: "_k1024", 4096: "_k4096", 2**20: "_bytes"}
+PF_SOURCES = {
+    "trend": "trend{k}:" + EXPLAINER,
+    "occlusion": "pushforward:occlusion{k}",
+    "kernelshap": "pushforward:kernelshap{k}",
+    "adaptive": "pushforward:partition{b}",
 }
 
 
@@ -66,7 +83,7 @@ def _pb_gbdt_evidence(run: Path) -> tuple[pl.DataFrame, pl.DataFrame]:
     files = pl.read_parquet(run / "files.parquet").filter(pl.col("status") == "ok")
     c = (
         curves.filter(pl.col("valid") & (pl.col("model") == "gbdt") & (pl.col("curve") == "deletion"))
-        .with_columns(pl.col("method").str.replace(r"^random:\d+$", "random"))
+        .with_columns(pl.col("method").str.replace(r"^(random|random_features):\d+$", "${1}"))
         .group_by("index", "method", "budget").agg(pl.col("log_odds").mean())
         .join(files.select("index", pl.col("log_odds:gbdt").alias("f0")), on="index")
         .with_columns((pl.col("f0").sign().replace(0, 1) * (pl.col("f0") - pl.col("log_odds"))).alias("removed"))
@@ -79,7 +96,7 @@ def pb_gbdt_curves(run: Path) -> pl.DataFrame:
     The median GBDT evidence removed per (budget, ranking) for the rankings in PB_CURVES.
 
     Args:
-        run: A scripts/faithfulness.py output directory with the field oracle (run 56).
+        run: A scripts/faithfulness.py output directory (run 66).
 
     Returns:
         One row per budget (budgets up to 50%, in percent), one column per ranking.
@@ -98,12 +115,12 @@ def pb_gbdt_areas(run: Path) -> pl.DataFrame:
     The deletion area of each ranking in PB_AREAS, mean over the files with every ranking, and its cost.
 
     Args:
-        run: A scripts/faithfulness.py output directory with the field oracle (run 56).
+        run: A scripts/faithfulness.py output directory (run 66).
 
     Returns:
         One row per ranking: its area (mean evidence removed over the budgets below 100%), its gain (area over random,
         relative to occlusion at 256 windows), and the median feature extractions per file (1 for the pullbacks, whose
-        P comes with the single extraction; the black-box pullback reuses occlusion's extractions; 0 for random).
+        P comes with the single extraction; 0 for random).
     """
     c, files = _pb_gbdt_evidence(run)
     areas = (
@@ -120,6 +137,47 @@ def pb_gbdt_areas(run: Path) -> pl.DataFrame:
         area = float(areas[method].to_numpy().mean())
         extractions = float(np.median(files[cost].to_numpy())) if cost is not None else (0.0 if method == "random" else 1.0)
         rows.append({"method": name, "area": area, "gain": (area - random) / (occlusion - random), "extractions": extractions})
+    return pl.DataFrame(rows)
+
+
+################################################################################
+# Pushforward on the GBDT
+################################################################################
+
+
+def pf_gbdt_resolution(run: Path) -> pl.DataFrame:
+    """
+    The deletion area of each pushed-forward ranking relative to the pullback of TreeSHAP, per source resolution.
+
+    Args:
+        run: A scripts/faithfulness.py output directory with the pushforward and the trend (run 66).
+
+    Returns:
+        One row per resolution (windows; the bytes at 2^20), one column per source in PF_SOURCES: the median over files
+        of the ranking's area over the reference's area, as scripts/pb1_tables.py reports it; NaN where not run.
+    """
+    c, _ = _pb_gbdt_evidence(run)
+    areas = (
+        c.filter(pl.col("budget") < 1.0).group_by("index", "method").agg(pl.col("removed").mean().alias("area"))
+        .pivot(on="method", index="index", values="area")
+    )
+    reference = f"pullback:{EXPLAINER}"
+    if reference not in areas.columns:
+        raise RuntimeError(f"The run has no reference ranking {reference}.")
+    rows = []
+    for windows, k in PF_WINDOWS.items():
+        row: dict[str, float] = {"windows": float(windows)}
+        for name, pattern in PF_SOURCES.items():
+            method = pattern.format(k=k, b=k.replace("_k", "_b"))
+            # NOTE: the primary window count (256) is stored without a suffix for some methods (e.g., occlusion).
+            if method not in areas.columns and method.endswith("_k256"):
+                method = method.removesuffix("_k256")
+            if method in areas.columns:
+                ratio = areas.select(pl.col(method) / pl.col(reference)).drop_nulls().to_series().to_numpy()
+                row[name] = float(np.median(ratio))
+            else:
+                row[name] = float("nan")
+        rows.append(row)
     return pl.DataFrame(rows)
 
 
@@ -151,7 +209,8 @@ def pf_malconv_curves(run: Path) -> pl.DataFrame:
     missing = [m for m in METHODS if m not in wide.columns]
     if missing:
         raise RuntimeError(f"The run has no rankings {missing}.")
-    return wide.select("budget", *METHODS).with_columns(pl.col("budget") * 100)
+    names = {m: m.replace("pushforward:", "pf_") for m in METHODS}
+    return wide.select("budget", *[pl.col(m).alias(n) for m, n in names.items()]).with_columns(pl.col("budget") * 100)
 
 
 ################################################################################
@@ -161,8 +220,8 @@ def pf_malconv_curves(run: Path) -> pl.DataFrame:
 
 def main() -> None:
     parser = ArgumentParser(description="Write the data files of the manuscript's figures.")
-    parser.add_argument("--pb_gbdt", type=Path, default=ROOT / "artifacts" / "experiments" / "e1" / "seed-0" / "zeros-typical-header-oracle")
-    parser.add_argument("--pf_malconv", type=Path, default=ROOT / "artifacts" / "experiments" / "pf_malconv" / "seed-0")
+    parser.add_argument("--pb_gbdt", type=Path, default=ROOT / "artifacts" / "experiments" / "e1" / "seed-0" / "zeros-typical-header-shared")
+    parser.add_argument("--pf_malconv", type=Path, default=ROOT / "artifacts" / "experiments" / "pf_malconv" / "seed-0-shared")
     parser.add_argument("--outdir", type=Path, default=ROOT / "manuscript" / "assets" / "data")
     args = parser.parse_args()
 
@@ -173,6 +232,9 @@ def main() -> None:
     pb_areas = pb_gbdt_areas(args.pb_gbdt)
     pb_areas.write_csv(args.outdir / "pb_gbdt_area.dat", separator=" ", float_precision=4)
     print(pb_areas)
+    pf_gbdt = pf_gbdt_resolution(args.pb_gbdt)
+    pf_gbdt.write_csv(args.outdir / "pf_gbdt.dat", separator=" ", float_precision=4)
+    print(pf_gbdt)
     pf = pf_malconv_curves(args.pf_malconv)
     pf.write_csv(args.outdir / "pf_malconv.dat", separator=" ", float_precision=4)
     print(pf)

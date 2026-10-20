@@ -10,8 +10,8 @@ pushforward. The data, detectors, explainers, and deletion operator are those of
 A pulled-back explanation is useful only if the bytes it ranks highest are the bytes the decision rests on. We compare
 the pullback with explaining the GBDT directly over the bytes, with the window explainers of
 Section~\ref{sec:XML:SetupExplainers}, and score every ranking by deleting the bytes it ranks highest
-(Section~\ref{sec:XML:SetupDeletion}). In short, at the same resolution the pullback is as faithful as direct
-explanation at a small fraction of its cost, and at the resolution of single bytes, which direct explanation cannot
+(Section~\ref{sec:XML:SetupDeletion}). In short, at the same resolution the pullback is as faithful as occlusion at
+a small fraction of its cost, and at the resolution of single bytes, which direct explanation cannot
 afford, it removes substantially more evidence than any direct method, adaptive ones included
 (Figure~\ref{fig:XML:PullbackDeletion}).
 
@@ -23,24 +23,26 @@ windows; like the pullback, none of them uses knowledge of the file format. A ra
 
 \input{assets/fig_pullback_cost}
 
-At the same resolution, the pullback is as faithful as direct explanation at a fraction of its cost. Summed into the
+At the same resolution, the pullback is as faithful as occlusion at a fraction of its cost. Summed into the
 windows that occlusion uses, the pullback removes as much evidence as occlusion at 64, 256, and 1{,}024 windows (4.6,
 5.0, and 5.4 log-odds against 4.8, 5.1, and 5.5; $p \geq 0.55$) and more at 4{,}096 (6.0 against 5.5, $p = 0.008$),
-while needing one query of the detector instead of one per window: at 256 windows, 0.15\,s instead of 20\,s for the
-median file, or 1/135 of the time. KernelSHAP over the same 256 windows does better than occlusion (on 83 of 100 files)
-and matches occlusion at 1{,}024 and 4{,}096 windows, at eight times occlusion's queries (2{,}050). The pullback also needs its feature-space explanation, whose cost depends on the explainer: milliseconds for TreeSHAP, but about 45\,s per file for
+while needing one query of the detector instead of one per window: at 256 windows, 0.12\,s instead of 11\,s for the
+median file, or about 1/95 of the time. KernelSHAP over the same 256 windows does better than both (5.5 log-odds; better than occlusion on 83 of 100
+files), at eight times occlusion's queries (2{,}050). The pullback also needs its feature-space explanation, whose cost depends on the explainer: milliseconds for TreeSHAP, but about 45\,s per file for
 KernelSHAP, whose own cost then dominates either way. The three GBDT explainers give pullbacks within about 0.2
 log-odds of one another.
 
 Figure~\ref{fig:XML:PullbackDeletion} shows what byte resolution adds. Occlusion does not approach it by refining its
 windows: the evidence it removes rises to 5.5 log-odds at 1{,}024 windows and then stops (5.5 at 4{,}096 windows and
-4{,}098 queries per file), plausibly because occluding a small window changes the features too little to rank it;
-KernelSHAP over windows ends at the same level. Adaptive KernelSHAP, which spends its queries on the windows whose
-deletion matters, does better than uniform windows at the same cost \synthetic{(5.8 log-odds at 1{,}026 queries)}, but it
-stops short as well, for the same reason: below a few hundred bytes, deleting a window barely changes the features.
-The byte-level pullback, from the same single extraction, removes 8.0.
+4{,}098 queries per file), plausibly because occluding a small window changes the features too little to rank it.
+KernelSHAP, which deletes many windows at once, does better: over 1{,}024 windows it removes 6.3 log-odds, the most of
+any direct method, at 8{,}194 queries per file. Adaptive KernelSHAP, which spends its queries on the windows whose
+deletion matters, pays off only with a large budget: at 4{,}098 queries it removes 6.0 log-odds against occlusion's 5.5
+(better on 70 of 100 files), but at 256 queries it removes less than uniform windows (4.5 against 5.1), since its first
+queries go to coarse windows. The byte-level pullback, from the same single extraction, removes 8.0.
 Above the 0.9 that a random ranking removes, that is 1.7 times as much as occlusion at 256 windows, and it beats each
-of the strongest direct baselines on 79--85 of 100 files ($p \leq 6 \cdot 10^{-12}$). The advantage holds under both variants of the operator: with random instead of zero content, the byte-level
+of the strongest direct baselines: KernelSHAP over 1{,}024 windows on 72 of 100 files ($p = 2 \cdot 10^{-8}$), adaptive
+KernelSHAP and occlusion at 4{,}096 windows on 81 and 80 ($p \leq 3 \cdot 10^{-12}$). The advantage holds under both variants of the operator: with random instead of zero content, the byte-level
 pullback again removes 1.7 times as much evidence above random as occlusion and beats it on 81 of 100 files. Deleting
 the top half of the bytes can remove more evidence than deleting everything (6.4 log-odds in the median file), for
 every method family; this \emph{overshoot} arises mostly because rankings
@@ -65,15 +67,17 @@ decisions rest on about twice as faithfully as a surrogate model trained to imit
 
 \paragraph{On the GBDT\@.} The GBDT computes the features, so TreeSHAP explains them directly and serves as the
 reference. Every pushed-forward explanation is far above random features, and the finer the windows it comes from,
-the closer it comes to TreeSHAP: \synthetic{pushed forward from adaptive KernelSHAP, it removes 0.55 of TreeSHAP's
-evidence at 64 windows and 0.80 at 4{,}096}. To see how much of this limit lies in the source and how much in the
+the closer it comes to TreeSHAP: pushed forward from adaptive KernelSHAP, it removes 0.61 of TreeSHAP's
+evidence at 64 windows and 0.76 at 4{,}096, and from KernelSHAP 0.68 at 64 windows and 0.83 at 1{,}024. Occlusion is the
+exception: pushed forward, it stays near 0.65 at every resolution, as in Section~\ref{sec:XML:PullbackFaithfulness},
+where finer windows gained it little. To see how much of this limit lies in the source and how much in the
 transfer, we express TreeSHAP's own explanation at $K$ windows (pull it back, sum it over the windows, and push it
-forward through $P$ coarsened to the same windows) and score it the same way. It traces the same rise
-(Figure~\ref{fig:XML:PushforwardResolution}), and the direct explainers sit close to it: what limits the pushforward is
-the resolution of the explanation it is given, since the coarser the windows, the more features share each one
-(Section~\ref{sec:XML:SetupWindows}), not the transfer itself. Pushed forward from the bytes, TreeSHAP's explanation
-removes \synthetic{0.97} of its own evidence; byte deletion cannot see the rest, which lies in features with identical
-provenance that no transfer can tell apart (Proposition~\ref{prop:ExactPushforward}). The pushforward costs its source's
+forward through $P$ coarsened to the same windows) and score it the same way. It traces the same rise, from 0.64 at 64 windows to 0.79 at 4{,}096
+(Figure~\ref{fig:XML:PushforwardResolution}), and KernelSHAP and adaptive KernelSHAP follow it or exceed it: what
+limits the pushforward is the resolution of the explanation it is given, since the coarser the windows, the more
+features share each one (Section~\ref{sec:XML:SetupWindows}), not the transfer itself. Pushed forward from the bytes,
+TreeSHAP's explanation removes all of its own evidence (1.00): at byte resolution, the transfer loses nothing that byte
+deletion can measure. The pushforward costs its source's
 queries plus one extraction, so on the GBDT it is dearer than TreeSHAP, which needs none; this test is about the
 reference, not the cost.
 
@@ -93,16 +97,17 @@ surrogate's explanation (median area 6.25 against 3.28 log-odds; larger on 99 of
 2.7 times as much as random feature explanations (Figure~\ref{fig:XML:PushforwardMalConv}); with random instead of zero
 fill, the margin over the surrogate is the same (2.0 times, 99 of 99 files). The exact pushforward ranks the features no
 differently (median area 6.25 as well), so the one-step pushforward suffices. The advantage does not come from
-MalConv's gradients alone: \synthetic{pushed forward from occlusion or KernelSHAP over 1{,}024 windows, which use no
-gradients, the pushforward still removes more of MalConv's evidence than the surrogate (4.1 and 4.4 against 3.28
-log-odds)}, and like on the GBDT it improves with the resolution of its source. The surrogate imitates MalConv's outputs
+MalConv's gradients alone: pushed forward from occlusion or KernelSHAP over 1{,}024 windows, which use no
+gradients, the pushforward still removes more of MalConv's evidence than the surrogate (4.2 and 4.7 against 3.28
+log-odds; larger on 71 and 83 of 100 files, $p \leq 2 \cdot 10^{-7}$), and like on the GBDT it improves with the
+resolution of its source (occlusion from 3.8 at 64 windows to 4.9 at 4{,}096). The surrogate imitates MalConv's outputs
 closely, but its explanation describes the surrogate; the pushforward describes MalConv, in the surrogate's vocabulary.
 Integrated Gradients itself, per byte, removes much more, but not because it is a better summary: deleting its top 1\%
 of bytes already removes three times as much evidence as deleting the whole file, with either fill, a known fragility
 of MalConv. Any summary into features gives up this byte-level precision; among summaries into features, the
 pushforward is the faithful one.
 
-Both transfers are thus faithful. The pullback is as faithful as direct problem-space explanation at the same
+Both transfers are thus faithful. The pullback is as faithful as occlusion at the same
 resolution, at a small fraction of its cost, and it reaches byte resolution, which direct explanation cannot afford.
 The pushforward is faithful up to the resolution of its source, and on MalConv it names the features the detector's
 decisions rest on about twice as faithfully as a surrogate. Section~\ref{sec:XML:Applications} uses each direction for

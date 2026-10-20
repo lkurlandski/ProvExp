@@ -12,7 +12,7 @@ has a closed form, since the score is a weighted sum of per-feature games that a
 items: byte $z_i$ receives $\sum_j \beta_j$ times its recorded contribution to feature $x_j$. We compute this directly
 from the recorded contributions, and separately pull the model's feature-space Shapley values ($a_j = \beta_j \Delta_j$,
 against the baseline of no items present) back through $P$. The two coincide to numerical precision
-\synthetic{(maximum difference $10^{-12}$ of a log-odd over the whole explanation set)}, as the proposition states. The
+(maximum difference $9 \cdot 10^{-14}$ of a log-odd over the 2{,}000 files of the explanation set), as the proposition states. The
 check needs no sampling and runs on every file; it is a consistency check between two code paths that share the same
 recorded contributions, not an independent re-derivation, and it catches a wrong normalization of $P$, a baseline used
 inconsistently between the explainer and the pullback, or a mistake in how items map to bytes.

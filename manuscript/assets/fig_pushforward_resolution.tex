@@ -1,31 +1,33 @@
-% What survives the pushforward at each resolution (GBDT, 100 pilot files, path TreeSHAP, the matched reference; runs
-% 18 and 20, docs/experiments/pf1.md). OLD PROTOCOL (feature-space deletion, R): to regenerate under byte deletion (WP2). "bytes" is drawn at 2^20 windows.
+% What survives the pushforward at each resolution (GBDT, 100 pilot files, interventional TreeSHAP as the reference;
+% byte deletion, run 66). Data: scripts/paper_figures.py -> data/pf_gbdt.dat: per source resolution, the median over
+% files of the pushed-forward ranking's deletion area over that of TreeSHAP's pullback. "bytes" is drawn at 2^20 windows.
+% KernelSHAP at 4,096 windows was not run (deferred; about 2 h).
 \begin{figure}[t]
   \centering
   \begin{tikzpicture}
     \begin{axis}[
       paper,
-      xmode=log, log basis x=2, xmin=40, xmax=1700000, ymin=0.2, ymax=0.9,
+      xmode=log, log basis x=2, xmin=40, xmax=1700000, ymin=0.5, ymax=1.05,
       xtick={64,256,1024,4096,16384,65536,262144,1048576},
       xticklabels={64,256,1k,4k,16k,64k,256k,bytes},
       xlabel={Resolution of the source explanation (windows)},
-      ylabel={$R$ (relative to TreeSHAP)},
-      legend pos=south east,
+      ylabel={Evidence removed (relative to TreeSHAP)},
+      legend pos=south east, legend style={font=\scriptsize},
     ]
-      \addplot[ours, thick, mark=*, mark size=1.6pt]
-        coordinates {(64,0.34) (256,0.37) (1024,0.43) (4096,0.50) (16384,0.61) (65536,0.69) (262144,0.75) (1048576,0.80)};
+      \addplot[ours, thick, mark=*, mark size=1.6pt] table[x=windows, y=trend] {assets/data/pf_gbdt.dat};
       \addlegendentry{TreeSHAP's information, pushed forward}
-      \addplot[direct, thick, mark=square*, mark size=1.6pt]
-        coordinates {(64,0.31) (256,0.32) (1024,0.34) (4096,0.37)};
+      \addplot[direct!60!black, thick, mark=triangle*, mark size=1.8pt] table[x=windows, y=kernelshap] {assets/data/pf_gbdt.dat};
+      \addlegendentry{KernelSHAP, pushed forward}
+      \addplot[direct!60!black, thick, dashed, mark=diamond*, mark size=1.8pt] table[x=windows, y=adaptive] {assets/data/pf_gbdt.dat};
+      \addlegendentry{Adaptive KernelSHAP, pushed forward}
+      \addplot[direct, thick, mark=square*, mark size=1.4pt] table[x=windows, y=occlusion] {assets/data/pf_gbdt.dat};
       \addlegendentry{Occlusion, pushed forward}
-      \addplot[other, only marks, mark=diamond*, mark size=2.4pt] coordinates {(256,0.40)};
-      \addlegendentry{KernelSHAP (256 windows), pushed forward}
     \end{axis}
   \end{tikzpicture}
   \caption{Faithfulness of the pushforward rises with the resolution of the explanation it transfers (GBDT, 100 files).
-  The share of TreeSHAP's evidence removed when deleting the bytes of the top-ranked features. TreeSHAP's own explanation,
-  expressed over windows of each size and pushed forward, bounds what a window-level source can reach; the window
-  explainers stay close to that bound. \synthetic{Placeholder: the data shown are from the earlier feature-space
-  deletion protocol and will be regenerated under byte deletion.}}
+  The evidence removed by deleting the bytes of the top-ranked features, relative to deleting the bytes that TreeSHAP's
+  pullback ranks highest (median over files). TreeSHAP's own explanation, expressed over windows of each size and pushed
+  forward, shows what the information at each resolution supports; KernelSHAP and adaptive KernelSHAP follow it or
+  exceed it, and occlusion, which changes the features too little in small windows, stays flat.}
   \label{fig:XML:PushforwardResolution}
 \end{figure}
