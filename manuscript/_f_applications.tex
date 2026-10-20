@@ -33,8 +33,8 @@ the extractor and by the loader could misplace $P$, and we leave such files out 
 
 The pullback puts the explanations of a feature-based and a raw-byte detector on the same bytes, at byte resolution, so
 that a defender can compare them one file at a time. The defender asks three questions. Which bytes do both detectors
-rely on (\emph{shared reliance}), and does an attacker who evades the raw-byte detector also weaken the feature-based
-one, file by file (\emph{attack transfer})? And when the detectors disagree, is the flagging detector's evidence content
+rely on (\emph{shared reliance}), and does an attacker guided by the raw-byte detector also weaken the feature-based
+one, and on which files (\emph{attack transfer})? And when the detectors disagree, is the flagging detector's evidence content
 that the other does not read, or content that it reads the other way (\emph{disagreement triage})? Disagreements are where the defender learns most: one detector may have been evaded, or
 may have a blind spot or a false positive.
 
@@ -75,15 +75,28 @@ header and data-directory fields, such as the DLL characteristic, the sizes of t
 directory, and the checksum, consistent with MalConv's known reliance on the header~\cite{demetrio2019explaining}.
 
 \paragraph{Attack transfer.} Deletion shows where shared reliance lies, not what an attacker gains from it. We
-therefore attack MalConv as the setting allows and ask whether the pullback predicts, file by file, how much the attack
-also costs the GBDT. The attack is a white-box gradient attack on MalConv's byte
+therefore play the attacker of the setting, as a defender red-teaming its own pair would, with one restriction that
+matches practice: the attacker explains only MalConv, the detector whose gradients and byte-level explanations are
+directly available. The question is whether such an attack also costs the GBDT, and whether the defender can tell, file
+by file and before any change is made, which of the GBDT's detections it puts at risk.
+
+The first attack is the standard one: a white-box gradient attack on MalConv's byte
 embeddings~\cite{kolosnjaji2018adversarial, kreuk2018deceiving} that may rewrite only the loader-ignored bytes of the
 DOS header, the DOS stub, and the slack at the end of sections~\cite{demetrio2019explaining, suciu2019exploring,
-demetrio2021adversarial}; it runs for a fixed budget of queries and stops early once MalConv's score falls below its
-threshold. Because this editable region $E$ is fixed before the attack, the GBDT's pullback on the original file can
-place evidence on it, and its sum over $E$ says how much of the GBDT's verdict rests on bytes this attacker may change,
-before any attack is run. We compare it, as a predictor of the drop in the GBDT's log-odds on the adversarial file,
-with the same sum from occlusion's windows and with the number of bytes the attack changed.
+demetrio2021adversarial}, and stops once MalConv's score falls below its threshold. On 100 held-out malware that both
+detectors detect, it evades MalConv on 81\% of them, but the GBDT's malware log-odds \emph{rise} on 78\% (median
+$+1.06$), and its verdict never flips. The pullback shows why: it places a median 0.1\% of the GBDT's log-odds on these
+bytes, whereas the shared reliance lies in the optional header and the data directories. The attack writes new content
+into a region the GBDT barely reads, and what it writes there makes the GBDT more confident.
+
+The second attack keeps the attacker but moves it to where both detectors look. In each file it edits the three
+fields with the most of MalConv's Integrated Gradients evidence among those the loader lets it change, under the rules
+of Section~\ref{sec:XML:Audit}: a field the loader ignores is scrambled, a field it checks takes a valid value drawn
+from benign files, and $P$ locates each field's bytes in the file. The fields chosen are mostly entries of the
+certificate table and the checksum, a median of 24 bytes per file. On 500 held-out malware that both detectors detect,
+these edits lower the GBDT's log-odds by a median 1.36, by more than one log-odds on 58\% of files, and lower both
+detectors' by more than one on 43\%. Guided by MalConv alone, the attacker thus weakens the GBDT whenever it edits
+content the GBDT also reads.
 
 \begin{table}[t]
   \centering
@@ -92,24 +105,32 @@ with the same sum from occlusion's windows and with the number of bytes the atta
     \toprule
     Predictor of the GBDT's drop & Spearman $\rho$ & AUC \\
     \midrule
-    GBDT evidence on $E$, pullback & \synthetic{0.58} & \synthetic{0.81} \\
-    GBDT evidence on $E$, occlusion & \synthetic{0.31} & \synthetic{0.66} \\
-    Bytes changed by the attack & \synthetic{0.12} & \synthetic{0.55} \\
+    GBDT evidence on the fields, pullback & 0.48 & 0.78 \\
+    GBDT evidence on the fields, occlusion & 0.21 & 0.60 \\
+    Bytes changed by the edits & 0.03 & 0.55 \\
     \bottomrule
   \end{tabular}
-  \caption{Attack transfer: an attack on MalConv that rewrites only loader-ignored bytes (the region $E$), and how well
-  the GBDT's evidence on $E$ in the original file predicts the drop in the GBDT's log-odds. AUC: for a drop of more than
-  one log-odds. \synthetic{Placeholder values.}}
+  \caption{Predicting attack transfer. An attacker guided by MalConv's explanation alone edits, in each of 500 held-out
+  malware that both detectors detect, the three loader-safe fields with the most of MalConv's evidence. Before any
+  edit, the GBDT's evidence on those fields, from its pullback or from occlusion over 4{,}096 windows (no $P$), and the
+  number of bytes the edits change predict the drop in the GBDT's log-odds. AUC: for a drop of more than one log-odds
+  (58\% of files).}
   \label{tab:XML:Transfer}
 \end{table}
 
-On \synthetic{100} held-out malware that both detectors detect, \synthetic{the attack evades MalConv on 74\% of them and
-takes the GBDT's malware probability below its threshold on 9\%}. The pullback predicts which files these are
-(Table~\ref{tab:XML:Transfer}): \synthetic{its evidence on $E$ correlates with the GBDT's drop at Spearman 0.58,
-against 0.31 over windows and 0.12 for the number of bytes changed}. The editable region is small and lies next to
-content the GBDT reads in different ways, such as the Rich header inside the DOS stub, which EMBER summarizes in named
-features, and section data around the slack; windows blur these together. A defender can thus tell, per file, which
-of the feature-based detector's detections an attacker who evades the raw-byte detector would also put at risk.
+Which detections are at risk varies from file to file, and the pullback predicts it before any edit. Since the defender
+owns MalConv, it can compute the attacker's choice of fields itself; what it needs to know is how much of the GBDT's
+verdict rests on them. The GBDT's pullback, summed over the bytes of the chosen fields, ranks the files by the GBDT's
+eventual drop at Spearman 0.48 and separates the files that lose more than one log-odds at AUC 0.78
+(Table~\ref{tab:XML:Transfer}). The GBDT's occlusion over 4{,}096 windows, summed over the same bytes, reaches 0.21 and
+0.60 (the difference in $\rho$ has a 95\% bootstrap interval of 0.17 to 0.38), and the number of bytes changed predicts
+nothing. The fields are a few bytes each and lie next to content the GBDT reads in other ways, such as the remaining
+header fields and the rest of the certificate table; a window spreads one value over all of it, whereas the pullback
+credits each field with what the GBDT draws from it. Transfer is also asymmetric: an attacker who explains only the GBDT
+and edits its three strongest loader-safe fields lowers MalConv's log-odds by a median 0.66, half the GBDT's drop
+under MalConv-guided edits, and predicting that drop needs only MalConv's own Integrated Gradients, without $P$. A
+defender can thus tell, per file, which of the feature-based detector's detections an attacker guided by the raw-byte
+detector would also put at risk.
 
 \begin{table}[t]
   \centering
@@ -296,7 +317,7 @@ fields zeroed lowers evasion to $1.8\%$ with no measurable clean-detection cost.
 \end{table}
 
 The two applications use the transfers in opposite directions on the same pair of detectors. File by file, the
-pullback shows which bytes both detectors rely on, predicts which detections an attacker who evades the raw-byte
+pullback shows which bytes both detectors rely on, predicts which detections an attacker guided by the raw-byte
 detector also puts at risk, and, when the detectors disagree, shows whether they read the same bytes differently;
 across the corpus, the pushforward names what the raw-byte detector relies on, and loader-safe changes to it evade the
 detector. Neither needs a hand-built mapping from features to bytes.

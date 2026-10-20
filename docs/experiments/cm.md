@@ -266,3 +266,16 @@ GBDT's pullback evidence on the edited fields predicts the GBDT's drop: Spearman
 positives) vs. occlusion's evidence on the same fields 0.25 (0.64) and bytes changed -0.04 (0.52). The pullback leads
 the windows in all five arms (0.34-0.55 vs. 0.11-0.25); per-arm bootstrap CIs of the difference reach about -0.01
 (gbdt_only: [0.10, 0.57]). Pooled over 500 edits: 0.45 vs. 0.20. Pilot scale; 500 files would settle significance.
+
+**Run 72 (500 files, 2026-10-20): the prediction holds; in the paper (6.1, Table 2).** Clean (2,500 edits ok, 3
+unparsed). Arm malconv_only: Spearman 0.48 (pullback) vs. 0.21 (occlusion, 4,096 windows) vs. 0.03 (bytes); AUC (drop >
+1, 291/499 positives) 0.78 / 0.60 / 0.55; bootstrap CI of the rho gap [0.17, 0.38]. The lead holds in 4 of 5 arms
+(CIs above 0); in shared_pullback it does not (0.26 vs. 0.20, CI [-0.05, 0.16]); that arm is not in the paper.
+Medians, malconv_only: GBDT drop 1.36 (> 1 on 58%, rises on 14%), MalConv drop 1.45, both > 1 on 43%, MalConv evaded
+12%, 24 bytes changed; fields chosen are 53% authenticode, 28% header (CheckSum 168 of 1,497), 9% data directories, 7%
+DOS message, 3% Rich header. Mirror (gbdt_only): MalConv drop 0.66. Five-way "both drop": shared pullback 33%, shared
+windows 28%, MalConv-only 43%, GBDT-only 28%, random 8% (MalConv-only now beats shared pullback, p = 6e-6).
+
+*Known quirk:* `audit_evade.benign_pools` casts two benign ImageBase values above 2^63 to int64 (the RuntimeWarning in
+the log), giving a junk pool entry (2 of 20,000 rows; it passes the 64K-alignment filter). Negligible; affects 6.2's
+evasion runs equally. Fix (drop values outside int64) only together with a rerun, user decides.

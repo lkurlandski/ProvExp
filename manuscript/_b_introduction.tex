@@ -57,7 +57,8 @@ fields. In summary, we make the following contributions:
     \item \textbf{The pullback} (Sections~\ref{sec:XML:PullbackFaithfulness}
     and~\ref{sec:XML:Comparison}): faithful at a fraction of the cost of direct
     problem-space explanation and precise to the byte; it triages disagreements between a feature-based and a raw-byte
-    detector, file by file, where windows of bytes reach the opposite conclusion.
+    detector, file by file, where windows of bytes reach the opposite conclusion, and predicts, before any change, which
+    of the feature-based detector's detections an attacker guided by the raw-byte detector also puts at risk.
     \item \textbf{The pushforward} (Sections~\ref{sec:XML:PushforwardFaithfulness}
     and~\ref{sec:XML:Audit}): faithful up to the resolution of its source,
     and on MalConv more faithful than a surrogate model; it audits a raw-byte detector across a corpus in named features, confirming reliance that, changed only as the

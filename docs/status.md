@@ -1,5 +1,18 @@
 # Status
 
+**2026-10-20 (afternoon): 6.1 written; run/72 read.** The pullback's lead held at 500 files (hypothesis held).
+- **Run 72:** clean (3 of 2,500 edits unparsed). MalConv-guided edits of 3 loader-safe fields: Spearman 0.48 (pullback)
+  vs. 0.21 (occlusion, 4,096 windows) vs. 0.03 (bytes); AUC 0.78 / 0.60 / 0.55 (drop > 1, 291/499); CI of the rho gap
+  [0.17, 0.38]. Lead holds in 4 of 5 arms; not in shared_pullback (CI [-0.05, 0.16]; not in the paper). Details and the
+  ImageBase int64 quirk of `benign_pools` (negligible) in `docs/experiments/cm.md`.
+- **Manuscript:** 6.1's attack paragraph rewritten in three steps (run 68's stub/slack attack: MalConv evaded 81%, GBDT
+  rises, pullback shows why; MalConv-guided field edits: GBDT drop 1.36, both > 1 on 43%; the prediction, Table 2), plus
+  the asymmetric mirror in one sentence. Coherence: 6.1 opener's question, Section 6 close, intro's pullback bullet
+  (new clause), discussion's "From reliance to attacks" (TODO removed; why the stub attack's rise is not predicted).
+  `make check` clean. Remaining blue: 6.2's retrained row and its sentence; the discussion's Android sentence.
+- **Next / waiting on the user:** the deferred items (KernelSHAP@4096 on the GBDT, ~2 h; MalConv retraining with the
+  audited fields zeroed; scale-up and seeds; W7), then the front and back matter once the body is final.
+
 **2026-10-20 (end of morning session): Section 5, 6.2, and Appendix C filled; 6.1's claim decided, waiting on
 run/72 (500 files, the user is running it).**
 - **6.1 decided (user, 2026-10-20).** Claim: before any attack, the GBDT's pullback on the fields an attacker who

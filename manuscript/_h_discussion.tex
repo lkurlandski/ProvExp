@@ -31,12 +31,13 @@ features; the same machinery applies unchanged to any other feature-based model,
 verified on every file, which makes deletion a clean measurement of reliance, but it does not keep programs running.
 Section~\ref{sec:XML:Applications} therefore rests its security conclusions on changes that the Windows loader
 ignores or allows, following the format's documentation, so the changes are ones an attacker could make; we did not
-execute the modified files. Section~\ref{sec:XML:Comparison} uses one such change, a gradient attack confined to loader-ignored bytes, to ask
-whether the pullback predicts a transfer to the feature-based detector. Our attacker stays deliberately narrow:
-appending content, injecting sections, or packing evade MalConv more easily~\cite{demetrio2021adversarial}, and
-extending the same transfer analysis to them is a natural next step.
-% TODO (WP8): if run/68 shows no transfer, 6.1 drops attack transfer (option 1 fallback); then reword the first
-% sentence here back to posing the question as open.
+execute the modified files. Section~\ref{sec:XML:Comparison} uses two such changes, a gradient attack confined to
+loader-ignored bytes and edits of loader-safe fields, to ask whether the pullback predicts a transfer to the
+feature-based detector. Our attacker stays deliberately narrow:
+appending content, injecting sections, or packing evade MalConv more easily~\cite{demetrio2021adversarial}. An
+explanation of the original file measures the evidence that a change can remove, not the evidence that new content
+adds, which is why the gradient attack's rise in the GBDT's score is explained but not predicted; extending the
+transfer analysis to attacks that add content is a natural next step.
 
 \paragraph{Mitigation.} The audit points to a countermeasure, and Section~\ref{sec:XML:Audit} shows that it is a
 trade-off: zeroing the fields an attacker can change removes most of the measured attack surface but costs a few points

@@ -232,14 +232,14 @@ MalConv (arm `malconv_only`), the GBDT's pullback evidence on the edited fields 
 
 | predictor of the GBDT's drop (MalConv-guided edits of 3 loader-safe fields) | operator | Spearman ρ | AUC (drop > 1) |
 |---|---|---|---|
-| GBDT's evidence on the edited fields, pullback | pullback | 0.47 (run 71) | 0.78 |
-| GBDT's evidence on the edited fields, occlusion over 4,096 windows | none | 0.25 | 0.64 |
-| bytes changed | none | -0.04 | 0.52 |
+| GBDT's evidence on the edited fields, pullback | pullback | 0.48 (run 72; run 71: 0.47) | 0.78 (0.78) |
+| GBDT's evidence on the edited fields, occlusion over 4,096 windows | none | 0.21 (0.25) | 0.60 (0.64) |
+| bytes changed | none | 0.03 (-0.04) | 0.55 (0.52) |
 
 Context for the text: run 68's attack on E evades MalConv on 81% and the GBDT rises (the pullback puts ~0.1% of the
 GBDT's evidence on E); MalConv-guided field edits drop the GBDT by a median 1.31 and both detectors on 37% of files.
 The GBDT-guided mirror is one sentence (asymmetric transfer; its predictor needs no P). Defender framing kept. The
-five-way selection table stays in `docs/experiments/cm.md`. Final numbers from run/72 (500 files).
+five-way selection table stays in `docs/experiments/cm.md`. **Run 72 (500 files): the lead holds** (CI of rho pullback - rho windows [0.17, 0.38]; 291/499 positives); written into 6.1 and Table 2 (2026-10-20).
 
 ### Part B: triage that decides a disagreement (option 2): DROPPED 2026-10-19
 
