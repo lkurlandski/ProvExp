@@ -10,8 +10,8 @@
   the asymmetric mirror in one sentence. Coherence: 6.1 opener's question, Section 6 close, intro's pullback bullet
   (new clause), discussion's "From reliance to attacks" (TODO removed; why the stub attack's rise is not predicted).
   `make check` clean. Remaining blue: 6.2's retrained row and its sentence; the discussion's Android sentence.
-- **ImageBase pool bug fixed** (commit 534edc3): **run/73** (~25 min, user runs it) reruns 49, 59, 72 with the fix;
-  then compare with the old numbers and update 6.1 (Table 2) and 6.2 (evasion rates, Table 5) if anything moved.
+- **ImageBase pool bug fixed** (commit 534edc3); **run/73** reran 49, 59, 72: every estimate and p-value unchanged
+  (some bootstrap CI endpoints move by 0.1 point). Manuscript unchanged; the `*fixpools*` outputs are the current ones.
 - **Next / waiting on the user:** the deferred items (KernelSHAP@4096 on the GBDT, ~2 h; MalConv retraining with the
   audited fields zeroed; scale-up and seeds; W7), then the front and back matter once the body is final.
 

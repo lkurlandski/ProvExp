@@ -6,6 +6,8 @@
 # run 49 (6.2's loader-safe evasion and its paired tests), run 59 (Table 5, test-time mitigation; its no-defense row
 # reproduces run 49), run 72 (6.1's Table 2; reuses run 72's IG, so no GPU work).
 # Hypothesis: every number moves by at most a few tenths of a point (a junk draw is rare and only skips one field).
+# Ran (2026-10-20, ~25 min): hypothesis held, and more strongly. Every estimate and p-value of runs 49, 59, and 72 is
+# unchanged; only some bootstrap CI endpoints move by 0.1 point (resampling). No manuscript change.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 source env/bin/activate

@@ -18,9 +18,6 @@ sentence. Explain in plain language; ask before changing what a claim is for. Fo
 - KernelSHAP / adaptive KernelSHAP at 4,096 windows on the GBDT (~2 h; KernelSHAP@4096 missing from Figure 4).
 - Retraining MalConv with the audited fields zeroed (Table 5's blue row); a stronger attacker on the mitigated MalConv.
 - Scale-up of Sections 5/6 to 500+ files and seeds 0-2; W7 (Android).
-- **First: read run/73** (the reruns of 49, 59, 72 after the ImageBase pool fix; logs `artifacts/logs/*fixpools*`).
-  Compare with the old numbers (expected: moves of a few tenths of a point at most) and update 6.1's Table 2 and 6.2's
-  evasion rates, paired tests, and Table 5 in the manuscript, plus `docs/experiments/{cm,audit}.md`.
 - Then a read-through of the whole body for coherence, and the front and back matter (abstract, intro, conclusion).
 
 ## Working rules
