@@ -180,6 +180,50 @@ action. Option 1 stays on record as the fallback for Part A.
 Context row for the text: MalConv evaded on **[mock] 74%** of files; the GBDT's median drop **[mock] 0.06**, above
 0.1 on **[mock] 23%**.
 
+### Part A' (2026-10-20, replaces Part A after run 68's no-go): editing the shared fields
+
+Run 68 failed because its region E (DOS header, stub, slack) holds almost none of the GBDT's evidence (median 0.1%);
+the shared reliance lies in optional-header and data-directory fields (`docs/experiments/cm.md`, "Attack transfer").
+Approved by the user: edit the bytes both detectors rely on, loader-safe, and compare with edits chosen other ways.
+
+- **Claim.** The pullback lets a defender (or red team) find, per file, the content whose change weakens *both*
+  detectors; an attacker guided by the raw-byte detector alone weakens only that detector (run 68: the GBDT rises).
+- **Unit of change.** Loader-safe fields: `FREE` (scrambled), `CONSTRAINED` (valid benign value), `FREE_EXTRA`
+  (scrambled) from `scripts/audit_evade.py`; loader-critical fields untouched. Each candidate field is located in the
+  file by P (domain knowledge stays inside the experiment, as in 6.2). Per file, every arm edits the same number n of
+  fields (n fixed in advance, e.g. 3; files with fewer than n candidates use all, in every arm).
+- **Arms (they differ only in how fields are scored).** Each field's evidence = the detector's byte evidence summed
+  over the field's bytes.
+  1. shared (pullback): top n by min(GBDT pullback evidence, MalConv IG evidence), both for malware;
+  2. shared (windows): the same, with the GBDT's evidence from its occlusion over 256 windows spread over each window's
+     bytes (no P for the GBDT's explanation; the in-class baseline of 5.1);
+  3. MalConv only: top n by MalConv IG evidence (an attacker who explains only the raw-byte detector);
+  4. GBDT only: top n by GBDT pullback evidence;
+  5. random: n candidate fields drawn per file (seeded);
+  6. run 68's attack on E (context row, same files).
+- **Population.** Run 68's 100 held-out malware that both detectors detect (1% FPR thresholds), so row 6 is paired.
+- **Outcome.** Both detectors' drops in malware log-odds; the share of files where both drop by more than delta = 1
+  log-odds (the headline); MalConv evasion and GBDT threshold crossings as context. Paired per file: shared (pullback)
+  vs. each other arm, Wilcoxon on min(GBDT drop, MalConv drop), and an exact test on "both drop".
+- **Hypothesis.** Shared (pullback) gives "both drop" on the most files; MalConv-only drops MalConv about as much but
+  the GBDT much less; windows blur the header fields together and pick worse fields for the GBDT.
+- **Steps.** (0) Feasibility pre-check on the 100 files, CPU only: candidate fields per file, and the share of each
+  detector's evidence in its top 1% that lies on candidate fields. Gate: most files have >= n candidates and the shared
+  fields carry a non-trivial share of both detectors' evidence. (1) Script `scripts/cm_shared_edit.py` (reuses
+  cm_shared.split_sets, audit_evade.realizable_plan / benign_pools / _scramble_features, cm_transfer's file list;
+  MalConv IG on GPU 3 for the 100 files), unit tests for the field-scoring helper, smoke on 5 files. (2) `run/71`,
+  estimate first. (3) Read, hypothesis vs. outcome, fill Table 2 and the paragraph; run 68 becomes the context row and
+  one sentence. (4) Coherence: intro, discussion, Section 6 close; status.
+
+| edit n loader-safe fields per file, chosen by | operator | MalConv drop | GBDT drop | both drop > 1 |
+|---|---|---|---|---|
+| shared, pullback ∩ IG | pullback | **[mock] 2.5** | **[mock] 1.8** | **[mock] 55%** |
+| shared, GBDT occlusion windows ∩ IG | none | **[mock] 2.0** | **[mock] 0.6** | **[mock] 25%** |
+| MalConv only (IG) | none | **[mock] 2.8** | **[mock] 0.3** | **[mock] 15%** |
+| GBDT only (pullback) | pullback | **[mock] 0.8** | **[mock] 2.0** | **[mock] 20%** |
+| random loader-safe fields | none | **[mock] 0.6** | **[mock] 0.3** | **[mock] 5%** |
+| run 68 attack on E (context) | none | evades 81% | -1.06 (rises) | 5% |
+
 ### Part B: triage that decides a disagreement (option 2): DROPPED 2026-10-19
 
 > **Pre-check (2026-10-19, pilot data, indicative only): likely no-go as designed.** On the 50 GBDT-only files of the
