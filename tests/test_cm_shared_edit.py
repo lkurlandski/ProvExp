@@ -18,6 +18,7 @@ from cm_shared_edit import ARMS  # noqa: E402
 from cm_shared_edit import choose_fields  # noqa: E402
 from cm_shared_edit import field_evidence  # noqa: E402
 from cm_shared_edit import paired  # noqa: E402
+from cm_shared_edit import predictors  # noqa: E402
 from cm_shared_edit import summarize  # noqa: E402
 
 
@@ -76,7 +77,8 @@ def _table() -> pl.DataFrame:
             hit = arm == "shared_pullback"
             rows.append({"index": index, "status": "ok", "arm": arm, "parsed": True, "num_fields": 3,
                          "malconv_drop": 2.0 if hit else 0.5, "gbdt_drop": 1.5 if hit else 0.2,
-                         "malconv_edited": 0.0, "gbdt_edited": 5.0})
+                         "malconv_edited": 0.0, "gbdt_edited": 5.0, "bytes": 8,
+                         "gbdt_evidence": 1.0 if hit else 0.1, "gbdt_window_evidence": 0.5})
     return pl.DataFrame(rows)
 
 
@@ -92,3 +94,12 @@ class TestSummary:
         p = paired(_table(), delta=1.0)
         row = p.filter(pl.col("against") == "random").row(0, named=True)
         assert row["wins"] == 2 and row["both_only_reference"] == 2 and row["both_only_other"] == 0
+
+    def test_predictors_rank_the_drop(self) -> None:
+        """A predictor that orders the files like the GBDT's drop has rho 1 and AUC 1."""
+        rows = [{"index": i, "status": "ok", "arm": "malconv_only", "parsed": True, "gbdt_drop": float(i),
+                 "gbdt_evidence": float(i), "gbdt_window_evidence": float(-i), "bytes": 4} for i in range(10)]
+        p = predictors(pl.DataFrame(rows), delta=4.5, num_boot=50)
+        row = p.row(0, named=True)
+        assert row["rho_pullback"] == pytest.approx(1.0) and row["auc_pullback"] == pytest.approx(1.0)
+        assert row["rho_windows"] == pytest.approx(-1.0) and row["positives"] == 5

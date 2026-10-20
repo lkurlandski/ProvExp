@@ -19,6 +19,10 @@ For each of the malware that both detectors detect (run 68's files, scripts/cm_t
             random            n candidate fields drawn per file
         Every edited file must parse with its original section layout; both detectors score it.
 
+The defender's question (run 68's, in the region the GBDT reads): before any edit, does the GBDT's evidence on the fields
+an attacker edits, from its pullback, predict how much the GBDT drops, better than its occlusion windows or the number
+of bytes written? Reported per arm; the arm `malconv_only` is the attacker who explains only MalConv.
+
 With `--check` (step 0, the feasibility check), phase 2 stops before editing and records, per file, the number of
 candidate fields and how much of each detector's evidence they carry.
 
@@ -86,6 +90,7 @@ __all__ = [
     "choose_fields",
     "field_evidence",
     "paired",
+    "predictors",
     "summarize",
 ]
 
@@ -325,6 +330,47 @@ def paired(files: pl.DataFrame, delta: float, reference: str = "shared_pullback"
     return pl.DataFrame(rows)
 
 
+def _auc(x: FloatArray, positive: npt.NDArray[np.bool_]) -> float:
+    """P(x is higher on a positive than on a negative), ties counted half."""
+    pos, neg = x[positive], x[~positive]
+    if pos.size == 0 or neg.size == 0:
+        return float("nan")
+    r = stats.rankdata(np.concatenate([pos, neg]))
+    return float((r[:pos.size].sum() - pos.size * (pos.size + 1) / 2) / (pos.size * neg.size))
+
+
+def predictors(files: pl.DataFrame, delta: float, num_boot: int = 2000, seed: int = 0) -> pl.DataFrame:
+    """
+    Per arm, how well the GBDT's evidence on the edited fields, from its pullback or from its occlusion windows, and the
+    number of bytes written predict the GBDT's drop: Spearman's rho, the AUC for a drop of more than `delta`, and a
+    bootstrap 95% CI (over files) of rho(pullback) - rho(windows). The arm `malconv_only` is the attacker who explains
+    only MalConv; the prediction is the defender's, made from the original file.
+    """
+    ok = files.filter((pl.col("status") == "ok") & pl.col("parsed"))
+    rng = np.random.default_rng(seed)
+    rows = []
+    for arm in ARMS:
+        a = ok.filter(pl.col("arm") == arm)
+        if a.height < 3:
+            continue
+        d = a["gbdt_drop"].to_numpy()
+        P, W = a["gbdt_evidence"].to_numpy(), a["gbdt_window_evidence"].to_numpy()
+        B = a["bytes"].to_numpy().astype(np.float64)
+        big = d > delta
+        diffs = []
+        for _ in range(num_boot):
+            i = rng.integers(0, d.size, d.size)
+            diffs.append(stats.spearmanr(P[i], d[i]).statistic - stats.spearmanr(W[i], d[i]).statistic)
+        lo, hi = np.nanpercentile(diffs, [2.5, 97.5])
+        rows.append({"arm": arm, "files": a.height, "positives": int(big.sum()),
+                     "rho_pullback": float(stats.spearmanr(P, d).statistic),
+                     "rho_windows": float(stats.spearmanr(W, d).statistic),
+                     "rho_bytes": float(stats.spearmanr(B, d).statistic),
+                     "auc_pullback": _auc(P, big), "auc_windows": _auc(W, big), "auc_bytes": _auc(B, big),
+                     "diff_lo": float(lo), "diff_hi": float(hi)})
+    return pl.DataFrame(rows)
+
+
 ################################################################################
 # Main
 ################################################################################
@@ -423,16 +469,19 @@ def main() -> None:
     table = pl.read_parquet(outdir / "files.parquet")
     summary = summarize(table, gbdt_threshold, malconv_threshold, args.delta)
     comparisons = paired(table, args.delta)
+    prediction = predictors(table, args.delta, seed=args.seed)
     context = context_row(args.transfer / f"seed-{args.seed}" / "files.parquet", table, gbdt_threshold, args.delta)
     with pl.Config(tbl_rows=-1, tbl_cols=-1, tbl_width_chars=200):
         print(f"\nPer arm (median drops in log-odds; both = both drop by more than {args.delta}):\n{summary}")
         print(f"\nRun 68's attack on the same files (context):\n{context}")
         print(f"\nShared (pullback) against each arm, paired per file:\n{comparisons}")
+        print(f"\nPredicting the GBDT's drop from the original file (diff = rho pullback - rho windows, 95% CI):\n{prediction}")
     report = {"config": {k: (v.as_posix() if isinstance(v, Path) else v) for k, v in vars(args).items()},
               "gbdt_threshold": gbdt_threshold, "malconv_threshold": malconv_threshold,
               "status": table.group_by("status").len().to_dicts(),
               "unparsed": int((table.filter(pl.col("status") == "ok")["parsed"] == False).sum()),  # noqa: E712
               "summary": summary.to_dicts(), "context": context.to_dicts(), "paired": comparisons.to_dicts(),
+              "predictors": prediction.to_dicts(),
               "seconds_ig": seconds_ig, "seconds_files": seconds_files}
     (outdir / "report.json").write_text(json.dumps(report, indent=2))
     print(f"Wrote {outdir.as_posix()}.", flush=True)
