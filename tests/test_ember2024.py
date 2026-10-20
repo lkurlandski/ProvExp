@@ -4,6 +4,7 @@ Tests for the EMBER-2024 feature set (featuresets/ember2024/features.py).
 Most of these tests need real executables in tests/data/ (see scripts/make_fixtures.py) and are skipped without them.
 """
 
+import collections
 from functools import lru_cache
 from pathlib import Path
 from types import SimpleNamespace
@@ -264,3 +265,56 @@ class TestSpeedups:
         extractor = features.StringExtractor()  # type: ignore[no-untyped-call]
         original = features._strings_raw_features_original(extractor, data, None)  # type: ignore[no-untyped-call]
         assert features._strings_raw_features(extractor, data, None) == original
+
+
+################################################################################
+# Speed-up of the byte counts (an exact replacement of collections.Counter, added on top of thrember and pefile)
+################################################################################
+
+
+def _late_values() -> bytes:
+    """Bytes whose last values first appear well beyond the first chunk of byte_counter."""
+    rng = np.random.default_rng(0)
+    return bytes(rng.integers(0, 40, size=3 * (1 << 16), dtype=np.uint8)) + bytes(range(255, 39, -1))
+
+
+class TestByteCounter:
+
+    @pytest.mark.parametrize("data", [
+        b"",
+        b"a",
+        b"\x00" * 1000,
+        bytes(range(256)),
+        bytes(range(255, -1, -1)) * 3,
+        bytes(np.random.default_rng(1).integers(0, 256, size=100_000, dtype=np.uint8)),
+        _late_values(),
+        bytearray(b"MZ\x90\x00\x03\x00\x00\x00\x04\x00"),
+    ], ids=range(8))
+    def test_matches_counter(self, data: bytes) -> None:
+        """The same counts in the same order, as a Counter."""
+        counts = features.byte_counter(data)
+        assert isinstance(counts, collections.Counter)
+        assert list(counts.items()) == list(collections.Counter(data).items())
+
+    @pytest.mark.parametrize("data", [[3, 1, 3, 2], "hello", memoryview(b"abca")], ids=["list", "str", "memoryview"])
+    def test_other_inputs_fall_back(self, data: object) -> None:
+        assert list(features.byte_counter(data).items()) == list(collections.Counter(data).items())  # type: ignore[call-overload]
+
+    def test_installed(self) -> None:
+        assert getattr(features, "Counter") is features.byte_counter
+        assert getattr(pefile, "Counter") is features.byte_counter
+
+    def test_pefile_on_files(self, sample: tuple[bytes, np.ndarray, Provenance], monkeypatch: pytest.MonkeyPatch) -> None:
+        """pefile's warnings and section entropies are the same with and without the replacement."""
+        needs_files()
+        data, _, _ = sample
+        patched = _parse(data)
+        monkeypatch.setattr(pefile, "Counter", collections.Counter)
+        original = _parse(data)
+        if original is None:
+            assert patched is None
+            return
+        assert patched is not None
+        assert patched.get_warnings() == original.get_warnings()
+        assert [s.get_entropy() for s in patched.sections] == [s.get_entropy() for s in original.sections]
+

@@ -1777,3 +1777,42 @@ def _strings_raw_features(self: StringExtractor, bytez: bytes, pe: Optional[pefi
 _strings_raw_features_original = StringExtractor.raw_features
 StringExtractor.raw_features = _strings_raw_features  # type: ignore[method-assign]
 
+
+
+################################################################################
+# Speed: byte counts with numpy, for thrember's and pefile's entropies (added on top of thrember)
+################################################################################
+
+
+# NOTE: thrember (the file entropy in GeneralFileInfo, the overlay entropy in SectionInfo) and pefile (a check for a
+# dominant byte value on every parse, and section entropies) count bytes with `collections.Counter`, a Python-level
+# loop over every byte: about 60 ms for a 4 MB file, four times per ablated file in the faithfulness experiments (two
+# counts in thrember; one parse in the extractor and one in ablation.verify), about half the cost of a query.
+# `byte_counter` computes the same Counter, the same counts in the same (first-occurrence) order, with numpy, so every
+# float sum over it, and every warning pefile appends while iterating over it, is unchanged. It replaces the name
+# `Counter` in this module (whose only uses are those two counts) and in pefile, at import; the original lines of both
+# stay unchanged. Tests compare it with collections.Counter and the patched extraction with thrember's on real files.
+_COUNTER = Counter
+_BYTE_COUNTER_CHUNK = 1 << 16
+
+
+def byte_counter(data: object) -> Counter[int]:
+    """collections.Counter(data), computed with numpy when `data` is bytes or a bytearray (see the NOTE above)."""
+    if not isinstance(data, (bytes, bytearray)):
+        return _COUNTER(data)  # type: ignore[call-overload,no-any-return]
+    a = np.frombuffer(data, dtype=np.uint8)
+    counts = np.bincount(a, minlength=256)
+    present = int(np.count_nonzero(counts))
+    # The first position of each byte value, chunk by chunk; usually every value has appeared within the first chunk.
+    first: dict[int, int] = {}
+    for lo in range(0, a.size, _BYTE_COUNTER_CHUNK):
+        if len(first) == present:
+            break
+        values, index = np.unique(a[lo:lo + _BYTE_COUNTER_CHUNK], return_index=True)
+        for v, i in zip(values.tolist(), index.tolist()):
+            first.setdefault(v, lo + i)
+    return _COUNTER({v: int(counts[v]) for v in sorted(first, key=first.__getitem__)})
+
+
+Counter = byte_counter  # type: ignore[misc,assignment]
+pefile.Counter = byte_counter  # type: ignore[attr-defined]

@@ -12,6 +12,8 @@
 # run 66's actual time by its new work (32,770 vs. ~14,200 extractions per file) gives ~9 h; a refit of the cost model
 # on the smoke gives ~10 h. The largest file is one task of ~6 h and starts first. --timeout 86400 (24 h per file),
 # since run 66's 10 h could cut off the largest file on a loaded machine.
+# Update (2026-10-20): byte counts now use numpy (features.byte_counter; identical features), 2.1x faster per query on
+# a 4 MB file and 1.65x on a 0.18 MB file, so expect ~5 h (the largest file ~3 h). The estimates above predate it.
 # Smoke-tested on 2 files (2 workers, 20 min): 21 pass-1 tasks reused, only KernelSHAP@4096 ran (19 min on the 0.18 MB
 # file, 4x its time at 1,024 windows, as the refit predicts); kernelshap_k4096 and its pushforward are in curves.parquet.
 set -euo pipefail
@@ -20,7 +22,7 @@ source env/bin/activate
 export PYTHONHASHSEED=0
 
 LOG=artifacts/logs/pb1-shared-ks4096-seed0.log
-echo "Sections 5.1/5.2 (GBDT): KernelSHAP over 4,096 windows, 100 pilot files, 16 workers (~9-10 h)."
+echo "Sections 5.1/5.2 (GBDT): KernelSHAP over 4,096 windows, 100 pilot files, 16 workers (~5 h)."
 echo "Output: artifacts/experiments/e1/seed-0/zeros-typical-header-shared-ks4096/"
 echo "Log:    $LOG   (follow with: tail -f $LOG)"
 OMP_NUM_THREADS=1 python scripts/faithfulness.py \
