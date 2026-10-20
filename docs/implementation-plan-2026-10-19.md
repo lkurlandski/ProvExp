@@ -1,5 +1,10 @@
 # Implementation plan (2026-10-19)
 
+> **Build status (2026-10-20).** Runs 66-70 done and in the manuscript (Section 5, 6.2, Appendix C; WP8 done for
+> these). WP4/WP5 (6.1 attack transfer, run 68): no-go; replaced by 6.1 Part A' (`docs/experiments/specs.md`):
+> `scripts/cm_shared_edit.py`, run 71 (100 files) and run/72 (500 files, running). Remaining WP8: 6.1's table and
+> text once run 72 is in. Deferred as before: KernelSHAP at 4,096 windows, retraining MalConv, scale-up, Android.
+>
 > **Build status (2026-10-19).** WP0-WP5 and WP7 implemented, smoke-tested, lint + strict mypy clean; WP6 dropped. Run
 > scripts: `run/64` (theory coverage, done), `run/65` (instrumentation cost, done), `run/66` (Sections 5.1/5.2 GBDT),
 > `run/67` (5.2 MalConv window sources), `run/68` (6.1 attack transfer: selection + the 100-file run; its summary is the feasibility read), `run/69` (6.2 unfiltered audit). Nothing long has been run yet; the user launches 66-69 (GPU 3, <=16 workers).

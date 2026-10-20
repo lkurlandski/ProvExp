@@ -9,6 +9,13 @@ pushforward) done (`docs/experiments/audit.md`); 3-B and the earlier rule-based 
 (`docs/graveyard.md`). Claims 1-3 predate the restructuring and are partly rewritten (claim 3 for AU, claim 4 for CM);
 the rest to follow. No scaling until the pilot results and the claims are settled (user).
 
+> **2026-10-20:** Section 5 (runs 66-67), 6.2 (run 69, unfiltered audit: no reliance beyond header fields), and
+> Appendix C (run 70, exact) filled with real numbers. 6.1: attack transfer through the DOS stub and slack failed (run
+> 68: the GBDT reads almost nothing there); editing loader-safe header and certificate fields transfers, and the
+> GBDT's pullback on the fields a MalConv-guided attacker edits predicts the GBDT's drop (run 71: Spearman 0.47 vs.
+> 0.25 for windows). That prediction is 6.1's claim (user); run 72 scales it to 500 files. Details:
+> `docs/status.md`, `docs/experiments/specs.md` (6.1 Part A'), `docs/experiments/cm.md`.
+
 > **2026-10-16:** **Section 3 carries the theory again, a new kind (W1).** (A) Shapley-grounded construction of P:
 > instrumentation equals the Shapley provenance for features additive over their items; a data-flow convention for
 > the rest; P stays nonnegative. (B) The pullback is exact for linear models over such features; the pushforward is

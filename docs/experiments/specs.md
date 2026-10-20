@@ -224,6 +224,23 @@ Approved by the user: edit the bytes both detectors rely on, loader-safe, and co
 | random loader-safe fields | none | **[mock] 0.6** | **[mock] 0.3** | **[mock] 5%** |
 | run 68 attack on E (context) | none | evades 81% | -1.06 (rises) | 5% |
 
+**Outcome (run 71, 100 files) and decision (user, 2026-10-20).** The comparative hypothesis failed: shared fields
+make both detectors drop on 32% of files (random 6%, run 68 5%), but MalConv-only selection does as well (37%), since
+in the loader-safe pool both detectors rely on the same certificate fields and checksum. **6.1's claim becomes the
+defender's prediction** (Part A's original question, in the region the GBDT reads): for the attacker who explains only
+MalConv (arm `malconv_only`), the GBDT's pullback evidence on the edited fields predicts the GBDT's drop.
+
+| predictor of the GBDT's drop (MalConv-guided edits of 3 loader-safe fields) | operator | Spearman ρ | AUC (drop > 1) |
+|---|---|---|---|
+| GBDT's evidence on the edited fields, pullback | pullback | 0.47 (run 71) | 0.78 |
+| GBDT's evidence on the edited fields, occlusion over 4,096 windows | none | 0.25 | 0.64 |
+| bytes changed | none | -0.04 | 0.52 |
+
+Context for the text: run 68's attack on E evades MalConv on 81% and the GBDT rises (the pullback puts ~0.1% of the
+GBDT's evidence on E); MalConv-guided field edits drop the GBDT by a median 1.31 and both detectors on 37% of files.
+The GBDT-guided mirror is one sentence (asymmetric transfer; its predictor needs no P). Defender framing kept. The
+five-way selection table stays in `docs/experiments/cm.md`. Final numbers from run/72 (500 files).
+
 ### Part B: triage that decides a disagreement (option 2): DROPPED 2026-10-19
 
 > **Pre-check (2026-10-19, pilot data, indicative only): likely no-go as designed.** On the 50 GBDT-only files of the

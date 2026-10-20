@@ -1,13 +1,19 @@
 # Status
 
-**2026-10-20: overnight runs read; WP8 done for Sections 5 and 6.2; 6.1 is a NO-GO, directions under discussion
-(analysis in `docs/experiments/cm.md`, "Attack transfer").**
-- **Run 71 (6.1 Part A', editing the shared fields): comparative hypothesis failed; a reframe works.** Shared fields
-  (pullback ∩ IG) make both detectors drop on 32% of files vs. 6% random and 5% for run 68, but MalConv-only fields do
-  as well (37%): in the loader-safe pool both detectors rely on the same certificate fields and checksum. Run 68's
-  original question (does the pullback predict the GBDT's drop under a MalConv-guided attack?) works once the attack
-  edits these fields: Spearman 0.47 vs. 0.25 for windows, -0.04 for bytes changed. **The user decides 6.1's claim**;
-  6.1 text untouched. Details: `docs/experiments/cm.md`, "Editing the shared fields".
+**2026-10-20 (end of morning session): Section 5, 6.2, and Appendix C filled; 6.1's claim decided, waiting on
+run/72 (500 files, the user is running it).**
+- **6.1 decided (user, 2026-10-20).** Claim: before any attack, the GBDT's pullback on the fields an attacker who
+  explains only MalConv edits predicts how much the GBDT's score drops; windows and byte counts do not. Defender
+  framing kept (optionally worded as the defender red-teaming the pair); the GBDT-guided mirror is one sentence
+  (transfer is asymmetric: GBDT-guided edits drop MalConv 0.59 vs. MalConv-guided edits dropping the GBDT 1.31; the
+  mirror's predictor, MalConv's IG, needs no P). Run 68 becomes the "wrong region" contrast (DOS stub and slack: the GBDT
+  puts ~0.1% of its evidence there and rises). Run 71's five-way "who chooses the fields" table stays in
+  `docs/experiments/cm.md`, not in the paper (MalConv-only selection does as well as the pullback, 37% vs. 32%).
+- **Run 71 (100 files):** prediction under MalConv-guided edits: Spearman 0.47 (pullback) vs. 0.25 (occlusion, 4,096
+  windows) vs. -0.04 (bytes); AUC 0.78 / 0.64 / 0.52 (drop > 1, 56 positives). The pullback leads in all five arms but
+  the CI of the gap for the MalConv-only arm starts at 0.00, hence **run/72** (500 files, ~25 min; log
+  `artifacts/logs/cm-shared-edit-500-seed0.log`; output `artifacts/experiments/cm_shared_edit_500/seed-0/`). The script
+  now prints the prediction table itself.
 - **run/66 (5.1/5.2, GBDT):** clean. Adaptive KernelSHAP beats occlusion only at 4,096 queries (5.96 vs 5.51, 70/100);
   below it at 64/256 queries (3.42 vs 4.79; 4.46 vs 5.07), about even at 1,024 (5.37 vs 5.47). KernelSHAP over 1,024 windows is the strongest
   direct method (6.31 at 8,194 queries) and beats the pullback summed into the same windows; the byte-level pullback
@@ -16,10 +22,10 @@
   bytes 1.00. Hypothesis half held (below the pullback: yes; adaptive beats occlusion at equal queries: only at 4,096).
 - **run/67 (5.2, MalConv):** clean; hypothesis held. Gradient-free sources beat the surrogate (occlusion@1k 4.23,
   71/100; KernelSHAP@1k 4.69, 83/100; vs 3.28); IG pushforward on top (6.25).
-- **run/68 (6.1 attack transfer): NO-GO.** MalConv evaded 81%; the GBDT never crosses its threshold and *rises* on
+- **run/68 (6.1 attack transfer): NO-GO** (superseded by the decision above). MalConv evaded 81%; the GBDT never crosses its threshold and *rises* on
   78% of files (median +1.06 log-odds); only 5/100 drop by >1 log-odds. Pullback on E ranks the signed change best
   (Spearman 0.34, p = 5e-4, vs occlusion 0.18, |C| -0.18), but the bootstrap CI of the difference with occlusion spans 0
-  ([-0.09, 0.41]). 6.1's text and table are still placeholders: **the user decides** (fallback option 1, or another).
+  ([-0.09, 0.41]).
 - **run/69 (6.2 unfiltered audit): done, hypothesis failed (neutral-to-favorable for the paper).** Two script fixes
   (IG symlink; `--direction malware`, which the first rerun lacked: discovery wrote only the benign direction, kept in
   `audit-discover-unfiltered-benign-seed0.log`). Unfiltered candidates add hashed section entropies, byte-entropy bins,
