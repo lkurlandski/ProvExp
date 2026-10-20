@@ -1,5 +1,30 @@
 # Status
 
+**2026-10-20: overnight runs read; WP8 done for Section 5; 6.1 is a NO-GO, waiting on the user.**
+- **run/66 (5.1/5.2, GBDT):** clean. Adaptive KernelSHAP beats occlusion only at 4,096 queries (5.96 vs 5.51, 70/100);
+  below it at 64/256 queries (3.42 vs 4.79; 4.46 vs 5.07), about even at 1,024 (5.37 vs 5.47). KernelSHAP over 1,024 windows is the strongest
+  direct method (6.31 at 8,194 queries) and beats the pullback summed into the same windows; the byte-level pullback
+  (8.03, one extraction) beats it on 72/100 and adaptive@4096 on 81/100. Pushforward relative to TreeSHAP's pullback:
+  KernelSHAP 0.68/0.75/0.83 (64/256/1k), adaptive 0.61/0.65/0.70/0.76, occlusion flat ~0.65, trend 0.64/0.63/0.70/0.79,
+  bytes 1.00. Hypothesis half held (below the pullback: yes; adaptive beats occlusion at equal queries: only at 4,096).
+- **run/67 (5.2, MalConv):** clean; hypothesis held. Gradient-free sources beat the surrogate (occlusion@1k 4.23,
+  71/100; KernelSHAP@1k 4.69, 83/100; vs 3.28); IG pushforward on top (6.25).
+- **run/68 (6.1 attack transfer): NO-GO.** MalConv evaded 81%; the GBDT never crosses its threshold and *rises* on
+  78% of files (median +1.06 log-odds); only 5/100 drop by >1 log-odds. Pullback on E ranks the signed change best
+  (Spearman 0.34, p = 5e-4, vs occlusion 0.18, |C| -0.18), but the bootstrap CI of the difference with occlusion spans 0
+  ([-0.09, 0.41]). 6.1's text and table are still placeholders: **the user decides** (fallback option 1, or another).
+- **run/69 (6.2 unfiltered audit): failed at once** (cached IG lives in `audit_discover/seed-0/ig`); fixed by a symlink
+  step in the script (commit 063e299). **The user reruns run/69** (~12 min, 16 workers); then group the confirmed
+  features by type for Table 3 and fill 6.2's blue sentence.
+- **Run 70 (Appendix C):** exact, max difference 8.5e-14 over 2,000 files; filled.
+- **Manuscript (commit b2aea56):** Figures 3-5 regenerated under byte deletion (`scripts/paper_figures.py`, new
+  `pf_gbdt.dat`; Figure 3 adds KernelSHAP@1k and adaptive@4096); every `\synthetic` in Section 5 and Appendix C
+  replaced. Wording changed where results changed direction: "as faithful as direct explanation at the same resolution"
+  narrowed to "as faithful as occlusion" (KernelSHAP beats both at matched windows); adaptive pays off only with a large
+  budget; the TreeSHAP trend is no longer called a bound (KernelSHAP exceeds it). The introduction (line 42) already says
+  "as faithful as occlusion". Remaining blue: 6.1 (Table and paragraph), 6.2 (audit sentence; retrained row, deferred),
+  the discussion's Android sentence (deferred).
+
 **2026-10-19: manuscript reorganized** (user). Sections 5-6 were one per operator (Pulling Back / Pushing Forward);
 now **5 Evaluating the Transfers** (`_e_evaluation.tex`: 5.1 pullback faithfulness and cost, 5.2 pushforward
 faithfulness, 5.3 the planted trigger, both directions in one subsection) and **6 Security Applications**
