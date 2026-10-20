@@ -1,6 +1,7 @@
 # Status
 
-**2026-10-20: overnight runs read; WP8 done for Section 5; 6.1 is a NO-GO, waiting on the user.**
+**2026-10-20: overnight runs read; WP8 done for Sections 5 and 6.2; 6.1 is a NO-GO, directions under discussion
+(analysis in `docs/experiments/cm.md`, "Attack transfer").**
 - **run/66 (5.1/5.2, GBDT):** clean. Adaptive KernelSHAP beats occlusion only at 4,096 queries (5.96 vs 5.51, 70/100);
   below it at 64/256 queries (3.42 vs 4.79; 4.46 vs 5.07), about even at 1,024 (5.37 vs 5.47). KernelSHAP over 1,024 windows is the strongest
   direct method (6.31 at 8,194 queries) and beats the pullback summed into the same windows; the byte-level pullback
@@ -13,9 +14,14 @@
   78% of files (median +1.06 log-odds); only 5/100 drop by >1 log-odds. Pullback on E ranks the signed change best
   (Spearman 0.34, p = 5e-4, vs occlusion 0.18, |C| -0.18), but the bootstrap CI of the difference with occlusion spans 0
   ([-0.09, 0.41]). 6.1's text and table are still placeholders: **the user decides** (fallback option 1, or another).
-- **run/69 (6.2 unfiltered audit): failed at once** (cached IG lives in `audit_discover/seed-0/ig`); fixed by a symlink
-  step in the script (commit 063e299). **The user reruns run/69** (~12 min, 16 workers); then group the confirmed
-  features by type for Table 3 and fill 6.2's blue sentence.
+- **run/69 (6.2 unfiltered audit): done, hypothesis failed (neutral-to-favorable for the paper).** Two script fixes
+  (IG symlink; `--direction malware`, which the first rerun lacked: discovery wrote only the benign direction, kept in
+  `audit-discover-unfiltered-benign-seed0.log`). Unfiltered candidates add hashed section entropies, byte-entropy bins,
+  the DOS-stub message; none confirmed. MalConv: 8 of the 9 Table 3 fields confirmed again (IAT drops out of the top
+  20); surrogate: the same 9 as before. No section/import/string reliance. The run's preset gate reads "no-go" (b: 4 of 8
+  confirmed shared with the surrogate, exactly half), only because IAT left the top 20. Manuscript: 6.2 keeps the
+  filtered protocol (Table 3 and the evasion/mitigation rest on it) and states the unfiltered run as a robustness
+  sentence; the blue sentence is gone.
 - **Run 70 (Appendix C):** exact, max difference 8.5e-14 over 2,000 files; filled.
 - **Manuscript (commit b2aea56):** Figures 3-5 regenerated under byte deletion (`scripts/paper_figures.py`, new
   `pf_gbdt.dat`; Figure 3 adds KernelSHAP@1k and adaptive@4096); every `\synthetic` in Section 5 and Appendix C

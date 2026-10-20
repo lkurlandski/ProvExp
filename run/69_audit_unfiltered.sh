@@ -7,6 +7,7 @@
 # Hypothesis: some section/import/string features are confirmed, i.e., reliance the pushforward splits from shared
 # bytes that summing attributions per parsed region would not separate.
 #
+# NOTE: --direction malware is required: confirmation reads {source}-malware (as runs 43-44); the first rerun omitted it.
 # NOTE: grouping the confirmed features by type (header / section / import / string) for Table 3 is a follow-up on
 # this run's output; not scripted here.
 set -euo pipefail
@@ -24,6 +25,7 @@ echo "Unfiltered discovery: 2,000 files, 16 workers (~7 min). Log: $LOG"
 OMP_NUM_THREADS=1 python scripts/audit_discover.py \
   --seed 0 \
   --phase discover \
+  --direction malware \
   --max_content 100000 \
   --max_runs 256 \
   --num_workers 16 \

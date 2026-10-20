@@ -199,10 +199,7 @@ detections rest on.
 We explain MalConv with Integrated Gradients on the 2{,}000-file explanation set and push each file's explanation
 forward through that file's $P$. In each file we take the 20 features with the most credit for malware; across files, a
 feature scores the number of files it appears in times its mean credit. The 20 highest-scoring features whose credited
-content in a file can be located, at most 256 runs of bytes, are the candidates; this excludes aggregates such as the
-byte histogram, but not features whose content is spread over the file or shared with other features, such as a
-section's name, which several section features read, or an imported function's name, which import and string
-features share. A
+content in a file is a run of at most 256 bytes, so that it can be located and changed, are the candidates. A
 candidate is \emph{confirmed} by scrambling: in 191 held-out malware, we overwrite the bytes that the file's own $P$
 assigns to the feature with random bytes and compare the drop in MalConv's malware log-odds, paired per file, with that
 from scrambling, for every byte scrambled, a random byte elsewhere in the same convolution window. A feature is confirmed if the median drop
@@ -240,10 +237,12 @@ DOS header, the region whose manipulation MalConv is known to be sensitive to~\c
 finds reliance beyond what was documented. The surrogate's candidates recover 4 of these 9 fields and add 5 others
 (certificate-table entries, the signing time, the DLL characteristic), with some larger effects. The two methods thus
 find reliance of comparable size but only partly the same: each confirms fields the other misses.
-\synthetic{Beyond header fields, the audit confirms reliance on two section names and three hashed import buckets,
-whose bytes other features read as well; there the pushforward splits each byte's credit among the features that read
-it, which summing attributions over parsed regions does not do.}
-% TODO: Table and counts above are from the run restricted to contiguous content (runs 44-49); update after WP7.
+The restriction to short runs of bytes hides no other reliance. Lifting it, so that features whose
+content is spread over the file or shared with other features also become candidates, adds hashed section entropies,
+byte-entropy bins, and the DOS stub's message to MalConv's candidates, but none of them is confirmed, while 8 of the 9
+fields are confirmed again (the import address table's falls out of the top 20). MalConv's measurable reliance on
+content an attacker controls lies in these header fields.
+% Unfiltered audit: run 69 (artifacts/experiments/audit_scramble_unfiltered); Table and counts above: runs 44-49.
 
 Scrambling measures reliance; whether that reliance can be exploited is a separate question, which we answer with
 changes an attacker could actually make. In 1{,}000 fresh held-out malware, none in the explanation set or used for

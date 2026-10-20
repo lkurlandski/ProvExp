@@ -16,10 +16,8 @@ changing what a claim is for. Follow the memories `consistency-and-simplicity`, 
   0.34) but not significantly better than windows (bootstrap CI of the difference [-0.09, 0.41]). **Do not write 6.1's
   result until the user picks a direction** (the spec's fallback, option 1: controlled loader-safe changes to the shared
   bytes S vs. each detector's exclusive bytes; or another idea they raise). Mock the table before any code.
-- **6.2 unfiltered audit (run/69)** failed at once on a missing IG path; fixed (commit 063e299). If the user has rerun
-  it: read the end of `artifacts/logs/audit-scramble-unfiltered-seed0.log`; are any section / import / string features
-  confirmed, not only header fields? Group the confirmed features by type for Table 3 (unscripted follow-up) and replace
-  the blue sentence at `_f_applications.tex` ~line 243.
+- **6.2 is filled** (run/69 done: no reliance beyond header fields; 8 of 9 fields reconfirmed; one robustness
+  sentence in 6.2). Remaining blue in 6.2: the retrained-MalConv row (deferred).
 
 ## Deferred, the user decides
 

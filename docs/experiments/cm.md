@@ -215,3 +215,26 @@ feature over the blind bytes; oppose -> conflict over the same bytes, inspect th
 missing detector is easiest to move), with one honest sentence that the labels describe *which content* drives a
 disagreement, not its cause, citing run 57. Not yet run: a localized readout (label only the changed bytes S of the
 evaded file, or the triage on the original file's S); it would need re-explaining (~40 min GPU at 200 candidates).
+
+## Attack transfer (6.1 Part A; run 68, 2026-10-20): NO-GO
+
+**Purpose.** Answer REVIEW W3 / risk 3 (the pullback's application has no attacker and no security outcome): before any
+attack, the GBDT's pullback on the loader-ignored region E (DOS header, DOS stub, section slack) should predict, file by
+file, how much an attacker who evades MalConv there also costs the GBDT; compared with occlusion's evidence on E and
+with the number of bytes changed.
+
+**Result (100 both-detected malware, seed 0).** MalConv evaded on 81%. The GBDT never crosses its threshold, *rises* on
+78% of files (median drop -1.06 log-odds), and drops by >1 log-odds on 5. Spearman with the signed drop: pullback_E 0.34
+(p = 5e-4), occlusion_E 0.18, |C| -0.18; AUC (drop > 1, 5 positives) 0.78 / 0.54 / 0.58. Bootstrap CI of rho(pullback)
+- rho(occlusion): [-0.09, 0.41], not significant.
+
+**Why (diagnostics from files.parquet, no new runs).**
+1. The GBDT barely reads E. The pullback puts a median 0.1% of the GBDT's log-odds on E (|evidence| < 0.1 log-odds on
+   54% of files); the shared bytes S of 6.1 (checksum, data-directory sizes, DLL characteristics) lie in the optional
+   header, outside E. The attack region and the shared reliance barely overlap, so there was little to transfer.
+2. Where the pullback does see evidence, it is right: in the top quartile of evidence on E (median 0.35 log-odds), 52%
+   of files drop and 4 of the 5 large drops occur; in the other three quartiles, 12% drop.
+3. The rise is from *added* content: the attack writes new bytes (median 64 changed) that the GBDT reads as more
+   malicious (likely stub strings, Rich-header and byte-histogram features). An explanation of the original file
+   measures evidence that removal takes away; it cannot predict evidence that new content adds.
+4. occlusion_E's scale looks off (hundreds to thousands, signs mixed); irrelevant for Spearman but check before reuse.
