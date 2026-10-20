@@ -249,7 +249,11 @@ def benign_pools(
     pools: dict[tuple[int, int], np.ndarray] = {}
     for k, j in enumerate(columns):
         for m in np.unique(machines):
-            pools[(j, int(m))] = np.round(sample[machines == m, k]).astype(np.int64)
+            v = sample[machines == m, k]
+            # NOTE: features are stored as floats, so a value at or above 2^53 (e.g., a kernel-mode ImageBase above
+            # 2^63) is not held exactly and may not fit int64; such values cannot be written back faithfully.
+            v = v[np.isfinite(v) & (v >= 0) & (v < 2.0 ** 53)]
+            pools[(j, int(m))] = np.round(v).astype(np.int64)
     return pools
 
 
