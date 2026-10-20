@@ -276,6 +276,4 @@ Medians, malconv_only: GBDT drop 1.36 (> 1 on 58%, rises on 14%), MalConv drop 1
 DOS message, 3% Rich header. Mirror (gbdt_only): MalConv drop 0.66. Five-way "both drop": shared pullback 33%, shared
 windows 28%, MalConv-only 43%, GBDT-only 28%, random 8% (MalConv-only now beats shared pullback, p = 6e-6).
 
-*Known quirk:* `audit_evade.benign_pools` casts two benign ImageBase values above 2^63 to int64 (the RuntimeWarning in
-the log), giving a junk pool entry (2 of 20,000 rows; it passes the 64K-alignment filter). Negligible; affects 6.2's
-evasion runs equally. Fix (drop values outside int64) only together with a rerun, user decides.
+*Fixed (2026-10-20, commit 534edc3):* `audit_evade.benign_pools` cast two benign ImageBase values above 2^63 to a negative int64 (the RuntimeWarning in the log); a file that drew it skipped that field (the write step rejects negative values). Pools now keep 0 <= v < 2^53. `run/73` reruns 49, 59, and 72 into new directories (`*fixpools*`).
