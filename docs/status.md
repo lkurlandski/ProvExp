@@ -2,6 +2,12 @@
 
 **2026-10-20: overnight runs read; WP8 done for Sections 5 and 6.2; 6.1 is a NO-GO, directions under discussion
 (analysis in `docs/experiments/cm.md`, "Attack transfer").**
+- **Run 71 (6.1 Part A', editing the shared fields): comparative hypothesis failed; a reframe works.** Shared fields
+  (pullback ∩ IG) make both detectors drop on 32% of files vs. 6% random and 5% for run 68, but MalConv-only fields do
+  as well (37%): in the loader-safe pool both detectors rely on the same certificate fields and checksum. Run 68's
+  original question (does the pullback predict the GBDT's drop under a MalConv-guided attack?) works once the attack
+  edits these fields: Spearman 0.47 vs. 0.25 for windows, -0.04 for bytes changed. **The user decides 6.1's claim**;
+  6.1 text untouched. Details: `docs/experiments/cm.md`, "Editing the shared fields".
 - **run/66 (5.1/5.2, GBDT):** clean. Adaptive KernelSHAP beats occlusion only at 4,096 queries (5.96 vs 5.51, 70/100);
   below it at 64/256 queries (3.42 vs 4.79; 4.46 vs 5.07), about even at 1,024 (5.37 vs 5.47). KernelSHAP over 1,024 windows is the strongest
   direct method (6.31 at 8,194 queries) and beats the pullback summed into the same windows; the byte-level pullback

@@ -11,11 +11,11 @@ changing what a claim is for. Follow the memories `consistency-and-simplicity`, 
   deletion. Results that changed direction were reworded: the pullback at matched resolution equals occlusion
   (KernelSHAP beats both); adaptive KernelSHAP beats occlusion only at 4,096 queries; the byte-level pullback beats
   every direct method (72-89/100 files).
-- **6.1 attack transfer (run/68) is a NO-GO.** MalConv evaded 81%; the GBDT never crosses its threshold and becomes
-  *more* confident on 78% of files; 5/100 drop by >1 log-odds. The pullback ranks the signed change best (Spearman
-  0.34) but not significantly better than windows (bootstrap CI of the difference [-0.09, 0.41]). **Do not write 6.1's
-  result until the user picks a direction** (the spec's fallback, option 1: controlled loader-safe changes to the shared
-  bytes S vs. each detector's exclusive bytes; or another idea they raise). Mock the table before any code.
+- **6.1: runs 68 and 71 done; the user decides the claim before any writing.** Run 68 (MalConv attack on DOS
+  stub/slack): no transfer. Run 71 (loader-safe edits to 3 fields, 5 arms): shared fields hit both detectors (32% vs.
+  6% random) but MalConv-only fields do as well (37%). The pullback predicts the GBDT's drop under MalConv-guided field
+  edits (Spearman 0.47 vs. windows 0.25, bytes -0.04). Options are in `docs/experiments/cm.md`, "Editing the shared
+  fields", and in the last session's message.
 - **6.2 is filled** (run/69 done: no reliance beyond header fields; 8 of 9 fields reconfirmed; one robustness
   sentence in 6.2). Remaining blue in 6.2: the retrained-MalConv row (deferred).
 

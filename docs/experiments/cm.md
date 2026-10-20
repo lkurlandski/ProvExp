@@ -238,3 +238,31 @@ with the number of bytes changed.
    malicious (likely stub strings, Rich-header and byte-histogram features). An explanation of the original file
    measures evidence that removal takes away; it cannot predict evidence that new content adds.
 4. occlusion_E's scale looks off (hundreds to thousands, signs mixed); irrelevant for Spearman but check before reuse.
+
+## Editing the shared fields (6.1 Part A'; run 71, 2026-10-20)
+
+Step 0 (feasibility) passed: every file has >= 3 loader-safe candidate fields (median 53); they hold a median 28% of
+the GBDT's and 27% of MalConv's evidence; on 86% of files the 3 shared fields carry > 0.5 log-odds of each detector.
+
+Step 1, 3 fields per file, 100 both-detected malware (run 68's), all edits parsed:
+
+| arm | MalConv drop | GBDT drop | both drop > 1 |
+|---|---|---|---|
+| shared, pullback ∩ IG | 0.82 | 1.33 | 32% |
+| shared, occlusion (4,096 windows) ∩ IG | 0.84 | 1.05 | 25% |
+| MalConv only (IG) | 1.30 | 1.31 | 37% |
+| GBDT only (pullback) | 0.59 | 1.33 | 24% |
+| random loader-safe fields | 0.26 | 0.34 | 6% |
+| run 68's attack on E (context) | 6.89 | -1.06 | 5% |
+
+**Hypothesis failed in its comparative part.** Shared fields beat random (28 vs 2 discordant files, p = 9e-7) and
+run 68, but not MalConv-only selection (32% vs 37%, p = 0.40) nor windows (32% vs 25%, p = 0.28). Why: within the
+loader-safe pool both detectors' top fields are the same certificate (authenticode) fields and the checksum (pullback
+and MalConv-only choose 63% of the same fields); MalConv's IG alone already finds edits that hurt both. What decides
+transfer is the region (header/certificate fields vs. run 68's DOS stub and slack), not who ranks within it.
+
+**Run 68's original question, in the right region: works.** For the MalConv-guided edits (arm malconv_only), the
+GBDT's pullback evidence on the edited fields predicts the GBDT's drop: Spearman 0.47 (AUC 0.78 for drop > 1, 56
+positives) vs. occlusion's evidence on the same fields 0.25 (0.64) and bytes changed -0.04 (0.52). The pullback leads
+the windows in all five arms (0.34-0.55 vs. 0.11-0.25); per-arm bootstrap CIs of the difference reach about -0.01
+(gbdt_only: [0.10, 0.57]). Pooled over 500 edits: 0.45 vs. 0.20. Pilot scale; 500 files would settle significance.

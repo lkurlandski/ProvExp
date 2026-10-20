@@ -265,6 +265,7 @@ def process_file(task: dict[str, Any]) -> list[dict[str, Any]]:
                 "parsed": ok, "gbdt_edited": g, "malconv_edited": mc,
                 "gbdt_drop": d_g * (f_g - g), "malconv_drop": d_m * (f_m - mc),
                 "gbdt_evidence": float(G[chosen[arm]].sum()), "malconv_evidence": float(M[chosen[arm]].sum()),
+                "gbdt_window_evidence": float(W[chosen[arm]].sum()),
                 "seconds": time.perf_counter() - t_0,
             })
         return rows
