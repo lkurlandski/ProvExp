@@ -12,6 +12,9 @@
   `make check` clean. Remaining blue: 6.2's retrained row and its sentence; the discussion's Android sentence.
 - **ImageBase pool bug fixed** (commit 534edc3); **run/73** reran 49, 59, 72: every estimate and p-value unchanged
   (some bootstrap CI endpoints move by 0.1 point). Manuscript unchanged; the `*fixpools*` outputs are the current ones.
+- **Extraction ~2x faster** (commit 52db0f4): `features.byte_counter` replaces `collections.Counter` for thrember's and
+  pefile's byte counts (monkeypatched at import, no original line changed; identical features). **run/74**
+  (KernelSHAP@4096 on the GBDT, ~5 h) is ready for the user.
 - **Next / waiting on the user:** the deferred items (KernelSHAP@4096 on the GBDT, ~2 h; MalConv retraining with the
   audited fields zeroed; scale-up and seeds; W7), then the front and back matter once the body is final.
 
