@@ -9,12 +9,13 @@ pushforward) done (`docs/experiments/audit.md`); 3-B and the earlier rule-based 
 (`docs/graveyard.md`). Claims 1-3 predate the restructuring and are partly rewritten (claim 3 for AU, claim 4 for CM);
 the rest to follow. No scaling until the pilot results and the claims are settled (user).
 
-> **2026-10-20:** Section 5 (runs 66-67), 6.2 (run 69, unfiltered audit: no reliance beyond header fields), and
-> Appendix C (run 70, exact) filled with real numbers. 6.1: attack transfer through the DOS stub and slack failed (run
-> 68: the GBDT reads almost nothing there); editing loader-safe header and certificate fields transfers, and the
-> GBDT's pullback on the fields a MalConv-guided attacker edits predicts the GBDT's drop (run 71: Spearman 0.47 vs.
-> 0.25 for windows). That prediction is 6.1's claim (user); run 72 scales it to 500 files. Details:
-> `docs/status.md`, `docs/experiments/specs.md` (6.1 Part A'), `docs/experiments/cm.md`.
+> **2026-10-20:** The body is filled except the deferred runs. Section 5 (runs 66-67), 6.2 (run 69), and Appendix C
+> (run 70) carry real numbers; 6.1's attack transfer is written (run 68: the DOS-stub/slack attack evades MalConv but the
+> GBDT rises; run 72, 500 files: before any edit, the GBDT's pullback on the fields a MalConv-guided attacker edits
+> predicts the GBDT's drop, Spearman 0.48 vs. 0.21 for windows, Table 2). A pool bug in the loader-safe edits was fixed
+> and runs 49, 59, 72 rerun (run 73): nothing reported changed. Extraction is ~2x faster (exact byte counts). Running:
+> run 74 (KernelSHAP@4096 on the GBDT). Deferred by the user: MalConv retraining, the scale-up, more seeds. Next: a fresh
+> critical review of the current draft, then the front matter. Details: `docs/status.md`.
 
 > **2026-10-16:** **Section 3 carries the theory again, a new kind (W1).** (A) Shapley-grounded construction of P:
 > instrumentation equals the Shapley provenance for features additive over their items; a data-flow convention for
@@ -521,6 +522,9 @@ the research runs at pilot scale; scaling up is for the final numbers, when the 
 | Oct 13 (night) | AU corrected: held-out, detected-only, loader-realizable evasion with paired tests and a broad null (runs 47-49); string features 2.1x faster; seed-0 scale-up to 500 files prepared (`run/50`-`55`) | |
 | Oct 14-15 | **User runs `run/50`-`55`** (~20-24 h); then compare with the pilot, update the experiment docs and the manuscript's numbers | with the user |
 | then | Section-level writing (the user reads the restructured draft); AU mitigation written as a TODO | with the user |
+| Oct 16-19 | Simulated CCS review (`REVIEW.md`) and reassessment; paper reorganized (5 Evaluating the Transfers, 6 Security Applications); low-hanging fixes; experiment code for the shared protocol | |
+| Oct 20 | Runs 66-73: Section 5, 6.1 (attack transfer, Table 2), 6.2's unfiltered audit, Appendix C filled; pool bug fixed (nothing changed); extraction ~2x faster; run 74 (KernelSHAP@4096) started by the user | |
+| next | Fresh critical review of the current draft; decision on W7 (Android vs. scoped claims); read run 74 (Figures 3-4); then abstract, introduction, conclusion | with the user |
 | later | Cluster round: 3 seeds, 10K files (after the deferred optimizations in `docs/design.md`); AU mitigation (1c) if taken up; real-attack transfer (1d) probably not | with the user |
 | later | Appendix (App-R; the byte-set control bound) | |
 | Dec 15–mid Jan | Writing: introduction and contributions, framework edits, figures | Submission (CCS '27 Cycle A, est. abstract ~Jan 7, paper ~Jan 14) |

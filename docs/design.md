@@ -211,7 +211,16 @@ as `_strings_raw_features_original`): the 76 string regexes run once each over t
 each counts the distinct strings with a match. Exact (strings contain no newline and no regex can match one; `\b` sees
 the newline like a string's end); bit-identical feature vectors on 400 files; 2.1x faster extraction overall (the
 regex loop was ~60% of it). The other hot spots (pefile's section entropy, the whole-file entropy `Counter`, pefile's
-parse) are left as they are by decision (user, 2026-10-13: no replacing pefile or rewriting the pipeline).
+parse) were left as they are by decision (user, 2026-10-13: no replacing pefile or rewriting the pipeline).
+
+**Byte counts (2026-10-20, approved by the user).** `features.byte_counter` (end of `features.py`) builds the same
+`collections.Counter` as before (same counts, same first-occurrence order, so every float sum and every pefile warning
+is unchanged) with numpy. It replaces the name `Counter` in `features.py` (thrember's whole-file and overlay entropies,
+lines 226 and 642) and in pefile (`pefile.Counter = byte_counter`: the dominant-byte check on every parse and
+`entropy_H`) at import; no original line of either changes, and `collections.Counter` itself is untouched, so other
+modules are unaffected. Any process that imports `features.py` gets it, `ablation.verify`'s parse included. Measured:
+2.1x faster per ablated file at 4 MB (425 -> 205 ms), 1.65x at 0.18 MB; identical features and verification results.
+Tests: `TestByteCounter` in `tests/test_ember2024.py`.
 
 ## Deferred optimizations (noted 2026-10-13; revisit before the cluster round)
 
@@ -233,13 +242,12 @@ look at later; neither is implemented.
    |---|---|---|---|---|
    | strings (rest: findall, decode, 76 passes) | 0.062 s | merge the plain case-insensitive literal regexes into one lowercase scan | ~20 lines | ~10-15%, fiddly to keep exact |
    | pefile parse | 0.041 s | none (a partial load changes features) | — | — |
-   | section entropies (pefile `entropy_H`, overlay) | 0.040 s | numpy byte counts in first-occurrence order (bit-identical) | 25-50 lines | ~15% |
-   | whole-file entropy (`general`) | 0.039 s | same | ~25 lines | ~17% |
+   | section entropies (pefile `entropy_H`, overlay) | 0.040 s | **done 2026-10-20** (`byte_counter`, see above) | — | — |
+   | whole-file entropy (`general`) | 0.039 s | **done 2026-10-20** (same) | — | — |
    | byte-entropy windows | 0.020 s | vectorize over windows | ~30 lines | ~7% |
 
    Together ~1.5-2x more, but each needs copying a thrember method (the add-only rule forbids editing it) or patching
-   pefile; the user rejected that for now ("too much code to review", 2026-10-13). An exact numpy byte counter
-   was written and verified bit-identical on 400 files, then removed before any commit (not in git history). Its
-   recipe: `np.bincount` for the counts, the first index of each present value from `np.unique(..., return_index=True)`
+   pefile; the user rejected that for now ("too much code to review", 2026-10-13). The byte-count rows were done on
+   2026-10-20 by name replacement instead (no copied method, no edited pefile line). The recipe: `np.bincount` for the counts, the first index of each present value from `np.unique(..., return_index=True)`
    over 64 KB chunks (stop once every present value is seen), and iterate the values in that order, so the
    floating-point sum matches `Counter` exactly.

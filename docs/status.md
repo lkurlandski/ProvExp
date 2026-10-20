@@ -1,22 +1,32 @@
 # Status
 
-**2026-10-20 (afternoon): 6.1 written; run/72 read.** The pullback's lead held at 500 files (hypothesis held).
-- **Run 72:** clean (3 of 2,500 edits unparsed). MalConv-guided edits of 3 loader-safe fields: Spearman 0.48 (pullback)
+**2026-10-20 (end of afternoon session): 6.1 written; body filled except the deferred runs; run/74 running.**
+- **Run 72 read (500 files):** hypothesis held. MalConv-guided edits of 3 loader-safe fields: Spearman 0.48 (pullback)
   vs. 0.21 (occlusion, 4,096 windows) vs. 0.03 (bytes); AUC 0.78 / 0.60 / 0.55 (drop > 1, 291/499); CI of the rho gap
-  [0.17, 0.38]. Lead holds in 4 of 5 arms; not in shared_pullback (CI [-0.05, 0.16]; not in the paper). Details and the
-  ImageBase int64 quirk of `benign_pools` (negligible) in `docs/experiments/cm.md`.
-- **Manuscript:** 6.1's attack paragraph rewritten in three steps (run 68's stub/slack attack: MalConv evaded 81%, GBDT
-  rises, pullback shows why; MalConv-guided field edits: GBDT drop 1.36, both > 1 on 43%; the prediction, Table 2), plus
-  the asymmetric mirror in one sentence. Coherence: 6.1 opener's question, Section 6 close, intro's pullback bullet
-  (new clause), discussion's "From reliance to attacks" (TODO removed; why the stub attack's rise is not predicted).
-  `make check` clean. Remaining blue: 6.2's retrained row and its sentence; the discussion's Android sentence.
-- **ImageBase pool bug fixed** (commit 534edc3); **run/73** reran 49, 59, 72: every estimate and p-value unchanged
-  (some bootstrap CI endpoints move by 0.1 point). Manuscript unchanged; the `*fixpools*` outputs are the current ones.
-- **Extraction ~2x faster** (commit 52db0f4): `features.byte_counter` replaces `collections.Counter` for thrember's and
-  pefile's byte counts (monkeypatched at import, no original line changed; identical features). **run/74**
-  (KernelSHAP@4096 on the GBDT, ~5 h) is ready for the user.
-- **Next / waiting on the user:** the deferred items (KernelSHAP@4096 on the GBDT, ~2 h; MalConv retraining with the
-  audited fields zeroed; scale-up and seeds; W7), then the front and back matter once the body is final.
+  [0.17, 0.38]. Details in `docs/experiments/cm.md`.
+- **Manuscript:** 6.1's attack paragraph and Table 2 written (run 68's stub/slack attack: MalConv evaded 81%, the GBDT
+  rises, the pullback shows why; MalConv-guided field edits: GBDT drop 1.36, both > 1 on 43%; the prediction; one
+  sentence for the asymmetric GBDT-guided mirror). Coherence: 6.1 opener, Section 6 close, intro's pullback bullet,
+  discussion. `make check` clean. Remaining blue: 6.2's retrained row and sentence; the discussion's Android sentence.
+- **Pool bug fixed** (commit 534edc3): two benign ImageBase values above 2^63 overflowed into a junk entry; a file that
+  drew it skipped one field. **Run 73** reran 49, 59, 72: every estimate and p-value unchanged; the `*fixpools*`
+  outputs are the current ones.
+- **Extraction ~2x faster** (commit 52db0f4): `features.byte_counter` replaces `Counter` for thrember's and pefile's byte
+  counts by name (pefile monkeypatched at import; no original line changed; identical features; `docs/design.md`,
+  "Speed"). It affects no other code (`collections.Counter` untouched).
+- **Run 74 running** (user, started 2026-10-20 ~16:00): KernelSHAP over 4,096 windows on the GBDT, reusing run 66,
+  ~5 h. Log `artifacts/logs/pb1-shared-ks4096-seed0.log`; output `artifacts/experiments/e1/seed-0/
+  zeros-typical-header-shared-ks4096/`. Hypothesis: beats KernelSHAP@1024 (6.31) and adaptive@4096 (5.96), stays below
+  the byte-level pullback (8.03).
+- **Decisions (user, 2026-10-20):** MalConv retraining, the scale-up, and more seeds stay deferred. The three remaining
+  review items were evaluated and dropped: a stronger attacker on the zeroed MalConv (outcome near-certain; belongs with
+  retraining), a named-feature TreeSHAP baseline for Table 2 (it presumes a hand-built field-to-feature map, which is not
+  a realistic alternative; the GBDT-score covariate is optional, only if a reviewer asks), and a 0.1% FPR column (noisy
+  at 5,000 benign files; at most one sentence later). Sentence-level rewordings (the 6.2 "attack surface" sentence,
+  "for any extractor") ignored for now.
+- **Next:** read run 74 and update Figures 3-4 and Section 5; a fresh critical review of the current draft
+  (`REVIEW.md` predates the reorganization and most results); the W7 decision (Android vs. scoped claims; the blue
+  Android sentence must go or be filled); then abstract, introduction, conclusion.
 
 **2026-10-20 (end of morning session): Section 5, 6.2, and Appendix C filled; 6.1's claim decided, waiting on
 run/72 (500 files, the user is running it).**
