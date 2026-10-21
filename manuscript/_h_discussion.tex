@@ -24,16 +24,23 @@ single group.
 
 \paragraph{Explainers.} The transfers are linear in the explanation, so they carry it into the other space as it is:
 they make a good explanation more useful and leave a weak one as weak as it was. The quality of a transferred
-explanation is therefore the quality of its source. We established the method on the GBDT, the standard model for these
-features; the same machinery applies unchanged to any other feature-based model, which we return to in future work.
+explanation is therefore the quality of its source: pushed forward from KernelSHAP over 64 windows, an explanation of
+the GBDT keeps 0.68 of TreeSHAP's evidence, and from 4{,}096 windows 0.97 (Section~\ref{sec:XML:PushforwardFaithfulness}).
+We established the method on the GBDT, the standard model for these features; the same machinery applies unchanged to
+any other feature-based model, which we return to in future work.
+
+\paragraph{Direct explanation at finer resolution.} KernelSHAP over windows was still gaining at 4{,}096 windows
+(Section~\ref{sec:XML:PullbackFaithfulness}), and finer windows might bring it closer to the byte-level pullback. Each
+fourfold refinement, however, multiplies its queries by four, to about 131{,}000 feature extractions per file at
+16{,}384 windows, whereas the pullback reaches single bytes from the one extraction that computes the features.
 
 \paragraph{From reliance to attacks.} Our deletion operator keeps every file parseable with its layout intact and is
 verified on every file, which makes deletion a clean measurement of reliance, but it does not keep programs running.
 Section~\ref{sec:XML:Applications} therefore rests its security conclusions on changes that the Windows loader
 ignores or allows, following the format's documentation, so the changes are ones an attacker could make; we did not
 execute the modified files. Section~\ref{sec:XML:Comparison} uses two such changes, a gradient attack confined to
-loader-ignored bytes and edits of loader-safe fields, to ask whether the pullback predicts a transfer to the
-feature-based detector. Our attacker stays deliberately narrow:
+loader-ignored bytes and edits of loader-safe fields, to ask whether an attack guided by the raw-byte detector carries
+over to the feature-based one, and whether the pullback predicts on which files. Our attacker stays deliberately narrow:
 appending content, injecting sections, or packing evade MalConv more easily~\cite{demetrio2021adversarial}. An
 explanation of the original file measures the evidence that a change can remove, not the evidence that new content
 adds, which is why the gradient attack's rise in the GBDT's score is explained but not predicted; extending the

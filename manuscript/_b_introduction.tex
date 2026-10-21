@@ -39,16 +39,19 @@ transfer into the features can recover is fixed by $P$ alone.
 
 We instrument the EMBER extractor and evaluate both transfers on EMBER-2024 with a GBDT and MalConv, first in the
 laboratory, asking whether each transferred explanation is faithful and at what cost, and then on one security task per
-direction. The pullback is as faithful as occlusion at the same resolution, at
-1/135 of its cost, and at byte resolution removes 1.7 times as much evidence. Used \emph{locally}, it compares the two detectors on a single file:
-when the GBDT alone flags malware, MalConv reads a third of the GBDT's evidence the other way, and deleting those bytes
-makes MalConv flag 19 of 25 such files, a distinction that vanishes over windows of bytes. The pushforward is faithful
-up to the resolution of its source and, in one step, comes close to its exact form; on MalConv, the features it ranks
-highest carry about twice as much of the detector's evidence as those of a surrogate model trained to imitate it.
-Used \emph{globally}, it gives MalConv's per-file explanations a shared vocabulary, so they can be aggregated over a
-corpus: 9 of the 20 fields MalConv relies on most are confirmed, and changing them only as the Windows loader allows
-evades 12.4\% of detected held-out malware at a 1\% false-positive rate, twice the rate of as many other loader-ignored
-fields. In summary, we make the following contributions:
+direction. The pullback is as faithful as occlusion at the same resolution, at about a hundredth of its time, and at
+byte resolution, which direct explanation can approach only with tens of thousands of extractions per file, it removes
+more evidence than any direct method. Used \emph{locally}, it compares the two detectors on a single file. An attacker
+who explains only MalConv and edits the header fields MalConv relies on also weakens the GBDT, but on some files far
+more than on others; before any edit, the GBDT's pullback on those fields predicts how much (Spearman 0.48, against 0.21
+for occlusion and nothing for the number of bytes changed). When the detectors disagree, it shows whether the flagging
+detector's evidence is content the other ignores or reads the other way, a distinction that vanishes over windows of
+bytes. The pushforward is faithful up to the resolution of its source and, in one step, comes close to its exact form;
+on MalConv, the features it ranks highest carry about twice as much of the detector's evidence as those of a surrogate
+model trained to imitate it. Used \emph{globally}, it gives MalConv's per-file explanations a shared vocabulary, so they
+can be aggregated over a corpus: 9 of the 20 fields MalConv relies on most are confirmed, and changing them only as the
+Windows loader allows evades 12.4\% of detected held-out malware at a 1\% false-positive rate, twice the rate of as
+many other loader-ignored fields. In summary, we make the following contributions:
 \begin{itemize}
     \item \textbf{Explanation provenance} (Section~\ref{sec:XML:Framework}): a matrix $P$ grounded in the Shapley
     value, recorded exactly by instrumenting a feature extractor where its features are additive, and two transfers through it: the pullback, exact for linear models, and the
@@ -56,12 +59,13 @@ fields. In summary, we make the following contributions:
     features can recover from a pulled-back explanation.
     \item \textbf{The pullback} (Sections~\ref{sec:XML:PullbackFaithfulness}
     and~\ref{sec:XML:Comparison}): faithful at a fraction of the cost of direct
-    problem-space explanation and precise to the byte; it triages disagreements between a feature-based and a raw-byte
-    detector, file by file, where windows of bytes reach the opposite conclusion, and predicts, before any change, which
-    of the feature-based detector's detections an attacker guided by the raw-byte detector also puts at risk.
+    problem-space explanation and precise to the byte; comparing a feature-based and a raw-byte detector file by
+    file, it predicts, before any change, which of the feature-based detector's detections an attacker guided by the
+    raw-byte detector also puts at risk, and triages their disagreements where windows of bytes reach the opposite
+    conclusion.
     \item \textbf{The pushforward} (Sections~\ref{sec:XML:PushforwardFaithfulness}
     and~\ref{sec:XML:Audit}): faithful up to the resolution of its source,
     and on MalConv more faithful than a surrogate model; it audits a raw-byte detector across a corpus in named features, confirming reliance that, changed only as the
-    loader allows, evades an eighth of detected malware; zeroing the audited fields cuts the strongest such attack
-    from 16.8\% to 2.9\% at a cost of 3.5 points of detection.
+    loader allows, evades an eighth of detected malware; zeroing the fields that the pushforward and the surrogate find
+    cuts the strongest such attack from 16.8\% to 2.9\% at a cost of 3.5 points of detection.
 \end{itemize}

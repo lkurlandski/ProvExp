@@ -33,10 +33,10 @@ the extractor and by the loader could misplace $P$, and we leave such files out 
 
 The pullback puts the explanations of a feature-based and a raw-byte detector on the same bytes, at byte resolution, so
 that a defender can compare them one file at a time. The defender asks three questions. Which bytes do both detectors
-rely on (\emph{shared reliance}), and does an attacker guided by the raw-byte detector also weaken the feature-based
-one, and on which files (\emph{attack transfer})? And when the detectors disagree, is the flagging detector's evidence content
-that the other does not read, or content that it reads the other way (\emph{disagreement triage})? Disagreements are where the defender learns most: one detector may have been evaded, or
-may have a blind spot or a false positive.
+rely on (\emph{shared reliance})? Does an attacker guided by the raw-byte detector also weaken the feature-based one, and
+on which files (\emph{attack transfer})? And when the detectors disagree, is the flagging detector's evidence content
+that the other does not read, or content that it reads the other way (\emph{disagreement triage})? Disagreements are
+where the defender learns most: one detector may have been evaded, or may have a blind spot or a false positive.
 
 % TODO (WP8): replace occlusion by the best window explainer of Section 5.1 once run/66 has run.
 The realistic alternative needs no provenance: explain both models directly over windows of bytes, with occlusion as in

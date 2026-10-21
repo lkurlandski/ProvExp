@@ -138,4 +138,5 @@ that share their elements while conserving attribution. Unlike a surrogate, the 
 imitates its outputs; unlike concept probes, it needs neither the detector's internals nor labeled examples, only a
 byte-level explanation and the extractor's record of which bytes each feature is computed from. \emph{Third}, the two directions together put detectors over different representations
 into one space, which turns explanation transfer into two security tasks: comparing two detectors on the same file, at a
-resolution that windows of bytes do not reach, and auditing a raw-byte detector across a corpus in named features.
+resolution that windows of bytes do not reach, which predicts which detections an attack on one detector carries over to
+the other, and auditing a raw-byte detector across a corpus in named features.

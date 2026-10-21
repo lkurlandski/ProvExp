@@ -1,5 +1,19 @@
 # Status
 
+**2026-10-21 (later): front matter, background, discussion, conclusion brought up to date; end-to-end pass.**
+- Abstract and introduction: the cost ratio was stale (1/135 -> "about a hundredth of its time", 5.1's 1/95); byte
+  resolution now "more evidence than any direct explanation, from one extraction instead of tens of thousands"; 6.1 led
+  by its decided claim (the pullback predicts the GBDT's drop under MalConv-guided edits, 0.48 vs. 0.21), triage
+  second; the pushforward's surrogate result in the abstract; the mitigation bullet names whose fields are zeroed.
+- Background (position, third point), discussion (KernelSHAP 0.68 -> 0.97 as evidence that transfer quality is source
+  quality; a new paragraph on direct explanation at finer windows: ~131k extractions at 16k windows), conclusion
+  (rewritten around the current results), ethics (the trigger is now one worked example; 6.1's transfer to the GBDT).
+- Fixes: the method claimed Appendix C measures the data-flow convention's cost (it does not); 6.1's three questions
+  were punctuated as two; small wording.
+- Unchanged, for the user: the blue Android sentence (W7) and 6.2's retrained row; the TODO in 6.1 to use the best
+  window explainer (now KernelSHAP@4096) in place of occlusion@4096 for Table 2 needs a run. `make check`: one 1.7pt
+  overfull vbox on page 17 (column break in the appendices; will reflow).
+
 **2026-10-21: run 74 read; Section 5 and Figures 3-4 updated.**
 - **Run 74 (KernelSHAP over 4,096 windows, GBDT):** clean (100/100, no failures or invalid points), 8.1 h (not ~5 h).
   Hypothesis held: 7.17 log-odds (vs. KernelSHAP@1024 6.31, adaptive@4096 5.96, occlusion@4096 5.51), below the
