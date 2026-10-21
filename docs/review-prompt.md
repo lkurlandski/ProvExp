@@ -15,6 +15,11 @@ cycle.
   experiments 500 or 2,000 files). The numbers will change when experiments are scaled up, so do not nitpick values.
   Judge instead whether each experiment's *design* can support its claim, and whether the claim would survive
   plausible shifts in the numbers (a narrower margin, a weaker correlation).
+- **Blue text is a placeholder for a pending run.** Values and sentences set in blue (`\synthetic{...}` in the LaTeX,
+  marked `% SYNTHETIC` in the source) are predicted results of experiments that are designed and scripted but not yet
+  run; the prose around them is written as if the run had finished. Do not flag them as missing evidence, fabrication,
+  or inconsistency. Review them as claims: would the design support the claim if the run came out as predicted, and
+  what would a different outcome do to the paper? List each one once, in the risk register, with what hinges on it.
 - **Front matter is written last.** The abstract, introduction, and conclusion are provisional; one purpose of this
   review is to shape their rewrite. Treat the body as the source of truth and the front matter as a draft to be checked
   against it.

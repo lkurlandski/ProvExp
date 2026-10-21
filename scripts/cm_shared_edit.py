@@ -6,12 +6,17 @@ of fields chosen another way weakens only one?
 For each of the malware that both detectors detect (run 68's files, scripts/cm_transfer.py):
 
     Phase 1 (GPU): MalConv's Integrated Gradients per byte, cached in `{outdir}/ig/{index}.npy`.
+    Phase 1b (CPU, with `--kernelshap`): the GBDT's KernelSHAP over the windows, with Section 5.1's worker
+        (scripts/faithfulness.py, `process_kernelshap`; per_window * K coalitions, every window a player, so it costs
+        tens of thousands of extractions per file whatever the fields), cached in `{outdir}/kernelshap/{index}.npy`.
     Phase 2 (CPU): on the original file, the GBDT's interventional-TreeSHAP pullback, its occlusion over windows (the
         window baseline, no provenance), and MalConv's IG, all as evidence for malware. The candidate fields are the
         loader-safe fields of scripts/audit_evade.py (FREE and FREE_EXTRA, scrambled; CONSTRAINED, a valid benign value),
         located in the file by P. A field's evidence is a detector's evidence summed over the field's bytes (for occlusion,
-        each window's score spread evenly over its bytes; only windows that hold a candidate field are occluded). Each arm
-        edits the same number of fields per file and differs only in how they are chosen:
+        each window's score spread evenly over its bytes; only windows that hold a candidate field are occluded). With
+        `--kernelshap`, also the GBDT's KernelSHAP over the same windows (a second window baseline, the strongest of
+        Section 5.1), computed in phase 1b. Each arm edits the same number of fields per file and differs only in how
+        they are chosen:
             shared_pullback   top n by min(GBDT pullback evidence, MalConv IG evidence)
             shared_windows    top n by min(GBDT occlusion evidence, MalConv IG evidence)
             malconv_only      top n by MalConv IG evidence (an attacker who explains only the raw-byte detector)
@@ -20,8 +25,8 @@ For each of the malware that both detectors detect (run 68's files, scripts/cm_t
         Every edited file must parse with its original section layout; both detectors score it.
 
 The defender's question (run 68's, in the region the GBDT reads): before any edit, does the GBDT's evidence on the fields
-an attacker edits, from its pullback, predict how much the GBDT drops, better than its occlusion windows or the number
-of bytes written? Reported per arm; the arm `malconv_only` is the attacker who explains only MalConv.
+an attacker edits, from its pullback, predict how much the GBDT drops, better than its occlusion windows (and, with
+`--kernelshap`, its KernelSHAP windows) or the number of bytes written? Reported per arm; the arm `malconv_only` is the attacker who explains only MalConv.
 
 With `--check` (step 0, the feasibility check), phase 2 stops before editing and records, per file, the number of
 candidate fields and how much of each detector's evidence they carry.
@@ -226,7 +231,15 @@ def process_file(task: dict[str, Any]) -> list[dict[str, Any]]:
                 occlusion, _ = occlude_range(scorer, window, f0, k, k + 1)
                 e_w[edges[k]:edges[k + 1]] = d_g * occlusion["gbdt"][0] / max(1, int(edges[k + 1] - edges[k]))
                 windows_occluded += 1
-        G, W, M = (field_evidence(e, runs, fields) for e in (e_g, e_w, e_m))
+        # The second window baseline: the GBDT's KernelSHAP over the same windows (phase 1b), each window's value
+        # spread evenly over its bytes.
+        e_k = np.zeros(m)
+        if task["kernelshap"] and not task["check"]:
+            shapley = np.load(task["kernelshap_values"])
+            if shapley.shape[0] != edges.shape[0] - 1:
+                raise RuntimeError(f"KernelSHAP has {shapley.shape[0]} windows, the file {edges.shape[0] - 1}.")
+            e_k = d_g * (shapley / np.maximum(1, np.diff(edges)))[window]
+        G, W, M, Ks = (field_evidence(e, runs, fields) for e in (e_g, e_w, e_m, e_k))
         tiebreak = np.random.default_rng([task["seed"], task["index"], 2]).permutation(len(fields)).astype(np.int64)
         n = task["num_fields"]
         chosen = {
@@ -271,6 +284,7 @@ def process_file(task: dict[str, Any]) -> list[dict[str, Any]]:
                 "gbdt_drop": d_g * (f_g - g), "malconv_drop": d_m * (f_m - mc),
                 "gbdt_evidence": float(G[chosen[arm]].sum()), "malconv_evidence": float(M[chosen[arm]].sum()),
                 "gbdt_window_evidence": float(W[chosen[arm]].sum()),
+                **({"gbdt_kernelshap_evidence": float(Ks[chosen[arm]].sum())} if task["kernelshap"] else {}),
                 "seconds": time.perf_counter() - t_0,
             })
         return rows
@@ -341,9 +355,10 @@ def _auc(x: FloatArray, positive: npt.NDArray[np.bool_]) -> float:
 
 def predictors(files: pl.DataFrame, delta: float, num_boot: int = 2000, seed: int = 0) -> pl.DataFrame:
     """
-    Per arm, how well the GBDT's evidence on the edited fields, from its pullback or from its occlusion windows, and the
-    number of bytes written predict the GBDT's drop: Spearman's rho, the AUC for a drop of more than `delta`, and a
-    bootstrap 95% CI (over files) of rho(pullback) - rho(windows). The arm `malconv_only` is the attacker who explains
+    Per arm, how well the GBDT's evidence on the edited fields, from its pullback or from its occlusion windows (and
+    its KernelSHAP windows, if the run has them), and the number of bytes written predict the GBDT's drop: Spearman's
+    rho, the AUC for a drop of more than `delta`, and bootstrap 95% CIs (over files) of rho(pullback) - rho(windows)
+    and rho(pullback) - rho(kernelshap). The arm `malconv_only` is the attacker who explains
     only MalConv; the prediction is the defender's, made from the original file.
     """
     ok = files.filter((pl.col("status") == "ok") & pl.col("parsed"))
@@ -356,18 +371,27 @@ def predictors(files: pl.DataFrame, delta: float, num_boot: int = 2000, seed: in
         d = a["gbdt_drop"].to_numpy()
         P, W = a["gbdt_evidence"].to_numpy(), a["gbdt_window_evidence"].to_numpy()
         B = a["bytes"].to_numpy().astype(np.float64)
+        Ks = a["gbdt_kernelshap_evidence"].to_numpy() if "gbdt_kernelshap_evidence" in a.columns else None
         big = d > delta
-        diffs = []
+        diffs, diffs_k = [], []
         for _ in range(num_boot):
             i = rng.integers(0, d.size, d.size)
-            diffs.append(stats.spearmanr(P[i], d[i]).statistic - stats.spearmanr(W[i], d[i]).statistic)
+            rho_p = stats.spearmanr(P[i], d[i]).statistic
+            diffs.append(rho_p - stats.spearmanr(W[i], d[i]).statistic)
+            if Ks is not None:
+                diffs_k.append(rho_p - stats.spearmanr(Ks[i], d[i]).statistic)
         lo, hi = np.nanpercentile(diffs, [2.5, 97.5])
-        rows.append({"arm": arm, "files": a.height, "positives": int(big.sum()),
-                     "rho_pullback": float(stats.spearmanr(P, d).statistic),
-                     "rho_windows": float(stats.spearmanr(W, d).statistic),
-                     "rho_bytes": float(stats.spearmanr(B, d).statistic),
-                     "auc_pullback": _auc(P, big), "auc_windows": _auc(W, big), "auc_bytes": _auc(B, big),
-                     "diff_lo": float(lo), "diff_hi": float(hi)})
+        row = {"arm": arm, "files": a.height, "positives": int(big.sum()),
+               "rho_pullback": float(stats.spearmanr(P, d).statistic),
+               "rho_windows": float(stats.spearmanr(W, d).statistic),
+               "rho_bytes": float(stats.spearmanr(B, d).statistic),
+               "auc_pullback": _auc(P, big), "auc_windows": _auc(W, big), "auc_bytes": _auc(B, big),
+               "diff_lo": float(lo), "diff_hi": float(hi)}
+        if Ks is not None:
+            lo_k, hi_k = np.nanpercentile(diffs_k, [2.5, 97.5])
+            row |= {"rho_kernelshap": float(stats.spearmanr(Ks, d).statistic), "auc_kernelshap": _auc(Ks, big),
+                    "diff_kernelshap_lo": float(lo_k), "diff_kernelshap_hi": float(hi_k)}
+        rows.append(row)
     return pl.DataFrame(rows)
 
 
@@ -390,6 +414,44 @@ def run_ig(files: pl.DataFrame, checkpoint: Path, db: Path, steps: int, device: 
     del model
 
 
+def _kernelshap_task(task: dict[str, Any]) -> dict[str, Any]:
+    """Phase 1b for one file: Section 5.1's KernelSHAP over windows, with any error returned rather than raised."""
+    try:
+        return faithfulness.process_kernelshap(task)
+    except Exception as err:
+        return {"index": task["index"], "error": f"{type(err).__name__}: {err}"[:300]}
+
+
+def run_kernelshap(files: pl.DataFrame, model_file: Path, d: int, args: Any, ksdir: Path) -> pl.DataFrame:
+    """
+    The GBDT's KernelSHAP over `args.num_windows` windows for each file, as Section 5.1 computes it (zero fill, typical
+    header, `args.kernelshap_per_window` coalitions per window), saved to `ksdir`; files already done are skipped, so an
+    interrupted run resumes. Returns one row per file computed now: seconds, extractions, failed coalitions, or the
+    error.
+    """
+    ksdir.mkdir(parents=True, exist_ok=True)
+    tasks = [{"kind": "kernelshap_k", "index": int(r["index"]), "name": r["name"], "shard": int(r["shard"]),
+              "position": int(r["position"]), "dbdir": args.db, "header": "typical", "fill": "zeros",
+              "seed": args.seed + int(r["index"]), "num_windows": args.num_windows,
+              "kernelshap_samples": args.kernelshap_per_window * args.num_windows}
+             for r in files.iter_rows(named=True) if not (ksdir / f"{r['index']}.npy").exists()]
+    rows: list[dict[str, Any]] = []
+    if not tasks:
+        return pl.DataFrame(rows)
+    # NOTE: fork, as scripts/faithfulness.py runs this worker (run 74). In a 3-file smoke test, KernelSHAP inside the
+    # spawned phase-2 workers ran about 3x slower per file than this pool (cause not found). Phase 1 creates no CUDA
+    # context with --device cpu, which --kernelshap requires.
+    with mp.get_context("fork").Pool(args.num_workers, initializer=faithfulness._init_worker,
+                                     initargs=({"gbdt": model_file}, d)) as pool:
+        for out in tqdm(pool.imap_unordered(_kernelshap_task, tasks), total=len(tasks), desc="KernelSHAP", mininterval=60):
+            if "error" in out:
+                print(f"File {out['index']}: KernelSHAP failed: {out['error']}", flush=True)
+            else:
+                np.save(ksdir / f"{out['index']}.npy", np.asarray(out["values"]["gbdt"], dtype=np.float64))
+            rows.append({k: out.get(k) for k in ("index", "seconds", "extractions", "failed", "error")})
+    return pl.DataFrame(rows, infer_schema_length=None)
+
+
 def main() -> None:
     parser = ArgumentParser(description=__doc__.split("\n\n")[1] if __doc__ else None)
     parser.add_argument("--seed", type=int, default=0, help="The seed of MalConv and of the GBDT.")
@@ -397,6 +459,8 @@ def main() -> None:
     parser.add_argument("--num_files", type=int, default=100, help="The first files of the selection by row, as run 68 (0: all).")
     parser.add_argument("--num_fields", type=int, default=3, help="The fields every arm edits per file.")
     parser.add_argument("--num_windows", type=int, default=4096, help="Windows for the GBDT's occlusion (the window baseline).")
+    parser.add_argument("--kernelshap", action="store_true", help="Also explain the GBDT with KernelSHAP over the same windows (a second window baseline; slow: per_window * K + 2 extractions per file).")
+    parser.add_argument("--kernelshap_per_window", type=int, default=8, help="Coalitions per window for --kernelshap (8, as Section 5.1).")
     parser.add_argument("--max_content", type=int, default=256, help="The largest field, in bytes, that counts as a candidate.")
     parser.add_argument("--delta", type=float, default=1.0, help="The drop in log-odds that counts, for 'both drop'.")
     parser.add_argument("--ig_steps", type=int, default=256)
@@ -417,6 +481,8 @@ def main() -> None:
     args = parser.parse_args()
     if os.environ.get("PYTHONHASHSEED") != "0":
         raise RuntimeError("Run with PYTHONHASHSEED=0 so that the features match the feature store.")
+    if args.kernelshap and not args.device.startswith("cpu"):
+        raise ValueError(f"--kernelshap forks its workers after phase 1, so it needs --device cpu (cached IG). Got {args.device}.")
 
     outdir = args.outdir / f"seed-{args.seed}"
     outdir.mkdir(parents=True, exist_ok=True)
@@ -429,7 +495,8 @@ def main() -> None:
             files = files.sort("row").head(args.num_files)
         files = files.select(pl.col("row").alias("index"), "name", "shard", "position").sort("index")
         print(f"Shared-field edits: {files.height} both-detected malware, seed {args.seed}, {args.num_fields} fields per "
-              f"file, GBDT occlusion over {args.num_windows} windows{' (check only)' if args.check else ''}.", flush=True)
+              f"file, GBDT occlusion{' and KernelSHAP' if args.kernelshap else ''} over {args.num_windows} windows"
+              f"{' (check only)' if args.check else ''}.", flush=True)
         print(f"Thresholds (1% FPR): GBDT {gbdt_threshold:.3f}, MalConv {malconv_threshold:.3f}.", flush=True)
 
         t_0 = time.time()
@@ -438,6 +505,18 @@ def main() -> None:
         seconds_ig = time.time() - t_0
         print(f"Phase 1 (IG on {args.device}): {seconds_ig:.0f} s.", flush=True)
 
+        model_file = args.models / "gbdt" / f"seed-{args.seed}" / "model.txt"
+        if args.kernelshap and not args.check:
+            t_0 = time.time()
+            ks = run_kernelshap(files, model_file, len(PEFeatureExtractor().feature_names), args, outdir / "kernelshap")
+            if ks.height:
+                ks.write_parquet(outdir / f"kernelshap-{int(time.time())}.parquet")
+            print(f"Phase 1b (KernelSHAP on {args.num_workers} workers, {ks.height} files): {time.time() - t_0:.0f} s.",
+                  flush=True)
+            missing = [i for i in files["index"].to_list() if not (outdir / "kernelshap" / f"{i}.npy").exists()]
+            if missing:
+                raise RuntimeError(f"KernelSHAP is missing for {len(missing)} files, e.g., {missing[:5]}; rerun to resume.")
+
         names = list(PEFeatureExtractor().feature_names)
         index = {name: i for i, name in enumerate(names)}
         pools = benign_pools(args.features, names, sorted(index[n] for n in CONSTRAINED), args.benign_rows, args.seed)
@@ -445,10 +524,10 @@ def main() -> None:
         tasks = [{"index": int(r["index"]), "name": r["name"], "shard": int(r["shard"]), "position": int(r["position"]),
                   "dbdir": args.db, "ig": outdir / "ig" / f"{r['index']}.npy", "num_windows": args.num_windows,
                   "num_fields": args.num_fields, "max_content": args.max_content, "seed": args.seed,
-                  "check": args.check} for r in files.iter_rows(named=True)]
+                  "check": args.check, "kernelshap": args.kernelshap,
+                  "kernelshap_values": outdir / "kernelshap" / f"{r['index']}.npy"} for r in files.iter_rows(named=True)]
         t_0 = time.time()
         rows: list[dict[str, Any]] = []
-        model_file = args.models / "gbdt" / f"seed-{args.seed}" / "model.txt"
         # Spawn, not fork: phase 1 initialized a CUDA context in this process, which a forked worker cannot use.
         with mp.get_context("spawn").Pool(args.num_workers, initializer=_init_worker,
                                           initargs=(model_file, checkpoint, background, pools)) as pool:
@@ -475,7 +554,7 @@ def main() -> None:
         print(f"\nPer arm (median drops in log-odds; both = both drop by more than {args.delta}):\n{summary}")
         print(f"\nRun 68's attack on the same files (context):\n{context}")
         print(f"\nShared (pullback) against each arm, paired per file:\n{comparisons}")
-        print(f"\nPredicting the GBDT's drop from the original file (diff = rho pullback - rho windows, 95% CI):\n{prediction}")
+        print(f"\nPredicting the GBDT's drop from the original file (diff = rho pullback - rho windows or kernelshap, 95% CI):\n{prediction}")
     report = {"config": {k: (v.as_posix() if isinstance(v, Path) else v) for k, v in vars(args).items()},
               "gbdt_threshold": gbdt_threshold, "malconv_threshold": malconv_threshold,
               "status": table.group_by("status").len().to_dicts(),

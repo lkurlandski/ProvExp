@@ -44,7 +44,7 @@ byte resolution, which direct explanation can approach only with tens of thousan
 more evidence than any direct method. Used \emph{locally}, it compares the two detectors on a single file. An attacker
 who explains only MalConv and edits the header fields MalConv relies on also weakens the GBDT, but on some files far
 more than on others; before any edit, the GBDT's pullback on those fields predicts how much (Spearman 0.48, against 0.21
-for occlusion and nothing for the number of bytes changed). When the detectors disagree, it shows whether the flagging
+for occlusion, \synthetic{0.31} for KernelSHAP over windows, and nothing for the number of bytes changed). When the detectors disagree, it shows whether the flagging
 detector's evidence is content the other ignores or reads the other way, a distinction that vanishes over windows of
 bytes. The pushforward is faithful up to the resolution of its source and, in one step, comes close to its exact form;
 on MalConv, the features it ranks highest carry about twice as much of the detector's evidence as those of a surrogate

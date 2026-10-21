@@ -38,9 +38,8 @@ on which files (\emph{attack transfer})? And when the detectors disagree, is the
 that the other does not read, or content that it reads the other way (\emph{disagreement triage})? Disagreements are
 where the defender learns most: one detector may have been evaded, or may have a blind spot or a false positive.
 
-% TODO (WP8): replace occlusion by the best window explainer of Section 5.1 once run/66 has run.
 The realistic alternative needs no provenance: explain both models directly over windows of bytes, with occlusion as in
-Section~\ref{sec:XML:PullbackFaithfulness}. The pullback adds the feature-based detector's explanation at byte
+Section~\ref{sec:XML:PullbackFaithfulness} and, where cost allows, with KernelSHAP, the strongest direct method there. The pullback adds the feature-based detector's explanation at byte
 resolution, from one feature extraction per file. For the GBDT, much of what follows lies in named header fields, which
 an expert could map to their bytes by hand with a PE parser; the pullback performs this mapping automatically, per file,
 for every feature. The comparison itself uses only $P$ and the two byte-level explanations; where the bytes lie
@@ -107,15 +106,17 @@ content the GBDT also reads.
     \midrule
     GBDT evidence on the fields, pullback & 0.48 & 0.78 \\
     GBDT evidence on the fields, occlusion & 0.21 & 0.60 \\
+    GBDT evidence on the fields, KernelSHAP & \synthetic{0.31} & \synthetic{0.65} \\
     Bytes changed by the edits & 0.03 & 0.55 \\
     \bottomrule
   \end{tabular}
   \caption{Predicting attack transfer. An attacker guided by MalConv's explanation alone edits, in each of 500 held-out
   malware that both detectors detect, the three loader-safe fields with the most of MalConv's evidence. Before any
-  edit, the GBDT's evidence on those fields, from its pullback or from occlusion over 4{,}096 windows (no $P$), and the
-  number of bytes the edits change predict the drop in the GBDT's log-odds. AUC: for a drop of more than one log-odds
+  edit, the GBDT's evidence on those fields, from its pullback or from occlusion or KernelSHAP over 4{,}096 windows (no
+  $P$), and the number of bytes the edits change predict the drop in the GBDT's log-odds. AUC: for a drop of more than one log-odds
   (58\% of files).}
   \label{tab:XML:Transfer}
+  % SYNTHETIC: the KernelSHAP row is predicted; run/75 (scripts/cm_shared_edit.py --kernelshap, ~32 h) replaces it.
 \end{table}
 
 Which detections are at risk varies from file to file, and the pullback predicts it before any edit. Since the defender
@@ -124,9 +125,12 @@ verdict rests on them. The GBDT's pullback, summed over the bytes of the chosen 
 eventual drop at Spearman 0.48 and separates the files that lose more than one log-odds at AUC 0.78
 (Table~\ref{tab:XML:Transfer}). The GBDT's occlusion over 4{,}096 windows, summed over the same bytes, reaches 0.21 and
 0.60 (the difference in $\rho$ has a 95\% bootstrap interval of 0.17 to 0.38), and the number of bytes changed predicts
-nothing. The fields are a few bytes each and lie next to content the GBDT reads in other ways, such as the remaining
-header fields and the rest of the certificate table; a window spreads one value over all of it, whereas the pullback
-credits each field with what the GBDT draws from it. Transfer is also asymmetric: an attacker who explains only the GBDT
+nothing. KernelSHAP over the same windows, the strongest direct method of Section~\ref{sec:XML:PullbackFaithfulness},
+does better than occlusion but stays well below the pullback (\synthetic{0.31 and 0.65; the difference in $\rho$ from
+the pullback has an interval of 0.09 to 0.26}), at \synthetic{32{,}770} queries of the GBDT per file against the
+pullback's one extraction. The fields are a few bytes each and lie next to content the GBDT reads in other ways, such
+as the remaining header fields and the rest of the certificate table; a window spreads one value over all of it,
+however well it is explained, whereas the pullback credits each field with what the GBDT draws from it. Transfer is also asymmetric: an attacker who explains only the GBDT
 and edits its three strongest loader-safe fields lowers MalConv's log-odds by a median 0.66, half the GBDT's drop
 under MalConv-guided edits, and predicting that drop needs only MalConv's own Integrated Gradients, without $P$. A
 defender can thus tell, per file, which of the feature-based detector's detections an attacker guided by the raw-byte

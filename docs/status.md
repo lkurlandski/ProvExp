@@ -1,5 +1,15 @@
 # Status
 
+**2026-10-21 (later still): Table 2 gets a KernelSHAP row (predicted, blue); run/75 ready.**
+- `scripts/cm_shared_edit.py --kernelshap`: the GBDT's KernelSHAP over 4,096 windows as a second window baseline,
+  computed in a cached, resumable phase (1b) with Section 5.1's worker (`faithfulness.process_kernelshap`, fork pool;
+  inside the spawned phase-2 workers it ran ~3x slower). Smoke test (3 files): run 72 reproduces exactly.
+- **run/75** (not run; the user runs it later): 500 files, 16 workers, ~32 h. Hypothesis: rho ~0.25-0.35, between
+  occlusion (0.21) and the pullback (0.48). If KernelSHAP reaches the pullback, 6.1's claim weakens: stop and decide.
+- Manuscript (blue, as if run): Table 2's KernelSHAP row (rho 0.31, AUC 0.65), 6.1's prediction paragraph (CI of the
+  difference 0.09-0.26; 32,770 queries vs. one extraction), the "realistic alternative" sentence, the intro's
+  comparison. `docs/review-prompt.md` now tells the reviewer how to treat blue placeholders.
+
 **2026-10-21 (later): front matter, background, discussion, conclusion brought up to date; end-to-end pass.**
 - Abstract and introduction: the cost ratio was stale (1/135 -> "about a hundredth of its time", 5.1's 1/95); byte
   resolution now "more evidence than any direct explanation, from one extraction instead of tens of thousands"; 6.1 led
