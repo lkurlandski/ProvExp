@@ -16,6 +16,11 @@
 # a 4 MB file and 1.65x on a 0.18 MB file, so expect ~5 h (the largest file ~3 h). The estimates above predate it.
 # Smoke-tested on 2 files (2 workers, 20 min): 21 pass-1 tasks reused, only KernelSHAP@4096 ran (19 min on the 0.18 MB
 # file, 4x its time at 1,024 windows, as the refit predicts); kernelshap_k4096 and its pushforward are in curves.parquet.
+# Result (2026-10-21): clean (100/100 ok, no failures or invalid points); took 8.1 h, not the ~5 h expected. Hypothesis
+# held: KernelSHAP@4096 removes 7.17 log-odds (vs. 6.31 at 1,024 windows, adaptive@4096 5.96), below the byte-level
+# pullback (8.03), which beats it on 59/100 files (p = 0.005) and at every budget. Pushed forward, it reaches 0.97 of
+# TreeSHAP's evidence (0.68/0.75/0.83 at 64/256/1,024). Every run-66 number is reproduced exactly; scripts/paper_figures.py
+# now reads this run.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 source env/bin/activate

@@ -1,5 +1,19 @@
 # Status
 
+**2026-10-21: run 74 read; Section 5 and Figures 3-4 updated.**
+- **Run 74 (KernelSHAP over 4,096 windows, GBDT):** clean (100/100, no failures or invalid points), 8.1 h (not ~5 h).
+  Hypothesis held: 7.17 log-odds (vs. KernelSHAP@1024 6.31, adaptive@4096 5.96, occlusion@4096 5.51), below the
+  byte-level pullback (8.03). But the margin narrows: the pullback beats it on only **59/100 files (p = 0.005)**, though
+  at every budget and with 1/32,770 of its queries. Pushed forward it reaches **0.97** of TreeSHAP's evidence (KernelSHAP
+  0.68/0.75/0.83/0.97 at 64/256/1k/4k; the trend 0.79 at 4k). Run 66's numbers reproduce exactly; output
+  `artifacts/experiments/e1/seed-0/zeros-typical-header-shared-ks4096/` supersedes run 66's as the figures' source.
+- **Manuscript:** `scripts/paper_figures.py` reads run 74 by default (adds `kernelshap_k4096`). Figure 3 now shows
+  KernelSHAP@4096 (32,770 extractions) in place of @1024; caption "well below" -> "below". 5.1: KernelSHAP keeps
+  improving with finer windows (6.3 -> 7.2); pairwise counts updated; the opener drops "substantially" and says "from one
+  query instead of tens of thousands". 5.2: KernelSHAP 0.68 -> 0.97. `make check` clean.
+- **Reviewer risk to note:** with KernelSHAP still rising at 4,096 windows, a reviewer may ask whether 16k windows would
+  match the pullback; the paper's answer is cost (131k queries per file), not faithfulness.
+
 **2026-10-20 (end of afternoon session): 6.1 written; body filled except the deferred runs; run/74 running.**
 - **Run 72 read (500 files):** hypothesis held. MalConv-guided edits of 3 loader-safe fields: Spearman 0.48 (pullback)
   vs. 0.21 (occlusion, 4,096 windows) vs. 0.03 (bytes); AUC 0.78 / 0.60 / 0.55 (drop > 1, 291/499); CI of the rho gap

@@ -12,7 +12,8 @@ the pullback with explaining the GBDT directly over the bytes, with the window e
 Section~\ref{sec:XML:SetupExplainers}, and score every ranking by deleting the bytes it ranks highest
 (Section~\ref{sec:XML:SetupDeletion}). In short, at the same resolution the pullback is as faithful as occlusion at
 a small fraction of its cost, and at the resolution of single bytes, which direct explanation cannot
-afford, it removes substantially more evidence than any direct method, adaptive ones included
+afford, it removes more evidence than any direct method, adaptive ones included, from one query instead of tens of
+thousands
 (Figure~\ref{fig:XML:PullbackDeletion}).
 
 Each of the GBDT's three explanations (Section~\ref{sec:XML:SetupExplainers}) is pulled back to the bytes, where it
@@ -35,14 +36,16 @@ log-odds of one another.
 Figure~\ref{fig:XML:PullbackDeletion} shows what byte resolution adds. Occlusion does not approach it by refining its
 windows: the evidence it removes rises to 5.5 log-odds at 1{,}024 windows and then stops (5.5 at 4{,}096 windows and
 4{,}098 queries per file), plausibly because occluding a small window changes the features too little to rank it.
-KernelSHAP, which deletes many windows at once, does better: over 1{,}024 windows it removes 6.3 log-odds, the most of
-any direct method, at 8{,}194 queries per file. Adaptive KernelSHAP, which spends its queries on the windows whose
+KernelSHAP, which deletes many windows at once, does better and keeps improving as its windows shrink: over 1{,}024
+windows it removes 6.3 log-odds at 8{,}194 queries per file, and over 4{,}096 windows 7.2, the most of any direct
+method, at 32{,}770 queries. Adaptive KernelSHAP, which spends its queries on the windows whose
 deletion matters, pays off only with a large budget: at 4{,}098 queries it removes 6.0 log-odds against occlusion's 5.5
 (better on 70 of 100 files), but at 256 queries it removes less than uniform windows (4.5 against 5.1), since its first
 queries go to coarse windows. The byte-level pullback, from the same single extraction, removes 8.0.
 Above the 0.9 that a random ranking removes, that is 1.7 times as much as occlusion at 256 windows, and it beats each
-of the strongest direct baselines: KernelSHAP over 1{,}024 windows on 72 of 100 files ($p = 2 \cdot 10^{-8}$), adaptive
-KernelSHAP and occlusion at 4{,}096 windows on 81 and 80 ($p \leq 3 \cdot 10^{-12}$). The advantage holds under both variants of the operator: with random instead of zero content, the byte-level
+of the strongest direct baselines: KernelSHAP over 4{,}096 windows on 59 of 100 files ($p = 0.005$), with one
+32{,}770th of its queries, and KernelSHAP over 1{,}024 windows, adaptive KernelSHAP, and occlusion at 4{,}096 windows on
+72, 81, and 80 ($p \leq 2 \cdot 10^{-8}$). The advantage holds under both variants of the operator: with random instead of zero content, the byte-level
 pullback again removes 1.7 times as much evidence above random as occlusion and beats it on 81 of 100 files. Deleting
 the top half of the bytes can remove more evidence than deleting everything (6.4 log-odds in the median file), for
 every method family; this \emph{overshoot} arises mostly because rankings
@@ -68,7 +71,7 @@ decisions rest on about twice as faithfully as a surrogate model trained to imit
 \paragraph{On the GBDT\@.} The GBDT computes the features, so TreeSHAP explains them directly and serves as the
 reference. Every pushed-forward explanation is far above random features, and the finer the windows it comes from,
 the closer it comes to TreeSHAP: pushed forward from adaptive KernelSHAP, it removes 0.61 of TreeSHAP's
-evidence at 64 windows and 0.76 at 4{,}096, and from KernelSHAP 0.68 at 64 windows and 0.83 at 1{,}024. Occlusion is the
+evidence at 64 windows and 0.76 at 4{,}096, and from KernelSHAP 0.68 at 64 windows and 0.97 at 4{,}096. Occlusion is the
 exception: pushed forward, it stays near 0.65 at every resolution, as in Section~\ref{sec:XML:PullbackFaithfulness},
 where finer windows gained it little. To see how much of this limit lies in the source and how much in the
 transfer, we express TreeSHAP's own explanation at $K$ windows (pull it back, sum it over the windows, and push it

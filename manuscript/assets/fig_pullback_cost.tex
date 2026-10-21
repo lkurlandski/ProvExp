@@ -1,7 +1,7 @@
-% Pullback faithfulness on the GBDT (100 pilot files, zero fill, byte deletion; run 66). Data:
+% Pullback faithfulness on the GBDT (100 pilot files, zero fill, byte deletion; runs 66 and 74). Data:
 % scripts/paper_figures.py -> data/pb_gbdt.dat (median curves); extractions per file (medians) from data/pb_gbdt_area.dat.
 % The direct baselines shown are occlusion (256 and 4,096 windows) and the two strongest direct methods: KernelSHAP over
-% 1,024 windows and adaptive KernelSHAP at 4,096 queries.
+% 4,096 windows and adaptive KernelSHAP at 4,096 queries.
 % The right panel is the legend: each method's line sample and name, with its feature extractions per file.
 \newcommand{\pbsample}[2]{\tikz[baseline=-0.6ex]{\draw[#1] (0pt,0pt) -- (12pt,0pt);
   \begin{scope}[#1, solid] \pgftransformshift{\pgfpoint{6pt}{0pt}}\pgfsetplotmarksize{1.4pt}\pgfuseplotmark{#2} \end{scope}}}
@@ -17,7 +17,7 @@
       ylabel={Median Confidence Difference},
     ]
       \addplot[ours, thick, mark=*, mark size=1.5pt] table[x=budget, y=pullback] {assets/data/pb_gbdt.dat};
-      \addplot[direct!60!black, thick, mark=triangle*, mark size=1.8pt] table[x=budget, y=kernelshap_k1024] {assets/data/pb_gbdt.dat};
+      \addplot[direct!60!black, thick, mark=triangle*, mark size=1.8pt] table[x=budget, y=kernelshap_k4096] {assets/data/pb_gbdt.dat};
       \addplot[direct!60!black, thick, dashed, mark=diamond*, mark size=1.8pt] table[x=budget, y=adaptive_b4096] {assets/data/pb_gbdt.dat};
       \addplot[direct, thick, mark=square*, mark size=1.4pt] table[x=budget, y=occlusion_k256] {assets/data/pb_gbdt.dat};
       \addplot[direct, thick, dashed, mark=square, mark size=1.4pt] table[x=budget, y=occlusion_k4096] {assets/data/pb_gbdt.dat};
@@ -26,7 +26,7 @@
     \begin{axis}[
       paper, at={(main.east)}, anchor=west, xshift=2.6cm,
       width=0.33\columnwidth, height=0.66\columnwidth,
-      xbar, bar width=5pt, bar shift=0pt, xmode=log, log origin=infty, xmin=0.5, xmax=3e5,
+      xbar, bar width=5pt, bar shift=0pt, xmode=log, log origin=infty, xmin=0.5, xmax=1e6,
       xtick={1,100,10000}, xticklabels={$10^0$,$10^2$,$10^4$}, xminorgrids=false,
       ymin=-0.6, ymax=5.6, ytick={0,...,5}, axis y line*=left, ytick style={draw=none},
       yticklabels={
@@ -34,7 +34,7 @@
         {Occlusion (4{,}096) \pbsample{direct, thick, dashed}{square}},
         {Occlusion (256) \pbsample{direct, thick}{square*}},
         {Adaptive KS (4{,}096) \pbsample{direct!60!black, thick, dashed}{diamond*}},
-        {KernelSHAP (1{,}024) \pbsample{direct!60!black, thick}{triangle*}},
+        {KernelSHAP (4{,}096) \pbsample{direct!60!black, thick}{triangle*}},
         {Pullback \pbsample{ours, thick}{*}},
       },
       yticklabel style={font=\scriptsize},
@@ -43,7 +43,7 @@
       point meta=explicit symbolic,
     ]
       \addplot[ours, fill=ours] coordinates {(1,5)[1]};
-      \addplot[direct!60!black, fill=direct!60!black] coordinates {(8194,4)[8{,}194]};
+      \addplot[direct!60!black, fill=direct!60!black] coordinates {(32770,4)[32{,}770]};
       \addplot[direct!60!black, fill=direct!60!black!40] coordinates {(4098,3)[4{,}098]};
       \addplot[direct, fill=direct] coordinates {(258,2)[258]};
       \addplot[direct, fill=direct!40] coordinates {(4099,1)[4{,}099]};
@@ -53,7 +53,7 @@
   \caption{Deleting the bytes that each method ranks highest from the GBDT's files (100 files). Left: the median drop
   in the GBDT's log-odds. Right: feature extractions per file (median). The pullback of TreeSHAP ranks single bytes from
   one extraction and removes more evidence at every budget than any direct method, each of which needs thousands of
-  extractions to reach its best: occlusion gains little from 16 times finer windows, and KernelSHAP over 1{,}024
-  windows and adaptive KernelSHAP (KS) at 4{,}096 queries, the strongest direct methods, stay well below the pullback.}
+  extractions to reach its best: occlusion gains little from 16 times finer windows, and KernelSHAP over 4{,}096
+  windows and adaptive KernelSHAP (KS) at 4{,}096 queries, the strongest direct methods, stay below the pullback.}
   \label{fig:XML:PullbackDeletion}
 \end{figure}

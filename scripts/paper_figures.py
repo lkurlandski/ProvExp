@@ -1,11 +1,11 @@
 """
 Data files for the manuscript's pgfplots figures and result tables, written to `manuscript/assets/data/`.
 
-    pb_gbdt.dat      pullback faithfulness on the GBDT (Section 5.1; run 66): per deletion budget, the median GBDT
+    pb_gbdt.dat      pullback faithfulness on the GBDT (Section 5.1; runs 66 and 74): per deletion budget, the median GBDT
                      evidence removed by each ranking in PB_CURVES
     pb_gbdt_area.dat the same experiment's deletion areas (mean evidence removed over the budgets below 100%), mean over
                      the files, with the median feature extractions per file (Figure 3, right; the areas in the text)
-    pf_gbdt.dat      the pushforward on the GBDT (Section 5.2; run 66): per resolution of the source, the median over
+    pf_gbdt.dat      the pushforward on the GBDT (Section 5.2; runs 66 and 74): per resolution of the source, the median over
                      files of each pushed-forward ranking's deletion area relative to the pullback of TreeSHAP
     pf_malconv.dat   the pushforward on MalConv (Section 5.2; run 67): per deletion budget, the median MalConv
                      evidence removed by each ranking, over the files with every deletion verified
@@ -40,6 +40,7 @@ PB_CURVES = {
     "occlusion": "occlusion_k256",
     "occlusion_k4096": "occlusion_k4096",
     "kernelshap_k1024": "kernelshap_k1024",
+    "kernelshap_k4096": "kernelshap_k4096",
     "partition_b4096": "adaptive_b4096",
     "random": "random",
 }
@@ -56,6 +57,7 @@ PB_AREAS = {
     "kernelshap_k64": ("kernelshap_k64", "kernelshap_k64_extractions"),
     "kernelshap_windows": ("kernelshap_k256", "kernelshap_windows_extractions"),
     "kernelshap_k1024": ("kernelshap_k1024", "kernelshap_k1024_extractions"),
+    "kernelshap_k4096": ("kernelshap_k4096", "kernelshap_k4096_extractions"),
     "partition_b64": ("adaptive_b64", "partition_b64_extractions"),
     "partition_b256": ("adaptive_b256", "partition_b256_extractions"),
     "partition_b1024": ("adaptive_b1024", "partition_b1024_extractions"),
@@ -96,7 +98,7 @@ def pb_gbdt_curves(run: Path) -> pl.DataFrame:
     The median GBDT evidence removed per (budget, ranking) for the rankings in PB_CURVES.
 
     Args:
-        run: A scripts/faithfulness.py output directory (run 66).
+        run: A scripts/faithfulness.py output directory (run 74, which extends run 66).
 
     Returns:
         One row per budget (budgets up to 50%, in percent), one column per ranking.
@@ -115,7 +117,7 @@ def pb_gbdt_areas(run: Path) -> pl.DataFrame:
     The deletion area of each ranking in PB_AREAS, mean over the files with every ranking, and its cost.
 
     Args:
-        run: A scripts/faithfulness.py output directory (run 66).
+        run: A scripts/faithfulness.py output directory (run 74, which extends run 66).
 
     Returns:
         One row per ranking: its area (mean evidence removed over the budgets below 100%), its gain (area over random,
@@ -150,7 +152,7 @@ def pf_gbdt_resolution(run: Path) -> pl.DataFrame:
     The deletion area of each pushed-forward ranking relative to the pullback of TreeSHAP, per source resolution.
 
     Args:
-        run: A scripts/faithfulness.py output directory with the pushforward and the trend (run 66).
+        run: A scripts/faithfulness.py output directory with the pushforward and the trend (run 74).
 
     Returns:
         One row per resolution (windows; the bytes at 2^20), one column per source in PF_SOURCES: the median over files
@@ -220,7 +222,7 @@ def pf_malconv_curves(run: Path) -> pl.DataFrame:
 
 def main() -> None:
     parser = ArgumentParser(description="Write the data files of the manuscript's figures.")
-    parser.add_argument("--pb_gbdt", type=Path, default=ROOT / "artifacts" / "experiments" / "e1" / "seed-0" / "zeros-typical-header-shared")
+    parser.add_argument("--pb_gbdt", type=Path, default=ROOT / "artifacts" / "experiments" / "e1" / "seed-0" / "zeros-typical-header-shared-ks4096")
     parser.add_argument("--pf_malconv", type=Path, default=ROOT / "artifacts" / "experiments" / "pf_malconv" / "seed-0-shared")
     parser.add_argument("--outdir", type=Path, default=ROOT / "manuscript" / "assets" / "data")
     args = parser.parse_args()
