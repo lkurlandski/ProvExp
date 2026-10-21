@@ -277,3 +277,19 @@ DOS message, 3% Rich header. Mirror (gbdt_only): MalConv drop 0.66. Five-way "bo
 windows 28%, MalConv-only 43%, GBDT-only 28%, random 8% (MalConv-only now beats shared pullback, p = 6e-6).
 
 *Fixed (2026-10-20, commit 534edc3):* `audit_evade.benign_pools` cast two benign ImageBase values above 2^63 to a negative int64 (the RuntimeWarning in the log); a file that drew it skipped that field (the write step rejects negative values). Pools now keep 0 <= v < 2^53. `run/73` reran 49, 59, and 72 into new directories (`*fixpools*`): every estimate and p-value unchanged (some bootstrap CI endpoints move by 0.1 point); the paper's numbers stand.
+
+## KernelSHAP as a second window baseline for Table 2 (run 75, prepared 2026-10-21; not yet run)
+
+Why: Section 5.1 now shows KernelSHAP over 4,096 windows as the strongest direct method (run 74), so a reviewer may ask
+why Table 2's window baseline is occlusion. Decided (user, 2026-10-21): add KernelSHAP as a second row, keep occlusion
+(the cheap alternative a defender would use). `scripts/cm_shared_edit.py --kernelshap` computes the GBDT's KernelSHAP
+over the 4,096 windows (8 coalitions per window, 32,770 queries per file, as in 5.1) in a cached, resumable phase 1b
+with Section 5.1's worker (`faithfulness.process_kernelshap`, fork pool; inside the spawned phase-2 workers the same
+computation ran ~3x slower, cause not found), then sums it over the edited fields like occlusion. `run/75`: 500 files,
+16 workers, ~32 h (from run 74's per-byte times; these files average 1.3 MB). Smoke test (3 files): run 72 reproduces
+exactly, no failed coalitions, times in line with the estimate.
+
+Hypothesis: rho ~0.25-0.35, between occlusion (0.21) and the pullback (0.48): the fields are a few bytes next to other
+header content the GBDT reads, and a ~300-byte window spreads one value over all of it however well it is explained. If
+KernelSHAP reaches the pullback, 6.1's claim weakens: stop and decide with the user before writing. The manuscript
+carries predicted values in blue (rho 0.31, AUC 0.65, CI of the rho gap 0.09-0.26), with the prose written as if run.

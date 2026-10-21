@@ -18,7 +18,7 @@ P and the round-trip theory were cut from the paper (2026-10-13) and archived in
   pullback's application); `audit.md` (AU: auditing a raw-byte detector through the pushforward, the pushforward's
   application). `docs/appendix.md` (App-L, App-R). `docs/theory.md`: strengthening Section 3 (Shapley-grounded P; the pushforward as
   an inverse problem; parked case-study ideas). `docs/graveyard.md`: ideas that did not pan out and why.
-  `docs/resume-prompt.md`: where to pick up next. `docs/style_guide.md`: a loose orientation on how
+  `docs/resume-prompt.md`: where to pick up next. `docs/review-prompt.md`: the prompt for simulated CCS reviews. `docs/style_guide.md`: a loose orientation on how
   top-tier security papers near our scope read (for the writing; not a template).
 - `docs/design.md`: package design, decisions, provenance conventions, thrember quirks.
   `docs/related_work.md`: literature and gaps. Some artifact paths still use retired IDs (e.g.
@@ -91,6 +91,9 @@ P and the round-trip theory were cut from the paper (2026-10-13) and archived in
   text to fit. (2) Exact numbers in the prose are of little concern, since experiments will be re-run and more data
   added; focus on structure, argument, and prose, not on syncing every number. Write the body first; the introduction
   and conclusion come last, once we can assess what the body shows.
+- **Deferred runs (user, 2026-10-21):** when a run is designed and scripted but deferred, put its predicted values in
+  the manuscript in blue (`\synthetic{...}`), write the prose as if the run had finished, and add a `% SYNTHETIC`
+  comment naming the run that replaces them. Replace them when the run is read.
 - Commit to `main` in logical pieces. Do not push unless asked.
 - Changes to the thrember-derived `features.py` are pure additions; the original lines stay untouched.
 

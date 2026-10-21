@@ -136,3 +136,11 @@ verified; 9 min). Pushforward area 6.34; vs. surrogate 3.20: 99/99, ratio 1.98, 
 90/99, 1.38; vs. random features 1.68: 98/99, 3.78; random windows 0.67. IG per byte 36.5 (full deletion removes 6.8):
 the overshoot is not a zero-fill artifact (my side guess that it would shrink failed). Main hypothesis confirmed; one
 clause added to 5.1. W4 closed.
+
+## Shared protocol on the GBDT (runs 66 and 74, 2026-10-20/21)
+
+Under byte deletion, pushed-forward explanations relative to TreeSHAP's pullback (median over files): KernelSHAP 0.68 /
+0.75 / 0.83 / **0.97** at 64 / 256 / 1,024 / 4,096 windows (run 74 added 4,096); adaptive KernelSHAP 0.61-0.76;
+occlusion flat ~0.65; TreeSHAP's own information over windows (the trend) 0.64-0.79; bytes 1.00. KernelSHAP@4096 well
+above the trend supports "the pushforward is limited by its source's resolution, not by the transfer" (Section 5.2,
+Figure 4).

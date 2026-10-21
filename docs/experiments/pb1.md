@@ -643,3 +643,13 @@ KernelSHAP, 7.5e-16 TreeSHAP interventional). Reused pass-1 scores, so every non
 occupies still cannot match the pullback, because it shares a field's drop over all its bytes while the pullback
 resolves within a field. This answers the "by construction" objection (W4): the pullback's advantage is resolution, not
 knowledge of the read set. Folded into the manuscript (Table 1 row, 4.1 prose) 2026-10-14.
+
+## KernelSHAP over 4,096 windows (run 74, 2026-10-21; shared protocol of run 66)
+
+Clean (100/100, no failures or invalid points), 8.1 h on 16 workers. Every run-66 number reproduces exactly; the
+output (`artifacts/experiments/e1/seed-0/zeros-typical-header-shared-ks4096/`) is now the source of Figures 3-4
+(`scripts/paper_figures.py`). Hypothesis held: KernelSHAP@4096 removes 7.17 log-odds (KernelSHAP@1024 6.31, adaptive@4096
+5.96, occlusion@4096 5.51), below the byte-level pullback (8.03). The pullback still leads at every budget, but beats it
+on only 59/100 files (p = 0.005), against 72-81/100 for the other strongest baselines. KernelSHAP is still rising at
+4,096 windows; the paper's answer to "would 16,384 windows match the pullback?" is cost (~131,000 extractions per file
+vs. one), stated in the discussion.
