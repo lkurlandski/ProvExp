@@ -35,7 +35,7 @@ import name, a header field, a single byte for the byte histogram, a window for 
 
 **Layer 2: contributions (items -> sums).** Each item t has a contribution vector v(t) over a set of sums; the sums are
 A(z) = Σ_{t ∈ T(z)} v(t). v(t) depends on the item's own content and kind, not on the rest of the file (the
-*locality* assumption; Section 6 lists where it fails). Signed entries are allowed (signed feature hashing).
+*locality* assumption; Section 7 lists where it fails). Signed entries are allowed (signed feature hashing).
 
 **Layer 3: the readout (sums -> features).** φ(z) = g(A(z)), with g known per feature: identity (counts, fields),
 division by a total (normalized histograms, size ratios), an entropy formula over a histogram, max over items,
@@ -103,7 +103,78 @@ features move in both directions (the attacker cannot add bytes without lowering
 signed hashing makes even an add-only edit two-sided on hashed buckets, which Incer-style manual analysis treats as
 "cannot fit"; (iv) the structural rows are where the model flags rather than predicts, and they are few and known.
 
-## 6. Scope and limitations
+## 6. Coverage of real transformations (on paper, 2026-10-22)
+
+Sources: secml-malware's manipulations (read from its source code: `attack/whitebox`, `attack/blackbox`,
+`utils/pe_operations.py`), Labaca-Castro et al.'s Table 1 (t0-t9, arXiv 2102.06747), and MAB-Malware's Table 1 (8
+macro- and 5 micro-actions, arXiv 2003.03100). The generic optimizers in secml-malware (FGSM, discretized bytes,
+end-to-end) are search methods over these manipulations, not transformations of their own; Kreuk/Suciu (padding +
+slack) and Format Exploit (extend + shift) are combinations of rows below. That leaves 34 listed transformations, which
+reduce to 16 distinct ones.
+
+"Bytes" below means the groups every byte write touches: the byte histogram, the byte-entropy histogram, the file
+entropy (`general`), and the string features (new printable runs of 5+ bytes, or broken ones; re-recognized locally).
+A class is the worst class among a transformation's writes. **Strict** is the model as written in Section 3:
+structural = touches a locating element. **Declared** marks a structural edit whose item delta the transformation
+itself states (it adds a section-table entry, zeroes a directory entry, moves the headers by a known amount), so the
+model does not have to predict the new parse.
+
+| # | Transformation | Listed as | Strict class | Item operations | Feature groups touched (readout effects in *italics*) |
+|---|---|---|---|---|---|
+| 1 | append bytes at the end | secml padding, GAMMA padding; OA, OA1; t0 | item-creating | add byte items, end windows, strings; create or extend the overlay item | bytes; `general` size; `section` overlay size/ratio/entropy and the max/min entropy and size ratio; *every histogram bin and every section's size ratio (denominator \|z'\| grows)* |
+| 2 | write section slack (between VirtualSize and SizeOfRawData) | secml slack (Kreuk, Suciu); SP, SP1, CP1; t4 | content | modify byte items and the section item (its entropy) | bytes (total unchanged, so only the written bins move); `section` that section's entropy, its hashed entropy bucket, *max/min entropy* |
+| 3 | partial DOS header (bytes 2-59) | secml partial DOS | content | modify DOS-header field items, byte items | bytes; `general` start bytes 2-3; `header` DOS fields except e_magic, e_lfanew |
+| 4 | full DOS header and stub (bytes 2-59, 64 to e_lfanew) | secml full DOS | content; structural for the Rich header | as 3, plus the stub's strings; may destroy or re-key the Rich header | as 3; `strings` dos_msg; `richheader` (pairs are XOR-decoded with a key and delimited by markers in the edited range: flagged) |
+| 5 | header fields ignored by the loader (Nisi et al.) | secml header fields | content | modify field items | bytes; `header` timestamp, pointer_to_symbol_table, number_of_symbols, linker/OS/image versions |
+| 6 | break the checksum | BC; t9 | content | modify one field item | bytes; `header` checksum |
+| 7 | rename a section | SR, SR1; t2 | content | modify the section item's name | bytes; `section` sizes, vsizes, entropies, characteristics *move from bucket h(old) to h(new)* (four signed hashers keyed by name), entry-name hash if it is the entry section, number of empty names |
+| 8 | code randomization (in place, same length) | CR | content | modify byte items and the code section item | bytes; `section` that section's entropy and its bucket, *max/min entropy* |
+| 9 | remove debug (zero the DEBUG directory entry) | RD; t6 | structural, declared | modify the directory item; remove the debug item (no EMBER feature reads it) | bytes; `datadirectories` DEBUG size and address; `pefilewarnings` possibly |
+| 10 | remove the signature (zero the SECURITY entry) | RC; t5 | structural, declared | modify the directory item; remove the certificate items | bytes; `datadirectories` SECURITY; `authenticode` *all features fall to their defaults*; if the certificate bytes are also stripped, as 1 in reverse |
+| 11 | add a section | GAMMA sections; SA, SA1; t3 | item-creating + structural, declared | add a section-table entry and section item; modify NumberOfSections, SizeOfImage | Section 5's table: `section` counts, buckets of the chosen name, max/min, ratios; `header` number_of_sections, sizeof_image (sizeof_code / initialized data if updated); bytes; `general` size; overlay moves |
+| 12 | add imports | GAMMA API; t1 | item-creating + structural, declared | add (library, function) items; redirect the IMPORT/IAT entries to a new section (as 11) | `imports` library and function buckets (*unsigned hashing: up only*), counts; `datadirectories` IMPORT, IAT; `strings` (the names are printable); everything of 11 |
+| 13 | extend the DOS header (move the PE header forward) | secml extend | structural, declared | move every header and section item by a known amount; add a gap of editable bytes | bytes (*byte-entropy windows re-tile after the gap unless the shift is a multiple of the window step*); `header` sizeof_headers; `general` size; *section size ratios*; SECURITY offset must be fixed or the signature is lost |
+| 14 | shift section content (insert before the first section) | secml shift, GAMMA shift | structural, declared | move every section item; add a gap | as 13, without sizeof_headers |
+| 15 | UPX pack | t7 | structural, undeclared | whole-file rewrite | all groups |
+| 16 | UPX unpack | t8 | structural, undeclared | whole-file rewrite | all groups |
+
+Shares (34 listed transformations / 16 distinct):
+
+| Class | Listed | Distinct | Exact under C1 as stated |
+|---|---|---|---|
+| content (2-8) | 14 (41%) | 7 | yes |
+| item-creating (1) | 5 (15%) | 1 | yes |
+| structural, declared (9-14) | 13 (38%) | 6 | no: needs the declared delta (below) |
+| structural, undeclared (15-16) | 2 (6%) | 2 | no: out of scope |
+
+**What this says.** Under the strict reading, 15 of 34 (44%) are structural, short of "most" but close. All but the two
+UPX actions are structural only in a predictable way: the transformation says which items it adds, removes, or moves.
+Two refinements to Section 3 would bring 32 of 34 (94%) under an exact or bounded side-effect claim:
+1. **Declared structural edits**: C1 holds for a structural edit when the transformation states its item delta (T+,
+   T-, T~). Section 3 already treats "add a section" this way; the claim should say so.
+2. **A fourth item operation, move**: items keep their content and change location (rows 13-14). Only
+   position-defined items change: the byte-entropy windows (re-tile after the insertion point) and anything read
+   through a file offset (the SECURITY entry). Everything else is exact, and the denominator effects come through the
+   readout.
+
+**Caveats, harshly.**
+- **The weight of evidence is not the count.** The strongest action in Labaca-Castro et al. is UPX packing (row 15),
+  which the model cannot cover; MAB-Malware's most effective is overlay append (row 1), which is trivially covered.
+  A coverage claim must also be stated as a share of successful attacks, not only of listed transformations.
+- **Implementations add undeclared side effects.** The Labaca-Castro/gym-malware actions and secml's GAMMA sections
+  and API attacks rebuild the file with LIEF's Builder, which MAB-Malware's authors report changes binaries
+  unnecessarily (sometimes breaking them). The classification is of the transformation's semantics; a real tool may
+  be structural where its description is not. (Comparing C1's prediction with re-extraction would expose this, a
+  side use, not an application.)
+- **The content rows are where provenance is least needed.** Rows 3, 5, and 6 map named header fields to named
+  features, the trap that sank the old direction. The non-obvious effects are the readout effects and hashing: append
+  moves every histogram bin and every section's size ratio; renaming moves four groups of hashed buckets at once;
+  adding imports is up-only on unsigned buckets while adding a section is two-sided on signed ones. That is where A has
+  to show its value.
+- **Features outside the model.** `pefilewarnings` and parse-error flags can change under any row and have no items;
+  this residual is not quantified.
+
+## 7. Scope and limitations
 
 - **Structural edits** (moving the PE header, shifting sections, mid-file insertion for windowed features, packing)
   change the parse. The model identifies them (location relation) and the items affected, but does not predict the
@@ -114,10 +185,11 @@ signed hashing makes even an add-only edit two-sided on hashed buckets, which In
 - **Functionality** is an input (the threat model), not derived.
 - Features with no items (whether the file parses; pefile warnings) stay outside the model, as today.
 
-## 7. Open questions
+## 8. Open questions
 
-1. How to measure coverage: what share of realistic transformations (secml-malware, Labaca-Castro et al.'s toolkit,
-   MAB-Malware's actions) and of feature mass falls into exact (C1), bounded (readout), and flagged (structural)?
+1. Coverage on paper is done (Section 6): 32 of 34 listed transformations are exact or bounded if C1 admits declared
+   structural deltas and a move operation. Still open: the share of *successful* attacks (UPX dominates
+   Labaca-Castro et al.), the share of feature mass, and how often LIEF-based tools add undeclared side effects.
 2. Catalogues of addable items: given by the threat model, harvested from benign files, or parameterized (a section
    of any size)? C3 needs a finite or parameterized description.
 3. Which application leads: an attack-side result (realizing feature changes, including hashed buckets Severi et al.
