@@ -70,6 +70,11 @@ introduction and a simple baseline (writing decision for later).
   bounds through the readout, structural edits flagged, plus a measured coverage of real attacks.
 - No need to engage database-theory provenance (semirings, aggregate provenance) beyond citation (user).
 - "Feature provenance" is the name.
+- Coverage on paper (model doc, Section 6): of 34 transformations in secml-malware, Labaca-Castro et al., and
+  MAB-Malware, 56% are content or item-creating edits, 38% structural with a delta the transformation declares, 6%
+  (UPX) undeclared. **Adopted:** C1 covers declared structural edits, and "move" is a fourth item operation; with
+  them 32/34 are exact or bounded. Coverage must still be weighted by attack success (UPX is the strongest in
+  Labaca-Castro et al.).
 
 ## Assets carried over
 

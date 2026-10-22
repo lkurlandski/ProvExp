@@ -1,12 +1,12 @@
 # Status
 
-**2026-10-22 (later): coverage of real transformations on paper (step 1) done; waiting on the user.**
+**2026-10-22 (later): coverage of real transformations on paper (step 1) done; refinements adopted.**
 - `docs/feature-provenance-model.md` Section 6: secml-malware (from its source), Labaca-Castro et al.'s t0-t9, and
   MAB-Malware's 13 actions: 34 listed, 16 distinct. Strict classes: content 41%, item-creating 15%, structural 44%
   (declared 38%: remove debug/signature, add section/imports, DOS extend, content shift; undeclared 6%: UPX pack/unpack).
-- Not "most structural", but close. **Waiting on the user:** adopt two refinements before the proof sketches (C1 for
-  structural edits whose item delta the transformation declares; a "move" item operation for extend/shift)? With
-  them, 32/34 are exact or bounded.
+- Not "most structural", but close. **The user adopted two refinements:** C1 covers structural edits whose item
+  delta the transformation declares, and "move" is a fourth item operation (DOS extend, content shift). With them,
+  32/34 are exact or bounded. Model doc Sections 3-4 and `PLAN.md` updated.
 - Caveats recorded: UPX is the strongest attack in Labaca-Castro et al. (uncovered); LIEF-rebuilding tools add
   undeclared side effects; the content rows are hand-mappable header fields, so A's value is in readout effects and
   hashing.

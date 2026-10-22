@@ -56,18 +56,27 @@ layer 1. A byte write to region S falls into three classes:
 2. **item-creating edit**: the item recognizers whose input covers S may recognize new items or extend neighbors
    (printable bytes next to an existing string extend it). Re-run the recognizers locally on S plus a margin set by
    the recognizer (for strings, up to the nearest non-printable byte on each side).
-3. **structural edit**: S touches a locating element. The parse may change; the model flags the edit and the
-   affected items (those located by elements in S) rather than predicting it.
+3. **structural edit**: S touches a locating element, so the parse may change. Two cases (adopted 2026-10-22):
+   - **declared**: the transformation states the resulting item delta (add this section-table entry and raise
+     NumberOfSections by one; zero the SECURITY entry, which removes the certificate items; move the headers forward
+     by 0x200 bytes). The model takes the delta from the transformation and C1 applies.
+   - **undeclared**: the new parse is not stated (packing, a rebuild by a binary-rewriting library with side effects
+     of its own). The model flags the edit and the affected items (those located by elements in S) rather than
+     predicting it.
 
 Compound transformations from the attack literature (add a section, append to slack, rename a section, add imports,
-remove the signature) are lists of item operations: add items, remove items, modify items, plus the structural edits
-they force (NumberOfSections, SizeOfImage). The byte view and the item view are therefore not alternatives: the byte
+remove the signature) are lists of item operations: add items, remove items, modify items, and **move** items (same content, new
+location; DOS extension and content shifting), plus the declared structural edits they force (NumberOfSections,
+SizeOfImage). A move changes only position-defined items (the byte-entropy windows after the insertion point) and
+contributions read through a file offset (the SECURITY entry); every other item keeps its contribution. The byte view and the item view are therefore not alternatives: the byte
 view is the interface (threat models and explanations are stated in bytes), the item view is where the computation is
 exact.
 
 ## 4. Claims (to prove)
 
-Let an edit add items T+, remove T-, and modify T~ (old -> new), with no structural edit.
+Let an edit add items T+, remove T-, modify T~ (old -> new), and move T→, with no undeclared structural edit (a
+declared one enters through its stated delta). Moved items contribute unchanged unless position-defined; those are
+re-derived as removed-and-added (T→ ⊆ T- ∪ T+ for windows).
 
 - **C1 (exact side effects).** φ(z') = g(A(z) + Σ_{T+} v(t) − Σ_{T-} v(t) + Σ_{T~} (v(t_new) − v(t_old))).
   The side-effect vector of Pierazzi et al. is computed without extracting z', from the items the edit touches.
@@ -149,7 +158,8 @@ Shares (34 listed transformations / 16 distinct):
 
 **What this says.** Under the strict reading, 15 of 34 (44%) are structural, short of "most" but close. All but the two
 UPX actions are structural only in a predictable way: the transformation says which items it adds, removes, or moves.
-Two refinements to Section 3 would bring 32 of 34 (94%) under an exact or bounded side-effect claim:
+Two refinements to Section 3, **adopted 2026-10-22** (Sections 3 and 4 now state them), bring 32 of 34 (94%) under
+an exact or bounded side-effect claim:
 1. **Declared structural edits**: C1 holds for a structural edit when the transformation states its item delta (T+,
    T-, T~). Section 3 already treats "add a section" this way; the claim should say so.
 2. **A fourth item operation, move**: items keep their content and change location (rows 13-14). Only
