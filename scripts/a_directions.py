@@ -12,6 +12,9 @@ Outputs, in `{outdir}/`:
                         threat model, the re-encoding (if any), and its directions (all re-encodings need
                         re-extraction: the feature store holds only the features)
     summary.json        counts per group and threat model, for the features and their re-encodings
+    {tm}[-quirkfixed].neutralize.txt   the features a sound monotone GBDT must drop (both), for scripts/train_classic.py
+    {tm}[-quirkfixed].monotone.tsv     name<TAB>sign for the up (+1) and down (-1) features; fixed ones stay free
+                        (`-quirkfixed`: as if the duplicate-library import quirk were fixed; check 3's sensitivity)
 
 Usage:
     python scripts/a_directions.py --outdir artifacts/experiments/a_directions
@@ -260,6 +263,17 @@ def main() -> None:
         writer = csv.DictWriter(f, fieldnames=list(rows[0].keys()))
         writer.writeheader()
         writer.writerows(rows)
+    for tm in THREAT_MODELS:
+        for variant in ("", "-quirkfixed"):
+            drop, mono = [], []
+            for row in rows:
+                d = str(row[f"{tm}_reencoded" if variant and row["group"] == "imports" else tm])
+                if d == "both":
+                    drop.append(f"{row['group']}:{row['name']}")
+                elif d in ("up", "down"):
+                    mono.append(f"{row['group']}:{row['name']}\t{1 if d == 'up' else -1}")
+            (args.outdir / f"{tm}{variant}.neutralize.txt").write_text("".join(n + "\n" for n in drop))
+            (args.outdir / f"{tm}{variant}.monotone.tsv").write_text("".join(m + "\n" for m in mono))
     totals = {key: {d: sum(g.get(d, 0) for g in groups.values()) for d in ("fixed", "up", "down", "both")}
               for key, groups in summary.items()}
     with open(args.outdir / "summary.json", "w") as f:

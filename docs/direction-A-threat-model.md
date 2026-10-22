@@ -104,8 +104,12 @@ What this says:
   library buckets are unaffected (a set). Adding a descriptor such as `KERNEL32.dll: Sleep` would hide every earlier
   KERNEL32 import from the import hashes. This is an A2 failure the model flags, and a candidate for check 2's hole:
   no secml-malware attack produces it (GAMMA's import attack reuses the existing descriptor), so PV selection would
-  keep all 1,024 buckets as up-only. **To verify:** that pefile reports both descriptors and the Windows loader
-  accepts the duplicate (believed true; linkers can emit it), on a pilot file.
+  keep all 1,024 buckets as up-only. **Verified on a test file** (LIEF 1.0, one extra `KERNEL32.dll: Sleep`
+  descriptor): pefile reports both descriptors; num_imports falls from 116 to 3 and 109 function buckets decrease.
+  **Handling (user, 2026-10-22: do not let results depend on implementation quirks):** the sound table must record
+  it (that is what soundness means for this extractor), but no A1 result may rest on it: check 2's hole and the A1
+  comparison are measured on the quirk-fixed variant (all rows, baselines included), and the quirk is at most a side
+  remark about what automatic analysis finds. Check 3 trains both variants to show the sensitivity.
 - **Three features are constant**: `min_entropy`, `min_size_ratio`, `min_vsize_ratio` are always 0, since the
   extractor appends 0 to each list before taking the minimum.
 - **Strictness costs some features.** Byte, string and section counts are two-sided under M_add only because adding a

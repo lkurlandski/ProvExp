@@ -11,8 +11,12 @@
 - Found: EMBER's imports overwrite a DLL's functions when a second descriptor names the same DLL; this alone makes
   1,025 import features two-sided and is a prime suspect for check 2's hole (no secml attack produces it). To verify
   on a real file. Also: min_entropy, min_size_ratio, min_vsize_ratio are constant 0.
-- **Waiting on the user:** check 3 from the feature store covers only the as-is row; the re-encoded row needs
-  re-extraction over the training set (a featurization job to scope). Check 2 needs secml-malware + LIEF installed.
+- The quirk is verified (116 -> 3 imports on a test file). The user does not want results to depend on such quirks:
+  check 2 and A1 use the quirk-fixed variant; the sound table records it. LIEF 1.0 installed (`requirements.txt`).
+- **run/77 ready (the user runs it, ~35 min):** check 3's as-is rows, five monotone/dropped GBDTs on the full splits
+  (`scripts/train_classic.py --monotone`, new). Smoke-tested (20k and 200k samples; constraints verified in the model).
+- secml-malware and secml need Python < 3.11 (our venv: 3.14, numpy 2.5): proposed a pinned clone in a separate
+  Python 3.10 venv for the attacks; awaiting the user's decision.
 
 **2026-10-22 (end): A1 approved as the target; Treant and Chen et al. CCS 2021 read; next steps set.**
 - The user likes A1 (monotone detectors with C4 directions vs. PV selection); any no-go goes to the user first.

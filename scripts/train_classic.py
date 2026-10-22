@@ -8,6 +8,9 @@ output directory is suffixed with the poison's name.
 With `--neutralize`, the features named in a file (one per line) are set to zero in every split, so the model cannot
 use them (3-B mitigation, docs/graveyard.md); give the output a `--suffix`.
 
+With `--monotone` (GBDT only), a file of `name<TAB>sign` lines (sign +1 or -1) constrains the GBDT to be monotone
+increasing or decreasing in those features (direction A, go/no-go check 3; scripts/a_directions.py writes the files).
+
 Outputs, in `{outdir}/{learner}/seed-{seed}[-{poison}]/`:
     model.txt (GBDT) or model.pt (MLP)   the trained model
     metrics.json                         test metrics, plus the training configuration
@@ -24,6 +27,7 @@ import json
 import os
 from pathlib import Path
 import time
+from typing import Any
 
 import numpy as np
 import polars as pl
@@ -94,6 +98,7 @@ def main() -> None:
     parser.add_argument("--limit", type=int, default=None, help="Use at most this many samples per split (for testing).")
     parser.add_argument("--poison", type=Path, default=None, help="A poison directory (scripts/trigger_poison.py); its files replace their clean training rows.")
     parser.add_argument("--neutralize", type=Path, default=None, help="A file of feature names, one per line, to set to zero in every split.")
+    parser.add_argument("--monotone", type=Path, default=None, help="GBDT only. A file of `name<TAB>sign` lines (sign +1 or -1): monotone constraints.")
     parser.add_argument("--suffix", type=str, default=None, help="The output directory's suffix (default: the poison's name).")
     args = parser.parse_args()
 
@@ -114,6 +119,22 @@ def main() -> None:
         neutral = sorted(index[name] for name in wanted)
         print(f"Neutralizing {len(neutral)} features: {wanted}", flush=True)
 
+    constraints: list[int] = []
+    if args.monotone is not None:
+        if args.learner != "gbdt" or args.suffix is None:
+            raise ValueError("--monotone needs --learner gbdt and a --suffix.")
+        names = load_manifest(args.features)["feature_names"]
+        index = {name: j for j, name in enumerate(names)}
+        constraints = [0] * len(names)
+        for line in args.monotone.read_text().splitlines():
+            if not line.strip():
+                continue
+            name, sign = line.split("\t")
+            if name not in index or sign not in ("1", "-1"):
+                raise ValueError(f"Bad line in {args.monotone.as_posix()}: {line!r}")
+            constraints[index[name]] = int(sign)
+        print(f"Monotone constraints: {constraints.count(1)} increasing, {constraints.count(-1)} decreasing.", flush=True)
+
     t_0 = time.time()
     data = {}
     for split in ("tr", "vl", "ts"):
@@ -131,10 +152,13 @@ def main() -> None:
         X_tr, y_tr, poison = apply_poison(X_tr, y_tr, meta_tr, args.poison)
 
     if args.learner == "gbdt":
-        booster = train_gbdt(X_tr, y_tr, X_vl, y_vl, seed=args.seed, num_threads=args.num_threads, categorical=args.categorical)
+        extra: dict[str, Any] = {"monotone_constraints": constraints} if constraints else {}
+        booster = train_gbdt(X_tr, y_tr, X_vl, y_vl, seed=args.seed, num_threads=args.num_threads, categorical=args.categorical, **extra)
         booster.save_model(outdir / "model.txt", num_iteration=booster.best_iteration)
         probs = np.asarray(booster.predict(X_ts, num_iteration=booster.best_iteration))
-        config = {"best_iteration": booster.best_iteration, "categorical": args.categorical}
+        config = {"best_iteration": booster.best_iteration, "categorical": args.categorical,
+                  "monotone": args.monotone.resolve().as_posix() if args.monotone else None,
+                  "num_monotone": sum(1 for c in constraints if c != 0)}
     else:
         device = torch.device(args.device)
         model = train_mlp(X_tr, y_tr, X_vl, y_vl, seed=args.seed, device=device)
