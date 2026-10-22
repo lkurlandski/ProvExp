@@ -1,4 +1,4 @@
-# Resume: ProvExp (after 2026-10-22, late) — feature provenance, conceptual phase
+# Resume: ProvExp (after 2026-10-22, end) — feature provenance, conceptual phase
 
 Read `CLAUDE.md`, then `PLAN.md`, `docs/feature-provenance-model.md` (the model; Sections 4-4a claims and proof
 sketches, Section 6 coverage), `docs/direction-A-mock.md` (the mock of direction A's tables), and
@@ -17,12 +17,11 @@ picture for the user in plain language before asking any decision. Be harsh abou
 
 ## Next
 
-1. The user reviews `docs/direction-A-mock.md`.
-2. Read Treant (Calzavara et al.) and Chen et al., "Learning Security Classifiers with Verified Global Robustness
-   Properties" (CCS 2021) before building; update the mock's novelty notes.
-3. If the mock passes: go/no-go check 2 (PV selection's hole) needs secml-malware perturbation vectors on pilot malware;
-   check 1 needs the explicit item table and location relation in the instrumentation (first engineering step).
-   Smoke-test small, hand long runs to the user as `run/` scripts.
+1. Fix the threat model M on paper (`PLAN.md`, revised next steps 1-2), then the provisional C4 table.
+2. Follow `PLAN.md`'s revised next steps: go/no-go 3 partial (monotone LightGBM; the user runs training), go/no-go 2
+   (secml-malware attacks; ask before adding dependencies), then the item table and C1 predictor (go/no-go 1).
+   **Any no-go goes to the user before anything is dropped.** Treant and Chen et al. CCS 2021 are read (fourth pass
+   of the literature doc). Smoke-test small, hand long runs to the user as `run/` scripts.
 4. Later: targeted search and mocks for B and C; clean out old-direction materials; update `CLAUDE.md` conventions.
 
 ## Notes

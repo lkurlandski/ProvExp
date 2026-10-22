@@ -191,3 +191,32 @@ Remaining papers: see the third pass below.
   dropped).
   For us: the four cases are a **generic, domain-independent** description of what a threat model allows per feature
   (which directions are reachable), and Incer et al. obtain it by hand; Gimenez et al. by perturbation vectors.
+
+## Fourth pass: robust-training consumers of a threat model (2026-10-22, late)
+
+- **Calzavara, Lucchese, Tolomei, Abebe & Orlando, "Treant: Training Evasion-Aware Decision Trees"** (DAMI 2020;
+  arXiv 1907.01197) **[sections: attacker model, attack generation, datasets]**. The attacker is a set of
+  **per-feature rewriting rules** `[a, b] ->_k [δl, δu]` (if feature f lies in [a, b], add any value in [δl, δu] at
+  cost k) plus a budget; Treant grows trees with robust splitting and attack invariance, sound with respect to those
+  rules, and evaluates with exhaustive attack enumeration (exponential in rules and budget). Datasets: census, wine,
+  credit (no malware); 3-6 rules per dataset, **written by hand** "after a preliminary data exploration stage".
+  For us: (i) a possible consumer of our directions and ranges (C3/C4 compile to Treant rules soundly); (ii) its rules
+  move **one feature at a time**, so a real operation that moves dozens of features jointly (add a section) can only
+  be relaxed into independent per-feature rules, losing the coupling (C2); (iii) rule sets at EMBER scale (2,568
+  features) look out of reach for its exhaustive enumeration. Not a novelty threat: the rules are the hand-made input
+  our model computes.
+- **Chen, Wang, Qin, Liao, Jana & Wagner, "Learning Security Classifiers with Verified Global Robustness Properties"**
+  (CCS 2021; arXiv 2105.11363) **[sections: properties, datasets]**. Trains logic-rule ensembles with a booster and a
+  CEGIS fixer to satisfy **global** properties: monotonicity, stability (bounded score change when a feature changes
+  arbitrarily), high confidence (low-cost features cannot flip a confident malicious verdict), redundancy (the
+  attacker must change one feature from every group), small neighborhood. Datasets: cryptojacking (7 features),
+  Twitter spam accounts (15), Twitter spam URLs (25). Every property is **specified by hand** "using security domain
+  knowledge and results from measurement studies" (including a crawl of 6,125 underground account listings to decide
+  which features are costly). Their redundancy groups are features "that count the same item" in different ways,
+  which is our co-movement (C2a); their low-cost features are the features a threat model can move (C3/C4).
+  For us: the strongest precedent that the *specification* is the bottleneck: it takes a measurement study for 7-25
+  features, and is out of reach by hand for EMBER's 2,568. A second consumer of our output (properties for their
+  trainer), not a competitor; their verifier likely does not scale to EMBER, so no A1 row.
+
+- https://arxiv.org/pdf/1907.01197 (Treant)
+- https://arxiv.org/pdf/2105.11363 (Chen et al., CCS 2021)

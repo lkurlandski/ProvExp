@@ -49,17 +49,33 @@ introduction and a simple baseline (writing decision for later).
   mutual agreement (score disagreement); C must win where scores are silent (e.g., both members evaded) or classify
   the cause. PASA is the nearest attribution-based detector (not malware).
 
-## Next steps (conceptual before any prototype; user, 2026-10-22)
+## Next steps (revised 2026-10-22, late)
 
-1. **Coverage on paper**: classify each transformation in secml-malware, Labaca-Castro et al.'s toolkit, and
-   MAB-Malware's actions as content / item-creating / structural, and list the feature groups each touches. If most
-   real attacks are structural, rethink before building.
-2. **Proof sketches** for C1-C4 (C1 short; C3 needs care with the readout).
-3. **Mock A's paper table** (done 2026-10-22: `docs/direction-A-mock.md`; tables A0 C1 validity, A1 monotone detectors
-   vs. PV selection with seen / held-out / adaptive attacks, A2 the C1-guided adaptive attack; three go/no-go checks) (attack side, defense side, or both) with the model component behind each column, name the
-   realistic baselines, and state a falsifiable go/no-go check (`mock-the-result-first`).
-4. Then: a targeted search and mock for B and C; clean out leftover materials of the old direction (scripts, run
-   scripts, manuscript, docs) once the new plan is settled; update `CLAUDE.md` conventions as they firm up.
+Done: coverage on paper (model doc, Section 6), proof sketches (Section 4a; C2 and C4 restated), the mock of A
+(`docs/direction-A-mock.md`; the user approved A1 as the target result), Treant and Chen et al. CCS 2021 read (both
+consume a hand-written threat-model specification; neither derives it). Any no-go is brought to the user before
+anything is dropped.
+
+Order: settle the threat model, then the two cheap checks of *value* (would A1 matter?), then the engineering that
+the check of *validity* and the full A1 need.
+
+1. **Fix the threat model M** on paper: the catalogue of operations (Section 6 rows 1-8, 11-12; removals as a
+   separate variant), what the attacker chooses (content, names, sizes), the byte budget. Every A1 row assumes it.
+2. **C4 directions for every EMBER feature under M**, first as a provisional table from each feature's group, readout
+   and the catalogue's signs (explicitly a stand-in for the automatic derivation), plus the layer-2 re-encoding
+   (raw counts, split signed buckets). Cheap; feeds checks 3 and 2.
+3. **Go/no-go 3 (accuracy cost of soundness), partial**: monotone LightGBM on (a) C4 up-only features and (b) the
+   re-encoded sums recoverable from the feature store (histogram and byte-entropy counts = frequencies x totals;
+   section size ratios x file size); split signed buckets need re-extraction and come later. Training: hand the user
+   a `run/` script after a smoke test.
+4. **Go/no-go 2 (PV selection's hole)**: run Gimenez et al.'s 8 secml-malware black-box attacks against our GBDT on
+   pilot malware (needs secml-malware and LIEF in the venv: ask first), compute PV selection, intersect with C4's
+   decreasable features, measure their gain share in the PV-selected GBDT.
+5. **Engineering, then go/no-go 1**: an explicit item table and the location relation in the instrumentation (A1),
+   a C1 predictor, pefile-based implementations of the catalogue's operations (reuse the loader-safe edit code);
+   Table A0 on the pilot files.
+6. **Full A1** (seen / held-out / adaptive attacks), then A2.
+7. Later: B and C screening; clean out the old direction's materials; update `CLAUDE.md` conventions.
 
 ## Settled decisions (2026-10-22)
 

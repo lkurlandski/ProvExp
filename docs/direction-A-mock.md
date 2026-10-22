@@ -128,8 +128,12 @@ fields secml-malware never touches but other toolkits or an adaptive attacker ca
 - A reviewer may say "splitting signed hashing and un-normalizing histograms is obvious once stated." The answer must
   be the full, automatic derivation across every feature group and readout, plus the measured hole in PV selection
   (check 2). If check 2 fails, that answer is weak.
-- To read before building: Treant (Calzavara et al.: training trees against attacker rewriting rules on features; our
-  directions could be its rules) and Chen et al., "Learning Security Classifiers with Verified Global Robustness
-  Properties" (CCS 2021: global properties such as monotonicity specified by hand).
+- Read 2026-10-22 (`docs/literature-2026-10-22.md`, fourth pass): **Treant** (per-feature rewriting rules written by
+  hand; census/wine/credit) and **Chen et al. CCS 2021** (global properties written by hand from domain knowledge and
+  a measurement study, for 7-25 features). Neither derives the threat model's effect on features; both consume it.
+  This strengthens the pitch: robust training *given* a specification is well studied; the specification for a
+  realistic malware extractor is what nobody can write by hand. Treant also shows the cost of per-feature rules: a
+  real operation moves many features jointly (C2), which its rule language cannot express. Optional extra A1 row:
+  Treant trained on rules compiled from C3/C4, if its enumeration scales to EMBER (likely not).
 - Removal transformations (remove signature, remove debug) are outside the add-only threat model; including them makes
   the affected features two-sided (dropped or treated as down-only). Report which threat model each row assumes.

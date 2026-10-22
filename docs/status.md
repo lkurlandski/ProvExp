@@ -1,5 +1,15 @@
 # Status
 
+**2026-10-22 (end): A1 approved as the target; Treant and Chen et al. CCS 2021 read; next steps set.**
+- The user likes A1 (monotone detectors with C4 directions vs. PV selection); any no-go goes to the user first.
+- Treant (hand-written per-feature rewriting rules; non-malware data) and Chen et al. CCS 2021 (hand-specified global
+  properties for 7-25 features, from domain knowledge and a measurement study) consume a threat-model specification;
+  neither derives one. No novelty threat; they sharpen the pitch (the specification is the bottleneck). Notes in the
+  literature doc (fourth pass) and the mock.
+- **Next (`PLAN.md`, revised next steps):** (1) fix the threat model M on paper; (2) provisional C4 directions for
+  every EMBER feature + the sums re-encoding; (3) go/no-go 3 partial (monotone LightGBM training: user runs it);
+  (4) go/no-go 2 (secml-malware attacks; new dependencies: ask); (5) item table + C1 predictor, go/no-go 1.
+
 **2026-10-22 (later): coverage of real transformations on paper (step 1) done; refinements adopted.**
 - `docs/feature-provenance-model.md` Section 6: secml-malware (from its source), Labaca-Castro et al.'s t0-t9, and
   MAB-Malware's 13 actions: 34 listed, 16 distinct. Strict classes: content 41%, item-creating 15%, structural 44%
