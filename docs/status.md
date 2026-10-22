@@ -1,5 +1,19 @@
 # Status
 
+**2026-10-22 (end, later): steps 1-2 of A done: threat model and provisional direction table (run 76).**
+- `docs/direction-A-threat-model.md`: three nested threat models (M_add: append, add section, add imports; M_shift:
+  + DOS extension, content shift; M_full: + slack, DOS header, header fields, checksum, rename, remove debug and
+  signature). Outside all: code randomization, UPX.
+- `scripts/a_directions.py` / `run/76_a_directions.sh` (hand-written per-group rules, a stand-in for C4): of 2,568
+  features, a sound monotone detector can use 22% as they are under M_add (19% under M_full), **96% (85%) once
+  re-encoded as layer-2 sums** (region-restricted counts, split signed buckets, the import quirk fixed). Hypothesis
+  held: the readout, not the items, makes features two-sided.
+- Found: EMBER's imports overwrite a DLL's functions when a second descriptor names the same DLL; this alone makes
+  1,025 import features two-sided and is a prime suspect for check 2's hole (no secml attack produces it). To verify
+  on a real file. Also: min_entropy, min_size_ratio, min_vsize_ratio are constant 0.
+- **Waiting on the user:** check 3 from the feature store covers only the as-is row; the re-encoded row needs
+  re-extraction over the training set (a featurization job to scope). Check 2 needs secml-malware + LIEF installed.
+
 **2026-10-22 (end): A1 approved as the target; Treant and Chen et al. CCS 2021 read; next steps set.**
 - The user likes A1 (monotone detectors with C4 directions vs. PV selection); any no-go goes to the user first.
 - Treant (hand-written per-feature rewriting rules; non-malware data) and Chen et al. CCS 2021 (hand-specified global

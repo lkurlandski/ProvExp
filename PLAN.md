@@ -59,9 +59,9 @@ anything is dropped.
 Order: settle the threat model, then the two cheap checks of *value* (would A1 matter?), then the engineering that
 the check of *validity* and the full A1 need.
 
-1. **Fix the threat model M** on paper: the catalogue of operations (Section 6 rows 1-8, 11-12; removals as a
+1. **(done, `docs/direction-A-threat-model.md`)** **Fix the threat model M** on paper: the catalogue of operations (Section 6 rows 1-8, 11-12; removals as a
    separate variant), what the attacker chooses (content, names, sizes), the byte budget. Every A1 row assumes it.
-2. **C4 directions for every EMBER feature under M**, first as a provisional table from each feature's group, readout
+2. **(done, run 76: 22% usable as is, 96% re-encoded under M_add)** **C4 directions for every EMBER feature under M**, first as a provisional table from each feature's group, readout
    and the catalogue's signs (explicitly a stand-in for the automatic derivation), plus the layer-2 re-encoding
    (raw counts, split signed buckets). Cheap; feeds checks 3 and 2.
 3. **Go/no-go 3 (accuracy cost of soundness), partial**: monotone LightGBM on (a) C4 up-only features and (b) the

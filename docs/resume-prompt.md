@@ -17,7 +17,9 @@ picture for the user in plain language before asking any decision. Be harsh abou
 
 ## Next
 
-1. Fix the threat model M on paper (`PLAN.md`, revised next steps 1-2), then the provisional C4 table.
+1. Steps 1-2 are done (`docs/direction-A-threat-model.md`, run 76). Next: check 3 (the as-is row from the feature
+   store; the re-encoded row needs re-extraction, to scope with the user), verify the duplicate-DLL import quirk on a
+   real file, and check 2 (secml-malware + LIEF: ask before installing).
 2. Follow `PLAN.md`'s revised next steps: go/no-go 3 partial (monotone LightGBM; the user runs training), go/no-go 2
    (secml-malware attacks; ask before adding dependencies), then the item table and C1 predictor (go/no-go 1).
    **Any no-go goes to the user before anything is dropped.** Treant and Chen et al. CCS 2021 are read (fourth pass
