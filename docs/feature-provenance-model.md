@@ -65,11 +65,11 @@ layer 1. A byte write to region S falls into three classes:
      predicting it.
 
 Compound transformations from the attack literature (add a section, append to slack, rename a section, add imports,
-remove the signature) are lists of item operations: add items, remove items, modify items, and **move** items (same content, new
-location; DOS extension and content shifting), plus the declared structural edits they force (NumberOfSections,
+remove the signature) are lists of item operations: add items, remove items, modify items, and **move** items (same
+content, new location; DOS extension and content shifting), plus the declared structural edits they force (NumberOfSections,
 SizeOfImage). A move changes only position-defined items (the byte-entropy windows after the insertion point) and
-contributions read through a file offset (the SECURITY entry); every other item keeps its contribution. The byte view and the item view are therefore not alternatives: the byte
-view is the interface (threat models and explanations are stated in bytes), the item view is where the computation is
+contributions read through a file offset (the SECURITY entry); every other item keeps its contribution. The byte
+view and the item view are therefore not alternatives: the byte view is the interface (threat models and explanations are stated in bytes), the item view is where the computation is
 exact.
 
 ## 4. Claims (to prove)
@@ -80,15 +80,20 @@ re-derived as removed-and-added (T→ ⊆ T- ∪ T+ for windows).
 
 - **C1 (exact side effects).** φ(z') = g(A(z) + Σ_{T+} v(t) − Σ_{T-} v(t) + Σ_{T~} (v(t_new) − v(t_old))).
   The side-effect vector of Pierazzi et al. is computed without extracting z', from the items the edit touches.
-- **C2 (coupling).** Two features are coupled under M exactly when some item the attacker can add, remove, or modify
-  contributes to both sums (or the readout mixes them, e.g., a shared denominator). Severi et al.'s
-  num_sections / num_write_sections dependency is the vector of a writable section.
+- **C2 (coupling; restated 2026-10-22).** (a) *Co-movement*: an operation changes both features i and j; read off its
+  change vector (a corollary of C1). (b) *Inseparability*: no allowed combination of operations changes one without
+  the other; decided by the cone the operations' change vectors generate in the (i, j) plane, or through a shared
+  readout (a common denominator), by C3's reachable set. Severi et al.'s num_sections / num_write_sections pair is
+  co-moving under "add a writable section" but separable once read-only sections are allowed too.
 - **C3 (reachable sums).** Under an add-only threat model with a catalogue C of addable items, the reachable sums are
   A(z) + { Σ n_t v(t) : n_t ∈ N }; their convex cone is a sound over-approximation; through g (interval bounds for
   ratios, entropies, maxima) it gives the input region verified training needs (Chen et al.).
-- **C4 (directions).** Feature j can be increased (decreased) under M iff some combination of allowed item operations
-  raises (lowers) g_j, decidable from the signs of v_j over the catalogue and the monotonicity of g_j. This yields
-  Incer et al.'s four cases (fixed, up only, down only, both) automatically.
+- **C4 (directions; restated 2026-10-22).** Per file, the directions feature j can move under M are decidable from
+  the catalogue's change vectors and the readout: the sign test (identity, presence, max/min), the ratio test (a ratio
+  rises iff some item's own ratio exceeds the current one), the cross-entropy test (an entropy rises iff some item's
+  distribution has cross-entropy above the current entropy). Globally (all files), the answer is the union over files:
+  identity, presence, and max/min features get it from signs alone, ratios and entropies are generally two-sided. This
+  yields Incer et al.'s four cases (fixed, up only, down only, both) automatically, and the per-file answer beyond them.
 
 ## 4a. Proof sketches (2026-10-22)
 
@@ -153,7 +158,7 @@ The proof is short; the work is in A1-A3 per item kind. That is also the first p
 files, for each transformation in Section 6, compare C1's prediction with re-extraction feature by feature. A mismatch
 is either a bug or an A1-A4 failure to be listed.
 
-### C2 (coupling): the statement needs a correction
+### C2 (coupling): corrected (restatement adopted 2026-10-22)
 
 **As stated, C2 is false in one direction.** "Two features are coupled exactly when some item the attacker can add,
 remove, or modify contributes to both" conflates two things: (a) **co-movement**: a given operation changes both
@@ -162,7 +167,7 @@ features (adding a writable section raises both the section count and the writab
 needed to rule features out. Sharing an item gives (a), not (b): adding a read-only section raises the section count
 alone, so the two counts can still be set independently by mixing the two kinds of section.
 
-**Proposed restatement.** Let W be the set of change vectors of allowed operations (each one's v_new − v_old, or v(t)
+**Restatement (adopted).** Let W be the set of change vectors of allowed operations (each one's v_new − v_old, or v(t)
 for an added item, restricted to the sums). (a) Co-movement is read off each w ∈ W directly (a corollary of C1).
 (b) Under an add-only threat model and identity readouts, features i and j can be moved independently, each in the
 directions it can move at all, iff the projections of W onto the (i, j) plane generate a cone that contains each
@@ -202,7 +207,7 @@ Limits: add-only (removals and modifications need their own generators, −v(t) 
 loses the cone's simplicity); the integer and budget structure is relaxed, so the region is sound but not tight;
 A1-A4 as for C1.
 
-### C4 (directions): the statement needs a correction for nonlinear readouts
+### C4 (directions): corrected for nonlinear readouts (restatement adopted 2026-10-22)
 
 **As stated, C4 holds for identity, presence, and max/min readouts, not for ratios or entropies.** For an identity
 readout, feature j can rise under add-only iff some catalogue item has v_j > 0 and fall iff some has v_j < 0 (signed
@@ -213,7 +218,7 @@ p toward an added distribution q, the entropy first rises iff the cross-entropy 
 concavity, if it does not rise at first it never rises; and since the cross-entropy is linear in q, checking the
 catalogue's vertices suffices. Decreases are budget-dependent (check the vertices at the budget's λ).
 
-**Proposed restatement.** Per file: the reachable directions of each feature are decidable from the catalogue's
+**Restatement (adopted).** Per file: the reachable directions of each feature are decidable from the catalogue's
 contribution vectors and the readout, by the sign test (identity, presence, max/min), the ratio test (ratios), or the
 cross-entropy test (entropies). Globally (for all files, which is what Incer et al.'s four cases and a monotone
 classifier need): a feature is up-only if it is up-only for every file; identity, presence, and max/min features
