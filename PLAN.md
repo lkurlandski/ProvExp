@@ -55,7 +55,8 @@ introduction and a simple baseline (writing decision for later).
    MAB-Malware's actions as content / item-creating / structural, and list the feature groups each touches. If most
    real attacks are structural, rethink before building.
 2. **Proof sketches** for C1-C4 (C1 short; C3 needs care with the readout).
-3. **Mock A's paper table** (attack side, defense side, or both) with the model component behind each column, name the
+3. **Mock A's paper table** (done 2026-10-22: `docs/direction-A-mock.md`; tables A0 C1 validity, A1 monotone detectors
+   vs. PV selection with seen / held-out / adaptive attacks, A2 the C1-guided adaptive attack; three go/no-go checks) (attack side, defense side, or both) with the model component behind each column, name the
    realistic baselines, and state a falsifiable go/no-go check (`mock-the-result-first`).
 4. Then: a targeted search and mock for B and C; clean out leftover materials of the old direction (scripts, run
    scripts, manuscript, docs) once the new plan is settled; update `CLAUDE.md` conventions as they firm up.

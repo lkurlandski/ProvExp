@@ -17,7 +17,15 @@
   co-movement with inseparability; C4's sign test fails for ratios and entropies, whose direction depends on the
   file); proposed restatements are in 4a. Found on the way: a repeated DLL name in a second import descriptor erases
   the first's functions in EMBER's import features.
-- **Next:** the user's call on the C2/C4 restatements; then mock A's table (step 3).
+- C2/C4 restatements **adopted** by the user (Section 4 updated).
+- **Step 3 done: `docs/direction-A-mock.md`** (invented numbers). Lead result: monotone detectors whose feature
+  directions come from C4 are sound against attacks nobody ran, unlike Gimenez et al.'s PV selection (whose
+  Proposition 3 assumes the perturbation set is known); reading layer-2 sums (raw counts, signed buckets split) instead
+  of normalized features should recover accuracy (the re-encoding ERDALT learns). Go/no-go: (1) C1 matches
+  re-extraction on >= 95% of pairs; (2) PV selection keeps features M can lower that carry >= 5% of the GBDT's gain;
+  (3) the sums-based monotone GBDT within ~2 AUC of PV.
+- **Waiting on the user:** review the mock. To read first: Treant (Calzavara et al.), Chen et al. CCS 2021 (verified
+  global robustness properties).
 
 **2026-10-22: the project restarts as "feature provenance in malware classification". Conceptual phase; no code.**
 - **Why:** the user judged the explanation-provenance paper far below CCS (not novel; no compelling security utility)
