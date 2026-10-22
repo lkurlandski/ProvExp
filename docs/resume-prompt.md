@@ -1,46 +1,38 @@
-# Resume: ProvExp (after 2026-10-21) — run a fresh simulated CCS review
+# Resume: ProvExp (after 2026-10-22) — feature provenance, conceptual phase
 
-Read `CLAUDE.md`, then `docs/status.md` (top blocks, 2026-10-21). Explain in plain language; ask before changing what a
-claim is for. Follow the memories `consistency-and-simplicity`, `paper-writing-style`, `check-baseline-realism`,
-`mock-the-result-first`, and `no-pedantic-rewordings`.
+Read `CLAUDE.md`, then `PLAN.md` (restarted 2026-10-22), `docs/feature-provenance-model.md` (the model), and
+`docs/literature-2026-10-22.md` (the related work read so far). `docs/status.md`'s top block summarizes the restart.
+Explain in plain language; be harsh about our own novelty; never raise deadlines or conference cycles. Follow the
+memories `be-self-critical-on-novelty`, `mock-the-result-first`, `check-baseline-realism`, `malware-generic-over-pe`,
+`symmetry-nice-to-have`.
 
 ## Where things stand
 
-- **The whole draft is current.** On 2026-10-21 the abstract, introduction, background, discussion, and conclusion were
-  brought up to date with the body, followed by an end-to-end pass. The front matter is no longer a placeholder, but the
-  review should still shape its final form.
-- **Section 5:** run 74 is in. KernelSHAP over 4,096 windows is the strongest direct method (7.17 log-odds), still below
-  the byte-level pullback (8.03; the pullback wins on 59/100 files, at every budget, with one extraction instead of
-  32,770). Pushed forward, KernelSHAP@4096 keeps 0.97 of TreeSHAP's evidence. The discussion answers "would finer
-  windows catch up?" with cost.
-- **Section 6.1, Table 2:** the pullback predicts the GBDT's drop under MalConv-guided field edits (Spearman 0.48 vs.
-  0.21 for occlusion; 500 files, run 72). A KernelSHAP row is **predicted in blue** (0.31 / 0.65) until run/75 runs.
-- **Blue placeholders** (`\synthetic{...}`): Table 2's KernelSHAP row and its sentences in 6.1 and the introduction
-  (run/75); 6.2's retrained-MalConv row and sentence (deferred); the discussion's Android sentence (W7, undecided).
+- The explanation-provenance paper is abandoned (`docs/graveyard.md`); its code, data, and manuscript are source
+  material. Do not polish or run anything for it (run/75 is on hold).
+- New thesis: simple feature provenance bridges the feature-problem space gap in malware classification. Direction A
+  (threat models to feature space) is the core; B (auditing raw-byte detectors for backdoors/shortcuts) and C (evasion
+  diagnosis across ensemble members) support it, each subject to its own screening.
+- The model: three layers (parse with membership and location; additive item contributions; a readout), byte edits
+  translated to item operations (content / item-creating / structural), claims C1-C4. The user likes its generality;
+  wants to stay conceptual before prototyping or smoke tests.
 
-## Next: the review
+## Next (agreed order)
 
-Run the simulated CCS review with `docs/review-prompt.md`, following it as written (three reviewers, blind first pass,
-then a comparison with `REVIEW.md` and `docs/review-reassessment-2026-10-19.md`; output in `REVIEW-<date>.md`). The
-prompt lists what is settled and how to treat blue placeholders. If the user wants truly independent reviewers, run
-each as its own subagent and write the meta-review and risk register yourself. Then go through the risk register with
-the user and decide what to act on.
+1. **Coverage on paper.** For each transformation in secml-malware (Demetrio et al.), Labaca-Castro et al.'s
+   toolkit (Table 1 of arXiv 2102.06747), and MAB-Malware's actions, classify it as content, item-creating, or
+   structural under the model, and list the EMBER feature groups it touches (use the worked example's table format in
+   `docs/feature-provenance-model.md`, Section 5). Report the share in each class. If most are structural, stop and
+   discuss with the user before going on.
+2. **Proof sketches** for C1-C4, in `docs/feature-provenance-model.md`.
+3. **Mock A's paper table(s)** (attack side and/or defense side), naming the model component behind each column, the
+   realistic baselines (Gimenez et al.'s PV selection and Labaca-Castro et al.'s probabilities on held-out attack
+   families; Severi et al.'s 17 features; Rosenberg et al.), and a falsifiable go/no-go check.
+4. Later: targeted search and mocks for B and C; clean out leftover materials of the old direction; update
+   `CLAUDE.md` conventions as the new design firms up.
 
-## Pending, for the user
+## Notes
 
-- **run/75** (`run/75_cm_kernelshap_4096.sh`, ~32 h, 16 workers, resumable): when it finishes, read it (log
-  `artifacts/logs/cm-shared-edit-500-ks-seed0.log`; `rho_kernelshap`, `auc_kernelshap`, `diff_kernelshap_lo/hi` for
-  the arm `malconv_only`), state hypothesis vs. outcome (expected rho ~0.25-0.35), replace the blue values in Table 2,
-  6.1, and the introduction, and record it in `docs/experiments/cm.md`. If KernelSHAP approaches the pullback (0.48),
-  stop and tell the user before writing.
-- **W7 (one extractor):** instrument the Android extractor (3-5 weeks) or scope the generality claims to
-  "domain-agnostic by construction" and delete the blue Android sentence (hours). The review may inform this.
-- Deferred by the user, do not propose: MalConv retraining (and a stronger attacker on it), the scale-up, more seeds.
-  Dropped: a named-feature TreeSHAP baseline for Table 2, a 0.1% FPR column, sentence-level rewordings.
-
-## Working rules
-
-- Long jobs: smoke-test, estimate, numbered `run/` script (<=16 workers, GPU 3), the user runs it in tmux.
-- `make` / `make check` in `manuscript/` after every manuscript edit; `ruff` + strict `mypy`; unit tests for new library
-  code.
+- `papers/` holds PDFs the user downloaded (e.g., Incer et al.); do not commit it. Ask the user for any paywalled paper.
+- Paper texts read on 2026-10-22 were fetched from arXiv into the session scratchpad; re-download if needed.
 - Update `docs/status.md` and rewrite this prompt at the end of the session.

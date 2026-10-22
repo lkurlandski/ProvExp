@@ -1,5 +1,24 @@
 # Status
 
+**2026-10-22: the project restarts as "feature provenance in malware classification". Conceptual phase; no code.**
+- **Why:** the user judged the explanation-provenance paper far below CCS (not novel; no compelling security utility)
+  and agreed with the diagnosis (method first, applications after the fact; flat P is precise only where it is not
+  needed). Old plan archived (`docs/archive/PLAN-explanation-provenance-2026-10-21.md`); graveyard entry added. The
+  simulated review is in `REVIEW-2026-10-21.md` (untracked, left for the user).
+- **New thesis and plan:** `PLAN.md`. Directions A (threat models to feature space; the core), B (auditing raw-byte
+  detectors for backdoors/shortcuts), C (evasion diagnosis across heterogeneous ensemble members).
+- **Literature read** (`docs/literature-2026-10-22.md`): Pierazzi, Labaca-Castro, Gimenez, Severi, Rosenberg,
+  Sheatsley, Bostani, Chen (robust PDF), Incer (from `papers/incer.pdf`, provided by the user), Dyrmishi, Smutz &
+  Stavrou, Jigsaw, PBP, RAMP, Perasso, PASA, Cheney. A's space is crowded, but every paper obtains "what can the
+  attacker reach in feature space" by hand, from data, or by running transformations.
+- **Model:** `docs/feature-provenance-model.md`, three layers (parse: membership/location; additive contributions;
+  readout), edits in bytes translated to items (content / item-creating / structural), claims C1-C4, a worked example
+  (adding a writable section in EMBER). Adopted as the working design after the "P + R" two-model idea was rejected.
+- **Pending runs:** run/75 is on hold (old direction); do not run.
+- **Next:** coverage of real transformations on paper; proof sketches for C1-C4; mock A's table (see `PLAN.md`).
+- Memories updated: symmetry is nice to have (not required); PE specifics allowed but keep framing malware-generic; be
+  harsh about novelty; never raise deadlines.
+
 **2026-10-21 (later still): Table 2 gets a KernelSHAP row (predicted, blue); run/75 ready.**
 - `scripts/cm_shared_edit.py --kernelshap`: the GBDT's KernelSHAP over 4,096 windows as a second window baseline,
   computed in a cached, resumable phase (1b) with Section 5.1's worker (`faithfulness.process_kernelshap`, fork pool;

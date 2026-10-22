@@ -1,40 +1,32 @@
 # ProvExp
 
-Dissertation research: **explanation provenance** for malware detectors. A provenance matrix P (bytes × features,
-plus a null element) transfers explanations between the feature-space (EMBER v3 features) and the problem-space
-(the bytes of a PE file): pullback b = Pa, pushforward a = PᵀD†b. Target: ACM CCS 2027, Cycle A
-(est. mid-January 2027; CfP not out yet), as a single security paper: a method (explanation provenance) and its two security applications. The statistics of
-P and the round-trip theory were cut from the paper (2026-10-13) and archived in `manuscript/archive/`.
+Dissertation research: **feature provenance in malware classification** (restarted 2026-10-22). Instrumenting a
+feature extractor records which problem-space elements (bytes, characters, tokens, ...) produce which features,
+through which items; this bridges the feature-problem space gap: what an attacker's edits can reach in feature space
+(side effects, coupling, reachable directions and regions), computed instead of found by hand, from data, or by running
+transformations. Model: `docs/feature-provenance-model.md`. The previous direction (explanation provenance: pullback
+b = Pa and pushforward a = PᵀD†b of explanations) was abandoned on 2026-10-22 (`docs/graveyard.md`); its code, data,
+and manuscript remain as source material. Deadlines and conference cycles are not a planning constraint (user).
 
 ## Read first
 
 - `docs/status.md`: current state, what is waiting on the user, and what to do next. **Update it at the end of
-  every session.**
-- `PLAN.md`: claims, experiments by ID (CP, PB1–2, PF1–2, CM; appendix App-L, App-R), timeline, gates, open
-  questions.
-- Experiment docs, one per experiment under `docs/experiments/`, named by ID: `cp.md` (CP: characterizing P);
-  `pb1.md` (PB1: pullback faithfulness and cost); `pf1.md` (PF1: pushforward faithfulness and the resolution trend);
-  `trigger.md` (the planted-trigger testbed: PB2 and PF2); `cm.md` (CM: comparing detectors through the pullback, the
-  pullback's application); `audit.md` (AU: auditing a raw-byte detector through the pushforward, the pushforward's
-  application). `docs/appendix.md` (App-L, App-R). `docs/theory.md`: strengthening Section 3 (Shapley-grounded P; the pushforward as
-  an inverse problem; parked case-study ideas). `docs/graveyard.md`: ideas that did not pan out and why.
-  `docs/resume-prompt.md`: where to pick up next. `docs/review-prompt.md`: the prompt for simulated CCS reviews. `docs/style_guide.md`: a loose orientation on how
-  top-tier security papers near our scope read (for the writing; not a template).
-- `docs/design.md`: package design, decisions, provenance conventions, thrember quirks.
-  `docs/related_work.md`: literature and gaps. Some artifact paths still use retired IDs (e.g.
-  `artifacts/experiments/e1/` is PB1).
+  every session.** `docs/resume-prompt.md`: where to pick up next.
+- `PLAN.md`: thesis, the model, directions A (core), B, C, next steps, settled decisions.
+- `docs/feature-provenance-model.md` (the three-layer model, claims C1-C4, worked example) and
+  `docs/literature-2026-10-22.md` (related work for the new direction, read 2026-10-22). Be harsh about our own
+  novelty: read the closest work on the same *task* before building (user, 2026-10-22).
+- `docs/graveyard.md`: ideas and directions that did not pan out and why.
+- Old direction, for reference only: `docs/archive/PLAN-explanation-provenance-2026-10-21.md`, `docs/experiments/`
+  (cp, pb1, pf1, trigger, cm, audit), `docs/theory.md`, `docs/appendix.md`, `docs/related_work.md`,
+  `docs/review-prompt.md`, the manuscript under `manuscript/`, `REVIEW-2026-10-21.md`. Some artifact paths use
+  retired IDs (e.g. `artifacts/experiments/e1/` is PB1). `docs/design.md` (package design, provenance conventions,
+  thrember quirks) and `docs/style_guide.md` still apply.
 - **State a hypothesis before running an experiment** (what you expect and why), and report a failed check as such.
   Keep it short and proportionate: a sentence or two, not an elaborate pre-registered reading for every outcome
   (user, 2026-10-09).
-- Manuscript order: intro (`_b`), background and related work (`_b2`: detection, post-hoc explanation, explaining
-  malware detectors, transferring attributions, our position), method (`_c`: preliminaries with Figures 1-2, P,
-  transfers, constructing P), experimental setup (`_d`: EMBER's instrumentation, data, models, explainers, the deletion
-  operator, windows of bytes / P^G as an experimental device only), evaluating the transfers (`_e_evaluation`: 5.1 pullback
-  faithfulness and cost = PB1, 5.2 pushforward faithfulness = PF1; the planted trigger was cut on 2026-10-19
-  and survives as a small worked example in an appendix, `_j2_worked_example`) and security applications (`_f_applications`: a shared setting, 6.1 comparing two detectors file by file = CM,
-  6.2 auditing a raw-byte detector = AU; each application has a short threat model)
-  (restructured 2026-10-19 from one section per operator), written as continuous prose rather than stacks of labeled paragraphs (user, 2026-10-14); discussion (`_h`), conclusion (`_i`); appendices `_j`-`_l`. No internal IDs (PB1, ...) in the paper text. Cut material lives in `manuscript/archive/`. Keep code and manuscript
-  consistent.
+- The manuscript will be rewritten once the new direction's applications survive screening; until then do not edit
+  it. Write continuous prose rather than stacks of labeled paragraphs (user, 2026-10-14); no internal IDs in the paper.
 
 ## Layout
 
@@ -111,32 +103,25 @@ Follow `/home/lk3591/Documents/code/SSViT/exeformer/exeformer.py` (ignore that i
 
 ## Framework conventions
 
-- Elements are bytes. Feature sets record raw contributions; `Provenance` normalizes lazily.
+- In the EMBER code, elements are bytes and feature sets record raw contributions (`Contributions.add_item` already
+  spreads each item over its bytes; the item layer of the new model is implicit there). `Provenance` normalizes
+  lazily.
 - Features with no contributions go to the null element (`empty="null"`, the default; `uniform`/`ignore` also exist).
 - All explainers attribute the malware log-odds (GBDT raw score; logit₁ − logit₀ for neural networks).
-- **The framework and the core contributions are domain-agnostic.** The framework applies to any classifier with a
-  complex feature extractor and depends only on the relationships between elements and features (P), never on what an
-  element or a feature *means*. `provexp` (outside `featuresets/`), the provenance statistics, the census, and the
-  core analyses work with elements, features, feature subsets, and P only. Analyses stratified on PE-format structure
-  (headers, sections, overlay, packers, PE-specific "attacker-controllable regions") have repeatedly not led anywhere,
-  so propose one only with a concrete reason rather than by default; questions about what control of an *arbitrary*
-  byte set allows, posed domain-agnostically in terms of P, are welcome. See `docs/graveyard.md`.
-- **Coverage, localizability, and the null element's share are not currently treated as contributions.** They measure
-  a particular explanation of a particular file by a particular explainer, not the provenance, and a large share of
-  attribution on unattributable features reflects a limitation of the provenance extraction pipeline, not a finding
-  about detectors; App-L stays a stated limitation. Reconsider promoting them, or reporting "reliance on absence",
-  only with a strong and specific case.
-- **Extrinsic applications: one per operator; the pushforward is essential.** The pullback alone is close to
-  G-DeepSHAP; the symmetry between the spaces is the novelty, so do not casually propose dropping the pushforward's
-  application or leaving it intrinsic-only — raise it only with a real argument. Before any code for an application:
-  the screening criteria and a mock of
-  its paper table with the operator behind each column (`PLAN.md`, "Paper structure", 3). Realistic alternatives are
-  what a practitioner would actually do; a hand-built, format-specific mapping that takes tremendous manual effort
-  (e.g., a PE parser locating every field per file) is not one.
+- **Provenance is domain-agnostic; the research is malware-specific** (user, 2026-10-22). The model depends only on
+  elements, items, and features, never on what they mean. Applications may use PE specifics (loader-ignored bytes,
+  sections, appended content) where they serve the argument, but frame everything as generically for malware as
+  possible; format minutiae turn reviewers off. Format-structure stratifications of the old kind still need a concrete
+  reason (`docs/graveyard.md`).
+- **Coverage, localizability, and the null element's share are not contributions** (old direction; still applies to
+  explanation-style analyses).
+- **Each application must cross the feature-problem gap in a way only feature provenance makes cheap**, against the
+  realistic alternative a practitioner would use. Using provenance in both directions is a plus, not a requirement
+  (relaxed 2026-10-22). Before any code for an application: the screening criteria, a mock of its paper table with the
+  model component behind each column, and a falsifiable go/no-go check. A hand-built, format-specific mapping that
+  takes tremendous manual effort is not a realistic alternative.
 - **The GBDT is the first classifier we experiment with** (decided 2026-10-08). The framework stays general-purpose
-  (P does not depend on the classifier). The MLP is set aside *temporarily* and returns once the GBDT methodology is
-  established (`PLAN.md`, "Model scope"); do not describe it as dropped.
+  (P does not depend on the classifier). The MLP is set aside *temporarily*; do not describe it as dropped.
 - **Experiments may use domain knowledge selectively** where it protects their integrity (decided 2026-10-07): e.g., a
-  PE-aware perturbation operator for the faithfulness evaluation (PB1) or a PE-aware trigger for the planted ground
-  truth (PB2, PF2). Keep it inside the experiment, say why it is needed, and never let it into the framework. The
-  extrinsic applications (3-A, 3-B, 3-C) may lean into domain-specific ideas where appropriate (user, 2026-10-09).
+  PE-aware perturbation operator or loader-safe edit rules. Keep it inside the experiment, say why it is needed, and
+  never let it into the model.

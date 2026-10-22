@@ -5,7 +5,25 @@ larger items are in git history (removed from the tree to reduce clutter); the c
 Code and run scripts for the dropped experiments live under `scripts/archive/` and `run/archive/` with their
 artifacts still in `artifacts/experiments/`.
 
-## Dropped experiments
+## Dropped directions
+
+### Explanation provenance for explainable ML (dropped 2026-10-22)
+
+**Idea.** Instrument the feature extractor once into a provenance matrix P and transfer explanations between the
+feature space and the bytes (pullback b = Pa, pushforward a = P^T D^+ b); evaluate faithfulness, then one security
+application per direction (comparing a GBDT and MalConv file by file; auditing MalConv in EMBER's vocabulary).
+
+**Why it failed.** Built method first, with applications found afterwards (four failed attempts before the two that
+survived). The technical core (data-flow bookkeeping, G-DeepSHAP's propagation, a Shapley grounding that equals the
+uniform recording on EMBER) was judged too small, the faithfulness results unsurprising (white-box structure beats
+black-box window explainers), and the security outcomes weak or already known (header reliance of MalConv; a 12.4%
+field attack beside the paper's own 81% stub attack; a predicted drop a defender could simulate). Structural reason:
+where flat P is precise (named header fields) it is not needed; where it would be needed (hashed and aggregate
+features) it is diffuse. The user judged the draft a strong reject (2026-10-22). Manuscript, plan
+(`docs/archive/PLAN-explanation-provenance-2026-10-21.md`), and the 2026-10-21 simulated review (`REVIEW-2026-10-21.md`)
+remain as source material.
+
+## Dropped experiments (within the old direction)
 
 ### 3-B — Spurious correlations via the pullback (dropped 2026-10-12)
 
@@ -52,7 +70,9 @@ audit. Recorded in `docs/experiments/audit.md`.
 ## Directions the user has generally found unproductive
 
 Not hard bans — raise them if there is a concrete reason — but each has been considered and set aside, so bring a
-justification rather than assuming it is welcome:
+justification rather than assuming it is welcome. **Updated 2026-10-22:** under the new direction, PE specifics are
+allowed where they serve a malware-generic argument, and the pushforward is no longer required (both directions are a
+plus, not a rule); the other items still apply.
 
 - **Analyses built on PE-format structure** (headers, sections, overlay, packers, "attacker-controllable regions").
   The framework is domain-agnostic and depends only on P; questions about controlling an *arbitrary* byte set, posed
