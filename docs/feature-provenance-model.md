@@ -90,6 +90,137 @@ re-derived as removed-and-added (T→ ⊆ T- ∪ T+ for windows).
   raises (lowers) g_j, decidable from the signs of v_j over the catalogue and the monotonicity of g_j. This yields
   Incer et al.'s four cases (fixed, up only, down only, both) automatically.
 
+## 4a. Proof sketches (2026-10-22)
+
+**In plain terms.** All four claims rest on one observation: the extractor computes each feature by walking over the
+file's pieces (items), adding up what each piece contributes, and then applying a final formula (the readout). If an
+edit changes only a known list of pieces, the new totals are the old totals plus the new pieces' contributions minus
+the old ones', and the features follow by re-applying the formulas. Everything that can go wrong is a way in which
+"the edit changes only a known list of pieces" or "a piece's contribution depends only on the piece" fails. Those
+failures are collected as four assumptions; each is checked per item kind, and each can be tested on real files by
+comparing the prediction with re-extraction.
+
+### Setting
+
+- A file z has a multiset of items T(z). Each item t has a kind k(t) and a content c(t) (its member bytes and any
+  attributes read from them). The **item table** of z lists, for every item, its kind, position, and contribution.
+  It is what the instrumented extractor outputs (today implicitly, via `Contributions.add_item`).
+- Contributions v(t) = v_{k(t)}(c(t)) are vectors over the sums. Each sum aggregates with a commutative operation:
+  addition (counts, histograms, hashed buckets, signed or not) or max/min (max section entropy, max size ratio).
+- Features are φ(z) = g(A(z)). The readouts in EMBER v3 are: identity; a ratio of two sums (normalized histograms, the
+  printable distribution, average string length, section size ratios once the file size is moved into the readout,
+  see A2); the entropy of a histogram of sums (file, overlay, string entropy); presence (min(1, ·)); and a
+  hashed-presence readout over keyed sums (unique import libraries).
+
+### Assumptions (checked per item kind; each is testable by re-extraction)
+
+- **A1 (complete location).** Every byte the parser uses to decide whether an item exists or where it lies is recorded
+  as a locating element. Then an edit that touches no locating element leaves every item at the same position with
+  the same extent, so the parse is unchanged by definition. This is a requirement on the instrumentation: today's P
+  records membership well and location only partly (e_lfanew, NumberOfSections, PointerToRawData, directory entries
+  must be added).
+- **A2 (local contributions).** v(t) depends only on t's kind and content. Known EMBER failures and their fixes:
+  section size ratios divide by |z| (fix: contribute SizeOfRawData and divide in the readout; max(s_i/N) = max(s_i)/N);
+  unique import libraries are a set (fix: keyed counts with a presence readout); a repeated DLL name in a second
+  import descriptor **overwrites** the first one's functions (`imports[dll_name] = []`), a genuine non-local effect
+  to flag; the entry section is chosen by a rule over AddressOfEntryPoint and all section ranges (treat the entry
+  section as a located item whose locating elements are those fields).
+- **A3 (local recognition).** Each recognizer has a margin m_k: after a write to region S, the items of kind k that
+  can differ are those overlapping S widened by m_k. Strings (maximal runs of 5+ printable bytes): the margin extends
+  to the nearest non-printable byte on each side, since a run's extent depends only on its neighbors. Byte-entropy
+  windows (2,048 bytes at multiples of 1,024): the windows overlapping S; appending d bytes adds the windows that now
+  fit and leaves the old ones intact (files under 2,048 bytes are one whole-file window, which any edit modifies).
+  Fixed-offset fields: no margin.
+- **A4 (faithful declaration).** A declared structural edit produces exactly the item delta it declares. This is
+  where LIEF-based rebuilds can fail; it is a property of the tool, not of the model.
+
+### C1 (exact side effects)
+
+Under A1-A4, for an edit that is content, item-creating, declared structural, or a move:
+
+1. *The delta is known.* Content edit: by A1 the parse is unchanged, so T~ is the items whose members intersect S
+   (from the item table) and T+ = T- = ∅. Item-creating edit: by A3, re-run each recognizer on S widened by its margin;
+   items found there in z are T-, items found in z' are T+. Declared structural edit: the delta is given (A4). Move:
+   items keep their content, so by A2 they keep their contributions, except position-defined items (windows, fields
+   read through a file offset), which are re-recognized as in the item-creating case on the shifted range.
+2. *The sums follow.* Additive sums: A(z') = A(z) + Σ_{T+} v − Σ_{T-} v + Σ_{T~} (v_new − v_old), because the sum over
+   a multiset is additive under union and removal, and by A2 the untouched items keep their contributions. Max/min
+   sums: adding is max(A, v_new); removing or lowering the current maximum needs the runner-up, which the item table
+   holds. So C1 needs the item table of z, not only A(z); it never needs z' to be extracted.
+3. *The features follow* by applying g. ∎
+
+The proof is short; the work is in A1-A3 per item kind. That is also the first prototype check (go/no-go): on pilot
+files, for each transformation in Section 6, compare C1's prediction with re-extraction feature by feature. A mismatch
+is either a bug or an A1-A4 failure to be listed.
+
+### C2 (coupling): the statement needs a correction
+
+**As stated, C2 is false in one direction.** "Two features are coupled exactly when some item the attacker can add,
+remove, or modify contributes to both" conflates two things: (a) **co-movement**: a given operation changes both
+features (adding a writable section raises both the section count and the writable-section count); and (b)
+**inseparability**: no allowed combination of operations changes one without the other, which is what Severi et al.
+needed to rule features out. Sharing an item gives (a), not (b): adding a read-only section raises the section count
+alone, so the two counts can still be set independently by mixing the two kinds of section.
+
+**Proposed restatement.** Let W be the set of change vectors of allowed operations (each one's v_new − v_old, or v(t)
+for an added item, restricted to the sums). (a) Co-movement is read off each w ∈ W directly (a corollary of C1).
+(b) Under an add-only threat model and identity readouts, features i and j can be moved independently, each in the
+directions it can move at all, iff the projections of W onto the (i, j) plane generate a cone that contains each
+attainable axis direction; otherwise they are coupled, and the projected cone says how (for example, the writable
+count can never exceed the section count added with it: every w has w_writable ≤ w_count). Through a shared readout
+(every histogram bin divided by the file size), coupling comes from g: the bins move jointly along the reachable set
+of C3. So C2 becomes a corollary of C1 (for co-movement) and C3 (for inseparability).
+
+### C3 (reachable sums and features, add-only)
+
+Threat model: the attacker adds items from a catalogue C (e.g., "a section with any name, characteristics, and content
+of up to s bytes"; "append up to B bytes"), any number of times within a budget, plus the declared structural edits
+each addition forces (those enter the item's vector: an added section also adds +1 to `header` number_of_sections).
+
+1. *Sums.* By C1 applied to each addition, A(z') = A(z) + Σ_t n_t v(t), n_t ∈ ℕ. Relaxing n_t to real n_t ≥ 0 gives
+   the convex cone A(z) + cone(v(C)), a sound over-approximation (it contains every reachable sum). For parameterized
+   catalogues (any name, any content), take for each sum the range of v over the family: a box per item kind; the
+   cone of the box is still sound.
+2. *Boundary effects.* Two added chunks can interact: adjacent printable payloads merge into one string (one fewer
+   string, one longer string); appended windows straddle two chunks. Soundness needs these either excluded by the
+   threat model (chunks delimited by a non-printable byte, at a cost of one byte) or added as extra generators with
+   bounded multiplicity (one merge per boundary). This is the one place where C3 needs care beyond C1.
+3. *Readouts.* Identity and presence: monotone, so intervals map to intervals. Max/min: under add-only, max is in
+   [A_max(z), max(A_max(z), sup_C v)] and never decreases. Ratio a/b with nonnegative contributions (mediant
+   inequality): every reachable value lies between the current ratio and the most extreme catalogue ratio a_t/b_t,
+   unbounded if some item has b_t = 0 < a_t. Normalized histograms, exactly: appending content with byte
+   distribution q to a file with distribution p and N bytes gives λp + (1 − λ)q with λ = N/(N + d); with a budget of B
+   bytes, the reachable set is {λp + (1 − λ)q : q ∈ conv(catalogue distributions), λ ∈ [N/(N+B), 1]}, a polytope (with
+   arbitrary bytes allowed, conv is the whole simplex). Entropy of such a histogram: concave in it, so its maximum over
+   the polytope is a small convex program and its minimum is attained at a vertex; together they give a sound
+   interval.
+4. *Region for verified training.* Per-feature intervals from step 3 form a box containing Reach(z, M), which is the
+   input region Chen et al.'s verified training needs; the polytope constraints (shared denominators, the coupling of
+   C2) give a tighter, still sound region if the training method accepts linear constraints.
+
+Limits: add-only (removals and modifications need their own generators, −v(t) or v_new − v_old, and the sign analysis
+loses the cone's simplicity); the integer and budget structure is relaxed, so the region is sound but not tight;
+A1-A4 as for C1.
+
+### C4 (directions): the statement needs a correction for nonlinear readouts
+
+**As stated, C4 holds for identity, presence, and max/min readouts, not for ratios or entropies.** For an identity
+readout, feature j can rise under add-only iff some catalogue item has v_j > 0 and fall iff some has v_j < 0 (signed
+hashing gives both when the attacker chooses the name; unsigned import hashing gives up only). Max: up only. But a
+ratio rises iff some catalogue item's own ratio exceeds the file's current ratio, so the direction depends on z, not
+only on signs: appending zero bytes lowers every normalized histogram bin except bin 0. Entropy: along the segment from
+p toward an added distribution q, the entropy first rises iff the cross-entropy −Σ q_i log p_i exceeds H(p); by
+concavity, if it does not rise at first it never rises; and since the cross-entropy is linear in q, checking the
+catalogue's vertices suffices. Decreases are budget-dependent (check the vertices at the budget's λ).
+
+**Proposed restatement.** Per file: the reachable directions of each feature are decidable from the catalogue's
+contribution vectors and the readout, by the sign test (identity, presence, max/min), the ratio test (ratios), or the
+cross-entropy test (entropies). Globally (for all files, which is what Incer et al.'s four cases and a monotone
+classifier need): a feature is up-only if it is up-only for every file; identity, presence, and max/min features
+get a global answer from the signs alone; ratios and entropies are generally "both" globally, and the per-file
+answer is what the model adds. Gimenez et al.'s PV selection estimates the global answer empirically from observed
+attacks; C4 computes it from the extractor, which is the comparison A's defense side should be built on.
+
 ## 5. Worked example: adding a writable section (EMBER v3)
 
 Edit: add a section named `.data2`, raw size s, content c, characteristics read|write, before any overlay.

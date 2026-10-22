@@ -10,7 +10,14 @@
 - Caveats recorded: UPX is the strongest attack in Labaca-Castro et al. (uncovered); LIEF-rebuilding tools add
   undeclared side effects; the content rows are hand-mappable header fields, so A's value is in readout effects and
   hashing.
-- **Next:** proof sketches for C1-C4 (with the refinements if adopted), then mock A's table.
+- **Proof sketches written** (model doc, Section 4a): C1 holds under four per-item-kind assumptions (A1 complete
+  location, A2 local contributions, A3 local recognition with a margin, A4 faithful declarations), each testable by
+  re-extraction; this is the prototype's first go/no-go check. C3: sound cone/box/polytope regions, with care at chunk
+  boundaries (merged strings). **Waiting on the user:** C2 and C4 as stated are wrong in part (C2 conflates
+  co-movement with inseparability; C4's sign test fails for ratios and entropies, whose direction depends on the
+  file); proposed restatements are in 4a. Found on the way: a repeated DLL name in a second import descriptor erases
+  the first's functions in EMBER's import features.
+- **Next:** the user's call on the C2/C4 restatements; then mock A's table (step 3).
 
 **2026-10-22: the project restarts as "feature provenance in malware classification". Conceptual phase; no code.**
 - **Why:** the user judged the explanation-provenance paper far below CCS (not novel; no compelling security utility)
