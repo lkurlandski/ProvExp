@@ -13,9 +13,13 @@ and manuscript remain as source material. Deadlines and conference cycles are no
 - `docs/status.md`: current state, what is waiting on the user, and what to do next. **Update it at the end of
   every session.** `docs/resume-prompt.md`: where to pick up next.
 - `PLAN.md`: thesis, the model, directions A (core), B, C, next steps, settled decisions.
-- `docs/feature-provenance-model.md` (the three-layer model, claims C1-C4, worked example) and
-  `docs/literature-2026-10-22.md` (related work for the new direction, read 2026-10-22). Be harsh about our own
-  novelty: read the closest work on the same *task* before building (user, 2026-10-22).
+- `docs/feature-provenance-model.md` (the three-layer model, claims C1-C4 with proof sketches and assumptions A1-A4,
+  worked example, coverage of real transformations) and `docs/literature-2026-10-22.md` (related work for the new
+  direction). Be harsh about our own novelty: read the closest work on the same *task* before building (user,
+  2026-10-22).
+- Direction A: `docs/direction-A-mock.md` (the target tables, baselines, go/no-go checks) and
+  `docs/direction-A-threat-model.md` (threat models M_add / M_shift / M_full, the direction table and re-encodings).
+  `docs/upstream-issues.md`: thrember bugs for the user to report upstream.
 - `docs/graveyard.md`: ideas and directions that did not pan out and why.
 - Old direction, for reference only: `docs/archive/PLAN-explanation-provenance-2026-10-21.md`, `docs/experiments/`
   (cp, pb1, pf1, trigger, cm, audit), `docs/theory.md`, `docs/appendix.md`, `docs/related_work.md`,
@@ -88,6 +92,9 @@ and manuscript remain as source material. Deadlines and conference cycles are no
   comment naming the run that replaces them. Replace them when the run is read.
 - Commit to `main` in logical pieces. Do not push unless asked.
 - Changes to the thrember-derived `features.py` are pure additions; the original lines stay untouched.
+- **No result may rest on an implementation quirk of the extractor** (user, 2026-10-22). Patch the quirk as a pure
+  addition (e.g., `merge_import_descriptors` for the duplicate-DLL import overwrite), run every row on the patched
+  variant, and note it in `docs/upstream-issues.md`.
 
 ## Code style
 

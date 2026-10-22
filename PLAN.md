@@ -49,28 +49,29 @@ introduction and a simple baseline (writing decision for later).
   mutual agreement (score disagreement); C must win where scores are silent (e.g., both members evaded) or classify
   the cause. PASA is the nearest attribution-based detector (not malware).
 
-## Next steps (revised 2026-10-22, late)
+## Next steps (end of 2026-10-22)
 
-Done: coverage on paper (model doc, Section 6), proof sketches (Section 4a; C2 and C4 restated), the mock of A
-(`docs/direction-A-mock.md`; the user approved A1 as the target result), Treant and Chen et al. CCS 2021 read (both
-consume a hand-written threat-model specification; neither derives it). Any no-go is brought to the user before
-anything is dropped.
+Done on 2026-10-22: coverage on paper (model doc, Section 6); proof sketches (Section 4a; C2 and C4 restated); the
+mock of A (`docs/direction-A-mock.md`; the user approved A1 as the target result); Treant and Chen et al. CCS 2021 read
+(both consume a hand-written threat-model specification; neither derives it); the threat models M_add / M_shift /
+M_full and the provisional direction table (`docs/direction-A-threat-model.md`, run 76: 22% of features usable by a
+sound monotone detector as they are, 96% once re-encoded as layer-2 sums, under M_add); the duplicate-DLL import quirk
+verified and patched (`ImportsInfoMerged`). Any no-go goes to the user before anything is dropped. No result may rest
+on an implementation quirk (user): every A1 row runs on the patched extractor.
 
-Order: settle the threat model, then the two cheap checks of *value* (would A1 matter?), then the engineering that
-the check of *validity* and the full A1 need.
-
-1. **(done, `docs/direction-A-threat-model.md`)** **Fix the threat model M** on paper: the catalogue of operations (Section 6 rows 1-8, 11-12; removals as a
-   separate variant), what the attacker chooses (content, names, sizes), the byte budget. Every A1 row assumes it.
-2. **(done, run 76: 22% usable as is, 96% re-encoded under M_add)** **C4 directions for every EMBER feature under M**, first as a provisional table from each feature's group, readout
-   and the catalogue's signs (explicitly a stand-in for the automatic derivation), plus the layer-2 re-encoding
-   (raw counts, split signed buckets). Cheap; feeds checks 3 and 2.
-3. **Go/no-go 3 (accuracy cost of soundness), partial**: monotone LightGBM on (a) C4 up-only features and (b) the
-   re-encoded sums recoverable from the feature store (histogram and byte-entropy counts = frequencies x totals;
-   section size ratios x file size); split signed buckets need re-extraction and come later. Training: hand the user
-   a `run/` script after a smoke test.
-4. **Go/no-go 2 (PV selection's hole)**: run Gimenez et al.'s 8 secml-malware black-box attacks against our GBDT on
-   pilot malware (needs secml-malware and LIEF in the venv: ask first), compute PV selection, intersect with C4's
-   decreasable features, measure their gain share in the PV-selected GBDT.
+1. **Read run 77** (check 3, the as-is rows; launched by the user 2026-10-22): five GBDTs, test AUC against 0.9976
+   unconstrained; predicted ~0.97-0.98 for M_add monotone. Fill check 3's as-is reading into the threat-model doc.
+2. **Scope the re-encoding extraction** (check 3's decisive row): region-restricted byte/string counts and per-region
+   byte-entropy windows (section bodies without slack, plus the overlay), split signed section buckets, merged imports.
+   A new feature type or a re-featurization pass over the training set; estimate the cost and agree on the scale with
+   the user (full set vs. a subsample) before writing it.
+3. **secml-malware for check 2**: it and secml require Python < 3.11 (our venv is 3.14). Proposed: a pinned clone (fork
+   if modified) in a separate Python 3.10 venv used only to run attacks against our LightGBM model (thrember +
+   lightgbm there), writing attacked files to disk for evaluation in `env/`. Awaiting the user's OK; then get GAMMA's
+   section injection working on a few pilot files.
+4. **Go/no-go 2 (PV selection's hole)**: Gimenez et al.'s 8 attacks on pilot malware, PV selection, intersect with
+   C4's decreasable features (quirk-fixed table), gain share in the PV-selected GBDT. Expected hole: signed section
+   buckets that random names never lowered, regexes ending in a word boundary.
 5. **Engineering, then go/no-go 1**: an explicit item table and the location relation in the instrumentation (A1),
    a C1 predictor, pefile-based implementations of the catalogue's operations (reuse the loader-safe edit code);
    Table A0 on the pilot files.
@@ -87,6 +88,9 @@ the check of *validity* and the full A1 need.
   bounds through the readout, structural edits flagged, plus a measured coverage of real attacks.
 - No need to engage database-theory provenance (semirings, aggregate provenance) beyond citation (user).
 - "Feature provenance" is the name.
+- No result rests on an implementation quirk of the extractor (user, 2026-10-22): quirks are patched by pure
+  additions and every row, baselines included, runs on the patched variant; upstream reports in
+  `docs/upstream-issues.md`.
 - Coverage on paper (model doc, Section 6): of 34 transformations in secml-malware, Labaca-Castro et al., and
   MAB-Malware, 56% are content or item-creating edits, 38% structural with a delta the transformation declares, 6%
   (UPX) undeclared. **Adopted:** C1 covers declared structural edits, and "move" is a fourth item operation; with

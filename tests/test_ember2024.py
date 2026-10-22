@@ -22,9 +22,11 @@ from provexp.boxmatrix import Pieces
 from provexp.featuresets.ember2024 import features
 from provexp.featuresets.ember2024.features import ExportsInfo
 from provexp.featuresets.ember2024.features import HeaderFileInfo
+from provexp.featuresets.ember2024.features import ImportsInfoMerged
 from provexp.featuresets.ember2024.features import PEFeatureExtractor
 from provexp.featuresets.ember2024.features import field_range
 from provexp.featuresets.ember2024.features import hash_indices
+from provexp.featuresets.ember2024.features import merge_import_descriptors
 from provexp.featuresets.ember2024.features import rva_string_range
 from provexp.provenance import Provenance
 
@@ -318,3 +320,58 @@ class TestByteCounter:
         assert patched.get_warnings() == original.get_warnings()
         assert [s.get_entropy() for s in patched.sections] == [s.get_entropy() for s in original.sections]
 
+
+
+################################################################################
+# Merged Import Descriptors
+################################################################################
+
+
+class TestImportsInfoMerged:
+
+    @staticmethod
+    def _duplicate_descriptor(path: Path, out: Path) -> bytes:
+        """The file with a second import descriptor for its largest DLL, importing `Sleep` (written by LIEF to `out`)."""
+        lief = pytest.importorskip("lief")
+        binary = lief.PE.parse(path.as_posix())
+        if binary is None or not binary.imports:
+            pytest.skip("No imports.")
+        dll = max(binary.imports, key=lambda i: len(i.entries)).name
+        binary.add_import(dll).add_entry("Sleep")
+        config = lief.PE.Builder.config_t()
+        config.imports = True
+        binary.write(out.as_posix(), config)
+        return out.read_bytes()
+
+    def test_merge_replaces_imports(self) -> None:
+        extractor = merge_import_descriptors(PEFeatureExtractor())
+        assert sum(isinstance(fe, ImportsInfoMerged) for fe in extractor.features) == 1
+        assert extractor.feature_names == NAMES
+        with pytest.raises(ValueError):
+            merge_import_descriptors(extractor)
+
+    def test_same_without_duplicates(self, sample: tuple[bytes, np.ndarray, Provenance]) -> None:
+        """On files with one descriptor per DLL, the features and provenance equal thrember's."""
+        needs_files()
+        data, x, prov = sample
+        pe = _parse(data)
+        dlls = [e.dll for e in getattr(pe, "DIRECTORY_ENTRY_IMPORT", [])] if pe is not None else []
+        if len(dlls) != len(set(dlls)):
+            pytest.skip("The file repeats a DLL.")
+        x_m, prov_m = merge_import_descriptors(PEFeatureExtractor()).feature_vector_with_provenance(data)
+        assert np.array_equal(x, x_m)
+        assert np.array_equal(prov.contributions.pieces().col, prov_m.contributions.pieces().col)
+        assert np.array_equal(prov.contributions.pieces().lo, prov_m.contributions.pieces().lo)
+
+    def test_duplicate_descriptor_keeps_functions(self, tmp_path: Path) -> None:
+        """thrember drops the earlier descriptor's functions; the merged version keeps all of them plus the new one."""
+        needs_files()
+        malware = sorted(f for f in (DATA / "malware").glob("*") if f.is_file())
+        data = self._duplicate_descriptor(malware[0], tmp_path / "duplicate.exe")
+        original = EXTRACTOR.feature_vector(data)  # type: ignore[no-untyped-call]
+        merged = merge_import_descriptors(PEFeatureExtractor()).feature_vector(data)  # type: ignore[no-untyped-call]
+        pe = _parse(data)
+        assert pe is not None
+        total = sum(len(e.imports) for e in pe.DIRECTORY_ENTRY_IMPORT)
+        assert merged[INDEX["imports:num_imports"]] == total
+        assert original[INDEX["imports:num_imports"]] < total

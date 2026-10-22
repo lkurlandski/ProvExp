@@ -1,5 +1,21 @@
 # Status
 
+**2026-10-22, end of day: summary and hand-off.** Today the project restarted as feature provenance for malware
+classification and direction A took shape:
+- **Model:** coverage of 34 real transformations on paper (94% exact or bounded once C1 admits declared structural
+  edits and a "move" operation, both adopted); proof sketches for C1-C4 with assumptions A1-A4; C2 and C4 restated
+  (adopted).
+- **Direction A:** the mock (`docs/direction-A-mock.md`; A1 approved as the target result); Treant and Chen et al.
+  CCS 2021 read (consumers of a hand-written specification); threat models and the provisional direction table
+  (run 76: 22% usable as is, 96% re-encoded, under M_add).
+- **Quirk policy (user):** no result rests on extractor quirks. The duplicate-DLL import overwrite is verified and
+  patched (`ImportsInfoMerged`, `merge_import_descriptors`, tests in `TestImportsInfoMerged`); every A1 row will use the
+  patched extractor. **For the user: file the upstream issue + PR** (`docs/upstream-issues.md`, drafted).
+- **Running:** run/77 (check 3, as-is rows; the user launched it in tmux). Read it next session.
+- **Waiting on the user:** OK for a separate Python 3.10 venv with a pinned secml-malware clone (it and secml need
+  Python < 3.11); the scale of the re-encoding extraction (to be estimated first).
+- LIEF 1.0 added to `requirements.txt`; `scripts/train_classic.py --monotone` added; lint and mypy clean.
+
 **2026-10-22 (end, later): steps 1-2 of A done: threat model and provisional direction table (run 76).**
 - `docs/direction-A-threat-model.md`: three nested threat models (M_add: append, add section, add imports; M_shift:
   + DOS extension, content shift; M_full: + slack, DOS header, header fields, checksum, rename, remove debug and

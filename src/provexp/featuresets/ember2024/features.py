@@ -914,6 +914,78 @@ class ImportsInfo(FeatureType):
         return C.build()
 
 
+class ImportsInfoMerged(ImportsInfo):
+    """
+    `ImportsInfo` with the import descriptors of the same DLL merged instead of overwritten.
+
+    NOTE: an addition on top of thrember, not part of it. thrember's `ImportsInfo.raw_features` starts a DLL's function
+    list over (`imports[dll_name] = []`) at every descriptor for it, so a second descriptor for an already imported
+    DLL (same spelling) erases the first one's functions from the features. That is an implementation quirk, not a
+    design choice of the feature set; direction A's experiments use this class (via `merge_import_descriptors`) so
+    that no result depends on it (docs/direction-A-threat-model.md). On files with one descriptor per DLL, which is
+    almost every file, the features and provenance equal `ImportsInfo`'s.
+    """
+
+    def raw_features(self, bytez, pe):
+        imports: dict[str, list[str]] = {}
+        if pe is None or "DIRECTORY_ENTRY_IMPORT" not in pe.__dict__.keys():
+            return imports
+
+        for entry in pe.DIRECTORY_ENTRY_IMPORT:
+            dll_name = entry.dll.decode()
+            functions = imports.setdefault(dll_name, [])
+            for lib in entry.imports:
+                if lib.name is not None and len(lib.name):
+                    functions.append(lib.name.decode()[:10000])
+                elif lib.ordinal is not None:
+                    functions.append(f"{dll_name}:ordinal{lib.ordinal}")
+        return imports
+
+    def provenance(self, bytez: bytes, pe: pefile.PE | None = None) -> BoxMatrix:
+        C = Contributions(len(bytez), self.dim)
+        if pe is None or "DIRECTORY_ENTRY_IMPORT" not in pe.__dict__.keys():
+            return C.build()
+
+        # Mirrors `ImportsInfo.provenance`, with the descriptors of a DLL merged as in `raw_features`.
+        thunk_size = 8 if pe.PE_TYPE == pefile.OPTIONAL_HEADER_MAGIC_PE_PLUS else 4
+        dll_ranges: dict[str, list[Optional[Range]]] = defaultdict(list)
+        imports: dict[str, list[tuple[str, Optional[Range]]]] = {}
+        for entry in pe.DIRECTORY_ENTRY_IMPORT:
+            dll_name = entry.dll.decode()
+            dll_ranges[dll_name].append(rva_string_range(pe, entry.struct.Name, len(entry.dll)))
+            functions = imports.setdefault(dll_name, [])
+            for lib in entry.imports:
+                if lib.name is not None and len(lib.name):
+                    r = (lib.name_offset, lib.name_offset + min(len(lib.name), 10000)) if lib.name_offset is not None else None
+                    functions.append((lib.name.decode()[:10000], r))
+                elif lib.ordinal is not None:
+                    r = (lib.ordinal_offset, lib.ordinal_offset + thunk_size) if lib.ordinal_offset is not None else None
+                    functions.append((f"{dll_name}:ordinal{lib.ordinal}", r))
+
+        libraries: dict[str, list[Optional[Range]]] = defaultdict(list)
+        for dll_name in imports:
+            libraries[dll_name.lower()].extend(dll_ranges[dll_name])
+        for b, ranges in zip(hash_indices(256, list(libraries)), libraries.values(), strict=True):
+            C.add_item(1, ranges)
+            C.add_item(2 + b, ranges)
+
+        items = [(dll_name.lower() + ":" + e, [r] + dll_ranges[dll_name]) for dll_name, elist in imports.items() for e, r in elist]
+        for b, (_, ranges) in zip(hash_indices(1024, [s for s, _ in items]), items, strict=True):
+            C.add_item(0, ranges)
+            C.add_item(258 + b, ranges)
+
+        return C.build()
+
+
+def merge_import_descriptors(extractor: "PEFeatureExtractor") -> "PEFeatureExtractor":
+    """Replace the extractor's `ImportsInfo` with `ImportsInfoMerged` (in place) and return the extractor."""
+    replaced = [ImportsInfoMerged() if type(fe) is ImportsInfo else fe for fe in extractor.features]
+    if replaced == extractor.features:
+        raise ValueError("The extractor has no ImportsInfo feature type to replace.")
+    extractor.features = replaced
+    return extractor
+
+
 def _export_address_offset(pe: pefile.PE, exp: pefile.ExportData) -> Optional[int]:
     """
     The file offset of an export's entry in the export address table.

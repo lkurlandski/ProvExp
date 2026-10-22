@@ -139,7 +139,10 @@ for M. The earlier numba sweep computed the previous, pairwise overlap; it was r
 - `exports:num_exports` is `len(exports_hashed)`, i.e., **always 128** (or 0 without exports).
 - `datadirectories` skips the last data directory (normally RESERVED), so `reserved_size` and
   `reserved_virtual_address` are always 0.
-- `imports`: a later import descriptor for the same DLL replaces the functions of an earlier one.
+- `imports`: a later import descriptor for the same DLL replaces the functions of an earlier one (a regression from
+  EMBER v2, which extended the list). Fixed as an option by pure addition: `ImportsInfoMerged` /
+  `merge_import_descriptors(extractor)`; direction A uses it so that no result depends on the quirk. Upstream report
+  drafted in `docs/upstream-issues.md`.
 - Files in the EMBER-2024 SimpleDB are truncated at **4,000,000 bytes**, not 4 MiB.
 - **Nondeterminism:** `PEFormatWarnings` maps each warning to the first matching pattern while iterating over a `set`
   of strings, so for warnings matching two overlapping patterns the feature depends on the interpreter's hash seed
