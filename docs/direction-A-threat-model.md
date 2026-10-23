@@ -197,30 +197,39 @@ gain is concentrated on the kept features.)
 ## 6. Check 1, Table A0: C1 vs re-extraction (run 79, 2026-10-23)
 
 Go/no-go check 1 (`docs/direction-A-mock.md`): does C1 predict the edited file's features from the original's item
-table alone, without extracting the edited file? On the 100 pilot files we apply the overlay-append transformation
-(Section 6 row 1: one non-printable guard byte + 4 KB of attacker-chosen random bytes -- secml/GAMMA padding, the
-cleanest item-creating edit and the one that drives every readout through the file-size denominator), predict phi(z')
-with C1, re-extract z', and compare feature by feature (relative tolerance 1e-4). `scripts/a_c1_table0.py`,
-`run/79_a_check1.sh`. The predictor touches only the five groups an append can change (`histogram`, `general`,
-`byteentropy`, `strings`, `section`/overlay) and copies the rest; it reuses the extractor's own window and string
-routines on (old tail + appended), never re-parsing z'. `pefilewarnings` has no items and is excluded (docs S7).
+table alone, without extracting the edited file? On the 100 pilot files we apply two loader-safe transformations, one
+per non-structural class, predict phi(z') with C1, re-extract z', and compare feature by feature (relative tolerance
+1e-4). `scripts/a_c1_table0.py`, `run/79_a_check1.sh`. The predictor updates only the groups each edit can touch and
+copies the rest, reusing the extractor's own window and string routines on local bytes (old tail + appended, or the
+edited window); it never re-parses z'. `pefilewarnings` has no items and is excluded (docs S7).
 
-**Result: GO.** Of the 100 pairs, 89 files satisfy A2 (no section's declared raw size overruns the file); C1 predicts
-**all 89 exactly** -- every one of the 2,480 modeled features matches re-extraction, including all 256 renormalized
-histogram bins, the 256 byte-entropy bins, the string distribution and entropy, and the section size-ratios, overlay
-size/ratio/entropy, and max/min entropy that move only through the readout. The remaining 11 files each have a section
-whose declared `SizeOfRawData` runs past the (4 MB-truncated, or packed/corrupt) file end, so appending extends that
-section's clamped content -- an A2 locality failure the model flags rather than predicts. All 13 feature mismatches
-across those files are in the `section` group, as expected; 3 of the 11 still matched. `pefilewarnings` (outside the
-model) changed on 6 files.
+- **append** (Section 6 row 1, item-creating): a non-printable guard byte + 4 KB of attacker-chosen random bytes
+  (secml/GAMMA padding), which drives every readout through the file-size denominator. Touches `histogram`,
+  `general`, `byteentropy`, `strings`, and `section` (every section's size_ratio, the growing overlay, max/min).
+- **dos_overwrite** (Section 6 row 3, content): an in-place overwrite of the loader-ignored DOS-header fields, bytes
+  [2, 60), leaving e_magic and e_lfanew intact. No parse or length change. Touches `histogram`, `general` (entropy,
+  start bytes), `byteentropy` (the one overlapping window), `strings` (the local run), and the `header` DOS fields.
 
-| Pairs | A2-applicable | C1 exact on A2-applicable | A2-flagged (overrun section) | mismatches, all A2, in `section` |
-|---|---|---|---|---|
-| 100 | 89 | 89 (100%) | 11 (3 still exact) | 13 features |
+**Result: GO on both rows.**
 
-**Reading.** C1 is exact for the item-creating class wherever its stated assumption holds, and the only failures are
-the single locality case the model already names (A2: a section's contribution depending on `|z|` through
-length-clamping). This validates the side-effect engine A1's guarantee rests on, for the append row. Next A0 rows:
-a content edit (in-place DOS-stub / header-field overwrite) and the declared-structural rows (add section, add
-imports) generated with the attack toolkit -- the latter expected to surface LIEF rebuild side effects (A4), itself a
-reported finding.
+| Transformation | Class | Pairs | A-applicable | C1 exact where it applies | flagged (A2 overrun) |
+|---|---|---|---|---|---|
+| append | item-creating | 100 | 89 | **89 (100%)** | 11 (3 still exact) |
+| dos_overwrite | content | 100 | 100 | **100 (100%)** | 0 |
+
+For append, C1 predicts all 89 A2-applicable files exactly -- every one of the 2,480 modeled features, including all
+256 renormalized histogram bins, the 256 byte-entropy bins, the string distribution and entropy, and the section
+size-ratios, overlay size/ratio/entropy, and max/min entropy that move only through the readout. The 11 exceptions
+each have a section whose declared `SizeOfRawData` runs past the (4 MB-truncated or packed/corrupt) file end, so
+appending extends that section's length-clamped content -- an A2 locality failure the model flags rather than
+predicts; every mismatch is in the `section` group, and 3 of the 11 still matched. For dos_overwrite, C1 is exact on
+all 100 files (the edit correctly moves the histogram, the first byte-entropy window, start bytes 2-3, the DOS-field
+`header` features, and nothing else). `pefilewarnings` (outside the model) changed on 6 files under append and 1
+under dos_overwrite.
+
+**Reading.** C1 is exact for the two non-structural classes -- content and item-creating, 56% of the transformations
+in the coverage table -- wherever its stated assumptions hold, and the only failures are the one locality case the
+model already names (A2: a section's contribution depending on `|z|` through length-clamping). This validates the
+side-effect engine A1's guarantee rests on. The remaining A0 rows are the declared-structural edits (add section, add
+imports) generated with the attack toolkit; these are expected to surface LIEF rebuild side effects (A4) -- itself a
+reported finding, not a C1 failure.

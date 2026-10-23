@@ -1,5 +1,14 @@
 # Status
 
+**2026-10-23 (A0 extended): Table A0 now covers both non-structural classes, both exact.** Added a content-edit row
+to `scripts/a_c1_table0.py` (now a two-transformation registry) and re-ran `run/79`. On the 100 pilot files:
+**append** (item-creating) 89/89 A2-applicable exact (11 flagged A2 section-overrun); **dos_overwrite** (content,
+in-place DOS-header fields [2,60)) **100/100 exact**. The content row exposed that EMBER's `header` group reads the
+DOS-header fields (dos_e_cblp..e_oeminfo); the predictor recomputes them from the edited bytes. C1 is now validated
+exact for content + item-creating (56% of the coverage table) wherever A1-A4 hold. Reading:
+`docs/direction-A-threat-model.md` S6. **Remaining A0 rows:** declared-structural (add section/imports via the attack
+toolkit; expect LIEF A4 side effects). Then A1 proper.
+
 **2026-10-23 (later still): go/no-go 1 (Table A0) is a GO.** First C1 predictor + validation
 (`scripts/a_c1_table0.py`, `run/79_a_check1.sh`): on the 100 pilot files, apply overlay append (guard byte + 4 KB
 random), predict phi(z') from z alone (no re-extraction), compare to re-extraction feature by feature. **89/89
