@@ -274,6 +274,95 @@ def predict_content_overwrite(extractor: PEFeatureExtractor, z: bytes, lo: int, 
     return np.asarray(extractor.process_raw_features(raw))  # type: ignore[no-untyped-call]
 
 
+def predict_add_section(extractor: PEFeatureExtractor, z: bytes, name: str, content: bytes, props: list[str]) -> np.ndarray:
+    """C1's prediction of phi(z') for a declared 'add a section (name, content, props)' edit, from z alone.
+
+    This is a *declared structural* edit (docs/feature-provenance-model.md S3): the transformation states the item it
+    adds. C1 predicts the delta that item declares -- a new section item, +1 to the section counts and the COFF
+    NumberOfSections, and the section content's byte contributions (histogram, strings), treated as added at the end.
+    What the declaration does NOT fix is the tool's file layout: the section-table entry bytes, alignment padding, the
+    exact file length, SizeOfImage, and any data-directory relocation. Those are A4 (tool side effects), so this
+    predictor leaves them at z's values and the Table A0 report attributes the resulting mismatches to A4.
+
+    Args:
+        extractor: The EMBER extractor.
+        z: The original file bytes.
+        name: The added section's name (<= 8 chars).
+        content: The added section's raw content (the bytes whose histogram/strings we can predict).
+        props: The section's characteristic names (e.g. ["MEM_READ", "MEM_WRITE", "CNT_INITIALIZED_DATA"]).
+
+    Returns:
+        The predicted feature vector for the declared delta.
+    """
+    pe = pefile.PE(data=z)
+    raw = _raw_copy(extractor, z, pe)
+    old_len = len(z)
+    new_len = old_len + len(content)  # declared length; the tool's alignment makes the true length A4
+    window, step = 2048, 1024
+
+    # histogram: the section content's bytes are counted wherever they sit (position-independent).
+    counts = np.asarray(raw["histogram"], dtype=np.int64) + np.bincount(np.frombuffer(content, dtype=np.uint8), minlength=256)
+    raw["histogram"] = counts.tolist()
+
+    # general: declared size and the entropy of the new byte distribution (size itself is approximate: A4 alignment).
+    raw["general"]["size"] = new_len
+    probs = counts[counts > 0] / new_len
+    raw["general"]["entropy"] = float(-(probs * np.log2(probs)).sum())
+
+    # byteentropy: windows over the content as if appended at the old end (the tool's real offset/padding is A4).
+    be = np.asarray(raw["byteentropy"], dtype=np.int64).reshape(16, 16)
+    old_last = ((old_len - window) // step) * step
+    new_last = ((new_len - window) // step) * step
+    if old_len >= window and new_last > old_last:
+        tail = np.frombuffer(z[old_last + step:] + content, dtype=np.uint8)
+        for s in range(0, new_last - (old_last + step) + 1, step):
+            hbin, c = extractor.features[2]._entropy_bin_counts(tail[s:s + window])  # type: ignore[attr-defined]
+            be[hbin, :] += c
+    raw["byteentropy"] = be.flatten().tolist()
+
+    # strings: the content's own strings (no boundary merge assumed; the tool pads around the section).
+    _apply_string_delta(raw["strings"], _empty_strings_raw(), _STRINGS.raw_features(content, None))  # type: ignore[no-untyped-call]
+
+    # section: a new section item is declared; its size_ratio and all others use the declared new length.
+    sec = raw["section"]
+    if sec:
+        for entry in sec["sections"]:
+            entry["size_ratio"] *= old_len / new_len
+        sec["sections"].append({
+            "name": name.strip("\x00").lower(), "size": len(content), "entropy": _byte_entropy(content),
+            "vsize": len(content), "size_ratio": len(content) / new_len,
+            "vsize_ratio": len(content) / max(len(content), 1), "props": list(props),
+        })
+        if sec["overlay"]["size"]:  # the overlay keeps its bytes; only its ratio denominator grows
+            sec["overlay"]["size_ratio"] = sec["overlay"]["size"] / new_len
+
+    # header: the COFF section count rises by one (SizeOfImage is the tool's to set: A4).
+    if raw["header"]:
+        raw["header"]["coff"]["number_of_sections"] += 1
+
+    return np.asarray(extractor.process_raw_features(raw))  # type: ignore[no-untyped-call]
+
+
+def edit_add_section(z: bytes, seed: int) -> tuple[bytes, dict[str, Any]]:
+    """Add a readable/writable section with random content via LIEF (secml/GAMMA-style), the declared delta known."""
+    import lief
+
+    lief.logging.disable()
+    content = np.random.default_rng(seed).integers(0, 256, size=4096, dtype=np.uint8).tobytes()
+    name, props = ".pv0", ["MEM_READ", "MEM_WRITE", "CNT_INITIALIZED_DATA"]
+    pe = lief.PE.parse(list(z))
+    if pe is None:
+        raise RuntimeError("LIEF could not parse the file")
+    s = lief.PE.Section(name)
+    s.content = list(content)
+    s.characteristics = (lief.PE.Section.CHARACTERISTICS.MEM_READ.value
+                         | lief.PE.Section.CHARACTERISTICS.MEM_WRITE.value
+                         | lief.PE.Section.CHARACTERISTICS.CNT_INITIALIZED_DATA.value)
+    pe.add_section(s)
+    zp = bytes(pe.write_to_bytes())
+    return zp, {"name": name, "content": content, "props": props}
+
+
 def edit_append(z: bytes, seed: int, append_size: int) -> tuple[bytes, dict[str, Any]]:
     """Overlay append: a non-printable guard byte then `append_size` random bytes (secml/GAMMA padding)."""
     appended = append_payload(seed, append_size)
@@ -328,6 +417,11 @@ def main() -> None:
          "predict": lambda z, kw: predict_content_overwrite(extractor, z, kw["lo"], kw["hi"], kw["c"]),
          "clean": lambda pe: True,
          "flag": None},
+        {"name": "add_section", "note": "LIEF add R/W section, 4 KB random (Section 6 row 11; declared structural)",
+         "edit": lambda z: edit_add_section(z, args.seed),
+         "predict": lambda z, kw: predict_add_section(extractor, z, kw["name"], kw["content"], kw["props"]),
+         "clean": lambda pe: True,
+         "flag": "A4: the tool's file layout (table entry, alignment, SizeOfImage, directory moves) is not declared"},
     ]
 
     rows: list[dict[str, Any]] = []
@@ -370,6 +464,11 @@ def main() -> None:
         flagged = ok.filter(~pl.col("assumptions_hold"))
         tm = [m for m in mism if m["transformation"] == tf["name"]]
         tm_clean = [m for m in tm if m["name"] in set(clean["name"].to_list())]
+        # Per modeled group, the number of predicted pairs on which C1 matches every feature of that group. For a
+        # declared-structural edit this separates the declaration-determined groups (predicted) from the A4 residual.
+        groups = sorted({g for g in group if g != "pefilewarnings"})
+        files_with_grp_miss = {g: {m["name"] for m in tm if m["group"] == g} for g in groups}
+        group_fully_predicted = {g: ok.height - len(files_with_grp_miss[g]) for g in groups}
         report["by_transformation"][tf["name"]] = {
             "note": tf["note"],
             "flag": tf["flag"],
@@ -381,6 +480,7 @@ def main() -> None:
             "flagged_pairs": flagged.height,
             "flagged_still_exact": int(flagged["exact"].sum()) if flagged.height else 0,
             "pefilewarnings_changed": int(t["pefilewarnings_changed"].sum()),
+            "group_fully_predicted_pairs": group_fully_predicted,
             "mismatch_by_group_clean": dict(Counter(m["group"] for m in tm_clean)),
             "mismatch_by_feature_top": dict(Counter(m["feature"] for m in tm).most_common(15)),
         }

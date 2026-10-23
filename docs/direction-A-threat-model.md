@@ -209,13 +209,17 @@ edited window); it never re-parses z'. `pefilewarnings` has no items and is excl
 - **dos_overwrite** (Section 6 row 3, content): an in-place overwrite of the loader-ignored DOS-header fields, bytes
   [2, 60), leaving e_magic and e_lfanew intact. No parse or length change. Touches `histogram`, `general` (entropy,
   start bytes), `byteentropy` (the one overlapping window), `strings` (the local run), and the `header` DOS fields.
+- **add_section** (Section 6 row 11, declared structural): add a readable/writable section of 4 KB of random content
+  with LIEF (the secml/GAMMA transformation). C1 predicts the *declared* item delta -- a new section item, +1 to the
+  section counts and COFF NumberOfSections, and the content's position-independent byte contributions.
 
-**Result: GO on both rows.**
+**Result: the two non-structural rows are exact; the declared-structural row behaves exactly as the model says.**
 
-| Transformation | Class | Pairs | A-applicable | C1 exact where it applies | flagged (A2 overrun) |
-|---|---|---|---|---|---|
-| append | item-creating | 100 | 89 | **89 (100%)** | 11 (3 still exact) |
-| dos_overwrite | content | 100 | 100 | **100 (100%)** | 0 |
+| Transformation | Class | Pairs | C1 exact | note |
+|---|---|---|---|---|
+| append | item-creating | 100 | **89 / 89 A2-applicable (100%)** | 11 flagged A2 (overrun section), 3 of those still exact |
+| dos_overwrite | content | 100 | **100 / 100 (100%)** | -- |
+| add_section | declared structural | 100 | declared delta exact; rest A4 | see below |
 
 For append, C1 predicts all 89 A2-applicable files exactly -- every one of the 2,480 modeled features, including all
 256 renormalized histogram bins, the 256 byte-entropy bins, the string distribution and entropy, and the section
@@ -223,13 +227,21 @@ size-ratios, overlay size/ratio/entropy, and max/min entropy that move only thro
 each have a section whose declared `SizeOfRawData` runs past the (4 MB-truncated or packed/corrupt) file end, so
 appending extends that section's length-clamped content -- an A2 locality failure the model flags rather than
 predicts; every mismatch is in the `section` group, and 3 of the 11 still matched. For dos_overwrite, C1 is exact on
-all 100 files (the edit correctly moves the histogram, the first byte-entropy window, start bytes 2-3, the DOS-field
-`header` features, and nothing else). `pefilewarnings` (outside the model) changed on 6 files under append and 1
-under dos_overwrite.
+all 100 files. `pefilewarnings` (outside the model) changed on 6 files under append and 1 under dos_overwrite.
+
+**The add_section row is an A4 result, by design, and it comes out as the model predicts.** C1 predicts the declared
+count delta exactly: COFF NumberOfSections rises by one on **all 100** files, and the section-count features
+(num_sections, num_w, num_rx, num_empty_name) match on 93-100. What the declaration does *not* fix is LIEF's file
+layout -- the section-table entry bytes, alignment padding, the exact file length, SizeOfImage, and data-directory or
+signature relocation -- so those diverge: SizeOfImage on 99/100, and the quantitative byte-level groups (the exact
+histogram counts, byte-entropy windows, string statistics, section size/entropy hash buckets) on most files, while
+the groups the edit does not touch (exports, rich header, imports) are predicted on ~100/100. This is the A4 case the
+model names: a real tool determines the concrete feature vector through layout choices the transformation never
+declares. It is exactly why a hand-written feature-space specification (Treant, Chen et al.) cannot capture
+add-section, and why a sound analysis needs either the declared catalogue or re-extraction.
 
 **Reading.** C1 is exact for the two non-structural classes -- content and item-creating, 56% of the transformations
-in the coverage table -- wherever its stated assumptions hold, and the only failures are the one locality case the
-model already names (A2: a section's contribution depending on `|z|` through length-clamping). This validates the
-side-effect engine A1's guarantee rests on. The remaining A0 rows are the declared-structural edits (add section, add
-imports) generated with the attack toolkit; these are expected to surface LIEF rebuild side effects (A4) -- itself a
-reported finding, not a C1 failure.
+in the coverage table -- wherever its stated assumptions hold, with the only failures being the one locality case the
+model already names (A2). For the declared-structural class, C1 predicts the semantic delta and the model correctly
+localizes the rest to the tool's layout (A4). This validates the side-effect engine A1's guarantee rests on and
+delimits precisely where it hands off to re-extraction.

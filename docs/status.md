@@ -1,5 +1,17 @@
 # Status
 
+**2026-10-23 (A0 complete): all three A0 rows done; C1 side-effect engine validated.** Added the declared-structural
+row (add_section via LIEF) to `scripts/a_c1_table0.py`. Full pilot, three transformations:
+- **append** (item-creating): 89/89 A2-applicable exact; 11 flagged A2 (section overrun).
+- **dos_overwrite** (content): 100/100 exact.
+- **add_section** (declared structural): C1 predicts the declared delta exactly -- COFF NumberOfSections +1 on all
+  100, section counts on 93-100 -- while SizeOfImage (99/100) and the quantitative byte/size features are LIEF's
+  layout (A4), as the model says; untouched groups (exports/richheader/imports) predicted ~100/100.
+So C1 is exact on the two non-structural classes (56% of the coverage table) where A1-A4 hold, and on the
+declared-structural class predicts the semantic delta while correctly localizing the rest to tool layout (A4).
+Reading: `docs/direction-A-threat-model.md` S6. **Go/no-go checks 1, 2, 3 all pass; A0 is complete.** Next: A1 proper
+(the monotone defenses from run 77 vs PV selection, on seen/held-out/adaptive attacks; the adaptive column uses C1).
+
 **2026-10-23 (A0 extended): Table A0 now covers both non-structural classes, both exact.** Added a content-edit row
 to `scripts/a_c1_table0.py` (now a two-transformation registry) and re-ran `run/79`. On the 100 pilot files:
 **append** (item-creating) 89/89 A2-applicable exact (11 flagged A2 section-overrun); **dos_overwrite** (content,
