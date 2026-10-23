@@ -1,5 +1,14 @@
 # Status
 
+**2026-10-23 (A1 design drafted).** `docs/direction-A-A1-design.md`: the full plan for Table A1 (defenses as rows,
+seen/held-out/adaptive attacks as columns), the one evasion protocol (1% FPR operating point, re-extraction ground
+truth, shared budgets, pilot scale), the C1-guided adaptive attack (the decisive column; 0 by construction for the
+C4 rows, an A1-A4 bug if not), the build order, falsifiable outcomes, and five open decisions for the user. Key
+prerequisite: the re-encoding ("sums") feature extraction for the decisive C4-on-sums row is a multi-hour
+featurization pass to scope with the user first; the features-as-is rows (run 77 models) and the adaptive attack can
+proceed now. **Waiting on the user:** the five decisions in the design doc (re-encoding scale, seen/held-out split,
+baselines now/later, malware set size, budgets).
+
 **2026-10-23 (A0 complete): all three A0 rows done; C1 side-effect engine validated.** Added the declared-structural
 row (add_section via LIEF) to `scripts/a_c1_table0.py`. Full pilot, three transformations:
 - **append** (item-creating): 89/89 A2-applicable exact; 11 flagged A2 (section overrun).
