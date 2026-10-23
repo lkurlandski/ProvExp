@@ -1,5 +1,17 @@
 # Status
 
+**2026-10-23 (later still): go/no-go 1 (Table A0) is a GO.** First C1 predictor + validation
+(`scripts/a_c1_table0.py`, `run/79_a_check1.sh`): on the 100 pilot files, apply overlay append (guard byte + 4 KB
+random), predict phi(z') from z alone (no re-extraction), compare to re-extraction feature by feature. **89/89
+A2-applicable files predicted exactly** (all 2,480 modeled features, incl. every renormalized histogram/byteentropy
+bin, string dist/entropy, section size-ratios + overlay + max/min); the 11 exceptions each have a section whose
+declared raw size overruns the truncated file (an A2 locality failure the model flags), all 13 mismatches in the
+`section` group. pefilewarnings (no items, outside the model) excluded. Reading in
+`docs/direction-A-threat-model.md` S6. This validates C1's side-effect engine for the item-creating class.
+**Next A0 rows:** a content edit (in-place DOS/header overwrite) and declared-structural (add section/imports via the
+attack toolkit; expect LIEF A4 side effects). Then A1 proper (seen/held-out/adaptive), whose adaptive column check 2
+set up. All three go/no-go checks (1, 2, 3) now pass.
+
 **2026-10-23 (later): check 2 is a GO; attack toolkits vendored and patched.** secml + secml-malware now run in
 `env/` (Python 3.14, NumPy 2, LIEF 1.0); vendored under `third_party/` (pristine commit `3cbef4f`, patches `dce1f60`).
 No separate venv was needed; no fix was due to Python 3.14 itself. All eight of Gimenez et al.'s black-box attacks

@@ -193,3 +193,34 @@ separation A1's adaptive column needs. A second, unplanned finding: the C4-sound
 constraint on 1,736 noisy features costs more than C4's clean drop of the two-sided ones. (The step-2 preview against
 the unconstrained GBDT reads the hole at 10.1% of PV-kept gain; the decisive number uses the PV-selected GBDT, where
 gain is concentrated on the kept features.)
+
+## 6. Check 1, Table A0: C1 vs re-extraction (run 79, 2026-10-23)
+
+Go/no-go check 1 (`docs/direction-A-mock.md`): does C1 predict the edited file's features from the original's item
+table alone, without extracting the edited file? On the 100 pilot files we apply the overlay-append transformation
+(Section 6 row 1: one non-printable guard byte + 4 KB of attacker-chosen random bytes -- secml/GAMMA padding, the
+cleanest item-creating edit and the one that drives every readout through the file-size denominator), predict phi(z')
+with C1, re-extract z', and compare feature by feature (relative tolerance 1e-4). `scripts/a_c1_table0.py`,
+`run/79_a_check1.sh`. The predictor touches only the five groups an append can change (`histogram`, `general`,
+`byteentropy`, `strings`, `section`/overlay) and copies the rest; it reuses the extractor's own window and string
+routines on (old tail + appended), never re-parsing z'. `pefilewarnings` has no items and is excluded (docs S7).
+
+**Result: GO.** Of the 100 pairs, 89 files satisfy A2 (no section's declared raw size overruns the file); C1 predicts
+**all 89 exactly** -- every one of the 2,480 modeled features matches re-extraction, including all 256 renormalized
+histogram bins, the 256 byte-entropy bins, the string distribution and entropy, and the section size-ratios, overlay
+size/ratio/entropy, and max/min entropy that move only through the readout. The remaining 11 files each have a section
+whose declared `SizeOfRawData` runs past the (4 MB-truncated, or packed/corrupt) file end, so appending extends that
+section's clamped content -- an A2 locality failure the model flags rather than predicts. All 13 feature mismatches
+across those files are in the `section` group, as expected; 3 of the 11 still matched. `pefilewarnings` (outside the
+model) changed on 6 files.
+
+| Pairs | A2-applicable | C1 exact on A2-applicable | A2-flagged (overrun section) | mismatches, all A2, in `section` |
+|---|---|---|---|---|
+| 100 | 89 | 89 (100%) | 11 (3 still exact) | 13 features |
+
+**Reading.** C1 is exact for the item-creating class wherever its stated assumption holds, and the only failures are
+the single locality case the model already names (A2: a section's contribution depending on `|z|` through
+length-clamping). This validates the side-effect engine A1's guarantee rests on, for the append row. Next A0 rows:
+a content edit (in-place DOS-stub / header-field overwrite) and the declared-structural rows (add section, add
+imports) generated with the attack toolkit -- the latter expected to surface LIEF rebuild side effects (A4), itself a
+reported finding.
