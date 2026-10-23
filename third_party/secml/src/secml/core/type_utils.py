@@ -272,7 +272,7 @@ def is_slice(x):
 def is_str(x):  # text unicode strings
     if isinstance(x, str):
         return True
-    elif isinstance(x, (np.str_, np.unicode_)):
+    elif isinstance(x, np.str_):
         return True
     return False
 

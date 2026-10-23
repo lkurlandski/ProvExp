@@ -6,7 +6,6 @@
 
 """
 import numpy as np
-import numpy.matlib
 from numpy.linalg import inv, pinv
 import scipy.sparse as scs
 
@@ -35,7 +34,7 @@ class CDense(_CArrayInterface):
             data = data.tondarray()  # np.ndarray from CDense
         else:  # Other inputs... just need to initialize the input shape
             self._input_shape = None
-        obj = np.array(data, dtype=dtype, copy=copy, ndmin=1)
+        obj = np.array(data, dtype=dtype, copy=copy or None, ndmin=1)
         # numpy created an object array, maybe input is malformed?!
         if obj.dtype.char == 'O':
             raise TypeError("Array is malformed, check input data.")
@@ -1243,7 +1242,7 @@ class CDense(_CArrayInterface):
          [1 1 1]]
 
         """
-        return self.__class__(np.matlib.repmat(self.tondarray(), m, n))
+        return self.__class__(np.tile(np.atleast_2d(self.tondarray()), (m, n)))
 
     def repeat(self, repeats, axis=None):
         """Wrapper for repeat.

@@ -1,5 +1,5 @@
 from setuptools import setup, find_packages
-from pkg_resources import parse_version
+from packaging.version import parse as parse_version
 import os
 import subprocess
 

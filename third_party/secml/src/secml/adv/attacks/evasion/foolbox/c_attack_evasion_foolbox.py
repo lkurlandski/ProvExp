@@ -11,7 +11,7 @@ import eagerpy as ep
 import foolbox as fb
 import torch
 from eagerpy import PyTorchTensor
-from numpy import NaN
+from numpy import nan
 
 from secml.adv.attacks.evasion import CAttackEvasion
 from secml.adv.attacks.evasion.foolbox.secml_autograd import \
@@ -105,7 +105,7 @@ class CAttackEvasionFoolbox(CAttackEvasion):
                     "use a single value of epsilon.")
 
         # f_opt is computed only in class-specific wrappers
-        f_opt = NaN
+        f_opt = nan
 
         self._last_f_eval = self.f_model.f_eval
         self._last_grad_eval = self.f_model.grad_eval

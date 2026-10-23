@@ -1,7 +1,7 @@
 import os
 import sys
 import subprocess
-from pkg_resources import parse_version
+from packaging.version import parse as parse_version
 
 from ._globals import _NoValue
 
