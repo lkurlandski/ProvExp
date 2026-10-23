@@ -1,5 +1,31 @@
 # Status
 
+**2026-10-23 (later): check 2 is a GO; attack toolkits vendored and patched.** secml + secml-malware now run in
+`env/` (Python 3.14, NumPy 2, LIEF 1.0); vendored under `third_party/` (pristine commit `3cbef4f`, patches `dce1f60`).
+No separate venv was needed; no fix was due to Python 3.14 itself. All eight of Gimenez et al.'s black-box attacks
+run against our GBDT. **Check 2 (run 78):** of the 1,736 features PV selection keeps (its reproduction matches
+Gimenez: AUC 0.945 vs their 0.938), C4 proves 213 decreasable under M_full; they carry **37.8% of the PV GBDT's
+split gain** (threshold 5%) — signed section buckets (22%) and string regexes (13%), exactly the hypothesised holes;
+85 were never touched by any attack. Decisive GO. Bonus: the C4-sound GBDT (run 77, AUC 0.993) beats PV (0.945) on
+accuracy too. Code: `scripts/a_pv_attacks.py`, `scripts/a_pv_hole.py`, `run/78_a_check2.sh`; results
+`artifacts/experiments/a_pv/` (deltas, hole.csv, report.json); reading in `docs/direction-A-threat-model.md` S5.
+**Next:** go/no-go 1 (C1 item table + Table A0), then A1 proper (the adaptive column this check sets up).
+
+**2026-10-23: run 77 read (check 3, as-is rows): passes, better than predicted.** Sound-as-is monotone GBDTs on the
+full splits: test AUC 0.9957 / TPR@1%FPR 92.1% under M_add, 0.9930 / 87.4% under M_full, against 0.9976 / 95.6%
+unconstrained (predicted ~0.97-0.98 and ~0.96). The quirk-fixed import features add nothing to accuracy. So the
+re-encodings have little to recover under M_add (3.5 TPR points) and more under M_full (8.2); A1's weight shifts to
+soundness (check 2) and M_full; lead with TPR at low FPR (AUC saturated). Details:
+`docs/direction-A-threat-model.md`, Section 4.
+- **No separate venv needed (user asked; verified).** secml + secml-malware run in `env/` (Python 3.14, NumPy 2.5,
+  LIEF 1.0) after ~20 one-line patches (NumPy 2: copy semantics, removed aliases, one NEP 50 overflow; LIEF 1.0:
+  builder API, parse(bytearray), add_import; one upstream None-default bug; eager imports of the old `ember` package).
+  None were caused by Python 3.14. All 8 of Gimenez et al.'s attacks (from their repo) smoke-tested against our GBDT,
+  re-extracted from disk. maltorch (user's fork) also runs with 2 LIEF patches but lacks 4 of the 8 (header fields,
+  GAMMA API, GAMMA shift, format exploit) and uses nevergrad instead of the GA. Patches and smoke scripts:
+  `artifacts/experiments/attack_env/`. **Waiting on the user:** OK to vendor patched secml/secml-malware under
+  `third_party/` and add their dependencies (deap, moocore, python-magic, torchvision, Pillow, matplotlib) to `env/`.
+
 **2026-10-22, end of day: summary and hand-off.** Today the project restarted as feature provenance for malware
 classification and direction A took shape:
 - **Model:** coverage of 34 real transformations on paper (94% exact or bounded once C1 admits declared structural

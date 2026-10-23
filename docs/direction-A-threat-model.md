@@ -123,3 +123,73 @@ Consequences for the next checks:
   the training set, to be scoped with the user.
 - **Check 2 (PV's hole)**: the prime suspects are now concrete: the 1,025 import features (the quirk), the signed
   section buckets PV's random names never decreased, and the strings regexes ending in a word boundary.
+
+## 4. Check 3, the "features as they are" rows (run 77, 2026-10-23)
+
+Five GBDTs on the full EMBER-2024 splits (seed 0, 500 rounds), using only the features run 76 found one-directional:
+the two-sided features are zeroed, the up features constrained monotone increasing. The quirk-fixed rows ("-qf")
+keep the 1,025 import features run 76 drops because of the duplicate-DLL quirk, constrained up; they are trained on the
+stored (unpatched) features, so they measure what those features are worth to the detector, not the patched extractor.
+
+| Model | Features used | Monotone | Test AUC | TPR @ 1% FPR | TPR @ 0.1% FPR |
+|---|---|---|---|---|---|
+| unconstrained (seed-0) | 2,568 | 0 | 0.99759 | 95.6% | 87.0% |
+| M_add, two-sided dropped, unconstrained | 557 | 0 | 0.99629 | 93.3% | 81.7% |
+| M_add, dropped + monotone | 557 | 270 | 0.99568 | 92.1% | 80.1% |
+| M_add, quirk assumed fixed | 1,582 | 1,295 | 0.99572 | 92.1% | 80.0% |
+| M_full, dropped + monotone | 483 | 280 | 0.99295 | 87.4% | 71.0% |
+| M_full, quirk assumed fixed | 1,508 | 1,305 | 0.99295 | 87.4% | 71.2% |
+
+Reading:
+- **The hypothesis was too pessimistic.** Predicted AUC ~0.97-0.98 (M_add) and ~0.96 (M_full); measured 0.9957 and
+  0.9930. A sound-as-is monotone GBDT keeps most of the detector: at 1% FPR it loses 3.5 TPR points under M_add and
+  8.2 under M_full. Check 3 passes for the as-is rows; there is no "sound but useless" drop (Incer et al.'s 13 points).
+- **Dropping costs more than the constraint** under M_add (93.3 -> 92.1 from the constraint, 95.6 -> 93.3 from the
+  drop).
+- **The quirk-fixed import features add nothing** (92.1 either way): once the two-sided features are gone, the import
+  function buckets carry no extra signal for this GBDT beyond the library buckets and header features it already has.
+  The quirk therefore matters for soundness (check 2's hole), not for accuracy.
+- **Consequence for the re-encodings.** Under M_add the gap they can close is small (3.5 TPR points at 1% FPR, 0.002
+  AUC); under M_full it is larger (8.2 points). AUC on EMBER-2024 is saturated, so A1 should lead with TPR at low FPR.
+  The accuracy half of A1's pitch ("reading the sums recovers the accuracy soundness costs") is worth less than the
+  mock assumed under M_add; the weight shifts to soundness (check 2, the adaptive column) and to M_full.
+- All five models stopped at the 500-round cap with validation AUC still rising (as did the unconstrained one); the
+  comparison is at equal rounds.
+
+## 5. Check 2, PV selection's hole (run 78, 2026-10-23)
+
+Go/no-go check 2 (`docs/direction-A-mock.md`): does Gimenez et al.'s perturbation-vector (PV) feature selection,
+derived from a finite sample of attacks, keep features an attacker can still push down within the same threat model?
+We ran their eight secml-malware attacks (low budget: population 10, 10 iterations) on the 50 detected pilot malware
+against our GBDT, re-extracted each written file with the quirk-fixed extractor, and recorded the 398 perturbation
+vectors (two files failed to re-parse). `scripts/a_pv_attacks.py`, `scripts/a_pv_hole.py`, `run/78_a_check2.sh`.
+
+**PV reproduction is faithful.** A GBDT trained on the 1,736 PV-kept features (those never decreased across the 398
+vectors), all constrained monotone-increasing, reaches test AUC 0.945 — Gimenez et al. report 0.938 for PV + monotone
+GBT on EMBER. Any-attack evasion on the pilot: 24/50 files evaded by at least one attack (GAMMA API 20, header fields
+8, GAMMA shift 4, content shift 3).
+
+**The hole is large and the GBDT leans on it. GO.** Of the 1,736 PV-kept features, C4 proves 213 decreasable under
+M_full (185 under M_add): PV trusts them because its attacks happened never to lower them, but a chosen section name
+or content can. In the PV-selected GBDT these hole features carry **37.8% of the total split gain under M_full**
+(34.9% under M_add) — far above the 5% go threshold. 85 of the 213 were never moved by any attack at all (the
+"attacks nobody ran" case); the other 128 moved only upward in the sample (min delta exactly 0). The hole is almost
+entirely the two sources the hypothesis named:
+
+| Group | Hole features | Share of PV GBDT gain (M_full) |
+|---|---|---|
+| section (signed name/size/entropy/vsize/characteristics hash buckets) | 120 | 22.3% |
+| strings (regexes: ipv4, environment, process, ...) | 75 | 13.2% |
+| rich header | 4 | 1.2% |
+| header | 12 | 1.0% |
+
+The top single feature is `section:size_hash_41` (4.9% of gain), a signed section-size bucket GAMMA's random names
+never drove negative; `strings:regex_ipv4_addr` (3.4%) is a count the attacker lowers by not shipping those strings.
+
+**Reading.** PV selection's soundness is only as good as its attack sample: more than a third of the detector it
+builds rests on features an attacker who picks names and content can lower, which C4 flags for free. This is the
+separation A1's adaptive column needs. A second, unplanned finding: the C4-sound monotone GBDT (run 77, M_full, AUC
+0.993) is not only sound against unseen attacks but more accurate than the PV model (0.945) — PV's monotone
+constraint on 1,736 noisy features costs more than C4's clean drop of the two-sided ones. (The step-2 preview against
+the unconstrained GBDT reads the hole at 10.1% of PV-kept gain; the decisive number uses the PV-selected GBDT, where
+gain is concentrated on the kept features.)
