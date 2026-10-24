@@ -49,9 +49,43 @@ introduction and a simple baseline (writing decision for later).
   mutual agreement (score disagreement); C must win where scores are silent (e.g., both members evaded) or classify
   the cause. PASA is the nearest attribution-based detector (not malware).
 
-## Next steps (end of 2026-10-23)
+## Next steps (end of 2026-10-24)
 
-Done on 2026-10-23: **all three go/no-go checks for direction A passed, and Table A0 is complete.**
+Done on 2026-10-24: **Table A1's machinery is built; run 80 is read, run 81/82 are running.** The five A1 decisions
+were taken (end of `docs/direction-A-A1-design.md`): sums re-encoding on a **10% subsample of every split** first; the
+proposed seen/held-out split as a **quick check only**, with **leave-one-out** (8 PV models) the formal version
+later; baselines later; 50 pilot malware; budgets max(5%, 512 KB) bytes and 100 queries.
+- **Step 1 — sums re-encoding (run 80, read):** `SumsFeatureExtractor` (thrember + merged imports + body_histogram,
+  body_byteentropy, body_strings, section_split; 3,655 features) in `src/provexp/featuresets/ember2024/sums.py`;
+  `featurize.py --extractor sums --every 10` (0.90 h, 0 failures, 207,872 train rows). The sums rows **beat** the
+  features-as-is rows: test AUC 0.99527 vs 0.99458 (M_add), 0.99296 vs 0.99189 (M_full), vs 0.99638 unconstrained.
+- **Step 2 — PV seen/held-out:** `a_pv_hole.py --attacks ... --tag=-seen` (all-8 reproduces run 78 exactly; the quick
+  seen split keeps 1,773 features, M_full hole 246 features / 13% of PV-seen's gain).
+- **Step 3 — toolkit harness (`a1_evaluate.py`, run 81, running):** defenses x 8 attacks, 1% FPR thresholds,
+  detected-only, byte cap, re-extracted ground truth, seen/held-out groups split by truncation. The s10 defenses
+  detect 40-43/50 pilot malware at 1% FPR (the full-split PV operating-point worry is resolved).
+- **Step 4 — adaptive search (`a1_adaptive.py`, run 81 thrember + run 82 sums, running):** scores each candidate edit
+  by its **C1-declared effect** (the reachable set under M), not real LIEF re-extraction (LIEF relayout is A4,
+  outside M; decided 2026-10-24). C4 rows are 0 by construction; a negative `min_delta_logit` on a `--sound` row is an
+  A1-A4 bug. Smoke: the same search drives the unconstrained detector down ~1.4-2.8 logits yet moves the C4 detectors
+  by exactly 0.0, in both the thrember and the sums feature spaces. Sums-space C1 predictors (`predict_append_sums`,
+  `predict_add_section_sums`) validated vs re-extraction and confirmed up-only on all 1,979 kept M_full-sums features.
+
+Next:
+1. **Read runs 81 and 82** (`artifacts/experiments/a1/{toolkit,adaptive,adaptive_sums}/`): confirm the separation —
+   seen evasion ~0 everywhere; held-out evasion > 0 for PV-seen, 0 for the M_full C4 rows; adaptive evasion 0 for all
+   C4 rows (any nonzero is an A1-A4 bug, debug via A0) and > 0 for PV-seen/unconstrained. Report truncated vs not.
+2. **Assemble Table A1** (`docs/direction-A-mock.md`) from the three columns; decide whether the separation is
+   decisive enough to scale (seeds/size) or whether to strengthen the adaptive attack first.
+3. **Scoped remainder (A0-sized, lower priority):** C1 predictors for the DOS-stub (Rich header), header-field,
+   checksum, rename, and remove operations, to reach the Rich-header/header-field parts of PV's hole adaptively
+   (`predict_content_overwrite` currently models DOS members only). append + add-section already reach the
+   histogram/string/section-bucket parts.
+4. Then Table A2 (the adaptive attack's own table), then A2 (the second application).
+5. Later: the formal leave-one-out PV experiment; full-scale numbers (seeds 0-2, 2,000 files); B and C screening;
+   clean out the old direction's materials; update `CLAUDE.md` conventions.
+
+### Earlier: all three go/no-go checks for direction A passed (end of 2026-10-23)
 - **Attack environment (no separate venv):** secml 0.15.6 + secml-malware 0.4.2 vendored under `third_party/` and
   patched to run in `env/` (Python 3.14, NumPy 2, LIEF 1.0); nothing broke because of Python 3.14 itself. All eight of
   Gimenez et al.'s black-box attacks run against our GBDT. Deps added to `requirements.txt`; see `third_party/README.md`.
@@ -66,20 +100,6 @@ Done on 2026-10-23: **all three go/no-go checks for direction A passed, and Tabl
   says (S6).
 - **A1 design drafted:** `docs/direction-A-A1-design.md` (rows/columns, one evasion protocol, the C1-guided adaptive
   attack, build order, falsifiable outcomes, five open decisions).
-
-Next (execute A1, per `docs/direction-A-A1-design.md`), **gated on five user decisions in that doc**:
-1. **Five decisions:** re-encoding extraction scale; seen/held-out split of the 8 attacks; baselines (adv-training /
-   expert) now vs later; malware test-set size for the first pass; byte/query budgets.
-2. **Re-encoding ("sums") extraction** — the big prerequisite for the decisive C4-on-sums row: a new feature type over
-   the splits (raw counts, region-restricted, split signed buckets, merged imports). Multi-hour featurization; scope a
-   cost estimate and agree scale with the user before writing (the features-as-is rows + the adaptive attack can go first).
-3. **PV seen/held-out re-derivation** (cheap) → train one PV-seen GBDT (user-run, ~6 min like run 77).
-4. **Attack-evaluation harness** (`scripts/a1_evaluate.py` + `run/80`): defenses × attack groups, calibrated-FPR
-   thresholds, evasion/robustness, re-extraction ground truth. Reuse `a_pv_attacks.py` plumbing.
-5. **Adaptive C1-guided attack** (`scripts/a1_adaptive.py`): search over M, scoring candidates with the A0 C1
-   predictors; 0 by construction for C4 rows (a non-zero is an A1–A4 bug, debugged via A0).
-6. Then Table A2 (the adaptive attack's own table), then A2 (the second application).
-7. Later: B and C screening; clean out the old direction's materials; update `CLAUDE.md` conventions.
 
 ## Settled decisions (2026-10-22)
 

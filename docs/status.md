@@ -1,5 +1,19 @@
 # Status
 
+**2026-10-24 (end of session): Table A1 machinery built; runs 81/82 running.** All of Table A1's build order
+(`docs/direction-A-A1-design.md`) is implemented and committed; the user is running `run/82` (`run/81` was running at
+hand-off). The decisive result already showed in smoke tests: the **same** adaptive search drives the unconstrained
+detector down ~1.4-2.8 logits yet moves the C4 detectors by exactly 0.0, in both the thrember and sums feature spaces
+— the soundness guarantee, measured. **Pick up at `docs/resume-prompt.md`:** read
+`artifacts/experiments/a1/{toolkit,adaptive,adaptive_sums}/*.json`, confirm the separation (seen ~0 everywhere;
+held-out > 0 for PV-seen, 0 for M_full C4; adaptive 0 for every C4 row — a nonzero on a sound row is an A1-A4 bug,
+debug via A0 — and > 0 for the unconstrained/PV-seen), then assemble Table A1. Scoped remainder: C1 predictors for the
+DOS-stub/header-field/checksum/rename/remove operations (A0-sized; append + add-section already reach the
+histogram/string/section-bucket parts of PV's hole, not yet the Rich-header/header-field parts). Session details
+below.
+
+---
+
 **2026-10-24 (A1 decisions).** User decided (recorded at the end of `docs/direction-A-A1-design.md`): sums
 re-encoding on a 10% subsample of all splits first (~1 h); the proposed seen/held-out split as a **quick check only**,
 with **leave-one-out** (8 PV models) for the formal experiment later; baselines later; 50 pilot malware; budgets at
