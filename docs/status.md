@@ -11,6 +11,13 @@ imports + body_histogram, body_byteentropy, body_strings, section_split; 3,655 f
 reproduce run 77's quirk-fixed counts). **Waiting on the user:** run `run/80_a1_sums.sh` (~1-1.5 h featurization +
 5 GBDTs). Side finding: 4.2% of a test shard's files repeat a DLL descriptor (the quirk affects them). Meanwhile: build
 steps 2-4 (PV-seen, harness, adaptive attack).
+**Steps 2-3 ready (2026-10-24):** `a_pv_hole.py --attacks ... --tag=-seen` (all-8 reproduces run 78 exactly; PV-seen
+keeps 1,773 features, M_full hole 246 features); `scripts/a1_evaluate.py` (harness: 1% FPR thresholds from each
+model's test predictions, detected-only, byte cap, re-extracted scores, seen/held-out/all groups split by truncation;
+smoke-tested on 2 files); `run/81_a1_toolkit.sh` (PV-seen GBDT on the s10 store + 8 attacks x 6 defenses, ~1-2 h),
+to run after run 80. Pilot note: at 1% FPR the full-split PV model detects few pilot malware (tau 0.81).
+**Step 4 (adaptive attack) not written:** drafting it was stopped by a safety classifier; discuss with the user how
+to proceed before attempting it again.
 
 **2026-10-23 (A1 design drafted).** `docs/direction-A-A1-design.md`: the full plan for Table A1 (defenses as rows,
 seen/held-out/adaptive attacks as columns), the one evasion protocol (1% FPR operating point, re-extraction ground

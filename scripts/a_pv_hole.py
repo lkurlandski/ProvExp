@@ -26,6 +26,10 @@ Outputs, in `{outdir}/`:
 The gain share is read from --model: pass the PV-selected GBDT (trained from pv.neutralize.txt / pv.monotone.tsv) for
 the decisive number; the default unconstrained GBDT gives an immediate preview of where the hole sits.
 
+With `--attacks`, PV selection is derived from that subset of the attacks only (Table A1's "PV, seen" row; the quick
+seen/held-out split of docs/direction-A-A1-design.md, with leave-one-out as the formal version), and `--tag` suffixes
+every output file (e.g. `pv-seen.neutralize.txt`, `report-seen.json`).
+
 Usage:
     python scripts/a_pv_hole.py --deltas artifacts/experiments/a_pv/deltas.parquet \
         --directions_dir artifacts/experiments/a_directions --outdir artifacts/experiments/a_pv
@@ -89,10 +93,17 @@ def main() -> None:
     parser.add_argument("--model", type=Path, default=ROOT / "artifacts/models/gbdt/seed-0/model.txt",
                         help="GBDT whose split gain weights the hole; pass the PV-selected GBDT for the decisive read.")
     parser.add_argument("--tol", type=float, default=1e-6)
+    parser.add_argument("--attacks", nargs="+", default=None, help="Derive PV from these attacks only (default: all).")
+    parser.add_argument("--tag", type=str, default="", help="Suffix of the output files, e.g. '-seen'.")
     args = parser.parse_args()
 
     args.outdir.mkdir(parents=True, exist_ok=True)
     df = pl.read_parquet(args.deltas)
+    if args.attacks is not None:
+        unknown = set(args.attacks) - set(df["attack"].unique().to_list())
+        if unknown:
+            raise ValueError(f"Attacks not in {args.deltas.as_posix()}: {sorted(unknown)}")
+        df = df.filter(pl.col("attack").is_in(args.attacks))
     meta = {"name", "attack", "p_clean", "p_adv"}
     names = [c for c in df.columns if c not in meta]
     deltas = df.select(names).to_numpy()
@@ -112,6 +123,7 @@ def main() -> None:
     moved = {names[j] for j in range(len(names)) if bool((np.abs(deltas[:, j]) > args.tol).any())}
 
     report: dict[str, object] = {
+        "attacks": sorted(df["attack"].unique().to_list()),
         "num_perturbation_vectors": int(deltas.shape[0]),
         "num_features": len(names),
         "tol": args.tol,
@@ -139,18 +151,19 @@ def main() -> None:
                               "moved_by_attack": n in moved, "gain": gain_of[n],
                               "gain_share_over_pv": gain_of[n] / pv_gain if pv_gain else 0.0})
 
-    pl.DataFrame(hole_rows).write_parquet(args.outdir / "hole.parquet")
-    pl.DataFrame(hole_rows).write_csv(args.outdir / "hole.csv")
-    (args.outdir / "report.json").write_text(json.dumps(report, indent=2))
+    t = args.tag
+    pl.DataFrame(hole_rows).write_parquet(args.outdir / f"hole{t}.parquet")
+    pl.DataFrame(hole_rows).write_csv(args.outdir / f"hole{t}.csv")
+    (args.outdir / f"report{t}.json").write_text(json.dumps(report, indent=2))
 
     # Train files for the PV-selected monotone GBDT (Gimenez et al.'s PV + monotone model): drop all but PV-kept,
     # constrain the kept features monotone-increasing.
     dropped = [n for n in names if n not in kept]
-    (args.outdir / "pv.neutralize.txt").write_text("\n".join(dropped) + "\n")
-    (args.outdir / "pv.monotone.tsv").write_text("".join(f"{n}\t1\n" for n in names if n in kept))
+    (args.outdir / f"pv{t}.neutralize.txt").write_text("\n".join(dropped) + "\n")
+    (args.outdir / f"pv{t}.monotone.tsv").write_text("".join(f"{n}\t1\n" for n in names if n in kept))
 
     print(json.dumps(report, indent=2))
-    print(f"\nWrote hole.csv ({len(hole_rows)} rows) and PV train files to {args.outdir}/", flush=True)
+    print(f"\nWrote hole{t}.csv ({len(hole_rows)} rows) and PV train files to {args.outdir}/", flush=True)
 
 
 if __name__ == "__main__":
