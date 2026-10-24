@@ -9,30 +9,57 @@ construction, Gimenez Prop. 1 + C4 + A1-A4); a decrease below -1e-6 is an A1-A4 
 evasion. For the PV-seen row, which is sound only against the attacks it was built from, the same search realizes the
 hole check 2 measured. Nothing is deployed; files are written only so their features can be re-extracted and re-scored.
 
-This first part provides the material (goodware donors) and the loader-safe edits; the search over them is added next.
-Each edit returns the new bytes and a description. Every edit keeps the original content in place -- each section's raw
-data, the overlay, the DOS header and stub, and the header fields it does not itself set -- so the edit stays inside M
-and does not exploit the writing tool's layout choices (A4); `lief_preserves` checks this for the LIEF edits.
+The search decides by C1 predictions of each candidate edit's *declared* effect (the attacker's reachable set under M;
+decided 2026-10-24), never by re-extracting a written file: LIEF's writer relays out the file (A4) outside M, so a
+real re-extraction would mix M effects with the tool's. The C4 rows are therefore 0 by construction here; the
+C1-vs-reextraction gap (A4) is a separate number A0 already measures. This part provides the material (goodware
+donors), the loader-safe edits (used only to materialize a file for the A4-gap report), and the greedy search over C1.
 
-Usage: see the search driver added in the next step.
+Every edit keeps the original content in place -- each section's raw data, the overlay, the DOS header and stub, and
+the header fields it does not itself set -- so it stays inside M and does not exploit the writing tool's layout
+choices; `lief_preserves` checks this for the LIEF edits.
+
+Outputs, in `{outdir}/`:
+    adaptive.parquet   one row per (defense, file): the C1-declared result (evaded, queries, best op sequence,
+                       min_delta_logit = the most negative score change any candidate's declared effect produced)
+    adaptive.json      per defense: detected, evaded (C1-declared), rate by truncation, min_delta_logit, and any
+                       C4-row soundness violation (min_delta_logit < -1e-6: an A1-A4 bug, debug via Table A0)
+
+Usage (smoke):
+    PYTHONHASHSEED=0 python scripts/a1_adaptive.py --outdir /tmp/a1a --num_malware 2 --queries 30 \
+        --threat_model M_full --defense pv-seen=artifacts/models/gbdt/seed-0-pv \
+        --features artifacts/features/ember2024
 """
 
 from __future__ import annotations
 
+from argparse import ArgumentParser
+import json
 from pathlib import Path
 import struct
 import sys
+import time
 from typing import Any
+from typing import Callable
 
+import lightgbm
+import numpy as np
 import pefile
 
+from provexp.data.tabular import load_manifest
+from provexp.featuresets.ember2024.features import PEFeatureExtractor
 from provexp.featuresets.ember2024.features import field_range
+from provexp.featuresets.ember2024.features import merge_import_descriptors
 
 sys.path.insert(0, str(Path(__file__).parent))
-# (the search driver, added next, will import THREAT_MODELS and the C1 predictors)
+from a_c1_table0 import has_overrun_section  # noqa: E402
+from a_c1_table0 import predict_add_section  # noqa: E402
+from a_c1_table0 import predict_append  # noqa: E402
+from a_c1_table0 import predict_content_overwrite  # noqa: E402
+from a_pv_attacks import load_pilot  # noqa: E402
 
-__all__ = ["Donors", "HDR_FIELDS", "add_imports", "add_section", "lief_preserves", "rename_section",
-           "set_header_fields", "zero_directory_entry"]
+__all__ = ["Donors", "HDR_FIELDS", "Operation", "add_imports", "add_section", "greedy_search", "lief_preserves",
+           "menu", "rename_section", "set_header_fields", "zero_directory_entry"]
 
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -210,3 +237,222 @@ def lief_preserves(original: bytes, edited: bytes, op: str) -> bool:
         if not all(s.Name in edited_names for s in a.sections):
             return False
     return True
+
+
+################################################################################
+# The greedy C1 search (declared effects only)
+#
+# NOTE: this first driver covers the two operations whose C1 predictors (from scripts/a_c1_table0.py) are complete
+# over every feature they touch -- append and add-section, both in M_add and so in every threat model. They already
+# reach the histogram, byte-entropy, string, and section-bucket parts of PV selection's hole (check 2). The remaining
+# operations (the DOS/header/checksum/rename/remove overwrites, which reach the Rich header and header-field parts of
+# the hole) need their C1 predictors completing -- predict_content_overwrite models the DOS header members but not the
+# Rich header or the COFF/optional header fields -- and the sums-space defenses need their own predictors (an
+# A0-style validation). Those are the scoped remainder (docs/direction-A-A1-design.md); until then the search is run
+# against the 2,568-feature (thrember-space) defenses only, and its evasion is a conservative lower bound.
+################################################################################
+
+Operation = tuple[str, Callable[[PEFeatureExtractor, bytes], np.ndarray]]
+
+
+def menu(donors: Donors, rng: np.random.Generator, candidates: int) -> list[Operation]:
+    """
+    A finite candidate set of declared edits, each a function predicting phi(z') with C1 from z alone.
+
+    Append candidates vary the payload (donor content, random bytes, a single repeated byte value) to move the byte
+    histogram and string features different ways. Add-section candidates vary the name (chosen to land in different
+    signed section-hash buckets) and content, to move the section buckets in either direction.
+    """
+    ops: list[Operation] = []
+    sizes = [4096, 65536]
+    for size in sizes:
+        payloads = [rng.integers(0, 256, size=size, dtype=np.uint8).tobytes(),
+                    bytes([int(rng.integers(0, 256))]) * size]
+        if donors.sections:
+            payloads.append(donors.sections[int(rng.integers(len(donors.sections)))][1][:size])
+        for payload in payloads:
+            blob = b"\x00" + payload
+            def _app(ext: PEFeatureExtractor, z: bytes, b: bytes = blob) -> np.ndarray:
+                return predict_append(ext, z, b)
+            ops.append(("app", _app))
+    for _ in range(max(0, candidates - len(ops))):
+        name = "." + "".join(chr(int(c)) for c in rng.integers(0x61, 0x7b, size=3))
+        donor = donors.sections[int(rng.integers(len(donors.sections)))]
+        content = donor[1][:4096]
+        def _sec(ext: PEFeatureExtractor, z: bytes, n: str = name, c: bytes = content) -> np.ndarray:
+            return predict_add_section(ext, z, n, c, ["MEM_READ", "CNT_INITIALIZED_DATA"])
+        ops.append(("sec", _sec))
+    return ops[:candidates]
+
+
+def _logit(p: float) -> float:
+    p = min(max(p, 1e-12), 1 - 1e-12)
+    return float(np.log(p / (1 - p)))
+
+
+def greedy_search(booster: lightgbm.Booster, extractor: PEFeatureExtractor, z: bytes, tau: float, donors: Donors,
+                  queries: int, candidates: int, seed: int) -> dict[str, Any]:
+    """
+    Greedily apply declared edits whose C1-predicted effect lowers the defense's score the most, until the predicted
+    score crosses below tau (evaded) or the query budget is spent. Scoring is by C1 prediction only; no file is written.
+
+    Returns a summary row: evaded, the predicted adversarial probability, the query count, the operations chosen, and
+    min_delta_logit (the most negative single-step score change seen -- the soundness probe for a C4 row).
+    """
+    tau_logit = _logit(tau)
+    state = z
+    p = float(booster.predict(extractor.feature_vector(state).reshape(1, -1))[0])  # type: ignore[no-untyped-call]
+    ops_chosen: list[str] = []
+    min_delta = 0.0
+    used = 0
+    rng = np.random.default_rng(seed)
+    while used < queries and p > tau:
+        best: tuple[float, str, np.ndarray] | None = None
+        for op_name, predict in menu(donors, rng, candidates):
+            if used >= queries:
+                break
+            used += 1
+            try:
+                phi = predict(extractor, state)
+            except Exception:
+                continue
+            p_cand = float(booster.predict(phi.reshape(1, -1))[0])
+            min_delta = min(min_delta, _logit(p_cand) - _logit(p))
+            if best is None or p_cand < best[0]:
+                best = (p_cand, op_name, phi)
+        if best is None or best[0] >= p:
+            break  # no candidate lowered the predicted score; a sound monotone detector stops here
+        # Materialize the chosen edit so the next step predicts from the real bytes (declared edits compose).
+        p, op_name, _ = best
+        ops_chosen.append(op_name)
+        state = _apply_declared(state, op_name, donors, rng)
+    return {"evaded": bool(p <= tau), "p_adv_c1": p, "queries": used, "ops": ",".join(ops_chosen),
+            "num_ops": len(ops_chosen), "min_delta_logit": min_delta, "tau_logit": tau_logit}
+
+
+def _apply_declared(z: bytes, op_name: str, donors: Donors, rng: np.random.Generator) -> bytes:
+    """Materialize one declared edit on the bytes (so a multi-step search composes); append is exact, add-section
+    uses LIEF (its layout is A4, but only the declared part feeds the next C1 prediction via re-parsing)."""
+    if op_name == "app":
+        return z + b"\x00" + rng.integers(0, 256, size=4096, dtype=np.uint8).tobytes()
+    name = "." + "".join(chr(int(c)) for c in rng.integers(0x61, 0x7b, size=3))
+    content = donors.sections[int(rng.integers(len(donors.sections)))][1][:4096]
+    return add_section(z, name, content, False)
+
+
+################################################################################
+# Main
+################################################################################
+
+def _parse_defenses(specs: list[str]) -> dict[str, Path]:
+    out: dict[str, Path] = {}
+    for spec in specs:
+        name, _, path = spec.partition("=")
+        if not name or not path:
+            raise ValueError(f"Expected name=model_dir, got {spec!r}.")
+        out[name] = Path(path)
+    return out
+
+
+def _threshold(pred_file: Path, fpr: float) -> float:
+    import polars as pl
+
+    pred = pl.read_parquet(pred_file)
+    good = np.sort(pred.filter(pl.col("label") == 0)["prob"].to_numpy())[::-1]
+    return float(good[min(int(fpr * good.size), good.size - 1)])
+
+
+def main() -> None:
+    import polars as pl
+
+    parser = ArgumentParser(description=__doc__.split("\n\n")[1])
+    parser.add_argument("--outdir", type=Path, required=True)
+    parser.add_argument("--defense", action="append", required=True, help="name=model_dir (repeatable).")
+    parser.add_argument("--sound", nargs="*", default=[], help="Defense names that carry the C4 guarantee (a negative "
+                        "min_delta_logit on one is an A1-A4 bug; on any other defense it is just the search working).")
+    parser.add_argument("--features", type=Path, required=True, help="The feature store the defenses were trained on.")
+    parser.add_argument("--pilot_files", type=Path, default=ROOT / "artifacts/experiments/e1/seed-0/zeros/files.parquet")
+    parser.add_argument("--db", type=Path, default=Path("/shared/datasets/EMBER-2024/data/ts"))
+    parser.add_argument("--threat_model", choices=["M_add", "M_shift", "M_full"], default="M_full")
+    parser.add_argument("--fpr", type=float, default=0.01)
+    parser.add_argument("--queries", type=int, default=100)
+    parser.add_argument("--candidates", type=int, default=12)
+    parser.add_argument("--num_malware", type=int, default=None)
+    parser.add_argument("--seed", type=int, default=0)
+    args = parser.parse_args()
+
+    import lief
+    lief.logging.disable()
+    args.outdir.mkdir(parents=True, exist_ok=True)
+    defenses = _parse_defenses(args.defense)
+
+    manifest = load_manifest(args.features)
+    if manifest["feature_set"] != "ember2024 (thrember v3)":
+        raise RuntimeError(f"This driver scores in thrember space; {args.features.as_posix()} is "
+                           f"{manifest['feature_set']}. The sums-space predictors are the scoped remainder.")
+    extractor = merge_import_descriptors(PEFeatureExtractor())
+
+    malware, goodware = load_pilot(args.pilot_files, args.db)
+    if args.num_malware is not None:
+        malware = malware[: args.num_malware]
+    donors = Donors(goodware)
+    print(f"Pilot: {len(malware)} malware, {len(goodware)} goodware donors; threat model {args.threat_model}.",
+          flush=True)
+
+    rows: list[dict[str, Any]] = []
+    for d, mdir in defenses.items():
+        booster = lightgbm.Booster(model_file=str(mdir / "model.txt"))
+        tau = _threshold(mdir / "ts_predictions.parquet", args.fpr)
+        t0 = time.time()
+        for name, data in malware:
+            phi0 = extractor.feature_vector(data)  # type: ignore[no-untyped-call]
+            p_clean = float(booster.predict(phi0.reshape(1, -1))[0])
+            if p_clean <= tau:
+                continue  # attack only what this defense detects
+            try:
+                pe = pefile.PE(data=data)
+                overrun = has_overrun_section(pe)
+            except Exception:
+                overrun = False
+            r = greedy_search(booster, extractor, data, tau, donors, args.queries, args.candidates, args.seed)
+            r.update(defense=d, name=name, tau=tau, p_clean=p_clean, truncated=len(data) >= MAX_LENGTH,
+                     overrun_section=overrun)
+            rows.append(r)
+        print(f"  {d}: tau={tau:.4f}, {time.time() - t0:.0f}s", flush=True)
+
+    results = pl.DataFrame(rows)
+    results.write_parquet(args.outdir / "adaptive.parquet")
+    report: dict[str, Any] = {"threat_model": args.threat_model, "fpr": args.fpr, "queries": args.queries,
+                              "candidates": args.candidates, "seed": args.seed, "defenses": {}}
+    for d in defenses:
+        r = results.filter(pl.col("defense") == d)
+        detected = r.height
+        evaded = int(r["evaded"].sum()) if detected else 0
+        worst = float(r["min_delta_logit"].min() or 0.0) if detected else 0.0  # type: ignore[arg-type]
+        report["defenses"][d] = {
+            "detected": detected, "evaded": evaded, "rate": (evaded / detected) if detected else None,
+            "min_delta_logit": worst,
+            "carries_guarantee": d in args.sound,
+            "soundness_violation": (d in args.sound) and worst < -1e-6,
+            "rate_truncated": _rate(r.filter(pl.col("truncated"))),
+            "rate_untruncated": _rate(r.filter(~pl.col("truncated"))),
+        }
+        v = report["defenses"][d]
+        flag = "  *** C4 SOUNDNESS VIOLATION (debug via Table A0)" if v["soundness_violation"] else ""
+        print(f"{d:16s} detected {detected:2d}  evaded {evaded:2d} (C1-declared)  min_delta_logit {worst:+.4f}{flag}",
+              flush=True)
+    (args.outdir / "adaptive.json").write_text(json.dumps(report, indent=2))
+    print(f"Wrote {args.outdir}/adaptive.parquet and adaptive.json", flush=True)
+
+
+def _rate(r: Any) -> Any:
+    if r.height == 0:
+        return None
+    return int(r["evaded"].sum()) / r.height
+
+
+MAX_LENGTH = 4_000_000
+
+
+if __name__ == "__main__":
+    main()

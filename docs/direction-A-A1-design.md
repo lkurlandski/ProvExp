@@ -107,7 +107,10 @@ the same model breaks the empirical defense and certifies its own ([[symmetry-ni
    thresholds, evasion and robustness, re-extraction from disk. Reuse the check-2 attack plumbing (`a_pv_attacks.py`:
    the wrappers, the parallel-over-files pool, the vendored toolkit).
 4. **The adaptive C1-guided attack** (`scripts/a1_adaptive.py`): the search above, reusing the A0 C1 predictors
-   (`a_c1_table0.py`) for φ̂.
+   (`a_c1_table0.py`) for φ̂. **Decided 2026-10-24:** the column scores by the C1-declared effect (the reachable set
+   under M), not real LIEF re-extraction (LIEF relayout is A4, outside M); C4 rows are 0 by construction, the A4 gap
+   is reported separately. Built for the thrember-space defenses (append + add-section, the complete predictors);
+   the DOS/header/rich-header predictors and the sums-space predictors are the scoped remainder.
 5. **Optional baselines** (adversarial training, expert set) once the core table reads.
 
 ## Falsifiable outcomes (what would sink A1)

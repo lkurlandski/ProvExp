@@ -5,14 +5,17 @@
 #   1. PV selection from the *seen* attacks only (quick split: padding, gamma_sections, gamma_shift, content_shift;
 #      the formal version is leave-one-out), from run 78's perturbation vectors
 #   2. train the PV-seen monotone GBDT on the same 10% store as the other rows (the re-encoded groups dropped too)
-#   3. the eight attacks against six defenses (s10 ref, PV-seen, C4 on features / sums under M_add and M_full), 1% FPR
-#      thresholds, byte cap max(5%, 512 KB), re-extracted ground truth
+#   3. the eight attacks against six defenses (toolkit columns): s10 ref, PV-seen, C4 on features / sums under M_add
+#      and M_full; 1% FPR thresholds, byte cap max(5%, 512 KB), re-extracted ground truth
+#   4. the C1-declared adaptive search against the thrember-space defenses (the decisive column; 0 for the C4 rows by
+#      construction, nonzero for the unconstrained reference; the sums-space predictors are the scoped remainder)
 # Hypothesis: seen evasion ~0 for PV-seen and the C4 rows; held-out evasion > 0 for PV-seen (its hole: Rich header,
 # DOS-stub string, section buckets, header fields: header_fields and format_exploit reach these), 0 for the M_full C4
 # rows; the M_add C4 rows may be evaded by the M_full attacks (outside their threat model), which is not a failure.
 #
 # Estimate: step 1 seconds; step 2 ~1-2 min; step 3 ~1-2 h on 16 workers (run 78: 400 runs in ~12 min on 12 workers
-# with thrember's extractor; here up to 6 x 400 runs, the sums extractor ~2x slower, monotone defenses stagnate early).
+# with thrember's extractor; here up to 6 x 400 runs, the sums extractor ~2x slower, monotone defenses stagnate
+# early). Step 4 adds a few minutes (C1 predictions, no attack engine).
 set -euo pipefail
 cd "$(dirname "$0")/.."
 source env/bin/activate
@@ -59,4 +62,21 @@ python scripts/a1_evaluate.py \
   --seed 0 \
   &> "$LOG"
 
-echo "Done. Table: artifacts/experiments/a1/toolkit/table.json"
+LOG=artifacts/logs/a1_adaptive.log
+echo "Step 4/4: the C1-declared adaptive search (thrember-space defenses only; the sums-space predictors are the"
+echo "  scoped remainder). Log: $LOG"
+python scripts/a1_adaptive.py \
+  --outdir artifacts/experiments/a1/adaptive \
+  --features artifacts/features/ember2024 \
+  --threat_model M_full \
+  --defense unconstrained=$M/seed-0 \
+  --defense pv=$M/seed-0-pv \
+  --defense madd-feat=$M/seed-0-a-madd-mono-qf \
+  --defense mfull-feat=$M/seed-0-a-mfull-mono-qf \
+  --sound madd-feat mfull-feat \
+  --queries 100 \
+  --seed 0 \
+  &> "$LOG"
+
+echo "Done. Toolkit table: artifacts/experiments/a1/toolkit/table.json"
+echo "      Adaptive (C1-declared): artifacts/experiments/a1/adaptive/adaptive.json"

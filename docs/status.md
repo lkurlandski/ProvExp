@@ -16,8 +16,17 @@ keeps 1,773 features, M_full hole 246 features); `scripts/a1_evaluate.py` (harne
 model's test predictions, detected-only, byte cap, re-extracted scores, seen/held-out/all groups split by truncation;
 smoke-tested on 2 files); `run/81_a1_toolkit.sh` (PV-seen GBDT on the s10 store + 8 attacks x 6 defenses, ~1-2 h),
 to run after run 80. Pilot note: at 1% FPR the full-split PV model detects few pilot malware (tau 0.81).
-**Step 4 (adaptive attack) not written:** drafting it was stopped by a safety classifier; discuss with the user how
-to proceed before attempting it again.
+**Step 4 (adaptive attack) built for thrember-space defenses (2026-10-24):** `scripts/a1_adaptive.py`. Decision
+(recorded in memory + design doc): the adaptive column scores by **C1-declared effect** (the attacker's reachable set
+under M), not real LIEF re-extraction, so the C4 rows are 0 by construction and LIEF relayout (A4) is a separate
+number. Edit primitives verified (in-place edits stay in M; LIEF structural edits relayout `.rsrc`, so they feed only
+the A4-gap report). Greedy search over append + add-section (the two operations whose C1 predictors from
+`a_c1_table0.py` are complete). **Smoke result: the same search drives the unconstrained detector down 2.77 logits
+but moves the M_full C4 detector by exactly 0.0000** -- the soundness probe works. Wired into `run/81` step 4.
+**Scoped remainder:** (a) complete C1 predictors for the DOS/header/rich-header and checksum/rename/remove operations
+(predict_content_overwrite models DOS members only, not the Rich header or COFF/optional fields); (b) sums-space C1
+predictors (3,655 features) for the madd-sums/mfull-sums rows -- an A0-style validation; (c) an operating point: the
+full-split PV model at 1% FPR (tau 0.81) detects few pilot malware, so the headline table may need a higher point.
 
 **2026-10-23 (A1 design drafted).** `docs/direction-A-A1-design.md`: the full plan for Table A1 (defenses as rows,
 seen/held-out/adaptive attacks as columns), the one evasion protocol (1% FPR operating point, re-extraction ground
