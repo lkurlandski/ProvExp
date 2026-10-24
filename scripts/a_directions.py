@@ -16,8 +16,14 @@ Outputs, in `{outdir}/`:
     {tm}[-quirkfixed].monotone.tsv     name<TAB>sign for the up (+1) and down (-1) features; fixed ones stay free
                         (`-quirkfixed`: as if the duplicate-library import quirk were fixed; check 3's sensitivity)
 
+With `--extractor sums`, the same for the features of `SumsFeatureExtractor` (merged imports plus the four re-encoded
+groups, which `feature_rule` covers with the re-encodings' signs). Its variants are `{tm}` (every feature: the "C4 on
+sums" detector) and `{tm}-control` (the four re-encoded groups dropped: "C4 on features" on the same store);
+`reencoded.neutralize.txt` lists the four groups, for the unconstrained reference on the same store.
+
 Usage:
     python scripts/a_directions.py --outdir artifacts/experiments/a_directions
+    python scripts/a_directions.py --extractor sums --outdir artifacts/experiments/a_directions_sums
 """
 
 from __future__ import annotations
@@ -32,6 +38,8 @@ from typing import Optional
 
 from provexp.featuresets.ember2024.features import PEFeatureExtractor
 from provexp.featuresets.ember2024.features import StringExtractor
+from provexp.featuresets.ember2024.sums import SUMS_GROUPS
+from provexp.featuresets.ember2024.sums import SumsFeatureExtractor
 
 __all__ = [
     "OPS",
@@ -222,6 +230,17 @@ def feature_rule(group: str, name: str, regexes: dict[str, str]) -> Rule:
     if group == "pefilewarnings":
         return Rule(every("+-"), "outside the model (no items)")
 
+    # The re-encoded groups (provexp.featuresets.ember2024.sums), with the signs of their re-encodings above.
+    if group in ("body_histogram", "body_byteentropy"):
+        return Rule(BODY, NOTE_BODY)
+    if group == "body_strings":
+        if name.startswith("regex_") and _trailing_boundary(regexes.get(name[len("regex_"):], "")):
+            return Rule({**BODY, "app": "+-"}, "the regex ends in \\b: extending a match to the right can unmatch it")
+        return Rule(BODY, NOTE_BODY)
+    if group == "section_split":
+        return Rule(signs(sec="+", imp="+", ren="+-", slk="+-" if name.startswith("entropy") else ""),
+                    "one sign's part of a bucket keyed by section name")
+
     raise ValueError(f"Unknown feature group {group}")
 
 
@@ -232,9 +251,11 @@ def feature_rule(group: str, name: str, regexes: dict[str, str]) -> Rule:
 def main() -> None:
     parser = ArgumentParser(description=__doc__.split("\n\n")[1])
     parser.add_argument("--outdir", type=Path, default=Path("artifacts/experiments/a_directions"))
+    parser.add_argument("--extractor", type=str, choices=["ember2024", "sums"], default="ember2024")
     args = parser.parse_args()
+    sums = args.extractor == "sums"
 
-    extractor = PEFeatureExtractor()
+    extractor = SumsFeatureExtractor() if sums else PEFeatureExtractor()
     strings = next(f for f in extractor.features if isinstance(f, StringExtractor))
     regexes = {k: r.pattern for k, r in strings._regexes.items()}
 
@@ -264,16 +285,24 @@ def main() -> None:
         writer.writeheader()
         writer.writerows(rows)
     for tm in THREAT_MODELS:
-        for variant in ("", "-quirkfixed"):
+        for variant in ("", "-control") if sums else ("", "-quirkfixed"):
             drop, mono = [], []
             for row in rows:
-                d = str(row[f"{tm}_reencoded" if variant and row["group"] == "imports" else tm])
+                # The sums extractor's imports are merged, so they take the quirk-fixed directions.
+                merged = (sums or variant == "-quirkfixed") and row["group"] == "imports"
+                d = str(row[f"{tm}_reencoded" if merged else tm])
+                if variant == "-control" and row["group"] in SUMS_GROUPS:
+                    d = "both"
                 if d == "both":
                     drop.append(f"{row['group']}:{row['name']}")
                 elif d in ("up", "down"):
                     mono.append(f"{row['group']}:{row['name']}\t{1 if d == 'up' else -1}")
             (args.outdir / f"{tm}{variant}.neutralize.txt").write_text("".join(n + "\n" for n in drop))
             (args.outdir / f"{tm}{variant}.monotone.tsv").write_text("".join(m + "\n" for m in mono))
+    if sums:
+        # The re-encoded groups alone, for the unconstrained reference on the same store.
+        reencoded = [f"{row['group']}:{row['name']}" for row in rows if row["group"] in SUMS_GROUPS]
+        (args.outdir / "reencoded.neutralize.txt").write_text("".join(n + "\n" for n in reencoded))
     totals = {key: {d: sum(g.get(d, 0) for g in groups.values()) for d in ("fixed", "up", "down", "both")}
               for key, groups in summary.items()}
     with open(args.outdir / "summary.json", "w") as f:

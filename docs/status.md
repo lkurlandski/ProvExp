@@ -3,7 +3,14 @@
 **2026-10-24 (A1 decisions).** User decided (recorded at the end of `docs/direction-A-A1-design.md`): sums
 re-encoding on a 10% subsample of all splits first (~1 h); the proposed seen/held-out split as a **quick check only**,
 with **leave-one-out** (8 PV models) for the formal experiment later; baselines later; 50 pilot malware; budgets at
-the doc's defaults (max(5%, 512 KB) bytes, 100 queries) unless overridden. Next: build order steps 1-4.
+the doc's defaults (max(5%, 512 KB) bytes, 100 queries) unless overridden.
+**Build step 1 ready:** `src/provexp/featuresets/ember2024/sums.py` (`SumsFeatureExtractor`: thrember with merged
+imports + body_histogram, body_byteentropy, body_strings, section_split; 3,655 features; tests
+`tests/test_ember2024_sums.py`, incl. append-never-lowers), `scripts/featurize.py --extractor sums --every 10`,
+`scripts/a_directions.py --extractor sums` (outputs in `artifacts/experiments/a_directions_sums/`; the -control lists
+reproduce run 77's quirk-fixed counts). **Waiting on the user:** run `run/80_a1_sums.sh` (~1-1.5 h featurization +
+5 GBDTs). Side finding: 4.2% of a test shard's files repeat a DLL descriptor (the quirk affects them). Meanwhile: build
+steps 2-4 (PV-seen, harness, adaptive attack).
 
 **2026-10-23 (A1 design drafted).** `docs/direction-A-A1-design.md`: the full plan for Table A1 (defenses as rows,
 seen/held-out/adaptive attacks as columns), the one evasion protocol (1% FPR operating point, re-extraction ground
