@@ -128,3 +128,17 @@ the same model breaks the empirical defense and certifies its own ([[symmetry-ni
 3. **Baselines now or later** — include adversarial training and the expert set in the first table, or defer?
 4. **Malware test-set size** for the first A1 pass — the 50 pilot, or a larger detected sample?
 5. **Budgets** — the byte-budget cap and the adaptive query budget values.
+
+## Decisions (user, 2026-10-24)
+
+1. **Re-encoding scale:** a 10% subsample of every split first (~1 h at 16 workers, from run 01's ~13 s per
+   1,024-file shard). The C4-on-sums row is compared against as-is models retrained on the *same* subsample; full
+   splits (~10.5 h) only later, on the user's decision.
+2. **Seen/held-out split:** the proposed split (seen = padding, gamma_sections, gamma_shift, content_shift; held-out =
+   gamma_api, header_fields, dos_extend, format_exploit) is a **quick check only**. The formal experiment will use
+   **leave-one-out** (derive PV from seven attacks, test on the eighth, for each of the eight: eight PV models).
+   Keep this distinction explicit in every table and report built from the quick split.
+3. **Baselines:** adversarial training and the expert set come later, once the core separation reads.
+4. **Malware set:** the 50 detected pilot malware for the first pass.
+5. **Budgets (defaults, user may override):** byte cap = max(5% of file size, 512 KB); adaptive query budget = 100
+   scored candidates, matching the toolkit's population 10 x 10 iterations.

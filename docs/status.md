@@ -1,5 +1,10 @@
 # Status
 
+**2026-10-24 (A1 decisions).** User decided (recorded at the end of `docs/direction-A-A1-design.md`): sums
+re-encoding on a 10% subsample of all splits first (~1 h); the proposed seen/held-out split as a **quick check only**,
+with **leave-one-out** (8 PV models) for the formal experiment later; baselines later; 50 pilot malware; budgets at
+the doc's defaults (max(5%, 512 KB) bytes, 100 queries) unless overridden. Next: build order steps 1-4.
+
 **2026-10-23 (A1 design drafted).** `docs/direction-A-A1-design.md`: the full plan for Table A1 (defenses as rows,
 seen/held-out/adaptive attacks as columns), the one evasion protocol (1% FPR operating point, re-extraction ground
 truth, shared budgets, pilot scale), the C1-guided adaptive attack (the decisive column; 0 by construction for the
