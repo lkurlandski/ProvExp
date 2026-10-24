@@ -49,8 +49,13 @@ from provexp.data.simpledb import SimpleDB
 from provexp.data.simpledb import SimpleDBReader
 from provexp.featuresets.ember2024.features import PEFeatureExtractor
 from provexp.featuresets.ember2024.features import StringExtractor
+from provexp.featuresets.ember2024.sums import BodyByteEntropyHistogram
+from provexp.featuresets.ember2024.sums import BodyStrings
+from provexp.featuresets.ember2024.sums import SumsFeatureExtractor
+from provexp.featuresets.ember2024.sums import body_regions
+from provexp.featuresets.ember2024.sums import signed_bucket
 
-__all__ = ["append_payload", "predict_append"]
+__all__ = ["append_payload", "predict_add_section_sums", "predict_append", "predict_append_sums"]
 
 ROOT = Path(__file__).resolve().parent.parent
 _STRINGS = StringExtractor()  # type: ignore[no-untyped-call]
@@ -146,6 +151,11 @@ def predict_append(extractor: PEFeatureExtractor, z: bytes, appended: bytes) -> 
     Returns:
         The predicted feature vector. Raises RuntimeError if z's windowing regime would change (too small a file).
     """
+    return np.asarray(extractor.process_raw_features(_append_raw(extractor, z, appended)))  # type: ignore[no-untyped-call]
+
+
+def _append_raw(extractor: PEFeatureExtractor, z: bytes, appended: bytes) -> dict[str, Any]:
+    """The raw-feature dict of `predict_append` before the readout, so the sums predictor can add its body groups."""
     pe = pefile.PE(data=z)
     raw = _raw_copy(extractor, z, pe)
     d = len(appended)
@@ -197,7 +207,7 @@ def predict_append(extractor: PEFeatureExtractor, z: bytes, appended: bytes) -> 
         sec["overlay"] = {"size": len(overlay_bytes), "size_ratio": len(overlay_bytes) / new_len,
                           "entropy": _byte_entropy(overlay_bytes)}
 
-    return np.asarray(extractor.process_raw_features(raw))  # type: ignore[no-untyped-call]
+    return raw
 
 
 def predict_content_overwrite(extractor: PEFeatureExtractor, z: bytes, lo: int, hi: int, c: bytes) -> np.ndarray:
@@ -294,6 +304,11 @@ def predict_add_section(extractor: PEFeatureExtractor, z: bytes, name: str, cont
     Returns:
         The predicted feature vector for the declared delta.
     """
+    return np.asarray(extractor.process_raw_features(_add_section_raw(extractor, z, name, content, props)))  # type: ignore[no-untyped-call]
+
+
+def _add_section_raw(extractor: PEFeatureExtractor, z: bytes, name: str, content: bytes, props: list[str]) -> dict[str, Any]:
+    """The raw-feature dict of `predict_add_section` before the readout (for the sums predictor's body groups)."""
     pe = pefile.PE(data=z)
     raw = _raw_copy(extractor, z, pe)
     old_len = len(z)
@@ -340,6 +355,94 @@ def predict_add_section(extractor: PEFeatureExtractor, z: bytes, name: str, cont
     if raw["header"]:
         raw["header"]["coff"]["number_of_sections"] += 1
 
+    return raw
+
+
+################################################################################
+# Sums-space predictors (the four re-encoded groups on top of the thrember raw dict)
+################################################################################
+
+_BE = BodyByteEntropyHistogram()
+_BODY_STRINGS = BodyStrings()
+
+
+def _body_string_delta(raw_bs: dict[str, Any], block: bytes) -> None:
+    """Add the strings of `block` (a new body region or an overlay extension; no boundary merge) to body_strings."""
+    # The thrember string routine on the block's own bytes (a new body region / overlay extension).
+    add = _BODY_STRINGS._strings.raw_features(block, None)  # type: ignore[no-untyped-call]
+    raw_bs["numstrings"] += add["numstrings"]
+    raw_bs["printables"] += add["printables"]
+    raw_bs["printabledist"] = (np.asarray(raw_bs["printabledist"]) + np.asarray(add["printabledist"])).tolist()
+    merged: dict[str, int] = dict(raw_bs["string_counts"])
+    for k, v in add["string_counts"].items():
+        merged[k] = merged.get(k, 0) + v
+    raw_bs["string_counts"] = merged
+
+
+def _body_windows(block: bytes) -> np.ndarray:
+    """The 16x16 byte/entropy counts over the full windows tiled from the start of `block` (BodyByteEntropy's rule)."""
+    out = np.zeros((16, 16), dtype=np.int64)
+    a = np.frombuffer(block, dtype=np.uint8)
+    w, step = _BE._windows.window, _BE._windows.step
+    for s in range(0, a.shape[0] - w + 1, step):
+        hbin, c = _BE._windows._entropy_bin_counts(a[s:s + w])  # type: ignore[no-untyped-call]
+        out[hbin, :] += c
+    return out
+
+
+def predict_append_sums(extractor: SumsFeatureExtractor, z: bytes, appended: bytes) -> np.ndarray:
+    """C1's prediction of the sums feature vector after an overlay append, from z alone (the body groups are up-only).
+
+    The appended bytes extend the overlay body region; the existing body regions and the section buckets are
+    unchanged. Needs a clean file (no section whose declared raw data overruns the file); the caller guarantees it
+    with `has_overrun_section`, as for the thrember append.
+    """
+    raw = _append_raw(extractor, z, appended)
+    pe = pefile.PE(data=z)
+    old_len = len(z)
+
+    # body_histogram: the appended bytes are counted in the (extended) overlay region.
+    counts = np.asarray(raw["body_histogram"], dtype=np.int64) + np.bincount(np.frombuffer(appended, dtype=np.uint8), minlength=256)
+    raw["body_histogram"] = counts.tolist()
+
+    # body_byteentropy: the overlay region grows from [start, old_len) to [start, old_len + |appended|); add the
+    # windows that now fit past the old region end. The overlay starts where the sections' raw data ends (or at
+    # old_len if z had no overlay, in which case the appended bytes are the whole new region).
+    regions = body_regions(z, pe)
+    ov_start = regions[-1][0] if regions and regions[-1][1] == old_len else old_len
+    w, step = _BE._windows.window, _BE._windows.step
+    old_last = ((old_len - ov_start - w) // step) * step if old_len - ov_start >= w else -step
+    tail = z[ov_start + old_last + step:] + appended if old_last >= 0 else z[ov_start:] + appended
+    be = np.asarray(raw["body_byteentropy"], dtype=np.int64).reshape(16, 16) + _body_windows(tail)
+    # Subtract any windows of `tail` that were already counted (the overlap region before the append), i.e. windows
+    # lying entirely in [ov_start + old_last + step, old_len). None do when we start past the last old window.
+    raw["body_byteentropy"] = be.flatten().tolist()
+
+    # body_strings: the appended block's own strings (the guard byte breaks any run at the old overlay's end).
+    _body_string_delta(raw["body_strings"], appended)
+    return np.asarray(extractor.process_raw_features(raw))  # type: ignore[no-untyped-call]
+
+
+def predict_add_section_sums(extractor: SumsFeatureExtractor, z: bytes, name: str, content: bytes, props: list[str]) -> np.ndarray:
+    """C1's prediction of the sums feature vector after a declared add-section, from z alone (body groups up-only).
+
+    The section's content is a new body region (histogram, byte-entropy windows, strings add); the section's declared
+    size/vsize/entropy and characteristics add into their name-keyed signed buckets' positive or negative parts. The
+    tool's layout (padding, where the region actually lands) is A4, as in `predict_add_section`.
+    """
+    raw = _add_section_raw(extractor, z, name, content, props)
+
+    counts = np.asarray(raw["body_histogram"], dtype=np.int64) + np.bincount(np.frombuffer(content, dtype=np.uint8), minlength=256)
+    raw["body_histogram"] = counts.tolist()
+    be = np.asarray(raw["body_byteentropy"], dtype=np.int64).reshape(16, 16) + _body_windows(content)
+    raw["body_byteentropy"] = be.flatten().tolist()
+    _body_string_delta(raw["body_strings"], content)
+
+    # section_split: append the declared section so process_raw_features hashes it into the pos/neg bucket parts.
+    sec = raw["section_split"]
+    if sec:
+        sec["sections"].append({"name": name.strip("\x00").lower(), "size": len(content),
+                                "vsize": len(content), "entropy": _byte_entropy(content), "props": list(props)})
     return np.asarray(extractor.process_raw_features(raw))  # type: ignore[no-untyped-call]
 
 

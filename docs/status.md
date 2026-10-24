@@ -23,10 +23,18 @@ number. Edit primitives verified (in-place edits stay in M; LIEF structural edit
 the A4-gap report). Greedy search over append + add-section (the two operations whose C1 predictors from
 `a_c1_table0.py` are complete). **Smoke result: the same search drives the unconstrained detector down 2.77 logits
 but moves the M_full C4 detector by exactly 0.0000** -- the soundness probe works. Wired into `run/81` step 4.
-**Scoped remainder:** (a) complete C1 predictors for the DOS/header/rich-header and checksum/rename/remove operations
-(predict_content_overwrite models DOS members only, not the Rich header or COFF/optional fields); (b) sums-space C1
-predictors (3,655 features) for the madd-sums/mfull-sums rows -- an A0-style validation; (c) an operating point: the
-full-split PV model at 1% FPR (tau 0.81) detects few pilot malware, so the headline table may need a higher point.
+**Sums-space C1 predictors done (2026-10-24):** `predict_append_sums` / `predict_add_section_sums` in
+`a_c1_table0.py` (refactored `predict_append`/`predict_add_section` to expose their raw dict; A0 regression holds).
+Validated vs re-extraction on 36 clean pilot files: append matches all four body groups 34/36 exactly; add-section's
+body histogram/strings match (section_split is A4 layout, as expected). **Up-only confirmed:** neither predictor
+lowers any of the 1,979 M_full-sums kept features on any file, so the C4-sums rows are sound by construction. The
+adaptive driver is now store-aware (`run/82` runs the sums adaptive column; smoke: ref driven -1.40 logits,
+mfull-sums exactly 0.0). Run 81's operating-point worry is resolved: the s10 defenses detect 40-43/50 pilot malware
+at 1% FPR.
+**Still open (scoped, A0-sized, lower priority):** C1 predictors for the DOS-stub (Rich header), header-field,
+checksum, rename, and remove operations (`predict_content_overwrite` models DOS members only). append + add-section
+already reach the histogram/string/section-bucket parts of PV's hole; these would add the Rich-header and
+header-field parts. The toolkit columns (run 81) exercise those attacks empirically meanwhile.
 
 **2026-10-23 (A1 design drafted).** `docs/direction-A-A1-design.md`: the full plan for Table A1 (defenses as rows,
 seen/held-out/adaptive attacks as columns), the one evasion protocol (1% FPR operating point, re-extraction ground

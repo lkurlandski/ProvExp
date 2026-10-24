@@ -50,11 +50,14 @@ from provexp.data.tabular import load_manifest
 from provexp.featuresets.ember2024.features import PEFeatureExtractor
 from provexp.featuresets.ember2024.features import field_range
 from provexp.featuresets.ember2024.features import merge_import_descriptors
+from provexp.featuresets.ember2024.sums import SumsFeatureExtractor
 
 sys.path.insert(0, str(Path(__file__).parent))
 from a_c1_table0 import has_overrun_section  # noqa: E402
 from a_c1_table0 import predict_add_section  # noqa: E402
+from a_c1_table0 import predict_add_section_sums  # noqa: E402
 from a_c1_table0 import predict_append  # noqa: E402
+from a_c1_table0 import predict_append_sums  # noqa: E402
 from a_c1_table0 import predict_content_overwrite  # noqa: E402
 from a_pv_attacks import load_pilot  # noqa: E402
 
@@ -253,9 +256,19 @@ def lief_preserves(original: bytes, edited: bytes, op: str) -> bool:
 ################################################################################
 
 Operation = tuple[str, Callable[[PEFeatureExtractor, bytes], np.ndarray]]
+# Predictors per feature store: the thrember (merged-imports) space and the sums (re-encoded) space. Both are the
+# C1 declared-effect predictors from a_c1_table0.py; the sums ones add the four re-encoded groups.
+PredictorSet = tuple[Callable[..., np.ndarray], Callable[..., np.ndarray]]
 
 
-def menu(donors: Donors, rng: np.random.Generator, candidates: int) -> list[Operation]:
+def predictors_for(sums: bool) -> PredictorSet:
+    """(append, add-section) C1 predictors for the sums store or the thrember store."""
+    if sums:
+        return predict_append_sums, predict_add_section_sums
+    return predict_append, predict_add_section
+
+
+def menu(donors: Donors, rng: np.random.Generator, candidates: int, preds: PredictorSet) -> list[Operation]:
     """
     A finite candidate set of declared edits, each a function predicting phi(z') with C1 from z alone.
 
@@ -263,6 +276,7 @@ def menu(donors: Donors, rng: np.random.Generator, candidates: int) -> list[Oper
     histogram and string features different ways. Add-section candidates vary the name (chosen to land in different
     signed section-hash buckets) and content, to move the section buckets in either direction.
     """
+    predict_app, predict_sec = preds
     ops: list[Operation] = []
     sizes = [4096, 65536]
     for size in sizes:
@@ -273,14 +287,14 @@ def menu(donors: Donors, rng: np.random.Generator, candidates: int) -> list[Oper
         for payload in payloads:
             blob = b"\x00" + payload
             def _app(ext: PEFeatureExtractor, z: bytes, b: bytes = blob) -> np.ndarray:
-                return predict_append(ext, z, b)
+                return predict_app(ext, z, b)
             ops.append(("app", _app))
     for _ in range(max(0, candidates - len(ops))):
         name = "." + "".join(chr(int(c)) for c in rng.integers(0x61, 0x7b, size=3))
         donor = donors.sections[int(rng.integers(len(donors.sections)))]
         content = donor[1][:4096]
         def _sec(ext: PEFeatureExtractor, z: bytes, n: str = name, c: bytes = content) -> np.ndarray:
-            return predict_add_section(ext, z, n, c, ["MEM_READ", "CNT_INITIALIZED_DATA"])
+            return predict_sec(ext, z, n, c, ["MEM_READ", "CNT_INITIALIZED_DATA"])
         ops.append(("sec", _sec))
     return ops[:candidates]
 
@@ -291,7 +305,7 @@ def _logit(p: float) -> float:
 
 
 def greedy_search(booster: lightgbm.Booster, extractor: PEFeatureExtractor, z: bytes, tau: float, donors: Donors,
-                  queries: int, candidates: int, seed: int) -> dict[str, Any]:
+                  queries: int, candidates: int, seed: int, preds: PredictorSet) -> dict[str, Any]:
     """
     Greedily apply declared edits whose C1-predicted effect lowers the defense's score the most, until the predicted
     score crosses below tau (evaded) or the query budget is spent. Scoring is by C1 prediction only; no file is written.
@@ -308,7 +322,7 @@ def greedy_search(booster: lightgbm.Booster, extractor: PEFeatureExtractor, z: b
     rng = np.random.default_rng(seed)
     while used < queries and p > tau:
         best: tuple[float, str, np.ndarray] | None = None
-        for op_name, predict in menu(donors, rng, candidates):
+        for op_name, predict in menu(donors, rng, candidates, preds):
             if used >= queries:
                 break
             used += 1
@@ -387,10 +401,12 @@ def main() -> None:
     defenses = _parse_defenses(args.defense)
 
     manifest = load_manifest(args.features)
-    if manifest["feature_set"] != "ember2024 (thrember v3)":
-        raise RuntimeError(f"This driver scores in thrember space; {args.features.as_posix()} is "
-                           f"{manifest['feature_set']}. The sums-space predictors are the scoped remainder.")
-    extractor = merge_import_descriptors(PEFeatureExtractor())
+    sums = manifest["feature_set"] == "ember2024-sums"
+    if not sums and manifest["feature_set"] != "ember2024 (thrember v3)":
+        raise RuntimeError(f"Unexpected feature set {manifest['feature_set']} in {args.features.as_posix()}.")
+    extractor: PEFeatureExtractor = SumsFeatureExtractor() if sums else merge_import_descriptors(PEFeatureExtractor())
+    preds = predictors_for(sums)
+    print(f"Scoring in {'sums' if sums else 'thrember'} space ({extractor.dim} features).", flush=True)
 
     malware, goodware = load_pilot(args.pilot_files, args.db)
     if args.num_malware is not None:
@@ -414,7 +430,7 @@ def main() -> None:
                 overrun = has_overrun_section(pe)
             except Exception:
                 overrun = False
-            r = greedy_search(booster, extractor, data, tau, donors, args.queries, args.candidates, args.seed)
+            r = greedy_search(booster, extractor, data, tau, donors, args.queries, args.candidates, args.seed, preds)
             r.update(defense=d, name=name, tau=tau, p_clean=p_clean, truncated=len(data) >= MAX_LENGTH,
                      overrun_section=overrun)
             rows.append(r)
