@@ -14,6 +14,13 @@ first (C1 predictors for header-field and DOS-stub/Rich-header edits, then re-ru
 adaptive column as designed; no scaling for now (nowhere near seeds 0-2 / 2,000 files). **Next:** those predictors.
 
 
+**Run 87 + Table A2 (2026-10-26):** Table A2 assembled (`docs/direction-A-A1-design.md`, "Result: Table A2"). The
+random-name ablation (run 87) held the hypothesis only partly: provenance-chosen names take PV-seen evasion from 11/22 to
+21/22 and PV-all from 15/22 to 22/22, but random names already evade PV often (its hole is broad), and on the
+unconstrained model targeting adds nothing (15 vs 14/47; GAMMA API, which adds imports, beats both there at 24/47). The
+toolkit attacks evade PV-all on 0/22 with ~100 extractions each; the C1-guided search needs a median of 3. User rule
+(2026-10-26): only run jobs of ~10 min or less myself.
+
 **Run 86 (2026-10-26, read): Table A1 complete at pilot scale** (`docs/direction-A-A1-design.md`, "Result").
 Toolkit re-run with the fixed harness matched every prediction: seen 0% on every constrained row; held-out 18% PV-seen,
 0% PV-all and both M_full C4 rows. With the adaptive column: pilot malware still detected after every attack, of 50:

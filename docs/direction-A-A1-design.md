@@ -167,3 +167,32 @@ evaded by no toolkit attack and not by the adaptive search.
 0.0. Shift outputs that no longer parse as PE (2 files, secml-malware bug; `docs/upstream-issues.md` item 4) are
 counted invalid. The adaptive attacker is white-box (it aims names at the defense's highest-gain section buckets).
 Formal leave-one-out PV, baselines (adversarial training), and scale-up remain.
+
+## Result: Table A2 at pilot scale (2026-10-26; runs 84-87)
+
+The adaptive attack against each defense, beside the toolkit attacks. Evasion over the detected pilot malware
+(declared; real re-extraction in parentheses for the C1-guided rows). Queries = model evaluations; for the toolkit
+attacks this is the configured budget (population 10 x 10 iterations; every query is a written and re-extracted file),
+for the C1-guided search the median count (each query scores a C1-predicted vector; no file is written). Extractions =
+files extracted (C1-guided: the clean file plus one per kept step, median). Bytes = median added (toolkit: over all
+runs; C1-guided: over evading runs).
+
+| Target | Attack | Evasion | Queries | Extractions | Bytes added |
+|---|---|---|---|---|---|
+| PV, 4 seen attacks | best toolkit attack (GAMMA API) | 4/22 | ~100 | ~100 | 65 KB |
+| PV, 4 seen attacks | GAMMA sections | 0/22 | ~100 | ~100 | 426 KB |
+| PV, 4 seen attacks | C1-guided, random section names | 11/22 (9) | 66 | 6 | 8 KB |
+| PV, 4 seen attacks | **C1-guided, provenance-chosen names** | **21/22 (19)** | 42 | 4.5 | 12 KB |
+| PV, all 8 attacks | any of the eight toolkit attacks | 0/22 | ~100 each | ~100 each | |
+| PV, all 8 attacks | C1-guided, random section names | 15/22 (13) | 24 | 3 | 8 KB |
+| PV, all 8 attacks | **C1-guided, provenance-chosen names** | **22/22 (20)** | 24 | 3 | 4.6 KB |
+| Unconstrained | best toolkit attack (GAMMA API) | 24/47 | ~100 | ~100 | 92 KB |
+| Unconstrained | C1-guided, random / provenance names | 15/47 (6) / 14/47 (9) | 84 / 72 | 7 / 6 | 15 / 21 KB |
+| C4 sums, M_full | all eight toolkit attacks | 0/41 | ~100 each | ~100 each | |
+| C4 sums, M_full | C1-guided, provenance-chosen names | 0/41 | 12 | 1 | |
+
+Reading: the C1-guided search (candidates scored on predicted features, a handful of extractions per file) is what
+breaks PV; provenance-chosen names roughly double its success on PV-seen (11 -> 21) and close the rest on PV-all
+(15 -> 22). Random names already work often because PV's hole is broad (section buckets carry 40% of it, and a random
+name lands in a trusted bucket with a negative sign often). On the unconstrained model, GAMMA API (import addition,
+which our search does not use) is stronger than our append + add-section search; that row is context, not a claim.
