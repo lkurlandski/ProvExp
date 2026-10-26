@@ -45,6 +45,7 @@ from typing import Callable
 import lightgbm
 import numpy as np
 import pefile
+from sklearn.utils import murmurhash3_32
 
 from provexp.data.tabular import load_manifest
 from provexp.featuresets.ember2024.features import PEFeatureExtractor
@@ -62,7 +63,7 @@ from a_c1_table0 import predict_content_overwrite  # noqa: E402
 from a_pv_attacks import load_pilot  # noqa: E402
 
 __all__ = ["Donors", "HDR_FIELDS", "Operation", "add_imports", "add_section", "greedy_search", "lief_preserves",
-           "menu", "rename_section", "set_header_fields", "zero_directory_entry"]
+           "bucket_names", "menu", "rename_section", "section_bucket", "set_header_fields", "zero_directory_entry"]
 
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -255,10 +256,16 @@ def lief_preserves(original: bytes, edited: bytes, op: str) -> bool:
 # against the 2,568-feature (thrember-space) defenses only, and its evasion is a conservative lower bound.
 ################################################################################
 
-Operation = tuple[str, Callable[[PEFeatureExtractor, bytes], np.ndarray]]
+# An edit the search can try: its name, the C1 predictor of its declared effect phi(z'), the function that
+# materializes exactly that edit on the bytes, and the bytes it adds (for the byte budget).
+Operation = tuple[str, Callable[[PEFeatureExtractor, bytes], np.ndarray], Callable[[bytes], bytes], int]
 # Predictors per feature store: the thrember (merged-imports) space and the sums (re-encoded) space. Both are the
 # C1 declared-effect predictors from a_c1_table0.py; the sums ones add the four re-encoded groups.
 PredictorSet = tuple[Callable[..., np.ndarray], Callable[..., np.ndarray]]
+# The properties of an added data section, as the extractor reads them from add_section(..., code=False).
+DATA_PROPS = ["CNT_INITIALIZED_DATA", "MEM_READ", "MEM_WRITE"]
+SECTION_BUCKETS = 50
+BUCKET_GROUPS = ("section:size_hash_", "section:vsize_hash_", "section:entropy_hash_")
 
 
 def predictors_for(sums: bool) -> PredictorSet:
@@ -268,34 +275,69 @@ def predictors_for(sums: bool) -> PredictorSet:
     return predict_append, predict_add_section
 
 
-def menu(donors: Donors, rng: np.random.Generator, candidates: int, preds: PredictorSet) -> list[Operation]:
-    """
-    A finite candidate set of declared edits, each a function predicting phi(z') with C1 from z alone.
+def section_bucket(name: str) -> tuple[int, int]:
+    """The (bucket, sign) a section name's (name, value) pairs land in, as the extractor's signed FeatureHasher."""
+    h = int(murmurhash3_32(name.strip("\x00").lower(), positive=False))
+    return abs(h) % SECTION_BUCKETS, (-1 if h < 0 else 1)
 
-    Append candidates vary the payload (donor content, random bytes, a single repeated byte value) to move the byte
-    histogram and string features different ways. Add-section candidates vary the name (chosen to land in different
-    signed section-hash buckets) and content, to move the section buckets in either direction.
+
+def bucket_names() -> dict[tuple[int, int], str]:
+    """One short section name per (bucket, sign): the provenance of the section-hash features, inverted."""
+    table: dict[tuple[int, int], str] = {}
+    letters = [chr(c) for c in range(0x61, 0x7b)]
+    for a in letters:
+        for b in letters:
+            for c in letters:
+                table.setdefault(section_bucket(f".{a}{b}{c}"), f".{a}{b}{c}")
+    if len(table) < 2 * SECTION_BUCKETS:
+        raise RuntimeError(f"Only {len(table)} of {2 * SECTION_BUCKETS} (bucket, sign) pairs have a name.")
+    return table
+
+
+def target_buckets(booster: lightgbm.Booster, feature_names: list[str], k: int) -> list[int]:
+    """The k section-hash buckets the defense relies on most (split gain summed over the size/vsize/entropy hashes).
+
+    The adaptive attacker knows the defense (white-box, the strongest adaptive setting); a name in a bucket moves that
+    bucket's three features together, by the section's size, virtual size, and entropy, with the name's sign.
+    """
+    gain = dict(zip(feature_names, booster.feature_importance("gain")))
+    score = [sum(float(gain.get(f"{g}{b}", 0.0)) for g in BUCKET_GROUPS) for b in range(SECTION_BUCKETS)]
+    return [int(b) for b in np.argsort(score, kind="stable")[::-1][:k]]
+
+
+def menu(donors: Donors, rng: np.random.Generator, candidates: int, preds: PredictorSet,
+         targets: list[tuple[int, int]], names: dict[tuple[int, int], str]) -> list[Operation]:
+    """
+    A finite candidate set of declared edits, each with its C1 predictor and the function that materializes it.
+
+    Append candidates vary the payload (random bytes, one repeated byte value, donor content) to move the byte
+    histogram and string features different ways. Add-section candidates are mostly *targeted*: a name chosen from the
+    inverted section hash to land in one of the defense's most-used buckets with a chosen sign (`targets`), with donor
+    content of two sizes; the rest use a random name.
     """
     predict_app, predict_sec = preds
     ops: list[Operation] = []
-    sizes = [4096, 65536]
-    for size in sizes:
-        payloads = [rng.integers(0, 256, size=size, dtype=np.uint8).tobytes(),
-                    bytes([int(rng.integers(0, 256))]) * size]
-        if donors.sections:
-            payloads.append(donors.sections[int(rng.integers(len(donors.sections)))][1][:size])
-        for payload in payloads:
-            blob = b"\x00" + payload
-            def _app(ext: PEFeatureExtractor, z: bytes, b: bytes = blob) -> np.ndarray:
-                return predict_app(ext, z, b)
-            ops.append(("app", _app))
-    for _ in range(max(0, candidates - len(ops))):
+
+    def _append(blob: bytes) -> Operation:
+        return ("app", lambda ext, z: predict_app(ext, z, blob), lambda z: z + blob, len(blob))
+
+    def _section(op: str, name: str, content: bytes) -> Operation:
+        return (op, lambda ext, z: predict_sec(ext, z, name, content, DATA_PROPS),
+                lambda z: add_section(z, name, content, False), len(content))
+
+    size = int(rng.choice([4096, 65536]))
+    ops.append(_append(b"\x00" + rng.integers(0, 256, size=size, dtype=np.uint8).tobytes()))
+    ops.append(_append(b"\x00" + bytes([int(rng.integers(0, 256))]) * size))
+    if donors.sections:
+        ops.append(_append(b"\x00" + donors.sections[int(rng.integers(len(donors.sections)))][1][:size]))
+    n_targeted = max(0, candidates - len(ops) - 1)
+    picks = [int(i) for i in rng.permutation(len(targets))[:n_targeted]]
+    for i in picks:
+        content = donors.sections[int(rng.integers(len(donors.sections)))][1]
+        ops.append(_section("sec", names[targets[i]], content[: int(rng.choice([4096, 65536]))]))
+    while len(ops) < candidates:
         name = "." + "".join(chr(int(c)) for c in rng.integers(0x61, 0x7b, size=3))
-        donor = donors.sections[int(rng.integers(len(donors.sections)))]
-        content = donor[1][:4096]
-        def _sec(ext: PEFeatureExtractor, z: bytes, n: str = name, c: bytes = content) -> np.ndarray:
-            return predict_sec(ext, z, n, c, ["MEM_READ", "CNT_INITIALIZED_DATA"])
-        ops.append(("sec", _sec))
+        ops.append(_section("sec", name, donors.sections[int(rng.integers(len(donors.sections)))][1][:4096]))
     return ops[:candidates]
 
 
@@ -305,53 +347,58 @@ def _logit(p: float) -> float:
 
 
 def greedy_search(booster: lightgbm.Booster, extractor: PEFeatureExtractor, z: bytes, tau: float, donors: Donors,
-                  queries: int, candidates: int, seed: int, preds: PredictorSet) -> dict[str, Any]:
+                  queries: int, candidates: int, seed: int, preds: PredictorSet, targets: list[tuple[int, int]],
+                  names: dict[tuple[int, int], str], cap: int) -> dict[str, Any]:
     """
-    Greedily apply declared edits whose C1-predicted effect lowers the defense's score the most, until the predicted
-    score crosses below tau (evaded) or the query budget is spent. Scoring is by C1 prediction only; no file is written.
+    Greedily apply the declared edit whose C1-predicted effect lowers the defense's score the most, until the
+    declared score crosses below tau (evaded), no candidate helps, or the query or byte budget is spent.
 
-    Returns a summary row: evaded, the predicted adversarial probability, the query count, the operations chosen, and
-    min_delta_logit (the most negative single-step score change seen -- the soundness probe for a C4 row).
+    Each step predicts every candidate from the current (materialized) file and then applies exactly the chosen edit,
+    so edits compose. The declared score is the clean logit plus the sum of the chosen steps' declared changes: the
+    tool's layout effects between steps (A4, outside M) are excluded, as in the single-step case; the real score of
+    the final file is reported alongside (`p_adv_real`, the A4 gap).
+
+    Returns a summary row: evaded (declared), the declared and real adversarial probabilities, the query count, the
+    operations chosen, the bytes added, and min_delta_logit (the most negative declared change of any candidate from
+    any state -- the soundness probe for a C4 row).
     """
     tau_logit = _logit(tau)
     state = z
-    p = float(booster.predict(extractor.feature_vector(state).reshape(1, -1))[0])  # type: ignore[no-untyped-call]
+    p_state = float(booster.predict(extractor.feature_vector(state).reshape(1, -1))[0])  # type: ignore[no-untyped-call]
+    logit_decl = _logit(p_state)
     ops_chosen: list[str] = []
     min_delta = 0.0
-    used = 0
+    used = added = 0
     rng = np.random.default_rng(seed)
-    while used < queries and p > tau:
-        best: tuple[float, str, np.ndarray] | None = None
-        for op_name, predict in menu(donors, rng, candidates, preds):
+    while used < queries and logit_decl > tau_logit:
+        best: tuple[float, Operation] | None = None
+        for op in menu(donors, rng, candidates, preds, targets, names):
             if used >= queries:
                 break
+            if added + op[3] > cap:
+                continue
             used += 1
             try:
-                phi = predict(extractor, state)
+                phi = op[1](extractor, state)
             except Exception:
                 continue
-            p_cand = float(booster.predict(phi.reshape(1, -1))[0])
-            min_delta = min(min_delta, _logit(p_cand) - _logit(p))
-            if best is None or p_cand < best[0]:
-                best = (p_cand, op_name, phi)
-        if best is None or best[0] >= p:
-            break  # no candidate lowered the predicted score; a sound monotone detector stops here
-        # Materialize the chosen edit so the next step predicts from the real bytes (declared edits compose).
-        p, op_name, _ = best
-        ops_chosen.append(op_name)
-        state = _apply_declared(state, op_name, donors, rng)
-    return {"evaded": bool(p <= tau), "p_adv_c1": p, "queries": used, "ops": ",".join(ops_chosen),
-            "num_ops": len(ops_chosen), "min_delta_logit": min_delta, "tau_logit": tau_logit}
-
-
-def _apply_declared(z: bytes, op_name: str, donors: Donors, rng: np.random.Generator) -> bytes:
-    """Materialize one declared edit on the bytes (so a multi-step search composes); append is exact, add-section
-    uses LIEF (its layout is A4, but only the declared part feeds the next C1 prediction via re-parsing)."""
-    if op_name == "app":
-        return z + b"\x00" + rng.integers(0, 256, size=4096, dtype=np.uint8).tobytes()
-    name = "." + "".join(chr(int(c)) for c in rng.integers(0x61, 0x7b, size=3))
-    content = donors.sections[int(rng.integers(len(donors.sections)))][1][:4096]
-    return add_section(z, name, content, False)
+            delta = _logit(float(booster.predict(phi.reshape(1, -1))[0])) - _logit(p_state)
+            min_delta = min(min_delta, delta)
+            if best is None or delta < best[0]:
+                best = (delta, op)
+        if best is None or best[0] >= 0:
+            break  # no candidate lowered the declared score; a sound monotone detector stops here
+        try:
+            state = best[1][2](state)
+        except Exception:
+            break
+        logit_decl += best[0]
+        added += best[1][3]
+        ops_chosen.append(best[1][0])
+        p_state = float(booster.predict(extractor.feature_vector(state).reshape(1, -1))[0])  # type: ignore[no-untyped-call]
+    return {"evaded": bool(logit_decl <= tau_logit), "p_adv_c1": float(1 / (1 + np.exp(-logit_decl))),
+            "p_adv_real": p_state, "evaded_real": bool(p_state <= tau), "queries": used, "ops": ",".join(ops_chosen),
+            "num_ops": len(ops_chosen), "bytes_added": added, "min_delta_logit": min_delta, "tau_logit": tau_logit}
 
 
 ################################################################################
@@ -391,6 +438,9 @@ def main() -> None:
     parser.add_argument("--fpr", type=float, default=0.01)
     parser.add_argument("--queries", type=int, default=100)
     parser.add_argument("--candidates", type=int, default=12)
+    parser.add_argument("--target_buckets", type=int, default=8, help="Section-hash buckets the targeted names aim at.")
+    parser.add_argument("--budget_frac", type=float, default=0.05)
+    parser.add_argument("--budget_min", type=int, default=512 * 1024)
     parser.add_argument("--num_malware", type=int, default=None)
     parser.add_argument("--seed", type=int, default=0)
     args = parser.parse_args()
@@ -412,6 +462,7 @@ def main() -> None:
     if args.num_malware is not None:
         malware = malware[: args.num_malware]
     donors = Donors(goodware)
+    names = bucket_names()
     print(f"Pilot: {len(malware)} malware, {len(goodware)} goodware donors; threat model {args.threat_model}.",
           flush=True)
 
@@ -419,6 +470,8 @@ def main() -> None:
     for d, mdir in defenses.items():
         booster = lightgbm.Booster(model_file=str(mdir / "model.txt"))
         tau = _threshold(mdir / "ts_predictions.parquet", args.fpr)
+        targets = [(b, sign) for b in target_buckets(booster, extractor.feature_names, args.target_buckets)
+                   for sign in (-1, 1)]
         t0 = time.time()
         for name, data in malware:
             phi0 = extractor.feature_vector(data)  # type: ignore[no-untyped-call]
@@ -430,7 +483,9 @@ def main() -> None:
                 overrun = has_overrun_section(pe)
             except Exception:
                 overrun = False
-            r = greedy_search(booster, extractor, data, tau, donors, args.queries, args.candidates, args.seed, preds)
+            cap = max(int(args.budget_frac * len(data)), args.budget_min)
+            r = greedy_search(booster, extractor, data, tau, donors, args.queries, args.candidates, args.seed, preds,
+                              targets, names, cap)
             r.update(defense=d, name=name, tau=tau, p_clean=p_clean, truncated=len(data) >= MAX_LENGTH,
                      overrun_section=overrun)
             rows.append(r)
@@ -439,7 +494,9 @@ def main() -> None:
     results = pl.DataFrame(rows)
     results.write_parquet(args.outdir / "adaptive.parquet")
     report: dict[str, Any] = {"threat_model": args.threat_model, "fpr": args.fpr, "queries": args.queries,
-                              "candidates": args.candidates, "seed": args.seed, "defenses": {}}
+                              "candidates": args.candidates, "target_buckets": args.target_buckets,
+                              "budget_frac": args.budget_frac, "budget_min": args.budget_min, "seed": args.seed,
+                              "defenses": {}}
     for d in defenses:
         r = results.filter(pl.col("defense") == d)
         detected = r.height
@@ -448,6 +505,7 @@ def main() -> None:
         report["defenses"][d] = {
             "detected": detected, "evaded": evaded, "rate": (evaded / detected) if detected else None,
             "min_delta_logit": worst,
+            "evaded_real": int(r["evaded_real"].sum()) if detected else 0,
             "carries_guarantee": d in args.sound,
             "soundness_violation": (d in args.sound) and worst < -1e-6,
             "rate_truncated": _rate(r.filter(pl.col("truncated"))),
