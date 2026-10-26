@@ -49,3 +49,14 @@ zeros) before filing.
 
 `exports:num_exports` is `len(exports_hashed)`, so always 128 (or 0 without exports); `datadirectories` skips the last
 directory, so `reserved_size` and `reserved_virtual_address` are always 0. Could go into the same issue as 2.
+
+## 4. secml-malware: the shift attacks destroy files whose first section has raw offset 0 (found 2026-10-26)
+
+Repository: https://github.com/pralab/secml_malware (vendored, patched copy in `third_party/secml_malware/`).
+`shift_section_by` / `shift_section_by_using_lief` (`secml_malware/utils/pe_operations.py`) insert the gap at
+`liefpe.sections[0].offset`. On files whose first section has `PointerToRawData = 0` (a VMProtect-style layout with
+an uninitialized `.text`; 2 of our 50 pilot malware, e.g. `48d9cc0c...`), that is offset 0: the gap goes in front of
+the MZ header and the result no longer parses as a PE. The GAMMA shift and content-shift attacks then report an
+"evasion" that is a broken file. A fix would insert at the smallest nonzero raw offset of a section with
+`SizeOfRawData > 0` (or at `SizeOfHeaders`). Our harness (`scripts/a1_evaluate.py`) now counts such outputs as invalid,
+not evaded.

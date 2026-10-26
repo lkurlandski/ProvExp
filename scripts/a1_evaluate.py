@@ -13,6 +13,9 @@ One protocol for every cell:
     budget            Gimenez's low budget (population 10, 10 iterations); an attacked file whose added bytes exceed
                       max(--budget_frac x size, --budget_min) counts as not evaded (over_budget)
     ground truth      the attacked file is written, read back, re-extracted, and re-scored; evaded means p_adv <= tau
+    validity          an attacked file that no longer parses as a PE counts as not evaded (invalid): secml-malware's
+                      shift attacks insert at the first section's raw offset, which is 0 on some files (e.g. the
+                      VMProtect layout), so they overwrite the MZ header; a broken file is outside every threat model
 
 The defenses are GBDTs on one feature store (`--features`: its manifest names the extractor); every defense is scored
 with that store's extractor. The quick seen/held-out split (`--seen`) is a quick check only; the formal version is
@@ -20,7 +23,7 @@ leave-one-out (eight PV models; docs/direction-A-A1-design.md, decision 2).
 
 Outputs, in `{outdir}/`:
     results.parquet   one row per (defense, attack, file): p_clean, p_adv, tau, evaded, bytes_added, over_budget, ok,
-                      truncated, seconds
+                      valid, truncated, seconds
     table.json        per defense: tau, detected, per-attack evasion, and per group (seen, held-out) the fraction of
                       detected files evaded by at least one attack of the group, overall and split by truncation
 
@@ -129,11 +132,12 @@ def _work(task: tuple[str, str, str, bytes, float, int]) -> dict[str, Any]:
     out_path = Path(_W["tmp"]) / f"{defense}.{name[:16]}.{atk}"
     start = time.time()
     p_clean = p_adv = float("nan")
-    added, ok, error = 0, False, ""
+    added, ok, valid, error = 0, False, False, ""
     try:
         problem = build_attack(atk, wrapper, _W["section_pop"], _W["api_calls"])
         adv_bytes, p_clean, p_adv = run_attack(problem, wrapper, data, out_path, seed=_W["seed"])
         added, ok = len(adv_bytes) - len(data), True
+        valid = lief.PE.parse(list(adv_bytes)) is not None
     except Exception as e:
         error = f"{type(e).__name__}: {str(e)[:200]}"
         print(f"  WARN {defense} {atk} {name[:12]}: {error}", flush=True)
@@ -141,8 +145,8 @@ def _work(task: tuple[str, str, str, bytes, float, int]) -> dict[str, Any]:
         out_path.unlink(missing_ok=True)
     over = added > cap
     return {"defense": defense, "attack": atk, "name": name, "tau": tau, "p_clean": p_clean, "p_adv": p_adv,
-            "evaded": bool(ok and not over and p_adv <= tau), "bytes_added": added, "over_budget": over, "ok": ok,
-            "truncated": len(data) >= MAX_LENGTH, "error": error, "seconds": time.time() - start}
+            "evaded": bool(ok and valid and not over and p_adv <= tau), "bytes_added": added, "over_budget": over,
+            "ok": ok, "valid": valid, "truncated": len(data) >= MAX_LENGTH, "error": error, "seconds": time.time() - start}
 
 
 ################################################################################
@@ -232,7 +236,8 @@ def main() -> None:
         for atk in args.attacks:
             a = r.filter(pl.col("attack") == atk)
             entry["per_attack"][atk] = {"runs": a.height, "evaded": int(a["evaded"].sum()),
-                                        "failed": int((~a["ok"]).sum()), "over_budget": int(a["over_budget"].sum())}
+                                        "failed": int((~a["ok"]).sum()), "over_budget": int(a["over_budget"].sum()),
+                                        "invalid": int((a["ok"] & ~a["valid"]).sum())}
         for group, atks in (("seen", seen), ("held_out", held_out), ("all", list(args.attacks))):
             entry["groups"][group] = {
                 "all": group_evasion(r, atks),
