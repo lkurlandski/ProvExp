@@ -1,18 +1,18 @@
 # Status
 
-**2026-10-26: runs 81/82/83 read; Table A1 assembled at pilot scale.** After correcting a secml-malware bug (the shift
-attacks insert at `sections[0].offset`, which is 0 on 2 pilot files, so they overwrite the MZ header; the harness now
-counts non-PE outputs as invalid; `docs/upstream-issues.md` item 4), every prediction held except one. Seen evasion 0%
-on every constrained row (17% unconstrained); held-out 18% PV-seen, **0% M_full C4 (features and sums)**, 35-40% M_add
-(header_fields, outside M_add, as expected); adaptive **0 on every C4 row with min_delta_logit exactly 0.0** (run 83
-added the s10 features-as-is rows). **Failed:** adaptive evasion of PV-seen is 0/22 (min -1.19 logits), and the search
-is weak overall (2/47 on the unconstrained reference); it reaches only append + add-section, while PV's hole is mostly
-Rich header + header fields. On the full-data models the same search evades full PV 4/22. **New, unplanned:** PV-seen
-has TPR@1%FPR 56.2% vs 86.7-88.6% for the M_full C4 rows; files still detected after all toolkit attacks: 82% (C4
-M_full sums) vs 36% (PV-seen) vs 42% (unconstrained). **User decisions (2026-10-26):** strengthen the adaptive search
-first (C1 predictors for header-field and DOS-stub/Rich-header edits, then re-run the adaptive column); keep the
-adaptive column as designed; no scaling for now (nowhere near seeds 0-2 / 2,000 files). **Next:** those predictors.
+**2026-10-26 (end of session): direction A complete at pilot scale; Tables A1 and A2 done.** Every go/no-go check and
+falsifiable outcome passed (`docs/direction-A-summary.md`). Table A1 (`docs/direction-A-A1-design.md`, "Result"): the
+four C4 rows are never moved by any attack (seen, held-out, adaptive; largest score change exactly 0.0), the M_full
+rows keep 86.7-88.6% TPR at 1% FPR and still detect 40-41 of 50 pilot malware after every attack; PV (4 or all 8
+attacks) holds against the toolkit but the C1-guided adaptive search evades it on 21-22 of 22, and it costs ~35 TPR
+points. Table A2: the search needs 3-4.5 extractions per file vs ~100 per toolkit attack; provenance-chosen section
+names double its success on PV-seen (random-name ablation, run 87). **Next (recommended, user to confirm):** the
+expert-set row (Gimenez et al.'s 40 features; get the list from arXiv 2508.10038 and map it to thrember v3), and the
+cost column; later, on the user's decision: adversarial-training row, a second toolkit for held-out attacks,
+leave-one-out PV, scale. **User rules from this session:** run only jobs of ~10 min or less myself; never hard-code
+worker caps in Python (16 is the run/ default only).
 
+Session log (2026-10-26), newest first:
 
 **Direction A summary (2026-10-26):** `docs/direction-A-summary.md` -- every check and falsifiable outcome passed at
 pilot scale; missing: expert-set row, adversarial-training row, second toolkit, leave-one-out, scale, cost column.
@@ -44,6 +44,21 @@ one (steps did not compose), and section names were random rather than chosen th
 toolkit byte budget applies, and the real re-extracted score is reported beside the declared one. Result (declared /
 real re-extraction): **PV-seen evaded 21/22 / 19/22**, unconstrained 14/47 / 9/47, **all four C4 rows 0/0 with
 min_delta_logit exactly 0.0**. The Rich-header predictor is no longer needed for the separation.
+
+**Runs 81-83 read (morning; superseded by runs 84-86):** After correcting a secml-malware bug (the shift
+attacks insert at `sections[0].offset`, which is 0 on 2 pilot files, so they overwrite the MZ header; the harness now
+counts non-PE outputs as invalid; `docs/upstream-issues.md` item 4), every prediction held except one. Seen evasion 0%
+on every constrained row (17% unconstrained); held-out 18% PV-seen, **0% M_full C4 (features and sums)**, 35-40% M_add
+(header_fields, outside M_add, as expected); adaptive **0 on every C4 row with min_delta_logit exactly 0.0** (run 83
+added the s10 features-as-is rows). **Failed:** adaptive evasion of PV-seen is 0/22 (min -1.19 logits), and the search
+is weak overall (2/47 on the unconstrained reference); it reaches only append + add-section, while PV's hole is mostly
+Rich header + header fields. On the full-data models the same search evades full PV 4/22. **New, unplanned:** PV-seen
+has TPR@1%FPR 56.2% vs 86.7-88.6% for the M_full C4 rows; files still detected after all toolkit attacks: 82% (C4
+M_full sums) vs 36% (PV-seen) vs 42% (unconstrained). **User decisions (2026-10-26):** strengthen the adaptive search
+first (C1 predictors for header-field and DOS-stub/Rich-header edits, then re-run the adaptive column); keep the
+adaptive column as designed; no scaling for now (nowhere near seeds 0-2 / 2,000 files). **Next:** those predictors.
+
+
 
 ---
 
