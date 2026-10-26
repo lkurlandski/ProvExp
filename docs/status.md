@@ -1,5 +1,20 @@
 # Status
 
+**2026-10-26: runs 81/82/83 read; Table A1 assembled at pilot scale.** After correcting a secml-malware bug (the shift
+attacks insert at `sections[0].offset`, which is 0 on 2 pilot files, so they overwrite the MZ header; the harness now
+counts non-PE outputs as invalid; `docs/upstream-issues.md` item 4), every prediction held except one. Seen evasion 0%
+on every constrained row (17% unconstrained); held-out 18% PV-seen, **0% M_full C4 (features and sums)**, 35-40% M_add
+(header_fields, outside M_add, as expected); adaptive **0 on every C4 row with min_delta_logit exactly 0.0** (run 83
+added the s10 features-as-is rows). **Failed:** adaptive evasion of PV-seen is 0/22 (min -1.19 logits), and the search
+is weak overall (2/47 on the unconstrained reference); it reaches only append + add-section, while PV's hole is mostly
+Rich header + header fields. On the full-data models the same search evades full PV 4/22. **New, unplanned:** PV-seen
+has TPR@1%FPR 56.2% vs 86.7-88.6% for the M_full C4 rows; files still detected after all toolkit attacks: 82% (C4
+M_full sums) vs 36% (PV-seen) vs 42% (unconstrained). **User decisions (2026-10-26):** strengthen the adaptive search
+first (C1 predictors for header-field and DOS-stub/Rich-header edits, then re-run the adaptive column); keep the
+adaptive column as designed; no scaling for now (nowhere near seeds 0-2 / 2,000 files). **Next:** those predictors.
+
+---
+
 **2026-10-24 (end of session): Table A1 machinery built; runs 81/82 running.** All of Table A1's build order
 (`docs/direction-A-A1-design.md`) is implemented and committed; the user is running `run/82` (`run/81` was running at
 hand-off). The decisive result already showed in smoke tests: the **same** adaptive search drives the unconstrained
