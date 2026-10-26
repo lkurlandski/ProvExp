@@ -177,11 +177,11 @@ def main() -> None:
     parser.add_argument("--budget_frac", type=float, default=0.05)
     parser.add_argument("--budget_min", type=int, default=512 * 1024)
     parser.add_argument("--num_malware", type=int, default=None, help="Cap on malware files (for smoke tests).")
-    parser.add_argument("--num_workers", type=int, default=8, help="Processes over tasks (<= 16).")
+    parser.add_argument("--num_workers", type=int, default=8, help="Processes over tasks.")
     parser.add_argument("--seed", type=int, default=0)
     args = parser.parse_args()
-    if args.num_workers > 16:
-        raise ValueError("At most 16 workers (run/ resource budget).")
+    if args.num_workers < 1:
+        raise ValueError(f"--num_workers must be >= 1, got {args.num_workers}.")
 
     lief.logging.disable()
     args.outdir.mkdir(parents=True, exist_ok=True)
