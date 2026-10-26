@@ -145,3 +145,25 @@ the same model breaks the empirical defense and certifies its own ([[symmetry-ni
 4. **Malware set:** the 50 detected pilot malware for the first pass.
 5. **Budgets (defaults, user may override):** byte cap = max(5% of file size, 512 KB); adaptive query budget = 100
    scored candidates, matching the toolkit's population 10 x 10 iterations.
+
+## Result: Table A1 at pilot scale (2026-10-26; runs 84, 85, 86)
+
+10% subsample of every split, seed 0, 50 pilot malware, threat model M_full, 1% FPR thresholds, byte cap
+max(5%, 512 KB). Evasion is over the pilot malware each detector detects (column "det."). Adaptive = the C1-declared
+targeted search (run 84/85; real re-extraction in parentheses). "Still detected" = pilot malware (of 50) detected and
+evaded by no toolkit attack and not by the adaptive search.
+
+| Detector | Test AUC | TPR @ 1% FPR | Det. | Seen | Held-out | Adaptive | Still detected |
+|---|---|---|---|---|---|---|---|
+| Unconstrained | 0.9964 | 93.5% | 47 | 17% | 53% | 30% (19%) | 20/50 |
+| PV, 4 seen attacks (Gimenez) | 0.9537 | 56.2% | 22 | 0% | 18% | 95% (86%) | 1/50 |
+| PV, all 8 attacks | 0.9443 | 53.8% | 22 | 0% | 0% (all seen) | 100% (91%) | 0/50 |
+| C4 features, M_add | 0.9946 | 91.2% | 46 | 0% | 35%* | 0% (0%) | 30/50 |
+| C4 sums, M_add | 0.9953 | 92.4% | 43 | 0% | 40%* | 0% (0%) | 26/50 |
+| C4 features, M_full | 0.9919 | 86.7% | 40 | 0% | 0% | 0% (0%) | 40/50 |
+| C4 sums, M_full | 0.9930 | 88.6% | 41 | 0% | 0% | 0% (0%) | 41/50 |
+
+\* header_fields (and one dos_extend), edits outside M_add. Every C4 row's largest adaptive score change is exactly
+0.0. Shift outputs that no longer parse as PE (2 files, secml-malware bug; `docs/upstream-issues.md` item 4) are
+counted invalid. The adaptive attacker is white-box (it aims names at the defense's highest-gain section buckets).
+Formal leave-one-out PV, baselines (adversarial training), and scale-up remain.

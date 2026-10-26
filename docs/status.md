@@ -14,10 +14,15 @@ first (C1 predictors for header-field and DOS-stub/Rich-header edits, then re-ru
 adaptive column as designed; no scaling for now (nowhere near seeds 0-2 / 2,000 files). **Next:** those predictors.
 
 
+**Run 86 (2026-10-26, read): Table A1 complete at pilot scale** (`docs/direction-A-A1-design.md`, "Result").
+Toolkit re-run with the fixed harness matched every prediction: seen 0% on every constrained row; held-out 18% PV-seen,
+0% PV-all and both M_full C4 rows. With the adaptive column: pilot malware still detected after every attack, of 50:
+C4 M_full sums 41, features 40; unconstrained 20; PV-seen 1; PV-all 0. Next: Table A2 (the adaptive attack's own table,
+mostly in run 84/85's output).
+
 **Run 85 (2026-10-26, read): PV built from all eight toolkit attacks (s10 PV-all; AUC 0.944, TPR@1%FPR 53.8%) is
 evaded by the targeted adaptive search on 22/22 detected pilot malware (20/22 on re-extraction; median 4.6 KB, 24
-queries).** Observing more attacks does not close PV's hole. **Waiting on the user:** `run/86_a1_toolkit_rerun.sh`
-(toolkit columns with the fixed harness, seven defenses incl. PV-all, ~1.5 h). Then Table A2.
+queries).** Observing more attacks does not close PV's hole. Run 86 then re-ran the toolkit columns.
 
 **Run 84 (2026-10-26, read): the adaptive column now separates decisively.** Step 1 of the plan (which edits reach
 PV-seen's hole, weighted by its gain; hole = 44% of PV-seen's split gain) showed 72% of the hole is reachable by

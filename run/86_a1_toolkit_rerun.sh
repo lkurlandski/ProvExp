@@ -8,7 +8,8 @@
 # M_full C4 rows, 35-40% for the M_add rows (header_fields, outside M_add) -- with the shift outputs on 16344ac4 and
 # 48d9cc0c now counted invalid; PV-all ~0% on every attack (all eight are its seen attacks).
 #
-# Estimate: ~1.5 h on 16 workers (run 81's step 3: 1,912 attack runs in 80 min; PV-all adds ~180 runs).
+# Estimate: ~1.5 h on 16 workers (run 81's step 3: 1,912 attack runs in 80 min; PV-all adds ~180 runs). The user ran it
+# with --num_workers 32 (2026-10-26): 2,088 attack runs in 47 min. Result: as hypothesised, exactly; PV-all 0 on all eight.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 source env/bin/activate
@@ -30,7 +31,7 @@ python scripts/a1_evaluate.py \
   --defense madd-sums=$M/seed-0-s10-madd-sums \
   --defense mfull-feat=$M/seed-0-s10-mfull-feat \
   --defense mfull-sums=$M/seed-0-s10-mfull-sums \
-  --num_workers 16 \
+  --num_workers 32 \
   --seed 0 \
   &> "$LOG"
 
