@@ -6,7 +6,9 @@
 # runs 82/83. FOR ACADEMIC SECURITY RESEARCH ONLY: the C1-declared adaptive soundness test against our own detectors on
 # our own pilot malware. A negative min_delta_logit on a --sound row is an A1-A4 bug (debug via Table A0).
 #
-# Estimate: ~10 min for 50 malware x 6 defenses (C1 predictions plus one LIEF write per chosen step).
+# Took 38 min (2026-10-26): ref 24 min (most files use all 100 queries, each kept step is a LIEF write + re-extraction),
+# pv-seen 5 min, each sound row ~2.3 min (stops after the first 12 candidates). Result: evaded (declared / real)
+# ref 14/47 / 9, pv-seen 21/22 / 19, all four C4 rows 0 with min_delta_logit exactly 0.0.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 source env/bin/activate

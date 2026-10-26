@@ -13,6 +13,17 @@ M_full sums) vs 36% (PV-seen) vs 42% (unconstrained). **User decisions (2026-10-
 first (C1 predictors for header-field and DOS-stub/Rich-header edits, then re-run the adaptive column); keep the
 adaptive column as designed; no scaling for now (nowhere near seeds 0-2 / 2,000 files). **Next:** those predictors.
 
+
+**Run 84 (2026-10-26, read): the adaptive column now separates decisively.** Step 1 of the plan (which edits reach
+PV-seen's hole, weighted by its gain; hole = 44% of PV-seen's split gain) showed 72% of the hole is reachable by
+add-section, already in the search; the Rich header (DOS stub) holds most of the rest (27%). The search was weak for
+two reasons, now fixed in `scripts/a1_adaptive.py`: it materialized a freshly drawn random edit instead of the chosen
+one (steps did not compose), and section names were random rather than chosen through the inverted section hash
+(bucket, sign) at the defense's highest-gain buckets. Also: predicted props now match the materialized section, the
+toolkit byte budget applies, and the real re-extracted score is reported beside the declared one. Result (declared /
+real re-extraction): **PV-seen evaded 21/22 / 19/22**, unconstrained 14/47 / 9/47, **all four C4 rows 0/0 with
+min_delta_logit exactly 0.0**. The Rich-header predictor is no longer needed for the separation.
+
 ---
 
 **2026-10-24 (end of session): Table A1 machinery built; runs 81/82 running.** All of Table A1's build order
