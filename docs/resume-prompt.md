@@ -1,75 +1,63 @@
-# Resume: ProvExp (after 2026-10-24) — direction A, Table A1 machinery built, reading runs 81/82
+# Resume: ProvExp (after 2026-10-26) — direction A done at pilot scale; screen the second application
 
-Read `CLAUDE.md`, then `docs/status.md`'s top block, `PLAN.md` ("Next steps (end of 2026-10-24)"),
-`docs/direction-A-A1-design.md` (the A1 plan, with the five decisions recorded at the end),
-`docs/direction-A-mock.md` (Table A1 target), and `docs/direction-A-threat-model.md` (checks in S4/S5/S6); the model
-is in `docs/feature-provenance-model.md`. **Start by recapping the big picture for the user in plain language** (where
-the research stands, what Table A1 shows, what is next) before asking anything. Be harsh about novelty; never raise
-deadlines; bring any no-go to the user before dropping anything; no result may rest on an extractor quirk.
+Read `CLAUDE.md`, then `docs/status.md`'s top block, `PLAN.md` (Thesis, Directions incl. **A'**, and "Next steps (end
+of 2026-10-26)"), and `docs/direction-A-summary.md` (where A stands: checks, mock vs measured, gaps, harsh notes). The
+results tables are in `docs/direction-A-A1-design.md` ("Result: Table A1", "Result: Table A2"); the model is in
+`docs/feature-provenance-model.md`; related work in `docs/literature-2026-10-22.md`. **Start by recapping the big
+picture for the user in plain language** (where the research stands, what direction A showed, what is next) before
+asking anything. Be harsh about novelty; never raise deadlines; bring any no-go to the user before dropping anything;
+no result may rest on an extractor quirk. Run only jobs of ~10 minutes or less yourself (estimate from the slowest
+case first); anything longer goes to the user as a `run/` script (default 16 workers; never cap workers in Python).
 
-## The thesis and Table A1
+## Where the research stands
 
-- Thesis: feature provenance computes what an attacker's edits can do to a malware detector's features (side effects,
-  coupling, reachable values, directions), which robust-detector work otherwise gets by hand or by running attacks.
-- Table A1 (approved target): monotone (guaranteed-robust) GBDTs whose feature directions come from the extractor
-  (C4), against Gimenez et al.'s perturbation-vector (PV) selection, on **seen / held-out / adaptive** attacks. Rows:
-  unconstrained reference; PV-seen; C4 on features (M_add, M_full); C4 on sums (M_add, M_full). The layer-2
-  re-encodings ("sums": raw counts, region-restricted, split signed buckets, merged imports) recover the accuracy
-  soundness costs. The decisive cell is **adaptive**: 0 for the C4 rows by construction, > 0 for PV-seen.
-- All three screening gates passed 2026-10-23 (checks 1/2/3; see the "Earlier" block in PLAN.md and S4/S5/S6).
+- Thesis: feature provenance (instrumenting the extractor) computes what an attacker's edits can do to a malware
+  detector's features, which robust-detector and realizable-attack work otherwise gets by hand or by running attacks.
+- **Direction A (core) is complete at pilot scale** (10% subsample, seed 0, 50 pilot malware, M_full, 1% FPR); every
+  go/no-go check and falsifiable outcome passed:
+  - Monotone GBDTs with directions from the extractor (C4) are never moved by any attack — toolkit (seen and
+    held-out), and the C1-guided adaptive search (largest score change exactly 0.0, also on real re-extraction). The
+    M_full rows keep 86.7% (features) / 88.6% (sums re-encoding) TPR vs 93.5% unconstrained and still detect 40-41/50
+    pilot malware after every attack (unconstrained 20/50).
+  - Gimenez et al.'s PV selection, built from 4 or all 8 secml-malware attacks, holds against those attacks but costs
+    ~35 TPR points (56.2% / 53.8%) and falls to the adaptive search on 21/22 and 22/22 files it detects.
+  - Table A2: the adaptive search needs 3-4.5 extractions per file (toolkit attacks ~100); provenance-chosen section
+    names (inverting the section hash for the bucket and sign wanted) take PV-seen from 11/22 (random names) to 21/22.
+- Gaps (in `docs/direction-A-summary.md`): expert-set row, cost column, adversarial-training row, a second toolkit for
+  held-out attacks, leave-one-out PV, scale. The main open risk is novelty, not the results: the monotone guarantee is
+  Gimenez's and Incer's; ours is deriving the threat model's effect on features automatically.
 
-## What this session (2026-10-24) built — all committed
+## Do next (agreed with the user, 2026-10-26)
 
-- **Five A1 decisions taken** (end of `docs/direction-A-A1-design.md`): 10% subsample of every split for the sums
-  featurization first; the proposed seen/held-out split is a **quick check only**, with **leave-one-out** (8 PV
-  models) the formal version later; baselines later; 50 pilot malware; budgets max(5%, 512 KB) bytes, 100 queries.
-- **Sums extractor** `src/provexp/featuresets/ember2024/sums.py` (`SumsFeatureExtractor`, 3,655 features), tests
-  `tests/test_ember2024_sums.py`; `scripts/featurize.py --extractor sums --every 10`; `scripts/a_directions.py
-  --extractor sums` → `artifacts/experiments/a_directions_sums/`.
-- **Run 80 (read):** the 10% sums store (`artifacts/features/ember2024-sums-10`, 0.90 h) and 5 GBDTs. Sums rows beat
-  features-as-is: test AUC 0.99527 vs 0.99458 (M_add), 0.99296 vs 0.99189 (M_full), vs 0.99638 unconstrained.
-- **Harness** `scripts/a1_evaluate.py` (toolkit columns: 8 attacks x defenses, 1% FPR, re-extracted ground truth,
-  seen/held-out split by truncation) and **adaptive search** `scripts/a1_adaptive.py` (scores by **C1-declared
-  effect**, not real LIEF re-extraction — see [[a1-adaptive-c1-ground-truth]]; C4 rows 0 by construction, a negative
-  `min_delta_logit` on a `--sound` row is an A1-A4 bug). Store-aware (thrember or sums).
-- **Sums-space C1 predictors** `predict_append_sums` / `predict_add_section_sums` in `scripts/a_c1_table0.py`
-  (`predict_append`/`predict_add_section` refactored to expose their raw dict; A0 regression unchanged). Validated vs
-  re-extraction (append exact on 34/36 clean files) and **confirmed up-only** on all 1,979 M_full-sums kept features.
-- **`a_pv_hole.py --attacks ... --tag`** for PV-seen (all-8 reproduces run 78 exactly).
-- Run scripts: `run/80_a1_sums.sh` (done), `run/81_a1_toolkit.sh` (PV-seen GBDT + toolkit + thrember adaptive),
-  `run/82_a1_adaptive_sums.sh` (sums adaptive).
-
-## Do first — read the running/finished runs
-
-**The user is running `run/82` (and `run/81` was running at hand-off).** When they finish, read:
-- `artifacts/experiments/a1/toolkit/table.json` — per defense: `tau`, `detected`, per-attack evasion, and per group
-  (seen / held-out / all) the fraction evaded, split truncated/untruncated.
-- `artifacts/experiments/a1/adaptive/adaptive.json` (thrember) and `artifacts/experiments/a1/adaptive_sums/adaptive.json`
-  (sums) — per defense: `detected`, `evaded` (C1-declared), `min_delta_logit`, `soundness_violation`.
-
-**Expected / what to check (state as hypotheses, report failures as such):** seen evasion ~0 everywhere; held-out
-evasion > 0 for PV-seen (its hole), ~0 for the M_full C4 rows; adaptive evasion **0 for every C4 row** (any nonzero on
-a `--sound` row is an A1-A4 bug — debug via Table A0 / `a_c1_table0.py`, do not accept as evasion) and > 0 for the
-unconstrained reference and PV-seen. If PV-seen's adaptive evasion is ~0 (append+add-section may not reach its hole,
-which skews to the Rich header + header fields — the scoped remainder below), report it: the separation then rests on
-the held-out column + the "no attack runs needed" argument, which the mock flags as not enough alone.
-
-## Then
-
-1. **Assemble Table A1** from the three columns (`docs/direction-A-mock.md`). Lead with TPR at 1% FPR (AUC saturated).
-   Decide with the user: is the separation decisive enough to scale (seeds 0-2, 2,000 files, user-run), or strengthen
-   the adaptive attack first?
-2. **Scoped remainder (A0-sized, lower priority):** C1 predictors for the DOS-stub (Rich header), header-field,
-   checksum, rename, and remove operations, so the adaptive search reaches the Rich-header/header-field parts of PV's
-   hole (`predict_content_overwrite` models DOS members only). Each needs its EMBER readout mirrored and an A0-style
-   validation. append + add-section already reach the histogram/string/section-bucket parts.
-3. Then Table A2 (the adaptive attack's own table), then A2 (the second application).
-4. Later: the formal leave-one-out PV experiment; full-scale numbers; B and C screening; clean out the old direction's
-   materials; update `CLAUDE.md` conventions. The user still owes the upstream thrember report (`docs/upstream-issues.md`).
+1. **Screen the second application on paper, three candidates side by side** — no code before one passes:
+   - **A'** (the user found it "pretty intriguing"): realizing feature-space attacks in the problem space, including
+     hashed features (Severi et al. ruled them out; Rosenberg/Pierazzi et al. use hand-written modifiers). Table A2's
+     search is half of it. `PLAN.md`, Directions.
+   - **B**: auditing raw-byte detectors for backdoors/shortcuts (edge only for triggers in shared or hashed content).
+   - **C**: diagnosing evasion through disagreement between heterogeneous ensemble members (must beat score
+     disagreement where scores are silent).
+   For each: the screening criteria (`CLAUDE.md`, Framework conventions: must cross the feature-problem gap in a way
+   only provenance makes cheap, against the realistic alternative), a mock of its paper table with the model component
+   behind each column, a falsifiable go/no-go check, and a harsh read of the closest work on the same *task* (read the
+   papers, do not rely on memory). Bring the mocks to the user before building.
+2. **In parallel, two cheap direction-A items:** the expert-set row (Gimenez et al.'s 40 hand-picked features — ask
+   the user whether the paper, arXiv 2508.10038, is in `papers/` or may be fetched; write out the mapping onto
+   thrember v3 feature names for the user to check before training one ~2-min GBDT on the 10% store) and the
+   cost-to-derive column (run 78's attack runs vs one pass over the extractor; bookkeeping).
+3. Later, with the scale-up and on the user's decision: adversarial-training row, second toolkit, leave-one-out PV,
+   seeds 0-2 and full splits. Deferred: the framework/theory section (waits for the applications; no manuscript edits
+   before they survive screening).
 
 ## Notes
 
+- Key files: `scripts/a1_evaluate.py` (toolkit columns; counts non-PE outputs invalid), `scripts/a1_adaptive.py`
+  (C1-guided adaptive search: exact composition of chosen edits, targeted names via `bucket_names` /
+  `target_buckets`, byte budget, declared and real scores), `scripts/a_c1_table0.py` (C1 predictors), runs 80-87 in
+  `run/` with their runtimes. Outputs under `artifacts/experiments/a1/` (`toolkit_v2/` supersedes `toolkit/`;
+  `adaptive_targeted/`, `adaptive_pv_all/`, `adaptive_random_names/` supersede `adaptive/`, `adaptive_sums/`,
+  `adaptive_s10feat/`).
+- Runtimes: the adaptive search takes ~25 min on the unconstrained model (full query budget on most files), ~5 min per
+  PV row, ~2 min per sound row; the toolkit columns took 47 min on 32 workers.
+- The user still owes the upstream reports in `docs/upstream-issues.md` (thrember item 1; secml-malware item 4).
 - `papers/`, `REVIEW*.md`, `make-manuscript.sh` are untracked and not mine to commit; leave them.
-- Attack sweeps parallelise over files (<=16 workers). The adaptive search is C1-only (no genetic engine), a few
-  minutes. GBDTs are ~1-2 min on the 10% store. Full featurization is ~10.5 h (run long jobs via a `run/` script).
 - Everything uses the quirk-fixed (merged-imports) extractor; the sums extractor includes it.

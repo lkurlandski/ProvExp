@@ -84,3 +84,7 @@ Direction A is a go at pilot scale. Before moving to the second application, add
 a reviewer reads Table A1: the expert-set row (item 1: get the paper's list and map it, then one ~2-min GBDT) and the cost column (item 6, bookkeeping). The
 adversarial-training baseline, the second toolkit, leave-one-out, and scale are larger and can come with the
 scale-up, on the user's decision.
+
+**Flip side noted (2026-10-26):** the same machinery may give a second application, A' — realizing feature-space
+attacks in the problem space (including hashed features, by inverting the hash for the bucket and sign wanted). Table
+A2's search is half of it. Recorded in `PLAN.md` (Directions, A'); to be screened next to B and C.

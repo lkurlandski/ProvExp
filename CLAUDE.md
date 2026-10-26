@@ -17,9 +17,11 @@ and manuscript remain as source material. Deadlines and conference cycles are no
   worked example, coverage of real transformations) and `docs/literature-2026-10-22.md` (related work for the new
   direction). Be harsh about our own novelty: read the closest work on the same *task* before building (user,
   2026-10-22).
-- Direction A: `docs/direction-A-mock.md` (the target tables, baselines, go/no-go checks) and
-  `docs/direction-A-threat-model.md` (threat models M_add / M_shift / M_full, the direction table and re-encodings).
-  `docs/upstream-issues.md`: thrember bugs for the user to report upstream.
+- Direction A: `docs/direction-A-summary.md` (where A stands at pilot scale: checks, mock vs measured, gaps; read
+  this first), `docs/direction-A-mock.md` (the target tables, baselines, go/no-go checks),
+  `docs/direction-A-threat-model.md` (threat models M_add / M_shift / M_full, the direction table and re-encodings,
+  Table A0 in S6), and `docs/direction-A-A1-design.md` (Table A1/A2 design, decisions, and results).
+  `docs/upstream-issues.md`: thrember (and secml-malware) bugs for the user to report upstream.
 - `docs/graveyard.md`: ideas and directions that did not pan out and why.
 - Old direction, for reference only: `docs/archive/PLAN-explanation-provenance-2026-10-21.md`, `docs/experiments/`
   (cp, pb1, pf1, trigger, cm, audit), `docs/theory.md`, `docs/appendix.md`, `docs/related_work.md`,
@@ -45,7 +47,10 @@ and manuscript remain as source material. Deadlines and conference cycles are no
   the trigger (trigger_select, trigger_poison, trigger_validate, trigger_explain, trigger_tables); PF1 (pf1,
   pf1_resolution, pf_malconv); 3-A (cm_check, cm_shared, cm_triage, cm_tables); 3-C audit (audit_*, incl. audit_mitigate;
   cm_global); the manuscript's figure data (paper_figures -> `manuscript/assets/data/`); shared
-  discovery/transplant machinery (shortcuts, shortcuts_transplant). Dropped experiments are under `scripts/archive/`.
+  discovery/transplant machinery (shortcuts, shortcuts_transplant). Direction A: a_directions (C4 directions per
+  threat model), a_c1_table0 (C1 predictors and Table A0), a_pv_attacks / a_pv_hole (secml-malware attacks, PV
+  selection and its hole), a1_evaluate (toolkit columns), a1_adaptive (C1-guided adaptive search); the sums
+  re-encoding is `src/provexp/featuresets/ember2024/sums.py`. Dropped experiments are under `scripts/archive/`.
 - **Rankings break ties by a seeded permutation, never by position or index** (`ablation.element_order` /
   `window_order` with `tiebreak`, `pf1.feature_order`), and treat scores within 1e-9 (relative) as tied: equal scores
   are common (features or bytes with identical provenance; occlusion windows that change nothing).
@@ -71,9 +76,11 @@ and manuscript remain as source material. Deadlines and conference cycles are no
 - **Work at pilot scale** (decided 2026-10-08): do most of the research on the ~100-file pilot subset and one seed;
   scale up (2,000 files, seeds 0–2) only for final numbers, and only when the user decides.
 - **Do not run long or resource-intensive jobs** (featurization, training, large sweeps, the full test suite while
-  the user's jobs run) without asking. Smoke-test on a small slice, then give the user the exact command.
-- **Resources in `run/` scripts:** at most 16 workers or threads and 2 GPUs (the user cut runs 38-40 down to these,
-  2026-10-12). Never edit a `run/` script while it runs (bash reads it as it goes); sync its comments afterwards.
+  the user's jobs run) without asking. Run yourself only jobs estimated at **~10 minutes or less**, estimating from
+  the slowest case (user, 2026-10-26); otherwise smoke-test on a small slice and give the user a `run/` script.
+- **Resources in `run/` scripts:** default to at most 16 workers or threads and 2 GPUs (the user cut runs 38-40 down
+  to these, 2026-10-12); the user may raise them, so never enforce the cap in Python (2026-10-26).
+  Never edit a `run/` script while it runs (bash reads it as it goes); sync its comments afterwards.
 - **Explain plainly.** Lead with the plain-language version of an argument (what is computed, what it is compared
   with, why it matters); define terms and avoid dense shorthand. The user could not follow a jargon-heavy explanation
   (2026-10-12).

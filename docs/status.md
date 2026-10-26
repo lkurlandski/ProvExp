@@ -6,10 +6,12 @@ four C4 rows are never moved by any attack (seen, held-out, adaptive; largest sc
 rows keep 86.7-88.6% TPR at 1% FPR and still detect 40-41 of 50 pilot malware after every attack; PV (4 or all 8
 attacks) holds against the toolkit but the C1-guided adaptive search evades it on 21-22 of 22, and it costs ~35 TPR
 points. Table A2: the search needs 3-4.5 extractions per file vs ~100 per toolkit attack; provenance-chosen section
-names double its success on PV-seen (random-name ablation, run 87). **Next (recommended, user to confirm):** the
-expert-set row (Gimenez et al.'s 40 features; get the list from arXiv 2508.10038 and map it to thrember v3), and the
-cost column; later, on the user's decision: adversarial-training row, a second toolkit for held-out attacks,
-leave-one-out PV, scale. **User rules from this session:** run only jobs of ~10 min or less myself; never hard-code
+names double its success on PV-seen (random-name ablation, run 87). **Next (agreed with the user):** screen
+the second application on paper, three candidates side by side -- A' (realizing feature-space attacks in the problem
+space; `PLAN.md`, Directions), B, C -- and, in parallel, A's expert-set row (needs Gimenez et al.'s paper, arXiv
+2508.10038) and cost column. Later, with the scale-up: adversarial-training row, second toolkit, leave-one-out PV,
+scale. The framework/theory section waits for the applications. Pick up at `docs/resume-prompt.md`.
+**User rules from this session:** run only jobs of ~10 min or less myself; never hard-code
 worker caps in Python (16 is the run/ default only).
 
 Session log (2026-10-26), newest first:

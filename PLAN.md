@@ -48,42 +48,55 @@ introduction and a simple baseline (writing decision for later).
 - **C. Diagnosing evasion through disagreement between heterogeneous ensemble members.** Baseline: Smutz & Stavrou's
   mutual agreement (score disagreement); C must win where scores are silent (e.g., both members evaded) or classify
   the cause. PASA is the nearest attribution-based detector (not malware).
+- **A' (candidate, noted 2026-10-26, user: "pretty intriguing"; to screen next to B and C). The flip side of A:
+  realizing feature-space attacks in the problem space.** A feature-space attacker (gradient or search on the feature
+  vector) produces a target vector; C1/C4 tell which loader-safe edits in M reach which feature changes, so the
+  provenance can turn the target into concrete file edits, including through hashed features (pick a section name
+  or import by inverting the hash for the bucket and sign wanted), which Severi et al. ruled out ("preimage
+  resistance") and Rosenberg et al. handle with hand-written modifiers. Table A2's adaptive search is already half of
+  it (C1-scored candidates, provenance-chosen section names, 3-4.5 extractions per file vs ~100 per toolkit attack).
+  Baselines to beat: Severi et al. (17 hand-picked non-hashed features), Rosenberg et al. / Pierazzi et al.
+  (hand-written problem-space modifiers, feature-space side effects found by trial), and query-based problem-space
+  attacks (GAMMA, MAB-Malware). Harsh check first: Pierazzi et al.'s problem-space formalization and every
+  "realizable attack" paper since; the novelty must be the automatic, side-effect-exact translation, not the attack.
 
-## Next steps (end of 2026-10-24)
+## Next steps (end of 2026-10-26)
 
-Done on 2026-10-24: **Table A1's machinery is built; run 80 is read, run 81/82 are running.** The five A1 decisions
-were taken (end of `docs/direction-A-A1-design.md`): sums re-encoding on a **10% subsample of every split** first; the
-proposed seen/held-out split as a **quick check only**, with **leave-one-out** (8 PV models) the formal version
-later; baselines later; 50 pilot malware; budgets max(5%, 512 KB) bytes and 100 queries.
-- **Step 1 — sums re-encoding (run 80, read):** `SumsFeatureExtractor` (thrember + merged imports + body_histogram,
-  body_byteentropy, body_strings, section_split; 3,655 features) in `src/provexp/featuresets/ember2024/sums.py`;
-  `featurize.py --extractor sums --every 10` (0.90 h, 0 failures, 207,872 train rows). The sums rows **beat** the
-  features-as-is rows: test AUC 0.99527 vs 0.99458 (M_add), 0.99296 vs 0.99189 (M_full), vs 0.99638 unconstrained.
-- **Step 2 — PV seen/held-out:** `a_pv_hole.py --attacks ... --tag=-seen` (all-8 reproduces run 78 exactly; the quick
-  seen split keeps 1,773 features, M_full hole 246 features / 13% of PV-seen's gain).
-- **Step 3 — toolkit harness (`a1_evaluate.py`, run 81, running):** defenses x 8 attacks, 1% FPR thresholds,
-  detected-only, byte cap, re-extracted ground truth, seen/held-out groups split by truncation. The s10 defenses
-  detect 40-43/50 pilot malware at 1% FPR (the full-split PV operating-point worry is resolved).
-- **Step 4 — adaptive search (`a1_adaptive.py`, run 81 thrember + run 82 sums, running):** scores each candidate edit
-  by its **C1-declared effect** (the reachable set under M), not real LIEF re-extraction (LIEF relayout is A4,
-  outside M; decided 2026-10-24). C4 rows are 0 by construction; a negative `min_delta_logit` on a `--sound` row is an
-  A1-A4 bug. Smoke: the same search drives the unconstrained detector down ~1.4-2.8 logits yet moves the C4 detectors
-  by exactly 0.0, in both the thrember and the sums feature spaces. Sums-space C1 predictors (`predict_append_sums`,
-  `predict_add_section_sums`) validated vs re-extraction and confirmed up-only on all 1,979 kept M_full-sums features.
+Done on 2026-10-26: **direction A is complete at pilot scale; Tables A1 and A2 are done** (assessment:
+`docs/direction-A-summary.md`; tables: `docs/direction-A-A1-design.md`, "Result: Table A1/A2"). Every go/no-go check and
+falsifiable outcome passed. 10% subsample, seed 0, 50 pilot malware, M_full, 1% FPR:
+- **Table A1:** the four C4 rows are never moved by any attack (seen, held-out, adaptive; largest score change
+  exactly 0.0). The M_full rows keep 86.7% (features) / 88.6% (sums) TPR vs 93.5% unconstrained and still detect
+  40-41/50 pilot malware after every attack (unconstrained 20/50). PV from 4 (seen) or all 8 toolkit attacks holds
+  against the toolkit but costs ~35 TPR points (56.2% / 53.8%) and is evaded by the adaptive search on 21/22 and 22/22
+  (19-20/22 on real re-extraction): adding attacks does not close PV's hole.
+- **Table A2:** the C1-guided search needs 24-42 queries and 3-4.5 extractions per file (toolkit: ~100 each);
+  provenance-chosen section names (inverted section hash) take PV-seen from 11/22 (random names, run 87) to 21/22.
+  On the unconstrained model, GAMMA API (adds imports; our search does not) is stronger (24/47 vs 14/47): context.
+- **Fixes along the way:** secml-malware's shift attacks overwrite the MZ header on files whose first section has raw
+  offset 0 (harness now counts non-PE outputs invalid; `docs/upstream-issues.md` item 4); the adaptive search
+  materialized a random edit instead of the chosen one (fixed; plus targeted names, matched section props, the
+  toolkit byte budget, and the real re-extracted score beside the declared one).
+- Runs 83-87 (`run/`). Scripts: `scripts/a1_evaluate.py` (toolkit columns), `scripts/a1_adaptive.py` (adaptive search).
 
-Next:
-1. **Read runs 81 and 82** (`artifacts/experiments/a1/{toolkit,adaptive,adaptive_sums}/`): confirm the separation —
-   seen evasion ~0 everywhere; held-out evasion > 0 for PV-seen, 0 for the M_full C4 rows; adaptive evasion 0 for all
-   C4 rows (any nonzero is an A1-A4 bug, debug via A0) and > 0 for PV-seen/unconstrained. Report truncated vs not.
-2. **Assemble Table A1** (`docs/direction-A-mock.md`) from the three columns; decide whether the separation is
-   decisive enough to scale (seeds/size) or whether to strengthen the adaptive attack first.
-3. **Scoped remainder (A0-sized, lower priority):** C1 predictors for the DOS-stub (Rich header), header-field,
-   checksum, rename, and remove operations, to reach the Rich-header/header-field parts of PV's hole adaptively
-   (`predict_content_overwrite` currently models DOS members only). append + add-section already reach the
-   histogram/string/section-bucket parts.
-4. Then Table A2 (the adaptive attack's own table), then A2 (the second application).
-5. Later: the formal leave-one-out PV experiment; full-scale numbers (seeds 0-2, 2,000 files); B and C screening;
-   clean out the old direction's materials; update `CLAUDE.md` conventions.
+Next (agreed with the user 2026-10-26):
+1. **Screen the second application on paper, three candidates side by side:** A' (realizing feature-space attacks in
+   the problem space; see Directions), B, and C. For each: screening criteria, a mock of its paper table with the
+   model component behind each column, a falsifiable go/no-go check, and a harsh read of the closest work on the same
+   task. No code before a candidate passes; bring the mocks to the user.
+2. **In parallel, the two cheap direction-A items that matter for novelty:** the expert-set row (Gimenez et al.'s 40
+   hand-picked features: needs the paper, arXiv 2508.10038, in `papers/` or fetched with the user's OK; write out
+   the mapping onto thrember v3 names for the user to check before training) and the cost-to-derive column
+   (bookkeeping from run 78's attack runs vs one pass over the extractor).
+3. **Later, on the user's decision (with the scale-up):** adversarial-training baseline row; held-out attacks from a
+   second toolkit (MAB-Malware / Labaca-Castro et al.); leave-one-out PV (8 models); seeds 0-2 and full splits.
+4. **Deferred:** the framework/theory section of the paper (waits until the applications are known; no manuscript
+   edits before they survive screening); the Rich-header and import-adding C1 predictors (not needed for A1's claim).
+
+### Earlier: Table A1 machinery (2026-10-24)
+Sums re-encoding (`SumsFeatureExtractor`, 3,655 features; run 80: 10% store in 0.90 h), PV seen/held-out
+(`a_pv_hole.py --tag`), the toolkit harness, and the C1-declared adaptive search were built; the five A1 decisions
+are at the end of `docs/direction-A-A1-design.md`.
 
 ### Earlier: all three go/no-go checks for direction A passed (end of 2026-10-23)
 - **Attack environment (no separate venv):** secml 0.15.6 + secml-malware 0.4.2 vendored under `third_party/` and
