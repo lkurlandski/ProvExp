@@ -14,6 +14,10 @@ first (C1 predictors for header-field and DOS-stub/Rich-header edits, then re-ru
 adaptive column as designed; no scaling for now (nowhere near seeds 0-2 / 2,000 files). **Next:** those predictors.
 
 
+**Direction A summary (2026-10-26):** `docs/direction-A-summary.md` -- every check and falsifiable outcome passed at
+pilot scale; missing: expert-set row, adversarial-training row, second toolkit, leave-one-out, scale, cost column.
+Recommended next: the expert-set row (needs Gimenez et al.'s 40-feature list) and the cost column.
+
 **Run 87 + Table A2 (2026-10-26):** Table A2 assembled (`docs/direction-A-A1-design.md`, "Result: Table A2"). The
 random-name ablation (run 87) held the hypothesis only partly: provenance-chosen names take PV-seen evasion from 11/22 to
 21/22 and PV-all from 15/22 to 22/22, but random names already evade PV often (its hole is broad), and on the
