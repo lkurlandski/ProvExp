@@ -360,6 +360,18 @@ locating ranges when there is no overlay. Recognizers are per feature type (`Fea
 import/export items have none yet, so writes to them are flagged. In-place predictions re-count the whole-file byte
 run (cheap to make local if A' needs it). Steps 6-9 remain; step 7 does not depend on 6.
 
+**Fourth session (2026-10-27): structures past the end of the file.** The overlay row of the anticipated
+disagreements is one case of a wider one: pefile skips any directory, section, or signature table that a header
+points to past the end of the file, and appending turns the appended bytes into it. 12 of 100 pilot files have such
+a structure. Witnessed for the signature table (`num_certs` 0 -> 1 on a truncated pilot file; `docs/status.md`),
+which the hand rules let only fall; exports, relocation flags, and the entry name hash are exposed the same way (to
+witness in G3). Decided (user): strict directions plus one precondition row (no locating range past the end of the
+file; fallback detector otherwise). Also: pefile's directory parsers crashed on unreadable structures and the
+extractor then treated the file as not a PE; one guard now makes a crash lose only that directory (`features.py`;
+run 94 rewrote the 394 stored files affected). This makes per-structure locating ranges sound, which step 7 needs:
+today every parsed item is located through every directory's data (`pe_locating`), so the strict C4 table would
+otherwise call even header fields two-sided under append.
+
 ## Open decisions for the user
 
 **Settled (user, 2026-10-27), all as recommended:** (1) add `items` now and keep `provenance` until G2 passes, then

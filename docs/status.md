@@ -1,5 +1,34 @@
 # Status
 
+**2026-10-27, fourth session: step 7 not started; a wider hole in the hand direction rules found and witnessed, and
+pefile's directory crashes fixed by one rule (run 94).** Commits 474e176..(this wrap-up).
+- **Appending can complete structures that lie past the end of the file.** pefile reads directory data, sections, and
+  the signature table through header pointers; where these point past EOF, the parse skips them, and appended bytes
+  later become them. 12 of 100 pilot files have such a structure (imports 9, resources 6, debug 3, security 2, ...;
+  mostly files cut at the dataset's 4 MB cap). **Witness (signature):** pilot malware `4294f2f053c2...` (4,000,000
+  bytes, truncated) has its security entry at file offset 8,841,232 (size 11,216); appending zeros up to that offset
+  plus a 10,160-byte certificate table copied from a signed pilot file gives `num_certs` 0 -> 1, `chain_max_depth`
+  0 -> 2, and new signing times on re-extraction (signify parses, never verifies). The hand rules constrain
+  authenticode to fall only (rsg); its features carry 13-16% of the gain of the M_full C4 models (4-5% M_add).
+  Exports, relocation flags, the entry-section name hash (via sections pefile dropped), and `overlay_size` are
+  exposed by the same mechanism; no witness for those yet. The witness was a scratch script; rebuild it in step 7's
+  report next to `scripts/a_overlay_witness.py`.
+- **Decided (user):** strict directions plus a precondition row: the detector checks at inference that no locating
+  range lies past the end of the file; files that fail go to a fallback detector of always-safe features, reported
+  next to the strict row. The user warned this approaches distracting complexity: keep the experiments' global
+  complexity down; excluding files over 4 MB is an option to weigh later, not decided.
+- **pefile directory crashes fixed by one rule** (user: patch, but no rabbit hole). pefile's directory parsers raise
+  AttributeErrors on structures they could not read (a type-20 debug payload outside the file; a dynamic relocation
+  table header outside the file; two rarer paths), and thrember then treats the file as not a PE (all PE features
+  zero). Appending can trigger the first two. Rule: a directory parser that raises anything but PEFormatError loses
+  only its own directory, with a warning (`features.py`, last section; installed in pefile at import). 394 of the
+  2,879,653 stored files were such crashes (371 benign, mostly truncated); **run 94** rewrote them in both stores
+  (full: 394; sums: 47; old values in `{store}/patches/`); none is a pilot file. `docs/upstream-issues.md` item 5.
+- **Consequence for step 7:** with the rule, a crash no longer spreads from one directory to every item, so the
+  parse-wide locating ranges (`pe_locating`: every item is located through all ten directories' data) can shrink to
+  per-structure ones. Without that split, the strict C4 table would call header fields two-sided under append.
+- Pending from before: the C4 retraining must run on the patched stores (they are now).
+
 **2026-10-27, third session: derivation steps 1-5 built and checked; step 6 (the edit catalogue) not started.**
 Commits 94c8d37..4d9d1ee. All checks passed, each after at most one fix round, with fresh-file confirmation:
 - Step 1: `src/provexp/items.py` (items, terms, readouts as data, projection), `tests/test_items.py`.

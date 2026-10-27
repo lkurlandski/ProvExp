@@ -7,7 +7,8 @@
 # 304 dynamic relocation crashes, 14 others, all inside directory parsers), about a tenth of that in the sums store;
 # the other 841 raise PEFormatError and stay non-PE.
 #
-# Took: (filled in after the run).
+# Took ~6 min (2026-10-27). Result: hypothesis held. Full store: 394 rows rewritten (tr 253, vl 41, ts 100) of 1,235
+# non-PE rows; sums store: 47 (tr 35, vl 4, ts 8) of 124. None of the 100 pilot files is among them.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 source env/bin/activate

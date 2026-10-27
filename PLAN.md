@@ -60,7 +60,30 @@ introduction and a simple baseline (writing decision for later).
   attacks (GAMMA, MAB-Malware). Harsh check first: Pierazzi et al.'s problem-space formalization and every
   "realizable attack" paper since; the novelty must be the automatic, side-effect-exact translation, not the attack.
 
-## Next steps (end of 2026-10-27, third session)
+## Next steps (end of 2026-10-27, fourth session)
+
+Done in the fourth session (`docs/status.md`): found that appending can complete structures past the end of the file
+(signature witness: `num_certs` 0 -> 1 on a truncated pilot malware file; the hand rules say authenticode only falls,
+13-16% of the M_full C4 models' gain); decided strict directions plus a precondition row (user; keep complexity
+down, the >4 MB exclusion is an option for later); fixed pefile's directory-parser crashes with one rule and
+re-featurized the 394 affected stored files (run 94).
+
+Next (in order, unless the user decides otherwise):
+1. **Step 7, the C4 engine** (`reach.py`; `scripts/a_directions.py --derive`). First split `pe_locating` into
+   per-structure locating ranges (now sound, since a directory crash no longer spreads; re-run G5 at the item level:
+   a header flip that changes an item must lie in that item's members or locating ranges). Then the sign envelopes
+   over the readouts (kind vocabulary checked on every recorded item; hash images by enumeration), unions per threat
+   model, the output shape of run 76's `directions.csv`, and the disagreement report (G3) with witnesses: the
+   signature case (rebuild this session's scratch witness as a script), `overlay_size` (run 88), then exports,
+   relocation flags, entry name hash. Operations other than append and add_section: provisional deltas from the
+   design doc until step 6.
+2. **The precondition row**: the check "no locating range past the end of the file", a fallback detector of
+   always-safe features, both as `run/` scripts for the user along with the retraining of the C4 models and the
+   re-run of Table A1's C4 rows (toolkit part ~47 min). Keep it to one row and one sentence in the paper.
+3. **Step 6, the catalogue**, from our own edit functions (`scripts/a1_adaptive.py`); the insertions last.
+4. Then the expert-set row and the A' pilot (checks 1-3).
+
+### Earlier: next steps at the end of 2026-10-27 (third session)
 
 Done in the third session: **derivation steps 1-5, every check passing** (`docs/item-layer-design.md`, "Build status").
 The item layer (`src/provexp/items.py`), the emitters and readouts for every EMBER group (pure additions to
