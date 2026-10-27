@@ -17,6 +17,9 @@ Later on 2026-10-27:
   only `overlay_size` becomes two-sided (with the next C4 retraining). Witness: `scripts/a_overlay_witness.py`, run 88.
 - **A' mock decisions accepted** (all six recommendations): lead with Table A'1; solver over edit choices; check 0
   (solver tractability, no provenance needed) first.
+- **Order (agreed with the user):** A' check 0 (solver tractability), then derivation steps 1-6 in one stretch
+  (4, locating ranges, feeds the C1 engine; 6, the edit catalogue, gives the solver its edit choices), then step 7,
+  then the expert-set row, then the A' pilot.
 
 Session log (2026-10-27):
 - **Second application: A'** (user agreed). Literature: `docs/literature-Aprime-2026-10-27.md`; nine foundational
