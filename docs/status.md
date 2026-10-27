@@ -5,6 +5,17 @@ Table A1 confirmed.** Next: the A' mock (not yet written), then the design doc's
 steps 1-3 and the expert-set row. Details and order: `PLAN.md`, "Next steps (end of 2026-10-27)". Pick up at
 `docs/resume-prompt.md`.
 
+Later on 2026-10-27:
+- **A' mock written** (`docs/direction-A-prime-mock.md`; first draft by another session, then revised). Fixes: the
+  C4 row's "certificate" was circular (now a sanity check); battery cells now use Table A1's measured numbers; the
+  solver searches over edit choices, so every evasion is a concrete edit; Chen et al. (USENIX Sec 2020) added as the
+  closest precedent; solver tractability is check 0; the baseline is constraints learned from the toolkit (predicted
+  to give wrong certificates on PV), not Simonetto's constraints translated by hand; the expert-set detector is a row.
+  Order: derivation steps 1-3, then 5 (C1 engine), then 7. Six open decisions at its end, for the user.
+- **Overlay gap: `body_*` sums not affected** (100 pilot files, 190 appends: no body count drops; `overlay_size`
+  drops on 8). 7 of 11 overrun files are cut at the 4 MB dataset cap. Proposed: pefile's rule is real behavior;
+  only `overlay_size` becomes two-sided. Awaiting user confirmation (`docs/item-layer-design.md`).
+
 Session log (2026-10-27):
 - **Second application: A'** (user agreed). Literature: `docs/literature-Aprime-2026-10-27.md`; nine foundational
   papers plus six for A' saved to `papers/` (untracked). Novelty is only the computed side effects/constraints;
