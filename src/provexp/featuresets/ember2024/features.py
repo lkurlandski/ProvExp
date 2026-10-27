@@ -281,6 +281,22 @@ def rva_ranges(pe: pefile.PE, rva: int, size: int) -> tuple[Range, ...]:
     return (r,) if r is not None and size > 0 else ()
 
 
+def dynamic_relocation_ranges(pe: pefile.PE) -> tuple[Range, ...]:
+    """The dynamic relocation table the load configuration points to (its header and its declared size), if any."""
+    lc = getattr(getattr(pe, "DIRECTORY_ENTRY_LOAD_CONFIG", None), "struct", None)
+    offset = getattr(lc, "DynamicValueRelocTableOffset", 0)
+    index = getattr(lc, "DynamicValueRelocTableSection", 0)
+    if not offset or not index or index > len(pe.sections):
+        return ()
+    # pefile indexes its sections sorted by virtual address, as `pe.sections` is.
+    rva = pe.sections[index - 1].VirtualAddress + offset
+    header = rva_ranges(pe, rva, 8)
+    if not header:
+        return ()
+    size = int.from_bytes(pe.__data__[header[0][0] + 4:header[0][0] + 8], "little")
+    return ((header[0][0], header[0][0] + 8 + size),)
+
+
 # NOTE: the `recognize` methods translate an in-place write or an append into item operations for the C1 engine
 # (provexp.reach.predict; assumption A3): each feature type re-recognizes its items around the written bytes, with
 # its margins (strings: out to the nearest non-printable byte; windows: every window that overlaps; fields: re-read),
@@ -2162,8 +2178,9 @@ class DataDirectories(FeatureType):
         for attr, which in [("has_relocs", "BASERELOC"), ("has_dynamic_relocs", "LOAD_CONFIG")]:
             idx = self._name_order.index(which)
             attr_ranges[attr] = (clipped(n, [structure_range(directories[idx])]),) if idx < len(directories) else ()
-        # Parsed from the directories' data (in `located`); pefile stops at a block past SizeOfImage.
-        relocs_locating = located + (field_range(pe.OPTIONAL_HEADER, "SizeOfImage"),)
+        # Parsed from the directories' data (in `located`); pefile stops at a block past SizeOfImage, and reads the
+        # dynamic relocations from the table the load configuration points to (`parse_dynamic_relocations`).
+        relocs_locating = located + (field_range(pe.OPTIONAL_HEADER, "SizeOfImage"),) + dynamic_relocation_ranges(pe)
         items.append(Item("relocs", attrs={"has_relocs": int(pe.has_relocs()), "has_dynamic_relocs": int(pe.has_dynamic_relocs())}, attr_ranges=attr_ranges, locating=relocs_locating))
         return ItemTable(n, families, items)
 

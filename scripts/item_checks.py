@@ -13,13 +13,20 @@ Mechanical checks of the item layer (docs/item-layer-design.md, "Validation and 
             or attributes change must have it among its member or locating ranges. Only the items pefile parses are
             compared; items recognized from content (bytes, windows, strings) are re-recognized locally (G6).
 
-Writes `files.parquet` (one row per file; `failures.parquet` for G5) and `report.json` (the totals and the verdict)
+    margins
+            G6 (assumption A3). Random in-place writes (offset uniform over the file, 1-64 bytes, random or printable
+            content), predicted by the C1 engine (provexp.reach) and compared with re-extraction: every prediction
+            must be bit-exact; writes the engine flags (to locating ranges, or items without a local recognizer) are
+            counted by reason.
+
+Writes `files.parquet` (one row per file; `failures.parquet` for G5, `writes.parquet` for G6) and `report.json` (the totals and the verdict)
 to --outdir.
 """
 
 from __future__ import annotations
 
 from argparse import ArgumentParser
+from collections import Counter
 from functools import partial
 import json
 from multiprocessing import Pool
@@ -41,6 +48,8 @@ from provexp.items import Item
 from provexp.items import ItemTable
 from provexp.items import evaluate
 from provexp.items import project
+from provexp.reach import ByteEdit
+from provexp.reach import predict
 
 warnings.filterwarnings("ignore", category=SyntaxWarning)
 
@@ -240,6 +249,77 @@ def main_locating(args: Any) -> None:
     print(json.dumps(report, indent=2))
 
 
+def check_margins(task: tuple[str, int, int]) -> list[dict[str, Any]]:
+    """G6 on one file: `num_writes` random in-place writes, seeded by (seed, file)."""
+    assert _READER is not None
+    name, num_writes, seed = task
+    bytez = _READER.get(name).data
+    rng = np.random.default_rng([seed, int(name[:8], 16)])
+    table = _MERGED.item_table(bytez)
+    readouts = _MERGED.readouts
+    modeled = ~np.array([n.startswith("pefilewarnings:") for n in _MERGED.feature_names])
+    rows = []
+    for _ in range(num_writes):
+        size = int(rng.integers(1, 65))
+        lo = int(rng.integers(0, max(1, len(bytez) - size)))
+        hi = min(lo + size, len(bytez))
+        printable = bool(rng.integers(0, 2))
+        content = rng.integers(0x20, 0x7f, hi - lo, dtype=np.uint8) if printable else rng.integers(0, 256, hi - lo, dtype=np.uint8)
+        t0 = time.perf_counter()
+        p = predict(table, bytez, ByteEdit(lo, hi, content.tobytes()), _MERGED.recognizers)
+        t1 = time.perf_counter()
+        row: dict[str, Any] = {"name": name, "lo": lo, "hi": hi, "printable": printable, "flagged": p.table is None,
+                               "reason": p.reason.split(":")[0] if p.table is None else "", "flagged_kinds": sorted({i.kind for i in p.flagged}),
+                               "mismatches": 0, "features": [], "seconds_predict": t1 - t0, "seconds_extract": float("nan")}
+        if p.table is not None:
+            x = _MERGED.feature_vector(p.new)  # type: ignore[no-untyped-call]
+            row["seconds_extract"] = time.perf_counter() - t1
+            bad = np.where(modeled & ~_equal(x, p.features(readouts)))[0]
+            row["mismatches"] = int(bad.size)
+            row["features"] = [_MERGED.feature_names[i] for i in bad[:10]]
+        rows.append(row)
+    return rows
+
+
+def main_margins(args: Any) -> None:
+    """G6 over the files."""
+    df = pl.read_parquet(args.files)
+    if "status" in df.columns:
+        df = df.filter(pl.col("status") == "ok")
+    names = sorted(df["name"].to_list())
+    if args.limit > 0:
+        names = names[: args.limit]
+    t0 = time.perf_counter()
+    rows: list[dict[str, Any]] = []
+    with Pool(args.workers, initializer=_init, initargs=(str(args.db),)) as pool:
+        for out in pool.imap_unordered(check_margins, [(n, args.num_writes, args.seed) for n in names], chunksize=1):
+            rows += out
+            for r in out:
+                if r["mismatches"]:
+                    print(f"FAIL {r['name'][:12]} [{r['lo']}, {r['hi']}) printable={r['printable']}: {r['features']}", flush=True)
+    writes = pl.DataFrame(rows)
+    args.outdir.mkdir(parents=True, exist_ok=True)
+    writes.write_parquet(args.outdir / "writes.parquet")
+    predicted = writes.filter(~pl.col("flagged"))
+    flagged = writes.filter(pl.col("flagged"))
+    report = {
+        "files": len(names),
+        "writes": writes.height,
+        "predicted": predicted.height,
+        "predicted_exact": int((predicted["mismatches"] == 0).sum()),
+        "flagged": flagged.height,
+        "flagged_by_reason": dict(sorted(Counter(flagged["reason"].to_list()).items())),
+        "flagged_by_kind": dict(Counter(k for ks in flagged["flagged_kinds"].to_list() for k in ks).most_common(12)),
+        "mismatching_features": dict(Counter(f for fs in predicted["features"].to_list() for f in fs).most_common(20)),
+        "seconds_predict_median": float(np.median(predicted["seconds_predict"].to_numpy())) if predicted.height else 0.0,
+        "seconds_extract_median": float(np.median(predicted["seconds_extract"].to_numpy())) if predicted.height else 0.0,
+        "wall_seconds": time.perf_counter() - t0,
+    }
+    report["pass"] = report["predicted_exact"] == report["predicted"]
+    (args.outdir / "report.json").write_text(json.dumps(report, indent=2))
+    print(json.dumps(report, indent=2))
+
+
 ################################################################################
 # Main
 ################################################################################
@@ -247,7 +327,7 @@ def main_locating(args: Any) -> None:
 
 def main() -> None:
     parser = ArgumentParser(description=__doc__.split("\n\n")[1] if __doc__ else None)
-    parser.add_argument("check", choices=["exact", "locating"])
+    parser.add_argument("check", choices=["exact", "locating", "margins"])
     parser.add_argument("--files", type=Path, required=True, help="Parquet with a `name` column (and optionally `status`).")
     parser.add_argument("--db", type=Path, default=Path("/shared/datasets/EMBER-2024/data/ts"))
     parser.add_argument("--outdir", type=Path, required=True)
@@ -256,10 +336,14 @@ def main() -> None:
     parser.add_argument("--no_g2", action="store_true", help="G1 only (G2 costs a provenance computation per file).")
     parser.add_argument("--num_files", type=int, default=20, help="locating: files drawn from --files (PE files only).")
     parser.add_argument("--max_bytes", type=int, default=1024, help="locating: header bytes flipped per file, at most.")
+    parser.add_argument("--num_writes", type=int, default=20, help="margins: random writes per file.")
     parser.add_argument("--seed", type=int, default=0)
     args = parser.parse_args()
     if args.check == "locating":
         main_locating(args)
+        return
+    if args.check == "margins":
+        main_margins(args)
         return
 
     df = pl.read_parquet(args.files)
