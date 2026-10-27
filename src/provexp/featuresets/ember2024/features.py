@@ -2699,46 +2699,49 @@ pefile.Counter = byte_counter  # type: ignore[attr-defined]
 
 
 ################################################################################
-# Correctness: pefile's type-20 debug entries (added on top of thrember and pefile)
+# Correctness: a crash in one directory's parser loses only that directory (added on top of thrember and pefile)
 ################################################################################
 
 
-# NOTE: pefile 2024.8.26 crashes on a debug entry of type 20 (IMAGE_DEBUG_TYPE_EX_DLLCHARACTERISTICS) whose payload
-# it cannot read (the entry's PointerToRawData lies past the end of the file, or SizeOfData is under four bytes):
-# `__unpack_data__` warns and returns None, and `parse_debug_directory` then reads `dbg_type.ExDllCharacteristics`,
-# an AttributeError that escapes the parse. The extractor catches it and treats the file as not a PE, so every header,
-# section, import, export, directory, Rich, and signature feature becomes zero. Appending bytes to a file whose debug
-# directory lies past its end is enough to trigger it (docs/upstream-issues.md, item 5). The other debug types skip a
-# payload they cannot read; this guard does the same for type 20, as the upstream fix would (`if dbg_type is not
-# None:` before `set_flags`): the entry is kept with `entry=None` and pefile's warning stays. It is installed in pefile
-# at import, like `byte_counter`, so every parse in the process is guarded; the original lines of both stay unchanged.
-_UNPACK_DATA = pefile.PE.__unpack_data__  # type: ignore[attr-defined]
-_PARSE_DEBUG_DIRECTORY = pefile.PE.parse_debug_directory
-_EX_DLLCHARACTERISTICS = "IMAGE_DEBUG_EX_DLLCHARACTERISTICS"
+# NOTE: pefile catches its own PEFormatError inside the directory parsers, but any other exception escapes the whole
+# parse, and the extractor (which catches AttributeError around `pefile.PE`) then treats the file as not a PE: every
+# header, section, import, export, directory, Rich, and signature feature becomes zero. pefile 2024.8.26 has at least
+# two such bugs, both a structure that could not be read (None) used without a check: a type-20 debug entry whose
+# payload lies outside the file, and a dynamic relocation table header outside the file (`parse_debug_directory`,
+# `parse_dynamic_relocations`; docs/upstream-issues.md, item 5). Appending bytes to a file whose directory data lies
+# past its end can trigger them. Rather than patch each bug, each directory parser is guarded: an exception other
+# than PEFormatError loses that directory only (pefile warns and the parser returns None, as for a PEFormatError).
+# Installed in pefile at import, like `byte_counter`, so every parse in the process is guarded; the original lines of
+# both stay unchanged. In the corpus, it makes 394 of the 2,879,653 stored files parse (2026-10-27).
+_DIRECTORY_PARSERS = (
+    "parse_import_directory",
+    "parse_export_directory",
+    "parse_resources_directory",
+    "parse_debug_directory",
+    "parse_relocations_directory",
+    "parse_directory_tls",
+    "parse_directory_load_config",
+    "parse_delay_import_directory",
+    "parse_directory_bound_imports",
+    "parse_exceptions_directory",
+)
+UNGUARDED_PARSERS: dict[str, Callable[..., object]] = {name: getattr(pefile.PE, name) for name in _DIRECTORY_PARSERS}
 
 
-class _UnreadDebugPayload:
-    """Stands in for a type-20 payload pefile could not read, so that `set_flags` succeeds; replaced by None after."""
-
-    ExDllCharacteristics = 0
-
-
-def _guarded_unpack_data(self: pefile.PE, format: list, data: bytes, file_offset: int) -> object:
-    """pefile's `__unpack_data__`, with a stand-in for an unreadable type-20 debug payload (see the NOTE above)."""
-    structure = _UNPACK_DATA(self, format, data, file_offset)
-    if structure is None and format[0] == _EX_DLLCHARACTERISTICS:
-        return _UnreadDebugPayload()
-    return structure
-
-
-def guarded_parse_debug_directory(self: pefile.PE, rva: int, size: int) -> Optional[list]:
-    """pefile's `parse_debug_directory`, keeping an unreadable type-20 entry with `entry=None` (see the NOTE above)."""
-    debug = _PARSE_DEBUG_DIRECTORY(self, rva, size)
-    for d in debug or ():
-        if isinstance(d.entry, _UnreadDebugPayload):
-            d.entry = None
-    return debug
+def _guard(name: str, parse: Callable[..., object]) -> Callable[..., object]:
+    """A directory parser that warns and returns None on any exception other than PEFormatError."""
+    def guarded(self: pefile.PE, *args: object, **kwargs: object) -> object:
+        try:
+            return parse(self, *args, **kwargs)
+        except pefile.PEFormatError:
+            raise
+        except Exception as e:
+            self.get_warnings().append(f"{name} failed ({type(e).__name__}: {e}); the directory is skipped")
+            return None
+    guarded.__name__ = guarded.__qualname__ = name
+    guarded.__wrapped__ = parse  # type: ignore[attr-defined]
+    return guarded
 
 
-pefile.PE.__unpack_data__ = _guarded_unpack_data  # type: ignore[attr-defined]
-pefile.PE.parse_debug_directory = guarded_parse_debug_directory  # type: ignore[method-assign]
+for _name, _parse in UNGUARDED_PARSERS.items():
+    setattr(pefile.PE, _name, _guard(_name, _parse))

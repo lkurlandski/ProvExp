@@ -73,8 +73,12 @@ flipping one byte of the debug directory's `Size` (offset 477, XOR 0xFF) makes p
 A fix: `if dbg_type is not None:` before `set_flags` (the other debug types already guard against `None`). An
 attacker-chosen edit can trigger it: appending bytes to a file whose debug directory lies past its end (3 of the 100
 pilot files, mostly files cut at the dataset's 4 MB cap) makes the appended bytes the debug entries, so a type-20 entry
-pointing outside the file zeroes every PE feature. **Patched here (2026-10-27, user)** as a pure addition: the guard
-in `features.py` ("Correctness: pefile's type-20 debug entries") is installed in pefile at import, keeps the entry
-with `entry=None` and pefile's warning, as the upstream fix would; `tests/test_ember2024.py::TestDebugGuard`. Also
+pointing outside the file zeroes every PE feature. **Patched here (2026-10-27, user)**, together with a second bug of the same kind (`parse_dynamic_relocations` reads
+`.Version` from a dynamic relocation table header it could not read, `pefile.py:4102`), by one general rule rather than
+per-bug fixes: a directory parser that raises anything other than `PEFormatError` loses only its own directory, with a
+warning (`features.py`, "Correctness: a crash in one directory's parser loses only that directory"; installed in pefile
+at import; `tests/test_ember2024.py::TestDirectoryGuard`). Of the 1,235 files the store held as not a PE, 394 (of
+2,879,653) were such crashes, almost all benign files truncated at 4 MB: 76 debug, 304 dynamic relocations, 14 in two
+rarer paths (`contains_rva`, `get_data`); all parse with the guard (run 94 rewrites their rows). Also
 worth reporting to thrember: `raw_features` catches `AttributeError` around `pefile.PE(...)`, so any pefile bug of
 this kind silently turns a file into a non-PE.

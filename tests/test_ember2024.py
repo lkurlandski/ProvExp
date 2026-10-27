@@ -323,7 +323,7 @@ class TestByteCounter:
 
 
 ################################################################################
-# Guard for pefile's type-20 debug entries (a fix added on top of thrember and pefile)
+# Guard for the directory parsers (a fix added on top of thrember and pefile)
 ################################################################################
 
 
@@ -344,27 +344,24 @@ def _pe_with_debug_entry(debug_type: int, pointer: int, size: int) -> bytes:
     return headers + entry.ljust(0x200, b"\0")
 
 
-class TestDebugGuard:
+class TestDirectoryGuard:
 
     @pytest.mark.parametrize("pointer,size", [(0x10000, 4), (0x200, 2)])
-    def test_unreadable_type_20_payload(self, pointer: int, size: int) -> None:
+    def test_crashing_directory_is_skipped(self, pointer: int, size: int) -> None:
         pe = pefile.PE(data=_pe_with_debug_entry(20, pointer, size))
-        (entry,) = pe.DIRECTORY_ENTRY_DEBUG
-        assert entry.struct.Type == 20
-        assert entry.entry is None
-        assert any("IMAGE_DEBUG_EX_DLLCHARACTERISTICS" in w for w in pe.get_warnings())
+        assert not hasattr(pe, "DIRECTORY_ENTRY_DEBUG")
+        assert any("parse_debug_directory failed (AttributeError" in w for w in pe.get_warnings())
 
     def test_unguarded_pefile_crashes(self, monkeypatch: pytest.MonkeyPatch) -> None:
-        monkeypatch.setattr(pefile.PE, "__unpack_data__", features._UNPACK_DATA)
-        monkeypatch.setattr(pefile.PE, "parse_debug_directory", features._PARSE_DEBUG_DIRECTORY)
+        for name, parse in features.UNGUARDED_PARSERS.items():
+            monkeypatch.setattr(pefile.PE, name, parse)
         with pytest.raises(AttributeError):
             pefile.PE(data=_pe_with_debug_entry(20, 0x10000, 4))
 
-    def test_readable_type_20_payload_unchanged(self) -> None:
+    def test_readable_directory_unchanged(self) -> None:
         data = _pe_with_debug_entry(20, 0x210, 4)
         data = data[:0x210] + struct.pack("<I", 0x41) + data[0x214:]
         (entry,) = pefile.PE(data=data).DIRECTORY_ENTRY_DEBUG
-        assert entry.entry is not None
         assert entry.entry.ExDllCharacteristics == 0x41
 
     def test_extractor_keeps_the_file_a_pe(self) -> None:
@@ -373,9 +370,8 @@ class TestDebugGuard:
         assert x[extractor.feature_names.index("general:is_pe")] == 1.0
 
     def test_installed(self) -> None:
-        assert pefile.PE.__unpack_data__ is features._guarded_unpack_data
-        assert pefile.PE.parse_debug_directory is features.guarded_parse_debug_directory
-
+        for name, parse in features.UNGUARDED_PARSERS.items():
+            assert getattr(pefile.PE, name).__wrapped__ is parse
 
 
 ################################################################################
