@@ -60,7 +60,47 @@ introduction and a simple baseline (writing decision for later).
   attacks (GAMMA, MAB-Malware). Harsh check first: Pierazzi et al.'s problem-space formalization and every
   "realizable attack" paper since; the novelty must be the automatic, side-effect-exact translation, not the attack.
 
-## Next steps (end of 2026-10-26)
+## Next steps (end of 2026-10-27)
+
+Done on 2026-10-27:
+- **Second application chosen: A'** (user agreed; B and C set aside for now: B's edge is narrow and drifts toward
+  legibility, C's score-disagreement baseline is strong). A' literature read: `docs/literature-Aprime-2026-10-27.md`.
+  Harsh read: the only new part is side effects and reachable constraints *computed from the extractor*; the attack,
+  constrained-feature-space frameworks (Simonetto, Sheatsley, Bostani), and hash-bucket targeting (Rosenberg) are prior
+  work. Strongest uses are probably evaluative/defensive (exact realizable worst-case evaluation; realizable
+  examples for adversarial training, as in Bostani et al.'s Level Up), not attacks on undefended models.
+- **Direction A's derivation is not yet automatic** (found this session): the C4 directions are hand-written per-group
+  rules (`scripts/a_directions.py`) and the C1 predictors hand-coded per edit. Both A's novelty claim and A' rest on
+  the automatic version. Design: `docs/item-layer-design.md` (item table, readouts as data, edit catalogue, C1/C4
+  engines, checks G1-G7, build steps 1-9). The user approved pursuing it. Its effort estimate (14-19 working days) is
+  in human days and far too high (user); expect a handful of sessions, bounded by the checks.
+- **Soundness gap in Table A1 confirmed:** pefile ignores extents past EOF when locating the overlay, so appending can
+  lower `section:overlay_size` (4 of 5 testable pilot files with a section past EOF, all malware). The M_full C4 rows
+  constrain it up-only (0.9% / 0.25% of gain). The `body_*` sums (10.7% of the sums row's gain) may be affected too;
+  not yet witnessed. Fix pending (design doc, open decision 2).
+- **Expert-set row:** Gimenez et al.'s 40 features come from their own LIEF extractor (list from their code), not
+  EMBER: `docs/direction-A-expert-set.md`. User decision: re-implement them (on pefile); report under our M_full as the
+  priority and their add-only threat model for context. Reading their code suggests 12 of 40 features are lowerable
+  under M_full and 23 more under M_add through per-name overwrite quirks (to confirm on one file; per the rules the
+  row runs on a quirk-patched variant).
+- **Cost column:** deferred until the derivation is automatic (today our side is "2 s plus hand-written rules"). PV's
+  side: run 78, 398 attack runs on 50 files, ~12 min on 12 workers; toolkit columns (run 86) 2,088 runs in 47 min on 32
+  workers.
+
+Next:
+1. **A' mock** (`docs/direction-A-prime-mock.md`), modeled on `docs/direction-A-mock.md`; bring it to the user before
+   any A' code. Not yet written (the safety classifier stopped the draft on 2026-10-27; the user may have it produced
+   by another session from the task prompt in `docs/resume-prompt.md`). Review it against the literature notes.
+2. **Decide the design doc's open decisions with the user** (`docs/item-layer-design.md`, end): mirrors in
+   `features.py`; strict vs precondition row for the overlay gap (and whether it is a pefile quirk to patch or real
+   behavior); re-run A1's C4 rows now; G1 on 2,000 files; the syntactic regex test.
+3. **Build the derivation, steps 1-3 first** (item table and readouts; checks G1/G2), which both A and A' need; the
+   mock decides whether step 5 (C1 engine) or step 7 (C4 engine) comes next.
+4. **Expert-set row:** re-implement the 40 features, confirm the quirk reading on one file, patch, featurize the 10%
+   store (`run/` script for the user if > 10 min), train the monotone GBDT, run the A1 protocol under M_full and M_add.
+5. Later, unchanged: adversarial-training row, second toolkit, leave-one-out PV, scale (user's decision).
+
+### Earlier: next steps at the end of 2026-10-26
 
 Done on 2026-10-26: **direction A is complete at pilot scale; Tables A1 and A2 are done** (assessment:
 `docs/direction-A-summary.md`; tables: `docs/direction-A-A1-design.md`, "Result: Table A1/A2"). Every go/no-go check and
@@ -143,5 +183,6 @@ explicit is the first engineering step once the plan is settled.
 
 ## Literature
 
-`docs/literature-2026-10-22.md` (summaries of the papers read on 2026-10-22, with what each means for A, B, C).
+`docs/literature-2026-10-22.md` (summaries of the papers read on 2026-10-22, with what each means for A, B, C);
+`docs/literature-Aprime-2026-10-27.md` (the closest work on the A' task, and a harsh read).
 `docs/related_work.md` is the old direction's survey (still useful for malware XAI and G-DeepSHAP).

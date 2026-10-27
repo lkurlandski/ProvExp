@@ -22,6 +22,10 @@ and manuscript remain as source material. Deadlines and conference cycles are no
   `docs/direction-A-threat-model.md` (threat models M_add / M_shift / M_full, the direction table and re-encodings,
   Table A0 in S6), and `docs/direction-A-A1-design.md` (Table A1/A2 design, decisions, and results).
   `docs/upstream-issues.md`: thrember (and secml-malware) bugs for the user to report upstream.
+- Direction A' (second application, chosen 2026-10-27): `docs/literature-Aprime-2026-10-27.md` (closest work, harsh
+  read); `docs/direction-A-prime-mock.md` (the mock, once written). The automatic derivation both A and A' rest on:
+  `docs/item-layer-design.md` (A's directions and predictors are still hand-written until it is built). The expert-set
+  row: `docs/direction-A-expert-set.md`.
 - `docs/graveyard.md`: ideas and directions that did not pan out and why.
 - Old direction, for reference only: `docs/archive/PLAN-explanation-provenance-2026-10-21.md`, `docs/experiments/`
   (cp, pb1, pf1, trigger, cm, audit), `docs/theory.md`, `docs/appendix.md`, `docs/related_work.md`,

@@ -1,5 +1,31 @@
 # Status
 
+**2026-10-27 (end of session): A' chosen and its literature read; the derivation designed; a soundness gap in
+Table A1 confirmed.** Next: the A' mock (not yet written), then the design doc's open decisions, then derivation
+steps 1-3 and the expert-set row. Details and order: `PLAN.md`, "Next steps (end of 2026-10-27)". Pick up at
+`docs/resume-prompt.md`.
+
+Session log (2026-10-27):
+- **Second application: A'** (user agreed). Literature: `docs/literature-Aprime-2026-10-27.md`; nine foundational
+  papers plus six for A' saved to `papers/` (untracked). Novelty is only the computed side effects/constraints;
+  hash-bucket targeting is Rosenberg et al.'s.
+- **Found: direction A's C4 directions and C1 predictors are hand-written**, not derived from the instrumentation.
+  Design for the automatic version: `docs/item-layer-design.md` (written by another session from a task prompt,
+  after the safety classifier stopped two attempts here; reviewed). User: pursue it; the doc's 14-19-day estimate is
+  far too high.
+- **Confirmed:** pefile skips extents past EOF when locating the overlay, so appending can lower
+  `section:overlay_size` (4 of 5 testable pilot files with a section past EOF; witness script was in the session
+  scratchpad, not committed; rebuild it in step 7's report). The M_full C4 rows constrain it up-only (0.9% / 0.25% of
+  gain), so "never moved by any attack" does not hold on such files. The `body_*` sums (10.7% of the sums row's
+  gain) still need a witness. Fix pending a user decision.
+- **Expert set:** `docs/direction-A-expert-set.md`. Their 40 features come from their own LIEF extractor; user:
+  re-implement; M_full is the priority, their add-only model for context.
+- **Safety classifier:** stopped four responses this session (literature notes, the derivation design, the A' mock
+  twice counting the last); the literature notes went through on a second attempt. The user had another session
+  write the design doc from a task prompt.
+
+---
+
 **2026-10-26 (end of session): direction A complete at pilot scale; Tables A1 and A2 done.** Every go/no-go check and
 falsifiable outcome passed (`docs/direction-A-summary.md`). Table A1 (`docs/direction-A-A1-design.md`, "Result"): the
 four C4 rows are never moved by any attack (seen, held-out, adaptive; largest score change exactly 0.0), the M_full
