@@ -203,6 +203,9 @@ class Item:
         locating: The elements that decide whether the item exists and where it is (assumption A1).
         local: Whether the item's contribution depends only on its own elements (assumption A2). An item whose
             contribution can be changed by another item (e.g., erased by a later one) is not local.
+        open_end: Whether the item extends to the end of the object, so that appended elements join it (e.g., data
+            appended to a file).
+        group: The feature type that recorded the item (set by the extractor; recognizers are per group).
     """
 
     kind: str
@@ -211,6 +214,8 @@ class Item:
     attr_ranges: dict[str, Units] = field(default_factory=dict)
     locating: tuple[Range, ...] = ()
     local: bool = True
+    open_end: bool = False
+    group: str = ""
 
     @property
     def members(self) -> tuple[Range, ...]:
@@ -296,17 +301,19 @@ class ItemTable:
         A slot may be written by at most one item; a slot no item writes stays zero (see `written`).
         """
         self.written  # Raises if two items write the same slot.
-        out = {f: np.zeros(d, dtype=np.float64) for f, d in self.families.items()}
-        for family, terms in self._terms_by_family.items():
-            s = out[family]
-            for t in terms:
-                if t.op == "bins":
-                    s[t.index:] += t.bin_counts(s.shape[0] - t.index)
-                elif t.op == "slot":
-                    s[t.index] = t.value
-                else:
-                    s[t.index] += t.amount
-        return out
+        return {f: self._family_sum(f) for f in self.families}
+
+    def _family_sum(self, family: str) -> FloatArray:
+        """One family of sums, added up in table order."""
+        s = np.zeros(self.families[family], dtype=np.float64)
+        for t in self.terms(family):
+            if t.op == "bins":
+                s[t.index:] += t.bin_counts(s.shape[0] - t.index)
+            elif t.op == "slot":
+                s[t.index] = t.value
+            else:
+                s[t.index] += t.amount
+        return s
 
     @cached_property
     def written(self) -> set[tuple[str, int]]:
@@ -319,6 +326,69 @@ class ItemTable:
                         raise ValueError(f"Slot {t.family}[{t.index}] is written by more than one item.")
                     out.add((t.family, t.index))
         return out
+
+    def of_group(self, group: str) -> list[Item]:
+        """The items a feature type recorded, in table order."""
+        return [item for item in self.items if item.group == group]
+
+    def replace(self, removed: Sequence[Item], added: Sequence[Item], num_elements: Optional[int] = None) -> ItemTable:
+        """
+        The table after an edit: `removed` (items of this table) leave, `added` join, and the sums are updated.
+
+        Each added item takes the place of the first unused removed item of its group and kind (a modified item keeps
+        its place), or else goes after the last item of its group and kind (at the end if there is none); this keeps
+        the order the extractor records, which float sums depend on. Families whose changed terms are all integral counts, sums, or
+        bins are updated by adding and subtracting the changed contributions, which is exact; the others (slots,
+        fractional hashed values) are added up again in table order, as the extractor does.
+
+        Args:
+            removed: Items of this table that the edit removes (or modifies: their new versions are in `added`).
+            added: The new and modified items.
+            num_elements: The object's new number of elements (default: unchanged).
+
+        Returns:
+            The new table.
+        """
+        gone = {id(item) for item in removed}
+        if len(gone) != len(removed) or any(id(item) not in self._positions for item in removed):
+            raise ValueError("Every removed item must be a distinct item of this table.")
+        pending: dict[tuple[str, str], list[Item]] = defaultdict(list)
+        for item in added:
+            pending[(item.group, item.kind)].append(item)
+        items: list[Item] = []
+        for item in self.items:
+            if id(item) not in gone:
+                items.append(item)
+            elif pending[(item.group, item.kind)]:
+                items.append(pending[(item.group, item.kind)].pop(0))
+        for (group, kind), rest in pending.items():
+            for item in rest:
+                last = max((i for i, x in enumerate(items) if x.group == group and x.kind == kind), default=len(items) - 1)
+                items.insert(last + 1, item)
+        out = ItemTable(self.num_elements if num_elements is None else num_elements, self.families, items)
+
+        out.written  # Raises if two items write the same slot.
+        sums = dict(self.sums)
+        changed = [(t, -1) for item in removed for t in item.terms] + [(t, 1) for item in added for t in item.terms]
+        inexact = {t.family for t, _ in changed if t.op == "slot" or (t.op != "bins" and not float(t.amount).is_integer())}
+        for family in {t.family for t, _ in changed} - inexact:
+            sums[family] = sums[family].copy()
+        for t, sign in changed:
+            if t.family in inexact:
+                continue
+            s = sums[t.family]
+            if t.op == "bins":
+                s[t.index:] += sign * t.bin_counts(s.shape[0] - t.index)
+            else:
+                s[t.index] += sign * t.amount
+        for family in inexact:
+            sums[family] = out._family_sum(family)
+        out.__dict__["sums"] = sums  # Fills the cached property.
+        return out
+
+    @cached_property
+    def _positions(self) -> dict[int, int]:
+        return {id(item): i for i, item in enumerate(self.items)}
 
     def key_counts(self, family: str) -> dict[str, tuple[int, int]]:
         """For a family of keyed terms: each key's bucket and the number of terms that add it, in first-seen order."""

@@ -22,6 +22,11 @@ histogram, general, byteentropy, strings, and section (size_ratios + the growing
 touches histogram, general (entropy, start bytes), byteentropy (the overlapping window), strings (the local run), and
 the header DOS fields.
 
+The C1 engine (provexp.reach, derivation step 5; docs/item-layer-design.md, check G4) predicts the same pairs from
+the instrumented extractor's item table: append and dos_overwrite as byte edits (the engine itself flags writes to
+locating ranges, e.g. an append that reaches a section running past the end of the file), add_section through the
+catalogue's declaration. Its columns (`engine_*`) compare it with re-extraction and with the hand predictors.
+
 Outputs, in `{outdir}/`:
     table0.parquet   one row per (file, transformation): exact match, num mismatching features, max abs error, timing
     mismatches.parquet   one row per (file, transformation, feature) that mismatched: predicted, actual, group
@@ -49,11 +54,17 @@ from provexp.data.simpledb import SimpleDB
 from provexp.data.simpledb import SimpleDBReader
 from provexp.featuresets.ember2024.features import PEFeatureExtractor
 from provexp.featuresets.ember2024.features import StringExtractor
+from provexp.featuresets.ember2024.catalogue import add_section
 from provexp.featuresets.ember2024.sums import BodyByteEntropyHistogram
 from provexp.featuresets.ember2024.sums import BodyStrings
 from provexp.featuresets.ember2024.sums import SumsFeatureExtractor
 from provexp.featuresets.ember2024.sums import body_regions
 from provexp.featuresets.ember2024.sums import signed_bucket
+from provexp.items import ItemTable
+from provexp.items import Readout
+from provexp.reach import ByteEdit
+from provexp.reach import Prediction
+from provexp.reach import predict
 
 __all__ = ["append_payload", "predict_add_section_sums", "predict_append", "predict_append_sums"]
 
@@ -483,6 +494,62 @@ def edit_dos_overwrite(z: bytes, seed: int) -> tuple[bytes, dict[str, Any]]:
     return z[:2] + c + z[60:], {"lo": 2, "hi": 60, "c": c}
 
 
+################################################################################
+# The C1 engine's columns (check G4)
+################################################################################
+
+_ENGINE_EMPTY: dict[str, Any] = {
+    "engine_flagged": False, "engine_reason": "", "engine_exact": False, "engine_bit_exact": False,
+    "engine_num_mismatch": -1, "engine_max_rel_err": float("nan"), "engine_vs_hand_max_rel": float("nan"),
+    "engine_hand_bit_equal": False, "engine_groups_missed": [], "engine_seconds": float("nan"),
+}
+
+
+def _engine_columns(engine: Any, table: ItemTable, z: bytes, kw: dict[str, Any], actual: np.ndarray, hand: np.ndarray,
+                    modeled: np.ndarray, tol: float, readouts: list[Readout], group: list[str]) -> dict[str, Any]:
+    """The engine's prediction for one pair, compared with re-extraction and with the hand predictor."""
+    start = time.time()
+    p: Prediction = engine(table, z, kw)
+    seconds = time.time() - start
+    if p.table is None:
+        return {**_ENGINE_EMPTY, "engine_flagged": True, "engine_reason": p.reason, "engine_seconds": seconds}
+    y = p.features(readouts)
+    err = np.abs(y - actual) / np.maximum(np.abs(actual), 1.0)
+    bad = np.where((err > tol) & modeled)[0]
+    vs_hand = np.abs(y - hand) / np.maximum(np.abs(hand), 1.0)
+    return {
+        "engine_flagged": False,
+        "engine_reason": "",
+        "engine_exact": len(bad) == 0,
+        "engine_bit_exact": bool(np.all((y == actual)[modeled])),
+        "engine_num_mismatch": int(len(bad)),
+        "engine_max_rel_err": float(err[modeled].max()),
+        "engine_vs_hand_max_rel": float(vs_hand[modeled].max()),
+        "engine_hand_bit_equal": bool(np.all((y == hand)[modeled])),
+        "engine_groups_missed": sorted({group[j] for j in bad}),
+        "engine_seconds": seconds,
+    }
+
+
+def _engine_report(ok: pl.DataFrame) -> dict[str, Any]:
+    """Per transformation: flags, exactness against re-extraction, and agreement with the hand predictor."""
+    predicted = ok.filter(~pl.col("engine_flagged"))
+    groups = Counter(g for gs in predicted["engine_groups_missed"].to_list() for g in gs)
+    return {
+        "flagged_pairs": int(ok["engine_flagged"].sum()),
+        "flagged_where_hand_flag": int((ok["engine_flagged"] & ~ok["assumptions_hold"]).sum()),
+        "flagged_where_hand_clean": int((ok["engine_flagged"] & ok["assumptions_hold"]).sum()),
+        "flag_reasons": dict(Counter(ok.filter(pl.col("engine_flagged"))["engine_reason"].to_list()).most_common(5)),
+        "predicted_pairs": predicted.height,
+        "exact_tol": int(predicted["engine_exact"].sum()),
+        "bit_exact": int(predicted["engine_bit_exact"].sum()),
+        "pairs_with_group_missed": dict(groups),
+        "max_rel_err_vs_hand": float(predicted["engine_vs_hand_max_rel"].max() or 0.0) if predicted.height else 0.0,  # type: ignore[arg-type]
+        "bit_equal_to_hand": int(predicted["engine_hand_bit_equal"].sum()),
+        "seconds_engine_median": float(predicted["engine_seconds"].median() or 0.0) if predicted.height else 0.0,  # type: ignore[arg-type]
+    }
+
+
 def main() -> None:
     parser = ArgumentParser(description=__doc__)
     parser.add_argument("--outdir", type=Path, required=True)
@@ -496,6 +563,7 @@ def main() -> None:
     args.outdir.mkdir(parents=True, exist_ok=True)
 
     extractor = PEFeatureExtractor()
+    readouts = extractor.readouts
     names = extractor.feature_names
     group = [n.split(":", 1)[0] for n in names]
     # pefilewarnings has no items (docs/feature-provenance-model.md S7): it is outside the model, so it is excluded
@@ -513,16 +581,19 @@ def main() -> None:
         {"name": "append", "note": "overlay append, guard byte + random payload (Section 6 row 1; item-creating)",
          "edit": lambda z: edit_append(z, args.seed, args.append_size),
          "predict": lambda z, kw: predict_append(extractor, z, kw["appended"]),
+         "engine": lambda t, z, kw: predict(t, z, ByteEdit(len(z), len(z), kw["appended"]), extractor.recognizers),
          "clean": lambda pe: not has_overrun_section(pe),
          "flag": "A2: a section's declared raw size overruns the file"},
         {"name": "dos_overwrite", "note": "in-place DOS-header overwrite, bytes [2,60) (Section 6 row 3; content)",
          "edit": lambda z: edit_dos_overwrite(z, args.seed),
          "predict": lambda z, kw: predict_content_overwrite(extractor, z, kw["lo"], kw["hi"], kw["c"]),
+         "engine": lambda t, z, kw: predict(t, z, ByteEdit(kw["lo"], kw["hi"], kw["c"]), extractor.recognizers),
          "clean": lambda pe: True,
          "flag": None},
         {"name": "add_section", "note": "LIEF add R/W section, 4 KB random (Section 6 row 11; declared structural)",
          "edit": lambda z: edit_add_section(z, args.seed),
          "predict": lambda z, kw: predict_add_section(extractor, z, kw["name"], kw["content"], kw["props"]),
+         "engine": lambda t, z, kw: add_section(extractor, t, z, kw["name"], kw["content"], kw["props"]),
          "clean": lambda pe: True,
          "flag": "A4: the tool's file layout (table entry, alignment, SizeOfImage, directory moves) is not declared"},
     ]
@@ -531,6 +602,7 @@ def main() -> None:
     mism: list[dict[str, Any]] = []
     for r in df.iter_rows(named=True):
         z = bytes(reader.get(r["name"]).data)
+        table = extractor.item_table(z)
         for tf in transforms:
             start = time.time()
             try:
@@ -542,17 +614,18 @@ def main() -> None:
                 err = np.abs(predicted - actual) / denom
                 bad = np.where((err > args.tol) & modeled)[0]
                 warn_changed = bool(((err > args.tol) & ~modeled).any())
+                engine = _engine_columns(tf["engine"], table, z, kw, actual, predicted, modeled, args.tol, readouts, group)
                 rows.append({"name": r["name"], "transformation": tf["name"], "exact": len(bad) == 0,
                              "num_mismatch": int(len(bad)), "max_rel_err": float(err[modeled].max()),
                              "assumptions_hold": clean, "pefilewarnings_changed": warn_changed,
-                             "seconds": time.time() - start})
+                             "seconds": time.time() - start, **engine})
                 for j in bad:
                     mism.append({"name": r["name"], "transformation": tf["name"], "feature": names[j],
                                  "group": group[j], "predicted": float(predicted[j]), "actual": float(actual[j])})
             except Exception as e:
                 rows.append({"name": r["name"], "transformation": tf["name"], "exact": False, "num_mismatch": -1,
                              "max_rel_err": float("nan"), "assumptions_hold": False,
-                             "pefilewarnings_changed": False, "seconds": time.time() - start})
+                             "pefilewarnings_changed": False, "seconds": time.time() - start, **_ENGINE_EMPTY})
                 print(f"  SKIP {tf['name']} {r['name'][:12]}: {type(e).__name__}: {str(e)[:120]}", flush=True)
 
     rdf = pl.DataFrame(rows)
@@ -586,6 +659,7 @@ def main() -> None:
             "group_fully_predicted_pairs": group_fully_predicted,
             "mismatch_by_group_clean": dict(Counter(m["group"] for m in tm_clean)),
             "mismatch_by_feature_top": dict(Counter(m["feature"] for m in tm).most_common(15)),
+            "engine": _engine_report(ok),
         }
     (args.outdir / "report.json").write_text(json.dumps(report, indent=2))
     print(json.dumps(report, indent=2))

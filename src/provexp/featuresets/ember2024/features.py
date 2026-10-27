@@ -30,6 +30,8 @@ from datetime import datetime
 
 from collections import defaultdict
 from collections.abc import Sequence
+from dataclasses import replace as _replace
+from typing import Callable
 from typing import Optional
 
 from provexp.boxmatrix import BoxMatrix
@@ -52,6 +54,9 @@ from provexp.items import Readout
 from provexp.items import Selection
 from provexp.items import Term
 from provexp.items import feature_hash
+from provexp.reach import ByteEdit
+from provexp.reach import NotLocal
+from provexp.reach import meets
 from provexp.provenance import Provenance
 
 
@@ -276,6 +281,63 @@ def rva_ranges(pe: pefile.PE, rva: int, size: int) -> tuple[Range, ...]:
     return (r,) if r is not None and size > 0 else ()
 
 
+# NOTE: the `recognize` methods translate an in-place write or an append into item operations for the C1 engine
+# (provexp.reach.predict; assumption A3): each feature type re-recognizes its items around the written bytes, with
+# its margins (strings: out to the nearest non-printable byte; windows: every window that overlaps; fields: re-read),
+# and raises NotLocal for what it cannot re-recognize locally. Writes to locating ranges never reach them (the engine
+# flags those first). They reuse the emitters' helpers, so a re-recognized item is the item the emitter would record.
+
+
+def entropy_H(data: bytes) -> float:
+    """The entropy pefile computes for a section's data and thrember for the overlay (the same formula and order)."""
+    return float(pefile.SectionStructure.entropy_H(None, data))
+
+
+def cut(ranges: Sequence[Range], lo: int, hi: int) -> tuple[Range, ...]:
+    """The ranges without the elements in [lo, hi)."""
+    out: list[Range] = []
+    for a, b in ranges:
+        out += [r for r in ((a, min(b, lo)), (max(a, hi), b)) if r[1] > r[0]]
+    return tuple(out)
+
+
+def recognize_runs(items: Sequence[Item], kind: str, make: Callable[[bytes, tuple[Range, ...]], Item], old: bytes, new: bytes, edit: ByteEdit) -> tuple[list[Item], list[Item]]:
+    """
+    Runs of per-byte items (each byte an item, stored as runs): an in-place write replaces the written bytes' items;
+    an append adds the new bytes' items. `make(bytez, ranges)` builds the run of `bytez` over `ranges`.
+    """
+    if edit.is_append(old):
+        return [], [make(new, ((len(old), len(new)),))]
+    if edit.hi == edit.lo:
+        return [], []
+    removed = [item for item in items if item.kind == kind and meets(item.members, (edit.lo, edit.hi))]
+    added = [make(old, rest) for item in removed if (rest := cut(item.members, edit.lo, edit.hi))]
+    return removed, added + [make(new, ((edit.lo, edit.hi),))]
+
+
+def recognize_fields(items: Sequence[Item], old: bytes, new: bytes, edit: ByteEdit) -> tuple[list[Item], list[Item]]:
+    """Field items (one slot each, read as a little-endian unsigned integer from its bytes) meeting the write."""
+    span = edit.touched(old)
+    removed = [item for item in items if item.kind == "field" and meets(item.members, span)]
+    added = []
+    for item in removed:
+        (term,) = item.terms
+        if len(term.ranges) != 1 or item.open_end:
+            raise NotLocal([item], "a field cut by the end of the file")
+        lo, hi = term.ranges[0]
+        added.append(_replace(item, terms=(_replace(term, value=int.from_bytes(new[lo:hi], "little")),)))
+    return removed, added
+
+
+def recognize_nothing(items: Sequence[Item], old: bytes, new: bytes, edit: ByteEdit) -> tuple[list[Item], list[Item]]:
+    """For feature types without local recognizers: no item may meet the write or grow with an append."""
+    span = edit.touched(old)
+    blocked = [item for item in items if meets(item.members, span) or (edit.is_append(old) and item.open_end)]
+    if blocked:
+        raise NotLocal(blocked, f"no local recognizer for {sorted({item.kind for item in blocked})}")
+    return [], []
+
+
 class FeatureType(object):
     """
     Base class from which each feature type may inherit
@@ -317,6 +379,10 @@ class FeatureType(object):
     def readouts(self) -> list[Readout]:
         """The formula of each feature over the sums and items, in the order of the feature vector."""
         raise (NotImplementedError)
+
+    def recognize(self, items: Sequence[Item], old: bytes, new: bytes, edit: ByteEdit) -> tuple[list[Item], list[Item]]:
+        """The items that leave and join after an in-place write or an append (see `provexp.reach.Recognizer`)."""
+        return recognize_nothing(items, old, new, edit)
 
 
 class GeneralFileInfo(FeatureType):
@@ -379,23 +445,34 @@ class GeneralFileInfo(FeatureType):
             C.add_bytes(3 + i, (i, i + 1))
         return C.build()
 
+    def _run(self, bytez: bytes, ranges: tuple[Range, ...]) -> Item:
+        """The bytes in `ranges` (each an item, stored as one run): their number and their counts."""
+        return Item("bytes", terms=(
+            Term("add", "general:size", value=sum(hi - lo for lo, hi in ranges), ranges=ranges, per_byte=True),
+            Term("bins", "general:bytes", ranges=ranges, bin_key=np.frombuffer(bytez, dtype=np.uint8)),
+        ))
+
+    def _start_byte(self, bytez: bytes, i: int) -> Item:
+        return Item("field", terms=(Term("slot", "general:start", index=i, value=bytez[i], ranges=((i, i + 1),)),))
+
     def items(self, bytez: bytes, pe: pefile.PE | None = None) -> ItemTable:
         n = len(bytez)
-        whole = clipped(n, [(0, n)])
-        items = [
-            # The file's bytes: its size and the byte counts its entropy is computed from.
-            Item("bytes", terms=(
-                Term("add", "general:size", value=n, ranges=whole, per_byte=True),
-                Term("bins", "general:bytes", ranges=whole, bin_key=np.frombuffer(bytez, dtype=np.uint8)),
-            )),
-        ]
+        # The file's bytes: its size and the byte counts its entropy is computed from.
+        items = [self._run(bytez, clipped(n, [(0, n)]))]
         # The first four bytes, each a field.
         for i in range(min(4, n)):
-            items.append(Item("field", terms=(Term("slot", "general:start", index=i, value=bytez[i], ranges=((i, i + 1),)),)))
+            items.append(self._start_byte(bytez, i))
         # Whether the file parsed as a PE (NOTE (Axiom 3): from no particular bytes).
         if pe is not None:
             items.append(Item("pe", attrs={"is_pe": 1}, locating=pe_locating(pe)))
         return ItemTable(n, {"general:size": 1, "general:bytes": 256, "general:start": 4}, items)
+
+    def recognize(self, items: Sequence[Item], old: bytes, new: bytes, edit: ByteEdit) -> tuple[list[Item], list[Item]]:
+        removed, added = recognize_runs(items, "bytes", self._run, old, new, edit)
+        r, a = recognize_fields(items, old, new, edit)
+        # Appending to a file of fewer than four bytes adds start bytes.
+        a += [self._start_byte(new, i) for i in range(len(old), min(4, len(new)))]
+        return removed + r, added + a
 
     @property
     def readouts(self) -> list[Readout]:
@@ -438,11 +515,16 @@ class ByteHistogram(FeatureType):
         C.add_keyed([0], [len(bytez)], [0], np.frombuffer(bytez, dtype=np.uint8))
         return C.build()
 
+    def _run(self, bytez: bytes, ranges: tuple[Range, ...]) -> Item:
+        """The bytes in `ranges` (each an item, stored as one run), each counted in the bin of its value."""
+        return Item("bytes", terms=(Term("bins", "histogram:counts", ranges=ranges, bin_key=np.frombuffer(bytez, dtype=np.uint8)),))
+
     def items(self, bytez: bytes, pe: pefile.PE | None = None) -> ItemTable:
         n = len(bytez)
-        # The bytes, each counted in the bin of its value (one run of byte items).
-        item = Item("bytes", terms=(Term("bins", "histogram:counts", ranges=clipped(n, [(0, n)]), bin_key=np.frombuffer(bytez, dtype=np.uint8)),))
-        return ItemTable(n, {"histogram:counts": 256}, [item])
+        return ItemTable(n, {"histogram:counts": 256}, [self._run(bytez, clipped(n, [(0, n)]))])
+
+    def recognize(self, items: Sequence[Item], old: bytes, new: bytes, edit: ByteEdit) -> tuple[list[Item], list[Item]]:
+        return recognize_runs(items, "bytes", self._run, old, new, edit)
 
     @property
     def readouts(self) -> list[Readout]:
@@ -523,25 +605,34 @@ class ByteEntropyHistogram(FeatureType):
         C.add_keyed(starts, stops, 16 * Hbins, a >> 4)
         return C.build()
 
-    def items(self, bytez: bytes, pe: pefile.PE | None = None) -> ItemTable:
+    def _spans(self, n: int) -> list[Range]:
+        """Mirror the windowing in `raw_features`: windows at multiples of the step; a short file is one window."""
+        if n < self.window:
+            return [(0, n)]
+        return [(s, s + self.window) for s in range(0, n - self.window + 1, self.step)]
+
+    def _windows(self, bytez: bytes, spans: Sequence[Range]) -> list[Item]:
+        """Each window counts the high nibbles of its bytes in the row of its entropy bin."""
         n = len(bytez)
         a = np.frombuffer(bytez, dtype=np.uint8)
         nibbles = a >> 4
-        # Mirror the windowing in `raw_features`: each window counts the high nibbles of its bytes in the row of its
-        # entropy bin. A file shorter than a window is one window.
-        if n < self.window:
-            starts = [0]
-            Hbins = [self._entropy_bin_counts(a)[0]]
-            stops = [n]
-        else:
-            starts = list(range(0, n - self.window + 1, self.step))
-            Hbins = [self._entropy_bin_counts(a[s:s + self.window])[0] for s in starts]
-            stops = [s + self.window for s in starts]
-        items = [
-            Item("window", attrs={"Hbin": h}, terms=(Term("bins", "byteentropy:counts", index=16 * h, ranges=clipped(n, [(s, e)]), bin_key=nibbles),))
-            for s, e, h in zip(starts, stops, Hbins, strict=True)
-        ]
-        return ItemTable(n, {"byteentropy:counts": 256}, items)
+        items = []
+        for s, e in spans:
+            h = self._entropy_bin_counts(a[s:e])[0]
+            items.append(Item("window", attrs={"Hbin": h, "span": (s, e)}, terms=(Term("bins", "byteentropy:counts", index=16 * h, ranges=clipped(n, [(s, e)]), bin_key=nibbles),)))
+        return items
+
+    def items(self, bytez: bytes, pe: pefile.PE | None = None) -> ItemTable:
+        return ItemTable(len(bytez), {"byteentropy:counts": 256}, self._windows(bytez, self._spans(len(bytez))))
+
+    def recognize(self, items: Sequence[Item], old: bytes, new: bytes, edit: ByteEdit) -> tuple[list[Item], list[Item]]:
+        # Windows are located by position: the windows that overlap the write, and those the new length adds or
+        # drops (the short-file window, the new windows over appended bytes), are re-recognized.
+        spans = set(self._spans(len(new)))
+        span = edit.touched(old)
+        removed = [w for w in items if w.kind == "window" and (w.attrs["span"] not in spans or meets([w.attrs["span"]], span))]
+        kept = {w.attrs["span"] for w in items if w.kind == "window"} - {w.attrs["span"] for w in removed}
+        return removed, self._windows(new, sorted(spans - kept))
 
     @property
     def readouts(self) -> list[Readout]:
@@ -758,9 +849,23 @@ class StringExtractor(FeatureType):
         return C.build()
 
     def items(self, bytez: bytes, pe: pefile.PE | None = None) -> ItemTable:
-        n = len(bytez)
         families = {"strings:numstrings": 1, "strings:printables": 1, "strings:printabledist": 96, "strings:regex": len(self._regexes)}
-        spans = [(mt.start(), mt.end()) for mt in self._allstrings.finditer(bytez)]
+        return ItemTable(len(bytez), families, self._string_items(bytez, 0, len(bytez)))
+
+    def recognize(self, items: Sequence[Item], old: bytes, new: bytes, edit: ByteEdit) -> tuple[list[Item], list[Item]]:
+        # A string is a maximal printable run: the written bytes are widened to the nearest non-printable byte (or
+        # the end of the file) on each side, in the new file; outside the write the old file has the same bytes.
+        lo, hi = edit.lo, edit.lo + len(edit.content)
+        while lo > 0 and 0x20 <= new[lo - 1] <= 0x7f:
+            lo -= 1
+        while hi < len(new) and 0x20 <= new[hi] <= 0x7f:
+            hi += 1
+        removed = [item for item in items if item.kind == "string" and meets(item.members, (lo, hi))]
+        return removed, self._string_items(new, lo, hi)
+
+    def _string_items(self, bytez: bytes, lo: int, hi: int) -> list[Item]:
+        """The strings of the file within [lo, hi) (whose ends are non-printable or the file's ends)."""
+        spans = [(mt.start(), mt.end()) for mt in self._allstrings.finditer(bytez, lo, hi)]
         # The regexes each string matches, in one pass per regex over the strings joined by newlines (see the NOTE on
         # `_strings_raw_features`: exact).
         matched: list[list[int]] = [[] for _ in spans]
@@ -783,7 +888,7 @@ class StringExtractor(FeatureType):
             ]
             terms += [Term("count", "strings:regex", index=j, ranges=r) for j in sorted(regexes)]
             items.append(Item("string", terms=tuple(terms)))
-        return ItemTable(n, families, items)
+        return items
 
     @property
     def readouts(self) -> list[Readout]:
@@ -1049,47 +1154,20 @@ class SectionInfo(FeatureType):
         raw_obj = self.raw_features(bytez, pe)
         sections = raw_obj["sections"]
         located = pe_locating(pe)
-        items = [Item("file", terms=(Term("add", "section:file_size", value=n, ranges=clipped(n, [(0, n)]), per_byte=True),), locating=located)]
+        items: list[Item] = []
 
-        # The sections, in the order of `pe.sections`.
-        name_buckets, name_signs = feature_hash(50, [s["name"] for s in sections])
-        characteristics = [f"{s['name']}:{p}" for s in sections for p in s["props"]]
-        char_buckets, char_signs = feature_hash(50, characteristics)
-        j = 0
-        for i, (section, s) in enumerate(zip(pe.sections, sections, strict=True)):
-            table = clipped(n, [structure_range(section)])
-            name = clipped(n, [field_range(section, "Name")])
-            size = clipped(n, [field_range(section, "SizeOfRawData")])
-            vsize = clipped(n, [field_range(section, "Misc_VirtualSize")])
-            props = clipped(n, [field_range(section, "Characteristics")])
-            data = clipped(n, [section_data_range(section)])
-            b, sign = int(name_buckets[i]), int(name_signs[i])
-            terms = [Term("count", "section:counts", index=0, ranges=table)]
-            if s["size"] == 0:
-                terms.append(Term("count", "section:counts", index=1, ranges=size))
-            if s["name"] == "":
-                terms.append(Term("count", "section:counts", index=2, ranges=name))
-            if "MEM_READ" in s["props"] and "MEM_EXECUTE" in s["props"]:
-                terms.append(Term("count", "section:counts", index=3, ranges=props))
-            if "MEM_WRITE" in s["props"]:
-                terms.append(Term("count", "section:counts", index=4, ranges=props))
-            terms += [
-                Term("hashed", "section:size_hash", index=b, value=s["size"], sign=sign, key=s["name"], attr="size", ranges=name + size),
-                Term("hashed", "section:vsize_hash", index=b, value=s["vsize"], sign=sign, key=s["name"], attr="vsize", ranges=name + vsize),
-                Term("hashed", "section:entropy_hash", index=b, value=s["entropy"], sign=sign, key=s["name"], attr="entropy", ranges=name + data),
-            ]
-            for _ in s["props"]:
-                terms.append(Term("hashed", "section:characteristics_hash", index=int(char_buckets[j]), sign=int(char_signs[j]), key=characteristics[j], ranges=name + props))
-                j += 1
-            items.append(Item(
-                "section",
-                terms=tuple(terms),
-                attrs={"name": s["name"], "size": s["size"], "vsize": s["vsize"], "entropy": s["entropy"], "vsize_ratio": s["vsize_ratio"]},
-                # The entropy of a section without data is determined by its size.
-                attr_ranges={"entropy": (data if data else size,), "size": (size,), "vsize_ratio": (size + vsize,)},
-                # Its header and its data's pointer and size are in the section table.
-                locating=located,
-            ))
+        # The sections, in the order of `pe.sections`. Each one's header and its data's pointer and size are in the
+        # section table, which is locating.
+        for section, s in zip(pe.sections, sections, strict=True):
+            ranges = {
+                "table": clipped(n, [structure_range(section)]),
+                "name": clipped(n, [field_range(section, "Name")]),
+                "size": clipped(n, [field_range(section, "SizeOfRawData")]),
+                "vsize": clipped(n, [field_range(section, "Misc_VirtualSize")]),
+                "props": clipped(n, [field_range(section, "Characteristics")]),
+                "data": clipped(n, [section_data_range(section)]),
+            }
+            items.append(self.section_item(s, ranges, located))
 
         # The overlay. pefile starts it after the furthest extent of the optional header, the sections, and the data
         # directories (but security) that lies within the file, so all of them locate it, and so do the bytes past
@@ -1104,19 +1182,11 @@ class SectionInfo(FeatureType):
                 except pefile.PEFormatError:
                     pass
         overlay_locating += tuple((n, hi) for _, hi in extents if hi > n)
+        # The file's length, which the size ratios divide by; it also carries the overlay's locating ranges when
+        # there is no overlay (appending creates one).
+        items.insert(0, self._file_item(n, overlay_locating))
         if overlay_offset is not None:
-            r = clipped(n, [(overlay_offset, n)])
-            o = raw_obj["overlay"]
-            items.append(Item(
-                "overlay",
-                terms=(
-                    Term("slot", "section:overlay", index=0, value=o["size"], attr="size", ranges=r, per_byte=True),
-                    Term("slot", "section:overlay", index=1, value=o["entropy"], attr="entropy", ranges=r, per_byte=True),
-                ),
-                attrs={"size": o["size"], "entropy": o["entropy"]},
-                attr_ranges={"size": (r,), "entropy": (r,)},
-                locating=overlay_locating,
-            ))
+            items.append(self._overlay_item(bytez, overlay_offset, overlay_locating))
 
         # The entry section, mirroring the selection logic in `raw_features` (and `provenance`). The entry point
         # always contributes, as do the name of the selected section and, if it was selected as a fallback, its
@@ -1149,6 +1219,91 @@ class SectionInfo(FeatureType):
             locating=located + (field_range(pe.OPTIONAL_HEADER, "AddressOfEntryPoint"),),
         ))
         return ItemTable(n, families, items)
+
+    def section_item(self, s: dict, ranges: dict[str, tuple[Range, ...]], locating: tuple[Range, ...]) -> Item:  # type: ignore[type-arg]
+        """
+        A section item from its raw features `s` (as in `raw_features`: name, size, vsize, entropy, vsize_ratio,
+        props) and the ranges of its header fields and data ("table", "name", "size", "vsize", "props", "data").
+        """
+        (b,), (sign,) = feature_hash(50, [s["name"]])
+        characteristics = [f"{s['name']}:{p}" for p in s["props"]]
+        char_buckets, char_signs = feature_hash(50, characteristics)
+        name, size, vsize, props, data = (ranges[k] for k in ("name", "size", "vsize", "props", "data"))
+        terms = [Term("count", "section:counts", index=0, ranges=ranges["table"])]
+        if s["size"] == 0:
+            terms.append(Term("count", "section:counts", index=1, ranges=size))
+        if s["name"] == "":
+            terms.append(Term("count", "section:counts", index=2, ranges=name))
+        if "MEM_READ" in s["props"] and "MEM_EXECUTE" in s["props"]:
+            terms.append(Term("count", "section:counts", index=3, ranges=props))
+        if "MEM_WRITE" in s["props"]:
+            terms.append(Term("count", "section:counts", index=4, ranges=props))
+        terms += [
+            Term("hashed", "section:size_hash", index=int(b), value=s["size"], sign=int(sign), key=s["name"], attr="size", ranges=name + size),
+            Term("hashed", "section:vsize_hash", index=int(b), value=s["vsize"], sign=int(sign), key=s["name"], attr="vsize", ranges=name + vsize),
+            Term("hashed", "section:entropy_hash", index=int(b), value=s["entropy"], sign=int(sign), key=s["name"], attr="entropy", ranges=name + data),
+        ]
+        for key, cb, cs in zip(characteristics, char_buckets.tolist(), char_signs.tolist(), strict=True):
+            terms.append(Term("hashed", "section:characteristics_hash", index=cb, sign=cs, key=key, ranges=name + props))
+        return Item(
+            "section",
+            terms=tuple(terms),
+            attrs={"name": s["name"], "size": s["size"], "vsize": s["vsize"], "entropy": s["entropy"], "vsize_ratio": s["vsize_ratio"], "props": list(s["props"]), "data": data},
+            # The entropy of a section without data is determined by its size.
+            attr_ranges={"entropy": (data if data else size,), "size": (size,), "vsize_ratio": (size + vsize,)},
+            locating=locating,
+        )
+
+    def _file_item(self, n: int, locating: tuple[Range, ...]) -> Item:
+        return Item("file", terms=(Term("add", "section:file_size", value=n, ranges=clipped(n, [(0, n)]), per_byte=True),), locating=locating, open_end=True)
+
+    def _overlay_item(self, bytez: bytes, start: int, locating: tuple[Range, ...]) -> Item:
+        """The overlay from `start` to the end of the file: its size and entropy (thrember's formula)."""
+        n = len(bytez)
+        r = clipped(n, [(start, n)])
+        size, entropy = n - start, entropy_H(bytez[start:])
+        return Item(
+            "overlay",
+            terms=(
+                Term("slot", "section:overlay", index=0, value=size, attr="size", ranges=r, per_byte=True),
+                Term("slot", "section:overlay", index=1, value=entropy, attr="entropy", ranges=r, per_byte=True),
+            ),
+            attrs={"size": size, "entropy": entropy, "start": start},
+            attr_ranges={"size": (r,), "entropy": (r,)},
+            locating=locating,
+            open_end=True,
+        )
+
+    def recognize(self, items: Sequence[Item], old: bytes, new: bytes, edit: ByteEdit) -> tuple[list[Item], list[Item]]:
+        n, m = len(old), len(new)
+        span = edit.touched(old)
+        removed: list[Item] = []
+        added: list[Item] = []
+        for item in items:
+            if item.kind == "file":
+                if m != n:
+                    removed.append(item)
+                    added.append(self._file_item(m, item.locating))
+            elif item.kind == "overlay":
+                if edit.is_append(old) or meets(item.members, span):
+                    removed.append(item)
+                    added.append(self._overlay_item(new, item.attrs["start"], item.locating))
+            elif item.kind == "section" and meets(item.attrs["data"], span) and not meets(cut(item.members, *item.attrs["data"][0]), span):
+                # A write into a section's data changes its entropy (its header is in the section table, which is
+                # locating, so the engine flags writes to it).
+                (lo, hi), = item.attrs["data"]
+                entropy = entropy_H(new[lo:hi])
+                terms = tuple(_replace(t, value=entropy) if t.family == "section:entropy_hash" else t for t in item.terms)
+                removed.append(item)
+                added.append(_replace(item, terms=terms, attrs={**item.attrs, "entropy": entropy}))
+            elif meets(item.members, span) or (edit.is_append(old) and item.open_end):
+                raise NotLocal([item], f"no local recognizer for a write to a {item.kind} item")
+        if edit.is_append(old) and not any(item.kind == "overlay" for item in items) and any(item.kind == "file" for item in items):
+            # pefile places the overlay after the furthest extent within the file; the file had none, so the furthest
+            # extent ends at the old end of the file (the extents past it are locating, so the engine flagged them).
+            file_item = next(item for item in items if item.kind == "file")
+            added.append(self._overlay_item(new, n, file_item.locating))
+        return removed, added
 
     @property
     def readouts(self) -> list[Readout]:
@@ -1859,7 +2014,9 @@ class HeaderFileInfo(FeatureType):
         located = pe_locating(pe)
 
         def field(family: str, index: int, structure: pefile.Structure, name: str, value: int) -> Item:
-            return Item("field", terms=(Term("slot", family, index=index, value=value, ranges=clipped(n, [field_range(structure, name)])),), attrs={"field": name}, locating=located)
+            r = field_range(structure, name)
+            # A field cut by the end of the file is padded by pefile, and grows with an append.
+            return Item("field", terms=(Term("slot", family, index=index, value=value, ranges=clipped(n, [r])),), attrs={"field": name}, locating=located, open_end=r[1] > n)
 
         items = [field("header:fields", i, getattr(pe, header), name, getattr(getattr(pe, header), name)) for i, (header, name) in enumerate(self._fields)]
         items.append(field("header:characteristics", 0, pe.FILE_HEADER, "Characteristics", pe.FILE_HEADER.Characteristics))
@@ -1869,6 +2026,11 @@ class HeaderFileInfo(FeatureType):
             value = dos_dict[member].get("Value")
             items.append(field("header:dos", i, pe.DOS_HEADER, member, value if value is not None else 0))
         return ItemTable(n, families, items)
+
+    def recognize(self, items: Sequence[Item], old: bytes, new: bytes, edit: ByteEdit) -> tuple[list[Item], list[Item]]:
+        if edit.is_append(old) and any(item.open_end for item in items):
+            raise NotLocal([item for item in items if item.open_end], "a header field cut by the end of the file")
+        return recognize_fields(items, old, new, edit)
 
     @property
     def readouts(self) -> list[Readout]:
@@ -2404,12 +2566,21 @@ class PEFeatureExtractor(object):
             pass
         except AttributeError:
             pass
-        return ItemTable.concatenate([fe.items(bytez, pe) for fe in self.features])
+        tables = [fe.items(bytez, pe) for fe in self.features]
+        for fe, table in zip(self.features, tables, strict=True):
+            for item in table.items:
+                item.group = fe.name
+        return ItemTable.concatenate(tables)
 
     @property
     def readouts(self) -> list[Readout]:
         """The formula of every feature, in the order of the feature vector (`provexp.items.evaluate`)."""
         return [r for fe in self.features for r in fe.readouts]
+
+    @property
+    def recognizers(self) -> dict[str, FeatureType]:
+        """The recognizer of each feature type, for the C1 engine (`provexp.reach.predict`)."""
+        return {fe.name: fe for fe in self.features}
 
 
 ################################################################################

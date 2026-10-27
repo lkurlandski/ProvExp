@@ -19,6 +19,8 @@ from provexp.featuresets.ember2024.features import merge_import_descriptors
 from provexp.items import Item
 from provexp.items import evaluate
 from provexp.items import project
+from provexp.reach import ByteEdit
+from provexp.reach import predict
 
 warnings.filterwarnings("ignore", category=SyntaxWarning)
 
@@ -147,3 +149,38 @@ class TestLocating:
                 for key, item in items.items():
                     if key not in other:
                         assert any(a <= offset < b for a, b in item.locating), (offset, item.kind)
+
+
+################################################################################
+# Real files: the C1 engine
+################################################################################
+
+
+def _edits(sample: bytes) -> list[ByteEdit]:
+    """An append with printable text (strings across the old end), a DOS-header write, and a write into code."""
+    rng = np.random.default_rng(0)
+    pe = pefile.PE(data=sample)
+    edits = [
+        ByteEdit(len(sample), len(sample), b"tail text http://example.com " * 4),
+        ByteEdit(2, 60, rng.integers(0, 256, 58, dtype=np.uint8).tobytes()),
+    ]
+    data = [s for s in pe.sections if s.SizeOfRawData >= 256 and s.PointerToRawData + s.SizeOfRawData <= len(sample)]
+    if data:
+        lo = data[0].PointerToRawData + 64
+        edits.append(ByteEdit(lo, lo + 32, b"PRINTABLE_" + rng.integers(0, 256, 22, dtype=np.uint8).tobytes()))
+    return edits
+
+
+class TestEngine:
+
+    def test_exact_or_flagged(self, sample: bytes) -> None:
+        needs_files()
+        table = EXTRACTOR.item_table(sample)
+        for edit in _edits(sample):
+            p = predict(table, sample, edit, EXTRACTOR.recognizers)
+            if p.table is None:
+                assert p.flagged and p.reason
+                continue
+            x = EXTRACTOR.feature_vector(p.new)  # type: ignore[no-untyped-call]
+            bad = [NAMES[i] for i in np.where(MODELED & (x != p.features(EXTRACTOR.readouts)))[0]]
+            assert not bad, (edit.lo, edit.hi)
