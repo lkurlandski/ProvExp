@@ -34,6 +34,24 @@ from typing import Optional
 
 from provexp.boxmatrix import BoxMatrix
 from provexp.provenance import EmptyPolicy
+from provexp.items import BitTest
+from provexp.items import DistinctCount
+from provexp.items import Entropy
+from provexp.items import Identity
+from provexp.items import Item
+from provexp.items import ItemTable
+from provexp.items import Lookup
+from provexp.items import Max
+from provexp.items import Min
+from provexp.items import Normalized
+from provexp.items import Opaque
+from provexp.items import Outside
+from provexp.items import Positive
+from provexp.items import Ratio
+from provexp.items import Readout
+from provexp.items import Selection
+from provexp.items import Term
+from provexp.items import feature_hash
 from provexp.provenance import Provenance
 
 
@@ -174,6 +192,27 @@ def hash_indices(n_features: int, items: Sequence[str]) -> np.ndarray:
     return X.indices.astype(np.int64)
 
 
+# NOTE: the `items` methods and `readouts` properties were added on top of thrember as well. They record the item layer
+# of feature provenance (docs/item-layer-design.md; provexp.items): each feature type's items (sections, strings,
+# windows, fields, ...), what each contributes to which sums (layer 2), and each feature's formula over the sums, as
+# data (layer 3). `provexp.items.evaluate(items, readouts)` must reproduce `feature_vector` exactly (check G1) and
+# `provexp.items.project(items, readouts)` must reproduce `provenance` (check G2). Like `provenance`, the emitters
+# mirror the selection logic of `raw_features` and reuse its per-item attributes (e.g., pefile's section entropy).
+# Families of sums are named "<feature type>:<family>".
+
+
+def clipped(num_bytes: int, ranges: Sequence[Optional[Range]]) -> tuple[Range, ...]:
+    """The ranges clipped to the file, without None and empty ranges (the clipping of `Contributions`)."""
+    out = []
+    for r in ranges:
+        if r is None:
+            continue
+        lo, hi = max(0, min(r[0], num_bytes)), max(0, min(r[1], num_bytes))
+        if hi > lo:
+            out.append((lo, hi))
+    return tuple(out)
+
+
 class FeatureType(object):
     """
     Base class from which each feature type may inherit
@@ -205,6 +244,15 @@ class FeatureType(object):
 
     def provenance(self, bytez: bytes, pe: pefile.PE | None = None) -> BoxMatrix:
         """The raw contribution of each byte to each feature, as a (len(bytez), dim) BoxMatrix."""
+        raise (NotImplementedError)
+
+    def items(self, bytez: bytes, pe: pefile.PE | None = None) -> ItemTable:
+        """The items of the file this feature type reads, with their contributions to its sums."""
+        raise (NotImplementedError)
+
+    @property
+    def readouts(self) -> list[Readout]:
+        """The formula of each feature over the sums and items, in the order of the feature vector."""
         raise (NotImplementedError)
 
 
@@ -268,6 +316,33 @@ class GeneralFileInfo(FeatureType):
             C.add_bytes(3 + i, (i, i + 1))
         return C.build()
 
+    def items(self, bytez: bytes, pe: pefile.PE | None = None) -> ItemTable:
+        n = len(bytez)
+        whole = clipped(n, [(0, n)])
+        items = [
+            # The file's bytes: its size and the byte counts its entropy is computed from.
+            Item("bytes", terms=(
+                Term("add", "general:size", value=n, ranges=whole, per_byte=True),
+                Term("bins", "general:bytes", ranges=whole, bin_key=np.frombuffer(bytez, dtype=np.uint8)),
+            )),
+        ]
+        # The first four bytes, each a field.
+        for i in range(min(4, n)):
+            items.append(Item("field", terms=(Term("slot", "general:start", index=i, value=bytez[i], ranges=((i, i + 1),)),)))
+        # Whether the file parsed as a PE (NOTE (Axiom 3): from no particular bytes).
+        if pe is not None:
+            items.append(Item("pe", attrs={"is_pe": 1}))
+        return ItemTable(n, {"general:size": 1, "general:bytes": 256, "general:start": 4}, items)
+
+    @property
+    def readouts(self) -> list[Readout]:
+        return [
+            Identity("general:size"),
+            Entropy("general:bytes", precision="python"),
+            Opaque("pe", ("is_pe",), (0.0,)),
+            Identity("general:start", 0, 4),
+        ]
+
 
 class ByteHistogram(FeatureType):
     """
@@ -299,6 +374,16 @@ class ByteHistogram(FeatureType):
         # Each byte is counted in the bin of its value.
         C.add_keyed([0], [len(bytez)], [0], np.frombuffer(bytez, dtype=np.uint8))
         return C.build()
+
+    def items(self, bytez: bytes, pe: pefile.PE | None = None) -> ItemTable:
+        n = len(bytez)
+        # The bytes, each counted in the bin of its value (one run of byte items).
+        item = Item("bytes", terms=(Term("bins", "histogram:counts", ranges=clipped(n, [(0, n)]), bin_key=np.frombuffer(bytez, dtype=np.uint8)),))
+        return ItemTable(n, {"histogram:counts": 256}, [item])
+
+    @property
+    def readouts(self) -> list[Readout]:
+        return [Normalized("histogram:counts", 256, precision="float32")]
 
 
 class ByteEntropyHistogram(FeatureType):
@@ -374,6 +459,30 @@ class ByteEntropyHistogram(FeatureType):
             Hbins = np.array([self._entropy_bin_counts(a[s:s + self.window])[0] for s in starts])
         C.add_keyed(starts, stops, 16 * Hbins, a >> 4)
         return C.build()
+
+    def items(self, bytez: bytes, pe: pefile.PE | None = None) -> ItemTable:
+        n = len(bytez)
+        a = np.frombuffer(bytez, dtype=np.uint8)
+        nibbles = a >> 4
+        # Mirror the windowing in `raw_features`: each window counts the high nibbles of its bytes in the row of its
+        # entropy bin. A file shorter than a window is one window.
+        if n < self.window:
+            starts = [0]
+            Hbins = [self._entropy_bin_counts(a)[0]]
+            stops = [n]
+        else:
+            starts = list(range(0, n - self.window + 1, self.step))
+            Hbins = [self._entropy_bin_counts(a[s:s + self.window])[0] for s in starts]
+            stops = [s + self.window for s in starts]
+        items = [
+            Item("window", attrs={"Hbin": h}, terms=(Term("bins", "byteentropy:counts", index=16 * h, ranges=clipped(n, [(s, e)]), bin_key=nibbles),))
+            for s, e, h in zip(starts, stops, Hbins, strict=True)
+        ]
+        return ItemTable(n, {"byteentropy:counts": 256}, items)
+
+    @property
+    def readouts(self) -> list[Readout]:
+        return [Normalized("byteentropy:counts", 256, precision="float32")]
 
 
 class StringExtractor(FeatureType):
@@ -584,6 +693,45 @@ class StringExtractor(FeatureType):
                     C.add_item(100 + self.regex_idxs[k], [span])
 
         return C.build()
+
+    def items(self, bytez: bytes, pe: pefile.PE | None = None) -> ItemTable:
+        n = len(bytez)
+        families = {"strings:numstrings": 1, "strings:printables": 1, "strings:printabledist": 96, "strings:regex": len(self._regexes)}
+        spans = [(mt.start(), mt.end()) for mt in self._allstrings.finditer(bytez)]
+        # The regexes each string matches, in one pass per regex over the strings joined by newlines (see the NOTE on
+        # `_strings_raw_features`: exact).
+        matched: list[list[int]] = [[] for _ in spans]
+        if spans:
+            text = "\n".join(bytez[lo:hi].decode() for lo, hi in spans)
+            starts = np.cumsum([0] + [hi - lo + 1 for lo, hi in spans[:-1]])
+            for k, r in self._regexes.items():
+                positions = [m.start() for m in r.finditer(text)]
+                for i in np.unique(np.searchsorted(starts, positions, side="right") - 1).tolist():
+                    matched[i].append(self.regex_idxs[k])
+        # The bin of each printable character; bytes outside the strings are never read.
+        key = np.frombuffer(bytez, dtype=np.uint8).astype(np.int16) - 0x20
+        items = []
+        for (lo, hi), regexes in zip(spans, matched, strict=True):
+            r = ((lo, hi),)
+            terms = [
+                Term("count", "strings:numstrings", ranges=r),
+                Term("add", "strings:printables", value=hi - lo, ranges=r, per_byte=True),
+                Term("bins", "strings:printabledist", ranges=r, bin_key=key),
+            ]
+            terms += [Term("count", "strings:regex", index=j, ranges=r) for j in sorted(regexes)]
+            items.append(Item("string", terms=tuple(terms)))
+        return ItemTable(n, families, items)
+
+    @property
+    def readouts(self) -> list[Readout]:
+        return [
+            Identity("strings:numstrings"),
+            Ratio(("strings:printables", 0), ("strings:numstrings", 0)),  # avlength
+            Identity("strings:printables"),
+            Normalized("strings:printabledist", 96, precision="float64"),
+            Entropy("strings:printabledist", precision="numpy"),
+            Identity("strings:regex", 0, len(self._regexes)),
+        ]
 
 
 class SectionInfo(FeatureType):
@@ -820,6 +968,128 @@ class SectionInfo(FeatureType):
 
         return C.build()
 
+    def items(self, bytez: bytes, pe: pefile.PE | None = None) -> ItemTable:
+        n = len(bytez)
+        families = {
+            "section:file_size": 1,
+            "section:counts": 5,
+            "section:size_hash": 50,
+            "section:vsize_hash": 50,
+            "section:entropy_hash": 50,
+            "section:characteristics_hash": 50,
+            "section:entry_name_hash": 10,
+            "section:overlay": 2,
+        }
+        if pe is None:
+            return ItemTable(n, families, [])
+
+        raw_obj = self.raw_features(bytez, pe)
+        sections = raw_obj["sections"]
+        items = [Item("file", terms=(Term("add", "section:file_size", value=n, ranges=clipped(n, [(0, n)]), per_byte=True),))]
+
+        # The sections, in the order of `pe.sections`.
+        name_buckets, name_signs = feature_hash(50, [s["name"] for s in sections])
+        characteristics = [f"{s['name']}:{p}" for s in sections for p in s["props"]]
+        char_buckets, char_signs = feature_hash(50, characteristics)
+        j = 0
+        for i, (section, s) in enumerate(zip(pe.sections, sections, strict=True)):
+            table = clipped(n, [structure_range(section)])
+            name = clipped(n, [field_range(section, "Name")])
+            size = clipped(n, [field_range(section, "SizeOfRawData")])
+            vsize = clipped(n, [field_range(section, "Misc_VirtualSize")])
+            props = clipped(n, [field_range(section, "Characteristics")])
+            data = clipped(n, [section_data_range(section)])
+            b, sign = int(name_buckets[i]), int(name_signs[i])
+            terms = [Term("count", "section:counts", index=0, ranges=table)]
+            if s["size"] == 0:
+                terms.append(Term("count", "section:counts", index=1, ranges=size))
+            if s["name"] == "":
+                terms.append(Term("count", "section:counts", index=2, ranges=name))
+            if "MEM_READ" in s["props"] and "MEM_EXECUTE" in s["props"]:
+                terms.append(Term("count", "section:counts", index=3, ranges=props))
+            if "MEM_WRITE" in s["props"]:
+                terms.append(Term("count", "section:counts", index=4, ranges=props))
+            terms += [
+                Term("hashed", "section:size_hash", index=b, value=s["size"], sign=sign, key=s["name"], attr="size", ranges=name + size),
+                Term("hashed", "section:vsize_hash", index=b, value=s["vsize"], sign=sign, key=s["name"], attr="vsize", ranges=name + vsize),
+                Term("hashed", "section:entropy_hash", index=b, value=s["entropy"], sign=sign, key=s["name"], attr="entropy", ranges=name + data),
+            ]
+            for _ in s["props"]:
+                terms.append(Term("hashed", "section:characteristics_hash", index=int(char_buckets[j]), sign=int(char_signs[j]), key=characteristics[j], ranges=name + props))
+                j += 1
+            items.append(Item(
+                "section",
+                terms=tuple(terms),
+                attrs={"name": s["name"], "size": s["size"], "vsize": s["vsize"], "entropy": s["entropy"], "vsize_ratio": s["vsize_ratio"]},
+                # The entropy of a section without data is determined by its size.
+                attr_ranges={"entropy": (data if data else size,), "size": (size,), "vsize_ratio": (size + vsize,)},
+            ))
+
+        # The overlay.
+        overlay_offset = pe.get_overlay_data_start_offset()
+        if overlay_offset is not None:
+            r = clipped(n, [(overlay_offset, n)])
+            o = raw_obj["overlay"]
+            items.append(Item(
+                "overlay",
+                terms=(
+                    Term("slot", "section:overlay", index=0, value=o["size"], attr="size", ranges=r, per_byte=True),
+                    Term("slot", "section:overlay", index=1, value=o["entropy"], attr="entropy", ranges=r, per_byte=True),
+                ),
+                attrs={"size": o["size"], "entropy": o["entropy"]},
+                attr_ranges={"size": (r,), "entropy": (r,)},
+            ))
+
+        # The entry section, mirroring the selection logic in `raw_features` (and `provenance`). The entry point
+        # always contributes, as do the name of the selected section and, if it was selected as a fallback, its
+        # characteristics.
+        entry_ranges = [field_range(pe.OPTIONAL_HEADER, "AddressOfEntryPoint")]
+        entry_section = ""
+        aoep = pe.OPTIONAL_HEADER.AddressOfEntryPoint
+        for i, section in enumerate(pe.sections):
+            if section.contains_rva(aoep):
+                entry_section = sections[i]["name"]
+                entry_ranges = [field_range(pe.OPTIONAL_HEADER, "AddressOfEntryPoint"), field_range(section, "Name")]
+        isection = 0
+        while entry_section == "" and isection < len(pe.sections):
+            if pe.sections[isection].Characteristics & 0x20000000 > 0:
+                entry_section = sections[isection]["name"]
+                entry_ranges = [
+                    field_range(pe.OPTIONAL_HEADER, "AddressOfEntryPoint"),
+                    field_range(pe.sections[isection], "Name"),
+                    field_range(pe.sections[isection], "Characteristics"),
+                ]
+            isection += 1
+        if entry_section != raw_obj["entry"]:
+            raise RuntimeError(f"Failed to mirror the entry section selection: {entry_section!r} != {raw_obj['entry']!r}")
+        buckets, signs = feature_hash(10, [entry_section])
+        items.append(Item(
+            "entry",
+            terms=(Term("hashed", "section:entry_name_hash", index=int(buckets[0]), sign=int(signs[0]), key=entry_section, ranges=clipped(n, entry_ranges)),),
+            attrs={"name": entry_section},
+        ))
+        return ItemTable(n, families, items)
+
+    @property
+    def readouts(self) -> list[Readout]:
+        return [
+            Identity("section:counts", 0, 5),
+            Max(("section", "overlay"), "entropy"),
+            Min(("section", "overlay"), "entropy"),
+            Max(("section", "overlay"), "size", divide_by=("section:file_size", 0)),
+            Min(("section", "overlay"), "size", divide_by=("section:file_size", 0)),
+            Max(("section",), "vsize_ratio"),
+            Min(("section",), "vsize_ratio"),
+            Identity("section:size_hash", 0, 50),
+            Identity("section:vsize_hash", 0, 50),
+            Identity("section:entropy_hash", 0, 50),
+            Identity("section:characteristics_hash", 0, 50),
+            Selection("section:entry_name_hash", 0, 10),
+            Identity("section:overlay", 0, 1),
+            Ratio(("section:overlay", 0), ("section:file_size", 0)),
+            Identity("section:overlay", 1, 1),
+        ]
+
 
 class ImportsInfo(FeatureType):
     """
@@ -913,6 +1183,64 @@ class ImportsInfo(FeatureType):
 
         return C.build()
 
+    def _import_items(self, bytez: bytes, pe: pefile.PE | None, merged: bool) -> ItemTable:
+        """The items of `raw_features` (`merged=False`) or of `ImportsInfoMerged.raw_features` (`merged=True`)."""
+        n = len(bytez)
+        families = {"imports:num_imports": 1, "imports:libraries": 256, "imports:functions": 1024}
+        if pe is None or "DIRECTORY_ENTRY_IMPORT" not in pe.__dict__.keys():
+            return ItemTable(n, families, [])
+
+        # Mirrors `provenance`: the names of all of the descriptors for a DLL contribute to the DLL's features.
+        thunk_size = 8 if pe.PE_TYPE == pefile.OPTIONAL_HEADER_MAGIC_PE_PLUS else 4
+        dll_ranges: dict[str, list[Optional[Range]]] = defaultdict(list)
+        imports: dict[str, list[tuple[str, Optional[Range]]]] = {}
+        for entry in pe.DIRECTORY_ENTRY_IMPORT:
+            dll_name = entry.dll.decode()
+            dll_ranges[dll_name].append(rva_string_range(pe, entry.struct.Name, len(entry.dll)))
+            if merged:
+                functions = imports.setdefault(dll_name, [])
+            else:
+                # A later descriptor for the same DLL replaces the functions of an earlier one.
+                functions = imports[dll_name] = []
+            for lib in entry.imports:
+                if lib.name is not None and len(lib.name):
+                    r = (lib.name_offset, lib.name_offset + min(len(lib.name), 10000)) if lib.name_offset is not None else None
+                    functions.append((lib.name.decode()[:10000], r))
+                elif lib.ordinal is not None:
+                    r = (lib.ordinal_offset, lib.ordinal_offset + thunk_size) if lib.ordinal_offset is not None else None
+                    functions.append((f"{dll_name}:ordinal{lib.ordinal}", r))
+
+        # One library item per descriptor, keyed by the lowercased name (the readout counts distinct keys).
+        items = []
+        libraries = [dll_name.lower() for dll_name in imports for _ in dll_ranges[dll_name]]
+        ranges = [r for dll_name in imports for r in dll_ranges[dll_name]]
+        buckets, _ = feature_hash(256, libraries)
+        for key, r, b in zip(libraries, ranges, buckets.tolist(), strict=True):
+            items.append(Item("library", terms=(Term("keyed", "imports:libraries", index=b, key=key, ranges=clipped(n, [r])),)))
+
+        # One import item per function. NOTE: without merging, a function's contribution depends on the later
+        # descriptors for its DLL (assumption A2), so these items are not local.
+        functions = [(dll_name.lower() + ":" + e, clipped(n, [r] + dll_ranges[dll_name])) for dll_name, elist in imports.items() for e, r in elist]
+        buckets, _ = feature_hash(1024, [k for k, _ in functions])
+        for (key, r), b in zip(functions, buckets.tolist(), strict=True):
+            items.append(Item("import", terms=(
+                Term("count", "imports:num_imports", ranges=r),
+                Term("hashed", "imports:functions", index=b, key=key, ranges=r),
+            ), attrs={"dll": key.split(":", 1)[0]}, local=merged))
+        return ItemTable(n, families, items)
+
+    def items(self, bytez: bytes, pe: pefile.PE | None = None) -> ItemTable:
+        return self._import_items(bytez, pe, merged=False)
+
+    @property
+    def readouts(self) -> list[Readout]:
+        return [
+            Identity("imports:num_imports"),
+            DistinctCount("imports:libraries"),
+            DistinctCount("imports:libraries", 256, per_bucket=True),
+            Identity("imports:functions", 0, 1024),
+        ]
+
 
 class ImportsInfoMerged(ImportsInfo):
     """
@@ -975,6 +1303,9 @@ class ImportsInfoMerged(ImportsInfo):
             C.add_item(258 + b, ranges)
 
         return C.build()
+
+    def items(self, bytez: bytes, pe: pefile.PE | None = None) -> ItemTable:
+        return self._import_items(bytez, pe, merged=True)
 
 
 def merge_import_descriptors(extractor: "PEFeatureExtractor") -> "PEFeatureExtractor":
@@ -1061,6 +1392,37 @@ class ExportsInfo(FeatureType):
             C.add_item(1 + b, [r])
 
         return C.build()
+
+    def items(self, bytez: bytes, pe: pefile.PE | None = None) -> ItemTable:
+        n = len(bytez)
+        families = {"exports:count": 1, "exports:hash": 128}
+        if pe is None or "DIRECTORY_ENTRY_EXPORT" not in pe.__dict__.keys():
+            return ItemTable(n, families, [])
+
+        exports: list[tuple[str, Optional[Range]]] = []
+        for exp in pe.DIRECTORY_ENTRY_EXPORT.symbols:
+            if exp.name is not None and len(exp.name):
+                r = (exp.name_offset, exp.name_offset + min(len(exp.name), 10000)) if exp.name_offset is not None else None
+                exports.append((exp.name.decode()[:10000], r))
+            elif exp.ordinal is not None:
+                offset = _export_address_offset(pe, exp)
+                r = (offset, offset + 4) if offset is not None else None
+                exports.append((f"ordinal{exp.ordinal}", r))
+        buckets, signs = feature_hash(128, [k for k, _ in exports])
+        items = [
+            Item("export", terms=(
+                Term("count", "exports:count", ranges=clipped(n, [r])),
+                Term("hashed", "exports:hash", index=b, sign=sign, key=key, ranges=clipped(n, [r])),
+            ))
+            for (key, r), b, sign in zip(exports, buckets.tolist(), signs.tolist(), strict=True)
+        ]
+        return ItemTable(n, families, items)
+
+    @property
+    def readouts(self) -> list[Readout]:
+        # NOTE: the first feature is meant to be the number of exports, but it is the length of the hashed vector:
+        # 128 if there is any export, else 0.
+        return [Positive(("exports:count", 0), scale=128.0), Identity("exports:hash", 0, 128)]
 
 
 class HeaderFileInfo(FeatureType):
@@ -1378,6 +1740,42 @@ class HeaderFileInfo(FeatureType):
 
         return C.build()
 
+    def items(self, bytez: bytes, pe: pefile.PE | None = None) -> ItemTable:
+        n = len(bytez)
+        families = {"header:fields": len(self._fields), "header:characteristics": 2, "header:dos": len(self._dos_members)}
+        if pe is None:
+            return ItemTable(n, families, [])
+
+        def field(family: str, index: int, structure: pefile.Structure, name: str, value: int) -> Item:
+            return Item("field", terms=(Term("slot", family, index=index, value=value, ranges=clipped(n, [field_range(structure, name)])),), attrs={"field": name})
+
+        items = [field("header:fields", i, getattr(pe, header), name, getattr(getattr(pe, header), name)) for i, (header, name) in enumerate(self._fields)]
+        items.append(field("header:characteristics", 0, pe.FILE_HEADER, "Characteristics", pe.FILE_HEADER.Characteristics))
+        items.append(field("header:characteristics", 1, pe.OPTIONAL_HEADER, "DllCharacteristics", pe.OPTIONAL_HEADER.DllCharacteristics))
+        dos_dict = pe.DOS_HEADER.dump_dict()
+        for i, member in enumerate(self._dos_members):
+            value = dos_dict[member].get("Value")
+            items.append(field("header:dos", i, pe.DOS_HEADER, member, value if value is not None else 0))
+        return ItemTable(n, families, items)
+
+    @property
+    def readouts(self) -> list[Readout]:
+        # The category codes of `process_raw_features`, as lookups of the raw field value.
+        machine = {v: float(self._machine_types_dict.get(k, 0)) for k, v in pefile.MACHINE_TYPE.items() if isinstance(k, str)}
+        subsystem = {v: float(self._subsystem_types_dict.get(k, 0)) for k, v in pefile.SUBSYSTEM_TYPE.items() if isinstance(k, str)}
+        # The flags pefile sets from the bit fields (`set_flags`); a flag pefile does not know is never set.
+        image = tuple(pefile.IMAGE_CHARACTERISTICS.get(f"IMAGE_FILE_{c}", 0) for c in self._image_characteristics)
+        dll = tuple(pefile.DLL_CHARACTERISTICS.get(f"IMAGE_DLLCHARACTERISTICS_{c}", 0) for c in self._dll_characteristics)
+        return [
+            Identity("header:fields", 0, 5),
+            Lookup(("header:fields", 5), machine, default=float(self._machine_types_dict.get("IMAGE_FILE_MACHINE_UNKNOWN", 0))),
+            Lookup(("header:fields", 6), subsystem, default=float(self._subsystem_types_dict.get("IMAGE_SUBSYSTEM_UNKNOWN", 0))),
+            Identity("header:fields", 7, len(self._fields) - 7),
+            BitTest(("header:characteristics", 0), image),
+            BitTest(("header:characteristics", 1), dll),
+            Identity("header:dos", 0, len(self._dos_members)),
+        ]
+
 
 class DataDirectories(FeatureType):
     """
@@ -1468,6 +1866,37 @@ class DataDirectories(FeatureType):
 
         return C.build()
 
+    def items(self, bytez: bytes, pe: pefile.PE | None = None) -> ItemTable:
+        n = len(bytez)
+        families = {"datadirectories:fields": 2 * len(self._name_order)}
+        if pe is None:
+            return ItemTable(n, families, [])
+
+        # Mirror `process_raw_features`, which skips the last data directory (usually RESERVED).
+        items = []
+        directories = pe.OPTIONAL_HEADER.DATA_DIRECTORY
+        for d in directories[:-1]:
+            idx = self._name_order.index(str(d.name).replace("IMAGE_DIRECTORY_ENTRY_", ""))
+            for k, name in enumerate(("Size", "VirtualAddress")):
+                term = Term("slot", "datadirectories:fields", index=2 * idx + k, value=getattr(d, name), ranges=clipped(n, [field_range(d, name)]))
+                items.append(Item("field", terms=(term,), attrs={"field": f"{d.name}.{name}"}))
+
+        # Whether the relocations were parsed: an outcome of pefile's parser, determined by the directories that
+        # point to them.
+        attr_ranges = {}
+        for attr, which in [("has_relocs", "BASERELOC"), ("has_dynamic_relocs", "LOAD_CONFIG")]:
+            idx = self._name_order.index(which)
+            attr_ranges[attr] = (clipped(n, [structure_range(directories[idx])]),) if idx < len(directories) else ()
+        items.append(Item("relocs", attrs={"has_relocs": int(pe.has_relocs()), "has_dynamic_relocs": int(pe.has_dynamic_relocs())}, attr_ranges=attr_ranges))
+        return ItemTable(n, families, items)
+
+    @property
+    def readouts(self) -> list[Readout]:
+        return [
+            Identity("datadirectories:fields", 0, 2 * len(self._name_order)),
+            Opaque("relocs", ("has_relocs", "has_dynamic_relocs"), (0.0, 0.0)),
+        ]
+
 
 class RichHeader(FeatureType):
     """
@@ -1512,6 +1941,29 @@ class RichHeader(FeatureType):
             C.add_item(1 + b, [r])
 
         return C.build()
+
+    def items(self, bytez: bytes, pe: pefile.PE | None = None) -> ItemTable:
+        n = len(bytez)
+        families = {"richheader:num_pairs": 1, "richheader:pairs": 32}
+        if pe is None or pe.RICH_HEADER is None:
+            return ItemTable(n, families, [])
+
+        # The (compid, count) pairs, eight bytes each after the DanS signature and padding (see `provenance`).
+        values = pe.RICH_HEADER.values
+        num_pairs = len(values) // 2
+        buckets, signs = feature_hash(32, [str(values[2 * i]) for i in range(num_pairs)])
+        items = []
+        for i in range(num_pairs):
+            r = clipped(n, [(0x80 + 16 + 8 * i, 0x80 + 16 + 8 * i + 8)])
+            items.append(Item("rich_pair", terms=(
+                Term("count", "richheader:num_pairs", ranges=r),
+                Term("hashed", "richheader:pairs", index=int(buckets[i]), value=values[2 * i + 1], sign=int(signs[i]), key=str(values[2 * i]), attr="count", ranges=r),
+            ), attrs={"compid": values[2 * i], "count": values[2 * i + 1]}))
+        return ItemTable(n, families, items)
+
+    @property
+    def readouts(self) -> list[Readout]:
+        return [Identity("richheader:num_pairs"), Identity("richheader:pairs", 0, 32)]
 
 
 class AuthenticodeSignature(FeatureType):
@@ -1627,6 +2079,30 @@ class AuthenticodeSignature(FeatureType):
 
         return C.build()
 
+    def items(self, bytez: bytes, pe: pefile.PE | None = None) -> ItemTable:
+        n = len(bytez)
+        if pe is None:
+            return ItemTable(n, {}, [])
+
+        # The certificate table, parsed by signify (opaque to the model), located by the security directory (whose
+        # address is a file offset, not an RVA). The signing time difference also reads the COFF timestamp.
+        directories = pe.OPTIONAL_HEADER.DATA_DIRECTORY
+        ranges: list[Optional[Range]] = []
+        if len(directories) > 4:
+            security = directories[4]
+            ranges.append(structure_range(security))
+            if security.Size > 0:
+                ranges.append((security.VirtualAddress, security.VirtualAddress + security.Size))
+        unit = clipped(n, ranges)
+        attrs = self.raw_features(bytez, pe)
+        attr_ranges = {a: (unit,) for a in self.feature_names}
+        attr_ranges["signing_time_diff"] = (unit, clipped(n, [field_range(pe.FILE_HEADER, "TimeDateStamp")]))
+        return ItemTable(n, {}, [Item("certificate_table", attrs=attrs, attr_ranges=attr_ranges)])
+
+    @property
+    def readouts(self) -> list[Readout]:
+        return [Opaque("certificate_table", tuple(self.feature_names), (0.0,) * self.dim)]
+
 
 class PEFormatWarnings(FeatureType):
     """
@@ -1699,6 +2175,14 @@ class PEFormatWarnings(FeatureType):
         # NOTE (Axiom 3): pefile emits warnings from all over its parser and does not record which bytes caused them,
         # so these features receive no contributions.
         return Contributions(len(bytez), self.dim).build()
+
+    def items(self, bytez: bytes, pe: pefile.PE | None = None) -> ItemTable:
+        # NOTE (Axiom 3): pefile does not record which bytes caused a warning; these features are outside the model.
+        return ItemTable(len(bytez), {}, [])
+
+    @property
+    def readouts(self) -> list[Readout]:
+        return [Outside(self.dim)]
 
 
 class PEFeatureExtractor(object):
@@ -1790,6 +2274,25 @@ class PEFeatureExtractor(object):
         Compute the explanation provenance of the feature vector of a file.
         """
         return self.feature_vector_with_provenance(bytez, empty)[1]
+
+    def item_table(self, bytez: bytes) -> ItemTable:
+        """
+        The items of every feature type, parsing the file only once (docs/item-layer-design.md, Section 1).
+        """
+        # Mirrors `raw_features`.
+        pe = None
+        try:
+            pe = pefile.PE(data=bytez)
+        except pefile.PEFormatError:
+            pass
+        except AttributeError:
+            pass
+        return ItemTable.concatenate([fe.items(bytez, pe) for fe in self.features])
+
+    @property
+    def readouts(self) -> list[Readout]:
+        """The formula of every feature, in the order of the feature vector (`provexp.items.evaluate`)."""
+        return [r for fe in self.features for r in fe.readouts]
 
 
 ################################################################################
