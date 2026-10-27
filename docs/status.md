@@ -14,7 +14,8 @@ Commits 94c8d37..4d9d1ee. All checks passed, each after at most one fix round, w
   dynamic relocation table to locating (run 93).
 - Not done: step 6 (catalogue for the other operations, parameter domains, G7). The session's response was stopped
   by the safety classifier while reading the toolkit's transformation code for the A0 rows; nothing was written for
-  step 6. Next: decide with the user how to proceed (see `docs/resume-prompt.md`).
+  step 6. Next (recommended to the user): step 7 (the C4 engine and the disagreement report), then step 6 built
+  from our own edit functions. Pick up at `docs/resume-prompt.md`.
 
 **2026-10-27, second session (end): A' mock written, reviewed, and accepted; A' check 0 passed; the overlay gap
 settled.** Next: derivation steps 1-6 of `docs/item-layer-design.md` in one stretch (item table, readouts as data,

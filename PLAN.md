@@ -60,7 +60,31 @@ introduction and a simple baseline (writing decision for later).
   attacks (GAMMA, MAB-Malware). Harsh check first: Pierazzi et al.'s problem-space formalization and every
   "realizable attack" paper since; the novelty must be the automatic, side-effect-exact translation, not the attack.
 
-## Next steps (end of 2026-10-27, second session)
+## Next steps (end of 2026-10-27, third session)
+
+Done in the third session: **derivation steps 1-5, every check passing** (`docs/item-layer-design.md`, "Build status").
+The item layer (`src/provexp/items.py`), the emitters and readouts for every EMBER group (pure additions to
+`features.py`), locating ranges, and the C1 engine (`src/provexp/reach.py`) with per-group recognizers. G1 (bit-exact
+on 100 + 2,000 files), G2 (projection = provenance), G5 (header byte flips), G4 (Table A0 reproduced, bit-equal to the
+hand predictors), G6 (random in-place writes) all pass; G5 and G6 each needed one fix round (pefile rules found by the
+checks themselves) and were confirmed on fresh files. Runs 90-93. Found: a pefile crash on a malformed debug directory
+makes the extractor treat the file as not a PE (`docs/upstream-issues.md` item 5; not patched, recorded soundly).
+
+Not done: step 6 (the edit catalogue: the remaining operations, their parameter domains, G7). The session's response
+was stopped by the safety classifier while it read the attack toolkit's transformation code for the new A0 rows.
+
+Next (in order, unless the user decides otherwise):
+1. **Step 7, the C4 engine** (does not need step 6; add_section is already declared): sign envelopes over the
+   readouts, the disagreement report against `scripts/a_directions.py` with witnesses (overlay_size first), then the
+   user-run retraining of the C4 models and re-run of Table A1's C4 rows.
+2. **Step 6, the catalogue**, built from our own edit functions (`scripts/a1_adaptive.py`) and the engine, framed as
+   validating the feature model against re-extraction; the extend/shift insertions last.
+3. Then, unchanged: the expert-set row, the A' pilot (checks 1-3), later items (cost column, adversarial training,
+   second toolkit, leave-one-out PV, scale).
+4. Optional speed-up if A' needs it: in-place predictions re-count the whole-file byte run (about one extraction on
+   large files); adjusting only the written bytes' counts would make them local.
+
+### Earlier: next steps at the end of 2026-10-27 (second session)
 
 Done in the second session of 2026-10-27:
 - **A' mock** (`docs/direction-A-prime-mock.md`): written by another session from a task prompt, then revised after

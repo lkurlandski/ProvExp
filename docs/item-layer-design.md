@@ -340,6 +340,26 @@ Runtime for the checks, from the slowest case: an item-table pass should cost ab
 20 files, parse only) are about 20,000 pefile parses, a few minutes with 16 workers; that is a `run/` script, smoke-
 tested on one file first. G4 and G7 at pilot scale are run-79-sized (minutes).
 
+## Build status (2026-10-27, third session)
+
+Steps 1-5 are built; the effort table above was far too high (they took one session). Results:
+
+| Check | Result | Run |
+|---|---|---|
+| G1 exactness | bit-exact on 100 pilot and 2,000 files, both import variants; no debugging round | 90 |
+| G2 projection | equal to `provenance` on 100 pilot files (max relative difference 0.0) | 90 |
+| G5 locating | first round: 1,385 failures at 55 (file, byte) pairs from three pefile rules (the section table is a chain; any non-PEFormatError in a directory parse ends the parse, e.g. a bogus debug size; SizeOfImage bounds relocations). After the fix: 0 failures on 18,944 flips of 20 pilot and 18,944 of 20 fresh files | 91 |
+| G4 C1 | Table A0 reproduced: append flagged by the engine on exactly the 11 overrun files, bit-exact on the other 89; dos_overwrite bit-exact on 100; add_section bit-equal to the hand predictor on 100; bit-equal to the hand predictors on all 289 predicted pairs | 92 |
+| G6 margins | first round: 1 failure in 1,561 (the dynamic relocation table the load configuration points to). After the fix: 1,560/1,560 pilot and 1,463/1,463 fresh writes bit-exact | 93 |
+
+Decisions made while building (all within the design): locating ranges of every parsed item include the bytes the
+parse succeeds through (`pe_locating`: header fields, the declared section table, every directory entry, the data of
+the ten directories pefile parses), so pefile's crash on a malformed debug directory is recorded rather than patched
+(`docs/upstream-issues.md` item 5; the user may revisit). The section group's `file` item carries the overlay's
+locating ranges when there is no overlay. Recognizers are per feature type (`FeatureType.recognize`); opaque and
+import/export items have none yet, so writes to them are flagged. In-place predictions re-count the whole-file byte
+run (cheap to make local if A' needs it). Steps 6-9 remain; step 7 does not depend on 6.
+
 ## Open decisions for the user
 
 **Settled (user, 2026-10-27), all as recommended:** (1) add `items` now and keep `provenance` until G2 passes, then

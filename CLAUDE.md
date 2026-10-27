@@ -41,7 +41,9 @@ and manuscript remain as source material. Deadlines and conference cycles are no
 
 ## Layout
 
-- `src/provexp/`: `boxmatrix.py` (sparse boxes), `provenance.py` (P, transfers, statistics, round trips),
+- `src/provexp/`: `boxmatrix.py` (sparse boxes), `provenance.py` (P, transfers, statistics, round trips), `items.py`
+  (the item layer: items, terms, readouts as data, projection), `reach.py` (the C1 engine),
+  `featuresets/ember2024/catalogue.py` (the edit catalogue; add_section so far),
   `featuresets/ember2024/features.py` (thrember + provenance), `data/` (SimpleDB, feature store, TLSH),
   `models/` (GBDT, MLP, MalConv), `explain/` (feature- and problem-space explainers), `ablation.py` (generic
   ablation, budgets, black-box provenance, coarsening), `featuresets/ember2024/ablation.py` (PE-aware protection and
@@ -55,7 +57,7 @@ and manuscript remain as source material. Deadlines and conference cycles are no
   discovery/transplant machinery (shortcuts, shortcuts_transplant). Direction A: a_directions (C4 directions per
   threat model), a_c1_table0 (C1 predictors and Table A0), a_pv_attacks / a_pv_hole (secml-malware attacks, PV
   selection and its hole), a1_evaluate (toolkit columns), a1_adaptive (C1-guided adaptive search), a_overlay_witness
-  (the overlay gap). Direction A': ap_check0_solver (Kantchelian's exact GBDT encoding, HiGHS via scipy). The sums
+  (the overlay gap), item_checks (derivation checks G1/G2, G5, G6). Direction A': ap_check0_solver (Kantchelian's exact GBDT encoding, HiGHS via scipy). The sums
   re-encoding is `src/provexp/featuresets/ember2024/sums.py`. Dropped experiments are under `scripts/archive/`.
 - **Rankings break ties by a seeded permutation, never by position or index** (`ablation.element_order` /
   `window_order` with `tiebreak`, `pf1.feature_order`), and treat scores within 1e-9 (relative) as tied: equal scores
