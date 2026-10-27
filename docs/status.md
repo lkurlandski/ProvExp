@@ -1,5 +1,21 @@
 # Status
 
+**2026-10-27, third session: derivation steps 1-5 built and checked; step 6 (the edit catalogue) not started.**
+Commits 94c8d37..4d9d1ee. All checks passed, each after at most one fix round, with fresh-file confirmation:
+- Step 1: `src/provexp/items.py` (items, terms, readouts as data, projection), `tests/test_items.py`.
+- Steps 2-3: `items`/`readouts` for every group in `features.py` (pure additions). **G1** bit-exact on 100 pilot +
+  2,000 files (both import variants); **G2** projection equals provenance on 100 (run 90).
+- Step 4: locating ranges. **G5** (header byte flips): first round found three pefile rules (section-table chain, a
+  debug-directory crash that makes the extractor treat the file as non-PE -- `docs/upstream-issues.md` item 5,
+  SizeOfImage bounds relocations); after the fix 0 failures on 20 pilot + 20 fresh files (run 91).
+- Step 5: `src/provexp/reach.py` (C1 engine), recognizers per group, `catalogue.py` (add_section only). **G4**:
+  Table A0 reproduced, bit-equal to the hand predictors on all 289 predicted pairs, the 11 overrun files flagged by
+  the engine itself (run 92). **G6** (random in-place writes): 1,560/1,560 and 1,463/1,463 bit-exact after adding the
+  dynamic relocation table to locating (run 93).
+- Not done: step 6 (catalogue for the other operations, parameter domains, G7). The session's response was stopped
+  by the safety classifier while reading the toolkit's transformation code for the A0 rows; nothing was written for
+  step 6. Next: decide with the user how to proceed (see `docs/resume-prompt.md`).
+
 **2026-10-27, second session (end): A' mock written, reviewed, and accepted; A' check 0 passed; the overlay gap
 settled.** Next: derivation steps 1-6 of `docs/item-layer-design.md` in one stretch (item table, readouts as data,
 exactness checks G1/G2, locating ranges, C1 engine, edit catalogue), then step 7, the expert-set row, and the A'
