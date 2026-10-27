@@ -70,7 +70,11 @@ escapes `parse_data_directories`. thrember's `PEFeatureExtractor.raw_features` c
 `pe = None`, so the file gets `is_pe = 0` and every header, section, import, export, directory, Rich, and signature
 feature becomes zero. Found by check G5 (`scripts/item_checks.py locating`, run 91): on pilot file `cf877553...`,
 flipping one byte of the debug directory's `Size` (offset 477, XOR 0xFF) makes pefile read garbage entries and crash.
-A fix: `if dbg_type is not None:` before `set_flags` (the other debug types already guard against `None`). Not patched
-here: like pefile's overlay rule, it is the extractor's real behavior, and the item layer records it soundly (every
-parsed item's locating ranges include the data of every directory pefile parses). Worth a sentence in the paper only
-if an attacker-chosen edit can trigger it (writing into the debug directory is outside our threat models).
+A fix: `if dbg_type is not None:` before `set_flags` (the other debug types already guard against `None`). An
+attacker-chosen edit can trigger it: appending bytes to a file whose debug directory lies past its end (3 of the 100
+pilot files, mostly files cut at the dataset's 4 MB cap) makes the appended bytes the debug entries, so a type-20 entry
+pointing outside the file zeroes every PE feature. **Patched here (2026-10-27, user)** as a pure addition: the guard
+in `features.py` ("Correctness: pefile's type-20 debug entries") is installed in pefile at import, keeps the entry
+with `entry=None` and pefile's warning, as the upstream fix would; `tests/test_ember2024.py::TestDebugGuard`. Also
+worth reporting to thrember: `raw_features` catches `AttributeError` around `pefile.PE(...)`, so any pefile bug of
+this kind silently turns a file into a non-PE.

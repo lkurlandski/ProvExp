@@ -5,6 +5,7 @@ Most of these tests need real executables in tests/data/ (see scripts/make_fixtu
 """
 
 import collections
+import struct
 from functools import lru_cache
 from pathlib import Path
 from types import SimpleNamespace
@@ -319,6 +320,61 @@ class TestByteCounter:
         assert patched is not None
         assert patched.get_warnings() == original.get_warnings()
         assert [s.get_entropy() for s in patched.sections] == [s.get_entropy() for s in original.sections]
+
+
+################################################################################
+# Guard for pefile's type-20 debug entries (a fix added on top of thrember and pefile)
+################################################################################
+
+
+def _pe_with_debug_entry(debug_type: int, pointer: int, size: int) -> bytes:
+    """A minimal PE32 file with one section holding one debug entry of the given type, payload offset, and size."""
+    dos = b"MZ" + bytes(0x3A) + struct.pack("<I", 0x40)
+    coff = b"PE\0\0" + struct.pack("<HHIIIHH", 0x14C, 1, 0, 0, 0, 0xE0, 0x0102)
+    optional = struct.pack(
+        "<HBBIIIIIIIIIHHHHHHIIIIHHIIIIII",
+        0x10B, 0, 0, 0x200, 0, 0, 0x1000, 0x1000, 0x1000, 0x400000, 0x1000, 0x200,
+        6, 0, 0, 0, 6, 0, 0, 0x2000, 0x200, 0, 2, 0, 0x100000, 0x1000, 0x100000, 0x1000, 0, 16,
+    )
+    directories = bytearray(16 * 8)
+    directories[6 * 8:7 * 8] = struct.pack("<II", 0x1000, 28)  # DEBUG: one entry at the start of the section
+    section = b".text\0\0\0" + struct.pack("<IIIIIIHHI", 0x200, 0x1000, 0x200, 0x200, 0, 0, 0, 0, 0x60000020)
+    headers = (dos + coff + optional + bytes(directories) + section).ljust(0x200, b"\0")
+    entry = struct.pack("<IIHHIIII", 0, 0, 0, 0, debug_type, size, 0, pointer)
+    return headers + entry.ljust(0x200, b"\0")
+
+
+class TestDebugGuard:
+
+    @pytest.mark.parametrize("pointer,size", [(0x10000, 4), (0x200, 2)])
+    def test_unreadable_type_20_payload(self, pointer: int, size: int) -> None:
+        pe = pefile.PE(data=_pe_with_debug_entry(20, pointer, size))
+        (entry,) = pe.DIRECTORY_ENTRY_DEBUG
+        assert entry.struct.Type == 20
+        assert entry.entry is None
+        assert any("IMAGE_DEBUG_EX_DLLCHARACTERISTICS" in w for w in pe.get_warnings())
+
+    def test_unguarded_pefile_crashes(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.setattr(pefile.PE, "__unpack_data__", features._UNPACK_DATA)
+        monkeypatch.setattr(pefile.PE, "parse_debug_directory", features._PARSE_DEBUG_DIRECTORY)
+        with pytest.raises(AttributeError):
+            pefile.PE(data=_pe_with_debug_entry(20, 0x10000, 4))
+
+    def test_readable_type_20_payload_unchanged(self) -> None:
+        data = _pe_with_debug_entry(20, 0x210, 4)
+        data = data[:0x210] + struct.pack("<I", 0x41) + data[0x214:]
+        (entry,) = pefile.PE(data=data).DIRECTORY_ENTRY_DEBUG
+        assert entry.entry is not None
+        assert entry.entry.ExDllCharacteristics == 0x41
+
+    def test_extractor_keeps_the_file_a_pe(self) -> None:
+        extractor = PEFeatureExtractor()
+        x = extractor.feature_vector(_pe_with_debug_entry(20, 0x10000, 4))  # type: ignore[no-untyped-call]
+        assert x[extractor.feature_names.index("general:is_pe")] == 1.0
+
+    def test_installed(self) -> None:
+        assert pefile.PE.__unpack_data__ is features._guarded_unpack_data
+        assert pefile.PE.parse_debug_directory is features.guarded_parse_debug_directory
 
 
 
