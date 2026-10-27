@@ -60,3 +60,17 @@ the MZ header and the result no longer parses as a PE. The GAMMA shift and conte
 "evasion" that is a broken file. A fix would insert at the smallest nonzero raw offset of a section with
 `SizeOfRawData > 0` (or at `SizeOfHeaders`). Our harness (`scripts/a1_evaluate.py`) now counts such outputs as invalid,
 not evaded.
+
+## 5. pefile: a malformed debug directory crashes the parse, and thrember then treats the file as not a PE (found 2026-10-27)
+
+Repository: https://github.com/erocarrera/pefile (version 2024.8.26). In `PE.parse_debug_directory`, a debug entry of
+type 20 (`IMAGE_DEBUG_TYPE_EX_DLLCHARACTERISTICS`) whose data lies outside the file makes `__unpack_data__` return
+`None`, and the next line reads `dbg_type.ExDllCharacteristics`: an `AttributeError`, not a `PEFormatError`, so it
+escapes `parse_data_directories`. thrember's `PEFeatureExtractor.raw_features` catches `AttributeError` and sets
+`pe = None`, so the file gets `is_pe = 0` and every header, section, import, export, directory, Rich, and signature
+feature becomes zero. Found by check G5 (`scripts/item_checks.py locating`, run 91): on pilot file `cf877553...`,
+flipping one byte of the debug directory's `Size` (offset 477, XOR 0xFF) makes pefile read garbage entries and crash.
+A fix: `if dbg_type is not None:` before `set_flags` (the other debug types already guard against `None`). Not patched
+here: like pefile's overlay rule, it is the extractor's real behavior, and the item layer records it soundly (every
+parsed item's locating ranges include the data of every directory pefile parses). Worth a sentence in the paper only
+if an attacker-chosen edit can trigger it (writing into the debug directory is outside our threat models).

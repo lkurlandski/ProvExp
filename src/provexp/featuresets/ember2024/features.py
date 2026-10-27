@@ -213,6 +213,69 @@ def clipped(num_bytes: int, ranges: Sequence[Optional[Range]]) -> tuple[Range, .
     return tuple(out)
 
 
+# NOTE: locating ranges (assumption A1) are the bytes that decide whether an item exists and where its members are,
+# as opposed to the bytes its value is read from. Every item pefile parses exists only if the parse succeeds, which
+# depends on the fields below, on the section table (pefile stops at the first header that is all zeros or has too
+# many implausible fields, so a section's existence depends on the headers before it; relative virtual addresses are
+# mapped through it), and on the entries and data of the ten directories pefile parses (any exception other than
+# PEFormatError ends the parse, and the extractor then treats the file as not a PE: e.g., a bogus debug directory
+# size makes pefile raise an AttributeError; docs/upstream-issues.md). Kinds add their own (an import's descriptor and
+# thunks, the overlay's extents). Locating ranges are not clipped to the file: an extent past the end of the file is
+# locating, since appending can bring it inside (docs/item-layer-design.md, the overlay case). Check G5
+# (`scripts/item_checks.py locating`) flips header bytes and fails on any change of the parse not recorded here.
+_PE_LOCATING_FIELDS = [
+    ("DOS_HEADER", "e_magic"),
+    ("DOS_HEADER", "e_lfanew"),
+    ("NT_HEADERS", "Signature"),
+    ("FILE_HEADER", "NumberOfSections"),
+    ("FILE_HEADER", "SizeOfOptionalHeader"),
+    ("OPTIONAL_HEADER", "Magic"),
+    ("OPTIONAL_HEADER", "SectionAlignment"),
+    ("OPTIONAL_HEADER", "FileAlignment"),
+    ("OPTIONAL_HEADER", "NumberOfRvaAndSizes"),
+]
+
+
+# The directories pefile parses on a full load (`PE.parse_data_directories`).
+_PARSED_DIRECTORIES = (0, 1, 2, 3, 5, 6, 9, 10, 11, 13)
+
+# The end of a range that reaches every byte past the end of the file.
+_PAST_EOF = 2 ** 62
+
+
+def pe_locating(pe: pefile.PE) -> tuple[Range, ...]:
+    """The bytes every item of a parsed PE file is located through: whether the parse succeeds, and where it reads."""
+    fields = tuple(field_range(getattr(pe, header), name) for header, name in _PE_LOCATING_FIELDS)
+    directories = pe.OPTIONAL_HEADER.DATA_DIRECTORY
+    data = tuple(r for i in _PARSED_DIRECTORIES if i < len(directories) for r in rva_ranges(pe, directories[i].VirtualAddress, directories[i].Size))
+    return fields + section_table_ranges(pe) + directory_ranges(pe, *range(len(directories))) + data
+
+
+def section_table_ranges(pe: pefile.PE) -> tuple[Range, ...]:
+    """
+    The declared section table, including headers pefile dropped; if it dropped any, also every byte past the end of
+    the file (pefile's plausibility checks compare the headers with the file size, so appending can restore them).
+    """
+    declared = min(pe.FILE_HEADER.NumberOfSections, pefile.MAX_SECTIONS)
+    lo = pe.OPTIONAL_HEADER.get_file_offset() + pe.FILE_HEADER.SizeOfOptionalHeader
+    out: tuple[Range, ...] = ((lo, lo + 40 * declared),) if declared > 0 else ()
+    if len(pe.sections) < declared:
+        out += ((len(pe.__data__), _PAST_EOF),)
+    return out
+
+
+def directory_ranges(pe: pefile.PE, *indices: int) -> tuple[Range, ...]:
+    """The entries of the given data directories (those the file has)."""
+    directories = pe.OPTIONAL_HEADER.DATA_DIRECTORY
+    return tuple(structure_range(directories[i]) for i in indices if i < len(directories))
+
+
+def rva_ranges(pe: pefile.PE, rva: int, size: int) -> tuple[Range, ...]:
+    """The bytes at a relative virtual address, if it maps into the file (unclipped)."""
+    r = rva_string_range(pe, rva, size)
+    return (r,) if r is not None and size > 0 else ()
+
+
 class FeatureType(object):
     """
     Base class from which each feature type may inherit
@@ -331,7 +394,7 @@ class GeneralFileInfo(FeatureType):
             items.append(Item("field", terms=(Term("slot", "general:start", index=i, value=bytez[i], ranges=((i, i + 1),)),)))
         # Whether the file parsed as a PE (NOTE (Axiom 3): from no particular bytes).
         if pe is not None:
-            items.append(Item("pe", attrs={"is_pe": 1}))
+            items.append(Item("pe", attrs={"is_pe": 1}, locating=pe_locating(pe)))
         return ItemTable(n, {"general:size": 1, "general:bytes": 256, "general:start": 4}, items)
 
     @property
@@ -985,7 +1048,8 @@ class SectionInfo(FeatureType):
 
         raw_obj = self.raw_features(bytez, pe)
         sections = raw_obj["sections"]
-        items = [Item("file", terms=(Term("add", "section:file_size", value=n, ranges=clipped(n, [(0, n)]), per_byte=True),))]
+        located = pe_locating(pe)
+        items = [Item("file", terms=(Term("add", "section:file_size", value=n, ranges=clipped(n, [(0, n)]), per_byte=True),), locating=located)]
 
         # The sections, in the order of `pe.sections`.
         name_buckets, name_signs = feature_hash(50, [s["name"] for s in sections])
@@ -1023,10 +1087,23 @@ class SectionInfo(FeatureType):
                 attrs={"name": s["name"], "size": s["size"], "vsize": s["vsize"], "entropy": s["entropy"], "vsize_ratio": s["vsize_ratio"]},
                 # The entropy of a section without data is determined by its size.
                 attr_ranges={"entropy": (data if data else size,), "size": (size,), "vsize_ratio": (size + vsize,)},
+                # Its header and its data's pointer and size are in the section table.
+                locating=located,
             ))
 
-        # The overlay.
+        # The overlay. pefile starts it after the furthest extent of the optional header, the sections, and the data
+        # directories (but security) that lies within the file, so all of them locate it, and so do the bytes past
+        # the end of the file that an extent reaches (appending can bring the extent inside).
         overlay_offset = pe.get_overlay_data_start_offset()
+        overlay_locating = located
+        extents = [(s.PointerToRawData, s.PointerToRawData + s.SizeOfRawData) for s in pe.sections]
+        for i, d in enumerate(pe.OPTIONAL_HEADER.DATA_DIRECTORY):
+            if i != 4:
+                try:
+                    extents.append((pe.get_offset_from_rva(d.VirtualAddress), pe.get_offset_from_rva(d.VirtualAddress) + d.Size))
+                except pefile.PEFormatError:
+                    pass
+        overlay_locating += tuple((n, hi) for _, hi in extents if hi > n)
         if overlay_offset is not None:
             r = clipped(n, [(overlay_offset, n)])
             o = raw_obj["overlay"]
@@ -1038,6 +1115,7 @@ class SectionInfo(FeatureType):
                 ),
                 attrs={"size": o["size"], "entropy": o["entropy"]},
                 attr_ranges={"size": (r,), "entropy": (r,)},
+                locating=overlay_locating,
             ))
 
         # The entry section, mirroring the selection logic in `raw_features` (and `provenance`). The entry point
@@ -1067,6 +1145,8 @@ class SectionInfo(FeatureType):
             "entry",
             terms=(Term("hashed", "section:entry_name_hash", index=int(buckets[0]), sign=int(signs[0]), key=entry_section, ranges=clipped(n, entry_ranges)),),
             attrs={"name": entry_section},
+            # Selected by the entry point among every section's range and characteristics.
+            locating=located + (field_range(pe.OPTIONAL_HEADER, "AddressOfEntryPoint"),),
         ))
         return ItemTable(n, families, items)
 
@@ -1194,9 +1274,26 @@ class ImportsInfo(FeatureType):
         thunk_size = 8 if pe.PE_TYPE == pefile.OPTIONAL_HEADER_MAGIC_PE_PLUS else 4
         dll_ranges: dict[str, list[Optional[Range]]] = defaultdict(list)
         imports: dict[str, list[tuple[str, Optional[Range]]]] = {}
+        # Located through the import directory, the section table, the descriptor, the thunks, and each name's
+        # terminating zero byte.
+        located = pe_locating(pe)
+        descriptor_locating: dict[str, list[Range]] = defaultdict(list)
+        function_locating: dict[str, list[tuple[Range, ...]]] = {}
         for entry in pe.DIRECTORY_ENTRY_IMPORT:
             dll_name = entry.dll.decode()
             dll_ranges[dll_name].append(rva_string_range(pe, entry.struct.Name, len(entry.dll)))
+            descriptor_locating[dll_name].append(structure_range(entry.struct))
+            descriptor_locating[dll_name].extend(rva_ranges(pe, entry.struct.Name + len(entry.dll), 1))
+            thunks = [
+                tuple(structure_range(t) for t in (lib.struct_table, lib.struct_iat) if t is not None)
+                + (((lib.name_offset + len(lib.name), lib.name_offset + len(lib.name) + 1),) if lib.name and lib.name_offset is not None else ())
+                for lib in entry.imports
+                if (lib.name is not None and len(lib.name)) or lib.ordinal is not None
+            ]
+            if merged:
+                function_locating.setdefault(dll_name, []).extend(thunks)
+            else:
+                function_locating[dll_name] = thunks
             if merged:
                 functions = imports.setdefault(dll_name, [])
             else:
@@ -1215,18 +1312,20 @@ class ImportsInfo(FeatureType):
         libraries = [dll_name.lower() for dll_name in imports for _ in dll_ranges[dll_name]]
         ranges = [r for dll_name in imports for r in dll_ranges[dll_name]]
         buckets, _ = feature_hash(256, libraries)
-        for key, r, b in zip(libraries, ranges, buckets.tolist(), strict=True):
-            items.append(Item("library", terms=(Term("keyed", "imports:libraries", index=b, key=key, ranges=clipped(n, [r])),)))
+        library_locating = [located + tuple(descriptor_locating[dll_name]) for dll_name in imports for _ in dll_ranges[dll_name]]
+        for key, r, b, loc in zip(libraries, ranges, buckets.tolist(), library_locating, strict=True):
+            items.append(Item("library", terms=(Term("keyed", "imports:libraries", index=b, key=key, ranges=clipped(n, [r])),), locating=loc))
 
         # One import item per function. NOTE: without merging, a function's contribution depends on the later
         # descriptors for its DLL (assumption A2), so these items are not local.
         functions = [(dll_name.lower() + ":" + e, clipped(n, [r] + dll_ranges[dll_name])) for dll_name, elist in imports.items() for e, r in elist]
+        locating = [located + tuple(descriptor_locating[dll_name]) + function_locating[dll_name][i] for dll_name, elist in imports.items() for i in range(len(elist))]
         buckets, _ = feature_hash(1024, [k for k, _ in functions])
-        for (key, r), b in zip(functions, buckets.tolist(), strict=True):
+        for (key, r), b, loc in zip(functions, buckets.tolist(), locating, strict=True):
             items.append(Item("import", terms=(
                 Term("count", "imports:num_imports", ranges=r),
                 Term("hashed", "imports:functions", index=b, key=key, ranges=r),
-            ), attrs={"dll": key.split(":", 1)[0]}, local=merged))
+            ), attrs={"dll": key.split(":", 1)[0]}, locating=loc, local=merged))
         return ItemTable(n, families, items)
 
     def items(self, bytez: bytes, pe: pefile.PE | None = None) -> ItemTable:
@@ -1399,22 +1498,33 @@ class ExportsInfo(FeatureType):
         if pe is None or "DIRECTORY_ENTRY_EXPORT" not in pe.__dict__.keys():
             return ItemTable(n, families, [])
 
-        exports: list[tuple[str, Optional[Range]]] = []
+        # Located through the export directory, the section table, and the entries of the name, ordinal, and
+        # address tables. NOTE: pefile stops at the first invalid name, so an export's existence also depends on the
+        # names before it (not local, assumption A2; the C1 engine re-parses the export directory on any write to it).
+        directory = pe.DIRECTORY_ENTRY_EXPORT.struct
+        located = pe_locating(pe) + (structure_range(directory),)
+        exports: list[tuple[str, Optional[Range], tuple[Range, ...]]] = []
+        i = 0
         for exp in pe.DIRECTORY_ENTRY_EXPORT.symbols:
+            tables = rva_ranges(pe, directory.AddressOfFunctions + 4 * (exp.ordinal - directory.Base), 4) if exp.ordinal is not None else ()
             if exp.name is not None and len(exp.name):
                 r = (exp.name_offset, exp.name_offset + min(len(exp.name), 10000)) if exp.name_offset is not None else None
-                exports.append((exp.name.decode()[:10000], r))
+                tables += rva_ranges(pe, directory.AddressOfNames + 4 * i, 4) + rva_ranges(pe, directory.AddressOfNameOrdinals + 2 * i, 2)
+                if exp.name_offset is not None:
+                    tables += ((exp.name_offset + len(exp.name), exp.name_offset + len(exp.name) + 1),)
+                exports.append((exp.name.decode()[:10000], r, tables))
+                i += 1
             elif exp.ordinal is not None:
                 offset = _export_address_offset(pe, exp)
                 r = (offset, offset + 4) if offset is not None else None
-                exports.append((f"ordinal{exp.ordinal}", r))
-        buckets, signs = feature_hash(128, [k for k, _ in exports])
+                exports.append((f"ordinal{exp.ordinal}", r, tables))
+        buckets, signs = feature_hash(128, [k for k, _, _ in exports])
         items = [
             Item("export", terms=(
                 Term("count", "exports:count", ranges=clipped(n, [r])),
                 Term("hashed", "exports:hash", index=b, sign=sign, key=key, ranges=clipped(n, [r])),
-            ))
-            for (key, r), b, sign in zip(exports, buckets.tolist(), signs.tolist(), strict=True)
+            ), locating=located + tables, local=False)
+            for (key, r, tables), b, sign in zip(exports, buckets.tolist(), signs.tolist(), strict=True)
         ]
         return ItemTable(n, families, items)
 
@@ -1746,8 +1856,10 @@ class HeaderFileInfo(FeatureType):
         if pe is None:
             return ItemTable(n, families, [])
 
+        located = pe_locating(pe)
+
         def field(family: str, index: int, structure: pefile.Structure, name: str, value: int) -> Item:
-            return Item("field", terms=(Term("slot", family, index=index, value=value, ranges=clipped(n, [field_range(structure, name)])),), attrs={"field": name})
+            return Item("field", terms=(Term("slot", family, index=index, value=value, ranges=clipped(n, [field_range(structure, name)])),), attrs={"field": name}, locating=located)
 
         items = [field("header:fields", i, getattr(pe, header), name, getattr(getattr(pe, header), name)) for i, (header, name) in enumerate(self._fields)]
         items.append(field("header:characteristics", 0, pe.FILE_HEADER, "Characteristics", pe.FILE_HEADER.Characteristics))
@@ -1874,12 +1986,13 @@ class DataDirectories(FeatureType):
 
         # Mirror `process_raw_features`, which skips the last data directory (usually RESERVED).
         items = []
+        located = pe_locating(pe)
         directories = pe.OPTIONAL_HEADER.DATA_DIRECTORY
         for d in directories[:-1]:
             idx = self._name_order.index(str(d.name).replace("IMAGE_DIRECTORY_ENTRY_", ""))
             for k, name in enumerate(("Size", "VirtualAddress")):
                 term = Term("slot", "datadirectories:fields", index=2 * idx + k, value=getattr(d, name), ranges=clipped(n, [field_range(d, name)]))
-                items.append(Item("field", terms=(term,), attrs={"field": f"{d.name}.{name}"}))
+                items.append(Item("field", terms=(term,), attrs={"field": f"{d.name}.{name}"}, locating=located))
 
         # Whether the relocations were parsed: an outcome of pefile's parser, determined by the directories that
         # point to them.
@@ -1887,7 +2000,9 @@ class DataDirectories(FeatureType):
         for attr, which in [("has_relocs", "BASERELOC"), ("has_dynamic_relocs", "LOAD_CONFIG")]:
             idx = self._name_order.index(which)
             attr_ranges[attr] = (clipped(n, [structure_range(directories[idx])]),) if idx < len(directories) else ()
-        items.append(Item("relocs", attrs={"has_relocs": int(pe.has_relocs()), "has_dynamic_relocs": int(pe.has_dynamic_relocs())}, attr_ranges=attr_ranges))
+        # Parsed from the directories' data (in `located`); pefile stops at a block past SizeOfImage.
+        relocs_locating = located + (field_range(pe.OPTIONAL_HEADER, "SizeOfImage"),)
+        items.append(Item("relocs", attrs={"has_relocs": int(pe.has_relocs()), "has_dynamic_relocs": int(pe.has_dynamic_relocs())}, attr_ranges=attr_ranges, locating=relocs_locating))
         return ItemTable(n, families, items)
 
     @property
@@ -1951,6 +2066,8 @@ class RichHeader(FeatureType):
         # The (compid, count) pairs, eight bytes each after the DanS signature and padding (see `provenance`).
         values = pe.RICH_HEADER.values
         num_pairs = len(values) // 2
+        # pefile searches for the "Rich" marker in [0x80, optional header), so the whole range locates every pair.
+        located = pe_locating(pe) + ((0x80, pe.OPTIONAL_HEADER.get_file_offset()),)
         buckets, signs = feature_hash(32, [str(values[2 * i]) for i in range(num_pairs)])
         items = []
         for i in range(num_pairs):
@@ -1958,7 +2075,7 @@ class RichHeader(FeatureType):
             items.append(Item("rich_pair", terms=(
                 Term("count", "richheader:num_pairs", ranges=r),
                 Term("hashed", "richheader:pairs", index=int(buckets[i]), value=values[2 * i + 1], sign=int(signs[i]), key=str(values[2 * i]), attr="count", ranges=r),
-            ), attrs={"compid": values[2 * i], "count": values[2 * i + 1]}))
+            ), attrs={"compid": values[2 * i], "count": values[2 * i + 1]}, locating=located))
         return ItemTable(n, families, items)
 
     @property
@@ -2097,7 +2214,7 @@ class AuthenticodeSignature(FeatureType):
         attrs = self.raw_features(bytez, pe)
         attr_ranges = {a: (unit,) for a in self.feature_names}
         attr_ranges["signing_time_diff"] = (unit, clipped(n, [field_range(pe.FILE_HEADER, "TimeDateStamp")]))
-        return ItemTable(n, {}, [Item("certificate_table", attrs=attrs, attr_ranges=attr_ranges)])
+        return ItemTable(n, {}, [Item("certificate_table", attrs=attrs, attr_ranges=attr_ranges, locating=pe_locating(pe))])
 
     @property
     def readouts(self) -> list[Readout]:

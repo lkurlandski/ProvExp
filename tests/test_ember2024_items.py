@@ -14,7 +14,9 @@ import pytest
 from provexp.featuresets.ember2024.features import ImportsInfo
 from provexp.featuresets.ember2024.features import PEFeatureExtractor
 from provexp.featuresets.ember2024.features import clipped
+from provexp.featuresets.ember2024.features import field_range
 from provexp.featuresets.ember2024.features import merge_import_descriptors
+from provexp.items import Item
 from provexp.items import evaluate
 from provexp.items import project
 
@@ -101,3 +103,47 @@ class TestRealFiles:
         for a, b in zip(p[:3], q[:3]):
             np.testing.assert_array_equal(a, b)
         np.testing.assert_allclose(p.val, q.val, rtol=1e-12)
+
+
+################################################################################
+# Real files: locating ranges (a small G5)
+################################################################################
+
+
+def _parsed_items(extractor: PEFeatureExtractor, bytez: bytes) -> dict[tuple[object, ...], Item]:
+    out: dict[tuple[object, ...], Item] = {}
+    for item in extractor.item_table(bytez).items:
+        if item.kind in ("bytes", "window", "string"):
+            continue
+        key = (item.kind, item.members, item.attrs.get("field"))
+        k = 0
+        while (*key, k) in out:
+            k += 1
+        out[(*key, k)] = item
+    return out
+
+
+class TestLocating:
+
+    def test_pe_items_are_located(self, sample: bytes) -> None:
+        needs_files()
+        pe = pefile.PE(data=sample)
+        e_lfanew = field_range(pe.DOS_HEADER, "e_lfanew")
+        for item in _parsed_items(EXTRACTOR, sample).values():
+            # The first four bytes (general) are read by position, not parsed.
+            if item.kind != "field" or item.attrs.get("field") is not None:
+                assert e_lfanew in item.locating, item.kind
+
+    def test_flips(self, sample: bytes) -> None:
+        needs_files()
+        pe = pefile.PE(data=sample)
+        lo = pe.sections[0].get_file_offset() if pe.sections else 0
+        before = _parsed_items(EXTRACTOR, sample)
+        for offset in range(lo, min(lo + 64, len(sample))):
+            edited = bytearray(sample)
+            edited[offset] ^= 0xFF
+            after = _parsed_items(EXTRACTOR, bytes(edited))
+            for items, other in [(before, after), (after, before)]:
+                for key, item in items.items():
+                    if key not in other:
+                        assert any(a <= offset < b for a, b in item.locating), (offset, item.kind)

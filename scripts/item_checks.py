@@ -6,7 +6,15 @@ Mechanical checks of the item layer (docs/item-layer-design.md, "Validation and 
             merged (the variant the experiments use) and, for the imports group, also thrember's original. G2: the
             items spread over their elements reproduce today's provenance (the raw contributions, in canonical form).
 
-Writes `files.parquet` (one row per file) and `report.json` (the totals and the verdict) to --outdir.
+    locating
+            G5 (assumption A1). Flips every byte of the header region (XOR 0xFF, up to --max_bytes per file) and
+            re-parses. Every item that appears, disappears, or moves (its kind or member ranges change) must have the
+            flipped byte among its locating ranges (in the table it belongs to), and every item whose contributions
+            or attributes change must have it among its member or locating ranges. Only the items pefile parses are
+            compared; items recognized from content (bytes, windows, strings) are re-recognized locally (G6).
+
+Writes `files.parquet` (one row per file; `failures.parquet` for G5) and `report.json` (the totals and the verdict)
+to --outdir.
 """
 
 from __future__ import annotations
@@ -29,6 +37,8 @@ from provexp.data.simpledb import SimpleDBReader
 from provexp.featuresets.ember2024.features import ImportsInfo
 from provexp.featuresets.ember2024.features import PEFeatureExtractor
 from provexp.featuresets.ember2024.features import merge_import_descriptors
+from provexp.items import Item
+from provexp.items import ItemTable
 from provexp.items import evaluate
 from provexp.items import project
 
@@ -118,6 +128,118 @@ def check_exact(name: str, g2: bool = True) -> dict[str, Any]:
     }
 
 
+# The feature types whose items pefile parses, and the kinds recognized from content instead.
+_PE_GROUPS = [fe for fe in _MERGED.features if fe.name not in ("histogram", "byteentropy", "strings", "pefilewarnings")]
+_CONTENT_KINDS = ("bytes", "window", "string")
+
+
+def _pe_items(bytez: bytes) -> dict[tuple[Any, ...], Item]:
+    """The parsed items of a file, keyed by (kind, members, field, occurrence): equal keys mean the same location."""
+    pe = _parse(bytez)
+    table = ItemTable.concatenate([fe.items(bytez, pe) for fe in _PE_GROUPS])
+    out: dict[tuple[Any, ...], Item] = {}
+    for item in table.items:
+        if item.kind in _CONTENT_KINDS:
+            continue
+        key: tuple[Any, ...] = (item.kind, item.members, item.attrs.get("field"))
+        occurrence = 0
+        while (*key, occurrence) in out:
+            occurrence += 1
+        out[(*key, occurrence)] = item
+    return out
+
+
+def _values(item: Item) -> tuple[Any, ...]:
+    """What an item contributes and the attributes readouts read."""
+    terms = tuple((t.op, t.family, t.index, t.amount, t.key) for t in item.terms)
+    attrs = tuple(sorted((k, repr(v)) for k, v in item.attrs.items()))
+    return terms, attrs
+
+
+def _within(offset: int, ranges: tuple[tuple[int, int], ...]) -> bool:
+    return any(lo <= offset < hi for lo, hi in ranges)
+
+
+def check_locating(task: tuple[str, int, int]) -> dict[str, Any]:
+    """G5 on the header bytes [lo, hi) of one file."""
+    assert _READER is not None
+    name, lo, hi = task
+    bytez = _READER.get(name).data
+    before = _pe_items(bytez)
+    failures: list[dict[str, Any]] = []
+    structural = 0
+    for offset in range(lo, hi):
+        edited = bytearray(bytez)
+        edited[offset] ^= 0xFF
+        after = _pe_items(bytes(edited))
+        changed = False
+        for side, items, other in [("removed", before, after), ("added", after, before)]:
+            for key, item in items.items():
+                if key in other:
+                    continue
+                changed = True
+                if not _within(offset, item.locating):
+                    failures.append({"name": name, "offset": offset, "check": side, "kind": item.kind, "field": str(item.attrs.get("field")), "members": str(item.members[:3])})
+        for key, item in before.items():
+            if key in after and _values(item) != _values(after[key]):
+                if not _within(offset, item.members + item.locating):
+                    failures.append({"name": name, "offset": offset, "check": "value", "kind": item.kind, "field": str(item.attrs.get("field")), "members": str(item.members[:3])})
+        structural += changed
+    return {"name": name, "lo": lo, "hi": hi, "structural": structural, "failures": failures}
+
+
+def main_locating(args: Any) -> None:
+    """G5 over the files, in chunks of header bytes."""
+    df = pl.read_parquet(args.files)
+    if "status" in df.columns:
+        df = df.filter(pl.col("status") == "ok")
+    rng = np.random.default_rng(args.seed)
+    names = sorted(df["name"].to_list())
+    _init(str(args.db))
+    assert _READER is not None
+    tasks: list[tuple[str, int, int]] = []
+    chosen: list[str] = []
+    for name in rng.permutation(names).tolist():
+        if len(chosen) == args.num_files:
+            break
+        bytez = _READER.get(name).data
+        pe = _parse(bytez)
+        if pe is None:
+            continue
+        chosen.append(name)
+        end = min(int(pe.OPTIONAL_HEADER.SizeOfHeaders), len(bytez), args.max_bytes)
+        tasks += [(name, lo, min(lo + 64, end)) for lo in range(0, end, 64)]
+    print(f"{len(chosen)} files, {len(tasks)} tasks, {sum(hi - lo for _, lo, hi in tasks)} flips", flush=True)
+
+    t0 = time.perf_counter()
+    rows: list[dict[str, Any]] = []
+    with Pool(args.workers, initializer=_init, initargs=(str(args.db),)) as pool:
+        for i, row in enumerate(pool.imap_unordered(check_locating, tasks, chunksize=1)):
+            rows.append(row)
+            if (i + 1) % 50 == 0:
+                print(f"{i + 1}/{len(tasks)} tasks, {time.perf_counter() - t0:.0f} s", flush=True)
+
+    failures = pl.DataFrame([f for r in rows for f in r["failures"]], schema={"name": pl.String, "offset": pl.Int64, "check": pl.String, "kind": pl.String, "field": pl.String, "members": pl.String})
+    files = pl.DataFrame([{k: r[k] for k in ("name", "lo", "hi", "structural")} for r in rows]).group_by("name").agg(
+        (pl.col("hi") - pl.col("lo")).sum().alias("flips"), pl.col("structural").sum()
+    ).sort("name")
+    args.outdir.mkdir(parents=True, exist_ok=True)
+    files.write_parquet(args.outdir / "files.parquet")
+    failures.write_parquet(args.outdir / "failures.parquet")
+    summary = failures.group_by("check", "kind", "field").agg(pl.len().alias("count"), pl.col("offset").unique().sort().head(8).alias("offsets"), pl.col("name").n_unique().alias("files")).sort("count", descending=True)
+    report = {
+        "files": files.height,
+        "flips": int(files["flips"].sum()),
+        "flips_structural": int(files["structural"].sum()),
+        "failures": failures.height,
+        "failures_by_kind": [{k: (v if not isinstance(v, list) else v) for k, v in row.items()} for row in summary.head(40).to_dicts()],
+        "wall_seconds": time.perf_counter() - t0,
+    }
+    report["pass"] = report["failures"] == 0
+    (args.outdir / "report.json").write_text(json.dumps(report, indent=2))
+    print(json.dumps(report, indent=2))
+
+
 ################################################################################
 # Main
 ################################################################################
@@ -125,14 +247,20 @@ def check_exact(name: str, g2: bool = True) -> dict[str, Any]:
 
 def main() -> None:
     parser = ArgumentParser(description=__doc__.split("\n\n")[1] if __doc__ else None)
-    parser.add_argument("check", choices=["exact"])
+    parser.add_argument("check", choices=["exact", "locating"])
     parser.add_argument("--files", type=Path, required=True, help="Parquet with a `name` column (and optionally `status`).")
     parser.add_argument("--db", type=Path, default=Path("/shared/datasets/EMBER-2024/data/ts"))
     parser.add_argument("--outdir", type=Path, required=True)
     parser.add_argument("--workers", type=int, default=1)
     parser.add_argument("--limit", type=int, default=0, help="Only the first N files (0: all).")
     parser.add_argument("--no_g2", action="store_true", help="G1 only (G2 costs a provenance computation per file).")
+    parser.add_argument("--num_files", type=int, default=20, help="locating: files drawn from --files (PE files only).")
+    parser.add_argument("--max_bytes", type=int, default=1024, help="locating: header bytes flipped per file, at most.")
+    parser.add_argument("--seed", type=int, default=0)
     args = parser.parse_args()
+    if args.check == "locating":
+        main_locating(args)
+        return
 
     df = pl.read_parquet(args.files)
     if "status" in df.columns:
