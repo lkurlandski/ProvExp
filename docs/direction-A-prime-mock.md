@@ -243,9 +243,9 @@ real behavior, not a bug to patch. It is one of the features where computed and 
   The catalogue is the threat model (M_full), stated as such, as in A.
 - **Tractability is unproven** (check 0). An engineering risk, not a novelty risk, but it can sink the main table.
 
-## Open decisions for the user
+## Decisions
 
-Each recommendation is listed first.
+The user accepted every recommendation below on 2026-10-27; they stand until the checks say otherwise.
 
 1. **Which use leads the paper.** *Recommended: Table A'1 (exact evaluation).* A'1 says "constraints learned from
    attacks certify a defense that a cheap search breaks; computed ones give certificates that hold and evasions that

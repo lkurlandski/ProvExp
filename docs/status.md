@@ -13,8 +13,10 @@ Later on 2026-10-27:
   to give wrong certificates on PV), not Simonetto's constraints translated by hand; the expert-set detector is a row.
   Order: derivation steps 1-3, then 5 (C1 engine), then 7. Six open decisions at its end, for the user.
 - **Overlay gap: `body_*` sums not affected** (100 pilot files, 190 appends: no body count drops; `overlay_size`
-  drops on 8). 7 of 11 overrun files are cut at the 4 MB dataset cap. Proposed: pefile's rule is real behavior;
-  only `overlay_size` becomes two-sided. Awaiting user confirmation (`docs/item-layer-design.md`).
+  drops on 8). 7 of 11 overrun files are cut at the 4 MB dataset cap. Decided (user): pefile's rule is real behavior;
+  only `overlay_size` becomes two-sided (with the next C4 retraining). Witness: `scripts/a_overlay_witness.py`, run 88.
+- **A' mock decisions accepted** (all six recommendations): lead with Table A'1; solver over edit choices; check 0
+  (solver tractability, no provenance needed) first.
 
 Session log (2026-10-27):
 - **Second application: A'** (user agreed). Literature: `docs/literature-Aprime-2026-10-27.md`; nine foundational

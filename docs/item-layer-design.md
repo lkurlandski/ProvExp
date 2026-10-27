@@ -230,8 +230,7 @@ row's guarantee.
 **First row confirmed (2026-10-27).** `pefile.get_overlay_data_start_offset` skips any extent whose end lies past
 the file. Of the 100 pilot files, 11 have a section past EOF; on the 5 whose overrun is under 8 MB, appending enough
 bytes to cover it lowered `overlay_size` on 4, all malware (e.g. 31,482 -> 4,096). Gain share in the M_full C4
-models: `overlay_size` 0.9% (features), 0.25% (sums). The scratch witness script is not committed; step 7's report
-should include it.
+models: `overlay_size` 0.9% (features), 0.25% (sums). Witness: `scripts/a_overlay_witness.py` (run 88).
 
 **The `body_*` sums are not affected (checked 2026-10-27).** On all 100 pilot files, appending enough bytes to bring
 every skipped section and directory extent inside the file (190 appends; guard byte plus random payload) lowered no
@@ -240,9 +239,10 @@ section at the end of the file and starts the overlay region only after every se
 extends that section's region instead of shrinking the overlay's. The one case left open in principle is a data
 directory past EOF while no section is; the pilot has none (all 11 overrun files overrun through a section). Of the
 11, 7 are files truncated at the dataset's 4,000,000-byte cap, so the overrun is mostly a truncation artifact.
-Proposed (to confirm with the user): treat pefile's rule as the extractor's real behavior (no patch); `overlay_size`
+Decided (user, 2026-10-27): treat pefile's rule as the extractor's real behavior (no patch); `overlay_size`
 becomes two-sided under appending, the only feature whose direction changes (`overlay_size_ratio`, `overlay_entropy`,
-and `max_entropy` are two-sided already).
+and `max_entropy` are two-sided already). The hand rule in `scripts/a_directions.py` changes with the next retraining of the C4
+models, so that code and artifacts stay in step.
 
 The first row is the important one. `overlay_size` is constrained monotone in the C4 detectors of Table A1, and the
 body sums are most of the C4-on-sums row. If it is confirmed, the strict table moves them to "both" (or the decision
