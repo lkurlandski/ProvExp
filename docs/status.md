@@ -17,6 +17,10 @@ Later on 2026-10-27:
   only `overlay_size` becomes two-sided (with the next C4 retraining). Witness: `scripts/a_overlay_witness.py`, run 88.
 - **A' mock decisions accepted** (all six recommendations): lead with Table A'1; solver over edit choices; check 0
   (solver tractability, no provenance needed) first.
+- **A' check 0: go** (run 89, `scripts/ap_check0_solver.py`; mock, check 0). Exact encoding; every solve decided in
+  <= 34 s on the 500-tree model. Directions alone certify nothing on non-monotone detectors (all evadable in feature
+  space), so A'1's region needs C3's magnitude bounds, which the edit-choice formulation gives; an L0 stand-in (K=1, 3)
+  yields real proofs in 13-34 s. Next: derivation steps 1-6.
 - **Order (agreed with the user):** A' check 0 (solver tractability), then derivation steps 1-6 in one stretch
   (4, locating ranges, feeds the C1 engine; 6, the edit catalogue, gives the solver its edit choices), then step 7,
   then the expert-set row, then the A' pilot.

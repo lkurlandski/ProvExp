@@ -195,6 +195,26 @@ Each is a short job on the pilot, on today's hand-coded predictors.
    files finish within the limit. *No-go:* switch to the verifiable-boosted-tree method, or report bounds from a
    time-limited solve (the solver's best bound is still sound), and bring it to the user before building anything
    else.
+   **Result (run 89, 2026-10-27): go.** Kantchelian's encoding with HiGHS (through scipy, no new dependency;
+   `scripts/ap_check0_solver.py`), decision version ("can the score go below the threshold?"), 5 detected pilot
+   malware per detector:
+   - the encoding reproduces the booster's score exactly on all 25 (detector, file) pairs;
+   - every solve was decided within 34 s, on the largest model too (500 trees, 22,533 binaries, 32,000 leaves);
+   - the C4 detectors are certified in 0.2 s, with no violation (they are monotone in the same directions; a check of
+     the encoding, not evidence);
+   - **directions alone certify nothing on a non-monotone detector**: under the M_full and even the M_add directions,
+     all 15 (unconstrained, PV-seen, PV-all) are evadable in feature space, because a direction with no limit on
+     magnitude lets a feature go anywhere on one side;
+   - with a budget of at most K features changed, as a stand-in for a tight region, real proofs appear and stay
+     fast: K = 1 certifies the unconstrained model on 5 of 5 (13-18 s) and PV-all on 1 of 5; K = 3 certifies the
+     unconstrained model on 2 of 5 (23-34 s).
+
+   Two consequences for the design. First, the computed region must bound *how far* each feature can move within the
+   byte budget (C3), not only which way (C4); a directions-only column would read 100% for every non-monotone
+   detector, like the budget-only one. The edit-choice formulation does this by construction. Second, the same holds
+   for the learned-constraints baseline: its constraints need magnitudes too (the largest change the toolkit produced
+   per feature), or check 1 is vacuous. Untested: proofs under the real edit-choice region, which has more structure
+   (counts, buckets, histogram mixing) than an L0 budget; check 0 says the solver scale is not the obstacle.
 1. **Learned constraints give wrong certificates.** Learn per-feature directions from the toolkit's adversarial
    outputs, run the solver on PV-seen, and compare with the battery's measured 21/22. *Go* if the learned-constraint
    solver certifies robust at least a third of the files the battery evades. *No-go:* if learned constraints already
