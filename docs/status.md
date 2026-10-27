@@ -1,11 +1,14 @@
 # Status
 
-**2026-10-27 (end of session): A' chosen and its literature read; the derivation designed; a soundness gap in
-Table A1 confirmed.** Next: the A' mock (not yet written), then the design doc's open decisions, then derivation
-steps 1-3 and the expert-set row. Details and order: `PLAN.md`, "Next steps (end of 2026-10-27)". Pick up at
-`docs/resume-prompt.md`.
+**2026-10-27, second session (end): A' mock written, reviewed, and accepted; A' check 0 passed; the overlay gap
+settled.** Next: derivation steps 1-6 of `docs/item-layer-design.md` in one stretch (item table, readouts as data,
+exactness checks G1/G2, locating ranges, C1 engine, edit catalogue), then step 7, the expert-set row, and the A'
+pilot. Details: `PLAN.md`, "Next steps (end of 2026-10-27, second session)". Pick up at `docs/resume-prompt.md`.
 
-Later on 2026-10-27:
+**2026-10-27 (first session, end): A' chosen and its literature read; the derivation designed; a soundness gap in
+Table A1 confirmed.**
+
+Session log (2026-10-27, second session):
 - **A' mock written** (`docs/direction-A-prime-mock.md`; first draft by another session, then revised). Fixes: the
   C4 row's "certificate" was circular (now a sanity check); battery cells now use Table A1's measured numbers; the
   solver searches over edit choices, so every evasion is a concrete edit; Chen et al. (USENIX Sec 2020) added as the
@@ -21,11 +24,15 @@ Later on 2026-10-27:
   <= 34 s on the 500-tree model. Directions alone certify nothing on non-monotone detectors (all evadable in feature
   space), so A'1's region needs C3's magnitude bounds, which the edit-choice formulation gives; an L0 stand-in (K=1, 3)
   yields real proofs in 13-34 s. Next: derivation steps 1-6.
+- **Design doc open decisions settled** (user accepted the recommendations): keep `provenance` until G2 passes, then
+  make it a projection of `items`; overlay: strict, no precondition row, no pefile patch; re-run A1's C4 rows when
+  the directions change (toolkit part is a 47-min `run/` script for the user); G1 also on the 2,000-file set; the
+  sound syntactic regex test.
 - **Order (agreed with the user):** A' check 0 (solver tractability), then derivation steps 1-6 in one stretch
   (4, locating ranges, feeds the C1 engine; 6, the edit catalogue, gives the solver its edit choices), then step 7,
   then the expert-set row, then the A' pilot.
 
-Session log (2026-10-27):
+Session log (2026-10-27, first session):
 - **Second application: A'** (user agreed). Literature: `docs/literature-Aprime-2026-10-27.md`; nine foundational
   papers plus six for A' saved to `papers/` (untracked). Novelty is only the computed side effects/constraints;
   hash-bucket targeting is Rosenberg et al.'s.

@@ -1,94 +1,101 @@
-# Resume: ProvExp (after 2026-10-27) — A' chosen; write its mock; build the automatic derivation
+# Resume: ProvExp (after 2026-10-27, second session) — build the derivation, steps 1-6
 
 Read `CLAUDE.md`, then `docs/status.md`'s top block, `PLAN.md` ("Directions", A', and "Next steps (end of
-2026-10-27)"), `docs/direction-A-summary.md`, `docs/literature-Aprime-2026-10-27.md`, and `docs/item-layer-design.md`.
+2026-10-27, second session)"), `docs/item-layer-design.md` (the build plan for this session: read it in full), and
+`docs/direction-A-prime-mock.md` (what A' needs from the derivation). Skim `docs/direction-A-summary.md` if direction
+A's results are not fresh.
+
 **Start by recapping for the user in plain language** where things stand and what is next, before asking anything.
-Be harsh about novelty; never raise deadlines; bring any no-go to the user before dropping anything; no result may
-rest on an extractor quirk. Run only jobs of ~10 minutes or less yourself (estimate from the slowest case first);
-anything longer goes to the user as a `run/` script (default 16 workers; never cap workers in Python).
+The user found the last sessions' state hard to follow ("discombobulated"), so give the one-page picture first:
+- the research in three sentences;
+- the two applications (A done at pilot scale; A' mocked and check 0 passed);
+- the one engineering task both need (the derivation);
+- the order of work.
+
+For every decision you put to the user, say what the thing is, give a concrete example, and say what each choice
+changes. Never use doc-internal labels (G1, A2, M_full, C3) without saying what they are.
+
+Standing rules:
+- Be harsh about novelty.
+- Never raise deadlines.
+- Bring any no-go to the user before dropping anything.
+- No result may rest on an extractor quirk.
+- Run only jobs of ~10 minutes or less yourself, estimated from the slowest case first. Anything longer goes to the
+  user as a `run/` script (default 16 workers; never cap workers in Python).
+- State a short hypothesis before each run.
+- Add a `run/` script for every experiment.
 
 ## Where things stand
 
-- **Direction A** is complete at pilot scale (`docs/direction-A-summary.md`), with two corrections found on
-  2026-10-27:
-  1. Its C4 directions are hand-written per-group rules (`scripts/a_directions.py`) and its C1 predictors are
-     hand-coded per edit (`scripts/a_c1_table0.py`, `scripts/a1_adaptive.py`). The paper's claim that they are derived
-     from the extractor needs the design in `docs/item-layer-design.md` built.
-  2. **A confirmed soundness gap:** pefile skips extents past EOF when locating the overlay, so appending can lower
-     `section:overlay_size` (4 of 5 testable pilot files with a section past EOF). The M_full C4 rows constrain it
-     up-only, so "never moved by any attack" does not hold on such files. The `body_*` sums (10.7% of the sums row's
-     gain) may be affected too; not yet witnessed.
-- **Second application: A'** (from feature-space targets to real file edits; B and C set aside). The literature is
-  read (`docs/literature-Aprime-2026-10-27.md`). Harsh read:
-  - the only new part is side effects and constraints computed from the extractor;
-  - hash-bucket targeting is prior work (Rosenberg et al.);
-  - the strongest uses are probably evaluative or defensive: exact realizable worst-case evaluation of a detector, or
-    realizable examples for adversarial training as in Bostani et al.'s Level Up.
-- **Expert-set row:** designed in `docs/direction-A-expert-set.md`. The user decided to re-implement Gimenez et al.'s
-  40 features (their own LIEF extractor, not EMBER); our M_full is the priority, their add-only threat model is for
-  context.
-- **Cost column:** deferred until the derivation is automatic.
+- **Direction A** (sound monotone detectors from computed feature directions) is complete at pilot scale. Every check
+  passed (`docs/direction-A-summary.md`). Its directions (`scripts/a_directions.py`) and edit-effect predictors
+  (`scripts/a_c1_table0.py`, `scripts/a1_adaptive.py`) are still **hand-written**. The paper's claim that they are
+  computed from the extractor needs the derivation.
+- **Direction A'** (realizable worst-case evaluation of a detector) has its mock in
+  `docs/direction-A-prime-mock.md`. The user accepted all six recommendations:
+  - lead with Table A'1;
+  - the exact solver searches over the attacker's edit choices, so every evasion is a concrete edit;
+  - rows: unconstrained, PV-seen, PV-all, Gimenez et al.'s expert-set detector, and later adversarially trained
+    models; our C4 detector is a sanity check only;
+  - the main baseline is constraints learned from the toolkit attacks;
+  - Chen et al. (USENIX Sec 2020, PDF) is the closest precedent.
+- **A' check 0 passed** (run 89, `scripts/ap_check0_solver.py`). Kantchelian's encoding with HiGHS (via scipy) is
+  exact, and every decision took at most 34 s on the 500-tree model. Key finding: feature *directions* alone certify
+  nothing on a non-monotone detector, because without a limit a feature can move arbitrarily far. So the region must
+  bound how far each feature can move within the byte budget (C3). The edit-choice formulation provides this, and
+  the learned-constraints baseline needs magnitudes too.
+- **The overlay gap is settled** (run 88, `scripts/a_overlay_witness.py`):
+  - only `section:overlay_size` is affected; it becomes two-sided under appending;
+  - the `body_*` sums never drop;
+  - no pefile patch: its rule is the extractor's real behavior;
+  - the hand rule changes with the next C4 retraining (after step 7).
+- **The design doc's five open decisions are settled** (end of `docs/item-layer-design.md`):
+  - keep `provenance` until G2 passes, then make it a projection of `items`;
+  - strict only;
+  - re-run A1's C4 rows after step 7;
+  - G1 also on the 2,000-file set;
+  - the syntactic regex test.
 
-## Do next
+## Do next: derivation steps 1-6 in one stretch (the user asked for them together, in order)
 
-1. **The A' mock** (`docs/direction-A-prime-mock.md`). Not yet written: the safety classifier stopped the draft
-   twice on 2026-10-27. If it is still missing, the user may have another session write it from the task prompt below;
-   then review it against the literature notes and direction A's results, and bring it to the user. No A' code before
-   the user has seen it.
-2. **The open decisions at the end of `docs/item-layer-design.md`.** My recommendations from 2026-10-27:
-   - keep `provenance` until G2 passes, then make it a projection of `items`;
-   - for the overlay gap, be strict and also report a precondition row;
-   - ask whether pefile's overlay rule is a quirk to patch or real behavior (leaning: real, it is pefile's
-     definition);
-   - re-run A1's C4 rows at pilot scale now (the toolkit part is a 47-min `run/` script);
-   - run G1 on the 2,000-file set too;
-   - accept the sound syntactic regex test.
-3. **Build the derivation, steps 1-3** (item table, readouts as data; checks G1/G2). Both A and A' need them. The mock
-   decides whether the C1 engine (step 5) or the C4 engine (step 7) follows. The doc's effort estimate is in human
-   days and far too high (user).
-4. **The expert-set row:**
-   - re-implement the 40 features on pefile, and confirm the per-name overwrite reading on one file;
-   - patch the quirks as pure additions and note them upstream;
-   - featurize the 10% store (a `run/` script if over 10 min);
-   - train the monotone GBDT and run the A1 protocol under M_full and M_add.
+1. **Step 1:** `src/provexp/items.py`: Item, ItemTable, the contribution vocabulary, readout types and evaluators,
+   and the projection to BoxMatrix. Unit tests in the style of `tests/`.
+2. **Steps 2-3:** `items(...)` emitters and readouts as pure additions to `features.py`.
+   - First the simple groups: general, histogram, header, datadirectories, exports, imports (both classes),
+     richheader, authenticode.
+   - Then the hard ones: strings, byteentropy, section (max pools, overlay, entry selection, signed hashes).
+   - **Stopping point:** G1 (recorded totals through the declared readouts reproduce the extractor *exactly*, on the
+     100 pilot files and the 2,000-file set; about a minute with 16 workers) and G2 (the projection matches today's
+     provenance).
+3. **Step 4:** locating ranges for every item kind; the byte-flip check G5. The full G5 run is a few minutes with 16
+   workers; smoke-test it on one file first.
+4. **Step 5:** the C1 engine (`src/provexp/reach.py`). **Stopping point:** G4 (reproduce Table A0).
+5. **Step 6:** the edit catalogue with parameter domains (`featuresets/ember2024/catalogue.py`); A0 rows for the nine
+   operations not yet covered (G7). The domains are what the A' solver will choose over.
 
-## Task prompt for the A' mock (for another session, if needed)
+Then, in later sessions:
+- step 7, the C4 engine, with the disagreement report against the hand rules (the overlay case should be the first
+  disagreement), then the user-run retraining and re-run of Table A1's C4 rows;
+- the expert-set row;
+- the A' pilot (checks 1-3).
 
-```
-You are working in the ProvExp repository (/home/lk3591/Documents/code/ProvExp), a dissertation project on feature
-provenance for robust malware detection. Read CLAUDE.md first and follow its conventions, especially "Explain
-plainly", "Be harsh about our own novelty", and the screening criteria under "Framework conventions".
+The effort table in the design doc is in human days and far too high (user).
 
-Task: write docs/direction-A-prime-mock.md, the on-paper screening mock for direction A' (PLAN.md, Directions, A').
-Model it closely on docs/direction-A-mock.md, which is the template the user was happy with: the pitch in plain
-terms; one or more mock paper tables with invented numbers clearly marked as invented; for every column, the model
-component (docs/feature-provenance-model.md, C1-C4) that produces it; the realistic baselines and why; falsifiable
-go/no-go checks to run before building; and harsh notes on novelty.
-
-Read before writing:
-  - PLAN.md (Thesis; Directions, especially A'), docs/direction-A-summary.md, and docs/direction-A-A1-design.md
-    ("Result: Table A2": the existing C1-guided search is half of A');
-  - docs/literature-Aprime-2026-10-27.md (closest work and the harsh read; note that hash-bucket targeting is prior
-    work and must not be claimed);
-  - docs/item-layer-design.md (the automatic derivation A' depends on; treat it as a planned component, and say which
-    of its build steps A' needs first);
-  - docs/feature-provenance-model.md Sections 2-4 and docs/direction-A-threat-model.md Section 1 (threat models).
-
-The mock must state, in plain language, which security task A' serves and against which realistic alternative a
-practitioner would use, and why only feature provenance makes it cheap. It should weigh the uses the literature notes
-name (realizable worst-case evaluation of a detector; realizable examples for adversarial training) and recommend
-one as the main table. Keep the comparison consistent with direction A's protocol (pilot scale, M_full, 1% FPR).
-End with open decisions for the user. Do not write code, run experiments, or commit; produce only the document.
-```
+Commit in logical pieces (after each stopping point at least). Before each commit, `env/bin/ruff check src tests
+scripts` and `env/bin/mypy src tests scripts` must pass. Pure additions to the thrember-derived `features.py` only;
+never edit `tests/reference/`.
 
 ## Notes
 
-- `papers/` now holds the foundational PDFs (Gimenez, Pierazzi extended, Severi, Rosenberg, Labaca-Castro, Demetrio,
-  RAMP, Perasso, Smutz & Stavrou, EvadeDroid, Kantchelian, PAD, Level Up, Dyrmishi, Simonetto). It is untracked, as are
-  `REVIEW*.md` and `make-manuscript.sh`; leave them uncommitted.
-- Gimenez et al.'s code (the 40-feature extractor) is at
-  github.com/PFGimenez/certifiably-robust-malware-detectors-by-design, `static_features_extraction.py:get_features`.
-- Still unread for A': HRAT (Zhao et al., CCS 2021; paywalled, ask the user), Šrndić & Laskov (S&P 2014), verifiable
-  boosted tree ensembles (arXiv 2402.14988).
+- `papers/`, `REVIEW*.md`, and `make-manuscript.sh` are untracked; leave them uncommitted.
+- The safety classifier stopped several drafts on 2026-10-27 (the literature notes, the design doc, the A' mock).
+  Frame the A' material as detector evaluation and hardening, which it is. If a document is blocked twice, offer the
+  user a task prompt for another session, as was done for the mock.
+- Still unread for A':
+  - HRAT (Zhao et al., CCS 2021; paywalled, ask the user);
+  - Šrndić & Laskov (S&P 2014);
+  - verifiable boosted tree ensembles (arXiv 2402.14988; the fallback solver).
 - The user still owes the upstream reports in `docs/upstream-issues.md` (thrember item 1; secml-malware item 4).
 - Everything uses the quirk-fixed (merged-imports) extractor; the sums extractor includes it.
+- Gimenez et al.'s 40-feature extractor: github.com/PFGimenez/certifiably-robust-malware-detectors-by-design,
+  `static_features_extraction.py:get_features`.

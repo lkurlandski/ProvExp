@@ -48,7 +48,7 @@ introduction and a simple baseline (writing decision for later).
 - **C. Diagnosing evasion through disagreement between heterogeneous ensemble members.** Baseline: Smutz & Stavrou's
   mutual agreement (score disagreement); C must win where scores are silent (e.g., both members evaded) or classify
   the cause. PASA is the nearest attribution-based detector (not malware).
-- **A' (candidate, noted 2026-10-26, user: "pretty intriguing"; to screen next to B and C). The flip side of A:
+- **A' (chosen 2026-10-27; mock `docs/direction-A-prime-mock.md`, check 0 passed). The flip side of A:
   realizing feature-space attacks in the problem space.** A feature-space attacker (gradient or search on the feature
   vector) produces a target vector; C1/C4 tell which loader-safe edits in M reach which feature changes, so the
   provenance can turn the target into concrete file edits, including through hashed features (pick a section name
@@ -60,7 +60,49 @@ introduction and a simple baseline (writing decision for later).
   attacks (GAMMA, MAB-Malware). Harsh check first: Pierazzi et al.'s problem-space formalization and every
   "realizable attack" paper since; the novelty must be the automatic, side-effect-exact translation, not the attack.
 
-## Next steps (end of 2026-10-27)
+## Next steps (end of 2026-10-27, second session)
+
+Done in the second session of 2026-10-27:
+- **A' mock** (`docs/direction-A-prime-mock.md`): written by another session from a task prompt, then revised after
+  review. Fixed: the "certificate" of our own C4 detector was circular (now a sanity check); battery cells use Table
+  A1's measured numbers; the solver searches over *edit choices*, so every evasion is a concrete edit; Chen et al.
+  (USENIX Sec 2020, PDF: edit -> over-approximated feature region -> verification) is the closest precedent and the
+  novelty is stated against it; the main baseline is constraints learned from the toolkit attacks (predicted to give
+  wrong certificates on PV), not Simonetto's constraints translated by hand; Gimenez et al.'s expert-set detector is
+  the strongest row. **The user accepted all six recommendations:** lead with Table A'1 (realizable worst-case
+  evaluation); solver over edit choices; rows unconstrained, PV-seen, PV-all, expert set, later adversarially trained
+  (C4 as sanity check); report certified and realized numbers; Kantchelian's encoding first; checks 0-2 on the hand
+  predictors, flagged.
+- **A' check 0: go** (run 89, `scripts/ap_check0_solver.py`). Kantchelian's encoding with HiGHS via scipy, decision
+  version: exact on all 25 (detector, file) pairs; every solve decided in <= 34 s on the 500-tree model. Finding:
+  **directions alone certify nothing** on a non-monotone detector (all evadable in feature space even under M_add),
+  so A'1's region needs C3's magnitude bounds within the byte budget; the edit-choice formulation gives them, and the
+  learned-constraints baseline needs magnitudes too. An L0 stand-in (K = 1, 3) gives real proofs in 13-34 s.
+- **Overlay gap settled** (run 88, `scripts/a_overlay_witness.py`): appending lowers `section:overlay_size` on 8 of
+  100 pilot files; the `body_*` sums never drop (190 appends), because `sums.body_regions` clips overrunning sections
+  at EOF. 7 of the 11 overrun files are cut at the dataset's 4 MB cap. Decision (user): pefile's rule is real
+  behavior, no patch; only `overlay_size` becomes two-sided under appending, applied with the next C4 retraining.
+- **Design doc decisions settled:** the five open decisions of `docs/item-layer-design.md` (see its end).
+- **Order (user):** the derivation steps are done together, in order, not interleaved with other work.
+
+Next:
+1. **Derivation steps 1-6 in one stretch** (`docs/item-layer-design.md`, "Build order"): item table and readouts as
+   data (1-3; checks G1 exactness on the pilot and on the 2,000-file set, G2 projection to today's provenance), locating
+   ranges (4, G5), the C1 engine (5, G4: reproduce Table A0), the edit catalogue with parameter domains (6, G7). Natural
+   stopping points: after step 3 (G1/G2) and after step 5 (G4). The effort table is in human days and far too high.
+2. **Step 7, the C4 engine**, with the disagreement report against `scripts/a_directions.py` (the overlay case is the
+   first expected disagreement, with its witness), then retrain the C4 models and re-run Table A1's C4 rows
+   (`run/` scripts for the user; the toolkit part takes ~47 min).
+3. **The expert-set row** (`docs/direction-A-expert-set.md`): re-implement Gimenez et al.'s 40 features on pefile,
+   confirm the per-name overwrite reading on one file, patch quirks as pure additions, featurize the 10% store,
+   train the monotone GBDT, run the A1 protocol under M_full and M_add. Also a row of Table A'1.
+4. **A' pilot:** checks 1-3 of the mock (learned constraints with magnitudes on PV; realization of the solver's
+   edit choices for append and add-section; the expert-set detector under computed M_full constraints).
+5. Later, unchanged: cost column (after the derivation), adversarial-training row, second toolkit, leave-one-out PV,
+   scale (user's decision).
+
+### Earlier: next steps at the end of 2026-10-27 (first session)
+
 
 Done on 2026-10-27:
 - **Second application chosen: A'** (user agreed; B and C set aside for now: B's edge is narrow and drifts toward

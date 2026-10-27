@@ -342,6 +342,13 @@ tested on one file first. G4 and G7 at pilot scale are run-79-sized (minutes).
 
 ## Open decisions for the user
 
+**Settled (user, 2026-10-27), all as recommended:** (1) add `items` now and keep `provenance` until G2 passes, then
+make it a projection of `items` (the old code is in git); (2) strict only, no precondition row: pefile's overlay rule
+is the extractor's real behavior, `overlay_size` becomes two-sided under appending, the `body_*` sums are unaffected
+(run 88); (3) re-run Table A1's C4 rows at pilot scale once step 7 changes a direction (the toolkit part is a `run/`
+script for the user); (4) G1 on the pilot and on the 2,000-file set; (5) the sound syntactic regex test. The
+questions as first posed:
+
 1. **Mirrors in `features.py`.** Each group would carry three mirrors of the same loop: `raw_features` (thrember's),
    `provenance`, and `items`. Proposal: add `items` now; once G2 passes, make `provenance` a projection of `items`,
    which removes one mirror. `provenance` is our addition, not thrember's, so this respects the pure-additions rule,

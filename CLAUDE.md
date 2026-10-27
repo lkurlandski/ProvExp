@@ -23,7 +23,8 @@ and manuscript remain as source material. Deadlines and conference cycles are no
   Table A0 in S6), and `docs/direction-A-A1-design.md` (Table A1/A2 design, decisions, and results).
   `docs/upstream-issues.md`: thrember (and secml-malware) bugs for the user to report upstream.
 - Direction A' (second application, chosen 2026-10-27): `docs/literature-Aprime-2026-10-27.md` (closest work, harsh
-  read); `docs/direction-A-prime-mock.md` (the mock, once written). The automatic derivation both A and A' rest on:
+  read); `docs/direction-A-prime-mock.md` (the mock: Table A'1, realizable worst-case evaluation, is the main
+  result; decisions accepted, check 0 passed). The automatic derivation both A and A' rest on:
   `docs/item-layer-design.md` (A's directions and predictors are still hand-written until it is built). The expert-set
   row: `docs/direction-A-expert-set.md`.
 - `docs/graveyard.md`: ideas and directions that did not pan out and why.
@@ -53,7 +54,8 @@ and manuscript remain as source material. Deadlines and conference cycles are no
   cm_global); the manuscript's figure data (paper_figures -> `manuscript/assets/data/`); shared
   discovery/transplant machinery (shortcuts, shortcuts_transplant). Direction A: a_directions (C4 directions per
   threat model), a_c1_table0 (C1 predictors and Table A0), a_pv_attacks / a_pv_hole (secml-malware attacks, PV
-  selection and its hole), a1_evaluate (toolkit columns), a1_adaptive (C1-guided adaptive search); the sums
+  selection and its hole), a1_evaluate (toolkit columns), a1_adaptive (C1-guided adaptive search), a_overlay_witness
+  (the overlay gap). Direction A': ap_check0_solver (Kantchelian's exact GBDT encoding, HiGHS via scipy). The sums
   re-encoding is `src/provexp/featuresets/ember2024/sums.py`. Dropped experiments are under `scripts/archive/`.
 - **Rankings break ties by a seeded permutation, never by position or index** (`ablation.element_order` /
   `window_order` with `tiebreak`, `pf1.feature_order`), and treat scores within 1e-9 (relative) as tied: equal scores
