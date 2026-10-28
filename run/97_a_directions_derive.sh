@@ -16,6 +16,9 @@
 # exactly entry_name_hash_* (sec, both), the Rich header (ext, both), and security_size (hand over-approximates).
 # Strict variant: M_add keeps 44 features (43 fixed, size up), M_full 9 (6 of them constant). 88 of 100 pilot files
 # pass the precondition; of the 12 that fail, 8 are cut at the dataset's 4,000,000-byte cap.
+# Step 2 (the 2,000-file set, ~5 min, 2026-10-28, after restricting slack and the DOS region to loader-ignored bytes):
+# the same directions in both variants; 1,682 of 2,000 files pass the precondition (318 fail: 73 benign, 245 malware;
+# 231 truncated at the cap).
 set -euo pipefail
 cd "$(dirname "$0")/.."
 source env/bin/activate
@@ -30,4 +33,12 @@ python scripts/a_directions.py \
   --workers 16 \
   &> artifacts/logs/a_directions_derived.log
 
-echo "Done. Outputs: artifacts/experiments/a_directions_derived (directions.csv, g3.json, g3_cells.csv)"
+echo "Derive the directions on the 2,000-file set. Log: artifacts/logs/a_directions_derived_2000.log"
+python scripts/a_directions.py \
+  --derive \
+  --files artifacts/explanation_set/ts.parquet \
+  --outdir artifacts/experiments/a_directions_derived_2000 \
+  --workers 16 \
+  &> artifacts/logs/a_directions_derived_2000.log
+
+echo "Done. Outputs: artifacts/experiments/a_directions_derived{,_2000} (directions.csv, g3.json, g3_cells.csv)"
