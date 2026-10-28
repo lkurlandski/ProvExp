@@ -192,20 +192,38 @@ REGION_OPS: dict[str, tuple[bool, dict[str, ChangeHow], bool, tuple[Change, ...]
 }
 
 
-def regions(pe: pefile.PE, z: bytes) -> dict[str, tuple[Range, ...]]:
-    """The bytes each in-place operation writes on the file (its domain on this file, with any content)."""
+# The kinds whose bytes the loader reads wherever they lie (import, export, and relocation data, the signature).
+LOADED_KINDS = ("import", "library", "export", "relocs", "certificate_table")
+
+
+def regions(pe: pefile.PE, z: bytes, table: ItemTable) -> dict[str, tuple[Range, ...]]:
+    """
+    The bytes each in-place operation writes on the file (its domain on this file, with any content). NOTE: slack and
+    the DOS region are restricted to bytes the loader ignores (domain knowledge inside the experiment, as for the
+    loader-safe edit rules): both exclude the headers past the DOS header, other sections' mapped data, directory data,
+    and the bytes of the `LOADED_KINDS` items (a section's raw data or the DOS stub can hold them), and the DOS region
+    ends where the PE header starts (it can start inside the DOS header).
+    """
     n = len(z)
     e_lfanew = int(pe.DOS_HEADER.e_lfanew)
-    slack = []
+    directories = pe.OPTIONAL_HEADER.DATA_DIRECTORY
+    read: list[Range] = [r for item in table.items if item.kind in LOADED_KINDS for r in item.members + item.locating]
+    holes = list(read)
+    read.append((0, int(pe.OPTIONAL_HEADER.SizeOfHeaders)))
+    read += [(s.PointerToRawData, s.PointerToRawData + min(s.Misc_VirtualSize, s.SizeOfRawData)) for s in pe.sections]
+    read += [r for i, d in enumerate(directories) if i != SECURITY_ENTRY and d.VirtualAddress and d.Size for r in rva_ranges(pe, d.VirtualAddress, d.Size)]
+    if len(directories) > SECURITY_ENTRY and directories[SECURITY_ENTRY].Size:
+        d = directories[SECURITY_ENTRY]
+        read.append((d.VirtualAddress, d.VirtualAddress + d.Size))
+    slack: list[Range] = []
     for s in pe.sections:
         lo = s.PointerToRawData + min(s.Misc_VirtualSize, s.SizeOfRawData)
         hi = min(s.PointerToRawData + s.SizeOfRawData, n)
         if hi > lo:
-            slack.append((lo, hi))
-    directories = pe.OPTIONAL_HEADER.DATA_DIRECTORY
+            slack += cut([(lo, hi)], read)
     return {
         "slk": tuple(slack),
-        "dos": clipped(n, [(2, 0x3C), (0x40, e_lfanew)]),
+        "dos": tuple(cut(clipped(n, [(2, min(0x3C, e_lfanew)), (0x40, e_lfanew)]), holes)),
         "hdr": tuple(field_range(getattr(pe, h), f) for h, f in HDR_FIELDS),
         "chk": (field_range(pe.OPTIONAL_HEADER, "CheckSum"),),
         "ren": tuple(field_range(s, "Name") for s in pe.sections),
@@ -214,10 +232,18 @@ def regions(pe: pefile.PE, z: bytes) -> dict[str, tuple[Range, ...]]:
     }
 
 
+def cut(ranges: Sequence[Range], holes: Sequence[Range]) -> list[Range]:
+    """The ranges without the elements of the holes."""
+    out = list(ranges)
+    for a, b in holes:
+        out = [r for lo, hi in out for r in ((lo, min(hi, a)), (max(lo, b), hi)) if r[1] > r[0]]
+    return out
+
+
 def file_region_changes(pe: pefile.PE, z: bytes, table: ItemTable) -> dict[str, set[Change]]:
     """The changes each in-place operation makes on one file (union them over a corpus)."""
     out: dict[str, set[Change]] = {}
-    for op, region in regions(pe, z).items():
+    for op, region in regions(pe, z, table).items():
         zero, declared, keep, extra = REGION_OPS[op]
         t = table if not keep else ItemTable(table.num_elements, table.families, [replace(item, locating=()) for item in table.items])
         out[op] = set(region_changes(t, region, CONTENT_KINDS, zero=zero, declared=declared))
