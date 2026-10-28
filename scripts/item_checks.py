@@ -7,11 +7,15 @@ Mechanical checks of the item layer (docs/item-layer-design.md, "Validation and 
             items spread over their elements reproduce today's provenance (the raw contributions, in canonical form).
 
     locating
-            G5 (assumption A1). Flips every byte of the header region (XOR 0xFF, up to --max_bytes per file) and
-            re-parses. Every item that appears, disappears, or moves (its kind or member ranges change) must have the
-            flipped byte among its locating ranges (in the table it belongs to), and every item whose contributions
-            or attributes change must have it among its member or locating ranges. Only the items pefile parses are
-            compared; items recognized from content (bytes, windows, strings) are re-recognized locally (G6).
+            G5 (assumption A1). Flips bytes (XOR 0xFF) and re-parses. Every item that appears, disappears, or moves
+            (its kind or member ranges change) must have the flipped byte among its locating ranges (in the table it
+            belongs to), and every item whose contributions or attributes change must have it among its member or
+            locating ranges. Only the items pefile parses are compared; items recognized from content (bytes,
+            windows, strings) are re-recognized locally (G6). With --region header (the default), every byte of the
+            header region, up to --max_bytes per file. With --region directories, the bytes past the header region
+            that the parse reads per structure: up to --per_target bytes drawn from each data directory's data and
+            from the member and locating ranges of each item kind. This checks that locating ranges can be recorded
+            per structure (a flip in one directory's data changes no item located elsewhere).
 
     margins
             G6 (assumption A3). Random in-place writes (offset uniform over the file, 1-64 bytes, random or printable
@@ -44,6 +48,7 @@ from provexp.data.simpledb import SimpleDBReader
 from provexp.featuresets.ember2024.features import ImportsInfo
 from provexp.featuresets.ember2024.features import PEFeatureExtractor
 from provexp.featuresets.ember2024.features import merge_import_descriptors
+from provexp.featuresets.ember2024.features import rva_ranges
 from provexp.items import Item
 from provexp.items import ItemTable
 from provexp.items import evaluate
@@ -169,15 +174,15 @@ def _within(offset: int, ranges: tuple[tuple[int, int], ...]) -> bool:
     return any(lo <= offset < hi for lo, hi in ranges)
 
 
-def check_locating(task: tuple[str, int, int]) -> dict[str, Any]:
-    """G5 on the header bytes [lo, hi) of one file."""
+def check_locating(task: tuple[str, tuple[int, ...]]) -> dict[str, Any]:
+    """G5 on the given byte offsets of one file."""
     assert _READER is not None
-    name, lo, hi = task
+    name, offsets = task
     bytez = _READER.get(name).data
     before = _pe_items(bytez)
     failures: list[dict[str, Any]] = []
     structural = 0
-    for offset in range(lo, hi):
+    for offset in offsets:
         edited = bytearray(bytez)
         edited[offset] ^= 0xFF
         after = _pe_items(bytes(edited))
@@ -194,7 +199,37 @@ def check_locating(task: tuple[str, int, int]) -> dict[str, Any]:
                 if not _within(offset, item.members + item.locating):
                     failures.append({"name": name, "offset": offset, "check": "value", "kind": item.kind, "field": str(item.attrs.get("field")), "members": str(item.members[:3])})
         structural += changed
-    return {"name": name, "lo": lo, "hi": hi, "structural": structural, "failures": failures}
+    return {"name": name, "flips": len(offsets), "structural": structural, "failures": failures}
+
+
+def _sample(ranges: list[tuple[int, int]], k: int, rng: np.random.Generator) -> list[int]:
+    """Up to k distinct offsets drawn uniformly from the union of the ranges."""
+    covered = sorted({o for lo, hi in ranges for o in range(lo, hi)}) if sum(hi - lo for lo, hi in ranges) <= 1 << 22 else []
+    if not covered:
+        return []
+    return [covered[i] for i in rng.choice(len(covered), size=min(k, len(covered)), replace=False).tolist()]
+
+
+def directory_offsets(bytez: bytes, pe: pefile.PE, per_target: int, rng: np.random.Generator) -> list[int]:
+    """
+    Offsets past the header region that the parse reads: up to `per_target` from each data directory's data (but
+    security, which pefile does not parse) and from the member and locating ranges of each parsed item kind.
+    """
+    n = len(bytez)
+    start = min(int(pe.OPTIONAL_HEADER.SizeOfHeaders), n)
+
+    def inside(ranges: tuple[tuple[int, int], ...]) -> list[tuple[int, int]]:
+        return [(max(lo, start), min(hi, n)) for lo, hi in ranges if min(hi, n) > max(lo, start)]
+
+    targets: list[list[tuple[int, int]]] = []
+    for i, d in enumerate(pe.OPTIONAL_HEADER.DATA_DIRECTORY):
+        if i != 4 and d.VirtualAddress and d.Size:
+            targets.append(inside(rva_ranges(pe, d.VirtualAddress, d.Size)))
+    by_kind: dict[str, list[tuple[int, int]]] = {}
+    for item in _pe_items(bytez).values():
+        by_kind.setdefault(item.kind, []).extend(inside(item.members + item.locating))
+    targets += [by_kind[k] for k in sorted(by_kind)]
+    return sorted({o for t in targets for o in _sample(t, per_target, rng)})
 
 
 def main_locating(args: Any) -> None:
@@ -206,7 +241,7 @@ def main_locating(args: Any) -> None:
     names = sorted(df["name"].to_list())
     _init(str(args.db))
     assert _READER is not None
-    tasks: list[tuple[str, int, int]] = []
+    tasks: list[tuple[str, tuple[int, ...]]] = []
     chosen: list[str] = []
     for name in rng.permutation(names).tolist():
         if len(chosen) == args.num_files:
@@ -216,9 +251,12 @@ def main_locating(args: Any) -> None:
         if pe is None:
             continue
         chosen.append(name)
-        end = min(int(pe.OPTIONAL_HEADER.SizeOfHeaders), len(bytez), args.max_bytes)
-        tasks += [(name, lo, min(lo + 64, end)) for lo in range(0, end, 64)]
-    print(f"{len(chosen)} files, {len(tasks)} tasks, {sum(hi - lo for _, lo, hi in tasks)} flips", flush=True)
+        if args.region == "header":
+            offsets = list(range(min(int(pe.OPTIONAL_HEADER.SizeOfHeaders), len(bytez), args.max_bytes)))
+        else:
+            offsets = directory_offsets(bytez, pe, args.per_target, np.random.default_rng([args.seed, int(name[:8], 16)]))
+        tasks += [(name, tuple(offsets[i:i + 64])) for i in range(0, len(offsets), 64)]
+    print(f"{len(chosen)} files, {len(tasks)} tasks, {sum(len(o) for _, o in tasks)} flips", flush=True)
 
     t0 = time.perf_counter()
     rows: list[dict[str, Any]] = []
@@ -229,8 +267,8 @@ def main_locating(args: Any) -> None:
                 print(f"{i + 1}/{len(tasks)} tasks, {time.perf_counter() - t0:.0f} s", flush=True)
 
     failures = pl.DataFrame([f for r in rows for f in r["failures"]], schema={"name": pl.String, "offset": pl.Int64, "check": pl.String, "kind": pl.String, "field": pl.String, "members": pl.String})
-    files = pl.DataFrame([{k: r[k] for k in ("name", "lo", "hi", "structural")} for r in rows]).group_by("name").agg(
-        (pl.col("hi") - pl.col("lo")).sum().alias("flips"), pl.col("structural").sum()
+    files = pl.DataFrame([{k: r[k] for k in ("name", "flips", "structural")} for r in rows]).group_by("name").agg(
+        pl.col("flips").sum(), pl.col("structural").sum()
     ).sort("name")
     args.outdir.mkdir(parents=True, exist_ok=True)
     files.write_parquet(args.outdir / "files.parquet")
@@ -336,6 +374,8 @@ def main() -> None:
     parser.add_argument("--no_g2", action="store_true", help="G1 only (G2 costs a provenance computation per file).")
     parser.add_argument("--num_files", type=int, default=20, help="locating: files drawn from --files (PE files only).")
     parser.add_argument("--max_bytes", type=int, default=1024, help="locating: header bytes flipped per file, at most.")
+    parser.add_argument("--region", choices=["header", "directories"], default="header", help="locating: which bytes to flip.")
+    parser.add_argument("--per_target", type=int, default=64, help="locating, directories: bytes drawn per directory and per item kind.")
     parser.add_argument("--num_writes", type=int, default=20, help="margins: random writes per file.")
     parser.add_argument("--seed", type=int, default=0)
     args = parser.parse_args()

@@ -15,7 +15,10 @@ from provexp.featuresets.ember2024.features import ImportsInfo
 from provexp.featuresets.ember2024.features import PEFeatureExtractor
 from provexp.featuresets.ember2024.features import clipped
 from provexp.featuresets.ember2024.features import field_range
+from provexp.featuresets.ember2024.features import header_locating
 from provexp.featuresets.ember2024.features import merge_import_descriptors
+from provexp.featuresets.ember2024.features import rva_ranges
+from provexp.featuresets.ember2024.features import zstring_end
 from provexp.items import Item
 from provexp.items import evaluate
 from provexp.items import project
@@ -61,6 +64,18 @@ class TestReadouts:
     )
     def test_clipped(self, ranges: list[tuple[int, int] | None], expected: tuple[tuple[int, int], ...]) -> None:
         assert clipped(10, ranges) == expected
+
+    @pytest.mark.parametrize(
+        "bytez,lo,limit,expected",
+        [
+            (b"abc\0def", 0, 16, 4),
+            (b"abc\0def", 4, 16, 4 + 16),
+            (b"abcdef\0", 0, 3, 3),
+            (b"\0", 0, 8, 1),
+        ],
+    )
+    def test_zstring_end(self, bytez: bytes, lo: int, limit: int, expected: int) -> None:
+        assert zstring_end(bytez, lo, limit) == expected
 
 
 class TestNonPE:
@@ -135,6 +150,27 @@ class TestLocating:
             # The first four bytes (general) are read by position, not parsed.
             if item.kind != "field" or item.attrs.get("field") is not None:
                 assert e_lfanew in item.locating, item.kind
+
+    def test_per_structure(self, sample: bytes) -> None:
+        # Header fields and Rich pairs are located through the headers only, never through a directory's data.
+        needs_files()
+        pe = pefile.PE(data=sample)
+        base = set(header_locating(pe))
+        for item in _parsed_items(EXTRACTOR, sample).values():
+            if item.kind == "field" and item.attrs.get("field") in ("Machine", "SizeOfCode", "e_cblp"):
+                assert set(item.locating) == base, item.attrs
+            if item.kind == "rich_pair":
+                assert set(item.locating) - base == {(0x80, pe.OPTIONAL_HEADER.get_file_offset())}
+
+    def test_unmapped_address_past_end(self, sample: bytes) -> None:
+        # pefile reads an address in no section at that file offset once the file reaches it.
+        needs_files()
+        pe = pefile.PE(data=sample)
+        rva = 0x7FFF0000
+        if pe.get_section_by_rva(rva) is not None:
+            pytest.skip("The address lies in a section.")
+        assert rva_ranges(pe, rva, 4) == ((rva, rva + 4),)
+        assert rva_ranges(pe, rva, 0) == ()
 
     def test_flips(self, sample: bytes) -> None:
         needs_files()
