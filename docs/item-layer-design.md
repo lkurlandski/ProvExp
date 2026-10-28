@@ -388,6 +388,11 @@ three `hdr` fields lie in pefile's Rich search range. Witness: the signature (ru
 Open: the remaining witnesses, the sums re-encodings (step 8), and what the detector does with files that fail the
 precondition (16% of the 2,000-file set; 73 benign, 245 malware) -- the user's decision.
 
+**Decided (user, 2026-10-28):** files that fail the precondition go to the unconstrained detector (no guarantee for
+them; the paper reports the coverage); the >4 MB files stay; the strict variant is one sentence (soundness over
+every possible file leaves 9 features under M_full), not a row. `a1_evaluate.py --route` evaluates the routed
+detectors; runs 99-100 retrain the C4 models from the derived directions and re-run Table A1.
+
 ## Open decisions for the user
 
 **Settled (user, 2026-10-27), all as recommended:** (1) add `items` now and keep `provenance` until G2 passes, then

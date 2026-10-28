@@ -196,3 +196,14 @@ breaks PV; provenance-chosen names roughly double its success on PV-seen (11 -> 
 (15 -> 22). Random names already work often because PV's hole is broad (section buckets carry 40% of it, and a random
 name lands in a trusted bucket with a negative sign often). On the unconstrained model, GAMMA API (import addition,
 which our search does not use) is stronger than our append + add-section search; that row is context, not a claim.
+
+## Re-run with derived directions (2026-10-28; runs 99-100, results pending)
+
+The C4 rows are retrained from the derived directions (run 97; `docs/item-layer-design.md`, Build status) and
+evaluated as precondition-row detectors: a file that passes the precondition check is scored by the C4 model, any other
+by the unconstrained reference, each at its own 1% FPR threshold (`a1_evaluate.py --route`; the check is made on every
+attack query). The derived files differ from the hand rules only in entry_name_hash (dropped under M_add) and
+security_size (down under M_full). 12 of the 100 pilot files fail the check (all malware, 8 truncated at 4 MB). The
+adaptive search is not routed: its C4 rows hold for passing files, failing files are the unconstrained row's. Decided
+(user): the strict detector is one sentence, not a row; the >4 MB files stay.
+

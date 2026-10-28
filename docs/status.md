@@ -1,7 +1,8 @@
 # Status
 
 **2026-10-28: locating ranges split per structure (runs 95-96); step 7's C4 engine built (run 97); signature
-witness (run 98). A decision is waiting on the user.** Commits 8b34250..(this wrap-up).
+witness (run 98); the user decided the precondition row and started runs 99-100 (retraining, Table A1 re-run with
+routed C4 rows) at the end of the session; read them next.** Commits 8b34250..(this wrap-up).
 - Split `pe_locating` into header / section / per-directory levels; G5 now also flips directory data. Round 1 found
   signify reading SizeOfOptionalHeader and the import parse reading names and both thunk arrays through their
   terminators (one rule: everything the import parse reads locates every import). G5 passes on pilot + fresh files
@@ -22,8 +23,9 @@ witness (run 98). A decision is waiting on the user.** Commits 8b34250..(this wr
   query, each branch at its own 1% FPR threshold, results split by whether the original file passes);
   `a_directions.py --derive --extractor sums` (the derived directions in the 10% store's layout; re-encoded groups
   keep their hand rules until step 8). The derived files differ from runs 77/80's only in entry_name_hash (dropped
-  under M_add) and security_size (down under M_full). **Waiting on the user to run:** `run/99_a1_train_derived.sh`
-  (~20 min: six models) then `run/100_a1_toolkit_derived.sh` (~1-1.5 h; smoke-tested on 3 files).
+  under M_add) and security_size (down under M_full). **Running (started by the user, 2026-10-28):** `run/99_a1_train_derived.sh`
+  (~20 min: six models) then `run/100_a1_toolkit_derived.sh` (~1-1.5 h; smoke-tested on 3 files). Read their logs
+  and outputs next; record the results in the run scripts' comments.
 - Noted, not acted on: the experiments' slack and DOS edits (`attack.region_parts`, `a1_adaptive.py`) do not exclude
   loader-read bytes (7 of 2,000 files have slack overlapping headers or relocations; 2 keep import names in the DOS
   stub); their results are measured by re-extraction, so nothing rests on it.

@@ -28,9 +28,12 @@ script for every experiment; commit in logical pieces after ruff and mypy pass; 
 Files that fail the precondition go to the unconstrained detector (no guarantee for them; coverage reported); the
 >4 MB files stay; the strict detector (9 features under M_full) is one sentence, not a row. `a1_evaluate.py` routes C4
 rows (`--route`); `run/99_a1_train_derived.sh` retrains the six C4 models from the derived directions and
-`run/100_a1_toolkit_derived.sh` re-runs Table A1's toolkit and adaptive columns. Ask whether the user has run them;
-if so, read `artifacts/experiments/a1/toolkit-derived/table.json` (the groups' `precondition` / `no_precondition`
-splits) and `adaptive-derived`, record them in the run scripts and `docs/direction-A-A1-design.md`.
+`run/100_a1_toolkit_derived.sh` re-runs Table A1's toolkit and adaptive columns. The user started both at the end of
+the 2026-10-28 session; check `artifacts/logs/train_classic-gbdt-0-*-pre*.log`, `a1_evaluate_derived.log`, and
+`a1_adaptive_derived.log` (ask the user if they are still running). When done, read `artifacts/experiments/a1/toolkit-derived/table.json` (the groups' `precondition` / `no_precondition`
+splits) and `adaptive-derived`, record them in the run scripts' comments and in `docs/direction-A-A1-design.md` (section "Re-run with derived
+directions"). Check the scripts' hypotheses: test metrics within noise of runs 77/80; routed C4 rows on passing
+files evaded as in run 81 (0 for M_full); failing files as the reference.
 
 ## Do next
 

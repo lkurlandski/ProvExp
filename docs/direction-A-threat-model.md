@@ -45,6 +45,11 @@ threat model's direction is the union over its operations: **fixed** (no operati
 **Provisional (a stand-in for the automatic derivation).** The per-group rules below were derived by hand from the
 extractor's code and the declared deltas, and are encoded in `scripts/a_directions.py`; the paper's version must come
 from the instrumented extractor (C4 over the item table). This table is for screening (go/no-go checks 2 and 3).
+**Derived (2026-10-28, run 97; `scripts/a_directions.py --derive`):** for files that pass the precondition check
+(nothing the parse is located through lies past the end of the file), the derived directions equal these rules per
+threat model except entry_name_hash (both under M_add and M_shift), the Rich header (both under M_shift), and
+security_size (tighter). Over every possible file (strict), almost nothing stays one-sided; see
+`docs/item-layer-design.md`, Build status.
 
 Global soundness is strict: a feature counts as one-directional only if no file and no choice of content can move it
 the other way. Where the exception is a rare file layout (header slack that is not zero-filled), the table still says
