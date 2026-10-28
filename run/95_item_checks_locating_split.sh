@@ -16,7 +16,8 @@
 # imports: every byte the import parse reads (descriptors, both thunk arrays through their terminators, names through
 # their terminating zero) locates every import and library item; plus SizeOfOptionalHeader for the certificate
 # table. The 22 failing flips then all pass.
-# Round 2 (below): the pilot files again and 20 files not used for fixing (seed 2).
+# Round 2 (below): the pilot files again and 20 files not used for fixing (seed 2). Took ~7.5 min (2026-10-28).
+# Result: 0 failures on all four (pilot: 18,944 header and 11,541 directory flips; fresh: 18,432 and 9,749). G5 passes.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 source env/bin/activate

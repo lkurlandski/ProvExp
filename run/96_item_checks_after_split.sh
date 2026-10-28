@@ -6,6 +6,12 @@
 # directories without items, e.g. debug or resources, no longer meet every item's locating ranges); G4's append row
 # may flag one or two files beyond the 11 overrun files (certificate tables and unmappable directory addresses past the
 # end of the file are now recorded as locating).
+#
+# Took ~6 min (2026-10-28). Result: G1/G2 exact on 100/100; G4 identical to run 92 (append: 11 flagged, exactly the
+# overrun files, 89 bit-exact and bit-equal to the hand predictors; dos_overwrite and add_section 100/100); G6
+# 1,791/1,791 predicted writes bit-exact, 209 flagged (440 in run 93). The hypothesis held, the append row without
+# new flags. Re-run after the emitter changes of run 97 (overlay size as an add term, header and directory fields
+# cut by the end of the file located there, the overlay not located through the security entry): unchanged.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 source env/bin/activate

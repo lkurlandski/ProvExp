@@ -1,5 +1,5 @@
 """
-Tests for reach.py (the C1 engine) and ItemTable.replace.
+Tests for reach.py (the C1 and C4 engines) and ItemTable.replace.
 """
 
 from collections.abc import Sequence
@@ -10,12 +10,30 @@ import pytest
 from provexp.items import Identity
 from provexp.items import Item
 from provexp.items import ItemTable
+from provexp.items import Max
+from provexp.items import Min
+from provexp.items import Normalized
+from provexp.items import Opaque
+from provexp.items import Ratio
 from provexp.items import Term
+from provexp.reach import BOTH
+from provexp.reach import DOWN
+from provexp.reach import FIXED
+from provexp.reach import UP
 from provexp.reach import ByteEdit
+from provexp.reach import Change
 from provexp.reach import NotLocal
+from provexp.reach import Vocabulary
+from provexp.reach import directions
+from provexp.reach import envelope
+from provexp.reach import extension_monotone
+from provexp.reach import hash_image
 from provexp.reach import meets
 from provexp.reach import predict
 from provexp.reach import predict_declared
+from provexp.reach import profile_kinds
+from provexp.reach import readout_signs
+from provexp.reach import region_changes
 
 
 ################################################################################
@@ -141,3 +159,138 @@ class TestReplace:
         t = _table(b"H\x00aaa")
         with pytest.raises(ValueError):
             t.replace([Item("x")], [])
+
+
+################################################################################
+# C4
+################################################################################
+
+
+def _c4_table() -> ItemTable:
+    """Two runs, a header slot, a hashed name, and a sized blob with a value attribute, for the vocabulary."""
+    z = b"h.aa.aaa"
+    items = _table(z).items
+    for item in items:
+        item.attrs["value"] = 2.0
+    blob = Item("blob", terms=(
+        Term("hashed", "names", index=1, value=1.0, sign=1, key="x", ranges=((1, 2),)),
+        Term("add", "size", value=3, attr="size", ranges=((0, 3),), per_byte=True),
+    ), attrs={"size": 3, "level": 0.5}, group="toy")
+    return ItemTable(len(z), {"n": 1, "len": 1, "h": 1, "names": 4, "size": 1}, items + [blob])
+
+
+@pytest.fixture(scope="module")
+def vocab() -> tuple[dict[tuple[str, str], object], dict[str, int]]:
+    return profile_kinds([_c4_table()])  # type: ignore[return-value]
+
+
+class TestVocabulary:
+
+    def test_profile(self, vocab: tuple[dict, dict]) -> None:  # type: ignore[type-arg]
+        profiles, sizes = vocab
+        assert set(profiles) == {("toy", "header"), ("toy", "run"), ("toy", "blob")}
+        assert sizes["names"] == 4
+        run = profiles[("toy", "run")]
+        assert run.items == 2 and run.terms[("n", 0)].items == 2
+        assert profiles[("toy", "blob")].growing == {"size"}
+
+    def test_merge_equals_add(self) -> None:
+        a, b = Vocabulary(), Vocabulary()
+        a.add(_c4_table())
+        b.merge(a)
+        b.merge(a)
+        c = Vocabulary()
+        c.add(_c4_table())
+        c.add(_c4_table())
+        assert b.finish()[0][("toy", "run")].items == c.finish()[0][("toy", "run")].items == 4
+
+    def test_conflicting_ops(self) -> None:
+        t = ItemTable(2, {"n": 1}, [Item("x", terms=(Term("count", "n"),), group="g"), Item("x", terms=(Term("slot", "n", value=1),), group="g")])
+        with pytest.raises(RuntimeError):
+            profile_kinds([t])
+
+
+class TestEnvelope:
+
+    def test_add_remove(self, vocab: tuple[dict, dict]) -> None:  # type: ignore[type-arg]
+        env = envelope([Change("add", "run")], *vocab)
+        assert env.entry("n", 0) == UP and env.entry("len", 0) == UP and env.entry("h", 0) == FIXED
+        env = envelope([Change("remove", "run")], *vocab)
+        assert env.entry("n", 0) == DOWN
+
+    def test_modify_keeps_unconditional_counts(self, vocab: tuple[dict, dict]) -> None:  # type: ignore[type-arg]
+        env = envelope([Change("modify", "run")], *vocab)
+        assert env.entry("n", 0) == FIXED and env.entry("len", 0) == BOTH
+
+    def test_rewrite_keeps_element_counts(self, vocab: tuple[dict, dict]) -> None:  # type: ignore[type-arg]
+        env = envelope([Change("rewrite", "blob")], *vocab)
+        assert env.entry("size", 0) == FIXED and env.entry("names", 1) == BOTH
+        assert env.kinds["blob"].attr("size") == FIXED and env.kinds["blob"].attr("level") == BOTH
+
+    def test_grow(self, vocab: tuple[dict, dict]) -> None:  # type: ignore[type-arg]
+        env = envelope([Change("grow", "blob")], *vocab)
+        assert env.entry("size", 0) == UP and env.entry("names", 1) == FIXED
+        assert env.kinds["blob"].attr("size") == UP and env.kinds["blob"].attr("level") == BOTH
+
+    def test_hashed_add(self, vocab: tuple[dict, dict]) -> None:  # type: ignore[type-arg]
+        # One key reaches one bucket with one sign; any key reaches every bucket with both.
+        env = envelope([Change("add", "blob", keys=("x",))], *vocab)
+        assert sum(1 for i in range(4) if env.entry("names", i)) == 1
+        env = envelope([Change("add", "blob")], *vocab)
+        assert all(env.entry("names", i) == BOTH for i in range(4))
+
+    def test_unknown_kind(self, vocab: tuple[dict, dict]) -> None:  # type: ignore[type-arg]
+        with pytest.raises(KeyError):
+            envelope([Change("add", "nothing")], *vocab)
+
+    def test_region_changes(self) -> None:
+        table = _c4_table()
+        # The header's locating range: flagged; a run's member: modified in the entries read there.
+        kinds = {c.kind: c.how for c in region_changes(table, [(1, 2)], {})}
+        assert kinds == {"header": "flag", "blob": "modify"}
+        (c,) = region_changes(table, [(3, 4)], {})
+        assert c.kind == "run" and dict(c.entries or ()) == {("n", 0): BOTH, ("len", 0): BOTH}
+        assert region_changes(table, [], {"run": "flag"}) == []
+
+
+class TestReadoutSigns:
+
+    @pytest.mark.parametrize(
+        "changes,readout,expected",
+        [
+            ([Change("add", "run")], Ratio(("len", 0), ("n", 0)), [BOTH]),
+            ([Change("grow", "blob")], Ratio(("len", 0), ("size", 0)), [DOWN]),
+            ([Change("add", "run")], Max(("run",), "value"), [UP]),
+            ([Change("remove", "run")], Max(("run",), "value"), [DOWN]),
+            ([Change("add", "run")], Min(("run",), "value"), [FIXED]),
+            ([Change("add", "blob", keys=("x",))], Normalized("names", 4), None),
+            ([Change("remove", "blob")], Opaque("blob", ("level",), (0.0,), ranges=((0.0, 1.0),)), [DOWN]),
+            ([Change("add", "blob")], Opaque("blob", ("level",), (0.5,), ranges=((0.0, 1.0),)), [BOTH]),
+        ],
+    )
+    def test_rules(self, vocab: tuple[dict, dict], changes: list[Change], readout: object, expected: list[frozenset[str]] | None) -> None:  # type: ignore[type-arg]
+        signs = readout_signs(readout, envelope(changes, *vocab))  # type: ignore[arg-type]
+        if expected is None:
+            # One bucket moves with the key's hash sign: its share moves with it, the others' the other way.
+            ((bucket, s),) = hash_image(4, ["x"]).items()
+            expected = [s if i == bucket else (DOWN if s == UP else UP) for i in range(4)]
+        assert signs == expected
+
+    def test_directions(self, vocab: tuple[dict, dict]) -> None:  # type: ignore[type-arg]
+        out = directions(READOUTS, {"op": [Change("add", "run")], "none": []}, *vocab)
+        assert out == {"op": [UP, UP, FIXED], "none": [FIXED, FIXED, FIXED]}
+
+
+class TestHelpers:
+
+    @pytest.mark.parametrize(
+        "pattern,expected",
+        [("abc", True), ("abc\\b", False), ("^abc", True), ("abc$", False), ("a(?=b)", False), ("\\bC:/", True), ("\\b", False), (b"http://", True)],
+    )
+    def test_extension_monotone(self, pattern: str | bytes, expected: bool) -> None:
+        assert extension_monotone(pattern) == expected
+
+    @pytest.mark.parametrize("size", [10, 50, 256])
+    def test_hash_image_covers(self, size: int) -> None:
+        image = hash_image(size)
+        assert len(image) == size and all(s == BOTH for s in image.values())

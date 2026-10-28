@@ -544,7 +544,7 @@ class GeneralFileInfo(FeatureType):
         return [
             Identity("general:size"),
             Entropy("general:bytes", precision="python"),
-            Opaque("pe", ("is_pe",), (0.0,)),
+            Opaque("pe", ("is_pe",), (0.0,), ranges=((0.0, 1.0),)),
             Identity("general:start", 0, 4),
         ]
 
@@ -1242,7 +1242,7 @@ class SectionInfo(FeatureType):
         # (appending can bring the extent inside; a directory address pefile cannot map lies past the end).
         overlay_offset = pe.get_overlay_data_start_offset()
         directories = pe.OPTIONAL_HEADER.DATA_DIRECTORY
-        overlay_locating = located + entries_locating(pe, *range(len(directories)))
+        overlay_locating = located + entries_locating(pe, *(i for i in range(len(directories)) if i != 4))
         extents = [(s.PointerToRawData, s.PointerToRawData + s.SizeOfRawData) for s in pe.sections]
         for i, d in enumerate(directories):
             if i != 4:
@@ -1334,7 +1334,8 @@ class SectionInfo(FeatureType):
         return Item(
             "overlay",
             terms=(
-                Term("slot", "section:overlay", index=0, value=size, attr="size", ranges=r, per_byte=True),
+                # Its size is a count of bytes (an add, as the file's), its entropy a value of the whole (a slot).
+                Term("add", "section:overlay", index=0, value=size, attr="size", ranges=r, per_byte=True),
                 Term("slot", "section:overlay", index=1, value=entropy, attr="entropy", ranges=r, per_byte=True),
             ),
             attrs={"size": size, "entropy": entropy, "start": start},
@@ -2098,8 +2099,10 @@ class HeaderFileInfo(FeatureType):
 
         def field(family: str, index: int, structure: pefile.Structure, name: str, value: int) -> Item:
             r = field_range(structure, name)
-            # A field cut by the end of the file is padded by pefile, and grows with an append.
-            return Item("field", terms=(Term("slot", family, index=index, value=value, ranges=clipped(n, [r])),), attrs={"field": name}, locating=located, open_end=r[1] > n)
+            # A field cut by the end of the file is padded by pefile, and grows with an append; its bytes past the end
+            # are locating (appending writes them).
+            past_end = ((n, r[1]),) if r[1] > n else ()
+            return Item("field", terms=(Term("slot", family, index=index, value=value, ranges=clipped(n, [r])),), attrs={"field": name}, locating=located + past_end, open_end=r[1] > n)
 
         items = [field("header:fields", i, getattr(pe, header), name, getattr(getattr(pe, header), name)) for i, (header, name) in enumerate(self._fields)]
         items.append(field("header:characteristics", 0, pe.FILE_HEADER, "Characteristics", pe.FILE_HEADER.Characteristics))
@@ -2236,8 +2239,11 @@ class DataDirectories(FeatureType):
         for d in directories[:-1]:
             idx = self._name_order.index(str(d.name).replace("IMAGE_DIRECTORY_ENTRY_", ""))
             for k, name in enumerate(("Size", "VirtualAddress")):
-                term = Term("slot", "datadirectories:fields", index=2 * idx + k, value=getattr(d, name), ranges=clipped(n, [field_range(d, name)]))
-                items.append(Item("field", terms=(term,), attrs={"field": f"{d.name}.{name}"}, locating=located))
+                r = field_range(d, name)
+                term = Term("slot", "datadirectories:fields", index=2 * idx + k, value=getattr(d, name), ranges=clipped(n, [r]))
+                # An entry cut by the end of the file is padded by pefile (as header fields are).
+                past_end = ((n, r[1]),) if r[1] > n else ()
+                items.append(Item("field", terms=(term,), attrs={"field": f"{d.name}.{name}"}, locating=located + past_end, open_end=r[1] > n))
 
         # Whether the relocations were parsed: an outcome of pefile's parser, determined by the directories that
         # point to them.
@@ -2255,7 +2261,7 @@ class DataDirectories(FeatureType):
     def readouts(self) -> list[Readout]:
         return [
             Identity("datadirectories:fields", 0, 2 * len(self._name_order)),
-            Opaque("relocs", ("has_relocs", "has_dynamic_relocs"), (0.0, 0.0)),
+            Opaque("relocs", ("has_relocs", "has_dynamic_relocs"), (0.0, 0.0), ranges=((0.0, 1.0), (0.0, 1.0))),
         ]
 
 
@@ -2468,7 +2474,11 @@ class AuthenticodeSignature(FeatureType):
 
     @property
     def readouts(self) -> list[Readout]:
-        return [Opaque("certificate_table", tuple(self.feature_names), (0.0,) * self.dim)]
+        # The declared ranges: counts and flags are nonnegative, the latest signing time starts at zero and only rises
+        # (`raw_features`), the difference from the COFF timestamp has either sign.
+        inf = float("inf")
+        ranges = {"self_signed": (0.0, 1.0), "empty_program_name": (0.0, 1.0), "no_countersigner": (0.0, 1.0), "parse_error": (0.0, 1.0), "signing_time_diff": (-inf, inf)}
+        return [Opaque("certificate_table", tuple(self.feature_names), (0.0,) * self.dim, ranges=tuple(ranges.get(a, (0.0, inf)) for a in self.feature_names))]
 
 
 class PEFormatWarnings(FeatureType):

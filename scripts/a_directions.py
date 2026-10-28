@@ -21,25 +21,58 @@ groups, which `feature_rule` covers with the re-encodings' signs). Its variants 
 sums" detector) and `{tm}-control` (the four re-encoded groups dropped: "C4 on features" on the same store);
 `reencoded.neutralize.txt` lists the four groups, for the unconstrained reference on the same store.
 
+With `--derive`, the directions are computed instead of read off the hand rules (derivation step 7, C4;
+docs/item-layer-design.md, component 5): the kinds' term vocabulary and the in-place operations' changes come from the
+item tables of the files in --files, the structural operations' changes from the catalogue
+(provexp.featuresets.ember2024.catalogue), and provexp.reach.directions turns them into signs. Two variants: strict
+(appending may complete structures past the end of the file, on any file) and the precondition row's (`-pre`: only
+files where no locating range lies past the end of the file). The re-encoded directions are derived for the merged
+imports; the other re-encodings keep the hand rules' until step 8. Also writes the comparison with the hand rules (G3):
+    g3_cells.csv        one row per (feature, operation) where the derived and hand signs differ
+    g3.json             counts per group and threat model, the features whose direction changes, and the corpus
+                        (files, those with a locating range past the end, and the kinds located there)
+
 Usage:
     python scripts/a_directions.py --outdir artifacts/experiments/a_directions
     python scripts/a_directions.py --extractor sums --outdir artifacts/experiments/a_directions_sums
+    python scripts/a_directions.py --derive --outdir artifacts/experiments/a_directions_derived
 """
 
 from __future__ import annotations
 
 from argparse import ArgumentParser
+from collections import Counter
 import csv
 import json
+from multiprocessing import Pool
 from pathlib import Path
 import re
+from typing import Any
 from typing import NamedTuple
 from typing import Optional
+import warnings
 
+import pefile
+import polars as pl
+
+from provexp.data.simpledb import SimpleDB
+from provexp.data.simpledb import SimpleDBReader
+from provexp.featuresets.ember2024.catalogue import PAST_END_KINDS
+from provexp.featuresets.ember2024.catalogue import declared_changes
+from provexp.featuresets.ember2024.catalogue import file_region_changes
+from provexp.featuresets.ember2024.catalogue import precondition
 from provexp.featuresets.ember2024.features import PEFeatureExtractor
 from provexp.featuresets.ember2024.features import StringExtractor
+from provexp.featuresets.ember2024.features import merge_import_descriptors
 from provexp.featuresets.ember2024.sums import SUMS_GROUPS
 from provexp.featuresets.ember2024.sums import SumsFeatureExtractor
+from provexp.reach import Change
+from provexp.reach import Signs as SignSet
+from provexp.reach import Vocabulary
+from provexp.reach import directions as derive_directions
+from provexp.reach import extension_monotone
+
+warnings.filterwarnings("ignore", category=SyntaxWarning)
 
 __all__ = [
     "OPS",
@@ -245,6 +278,177 @@ def feature_rule(group: str, name: str, regexes: dict[str, str]) -> Rule:
 
 
 ################################################################################
+# Derived directions (--derive)
+################################################################################
+
+_READER: Optional[SimpleDBReader] = None
+_EXTRACTORS = {"original": PEFeatureExtractor(), "merged": merge_import_descriptors(PEFeatureExtractor())}
+
+
+def _init(db: str) -> None:
+    global _READER
+    _READER = SimpleDBReader(SimpleDB(Path(db), check=False))
+
+
+def _past_end(table: Any) -> list[tuple[str, str]]:
+    """The (group, kind) of the items with a locating range past the end of the file."""
+    n = table.num_elements
+    return sorted({(item.group, item.kind) for item in table.items if any(hi > n for _, hi in item.locating)})
+
+
+def collect(name: str) -> dict[str, Any]:
+    """One file: the vocabulary and the in-place operations' changes, per import variant, and the kinds past the end."""
+    assert _READER is not None
+    bytez = _READER.get(name).data
+    try:
+        pe = pefile.PE(data=bytez)
+    except (pefile.PEFormatError, AttributeError):
+        pe = None
+    out: dict[str, Any] = {"name": name, "is_pe": pe is not None, "size": len(bytez)}
+    for variant, extractor in _EXTRACTORS.items():
+        table = extractor.item_table(bytez)
+        v = Vocabulary()
+        v.add(table)
+        out[variant] = {"vocabulary": v, "changes": file_region_changes(pe, bytez, table) if pe is not None else {}}
+        out["past_end"] = _past_end(table)
+        out["precondition"] = pe is not None and precondition(pe, table)
+    return out
+
+
+def _signs_str(s: SignSet) -> str:
+    return "".join(c for c in "+-" if c in s)
+
+
+def _write_monotone(outdir: Path, stem: str, rows: list[dict[str, Any]], column: str) -> None:
+    """The neutralize (both) and monotone (up/down) files for one variant, from a direction column."""
+    drop, mono = [], []
+    for row in rows:
+        d = str(row[column])
+        if d == "both":
+            drop.append(f"{row['group']}:{row['name']}")
+        elif d in ("up", "down"):
+            mono.append(f"{row['group']}:{row['name']}\t{1 if d == 'up' else -1}")
+    (outdir / f"{stem}.neutralize.txt").write_text("".join(n + "\n" for n in drop))
+    (outdir / f"{stem}.monotone.tsv").write_text("".join(m + "\n" for m in mono))
+
+
+def main_derive(args: Any) -> None:
+    """Derive the directions (C4) and compare them with the hand rules (G3)."""
+    df = pl.read_parquet(args.files)
+    if "status" in df.columns:
+        df = df.filter(pl.col("status") == "ok")
+    names = sorted(df["name"].to_list())
+    if args.limit > 0:
+        names = names[: args.limit]
+
+    vocab = {v: Vocabulary() for v in _EXTRACTORS}
+    changes: dict[tuple[str, bool], dict[str, set[Change]]] = {}
+    past_end_files: Counter[tuple[str, str]] = Counter()
+    num_pe = num_pre = 0
+    failing: list[dict[str, Any]] = []
+    with Pool(args.workers, initializer=_init, initargs=(str(args.db),)) as pool:
+        for i, rec in enumerate(pool.imap_unordered(collect, names, chunksize=1)):
+            num_pe += rec["is_pe"]
+            pre = rec["precondition"]
+            num_pre += pre
+            if rec["is_pe"] and not pre:
+                failing.append({"name": rec["name"], "size": rec["size"], "past_end_items": rec["past_end"]})
+            past_end_files.update(rec["past_end"])
+            for variant in _EXTRACTORS:
+                vocab[variant].merge(rec[variant]["vocabulary"])
+                for op, cs in rec[variant]["changes"].items():
+                    changes.setdefault((variant, False), {}).setdefault(op, set()).update(cs)
+                    if pre:
+                        changes.setdefault((variant, True), {}).setdefault(op, set()).update(cs)
+            if (i + 1) % 20 == 0:
+                print(f"{i + 1}/{len(names)} files", flush=True)
+
+    strings = next(f for f in _EXTRACTORS["original"].features if isinstance(f, StringExtractor))
+    regexes = {k: r.pattern for k, r in strings._regexes.items()}
+    monotone = [extension_monotone(regexes[k]) for k in sorted(regexes)]
+    derived: dict[tuple[str, bool], dict[str, list[SignSet]]] = {}
+    for variant, extractor in _EXTRACTORS.items():
+        profiles, sizes = vocab[variant].finish()
+        for pre in (False, True):
+            ops = {op: sorted(cs, key=repr) for op, cs in changes[(variant, pre)].items()}
+            ops.update(declared_changes(profiles, monotone, strict=not pre))
+            derived[(variant, pre)] = derive_directions(extractor.readouts, ops, profiles, sizes)
+
+    # One row per feature, in run 76's shape, plus the precondition row's directions.
+    extractor = _EXTRACTORS["original"]
+    rows: list[dict[str, Any]] = []
+    cells: list[dict[str, Any]] = []
+    changed: dict[str, list[str]] = {}
+    index = 0
+    for fs in extractor.features:
+        for name in fs.feature_names:
+            hand = feature_rule(fs.name, name, regexes)
+            row: dict[str, Any] = {"index": index, "name": name, "group": fs.name, "note": ""}
+            for pre in (False, True):
+                suffix = "_pre" if pre else ""
+                s = {op: derived[("original", pre)][op][index] for op in OPS}
+                m = {op: derived[("merged", pre)][op][index] for op in OPS}
+                if not pre:
+                    row.update({f"op_{op}": _signs_str(s[op]) for op in OPS})
+                else:
+                    row["op_app_pre"] = _signs_str(s["app"])
+                for tm, tm_ops in THREAT_MODELS.items():
+                    d = direction({op: _signs_str(s[op]) for op in OPS}, tm_ops)
+                    if fs.name == "imports":
+                        rd = direction({op: _signs_str(m[op]) for op in OPS}, tm_ops)
+                    else:
+                        rd = direction(hand.resigns, tm_ops) if hand.resigns is not None else d
+                    row[f"{tm}{suffix}"] = d
+                    row[f"{tm}{suffix}_reencoded"] = rd
+                    if not pre:
+                        hd = direction(hand.signs, tm_ops)
+                        if d != hd:
+                            changed.setdefault(tm, []).append(f"{fs.name}:{name} {hd} -> {d}")
+            row["reencoding"] = hand.reencoding + (" (hand rule until step 8)" if hand.resigns is not None and fs.name != "imports" else "")
+            for op in OPS:
+                h, d_ = hand.signs[op], str(row[f"op_{op}"])
+                if set(h) != set(d_):
+                    kind = "stricter" if set(h) < set(d_) else "looser" if set(d_) < set(h) else "different"
+                    cells.append({"index": index, "group": fs.name, "name": name, "op": op, "hand": h, "derived": d_, "relation": kind})
+            rows.append(row)
+            index += 1
+
+    args.outdir.mkdir(parents=True, exist_ok=True)
+    with open(args.outdir / "directions.csv", "w", newline="") as f:
+        writer = csv.DictWriter(f, fieldnames=list(rows[0].keys()))
+        writer.writeheader()
+        writer.writerows(rows)
+    for tm in THREAT_MODELS:
+        for pre in ("", "_pre"):
+            stem = tm + pre.replace("_", "-")
+            _write_monotone(args.outdir, stem, rows, f"{tm}{pre}")
+            quirk = [{**row, "d": row[f"{tm}{pre}_reencoded"] if row["group"] == "imports" else row[f"{tm}{pre}"]} for row in rows]
+            _write_monotone(args.outdir, f"{stem}-quirkfixed", quirk, "d")
+    pl.DataFrame(cells, schema={"index": pl.Int64, "group": pl.String, "name": pl.String, "op": pl.String, "hand": pl.String, "derived": pl.String, "relation": pl.String}).write_csv(args.outdir / "g3_cells.csv")
+
+    summary: dict[str, Any] = {"files": len(names), "pe_files": num_pe, "precondition_files": num_pre,
+                               "past_end_kinds": {f"{g}/{k}": c for (g, k), c in past_end_files.most_common()},
+                               "past_end_kinds_undeclared": sorted(f"{g}/{k}" for g, k in past_end_files if (g, k) not in PAST_END_KINDS),
+                               "precondition_failing": sorted(failing, key=lambda r: r["name"]),
+                               "precondition_failing_at_size_cap": sum(r["size"] == 4_000_000 for r in failing)}
+    for key in ["", "_pre"]:
+        for tm in THREAT_MODELS:
+            per_group: dict[str, dict[str, int]] = {}
+            for row in rows:
+                c = per_group.setdefault(row["group"], {})
+                c[row[f"{tm}{key}"]] = c.get(row[f"{tm}{key}"], 0) + 1
+            summary[f"{tm}{key}"] = {"totals": dict(Counter(row[f"{tm}{key}"] for row in rows)), "per_group": per_group}
+    summary["hand"] = {tm: dict(Counter(direction(feature_rule(row["group"], row["name"], regexes).signs, ops) for row in rows)) for tm, ops in THREAT_MODELS.items()}
+    summary["cells_by_relation"] = dict(Counter(c["relation"] for c in cells))
+    summary["cells_by_group_op"] = dict(Counter(f"{c['group']}/{c['op']}/{c['relation']}" for c in cells).most_common())
+    summary["threat_model_changes"] = changed
+    (args.outdir / "g3.json").write_text(json.dumps(summary, indent=2))
+    for key in ["hand"] + [f"{tm}{s}" for s in ("", "_pre") for tm in THREAT_MODELS]:
+        print(f"{key:14s} {summary[key] if key == 'hand' else summary[key]['totals']}")
+    print(json.dumps({k: summary[k] for k in ("files", "pe_files", "precondition_files", "precondition_failing_at_size_cap", "past_end_kinds", "past_end_kinds_undeclared", "cells_by_relation")}, indent=2))
+
+
+################################################################################
 # Main
 ################################################################################
 
@@ -252,7 +456,17 @@ def main() -> None:
     parser = ArgumentParser(description=__doc__.split("\n\n")[1])
     parser.add_argument("--outdir", type=Path, default=Path("artifacts/experiments/a_directions"))
     parser.add_argument("--extractor", type=str, choices=["ember2024", "sums"], default="ember2024")
+    parser.add_argument("--derive", action="store_true", help="Derive the directions from the item tables (C4).")
+    parser.add_argument("--files", type=Path, default=Path("artifacts/experiments/e1/seed-0/zeros/files.parquet"), help="derive: the corpus (a `name` column).")
+    parser.add_argument("--db", type=Path, default=Path("/shared/datasets/EMBER-2024/data/ts"))
+    parser.add_argument("--workers", type=int, default=1)
+    parser.add_argument("--limit", type=int, default=0, help="derive: only the first N files (0: all).")
     args = parser.parse_args()
+    if args.derive:
+        if args.extractor != "ember2024":
+            raise ValueError("--derive covers the EMBER features (the sums re-encodings are step 8).")
+        main_derive(args)
+        return
     sums = args.extractor == "sums"
 
     extractor = SumsFeatureExtractor() if sums else PEFeatureExtractor()

@@ -769,16 +769,20 @@ class Lookup(Readout):
 class Opaque(Readout):
     """
     Attributes of the one item of a kind, computed by a parser the model does not open; each attribute's default when
-    there is no such item. Each attribute's provenance units contribute to its feature.
+    there is no such item. Each attribute's provenance units contribute to its feature. `ranges` declares each
+    attribute's value range (C4 reads the sign of appearing or disappearing items off it; checked on recorded items).
     """
 
     kind: str
     attrs: tuple[str, ...]
     defaults: tuple[float, ...]
+    ranges: Optional[tuple[tuple[float, float], ...]] = None
 
     def __post_init__(self) -> None:
         if len(self.attrs) != len(self.defaults):
             raise ValueError(f"Expected one default per attribute. Got {len(self.attrs)} and {len(self.defaults)}.")
+        if self.ranges is not None and len(self.ranges) != len(self.attrs):
+            raise ValueError(f"Expected one range per attribute. Got {len(self.attrs)} and {len(self.ranges)}.")
 
     @property
     def dim(self) -> int:  # type: ignore[override]
