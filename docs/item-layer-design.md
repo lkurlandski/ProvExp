@@ -372,6 +372,22 @@ run 94 rewrote the 394 stored files affected). This makes per-structure locating
 today every parsed item is located through every directory's data (`pe_locating`), so the strict C4 table would
 otherwise call even header fields two-sided under append.
 
+**2026-10-28: per-structure locating ranges and the C4 engine (step 7).** `pe_locating` is split into
+`header_locating`, `section_locating`, `entries_locating`, and `directory_locating`; G5 also flips directory data now
+(run 95). Round 1 found signify reading SizeOfOptionalHeader and the import parse reading names and both thunk arrays
+through their terminators (one rule: every byte the import parse reads locates every import and library); then 0
+failures on 58,666 flips. G1/G2, G4, G6 unchanged (run 96; G6 flags 209 writes instead of 440). The C4 engine is in
+`reach.py` (Vocabulary from recorded items, Change: add/remove/modify/rewrite/grow/flag, envelope, one rule per readout
+type, regex extension test, hash images); the catalogue (`catalogue.py`) derives the in-place operations from the
+bytes they write on each corpus file (restricted to loader-ignored bytes) and declares the structural ones
+(provisional until step 6), plus the precondition check. Results (run 97, pilot and 2,000 files, identical): the
+precondition variant equals the hand rules per threat model except entry_name_hash under sec and the Rich header under
+ext (both anticipated) and security_size (hand over-approximates); the strict variant keeps 44 features under M_add
+and 9 under M_full (6 constant), so strict soundness over every possible file leaves no usable detector. Also found:
+three `hdr` fields lie in pefile's Rich search range. Witness: the signature (run 98, two files, num_certs 0 -> 1).
+Open: the remaining witnesses, the sums re-encodings (step 8), and what the detector does with files that fail the
+precondition (16% of the 2,000-file set; 73 benign, 245 malware) -- the user's decision.
+
 ## Open decisions for the user
 
 **Settled (user, 2026-10-27), all as recommended:** (1) add `items` now and keep `provenance` until G2 passes, then

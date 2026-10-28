@@ -60,7 +60,20 @@ introduction and a simple baseline (writing decision for later).
   attacks (GAMMA, MAB-Malware). Harsh check first: Pierazzi et al.'s problem-space formalization and every
   "realizable attack" paper since; the novelty must be the automatic, side-effect-exact translation, not the attack.
 
-## Next steps (end of 2026-10-27, fourth session)
+## Next steps (2026-10-28)
+
+Done (`docs/status.md`): per-structure locating ranges (runs 95-96); the C4 engine and `a_directions.py --derive`
+(run 97: precondition variant = hand rules but for three explained features; strict variant degenerate); signature
+witness (run 98). Next, in order:
+1. **User decision:** files that fail the precondition (reject as malicious / unconstrained fallback without
+   guarantee / the strict 9-feature model), whether the strict row stays a row, and the >4 MB exclusion.
+2. The remaining G3 witnesses: entry_name_hash under sec (entry point outside every section), Rich under ext and
+   under hdr (a file without a Rich header), exports and relocations past the end.
+3. `run/` scripts for the user: retrain the affected C4 models from the derived directions and re-run Table A1's C4
+   rows (toolkit part ~47 min), shaped by the decision.
+4. Step 8 (sums re-encodings in the engine), step 6 (catalogue checks, G7), the expert-set row, the A' pilot.
+
+### Earlier: next steps at the end of 2026-10-27 (fourth session)
 
 Done in the fourth session (`docs/status.md`): found that appending can complete structures past the end of the file
 (signature witness: `num_certs` 0 -> 1 on a truncated pilot malware file; the hand rules say authenticode only falls,

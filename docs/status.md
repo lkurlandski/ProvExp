@@ -1,26 +1,27 @@
 # Status
 
-**2026-10-28: locating ranges split per structure (runs 95-96, all checks pass); step 7's C4 engine built (run 97);
-a decision is waiting on the user.** Commits 8b34250, 1e7dcec, and the region fix after them.
+**2026-10-28: locating ranges split per structure (runs 95-96); step 7's C4 engine built (run 97); signature
+witness (run 98). A decision is waiting on the user.** Commits 8b34250..(this wrap-up).
 - Split `pe_locating` into header / section / per-directory levels; G5 now also flips directory data. Round 1 found
   signify reading SizeOfOptionalHeader and the import parse reading names and both thunk arrays through their
-  terminators (one rule: everything the import parse reads locates every import). G5 passes on pilot + fresh files;
-  G1/G2 exact, G4 identical to run 92, G6 1,791/1,791 exact (flagged 440 -> 209).
-- C4 engine (`reach.py`: Vocabulary, Change, envelope, readout rules) + catalogue changes (`catalogue.py`: in-place ops
-  derived from per-file regions, structural ops declared provisionally, `precondition`) + `a_directions.py --derive`.
-- **Precondition variant = hand rules per threat model** except entry_name_hash (sec, anticipated), Rich (ext,
-  anticipated), security_size (hand over-approximates). Also found: hdr fields lie in pefile's Rich search range.
-- **Strict variant is degenerate:** M_add keeps 44 features, M_full 9 (6 constant). So the planned fallback detector
-  of always-safe features is effectively empty. Pilot: 12/100 fail the precondition, all malware, 8 at the 4 MB cap.
-  2,000 files: 318 fail (73 benign, 245 malware; 231 truncated). **Decision for the user:** what happens to failing
-  files (reject as malicious / unconstrained fallback with no guarantee / strict 9-feature fallback), whether to keep
-  the strict row, and the >4 MB exclusion.
-- Slack and DOS regions now exclude loader-read bytes (headers, mapped data, directory data, import/export/reloc/
-  signature bytes). After this fix the 2,000-file `--derive` pass has NOT been re-run (it showed num_libraries both
-  under M_full from import names in the DOS stub of 2 files; re-run `--files artifacts/explanation_set/ts.parquet`).
-- Next: user decision; re-run the 2,000-file pass; witnesses (signature script, entry hash under sec, Rich under ext
-  and hdr, exports/relocs past EOF); run/ scripts for retraining and Table A1's C4 rows; docs (design doc build
-  status, PLAN, resume prompt) not yet updated this session.
+  terminators (one rule: everything the import parse reads locates every import). G5 passes on pilot + fresh files
+  (58,666 flips); G1/G2 exact, G4 identical to run 92, G6 1,791/1,791 exact (flagged 440 -> 209).
+- C4 engine (`reach.py`) + catalogue changes (`catalogue.py`: in-place ops derived from per-file regions restricted to
+  loader-ignored bytes, structural ops declared provisionally, `precondition`) + `a_directions.py --derive`.
+- **Precondition variant = hand rules per threat model**, on the pilot and the 2,000-file set alike, except
+  entry_name_hash (sec, anticipated), Rich (ext, anticipated), and security_size (hand over-approximates). Also
+  found: three hdr fields lie in pefile's Rich search range (no threat-model change: dos already moves Rich).
+- **Strict variant is degenerate:** M_add keeps 44 features, M_full 9 (6 constant), so the planned fallback of
+  always-safe features is effectively empty. Pilot: 12/100 fail the precondition, all malware, 8 at the 4 MB cap.
+  2,000 files: 318 fail (73 benign, 245 malware; 231 truncated).
+- **Signature witness (run 98):** both pilot files with a table past the end: num_certs 0 -> 1, chain_max_depth 0 -> 4,
+  signing_time_diff both ways (appends of 4.9 MB and 421 MB).
+- **Waiting on the user:** what happens to files that fail the precondition (reject as malicious / unconstrained
+  fallback without guarantee / strict 9-feature model), whether the strict row stays, the >4 MB exclusion.
+- Noted, not acted on: the experiments' slack and DOS edits (`attack.region_parts`, `a1_adaptive.py`) do not exclude
+  loader-read bytes (7 of 2,000 files have slack overlapping headers or relocations; 2 keep import names in the DOS
+  stub); their results are measured by re-extraction, so nothing rests on it.
+- Next: `PLAN.md`, "Next steps (2026-10-28)".
 
 **2026-10-27, fourth session: step 7 not started; a wider hole in the hand direction rules found and witnessed, and
 pefile's directory crashes fixed by one rule (run 94).** Commits 474e176..(this wrap-up).
