@@ -21,6 +21,9 @@ groups, which `feature_rule` covers with the re-encodings' signs). Its variants 
 sums" detector) and `{tm}-control` (the four re-encoded groups dropped: "C4 on features" on the same store);
 `reencoded.neutralize.txt` lists the four groups, for the unconstrained reference on the same store.
 
+With `--derive --extractor sums`, the precondition row's directions are also mapped onto the sums extractor's
+features (`write_sums_layout`): `{tm}-pre` and `{tm}-pre-control`, as run 80's `{tm}` and `{tm}-control`.
+
 With `--derive`, the directions are computed instead of read off the hand rules (derivation step 7, C4;
 docs/item-layer-design.md, component 5): the kinds' term vocabulary and the in-place operations' changes come from the
 item tables of the files in --files, the structural operations' changes from the catalogue
@@ -332,6 +335,35 @@ def _write_monotone(outdir: Path, stem: str, rows: list[dict[str, Any]], column:
     (outdir / f"{stem}.monotone.tsv").write_text("".join(m + "\n" for m in mono))
 
 
+def write_sums_layout(outdir: Path, rows: list[dict[str, Any]], regexes: dict[str, str]) -> None:
+    """
+    The precondition row's directions for the features of `SumsFeatureExtractor` (the 10% store of Table A1): the
+    derived directions for thrember's groups (imports merged, as the store's are), the hand rules for the four
+    re-encoded groups until step 8. Variants `{tm}-pre` (every feature: C4 on sums) and `{tm}-pre-control` (the
+    re-encoded groups dropped: C4 on features), and `reencoded.neutralize.txt`.
+    """
+    derived = {(str(row["group"]), str(row["name"])): row for row in rows}
+    extractor = SumsFeatureExtractor()
+    sums_rows: list[dict[str, Any]] = []
+    for fs in extractor.features:
+        for name in fs.feature_names:
+            row: dict[str, Any] = {"group": fs.name, "name": name}
+            for tm, ops in THREAT_MODELS.items():
+                if fs.name in SUMS_GROUPS:
+                    d = direction(feature_rule(fs.name, name, regexes).signs, ops)
+                    row[tm], row[f"{tm}-control"] = d, "both"
+                else:
+                    r = derived[(fs.name, name)]
+                    d = str(r[f"{tm}_pre_reencoded" if fs.name == "imports" else f"{tm}_pre"])
+                    row[tm] = row[f"{tm}-control"] = d
+            sums_rows.append(row)
+    for tm in THREAT_MODELS:
+        _write_monotone(outdir, f"{tm}-pre", sums_rows, tm)
+        _write_monotone(outdir, f"{tm}-pre-control", sums_rows, f"{tm}-control")
+    reencoded = [f"{row['group']}:{row['name']}" for row in sums_rows if row["group"] in SUMS_GROUPS]
+    (outdir / "reencoded.neutralize.txt").write_text("".join(n + "\n" for n in reencoded))
+
+
 def main_derive(args: Any) -> None:
     """Derive the directions (C4) and compare them with the hand rules (G3)."""
     df = pl.read_parquet(args.files)
@@ -418,12 +450,15 @@ def main_derive(args: Any) -> None:
         writer = csv.DictWriter(f, fieldnames=list(rows[0].keys()))
         writer.writeheader()
         writer.writerows(rows)
-    for tm in THREAT_MODELS:
+    # With the sums extractor, the variant files are in its layout (below) instead.
+    for tm in THREAT_MODELS if args.extractor == "ember2024" else ():
         for pre in ("", "_pre"):
             stem = tm + pre.replace("_", "-")
             _write_monotone(args.outdir, stem, rows, f"{tm}{pre}")
             quirk = [{**row, "d": row[f"{tm}{pre}_reencoded"] if row["group"] == "imports" else row[f"{tm}{pre}"]} for row in rows]
             _write_monotone(args.outdir, f"{stem}-quirkfixed", quirk, "d")
+    if args.extractor == "sums":
+        write_sums_layout(args.outdir, rows, regexes)
     pl.DataFrame(cells, schema={"index": pl.Int64, "group": pl.String, "name": pl.String, "op": pl.String, "hand": pl.String, "derived": pl.String, "relation": pl.String}).write_csv(args.outdir / "g3_cells.csv")
 
     summary: dict[str, Any] = {"files": len(names), "pe_files": num_pe, "precondition_files": num_pre,
@@ -463,8 +498,6 @@ def main() -> None:
     parser.add_argument("--limit", type=int, default=0, help="derive: only the first N files (0: all).")
     args = parser.parse_args()
     if args.derive:
-        if args.extractor != "ember2024":
-            raise ValueError("--derive covers the EMBER features (the sums re-encodings are step 8).")
         main_derive(args)
         return
     sums = args.extractor == "sums"

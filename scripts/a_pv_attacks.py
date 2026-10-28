@@ -59,12 +59,28 @@ ATTACKS = ("gamma_sections", "gamma_api", "gamma_shift", "content_shift", "dos_e
 # Our detector, wrapped for secml-malware's black-box engine
 ################################################################################
 
-def make_wrapper(model_path: Path, extractor: PEFeatureExtractor) -> Any:
+def calibrated(p: np.ndarray, tau: float) -> np.ndarray:
+    """A probability on a routed detector's scale: sigmoid(logit(p) - logit(tau)), so p > tau iff the result > 0.5."""
+    eps = 1e-12
+    logit = np.log(np.clip(p, eps, 1 - eps)) - np.log(np.clip(1 - p, eps, 1 - eps))
+    out: np.ndarray = 1 / (1 + np.exp(-(logit - np.log(tau / (1 - tau)))))
+    return out
+
+
+def make_wrapper(model_path: Path, extractor: PEFeatureExtractor, fallback: Optional[Path] = None,
+                 route: Optional[Callable[[bytes], bool]] = None, taus: Optional[tuple[float, float]] = None) -> Any:
     """A CWrapperPhi over our LightGBM GBDT that extracts features with our own extractor.
+
+    With `fallback`, the detector is routed: files for which `route` holds are scored by the model, the others by the
+    fallback model, each on one scale, sigmoid(logit(p) - logit(tau)) with its own threshold from `taus` (model,
+    fallback), so that a routed file is detected when its score exceeds 0.5. The attack queries the routed detector.
 
     Args:
         model_path: Path to the LightGBM model text file.
         extractor: The (quirk-fixed) extractor whose features the GBDT was trained on.
+        fallback: Path to the fallback model (routed detectors only).
+        route: Whether a file goes to the model (routed detectors only).
+        taus: The two models' thresholds (routed detectors only).
 
     Returns:
         A secml-malware CWrapperPhi instance wrapping our classifier.
@@ -74,15 +90,28 @@ def make_wrapper(model_path: Path, extractor: PEFeatureExtractor) -> Any:
     from secml.ml.classifiers import CClassifier
     from secml_malware.attack.blackbox.c_wrapper_phi import CWrapperPhi
 
+    routed = fallback is not None
+    if routed and (route is None or taus is None):
+        raise ValueError("A routed detector needs `route` and `taus`.")
+
     class _OurClassifier(CClassifier):  # type: ignore[misc]
         def __init__(self) -> None:
             super().__init__()
             self._booster = lightgbm.Booster(model_file=str(model_path))
+            self._fallback = lightgbm.Booster(model_file=str(fallback)) if routed else None
             self._classes = 2
-            self._n_features = self._booster.num_feature()
+            self._n_features = self._booster.num_feature() + int(routed)
 
         def _forward(self, x: Any) -> Any:
-            p = np.asarray(self._booster.predict(x.atleast_2d().tondarray()))
+            X = x.atleast_2d().tondarray()
+            if self._fallback is None:
+                p = np.asarray(self._booster.predict(X))
+            else:
+                assert taus is not None
+                # The last column says whether each file goes to the model (see extract_features).
+                go = X[:, -1] > 0.5
+                p = np.where(go, calibrated(np.asarray(self._booster.predict(X[:, :-1])), taus[0]),
+                             calibrated(np.asarray(self._fallback.predict(X[:, :-1])), taus[1]))
             return CArray(np.stack([1 - p, p], axis=1))
 
         def _backward(self, w: Any) -> None:
@@ -100,7 +129,12 @@ def make_wrapper(model_path: Path, extractor: PEFeatureExtractor) -> Any:
                 pad = xi.find(xi == 256)
                 if pad:
                     xi = xi[0, : pad[0]]
-                out.append(extractor.feature_vector(bytes(xi.astype(np.uint8).tolist()[0])))  # type: ignore[no-untyped-call]
+                bytez = bytes(xi.astype(np.uint8).tolist()[0])
+                v = extractor.feature_vector(bytez)  # type: ignore[no-untyped-call]
+                if routed:
+                    assert route is not None
+                    v = np.append(v, np.float32(route(bytez)))
+                out.append(v)
             return CArray(np.stack(out))
 
     return _OurWrapper(_OurClassifier())

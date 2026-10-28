@@ -65,13 +65,12 @@ introduction and a simple baseline (writing decision for later).
 Done (`docs/status.md`): per-structure locating ranges (runs 95-96); the C4 engine and `a_directions.py --derive`
 (run 97: precondition variant = hand rules but for three explained features; strict variant degenerate); signature
 witness (run 98). Next, in order:
-1. **User decision:** files that fail the precondition (reject as malicious / unconstrained fallback without
-   guarantee / the strict 9-feature model), whether the strict row stays a row, and the >4 MB exclusion.
+1. **Decided (user):** failing files go to the unconstrained detector (coverage reported); >4 MB files stay; the
+   strict detector is one sentence. The user runs `run/99` (retraining) and `run/100` (Table A1's toolkit columns with
+   routed C4 rows); read them when done.
 2. The remaining G3 witnesses: entry_name_hash under sec (entry point outside every section), Rich under ext and
    under hdr (a file without a Rich header), exports and relocations past the end.
-3. `run/` scripts for the user: retrain the affected C4 models from the derived directions and re-run Table A1's C4
-   rows (toolkit part ~47 min), shaped by the decision.
-4. Step 8 (sums re-encodings in the engine), step 6 (catalogue checks, G7), the expert-set row, the A' pilot.
+3. Step 8 (sums re-encodings in the engine), step 6 (catalogue checks, G7), the expert-set row, the A' pilot.
 
 ### Earlier: next steps at the end of 2026-10-27 (fourth session)
 

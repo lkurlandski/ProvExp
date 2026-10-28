@@ -18,7 +18,11 @@ One protocol for every cell:
                       VMProtect layout), so they overwrite the MZ header; a broken file is outside every threat model
 
 The defenses are GBDTs on one feature store (`--features`: its manifest names the extractor); every defense is scored
-with that store's extractor. The quick seen/held-out split (`--seen`) is a quick check only; the formal version is
+with that store's extractor. A routed defense (`--route name=fallback`) is the precondition row's detector: files that
+pass the precondition check (catalogue.precondition: nothing the parse is located through lies past the end of the
+file) are scored by the defense's model, the others by the fallback defense's model, each calibrated to its own
+threshold (a_pv_attacks.make_wrapper); the check is made on every file the attack queries. Results are also split by
+whether the original file passes the check (the guarantee covers only those). The quick seen/held-out split (`--seen`) is a quick check only; the formal version is
 leave-one-out (eight PV models; docs/direction-A-A1-design.md, decision 2).
 
 Outputs, in `{outdir}/`:
@@ -48,6 +52,7 @@ import numpy as np
 import polars as pl
 
 from provexp.data.tabular import load_manifest
+from provexp.featuresets.ember2024.catalogue import passes_precondition
 from provexp.featuresets.ember2024.features import PEFeatureExtractor
 from provexp.featuresets.ember2024.features import merge_import_descriptors
 from provexp.featuresets.ember2024.sums import SumsFeatureExtractor
@@ -55,6 +60,7 @@ from provexp.featuresets.ember2024.sums import SumsFeatureExtractor
 sys.path.insert(0, str(Path(__file__).parent))
 from a_pv_attacks import ATTACKS  # noqa: E402
 from a_pv_attacks import build_attack  # noqa: E402
+from a_pv_attacks import calibrated  # noqa: E402
 from a_pv_attacks import build_donor_pools  # noqa: E402
 from a_pv_attacks import load_pilot  # noqa: E402
 from a_pv_attacks import make_wrapper  # noqa: E402
@@ -114,20 +120,33 @@ def group_evasion(rows: pl.DataFrame, attacks: list[str]) -> dict[str, Any]:
 ################################################################################
 
 _W: dict[str, Any] = {}
+_PRECONDITION_EXTRACTOR = merge_import_descriptors(PEFeatureExtractor())
 
 
-def _init_worker(features: Path, models: dict[str, str], section_pop: list[Any], api_calls: list[Any],
-                 seed: int) -> None:
+def precondition_holds(bytez: bytes) -> bool:
+    """The precondition row's check on a file (with the thrember extractor's item table)."""
+    return passes_precondition(_PRECONDITION_EXTRACTOR, bytez)
+
+
+def _init_worker(features: Path, models: dict[str, str], routes: dict[str, tuple[str, float, float]],
+                 section_pop: list[Any], api_calls: list[Any], seed: int) -> None:
     """Build the extractor and one detector wrapper per defense, once per worker."""
     lief.logging.disable()
     extractor = make_extractor(features)
-    _W.update(wrappers={d: make_wrapper(Path(m), extractor) for d, m in models.items()}, section_pop=section_pop,
-              api_calls=api_calls, seed=seed, tmp=tempfile.mkdtemp(prefix="a1_w_"))
+    wrappers = {}
+    for d, m in models.items():
+        if d in routes:
+            fb, tau, tau_fb = routes[d]
+            wrappers[d] = make_wrapper(Path(m), extractor, fallback=Path(models[fb]), route=precondition_holds, taus=(tau, tau_fb))
+        else:
+            wrappers[d] = make_wrapper(Path(m), extractor)
+    _W.update(wrappers=wrappers, section_pop=section_pop, api_calls=api_calls, seed=seed,
+              tmp=tempfile.mkdtemp(prefix="a1_w_"))
 
 
-def _work(task: tuple[str, str, str, bytes, float, int]) -> dict[str, Any]:
+def _work(task: tuple[str, str, str, bytes, float, int, bool]) -> dict[str, Any]:
     """Run one (defense, attack, file) and score the re-extracted result at the defense's threshold."""
-    defense, atk, name, data, tau, cap = task
+    defense, atk, name, data, tau, cap, pre = task
     wrapper = _W["wrappers"][defense]
     out_path = Path(_W["tmp"]) / f"{defense}.{name[:16]}.{atk}"
     start = time.time()
@@ -146,7 +165,8 @@ def _work(task: tuple[str, str, str, bytes, float, int]) -> dict[str, Any]:
     over = added > cap
     return {"defense": defense, "attack": atk, "name": name, "tau": tau, "p_clean": p_clean, "p_adv": p_adv,
             "evaded": bool(ok and valid and not over and p_adv <= tau), "bytes_added": added, "over_budget": over,
-            "ok": ok, "valid": valid, "truncated": len(data) >= MAX_LENGTH, "error": error, "seconds": time.time() - start}
+            "ok": ok, "valid": valid, "truncated": len(data) >= MAX_LENGTH, "precondition": pre, "error": error,
+            "seconds": time.time() - start}
 
 
 ################################################################################
@@ -168,6 +188,8 @@ def main() -> None:
     parser = ArgumentParser(description=__doc__.split("\n\n")[1])
     parser.add_argument("--outdir", type=Path, required=True)
     parser.add_argument("--defense", action="append", required=True, help="name=model_dir (repeatable).")
+    parser.add_argument("--route", action="append", default=[], help="name=fallback: route the defense `name` to the "
+                        "defense `fallback` on files that fail the precondition check (repeatable).")
     parser.add_argument("--features", type=Path, required=True, help="The feature store the defenses were trained on.")
     parser.add_argument("--pilot_files", type=Path, default=ROOT / "artifacts/experiments/e1/seed-0/zeros/files.parquet")
     parser.add_argument("--db", type=Path, default=Path("/shared/datasets/EMBER-2024/data/ts"))
@@ -186,6 +208,10 @@ def main() -> None:
     lief.logging.disable()
     args.outdir.mkdir(parents=True, exist_ok=True)
     defenses = parse_defenses(args.defense)
+    routes_spec = {k: str(v) for k, v in parse_defenses(args.route).items()}
+    for d, fb in routes_spec.items():
+        if d not in defenses or fb not in defenses or fb in routes_spec:
+            raise ValueError(f"--route {d}={fb}: both must be defenses, and the fallback must not be routed.")
     extractor = make_extractor(args.features)
 
     malware, goodware = load_pilot(args.pilot_files, args.db)
@@ -196,24 +222,37 @@ def main() -> None:
     # Thresholds, and which pilot malware each defense detects (scored from the files themselves).
     import lightgbm
     X = np.stack([extractor.feature_vector(data) for _, data in malware])  # type: ignore[no-untyped-call]
-    taus: dict[str, float] = {}
-    detected: dict[str, list[int]] = {}
+    pre = [precondition_holds(data) for _, data in malware]
+    print(f"  {sum(pre)}/{len(malware)} pilot malware pass the precondition check", flush=True)
+    model_taus: dict[str, float] = {}
+    probs: dict[str, np.ndarray] = {}
     for d, mdir in defenses.items():
         pred = pl.read_parquet(mdir / "ts_predictions.parquet")
-        taus[d] = calibrate_threshold(pred["prob"].to_numpy(), pred["label"].to_numpy(), args.fpr)
-        p = np.asarray(lightgbm.Booster(model_file=str(mdir / "model.txt")).predict(X))
+        model_taus[d] = calibrate_threshold(pred["prob"].to_numpy(), pred["label"].to_numpy(), args.fpr)
+        probs[d] = np.asarray(lightgbm.Booster(model_file=str(mdir / "model.txt")).predict(X))
+    taus: dict[str, float] = {}
+    detected: dict[str, list[int]] = {}
+    routes = {d: (fb, model_taus[d], model_taus[fb]) for d, fb in routes_spec.items()}
+    for d in defenses:
+        if d in routes:
+            fb = routes[d][0]
+            p = np.where(pre, calibrated(probs[d], model_taus[d]), calibrated(probs[fb], model_taus[fb]))
+            taus[d] = 0.5
+        else:
+            p, taus[d] = probs[d], model_taus[d]
         detected[d] = [i for i in range(len(malware)) if p[i] > taus[d]]
-        print(f"  {d}: tau={taus[d]:.4f}, detects {len(detected[d])}/{len(malware)} pilot malware", flush=True)
+        print(f"  {d}: tau={taus[d]:.4f}{' (routed to ' + routes[d][0] + ')' if d in routes else ''}, detects "
+              f"{len(detected[d])}/{len(malware)} pilot malware", flush=True)
 
     caps = [max(int(args.budget_frac * len(data)), args.budget_min) for _, data in malware]
-    tasks = [(d, atk, malware[i][0], malware[i][1], taus[d], caps[i])
+    tasks = [(d, atk, malware[i][0], malware[i][1], taus[d], caps[i], pre[i])
              for d in defenses for atk in args.attacks for i in detected[d]]
     with tempfile.TemporaryDirectory(prefix="a1_") as tmp:
         section_pop, api_calls = build_donor_pools(goodware, Path(tmp))
         t0 = time.time()
         models = {d: str(m / "model.txt") for d, m in defenses.items()}
         with get_context("spawn").Pool(args.num_workers, initializer=_init_worker,
-                                       initargs=(args.features, models, section_pop, api_calls, args.seed)) as pool:
+                                       initargs=(args.features, models, routes, section_pop, api_calls, args.seed)) as pool:
             rows = pool.map(_work, tasks, chunksize=1)
         print(f"{len(tasks)} attack runs in {time.time() - t0:.0f}s on {args.num_workers} workers.", flush=True)
 
@@ -226,12 +265,15 @@ def main() -> None:
     table: dict[str, Any] = {"protocol": {"fpr": args.fpr, "budget_frac": args.budget_frac,
                                           "budget_min": args.budget_min, "seed": args.seed,
                                           "features": args.features.resolve().as_posix(), "seen": seen,
+                                          "routes": routes_spec,
                                           "held_out": held_out,
                                           "split_note": "quick seen/held-out split; formal version is leave-one-out"},
                              "defenses": {}}
     for d in defenses:
         r = results.filter(pl.col("defense") == d)
         entry: dict[str, Any] = {"model": defenses[d].as_posix(), "tau": taus[d], "detected": len(detected[d]),
+                                 "routed_to": routes[d][0] if d in routes else None,
+                                 "detected_passing_precondition": sum(pre[i] for i in detected[d]),
                                  "per_attack": {}, "groups": {}}
         for atk in args.attacks:
             a = r.filter(pl.col("attack") == atk)
@@ -243,6 +285,8 @@ def main() -> None:
                 "all": group_evasion(r, atks),
                 "truncated": group_evasion(r.filter(pl.col("truncated")), atks),
                 "untruncated": group_evasion(r.filter(~pl.col("truncated")), atks),
+                "precondition": group_evasion(r.filter(pl.col("precondition")), atks),
+                "no_precondition": group_evasion(r.filter(~pl.col("precondition")), atks),
             }
         table["defenses"][d] = entry
         g = entry["groups"]

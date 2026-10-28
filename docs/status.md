@@ -16,8 +16,14 @@ witness (run 98). A decision is waiting on the user.** Commits 8b34250..(this wr
   2,000 files: 318 fail (73 benign, 245 malware; 231 truncated).
 - **Signature witness (run 98):** both pilot files with a table past the end: num_certs 0 -> 1, chain_max_depth 0 -> 4,
   signing_time_diff both ways (appends of 4.9 MB and 421 MB).
-- **Waiting on the user:** what happens to files that fail the precondition (reject as malicious / unconstrained
-  fallback without guarantee / strict 9-feature model), whether the strict row stays, the >4 MB exclusion.
+- **Decided (user, 2026-10-28):** files that fail the precondition go to the unconstrained detector (no guarantee for
+  them; report coverage); the >4 MB files stay; the strict detector is one sentence, not a row of Table A1.
+- **Built for the user:** routed detectors in `a1_evaluate.py` (`--route name=fallback`: the check on every attack
+  query, each branch at its own 1% FPR threshold, results split by whether the original file passes);
+  `a_directions.py --derive --extractor sums` (the derived directions in the 10% store's layout; re-encoded groups
+  keep their hand rules until step 8). The derived files differ from runs 77/80's only in entry_name_hash (dropped
+  under M_add) and security_size (down under M_full). **Waiting on the user to run:** `run/99_a1_train_derived.sh`
+  (~20 min: six models) then `run/100_a1_toolkit_derived.sh` (~1-1.5 h; smoke-tested on 3 files).
 - Noted, not acted on: the experiments' slack and DOS edits (`attack.region_parts`, `a1_adaptive.py`) do not exclude
   loader-read bytes (7 of 2,000 files have slack overlapping headers or relocations; 2 keep import names in the DOS
   stub); their results are measured by re-extraction, so nothing rests on it.

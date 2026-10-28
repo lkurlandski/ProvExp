@@ -1,4 +1,4 @@
-# Resume: ProvExp (after 2026-10-28) — step 7 built; the precondition decision, then witnesses and retraining
+# Resume: ProvExp (after 2026-10-28) — step 7 built; read runs 99-100, then the remaining witnesses
 
 Read `CLAUDE.md`, then `docs/status.md`'s top block, `PLAN.md` ("Directions", A', and "Next steps (2026-10-28)"), and
 `docs/item-layer-design.md` (components 3 and 5, the anticipated disagreements, and "Build status" through the
@@ -11,7 +11,7 @@ Read `CLAUDE.md`, then `docs/status.md`'s top block, `PLAN.md` ("Directions", A'
 - the derivation: steps 1-5 and 7 built; locating ranges now per structure; the derived directions equal the hand
   rules under the precondition except three explained features; strict soundness over every possible file leaves
   almost no features (9 under M_full); the signature witness;
-- the decision waiting on the user, and the order of work.
+- the user's precondition decision, runs 99-100, and the order of work.
 
 For every decision you put to the user, say what the thing is, give a concrete example, and say what each choice
 changes. Never use doc-internal labels (G3, M_full, C4) without saying what they are.
@@ -23,25 +23,24 @@ jobs of ~10 minutes or less yourself (estimate from the slowest case first; long
 script, default 16 workers, never cap workers in Python); state a short hypothesis before each run; add a `run/`
 script for every experiment; commit in logical pieces after ruff and mypy pass; never edit `tests/reference/`.
 
-## The decision waiting on the user (ask first)
+## Decided (user, 2026-10-28)
 
-Files that fail the precondition (something the parse is located through lies past the end of the file, so appending
-can complete it): 12/100 pilot files (all malware, 8 cut at the 4 MB cap), 318/2,000 (73 benign, 245 malware, 231
-truncated). The planned fallback "detector of always-safe features" is the strict model, which keeps 9 features under
-M_full (6 constant). Options: treat failing files as malicious (false positives on benign failing files); send them to
-the unconstrained model (no guarantee on them; report coverage); the strict 9-feature model. Also: keep the strict row
-as a row or as one sentence; exclude files over 4 MB.
+Files that fail the precondition go to the unconstrained detector (no guarantee for them; coverage reported); the
+>4 MB files stay; the strict detector (9 features under M_full) is one sentence, not a row. `a1_evaluate.py` routes C4
+rows (`--route`); `run/99_a1_train_derived.sh` retrains the six C4 models from the derived directions and
+`run/100_a1_toolkit_derived.sh` re-runs Table A1's toolkit and adaptive columns. Ask whether the user has run them;
+if so, read `artifacts/experiments/a1/toolkit-derived/table.json` (the groups' `precondition` / `no_precondition`
+splits) and `adaptive-derived`, record them in the run scripts and `docs/direction-A-A1-design.md`.
 
-## Do next (after the decision)
+## Do next
 
 1. Remaining witnesses: entry_name_hash under sec (entry point outside every section), Rich under ext and under hdr
    (on a file without a Rich header; three hdr fields lie in pefile's Rich search range), exports and relocations past
    the end. Add each to a script with a `run/` script, as `scripts/a_signature_witness.py` (run 98).
-2. `run/` scripts for the user: retrain the affected C4 models from `artifacts/experiments/a_directions_derived`
-   (`{tm}-pre[-quirkfixed].neutralize.txt` / `.monotone.tsv`), the precondition check at inference
-   (`catalogue.precondition`), and the re-run of Table A1's C4 rows (toolkit part ~47 min).
-3. Step 8 (sums re-encodings in the engine; `--derive` refuses `--extractor sums` until then), step 6 (catalogue
-   checks, G7; the declared deltas of app/sec/imp/ext/shf/ren/rdb/rsg are provisional), the expert-set row, the A' pilot.
+2. The adaptive search (`a1_adaptive.py`) is not routed: its C4 rows hold for files that pass the check; report the
+   failing files with the unconstrained row.
+3. Step 8 (sums re-encodings in the engine), step 6 (catalogue checks, G7; the declared deltas of app/sec/imp/ext/shf/
+   ren/rdb/rsg are provisional), the expert-set row, the A' pilot.
 
 ## Notes
 

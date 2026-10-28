@@ -49,6 +49,7 @@ __all__ = [
     "file_region_changes",
     "declared_changes",
     "precondition",
+    "passes_precondition",
 ]
 
 
@@ -336,3 +337,12 @@ def precondition(pe: pefile.PE, table: ItemTable) -> bool:
             if any(hi > n for _, hi in data):
                 return False
     return all(s.PointerToRawData + s.SizeOfRawData <= n for s in pe.sections)
+
+
+def passes_precondition(extractor: PEFeatureExtractor, z: bytes) -> bool:
+    """`precondition` from the bytes: False for a file that does not parse as a PE (it has no guarantee either)."""
+    try:
+        pe = pefile.PE(data=z)
+    except (pefile.PEFormatError, AttributeError):
+        return False
+    return precondition(pe, extractor.item_table(z))
