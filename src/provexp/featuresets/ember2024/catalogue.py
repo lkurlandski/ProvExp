@@ -24,6 +24,7 @@ from provexp.featuresets.ember2024.features import clipped
 from provexp.featuresets.ember2024.features import entropy_H
 from provexp.featuresets.ember2024.features import field_range
 from provexp.featuresets.ember2024.features import rva_ranges
+from provexp.featuresets.ember2024.features import section_data_range
 from provexp.featuresets.ember2024.features import structure_range
 from provexp.featuresets.ember2024.sums import SUMS_GROUPS
 from provexp.items import Item
@@ -51,6 +52,7 @@ __all__ = [
     "regions",
     "file_region_changes",
     "declared_changes",
+    "plain_layout",
     "precondition",
     "passes_precondition",
 ]
@@ -187,6 +189,7 @@ HDR_FIELDS = (
     ("OPTIONAL_HEADER", "MajorOperatingSystemVersion"), ("OPTIONAL_HEADER", "MinorOperatingSystemVersion"),
 )
 DEBUG_ENTRY, SECURITY_ENTRY = 6, 4
+DOS_HEADER_SIZE = 64
 
 # The operations derived from the bytes they write: (zero content, the change of kinds whose locating ranges they
 # write, whether the write keeps every item's location, changes added whenever it writes a locating range).
@@ -378,12 +381,52 @@ def declared_changes(profiles: Mapping[tuple[str, str], KindProfile], regex_mono
     return {"app": app, "sec": sec, "imp": imp, "ext": ext, "shf": insertion + body + body_grow}
 
 
+def _align_up(x: int, a: int) -> int:
+    return (x + a - 1) // a * a if a else x
+
+
+def plain_layout(pe: pefile.PE) -> bool:
+    """
+    The layout clauses of the precondition (run 104, G7): the file's layout is one in which the operations move only what
+    the catalogue declares. Each clause excludes a layout where they move more, witnessed on the 2,000-file set:
+        - every section's virtual range lies within SizeOfImage (the loader rejects the others; pefile's RVA mapping
+          then shifts exports and relocations with the file layout);
+        - SizeOfImage is at most what the sections need, aligned (adding a section and recomputing it, as tools do,
+          would otherwise lower it);
+        - the headers hold only the headers: the PE header starts past the DOS header, and no section's raw data starts
+          before the PE header (writing or moving header fields would otherwise move DOS fields or that section);
+        - pefile's overlay starts where a section's raw data (or the optional header) ends, not at the end of a data
+          directory's declared extent (a section inserted there would split an unclaimed body run).
+    """
+    oh = pe.OPTIONAL_HEADER
+    sa = oh.SectionAlignment or 0x1000
+    sections = list(pe.sections)
+    if any(s.VirtualAddress + (s.Misc_VirtualSize or s.SizeOfRawData) > oh.SizeOfImage for s in sections):
+        return False
+    need = max([s.VirtualAddress + max(s.Misc_VirtualSize, s.SizeOfRawData) for s in sections] + [oh.SizeOfHeaders])
+    if oh.SizeOfImage > _align_up(need, sa):
+        return False
+    e_lfanew = pe.DOS_HEADER.e_lfanew
+    if e_lfanew < DOS_HEADER_SIZE or any(s.SizeOfRawData and section_data_range(s)[0] < e_lfanew for s in sections):
+        return False
+    overlay = pe.get_overlay_data_start_offset()
+    if overlay is not None:
+        n = len(pe.__data__)
+        ends = [s.PointerToRawData + s.SizeOfRawData for s in sections if s.PointerToRawData + s.SizeOfRawData <= n]
+        if overlay > max(ends + [oh.get_file_offset() + pe.FILE_HEADER.SizeOfOptionalHeader]):
+            return False
+    return True
+
+
 def precondition(pe: pefile.PE, table: ItemTable) -> bool:
     """
     The precondition row's check, made at inference: nothing the parse is located through lies past the end of the
     file, so appending cannot complete any structure. No item has a locating range past the end, and no data directory
-    (including one whose data pefile could not read, which has no items) or section extends past it.
+    (including one whose data pefile could not read, which has no items) or section extends past it. And the layout is
+    plain (`plain_layout`).
     """
+    if not plain_layout(pe):
+        return False
     n = len(pe.__data__)
     if any(hi > n for item in table.items for _, hi in item.locating):
         return False

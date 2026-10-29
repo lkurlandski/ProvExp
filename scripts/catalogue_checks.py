@@ -78,6 +78,8 @@ __all__ = [
     "observed_signs",
 ]
 
+# Below this SectionAlignment, Windows maps the image flat (raw offset = virtual address).
+PAGE = 0x1000
 OPS = ("app", "sec", "imp", "ext", "shf", "slk", "dos", "hdr", "chk", "ren", "rdb", "rsg")
 
 SCN_CODE, SCN_DATA = 0x00000020, 0x00000040
@@ -144,8 +146,6 @@ def add_section(z: bytes, name: bytes, content: bytes, characteristics: int, bef
     if slot is None:
         return None
     table_slot, rva = slot
-    if content_at_rva is not None:
-        content = content_at_rva(rva)
     fa = pe.OPTIONAL_HEADER.FileAlignment or 0x200
     sa = pe.OPTIONAL_HEADER.SectionAlignment or 0x1000
     overlay = pe.get_overlay_data_start_offset() if before_overlay else None
@@ -153,6 +153,11 @@ def add_section(z: bytes, name: bytes, content: bytes, characteristics: int, bef
     ends = [min(s.PointerToRawData + s.SizeOfRawData, len(z)) for s in pe.sections if s.SizeOfRawData]
     at = len(z) if overlay is None else max([overlay] + ends)
     offset = _align(at, fa)
+    if sa < PAGE:
+        # NOTE: a low-alignment image is mapped flat, so a section's raw offset must equal its virtual address (run 104).
+        offset = rva = max(offset, rva)
+    if content_at_rva is not None:
+        content = content_at_rva(rva)
     raw = content + b"\x00" * (_align(len(content), fa) - len(content))
     inserted = b"\x00" * (offset - at) + raw
     buf = bytearray(z[:at] + inserted + z[at:])
@@ -215,14 +220,16 @@ def insert_gap(z: bytes, at_pe_header: bool, gap: bytes) -> Optional[bytes]:
     """
     Insert a gap (`ext` before the PE header, `shf` before the first section's data) of a multiple of FileAlignment
     bytes, raising the pointers past it: e_lfanew and SizeOfHeaders (`ext`), PointerToRawData, and the certificate
-    table's offset. None if the gap is not a multiple of FileAlignment or the headers would outgrow the first section.
+    table's offset. None if the gap is not a multiple of FileAlignment, the headers would outgrow the first section, or
+    the image is low-alignment (mapped flat: raw data cannot move off its virtual address).
     """
     pe = _parse(z, fast=True)
     if pe is None:
         return None
     oh = pe.OPTIONAL_HEADER
     fa = oh.FileAlignment or 0x200
-    if len(gap) % fa:
+    if len(gap) % fa or oh.SectionAlignment < PAGE:
+        # NOTE: a low-alignment image is mapped flat: moving raw data off its virtual address is not loader-safe.
         return None
     k = len(gap)
     if at_pe_header:

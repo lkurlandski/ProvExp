@@ -18,8 +18,8 @@
 # Ran 2026-10-29 (started by the user): featurization 0.89 h, 0 failures; G1 5 min; derivation ~10 min; G7 25 min.
 # Result: G1 for sums exact on 2,000/2,000. The derivation's training inputs (`*-pre*`) are byte-identical to the
 # pilot's (a_directions_derived_sums_v2); the re-encoded groups equal the hand rules under the precondition. G7: the
-# strict variant holds on every edit of all twelve operations; the precondition variant fails on 100 edits of 13 files
-# (sec 37, imp 36, ext 9, shf 18), each witnessed: (a) low-alignment images (SectionAlignment < 0x1000, raw offset =
+# strict variant holds on every edit of all twelve operations; the precondition variant fails on 100 edits of 11 files
+# (sec 37, imp 36, ext 9, shf 18; some files under several operations), each witnessed: (a) low-alignment images (SectionAlignment < 0x1000, raw offset =
 # virtual address; 8 files): our shf and sec/imp edits move raw data off its address, which the loader rejects -- an
 # error in the check's edits; (b) sections whose virtual range runs past SizeOfImage (b0c8...; 3 files): not loadable,
 # and pefile's exports and relocations then move with the layout; (c) SizeOfImage larger than the sections need
@@ -27,7 +27,8 @@
 # else -- the PE header inside the DOS header (7286...; 2 files), a section's raw data before the PE header (219b...;
 # 4 files) -- so writing or moving the headers moves DOS fields or that section's entropy; (e) pefile's overlay
 # starting past the last section's raw data (a directory's declared extent; 2fa1...; 3 files): a section inserted
-# there splits an unclaimed body run, lowering body window counts. Rules: for the user (docs/status.md).
+# there splits an unclaimed body run, lowering body window counts. Rules (user, 2026-10-29): (a) fix the check's
+# edits; (b)-(e) extend the precondition (catalogue.plain_layout); re-checked in run 107.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 source env/bin/activate
