@@ -15,6 +15,19 @@
 # Pilot (2026-10-29): G1 exact on 100/100 files (27 s); derivation 36 s: precondition variant equal to the hand rules
 # on every cell of the re-encoded groups (M_add/M_shift 1,083 up, 4 both; M_full 683 up, 404 both); thrember's groups
 # unchanged per threat model from run 97 (17 fewer over-approximated cells); training inputs identical to run 99's.
+#
+# 2,000 files (run by the user, 2026-10-29; G1 ~5 min, derivation ~7 min): the hypothesis holds. G1 exact on
+# 2,000/2,000 files (sums and re-encoded features alike). Precondition variant equal to the hand rules per threat
+# model on the re-encoded groups (same totals as the pilot), and the `*-pre*` training inputs byte-identical to run
+# 99's, so no C4 model needs retraining. Per cell, one disagreement the pilot lacks, in thrember's section group and
+# the split buckets alike: the header overwrites (dos, hdr, chk, rdb, rsg) move section entropy both ways (thrember:
+# entropy_hash_* and max_entropy; sums: entropy_hash_*_pos/neg), where the hand rules say they cannot. Cause: 4 of
+# 2,000 files have a .bss section with PointerToRawData 0 and SizeOfRawData > 0, so its raw data is the header;
+# witnessed on all four by rewriting the DOS stub (section:entropy_hash_29 up with varied bytes, down with zeros, e.g.
+# 2.042 -> 2.226 / 1.559; max_entropy too on one file). The derived signs are right and the hand rules incomplete.
+# All 50 buckets are marked because the derivation reads a kind's profile, not the file's section names (sound). No
+# threat model changes: these operations are only in M_full, where section entropy is already two-sided. Run 97's
+# 2,000-file cells show the same 51 per operation (unexplained until now).
 set -euo pipefail
 cd "$(dirname "$0")/.."
 source env/bin/activate

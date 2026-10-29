@@ -1,5 +1,14 @@
 # Status
 
+**2026-10-29, third session: run 102 read; the hypothesis holds.** G1 for sums exact on 2,000/2,000 files; the
+precondition variant equals the hand rules per threat model on the re-encoded groups; the `*-pre*` training inputs are
+byte-identical to run 99's, so no C4 model needs retraining. One per-cell disagreement the pilot lacked (also in run
+97's 2,000-file cells, unexplained until now): the header overwrites (dos, hdr, chk, rdb, rsg) move section entropy
+both ways, which the hand rules rule out. Cause: 4 of 2,000 files have a .bss section with PointerToRawData 0 and
+SizeOfRawData > 0, so its raw data is the header; witnessed on all four by rewriting the DOS stub (entropy_hash_29 up
+and down). No threat-model change (these operations are only in M_full, where section entropy is already two-sided).
+Recorded in `run/102_step8_sums.sh`. **Next:** step 6 (catalogue checks, G7).
+
 **2026-10-29, second session: step 8 built (sums re-encodings as items); pilot checks pass; run 102's 2,000-file
 steps are for the user.** Commits ef8aa21..(this wrap-up).
 - **What changed:** the four re-encoded groups (`sums.py`) record items: byte runs, full windows, and strings per body
