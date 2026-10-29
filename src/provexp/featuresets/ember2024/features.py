@@ -299,6 +299,27 @@ def directory_locating(pe: pefile.PE, *indices: int) -> tuple[Range, ...]:
     return section_locating(pe) + entries_locating(pe, *indices) + data
 
 
+def overlay_extents_locating(pe: pefile.PE) -> tuple[Range, ...]:
+    """
+    The bytes where the overlay starts is located through, besides `section_locating`. pefile starts it after the
+    furthest extent of the optional header, the sections, and the data directories (but security) that lies within
+    the file, so all of them locate it (the directories through their entries, not their data), and so do the bytes
+    past the end of the file that an extent reaches (appending can bring the extent inside; a directory address pefile
+    cannot map lies past the end).
+    """
+    n = len(pe.__data__)
+    directories = pe.OPTIONAL_HEADER.DATA_DIRECTORY
+    extents = [(s.PointerToRawData, s.PointerToRawData + s.SizeOfRawData) for s in pe.sections]
+    for i, d in enumerate(directories):
+        if i != 4:
+            try:
+                extents.append((pe.get_offset_from_rva(d.VirtualAddress), pe.get_offset_from_rva(d.VirtualAddress) + d.Size))
+            except pefile.PEFormatError:
+                extents.append((d.VirtualAddress, d.VirtualAddress + d.Size))
+    entries = entries_locating(pe, *(i for i in range(len(directories)) if i != 4))
+    return entries + tuple((n, hi) for _, hi in extents if hi > n)
+
+
 def section_table_ranges(pe: pefile.PE) -> tuple[Range, ...]:
     """
     The declared section table, including headers pefile dropped; if it dropped any, also every byte past the end of
@@ -1236,21 +1257,9 @@ class SectionInfo(FeatureType):
             }
             items.append(self.section_item(s, ranges, located + (((n, end),) if end > n else ())))
 
-        # The overlay. pefile starts it after the furthest extent of the optional header, the sections, and the data
-        # directories (but security) that lies within the file, so all of them locate it (the directories through
-        # their entries, not their data), and so do the bytes past the end of the file that an extent reaches
-        # (appending can bring the extent inside; a directory address pefile cannot map lies past the end).
+        # The overlay.
         overlay_offset = pe.get_overlay_data_start_offset()
-        directories = pe.OPTIONAL_HEADER.DATA_DIRECTORY
-        overlay_locating = located + entries_locating(pe, *(i for i in range(len(directories)) if i != 4))
-        extents = [(s.PointerToRawData, s.PointerToRawData + s.SizeOfRawData) for s in pe.sections]
-        for i, d in enumerate(directories):
-            if i != 4:
-                try:
-                    extents.append((pe.get_offset_from_rva(d.VirtualAddress), pe.get_offset_from_rva(d.VirtualAddress) + d.Size))
-                except pefile.PEFormatError:
-                    extents.append((d.VirtualAddress, d.VirtualAddress + d.Size))
-        overlay_locating += tuple((n, hi) for _, hi in extents if hi > n)
+        overlay_locating = located + overlay_extents_locating(pe)
         # The file's length, which the size ratios divide by; it also carries the overlay's locating ranges when
         # there is no overlay (appending creates one).
         items.insert(0, self._file_item(n, overlay_locating))
@@ -1379,12 +1388,12 @@ class SectionInfo(FeatureType):
     def readouts(self) -> list[Readout]:
         return [
             Identity("section:counts", 0, 5),
-            Max(("section", "overlay"), "entropy"),
-            Min(("section", "overlay"), "entropy"),
-            Max(("section", "overlay"), "size", divide_by=("section:file_size", 0)),
-            Min(("section", "overlay"), "size", divide_by=("section:file_size", 0)),
-            Max(("section",), "vsize_ratio"),
-            Min(("section",), "vsize_ratio"),
+            Max(("section", "overlay"), "entropy", group=self.name),
+            Min(("section", "overlay"), "entropy", group=self.name),
+            Max(("section", "overlay"), "size", divide_by=("section:file_size", 0), group=self.name),
+            Min(("section", "overlay"), "size", divide_by=("section:file_size", 0), group=self.name),
+            Max(("section",), "vsize_ratio", group=self.name),
+            Min(("section",), "vsize_ratio", group=self.name),
             Identity("section:size_hash", 0, 50),
             Identity("section:vsize_hash", 0, 50),
             Identity("section:entropy_hash", 0, 50),

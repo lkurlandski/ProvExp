@@ -19,8 +19,10 @@ from provexp.featuresets.ember2024.features import merge_import_descriptors
 from provexp.featuresets.ember2024.sums import SUMS_GROUPS
 from provexp.featuresets.ember2024.sums import BodyByteEntropyHistogram
 from provexp.featuresets.ember2024.sums import SumsFeatureExtractor
+from provexp.featuresets.ember2024.sums import body_layout
 from provexp.featuresets.ember2024.sums import body_regions
 from provexp.featuresets.ember2024.sums import signed_bucket
+from provexp.items import evaluate
 
 warnings.filterwarnings("ignore", category=SyntaxWarning)
 
@@ -57,6 +59,24 @@ def sample(request: pytest.FixtureRequest) -> tuple[bytes, np.ndarray]:
 ################################################################################
 # Extractor
 ################################################################################
+
+
+class TestItems:
+
+    def test_g1(self, sample: tuple[bytes, np.ndarray]) -> None:
+        # The readouts over the item table reproduce the re-encoded groups bit for bit (G1 for sums).
+        data, x = sample
+        y = evaluate(SUMS.item_table(data), SUMS.readouts)
+        np.testing.assert_array_equal(y[SUMS_COLUMNS], x[SUMS_COLUMNS])
+
+    def test_body_items_in_regions(self, sample: tuple[bytes, np.ndarray]) -> None:
+        data, _ = sample
+        layout = body_layout(data, _parse(data))
+        table = SUMS.item_table(data)
+        for item in table.items:
+            if item.kind.startswith("body_"):
+                assert item.locating
+                assert any(r.range[0] <= lo and hi <= r.range[1] for lo, hi in item.members for r in layout)
 
 
 class TestSumsFeatureExtractor:

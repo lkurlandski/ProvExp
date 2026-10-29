@@ -16,10 +16,18 @@ The body regions are the parts of the file M writes nowhere in place: the data o
 (the raw data past its virtual size) and without anything below SizeOfHeaders, and the overlay. Adding a section or an
 import section adds a region; appending extends the overlay (or, past a section whose declared raw data overruns the
 file, that section's region); insertions move regions without changing their content.
+
+Each group also records its items (derivation step 8, docs/item-layer-design.md: "The re-encodings come for free"):
+the byte runs, windows, and strings of each body region, and the sections with each hashed value split by its sign.
+Their readouts are identities over the sums, so C4 (provexp.reach) derives the re-encodings' directions with no rule of
+their own. The body items are their own kinds, located through what decides the body regions: unlike the whole-file
+bytes, windows, and strings, an in-place write outside the body regions does not reach them.
 """
 
 from __future__ import annotations
 
+from dataclasses import dataclass
+from dataclasses import replace
 from functools import lru_cache
 from typing import Any
 from typing import Optional
@@ -34,8 +42,17 @@ from provexp.featuresets.ember2024.features import PEFeatureExtractor
 from provexp.featuresets.ember2024.features import Range
 from provexp.featuresets.ember2024.features import SectionInfo
 from provexp.featuresets.ember2024.features import StringExtractor
+from provexp.featuresets.ember2024.features import clipped
+from provexp.featuresets.ember2024.features import field_range
 from provexp.featuresets.ember2024.features import merge_import_descriptors
+from provexp.featuresets.ember2024.features import overlay_extents_locating
 from provexp.featuresets.ember2024.features import section_data_range
+from provexp.featuresets.ember2024.features import section_locating
+from provexp.items import Identity
+from provexp.items import Item
+from provexp.items import ItemTable
+from provexp.items import Readout
+from provexp.items import Term
 
 __all__ = [
     "SUMS_GROUPS",
@@ -44,6 +61,8 @@ __all__ = [
     "BodyStrings",
     "SectionSplitBuckets",
     "SumsFeatureExtractor",
+    "BodyRegion",
+    "body_layout",
     "body_regions",
     "signed_bucket",
 ]
@@ -53,13 +72,35 @@ __all__ = [
 ################################################################################
 
 
-def body_regions(bytez: bytes, pe: Optional[pefile.PE]) -> list[Range]:
+@dataclass(frozen=True)
+class BodyRegion:
+    """
+    One body region: its bytes, the bytes that decide where it is (assumption A1), and whether appending extends it.
+
+    Attributes:
+        range: The region's bytes.
+        locating: The bytes that decide whether the region exists and where it lies (unclipped: past the end of the
+            file where a section's declared data or a directory's extent lies there).
+        open_end: Whether the region ends at the end of the file and appending extends it (the overlay, or a section
+            whose declared data runs past the end of the file).
+    """
+
+    range: Range
+    locating: tuple[Range, ...]
+    open_end: bool
+
+
+def body_layout(bytez: bytes, pe: Optional[pefile.PE]) -> list[BodyRegion]:
     """
     The body regions of a file, in section order followed by the overlay; empty if the file did not parse.
 
     Each section contributes the data `get_entropy` reads (`section_data_range`), cut at its virtual size (when
     nonzero) and clipped to [SizeOfHeaders, len(bytez)). Regions are not merged: two sections whose raw data overlap
     are both counted, so that adding a region never changes how an existing one is read.
+
+    A section's region is located through the section table (`section_locating`) and SizeOfHeaders; the overlay's also
+    through every extent pefile's overlay rule reads (`overlay_extents_locating`), since it starts after the furthest of
+    them and after every section's raw data.
 
     NOTE: clipping at SizeOfHeaders keeps the header region out on files whose sections start inside it; the DOS
     extension (M_shift) raises SizeOfHeaders, which can move the clip on such files only (an A2 exception).
@@ -68,22 +109,29 @@ def body_regions(bytez: bytes, pe: Optional[pefile.PE]) -> list[Range]:
         return []
     n = len(bytez)
     floor = min(int(pe.OPTIONAL_HEADER.SizeOfHeaders), n)
-    regions: list[Range] = []
+    located = section_locating(pe) + (field_range(pe.OPTIONAL_HEADER, "SizeOfHeaders"),)
+    regions: list[BodyRegion] = []
     end = floor
     for section in pe.sections:
         lo, hi = section_data_range(section)
         end = max(end, min(hi, n))
         if section.Misc_VirtualSize > 0:
             hi = min(hi, lo + section.Misc_VirtualSize)
+        past = ((n, hi),) if hi > n else ()
         lo, hi = max(lo, floor), min(hi, n)
         if hi > lo:
-            regions.append((lo, hi))
+            regions.append(BodyRegion((lo, hi), located + past, bool(past)))
     # NOTE: on truncated files pefile can place the overlay inside the headers or the sections; the overlay region
     # starts only after every section's raw data.
     overlay = pe.get_overlay_data_start_offset()
     if overlay is not None and max(overlay, end) < n:
-        regions.append((max(overlay, end), n))
+        regions.append(BodyRegion((max(overlay, end), n), located + overlay_extents_locating(pe), True))
     return regions
+
+
+def body_regions(bytez: bytes, pe: Optional[pefile.PE]) -> list[Range]:
+    """The body regions of a file (`body_layout`), as ranges."""
+    return [r.range for r in body_layout(bytez, pe)]
 
 
 def _regions(raw_obj: Any) -> list[Range]:
@@ -114,6 +162,19 @@ class BodyByteHistogram(FeatureType):
     @property
     def feature_names(self) -> list[str]:
         return [f"byte_{b:02x}" for b in range(256)]
+
+    def items(self, bytez: bytes, pe: Optional[pefile.PE] = None) -> ItemTable:
+        """One run of byte items per body region, each byte counted in the bin of its value."""
+        key = np.frombuffer(bytez, dtype=np.uint8)
+        items = [
+            Item("body_bytes", terms=(Term("bins", "body_histogram:counts", ranges=(r.range,), bin_key=key),), locating=r.locating, open_end=r.open_end)
+            for r in body_layout(bytez, pe)
+        ]
+        return ItemTable(len(bytez), {"body_histogram:counts": 256}, items)
+
+    @property
+    def readouts(self) -> list[Readout]:
+        return [Identity("body_histogram:counts", 0, 256)]
 
 
 class BodyByteEntropyHistogram(FeatureType):
@@ -147,6 +208,24 @@ class BodyByteEntropyHistogram(FeatureType):
     @property
     def feature_names(self) -> list[str]:
         return [f"entropy_{h:x}_nibble_{b:x}" for h in range(16) for b in range(16)]
+
+    def items(self, bytez: bytes, pe: Optional[pefile.PE] = None) -> ItemTable:
+        """The full windows of each body region: each counts the high nibbles of its bytes in the row of its entropy."""
+        a = np.frombuffer(bytez, dtype=np.uint8)
+        nibbles = a >> 4
+        w, step = self._windows.window, self._windows.step
+        items = []
+        for r in body_layout(bytez, pe):
+            lo, hi = r.range
+            for start in range(lo, hi - w + 1, step):
+                h = self._windows._entropy_bin_counts(a[start:start + w])[0]  # type: ignore[no-untyped-call]
+                term = Term("bins", "body_byteentropy:counts", index=16 * h, ranges=((start, start + w),), bin_key=nibbles)
+                items.append(Item("body_window", terms=(term,), attrs={"Hbin": h, "span": (start, start + w)}, locating=r.locating))
+        return ItemTable(len(bytez), {"body_byteentropy:counts": 256}, items)
+
+    @property
+    def readouts(self) -> list[Readout]:
+        return [Identity("body_byteentropy:counts", 0, 256)]
 
 
 class BodyStrings(FeatureType):
@@ -189,6 +268,33 @@ class BodyStrings(FeatureType):
             + [f"printable_{c:02x}" for c in range(0x20, 0x20 + 96)]
             + [f"regex_{k}" for k in self._regexes]
         )
+
+    def items(self, bytez: bytes, pe: Optional[pefile.PE] = None) -> ItemTable:
+        """
+        The strings of each body region, as `StringExtractor` records them, in this group's families. A string is cut
+        at its region's ends, as the zero byte joining the regions in `raw_features` cuts it.
+        """
+        families = {
+            "body_strings:numstrings": 1,
+            "body_strings:printables": 1,
+            "body_strings:printabledist": 96,
+            "body_strings:regex": len(self._regexes),
+        }
+        items = []
+        for r in body_layout(bytez, pe):
+            for item in self._strings._string_items(bytez, *r.range):
+                terms = tuple(replace(t, family="body_" + t.family) for t in item.terms)
+                items.append(Item("body_string", terms=terms, locating=r.locating))
+        return ItemTable(len(bytez), families, items)
+
+    @property
+    def readouts(self) -> list[Readout]:
+        return [
+            Identity("body_strings:numstrings"),
+            Identity("body_strings:printables"),
+            Identity("body_strings:printabledist", 0, 96),
+            Identity("body_strings:regex", 0, len(self._regexes)),
+        ]
 
 
 @lru_cache(maxsize=65536)
@@ -237,6 +343,50 @@ class SectionSplitBuckets(FeatureType):
     def feature_names(self) -> list[str]:
         return [f"{kind}_hash_{i}_{part}" for kind in ("size", "vsize", "entropy", "characteristics")
                 for part in ("pos", "neg") for i in range(50)]
+
+    def items(self, bytez: bytes, pe: Optional[pefile.PE] = None) -> ItemTable:
+        """
+        The sections, as `SectionInfo` records them, each hashed value split by its key's hash sign: the size, virtual
+        size, and entropy keyed by the section's name, and one count per characteristic keyed by "name:characteristic".
+        """
+        n = len(bytez)
+        families = {f"section_split:{kind}": 2 * 50 for kind in ("size", "vsize", "entropy", "characteristics")}
+        if pe is None:
+            return ItemTable(n, families, [])
+        located = section_locating(pe)
+        items = []
+        for section, s in zip(pe.sections, self._sections.raw_features(bytez, pe)["sections"], strict=True):  # type: ignore[no-untyped-call]
+            name = clipped(n, [field_range(section, "Name")])
+            data = clipped(n, [section_data_range(section)])
+            reads = {
+                "size": clipped(n, [field_range(section, "SizeOfRawData")]),
+                "vsize": clipped(n, [field_range(section, "Misc_VirtualSize")]),
+                "entropy": data,
+            }
+            b, sign = signed_bucket(50, s["name"])
+            terms = [
+                Term("split", f"section_split:{k}", index=b + (50 if sign < 0 else 0), value=s[k], key=s["name"], attr=k, ranges=name + reads[k])
+                for k in ("size", "vsize", "entropy")
+            ]
+            props = clipped(n, [field_range(section, "Characteristics")])
+            for p in s["props"]:
+                key = f"{s['name']}:{p}"
+                b, sign = signed_bucket(50, key)
+                terms.append(Term("split", "section_split:characteristics", index=b + (50 if sign < 0 else 0), key=key, ranges=name + props))
+            end = section.PointerToRawData + section.SizeOfRawData
+            items.append(Item(
+                "section",
+                terms=tuple(terms),
+                attrs={"name": s["name"], "size": s["size"], "vsize": s["vsize"], "entropy": s["entropy"]},
+                # As `SectionInfo`'s section items: located through the section table, and through any part of its
+                # declared data past the end of the file, which appending fills.
+                locating=located + (((n, end),) if end > n else ()),
+            ))
+        return ItemTable(n, families, items)
+
+    @property
+    def readouts(self) -> list[Readout]:
+        return [Identity(f"section_split:{kind}", 0, 2 * 50) for kind in ("size", "vsize", "entropy", "characteristics")]
 
 
 ################################################################################
