@@ -436,6 +436,19 @@ for sums exact, G7 passes on every edit; training inputs change in two features 
 threat model, security_virtual_address up under M_add). Run 104 (user): the sums store re-featurized, G1, the
 derivation, and G7 on the 2,000-file set.
 
+**2026-10-29, fourth session: step 9 (the scripts on the engines).** `a_directions.py` derives by default (`--hand`
+gives the hand rules, which stay the G3 oracle; runs 76 and 80 now pass `--hand`). The adaptive search
+(`a1_adaptive.py`, `engine_predictors`) predicts its candidates with the C1 engine: append through `reach.predict`, the
+declared section through `catalogue.add_section`, from the item table of the current state. The hand predictors of
+`a_c1_table0.py` are its oracle (`tests/test_a1_adaptive.py`): equal on every modeled feature for the search's appends
+(which start with a NUL), and the engine also matches re-extraction where an append extends a trailing string, which
+the hand predictor does not model. One C1 gap, found by the switch: the declared add-section ends the file, so under
+pefile's overlay rule it leaves no overlay (finding 4 of step 6, on the C1 side); `catalogue.add_section` now removes
+the overlay item, checked against our byte-level edit. The sums store has no recognizers for the re-encoded groups, so
+the search refuses it (it has run on the thrember store since run 100). Training inputs (pilot derivation): differ
+from run 99's in exactly the two features step 6 moved, in both stores. Run 105 (user) retrains the six C4 models and
+re-runs Table A1's C4 rows.
+
 ## Open decisions for the user
 
 **Settled (user, 2026-10-27), all as recommended:** (1) add `items` now and keep `provenance` until G2 passes, then

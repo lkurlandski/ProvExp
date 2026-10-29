@@ -58,7 +58,20 @@ analysis of 40 features misses holes that a derivation from the extractor expose
 
 **Decided (user, 2026-10-29), both as recommended:** (1) re-implement their 40 features on pefile, with the two
 quirks patched (accumulate per library and per section name) as a pure addition noted upstream; (2) report the row
-under both M_add and M_full. Not yet built: after step 9.
+under both M_add and M_full.
+
+**Built (2026-10-29):** `provexp.featuresets.ember2024.expert` (`ExpertFeatureExtractor`; `accumulate=False` keeps
+their behavior). Checked against their own code (run through LIEF, with assign) on the 45 test files: every feature
+equal except where the parsers disagree (pefile fails on one file, misses a resource directory on one and nine imports
+on another; LIEF names one ordinal import on two). Three readings fixed by their code rather than the paper:
+`nb_imported_functions` and the keyword counts are over LIEF's `imported_functions` (imports by name, repeats included,
+ordinals left out); a section's entropy is over its raw data up to the virtual size (LIEF's `content`); and their
+`modified_dos_stub` compares a LIEF memoryview with a list, so under current LIEF it is constant 1 (we compare bytes, as
+intended; `docs/upstream-issues.md` item 6, with the two quirks). The quirks are witnessed on test files with our own
+byte-level edits (a second `.text` section lowers `.text-size`; a second kernel32.dll descriptor sets its count to 1),
+and the patched variant never falls under either addition (`tests/test_ember2024_expert.py`). `run/106_expert_set.sh`
+(user): featurize the 10% store, train the monotone and an unconstrained model, the toolkit columns. The adaptive
+search does not cover this row: the C1 engine reads only the instrumented extractor.
 
 **Decisions as first posed:**
 1. Re-implement their 40 features (recommended), or approximate them with the ~5 thrember counterparts?

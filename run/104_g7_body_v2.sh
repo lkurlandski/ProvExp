@@ -15,6 +15,19 @@
 # three threat models, security_virtual_address up (was fixed) under M_add; retraining is step 9.
 # Hypothesis: G1 exact on every file; G7 passes on the 2,000 files too (the pilot's adversarial instances cover the
 # declared operations; a rarer layout, e.g. a section inside the headers, could still show a violation).
+# Ran 2026-10-29 (started by the user): featurization 0.89 h, 0 failures; G1 5 min; derivation ~10 min; G7 25 min.
+# Result: G1 for sums exact on 2,000/2,000. The derivation's training inputs (`*-pre*`) are byte-identical to the
+# pilot's (a_directions_derived_sums_v2); the re-encoded groups equal the hand rules under the precondition. G7: the
+# strict variant holds on every edit of all twelve operations; the precondition variant fails on 100 edits of 13 files
+# (sec 37, imp 36, ext 9, shf 18), each witnessed: (a) low-alignment images (SectionAlignment < 0x1000, raw offset =
+# virtual address; 8 files): our shf and sec/imp edits move raw data off its address, which the loader rejects -- an
+# error in the check's edits; (b) sections whose virtual range runs past SizeOfImage (b0c8...; 3 files): not loadable,
+# and pefile's exports and relocations then move with the layout; (c) SizeOfImage larger than the sections need
+# (130e..., 4e1b...; 4 files): recomputing it on adding a section lowers it; (d) header bytes that are also something
+# else -- the PE header inside the DOS header (7286...; 2 files), a section's raw data before the PE header (219b...;
+# 4 files) -- so writing or moving the headers moves DOS fields or that section's entropy; (e) pefile's overlay
+# starting past the last section's raw data (a directory's declared extent; 2fa1...; 3 files): a section inserted
+# there splits an unclaimed body run, lowering body window counts. Rules: for the user (docs/status.md).
 set -euo pipefail
 cd "$(dirname "$0")/.."
 source env/bin/activate
