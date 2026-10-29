@@ -1,5 +1,25 @@
 # Status
 
+**2026-10-29, fourth session: run 104 read; step 9's code and the expert-set extractor built; a decision on five
+rare layouts is waiting on the user.** Commits a5e0cda..eb7bc65.
+
+Run 104: G1 for sums exact on 2,000/2,000; the training inputs from the 2,000-file derivation are byte-identical to the
+pilot's. **G7 fails its hypothesis** for the precondition variant (the strict one holds everywhere): 100 edits on 13
+files, five layouts, each witnessed (details in `run/104_g7_body_v2.sh`): (a) low-alignment images, where our own shf
+and sec/imp edits were not loader-safe (fix the check's edits); (b) sections running past SizeOfImage (not loadable);
+(c) SizeOfImage larger than the sections need (adding a section lowers it); (d) header bytes that are also something
+else (PE header inside the DOS header; a section's raw data before the PE header); (e) pefile's overlay starting past
+the last section's raw data (an inserted section splits a body run).
+- **Waiting on the user:** how to close (b)-(e): extend the precondition check (recommended: ~6 of the 1,682 passing
+  files leave it, no direction changes) or make the affected features two-sided. Then re-run G7 on the 2,000 files.
+- **Step 9 (code done):** `a_directions.py` derives by default (`--hand` for the oracle); the adaptive search predicts
+  with the C1 engine (hand predictors as its test oracle); the engine's add-section now removes the overlay.
+  `run/105_step9_retrain.sh` (user, ~3 h) retrains the six C4 models and re-runs Table A1's C4 rows: **hold it until
+  the decision**, since the precondition decides routing.
+- **Expert set (code done):** `provexp.featuresets.ember2024.expert`, checked against the authors' own code; their DOS-stub
+  flag is constant 1 under current LIEF (upstream-issues item 6). `run/106_expert_set.sh` (user, ~1-1.5 h) is
+  independent of the decision.
+
 **2026-10-29, third session: run 102 read (holds); step 6 built (G7, four findings closed); run 104 running.**
 Commits 05408f4..(this wrap-up).
 
