@@ -7,7 +7,17 @@ byte-identical to run 99's, so no C4 model needs retraining. One per-cell disagr
 both ways, which the hand rules rule out. Cause: 4 of 2,000 files have a .bss section with PointerToRawData 0 and
 SizeOfRawData > 0, so its raw data is the header; witnessed on all four by rewriting the DOS stub (entropy_hash_29 up
 and down). No threat-model change (these operations are only in M_full, where section entropy is already two-sided).
-Recorded in `run/102_step8_sums.sh`. **Next:** step 6 (catalogue checks, G7).
+Recorded in `run/102_step8_sums.sh`.
+
+**Step 6 (G7) built and run on the pilot (`scripts/catalogue_checks.py`, `run/103_catalogue_checks.sh`; user chose the
+direction check over exact prediction for all twelve operations).** In-place operations and append hold. Fixed, one
+rule each: an absent Rich header is located by its search range (C1 missed a forged one); every lengthening operation
+gets the strict past-end flags; a section placed before the overlay moves the certificate table (security_virtual_address
+under M_add: fixed -> up, the only training-input change so far). **Open, for the user:** a section placed *after* the
+overlay swallows it (pefile's overlay rule): overlay_size/overlay_entropy/max_entropy down and the old overlay bytes
+leave the body regions (all body_* down), on all 31 pilot files with an overlay that pass the precondition. Options:
+declare it as is (body sums lose their one-sidedness), declare it and count the bytes between and after sections as
+body (re-featurize the sums store), or restrict sec/imp to placement before the overlay (narrows the threat model).
 
 **2026-10-29, second session: step 8 built (sums re-encodings as items); pilot checks pass; run 102's 2,000-file
 steps are for the user.** Commits ef8aa21..(this wrap-up).
