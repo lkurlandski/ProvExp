@@ -1,13 +1,15 @@
 # Status
 
-**2026-10-29, third session: run 102 read; the hypothesis holds.** G1 for sums exact on 2,000/2,000 files; the
-precondition variant equals the hand rules per threat model on the re-encoded groups; the `*-pre*` training inputs are
-byte-identical to run 99's, so no C4 model needs retraining. One per-cell disagreement the pilot lacked (also in run
-97's 2,000-file cells, unexplained until now): the header overwrites (dos, hdr, chk, rdb, rsg) move section entropy
-both ways, which the hand rules rule out. Cause: 4 of 2,000 files have a .bss section with PointerToRawData 0 and
-SizeOfRawData > 0, so its raw data is the header; witnessed on all four by rewriting the DOS stub (entropy_hash_29 up
-and down). No threat-model change (these operations are only in M_full, where section entropy is already two-sided).
-Recorded in `run/102_step8_sums.sh`.
+**2026-10-29, third session: run 102 read (holds); step 6 built (G7, four findings closed); run 104 running.**
+Commits 05408f4..(this wrap-up).
+
+Run 102: **the hypothesis holds.** G1 for sums exact on 2,000/2,000 files; the precondition variant equals the hand
+rules per threat model on the re-encoded groups; the `*-pre*` training inputs are byte-identical to run 99's, so no C4
+model needs retraining. One per-cell disagreement the pilot lacked (also in run 97's 2,000-file cells, unexplained until
+now): the header overwrites (dos, hdr, chk, rdb, rsg) move section entropy both ways, which the hand rules rule out.
+Cause: 4 of 2,000 files have a .bss section with PointerToRawData 0 and SizeOfRawData > 0, so its raw data is the
+header; witnessed on all four by rewriting the DOS stub (entropy_hash_29 up and down). No threat-model change (these
+operations are only in M_full, where section entropy is already two-sided). Recorded in `run/102_step8_sums.sh`.
 
 **Step 6 (G7) built and run on the pilot (`scripts/catalogue_checks.py`, `run/103_catalogue_checks.sh`; the user
 chose the direction check over exact prediction for all twelve operations).** Append and the in-place operations held
@@ -23,8 +25,13 @@ threat models, security_virtual_address up under M_add.
 - **For the user:** `run/104_g7_body_v2.sh` (~2 h: re-featurize the 10% sums store, 0.9 h in run 80; G1, the derivation,
   and G7 on the 2,000-file set). Read `artifacts/experiments/item_checks/exact-sums-2000-v2/report.json` and
   `artifacts/experiments/catalogue_checks/2000/report.json`.
+- **Running (started by the user, 2026-10-29):** `run/104_g7_body_v2.sh`.
+- **Decided (user, 2026-10-29):** the expert-set row re-implements Gimenez et al.'s 40 features on pefile (quirks
+  patched) and is reported under both M_add and M_full (`docs/direction-A-expert-set.md`). Reading list: HRAT is now in
+  `papers/HRAT2021.pdf`; added Demontis et al., "Yes, Machine Learning Can Be More Secure!" (TDSC 2017).
 - **Next:** read run 104; step 9 (switch the scripts to the engines; regenerate the full-store and sums-store training
-  inputs; retrain the C4 models on `ember2024-sums-10-v2` and the full store; re-run Table A1's C4 rows, user-run).
+  inputs; retrain the C4 models on `ember2024-sums-10-v2` and the full store; re-run Table A1's C4 rows, user-run);
+  the expert-set row; the A' pilot.
 
 **2026-10-29, second session: step 8 built (sums re-encodings as items); pilot checks pass; run 102's 2,000-file
 steps are for the user.** Commits ef8aa21..(this wrap-up).

@@ -69,7 +69,9 @@ count every unclaimed run past the headers as body. Next, in order:
 2. Step 9: switch the scripts to the engines, keep the hand rules and predictors as test oracles; regenerate the
    training inputs (overlay_size dropped, security_virtual_address up under M_add), retrain the C4 models (sums store
    v2 and full store) and re-run Table A1's C4 rows (user-run `run/` scripts, as runs 99-100).
-3. The expert-set row of Table A1; the A' pilot.
+3. The expert-set row of Table A1 (decided 2026-10-29: re-implement the 40 features on pefile with the quirks
+   patched; report under M_add and M_full); the A' pilot. Reading: HRAT (`papers/HRAT2021.pdf`), Demontis et al.
+   TDSC 2017, Šrndić & Laskov, arXiv 2402.14988.
 
 ### Earlier: next steps (2026-10-29, second session)
 

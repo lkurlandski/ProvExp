@@ -56,7 +56,11 @@ Predicted row (M_full, 10% store, seed 0): AUC ~0.80, TPR@1%FPR ~30% (their 76.2
 argument it supports: an expert set is far less accurate than the derived one (0.993 / 88.6%), and even an expert
 analysis of 40 features misses holes that a derivation from the extractor exposes.
 
-**Decisions for the user:**
+**Decided (user, 2026-10-29), both as recommended:** (1) re-implement their 40 features on pefile, with the two
+quirks patched (accumulate per library and per section name) as a pure addition noted upstream; (2) report the row
+under both M_add and M_full. Not yet built: after step 9.
+
+**Decisions as first posed:**
 1. Re-implement their 40 features (recommended), or approximate them with the ~5 thrember counterparts?
 2. Report the row under M_add (where it is sound once patched), M_full (where it is not), or both? Recommended: both,
    since the A1 rows are M_full and the M_add row shows the set at its best.

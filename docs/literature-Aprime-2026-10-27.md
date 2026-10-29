@@ -81,7 +81,11 @@ that is new. The attack, the hash-bucket trick, and the concept of side effects 
 
 ## Not yet read
 
-- HRAT (Zhao et al., CCS 2021): graph edits with known feature effects, Android. Paywalled; ask the user.
+- HRAT (Zhao et al., CCS 2021): graph edits with known feature effects, Android. Now in `papers/HRAT2021.pdf`
+  (user, 2026-10-29).
+- Demontis et al., "Yes, Machine Learning Can Be More Secure! A Case Study on Android Malware Detection" (IEEE TDSC
+  2017): secure linear classifiers under feature-addition/removal attackers with per-feature bounds (added by the
+  user, 2026-10-29). Read for A (closest to "constrain weights by what the attacker can change") and A'.
 - Šrndić & Laskov (S&P 2014): approximate inverse mapping for PDF.
 - Verifiable boosted tree ensembles (arXiv 2402.14988): exact verification for LightGBM-style models.
 

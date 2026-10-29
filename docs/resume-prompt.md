@@ -1,59 +1,74 @@
-# Resume: ProvExp (after 2026-10-29, second session) — step 8 built; next: read run 102, then step 6 (catalogue checks)
+# Resume: ProvExp (after 2026-10-29, third session) — step 6 built; next: read run 104, then step 9
 
-Read `CLAUDE.md`, then `docs/status.md`'s top block, `PLAN.md` ("Directions", A', and "Next steps (2026-10-29, second
-session)"), and `docs/item-layer-design.md` (component 3, the build-plan table rows 6 and 9, and "Build status" through
-the step 8 paragraph). Skim `src/provexp/featuresets/ember2024/catalogue.py` (`declared_changes`, `REGION_OPS`,
-`add_section`), `src/provexp/reach.py` (section "C4"), and `scripts/a_c1_table0.py` (Table A0, which step 6 extends).
+Read `CLAUDE.md`, then `docs/status.md`'s top block, `PLAN.md` ("Directions", A', and "Next steps (2026-10-29, third
+session)"), and `docs/item-layer-design.md` (the build-plan table row 9, and "Build status" through the step 6
+paragraph). Skim `scripts/catalogue_checks.py` (G7), `src/provexp/featuresets/ember2024/catalogue.py`
+(`declared_changes`), `src/provexp/featuresets/ember2024/sums.py` (`body_layout`, redefined this session),
+`scripts/a_directions.py` (`--derive`), `scripts/a1_adaptive.py` (uses the hand C1 predictors of
+`scripts/a_c1_table0.py`), and `run/99_a1_train_derived.sh` / `run/100_a1_toolkit_derived.sh` (what step 9 re-runs).
 
 **Start by recapping for the user in plain language** where things stand and what is next, before asking anything:
 - the research in three sentences;
 - the two applications (A done at pilot scale, with derived and routed C4 rows; A' mocked, check 0 passed);
-- the derivation: steps 1-5, 7, and 8 built; every C4 direction is now computed (the hand rules are only a test
-  oracle); the derived directions equal the hand rules under the precondition except three explained features, all
-  witnessed; step 8 (the re-encoded groups) matched the hand rules on every cell at pilot scale;
-- what run 102 (2,000 files, run by the user) showed, once read;
-- the order of work: step 6, then 9, the expert-set row, the A' pilot.
+- the derivation: steps 1-8 built, every C4 direction computed (the hand rules are only a test oracle); step 6 (the
+  catalogue check: every operation applied with adversarial parameters by our own byte-level edits, every moved feature
+  checked against the derived signs) found four things, each closed by one general rule, the last by the user's
+  decision: a section added after the overlay swallows it, so it is declared and the body is now every section's
+  mapped data plus every unclaimed run past the headers;
+- what run 104 (run by the user) showed, once read;
+- the order of work: step 9, the expert-set row, the A' pilot.
 
 For every decision you put to the user, say what the thing is, give a concrete example, and say what each choice
-changes. Never use doc-internal labels (G1, G3, M_full, C4) without saying what they are.
+changes. Never use doc-internal labels (G1, G7, M_full, C4) without saying what they are.
 
 Standing rules: be harsh about novelty; never raise deadlines; bring any no-go to the user before dropping anything;
 no result may rest on an extractor quirk, but fix a quirk only if an edit in our threat models can reach it or a result
 depends on it, and prefer one general rule to per-bug patches; keep the experiments' global complexity down; run only
-jobs of ~10 minutes or less yourself (estimate from the slowest case first, *before* starting it, including one-off
-surveys; longer goes to the user as a `run/` script, default 16 workers, never cap workers in Python); state a short
-hypothesis before each run; add a `run/` script for every experiment; commit in logical pieces after ruff and mypy
-pass; never edit `tests/reference/`.
+jobs of ~10 minutes or less yourself (estimate from the slowest case first, *before* starting it; longer goes to the
+user as a `run/` script, default 16 workers, never cap workers in Python); state a short hypothesis before each run;
+add a `run/` script for every experiment; commit in logical pieces after ruff and mypy pass; never edit
+`tests/reference/`; do not run the full test suite while the user's jobs run.
 
 ## Do next
 
-1. **Read run 102** (`run/102_step8_sums.sh` steps 3-4): G1 for sums on the 2,000-file set
-   (`artifacts/experiments/item_checks/exact-sums-2000/report.json`), G3 for sums
-   (`artifacts/experiments/a_directions_derived_sums_2000/g3.json`, "sums"; `g3_sums_cells.csv`), and whether its
-   `*-pre*` training inputs equal `a_directions_derived_sums/` (run 99's). Hypothesis: all hold, as on the pilot.
-   Explain every disagreement; witness the class-1 ones. Record the results in the script's comments.
-2. **Step 6: the catalogue checks (G7).** The declared changes of app/sec/imp/ext/shf/ren/rdb/rsg against
-   re-extraction, with adversarial parameter choices (a repeated DLL name, an empty or colliding section name,
-   printable bytes next to an existing string), built from our own edit functions. Now also the body items: an added
-   section's body region, the overlay's body region under append, and that insertions leave the body sums unchanged.
-3. **Step 9:** switch the scripts to the engines, keep the hand rules as test oracles; if step 6 moves a direction,
-   retrain the affected C4 models and re-run Table A1's C4 rows (user-run `run/` scripts, as runs 99-100).
-4. The expert-set row (`docs/direction-A-expert-set.md`); the A' pilot (`docs/direction-A-prime-mock.md`).
+1. **Read run 104** (`run/104_g7_body_v2.sh`): the 10% sums store re-featurized with the new body regions
+   (`artifacts/features/ember2024-sums-10-v2`, log `artifacts/logs/featurize-sums-10-v2.log`: 0 failures?); G1 for
+   sums on 2,000 files (`artifacts/experiments/item_checks/exact-sums-2000-v2/report.json`); the derivation
+   (`artifacts/experiments/a_directions_derived_sums_2000_v2/`); G7 on 2,000 files
+   (`artifacts/experiments/catalogue_checks/2000/report.json`, "pass" and per-operation violations). Hypothesis: G1
+   exact and G7 passes, as on the pilot. Explain and witness every violation (a rarer layout, e.g. a section inside the
+   headers, could show one); fix by a general rule; record the results in the script's comments.
+2. **Step 9:** switch the scripts to the engines and keep the hand rules and predictors as test oracles
+   (`a_directions.py`: derived by default; `a1_adaptive.py`: the C1 engine instead of `a_c1_table0`'s predictors,
+   checked against them in tests). Then a user-run `run/` script, as runs 99-100: regenerate the training inputs
+   (sums layout on `ember2024-sums-10-v2`, and the full store's quirk-fixed files, as run 97 made them), retrain the
+   C4 models, and re-run Table A1's C4 rows (toolkit and adaptive columns). Known input changes vs run 99:
+   `section:overlay_size` dropped under every threat model (a section added after the overlay removes it);
+   `datadirectories:security_virtual_address` up (was fixed) under M_add (a section placed before the overlay moves the
+   certificate table). Hypothesis: metrics within noise of run 99.
+3. **The expert-set row** (`docs/direction-A-expert-set.md`, decided 2026-10-29): re-implement Gimenez et al.'s 40
+   features on pefile with the two assign-instead-of-accumulate quirks patched (pure addition; note upstream), featurize
+   the 10% store (user-run, ~10-20 min to be smoke-tested), train the monotone GBDT with all 40 increasing, and report
+   it under M_add and M_full.
+4. **The A' pilot** (`docs/direction-A-prime-mock.md`).
 
 ## Notes
 
-- `papers/`, `REVIEW*.md`, `TODO.md`, `docs/checkpoint-prompt.md`, and `make-manuscript.sh` are untracked; leave them.
-- Scripts that loop over the 2,000-file set should read and parse each file once and run on a worker pool with a
-  tqdm progress bar (`mininterval=30`, plain prints for log lines), as `scripts/a_structure_witness.py`: the user asked
-  for this after a serial pass took ~40 min. Multiprocessing scripts need an `if __name__ == "__main__":` guard
-  (Python 3.14 starts workers with forkserver).
-- Routed detectors print `tau=0.5000`: the routed score is normalized so each branch decides at its own 1% FPR
-  threshold; that is not a bug.
-- The experiments' slack and DOS edits (`attack.region_parts`, `a1_adaptive.py`) do not exclude loader-read bytes
-  and treat a section of virtual size 0 as all slack (rare; results are measured by re-extraction); the catalogue's
-  regions do neither.
+- `papers/`, `REVIEW*.md`, `TODO.md`, `docs/checkpoint-prompt.md`, `make-manuscript.sh`, and `slides/` are untracked;
+  leave them.
+- Reading list (`docs/literature-Aprime-2026-10-27.md`, "Not yet read"; harsh read, before building A'): HRAT (Zhao et
+  al., CCS 2021; now `papers/HRAT2021.pdf`), Demontis et al., "Yes, Machine Learning Can Be More Secure!" (TDSC 2017,
+  added by the user), Šrndić & Laskov (S&P 2014), verifiable boosted tree ensembles (arXiv 2402.14988). The user still
+  owes the upstream reports in `docs/upstream-issues.md`.
+- G7's edit functions (`scripts/catalogue_checks.py`: `add_section`, `add_imports`, `insert_gap`, `forged_rich`) do
+  exactly the declared operation; reuse them for any new witness rather than LIEF, which relays out the file.
+- Settled this session: appending a section after the overlay is loader-safe and preserves functionality unless the
+  sample locates its overlay from the end of the file (append breaks that too) or from the end of the last section;
+  it stays in the threat model. The bytes between sections are not "slack" in our sense (slack = raw data past a
+  section's virtual size, which `slk` writes); no operation writes them in place.
+- Scripts that loop over the 2,000-file set read and parse each file once and run on a worker pool with a tqdm
+  progress bar (`mininterval=30`), with an `if __name__ == "__main__":` guard (forkserver).
+- Routed detectors print `tau=0.5000`: each branch decides at its own 1% FPR threshold; not a bug.
 - Unchecked explanations, recorded as such: on the failing files the routed rows are evaded less than the
   unconstrained model alone (GAMMA API queries that pass the check are likely scored by the C4 model); the adaptive
   search's routed row would be 0/45 provided no query switches branch.
-- Still unread for A': HRAT (Zhao et al., CCS 2021; paywalled, ask the user); Šrndić & Laskov (S&P 2014); verifiable
-  boosted tree ensembles (arXiv 2402.14988). The user still owes the upstream reports in `docs/upstream-issues.md`.
