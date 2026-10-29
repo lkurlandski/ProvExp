@@ -13,8 +13,13 @@
 # pefile to read a pair before the marker; relocs gives has_relocs 0 -> 1 on both pilot files; exports adds an export
 # wherever the directory lies past the end.
 #
-# Estimate: smoke tests on the pilot took ~6.5 min (rich_hdr + relocs) and ~6.5 min (entry + rich_ext, one donor):
-# ~15 min for step 1 with three donors; step 2 reads and parses all 2,000 files twice, ~30-40 min.
+# Step 1 ran 2026-10-29 with the script's first, serial version (same arguments; the script now runs on --workers,
+# default 16, reading each file once for all cases): 13.6 min. Result: as hypothesised. entry 8/8 files
+# (entry_name_hash_0 1 -> 0, entry_name_hash_2 0 -> 1); rich_ext 39/39 (Rich header created; 3 donors each);
+# rich_hdr 8/39 (num_pairs 0 -> 13-93); relocs 2/2 (has_relocs 0 -> 1; appends of 4.5 MB and 31 MB); exports applies to
+# no pilot file. Step 2 (first attempt, serial, stopped by the user after ~5 min) was estimated at 60-80 min serially;
+# a pilot smoke test of the parallel version took 21 s for two cases.
+# Estimate for step 2 with 16 workers: a few minutes (one read and parse per file; extraction only where a case applies).
 set -euo pipefail
 cd "$(dirname "$0")/.."
 source env/bin/activate
@@ -23,6 +28,7 @@ export OMP_NUM_THREADS=2
 
 echo "Step 1/2: every case on the pilot files. Log: artifacts/logs/a_structure_witness.log"
 python scripts/a_structure_witness.py \
+  --workers 16 \
   --outdir artifacts/experiments/a_structure_witness \
   &> artifacts/logs/a_structure_witness.log
 
@@ -30,6 +36,7 @@ echo "Step 2/2: exports and relocations past the end on the 2,000-file set. Log:
 python scripts/a_structure_witness.py \
   --files artifacts/explanation_set/ts.parquet \
   --cases exports relocs \
+  --workers 16 \
   --outdir artifacts/experiments/a_structure_witness_2000 \
   &> artifacts/logs/a_structure_witness_2000.log
 

@@ -34,6 +34,7 @@ from __future__ import annotations
 from argparse import ArgumentParser
 from collections.abc import Callable
 import json
+from multiprocessing import get_context
 from pathlib import Path
 import struct
 import sys
@@ -44,6 +45,7 @@ import warnings
 import numpy as np
 import pefile
 import polars as pl
+from tqdm import tqdm
 
 from provexp.data.simpledb import SimpleDB
 from provexp.data.simpledb import SimpleDBReader
@@ -207,6 +209,64 @@ EDITS: dict[str, Callable[[bytes, Optional[bytes]], Optional[bytes]]] = {
 
 
 ################################################################################
+# Workers
+################################################################################
+
+
+_STATE: dict[str, Any] = {}
+
+
+def _init_worker(db: Path, cases: list[str], donors: list[tuple[str, bytes]]) -> None:
+    """Open the database and build the extractor once per worker."""
+    import lief
+
+    lief.logging.disable()
+    warnings.filterwarnings("ignore", category=SyntaxWarning)
+    extractor = merge_import_descriptors(PEFeatureExtractor())
+    names = extractor.feature_names
+    _STATE.update(
+        reader=SimpleDBReader(SimpleDB(db, check=False)), extractor=extractor, names=names, cases=cases, donors=donors,
+        idx={c: [i for i, n in enumerate(names) if n.startswith(PREFIXES[c])] for c in cases},
+    )
+
+
+def _witness_file(name: str) -> tuple[list[dict[str, Any]], list[str], list[str]]:
+    """Every case on one file: the witness rows, the cases that apply to it, and log lines."""
+    extractor, names = _STATE["extractor"], _STATE["names"]
+    z = _STATE["reader"].get(name).data
+    rows: list[dict[str, Any]] = []
+    applies: list[str] = []
+    log: list[str] = []
+    before: Optional[np.ndarray] = None
+    for case in _STATE["cases"]:
+        idx = _STATE["idx"][case]
+        tried = _STATE["donors"] if case == "rich_ext" else [("", None)]
+        for donor, block in tried:
+            try:
+                edited = EDITS[case](z, block)
+            except Exception as e:  # a tool that cannot edit the file is not a witness
+                log.append(f"{case} {name[:12]}: edit failed ({type(e).__name__}: {e})")
+                continue
+            if edited is None:
+                break
+            if case not in applies:
+                applies.append(case)
+            if before is None:
+                before = np.asarray(extractor.feature_vector(z))
+            after = np.asarray(extractor.feature_vector(edited))
+            changed = [i for i in idx if after[i] != before[i]]
+            rows.append({
+                "case": case, "name": name, "donor": donor, "added": len(edited) - len(z),
+                "parses": _parse(edited, fast=False) is not None,
+                "changed": [names[i] for i in changed],
+                "before": [float(before[i]) for i in changed], "after": [float(after[i]) for i in changed],
+            })
+            log.append(f"{case} {name[:12]}{' + ' + donor[:12] if donor else ''}: "
+                       + ", ".join(f"{names[i]} {before[i]:g} -> {after[i]:g}" for i in changed[:4]))
+    return rows, applies, log
+
+
+################################################################################
 # Main
 ################################################################################
 
@@ -218,59 +278,37 @@ def main() -> None:
     parser.add_argument("--outdir", type=Path, required=True)
     parser.add_argument("--cases", nargs="+", default=list(EDITS), choices=list(EDITS))
     parser.add_argument("--donors", type=int, default=3, help="Donor Rich headers tried per file (rich_ext), smallest first.")
+    parser.add_argument("--workers", type=int, default=16)
     args = parser.parse_args()
 
-    import lief
-
-    lief.logging.disable()
-    reader = SimpleDBReader(SimpleDB(args.db, check=False))
-    extractor = merge_import_descriptors(PEFeatureExtractor())
-    names = extractor.feature_names
     df = pl.read_parquet(args.files)
     if "status" in df.columns:
         df = df.filter(pl.col("status") == "ok")
     files = sorted(df["name"].to_list())
     donors: list[tuple[str, bytes]] = []
     if "rich_ext" in args.cases:
+        reader = SimpleDBReader(SimpleDB(args.db, check=False))
         donors = sorted(((n, b) for n in files if (b := rich_block(reader.get(n).data)) is not None), key=lambda d: len(d[1]))
-    print(f"{len(files)} files, {len(donors)} Rich header donors", flush=True)
+    print(f"{len(files)} files, {len(donors)} Rich header donors, {args.workers} workers", flush=True)
 
     rows: list[dict[str, Any]] = []
+    applies = {case: 0 for case in args.cases}
+    with get_context("forkserver").Pool(args.workers, initializer=_init_worker,
+                                        initargs=(args.db, args.cases, donors[: args.donors])) as pool:
+        for r, a, log in tqdm(pool.imap_unordered(_witness_file, files), total=len(files), mininterval=30, file=sys.stdout):
+            rows += r
+            for case in a:
+                applies[case] += 1
+            for line in log:
+                print(line, flush=True)
+    rows.sort(key=lambda r: (args.cases.index(r["case"]), r["name"], r["donor"]))
+
     report: dict[str, Any] = {}
     for case in args.cases:
-        idx = [i for i, n in enumerate(names) if n.startswith(PREFIXES[case])]
-        applies = 0
-        for name in files:
-            z = reader.get(name).data
-            tried = donors[: args.donors] if case == "rich_ext" else [("", None)]
-            before: Optional[np.ndarray] = None
-            hit = False
-            for donor, block in tried:
-                try:
-                    edited = EDITS[case](z, block)
-                except Exception as e:  # a tool that cannot edit the file is not a witness
-                    print(f"{case} {name[:12]}: edit failed ({type(e).__name__}: {e})", flush=True)
-                    continue
-                if edited is None:
-                    break
-                hit = True
-                if before is None:
-                    before = np.asarray(extractor.feature_vector(z))  # type: ignore[no-untyped-call]
-                after = np.asarray(extractor.feature_vector(edited))  # type: ignore[no-untyped-call]
-                changed = [i for i in idx if after[i] != before[i]]
-                rows.append({
-                    "case": case, "name": name, "donor": donor, "added": len(edited) - len(z),
-                    "parses": _parse(edited, fast=False) is not None,
-                    "changed": [names[i] for i in changed],
-                    "before": [float(before[i]) for i in changed], "after": [float(after[i]) for i in changed],
-                })
-                print(f"{case} {name[:12]}{' + ' + donor[:12] if donor else ''}: "
-                      + ", ".join(f"{names[i]} {before[i]:g} -> {after[i]:g}" for i in changed[:4]), flush=True)
-            applies += hit
         mine = [r for r in rows if r["case"] == case]
         moved = [r for r in mine if r["changed"]]
         report[case] = {
-            "files_it_applies_to": applies,
+            "files_it_applies_to": applies[case],
             "witnesses": len(mine),
             "witnesses_where_a_feature_changed": len(moved),
             "files_where_a_feature_changed": len({r["name"] for r in moved}),
