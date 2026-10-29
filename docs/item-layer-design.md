@@ -393,6 +393,18 @@ them; the paper reports the coverage); the >4 MB files stay; the strict variant 
 every possible file leaves 9 features under M_full), not a row. `a1_evaluate.py --route` evaluates the routed
 detectors; runs 99-100 retrain the C4 models from the derived directions and re-run Table A1.
 
+**2026-10-29: the remaining witnesses (run 101, `scripts/a_structure_witness.py`).** Every anticipated disagreement
+and past-the-end case now has a witness, each found by re-extraction. *Entry section* (`sec`): on the 8 pilot files
+whose entry point lies in no section and that have no executable section, an added executable section becomes the
+entry section (`entry_name_hash` moves). *Rich header under `ext`*: on all 39 pilot files without one, a donor's Rich
+header written only into the gap the stub extension inserts creates one. *Rich header under `hdr`*: "Rich" and a key in
+TimeDateStamp / PointerToSymbolTable create one on 8 of the 39 (pefile accepts the marker whatever precedes it; it
+reads pairs from 0x90, so the PE header must start past it). *Past the end* (`app`): completing a relocation directory
+gives `has_relocs` 0 -> 1 (2 pilot files, 151 of the 2,000), completing an export directory adds an export (no pilot
+file, 37 of the 2,000). The derived directions already account for all of them: the entry and Rich cases are the
+precondition variant's differences from the hand rules, and every past-the-end witness is on a file that fails the
+precondition check.
+
 ## Open decisions for the user
 
 **Settled (user, 2026-10-27), all as recommended:** (1) add `items` now and keep `provenance` until G2 passes, then

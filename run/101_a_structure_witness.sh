@@ -19,7 +19,10 @@
 # rich_hdr 8/39 (num_pairs 0 -> 13-93); relocs 2/2 (has_relocs 0 -> 1; appends of 4.5 MB and 31 MB); exports applies to
 # no pilot file. Step 2 (first attempt, serial, stopped by the user after ~5 min) was estimated at 60-80 min serially;
 # a pilot smoke test of the parallel version took 21 s for two cases.
-# Estimate for step 2 with 16 workers: a few minutes (one read and parse per file; extraction only where a case applies).
+# Rerun 2026-10-29 with 16 workers: step 1 ~1 min (results as above), step 2 ~4.5 min. Result of step 2: as
+# hypothesised. exports 37/37 files of the 2,000 (num_exports 0 -> 128, the constant-128 quirk of upstream-issues item
+# 3; export_hash_46 0 -> 1; appends up to 58 MB); relocs 151/151 (has_relocs 0 -> 1; appends up to 355 MB). Every
+# past-the-end witness is on a file that fails the precondition check, so the routed detectors' guarantee is untouched.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 source env/bin/activate

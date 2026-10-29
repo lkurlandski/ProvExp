@@ -1,5 +1,12 @@
 # Status
 
+**2026-10-29 (later): all remaining witnesses built (run 101).** Entry section 8/8 pilot files; Rich header via stub
+extension 39/39 and via two header fields 8/39; relocations past the end 2 pilot / 151 of 2,000; exports past the end
+0 pilot / 37 of 2,000. All are covered by the derived directions (the entry and Rich cases are the precondition variant's
+differences from the hand rules; the past-the-end cases fail the precondition check). The adaptive search's split by
+the check is in `docs/direction-A-A1-design.md`. Next: step 8 (sums re-encodings in the engine), then step 6 (catalogue
+checks), the expert-set row, the A' pilot.
+
 **2026-10-29: runs 99-100 read; both hypotheses hold.** Derived-direction C4 models: test metrics within noise of
 runs 77/80 (M_full slightly better, +1.2-1.4 points TPR at 1% FPR). Routed C4 rows (Table A1 toolkit columns): on the
 38/50 pilot malware that pass the precondition check, seen 0 everywhere and held-out 0/28, 0/30 under M_full (M_add's
