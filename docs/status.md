@@ -1,5 +1,30 @@
 # Status
 
+**2026-10-29, second session: step 8 built (sums re-encodings as items); pilot checks pass; run 102's 2,000-file
+steps are for the user.** Commits ef8aa21..(this wrap-up).
+- **What changed:** the four re-encoded groups (`sums.py`) record items: byte runs, full windows, and strings per body
+  region (own kinds, located through the section table, SizeOfHeaders, and pefile's overlay rule; `body_layout`), and
+  sections with a new `split` term (a value into the positive or negative part of its name's bucket). Their readouts
+  are identities, so C4 derives their directions; `a_directions.py --derive` uses the sums extractor as the merged
+  variant, and no direction is hand-written any more (the hand rules stay as G3's oracle).
+- **Engine fixes found on the way (one rule each):** Max/Min readouts read only their own group's items (the split
+  sections share the kind "section"); an in-place write keeps element counts (it no longer moves ratios over the file
+  size: 17 over-approximated cells gone, no threat-model change); debug removal moves the overlay only where the debug
+  directory decides its start (0 of 2,000 files: survey); the catalogue's slack excludes sections of virtual size 0,
+  which the loader maps whole (5 of 2,000 files would otherwise have made every body count two-sided under M_full).
+  `attack.region_parts` keeps the old slack convention for virtual size 0 (noted, not changed: results there are
+  measured by re-extraction).
+- **Pilot (run 102, steps 1-2):** G1 for sums exact on 100/100 files; G3 for sums: the precondition variant equals
+  the hand rules on every (feature, operation) cell of the re-encoded groups (M_add/M_shift 1,083 up, 4 both; M_full
+  683 up, 404 both); the strict variant differs only under append (sections and directories past the end), as for
+  thrember's groups. Thrember's directions per threat model are unchanged from run 97. The training inputs equal run
+  99's, so no C4 model needs retraining if the 2,000-file set agrees.
+- **For the user:** `run/102_step8_sums.sh` steps 3-4 (G1 with sums and the derivation on the 2,000-file set; ~10-20 min
+  together, each estimated at 5-10 min). Read `artifacts/experiments/item_checks/exact-sums-2000/report.json` and
+  `artifacts/experiments/a_directions_derived_sums_2000/g3.json` ("sums"), and compare its `*-pre*` files with
+  `a_directions_derived_sums/`.
+- **Next:** read run 102; then step 6 (catalogue checks, G7), step 9, the expert-set row, the A' pilot.
+
 **2026-10-29: runs 99-100 read (both hypotheses hold); every remaining witness built (run 101); next: step 8.**
 Commits 2155aa8..(this wrap-up).
 - **Run 99 (retraining from the derived directions):** test metrics within noise of runs 77/80 under M_add; under

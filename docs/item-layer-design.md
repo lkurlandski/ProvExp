@@ -405,6 +405,16 @@ file, 37 of the 2,000). The derived directions already account for all of them: 
 precondition variant's differences from the hand rules, and every past-the-end witness is on a file that fails the
 precondition check.
 
+**2026-10-29, second session: step 8 (the re-encodings).** Built as designed: the re-encoded groups record body
+items of their own kinds (an in-place write outside the body regions does not reach them, unlike the whole-file
+content kinds) and split section terms (one new term op, `split`, the positive or negative part of a signed bucket);
+their readouts are identities. Three engine rules and one catalogue rule were needed, each general: readouts over
+items read their own group's items; an in-place write keeps element counts; zeroing the debug entry is decided per file
+(it moves the overlay only where the debug directory decides its start: no file of the 2,000); slack excludes
+sections of virtual size 0. Pilot: G1 for sums exact (100/100), G3 for sums equal to the hand rules on every cell
+under the precondition, training inputs unchanged (run 102; the 2,000-file steps are the user's). Every C4 direction
+is now derived; the hand rules remain only as the G3 oracle.
+
 ## Open decisions for the user
 
 **Settled (user, 2026-10-27), all as recommended:** (1) add `items` now and keep `provenance` until G2 passes, then

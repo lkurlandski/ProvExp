@@ -60,7 +60,20 @@ introduction and a simple baseline (writing decision for later).
   attacks (GAMMA, MAB-Malware). Harsh check first: Pierazzi et al.'s problem-space formalization and every
   "realizable attack" paper since; the novelty must be the automatic, side-effect-exact translation, not the attack.
 
-## Next steps (2026-10-29)
+## Next steps (2026-10-29, second session)
+
+Done (`docs/status.md`): step 8, the sums re-encodings as items and identity readouts; every C4 direction is derived
+(the hand rules remain only as G3's oracle). Pilot: G1 for sums exact, G3 for sums equal to the hand rules on every
+cell under the precondition, training inputs unchanged (run 102 steps 1-2). Next, in order:
+1. Read run 102's 2,000-file steps (the user runs them): G1 for sums, G3 for sums, and whether the `*-pre*` training
+   inputs still equal run 99's (if not: explain and witness each change, then retrain in step 9).
+2. Step 6: the catalogue checks (G7): the declared changes of app/sec/imp/ext/shf/ren/rdb/rsg against re-extraction,
+   with adversarial parameter choices.
+3. Step 9: switch the scripts to the engines, keep the hand rules and predictors as test oracles; if step 6 moves a
+   direction, retrain the affected C4 models and re-run Table A1's C4 rows (user-run `run/` scripts).
+4. The expert-set row of Table A1; the A' pilot.
+
+### Earlier: next steps (2026-10-29)
 
 Done (`docs/status.md`): runs 99-100 read (derived C4 rows: accuracy within noise of the hand-rule models, M_full
 slightly better; routed rows evaded by nothing on passing files under M_full; Table A1 re-run recorded in
