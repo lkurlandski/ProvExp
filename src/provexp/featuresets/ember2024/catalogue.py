@@ -14,6 +14,7 @@ from __future__ import annotations
 from collections.abc import Mapping
 from collections.abc import Sequence
 from dataclasses import replace
+from typing import Optional
 
 import pefile
 
@@ -24,6 +25,7 @@ from provexp.featuresets.ember2024.features import entropy_H
 from provexp.featuresets.ember2024.features import field_range
 from provexp.featuresets.ember2024.features import rva_ranges
 from provexp.featuresets.ember2024.features import structure_range
+from provexp.featuresets.ember2024.sums import SUMS_GROUPS
 from provexp.items import Item
 from provexp.items import ItemTable
 from provexp.items import Range
@@ -43,6 +45,7 @@ from provexp.reach import region_changes
 __all__ = [
     "add_section",
     "CONTENT_KINDS",
+    "BODY_KINDS",
     "PAST_END_KINDS",
     "REGION_OPS",
     "regions",
@@ -156,6 +159,11 @@ def add_section(extractor: PEFeatureExtractor, table: ItemTable, z: bytes, name:
 # and windows get new values (the number of bytes stays), strings may appear, disappear, merge, or split.
 CONTENT_KINDS: dict[str, ChangeHow] = {"bytes": "rewrite", "window": "rewrite", "string": "flag"}
 
+# The same content restricted to the body regions (provexp.featuresets.ember2024.sums): the kinds of the re-encoded
+# groups, located through the section table and the overlay rule. In-place writes reach them only through their
+# members or locating ranges, like the parsed kinds.
+BODY_KINDS = ("body_bytes", "body_window", "body_string")
+
 # The (group, kind) pairs located through pointers that can lie past the end of the file (sections, directory
 # addresses, the certificate table's offset, a header cut by the end): appending can complete them. Strict C4 flags
 # them under append; the precondition row excludes the files where any locating range lies past the end.
@@ -164,6 +172,8 @@ PAST_END_KINDS = (
     ("imports", "import"), ("imports", "library"), ("exports", "export"),
     ("datadirectories", "relocs"), ("datadirectories", "field"), ("header", "field"),
     ("authenticode", "certificate_table"),
+    ("body_histogram", "body_bytes"), ("body_byteentropy", "body_window"), ("body_strings", "body_string"),
+    ("section_split", "section"),
 )
 
 # The loader-ignored header fields (`hdr`; scripts/a1_adaptive.py, HDR_FIELDS).
@@ -186,7 +196,8 @@ REGION_OPS: dict[str, tuple[bool, dict[str, ChangeHow], bool, tuple[Change, ...]
     # neither which sections exist nor where (pefile's plausibility checks do not read names).
     "ren": (False, {}, True, ()),
     # Removing debug removes one extent from pefile's overlay rule, so the overlay can only start earlier: it grows,
-    # or one appears; the file's length stays.
+    # or one appears; the file's length stays. On a file where the debug directory is not the extent the overlay starts
+    # after, nothing moves (`file_region_changes`).
     "rdb": (True, {"overlay": "grow", "file": "rewrite"}, False, (Change("add", "overlay"),)),
     # Removing the signature removes the certificate table.
     "rsg": (True, {"certificate_table": "remove"}, False, ()),
@@ -195,6 +206,12 @@ REGION_OPS: dict[str, tuple[bool, dict[str, ChangeHow], bool, tuple[Change, ...]
 
 # The kinds whose bytes the loader reads wherever they lie (import, export, and relocation data, the signature).
 LOADED_KINDS = ("import", "library", "export", "relocs", "certificate_table")
+
+
+def _mapped(section: pefile.SectionStructure) -> int:
+    """The raw bytes of a section the loader maps: up to its virtual size, or all of them when that is zero."""
+    vsize, raw = int(section.Misc_VirtualSize), int(section.SizeOfRawData)
+    return min(vsize, raw) if vsize > 0 else raw
 
 
 def regions(pe: pefile.PE, z: bytes, table: ItemTable) -> dict[str, tuple[Range, ...]]:
@@ -211,14 +228,14 @@ def regions(pe: pefile.PE, z: bytes, table: ItemTable) -> dict[str, tuple[Range,
     read: list[Range] = [r for item in table.items if item.kind in LOADED_KINDS for r in item.members + item.locating]
     holes = list(read)
     read.append((0, int(pe.OPTIONAL_HEADER.SizeOfHeaders)))
-    read += [(s.PointerToRawData, s.PointerToRawData + min(s.Misc_VirtualSize, s.SizeOfRawData)) for s in pe.sections]
+    read += [(s.PointerToRawData, s.PointerToRawData + _mapped(s)) for s in pe.sections]
     read += [r for i, d in enumerate(directories) if i != SECURITY_ENTRY and d.VirtualAddress and d.Size for r in rva_ranges(pe, d.VirtualAddress, d.Size)]
     if len(directories) > SECURITY_ENTRY and directories[SECURITY_ENTRY].Size:
         d = directories[SECURITY_ENTRY]
         read.append((d.VirtualAddress, d.VirtualAddress + d.Size))
     slack: list[Range] = []
     for s in pe.sections:
-        lo = s.PointerToRawData + min(s.Misc_VirtualSize, s.SizeOfRawData)
+        lo = s.PointerToRawData + _mapped(s)
         hi = min(s.PointerToRawData + s.SizeOfRawData, n)
         if hi > lo:
             slack += cut([(lo, hi)], read)
@@ -241,11 +258,28 @@ def cut(ranges: Sequence[Range], holes: Sequence[Range]) -> list[Range]:
     return out
 
 
+def overlay_start_without(pe: pefile.PE, entry: int) -> Optional[int]:
+    """Where pefile's overlay would start with one data directory entry zeroed (`get_overlay_data_start_offset`)."""
+    directory = pe.OPTIONAL_HEADER.DATA_DIRECTORY[entry]
+    saved = directory.VirtualAddress, directory.Size
+    directory.VirtualAddress, directory.Size = 0, 0
+    try:
+        start: Optional[int] = pe.get_overlay_data_start_offset()
+    finally:
+        directory.VirtualAddress, directory.Size = saved
+    return start
+
+
 def file_region_changes(pe: pefile.PE, z: bytes, table: ItemTable) -> dict[str, set[Change]]:
     """The changes each in-place operation makes on one file (union them over a corpus)."""
     out: dict[str, set[Change]] = {}
+    directories = pe.OPTIONAL_HEADER.DATA_DIRECTORY
     for op, region in regions(pe, z, table).items():
         zero, declared, keep, extra = REGION_OPS[op]
+        if op == "rdb" and len(directories) > DEBUG_ENTRY:
+            # Zeroing the debug entry is one edit with no parameter: whether it moves the overlay's start is decided on
+            # the file. Where it does not, everything located through pefile's overlay rule keeps its place.
+            keep = overlay_start_without(pe, DEBUG_ENTRY) == pe.get_overlay_data_start_offset()
         t = table if not keep else ItemTable(table.num_elements, table.families, [replace(item, locating=()) for item in table.items])
         out[op] = set(region_changes(t, region, CONTENT_KINDS, zero=zero, declared=declared))
         if any(meets(item.locating, r) for item in t.items for r in region):
@@ -277,9 +311,16 @@ def declared_changes(profiles: Mapping[tuple[str, str], KindProfile], regex_mono
         The changes per operation.
     """
     content = [Change("add", k) for k in CONTENT_KINDS]
+    # The content an append or an added section brings is a new body region (or the overlay's extension); an
+    # insertion's gap is not (it lies in the headers or between them and the first section's data).
+    # (Only for an extractor with the re-encoded groups.)
+    groups = {g for g, _ in profiles}
+    sums = bool(groups & set(SUMS_GROUPS))
+    body = [Change("add", k) for k in BODY_KINDS] if sums else []
     # Structural operations also write the header in place (a table entry, counts, pointers).
     in_place = [Change(how, k) for k, how in CONTENT_KINDS.items()]
     regex = tuple((("strings:regex", j), UP if mono else BOTH) for j, mono in enumerate(regex_monotone))
+    body_regex = tuple((("body_strings:regex", j), s) for (_, j), s in regex)
     sizes_up = _fields(profiles, "header", ["NumberOfSections", "SizeOfImage", "SizeOfCode", "SizeOfInitializedData", "SizeOfUninitializedData"], UP)
     insertion = content + in_place + [
         # The gap's content joins the file; every window after it is re-tiled, and strings can merge across it.
@@ -287,7 +328,7 @@ def declared_changes(profiles: Mapping[tuple[str, str], KindProfile], regex_mono
         Change("grow", "file"),
         Change("modify", "field", group="datadirectories", families=frozenset(), entries=_fields(profiles, "datadirectories", ["IMAGE_DIRECTORY_ENTRY_SECURITY.VirtualAddress"], UP)),
     ]
-    app = content + [
+    app = content + body + [
         # A file shorter than two windows is one window, which every append changes.
         Change("modify", "window"),
         # The trailing string, if the file ends in printable bytes, extends.
@@ -296,9 +337,16 @@ def declared_changes(profiles: Mapping[tuple[str, str], KindProfile], regex_mono
         Change("grow", "overlay"),
         Change("add", "overlay"),
     ]
+    if sums:
+        app += [
+            # The overlay's body region extends (its existing windows, full by construction, stay), and so does its
+            # trailing string.
+            Change("grow", "body_bytes"),
+            Change("grow", "body_string", entries=body_regex),
+        ]
     if strict:
-        app += [Change("flag", kind, group=group) for group, kind in PAST_END_KINDS]
-    sec = content + in_place + [
+        app += [Change("flag", kind, group=group) for group, kind in PAST_END_KINDS if group in groups]
+    sec = content + body + in_place + [
         Change("add", "section"),
         Change("grow", "file"),
         Change("modify", "field", group="header", families=frozenset(), entries=sizes_up),

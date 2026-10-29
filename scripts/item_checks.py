@@ -5,6 +5,8 @@ Mechanical checks of the item layer (docs/item-layer-design.md, "Validation and 
             (float32, bit for bit) for every modeled feature (all but pefilewarnings), with the import descriptors
             merged (the variant the experiments use) and, for the imports group, also thrember's original. G2: the
             items spread over their elements reproduce today's provenance (the raw contributions, in canonical form).
+            With --sums, also G1 for `SumsFeatureExtractor` (derivation step 8): every modeled feature, including the
+            four re-encoded groups, read through its readouts over the sums extractor's item table.
 
     locating
             G5 (assumption A1). Flips bytes (XOR 0xFF) and re-parses. Every item that appears, disappears, or moves
@@ -49,6 +51,8 @@ from provexp.featuresets.ember2024.features import ImportsInfo
 from provexp.featuresets.ember2024.features import PEFeatureExtractor
 from provexp.featuresets.ember2024.features import merge_import_descriptors
 from provexp.featuresets.ember2024.features import rva_ranges
+from provexp.featuresets.ember2024.sums import SUMS_GROUPS
+from provexp.featuresets.ember2024.sums import SumsFeatureExtractor
 from provexp.items import Item
 from provexp.items import ItemTable
 from provexp.items import evaluate
@@ -67,6 +71,7 @@ ROOT = Path(__file__).resolve().parent.parent
 _READER: SimpleDBReader | None = None
 _MERGED = merge_import_descriptors(PEFeatureExtractor())
 _IMPORTS = ImportsInfo()  # type: ignore[no-untyped-call]
+_SUMS = SumsFeatureExtractor()
 
 
 def _init(db: str) -> None:
@@ -88,8 +93,16 @@ def _equal(x: np.ndarray, y: np.ndarray) -> np.ndarray:
     return out
 
 
-def check_exact(name: str, g2: bool = True) -> dict[str, Any]:
-    """G1 and (if `g2`) G2 on one file."""
+def _g1(extractor: PEFeatureExtractor, x: np.ndarray, y: np.ndarray) -> np.ndarray:
+    """G1: the modeled features (all but pefilewarnings) where the readouts' values `y` differ from the extractor's `x`."""
+    modeled = np.array([not np.isnan(v) or not np.isnan(x[i]) for i, v in enumerate(y)])
+    modeled &= ~np.array([n.startswith("pefilewarnings:") for n in extractor.feature_names])
+    out: np.ndarray = np.where(modeled & ~_equal(x, y))[0]
+    return out
+
+
+def check_exact(name: str, g2: bool = True, sums: bool = False) -> dict[str, Any]:
+    """G1 and (if `g2`) G2 on one file; with `sums`, also G1 for the sums extractor."""
     assert _READER is not None
     bytez = _READER.get(name).data
     t0 = time.perf_counter()
@@ -104,9 +117,7 @@ def check_exact(name: str, g2: bool = True) -> dict[str, Any]:
     t2 = time.perf_counter()
 
     # G1: every modeled feature bit for bit.
-    modeled = np.array([not np.isnan(v) or not np.isnan(x[i]) for i, v in enumerate(y)])
-    modeled &= ~np.array([n.startswith("pefilewarnings:") for n in _MERGED.feature_names])
-    mismatch = np.where(modeled & ~_equal(x, y))[0]
+    mismatch = _g1(_MERGED, x, y)
 
     # G1 for thrember's original imports (the descriptors of a DLL overwrite each other).
     pe = _parse(bytez)
@@ -122,6 +133,14 @@ def check_exact(name: str, g2: bool = True) -> dict[str, Any]:
         max_diff = float(np.max(np.abs(p.val - q.val) / np.maximum(np.abs(p.val), 1e-300))) if same_support and p.val.size else 0.0
         num_pieces = [int(p.col.size), int(q.col.size)]
     t3 = time.perf_counter()
+
+    # G1 for the sums extractor (its thrember groups again, and the re-encoded ones).
+    sums_mismatch: list[str] = []
+    if sums:
+        xs = _SUMS.feature_vector(bytez)  # type: ignore[no-untyped-call]
+        bad = _g1(_SUMS, xs, evaluate(_SUMS.item_table(bytez), _SUMS.readouts))
+        sums_mismatch = [_SUMS.feature_names[i] for i in bad]
+    t4 = time.perf_counter()
 
     names = _MERGED.feature_names
     return {
@@ -139,6 +158,11 @@ def check_exact(name: str, g2: bool = True) -> dict[str, Any]:
         "seconds_extract": t1 - t0,
         "seconds_items": t2 - t1,
         "seconds_total": t3 - t0,
+        "g1_sums_checked": sums,
+        "g1_sums_mismatches": len(sums_mismatch),
+        "g1_sums_reencoded_mismatches": sum(n.split(":")[0] in SUMS_GROUPS for n in sums_mismatch),
+        "g1_sums_features": sums_mismatch[:20],
+        "seconds_sums": t4 - t3,
     }
 
 
@@ -372,6 +396,7 @@ def main() -> None:
     parser.add_argument("--workers", type=int, default=1)
     parser.add_argument("--limit", type=int, default=0, help="Only the first N files (0: all).")
     parser.add_argument("--no_g2", action="store_true", help="G1 only (G2 costs a provenance computation per file).")
+    parser.add_argument("--sums", action="store_true", help="exact: also G1 for the sums extractor (step 8).")
     parser.add_argument("--num_files", type=int, default=20, help="locating: files drawn from --files (PE files only).")
     parser.add_argument("--max_bytes", type=int, default=1024, help="locating: header bytes flipped per file, at most.")
     parser.add_argument("--region", choices=["header", "directories"], default="header", help="locating: which bytes to flip.")
@@ -397,10 +422,10 @@ def main() -> None:
     t0 = time.perf_counter()
     rows: list[dict[str, Any]] = []
     with Pool(args.workers, initializer=_init, initargs=(str(args.db),)) as pool:
-        for i, row in enumerate(pool.imap_unordered(partial(check_exact, g2=not args.no_g2), names, chunksize=1)):
+        for i, row in enumerate(pool.imap_unordered(partial(check_exact, g2=not args.no_g2, sums=args.sums), names, chunksize=1)):
             rows.append(row)
-            if row["g1_mismatches"] or row["g1_imports_original_mismatches"] or not row["g2_equal"]:
-                print(f"FAIL {row['name']}: G1 {row['g1_mismatches']} {row['g1_features'][:5]} imports {row['g1_imports_original_mismatches']} G2 {row['g2_equal']} {row['g2_pieces']} {row['g2_max_rel_diff']:.3g}", flush=True)
+            if row["g1_mismatches"] or row["g1_imports_original_mismatches"] or not row["g2_equal"] or row["g1_sums_mismatches"]:
+                print(f"FAIL {row['name']}: G1 {row['g1_mismatches']} {row['g1_features'][:5]} imports {row['g1_imports_original_mismatches']} G2 {row['g2_equal']} {row['g2_pieces']} {row['g2_max_rel_diff']:.3g} sums {row['g1_sums_mismatches']} {row['g1_sums_features'][:5]}", flush=True)
             if (i + 1) % 100 == 0:
                 print(f"{i + 1}/{len(names)} files, {time.perf_counter() - t0:.0f} s", flush=True)
 
@@ -411,6 +436,11 @@ def main() -> None:
         "g1_files_failed": int((out["g1_mismatches"] > 0).sum()),
         "g1_features_failed": sorted({f for fs in out["g1_features"].to_list() for f in fs}),
         "g1_imports_original_files_failed": int((out["g1_imports_original_mismatches"] > 0).sum()),
+        "g1_sums_checked": args.sums,
+        "g1_sums_files_failed": int((out["g1_sums_mismatches"] > 0).sum()),
+        "g1_sums_reencoded_files_failed": int((out["g1_sums_reencoded_mismatches"] > 0).sum()),
+        "g1_sums_features_failed": sorted({f for fs in out["g1_sums_features"].to_list() for f in fs}),
+        "seconds_sums": float(out["seconds_sums"].to_numpy().sum()),
         "g2_checked": not args.no_g2,
         "g2_files_failed": int((~out["g2_equal"]).sum()),
         "g2_max_rel_diff": float(out["g2_max_rel_diff"].to_numpy().max()),
@@ -418,7 +448,7 @@ def main() -> None:
         "slowest_file_seconds": float(out["seconds_total"].to_numpy().max()),
         "wall_seconds": time.perf_counter() - t0,
     }
-    report["pass"] = report["g1_files_failed"] == 0 and report["g1_imports_original_files_failed"] == 0 and report["g2_files_failed"] == 0
+    report["pass"] = report["g1_files_failed"] == 0 and report["g1_imports_original_files_failed"] == 0 and report["g2_files_failed"] == 0 and report["g1_sums_files_failed"] == 0
     (args.outdir / "report.json").write_text(json.dumps(report, indent=2))
     print(json.dumps(report, indent=2))
 

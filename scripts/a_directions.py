@@ -21,17 +21,21 @@ groups, which `feature_rule` covers with the re-encodings' signs). Its variants 
 sums" detector) and `{tm}-control` (the four re-encoded groups dropped: "C4 on features" on the same store);
 `reencoded.neutralize.txt` lists the four groups, for the unconstrained reference on the same store.
 
-With `--derive --extractor sums`, the precondition row's directions are also mapped onto the sums extractor's
-features (`write_sums_layout`): `{tm}-pre` and `{tm}-pre-control`, as run 80's `{tm}` and `{tm}-control`.
+With `--derive --extractor sums`, the variant files are written in the sums extractor's layout (`write_sums_layout`):
+`{tm}-pre` and `{tm}-pre-control`, as run 80's `{tm}` and `{tm}-control`.
 
 With `--derive`, the directions are computed instead of read off the hand rules (derivation step 7, C4;
 docs/item-layer-design.md, component 5): the kinds' term vocabulary and the in-place operations' changes come from the
 item tables of the files in --files, the structural operations' changes from the catalogue
 (provexp.featuresets.ember2024.catalogue), and provexp.reach.directions turns them into signs. Two variants: strict
 (appending may complete structures past the end of the file, on any file) and the precondition row's (`-pre`: only
-files where no locating range lies past the end of the file). The re-encoded directions are derived for the merged
-imports; the other re-encodings keep the hand rules' until step 8. Also writes the comparison with the hand rules (G3):
+files where no locating range lies past the end of the file). The re-encodings are derived too (step 8), from the item
+tables of `SumsFeatureExtractor` (imports merged, and the four re-encoded groups as identity readouts over their sums):
+    directions_sums.csv one row per feature of the sums extractor: the derived signs per operation, the derived and
+                        hand directions per threat model, in both variants
+Also writes the comparison with the hand rules (G3):
     g3_cells.csv        one row per (feature, operation) where the derived and hand signs differ
+    g3_sums_cells.csv   the same for the four re-encoded groups (G3 for sums), per variant
     g3.json             counts per group and threat model, the features whose direction changes, and the corpus
                         (files, those with a locating range past the end, and the kinds located there)
 
@@ -66,7 +70,6 @@ from provexp.featuresets.ember2024.catalogue import file_region_changes
 from provexp.featuresets.ember2024.catalogue import precondition
 from provexp.featuresets.ember2024.features import PEFeatureExtractor
 from provexp.featuresets.ember2024.features import StringExtractor
-from provexp.featuresets.ember2024.features import merge_import_descriptors
 from provexp.featuresets.ember2024.sums import SUMS_GROUPS
 from provexp.featuresets.ember2024.sums import SumsFeatureExtractor
 from provexp.reach import Change
@@ -285,7 +288,8 @@ def feature_rule(group: str, name: str, regexes: dict[str, str]) -> Rule:
 ################################################################################
 
 _READER: Optional[SimpleDBReader] = None
-_EXTRACTORS = {"original": PEFeatureExtractor(), "merged": merge_import_descriptors(PEFeatureExtractor())}
+# The merged variant is the sums extractor: its features start with the merged extractor's, in the same layout.
+_EXTRACTORS: dict[str, PEFeatureExtractor] = {"original": PEFeatureExtractor(), "merged": SumsFeatureExtractor()}
 
 
 def _init(db: str) -> None:
@@ -335,32 +339,36 @@ def _write_monotone(outdir: Path, stem: str, rows: list[dict[str, Any]], column:
     (outdir / f"{stem}.monotone.tsv").write_text("".join(m + "\n" for m in mono))
 
 
-def write_sums_layout(outdir: Path, rows: list[dict[str, Any]], regexes: dict[str, str]) -> None:
+def reencoding_features(group: str, name: str) -> list[tuple[str, str]]:
+    """The features of `SumsFeatureExtractor` that re-encode a feature of thrember's (none if it has no re-encoding)."""
+    if group in ("histogram", "byteentropy"):
+        return [(f"body_{group}", name)]
+    if group == "strings" and (name in ("numstrings", "printables") or name.startswith(("printable_", "regex_"))):
+        return [("body_strings", name)]
+    if group == "section" and re.match(r"(size|vsize|entropy|characteristics)_hash_\d+$", name):
+        return [("section_split", f"{name}_{part}") for part in ("pos", "neg")]
+    if group == "imports":
+        return [("imports", name)]
+    return []
+
+
+def write_sums_layout(outdir: Path, sums_rows: list[dict[str, Any]]) -> None:
     """
-    The precondition row's directions for the features of `SumsFeatureExtractor` (the 10% store of Table A1): the
-    derived directions for thrember's groups (imports merged, as the store's are), the hand rules for the four
-    re-encoded groups until step 8. Variants `{tm}-pre` (every feature: C4 on sums) and `{tm}-pre-control` (the
-    re-encoded groups dropped: C4 on features), and `reencoded.neutralize.txt`.
+    The precondition row's derived directions for the features of `SumsFeatureExtractor` (the 10% store of Table A1).
+    Variants `{tm}-pre` (every feature: C4 on sums) and `{tm}-pre-control` (the re-encoded groups dropped: C4 on
+    features), and `reencoded.neutralize.txt`.
     """
-    derived = {(str(row["group"]), str(row["name"])): row for row in rows}
-    extractor = SumsFeatureExtractor()
-    sums_rows: list[dict[str, Any]] = []
-    for fs in extractor.features:
-        for name in fs.feature_names:
-            row: dict[str, Any] = {"group": fs.name, "name": name}
-            for tm, ops in THREAT_MODELS.items():
-                if fs.name in SUMS_GROUPS:
-                    d = direction(feature_rule(fs.name, name, regexes).signs, ops)
-                    row[tm], row[f"{tm}-control"] = d, "both"
-                else:
-                    r = derived[(fs.name, name)]
-                    d = str(r[f"{tm}_pre_reencoded" if fs.name == "imports" else f"{tm}_pre"])
-                    row[tm] = row[f"{tm}-control"] = d
-            sums_rows.append(row)
+    rows = []
+    for row in sums_rows:
+        out = {"group": row["group"], "name": row["name"]}
+        for tm in THREAT_MODELS:
+            out[tm] = row[f"{tm}_pre"]
+            out[f"{tm}-control"] = "both" if row["group"] in SUMS_GROUPS else row[f"{tm}_pre"]
+        rows.append(out)
     for tm in THREAT_MODELS:
-        _write_monotone(outdir, f"{tm}-pre", sums_rows, tm)
-        _write_monotone(outdir, f"{tm}-pre-control", sums_rows, f"{tm}-control")
-    reencoded = [f"{row['group']}:{row['name']}" for row in sums_rows if row["group"] in SUMS_GROUPS]
+        _write_monotone(outdir, f"{tm}-pre", rows, tm)
+        _write_monotone(outdir, f"{tm}-pre-control", rows, f"{tm}-control")
+    reencoded = [f"{row['group']}:{row['name']}" for row in rows if row["group"] in SUMS_GROUPS]
     (outdir / "reencoded.neutralize.txt").write_text("".join(n + "\n" for n in reencoded))
 
 
@@ -406,6 +414,10 @@ def main_derive(args: Any) -> None:
             ops.update(declared_changes(profiles, monotone, strict=not pre))
             derived[(variant, pre)] = derive_directions(extractor.readouts, ops, profiles, sizes)
 
+    # The features of the sums extractor (the merged variant), by (group, name).
+    sums_extractor = _EXTRACTORS["merged"]
+    sums_index = {(fs.name, n): i for i, (fs, n) in enumerate((fs, n) for fs in sums_extractor.features for n in fs.feature_names)}
+
     # One row per feature, in run 76's shape, plus the precondition row's directions.
     extractor = _EXTRACTORS["original"]
     rows: list[dict[str, Any]] = []
@@ -419,24 +431,22 @@ def main_derive(args: Any) -> None:
             for pre in (False, True):
                 suffix = "_pre" if pre else ""
                 s = {op: derived[("original", pre)][op][index] for op in OPS}
-                m = {op: derived[("merged", pre)][op][index] for op in OPS}
+                m = {op: derived[("merged", pre)][op] for op in OPS}
                 if not pre:
                     row.update({f"op_{op}": _signs_str(s[op]) for op in OPS})
                 else:
                     row["op_app_pre"] = _signs_str(s["app"])
                 for tm, tm_ops in THREAT_MODELS.items():
                     d = direction({op: _signs_str(s[op]) for op in OPS}, tm_ops)
-                    if fs.name == "imports":
-                        rd = direction({op: _signs_str(m[op]) for op in OPS}, tm_ops)
-                    else:
-                        rd = direction(hand.resigns, tm_ops) if hand.resigns is not None else d
+                    re_ = [sums_index[f] for f in reencoding_features(fs.name, name)]
+                    rd = direction({op: _signs_str(frozenset().union(*(m[op][j] for j in re_))) for op in OPS}, tm_ops) if re_ else d
                     row[f"{tm}{suffix}"] = d
                     row[f"{tm}{suffix}_reencoded"] = rd
                     if not pre:
                         hd = direction(hand.signs, tm_ops)
                         if d != hd:
                             changed.setdefault(tm, []).append(f"{fs.name}:{name} {hd} -> {d}")
-            row["reencoding"] = hand.reencoding + (" (hand rule until step 8)" if hand.resigns is not None and fs.name != "imports" else "")
+            row["reencoding"] = hand.reencoding
             for op in OPS:
                 h, d_ = hand.signs[op], str(row[f"op_{op}"])
                 if set(h) != set(d_):
@@ -457,8 +467,37 @@ def main_derive(args: Any) -> None:
             _write_monotone(args.outdir, stem, rows, f"{tm}{pre}")
             quirk = [{**row, "d": row[f"{tm}{pre}_reencoded"] if row["group"] == "imports" else row[f"{tm}{pre}"]} for row in rows]
             _write_monotone(args.outdir, f"{stem}-quirkfixed", quirk, "d")
+    # The sums extractor's features (G3 for sums: its re-encoded groups against the hand rules' re-encoded signs).
+    sums_rows: list[dict[str, Any]] = []
+    sums_cells: list[dict[str, Any]] = []
+    for fs in sums_extractor.features:
+        for name in fs.feature_names:
+            j = sums_index[(fs.name, name)]
+            hand = feature_rule(fs.name, name, regexes)
+            row = {"index": j, "name": name, "group": fs.name}
+            for pre in (False, True):
+                suffix = "_pre" if pre else ""
+                d_ = {op: _signs_str(derived[("merged", pre)][op][j]) for op in OPS}
+                row.update({f"op_{op}{suffix}": d_[op] for op in OPS})
+                for tm, tm_ops in THREAT_MODELS.items():
+                    row[f"{tm}{suffix}"] = direction(d_, tm_ops)
+                if fs.name in SUMS_GROUPS:
+                    for op in OPS:
+                        h = hand.signs[op]
+                        if set(h) != set(d_[op]):
+                            kind = "stricter" if set(h) < set(d_[op]) else "looser" if set(d_[op]) < set(h) else "different"
+                            sums_cells.append({"index": j, "group": fs.name, "name": name, "variant": "pre" if pre else "strict", "op": op, "hand": h, "derived": d_[op], "relation": kind})
+            for tm, tm_ops in THREAT_MODELS.items():
+                row[f"{tm}_hand"] = direction(hand.signs, tm_ops) if fs.name in SUMS_GROUPS else ""
+            sums_rows.append(row)
+    with open(args.outdir / "directions_sums.csv", "w", newline="") as f:
+        writer = csv.DictWriter(f, fieldnames=list(sums_rows[0].keys()))
+        writer.writeheader()
+        writer.writerows(sums_rows)
+    cell_schema = {"index": pl.Int64, "group": pl.String, "name": pl.String, "variant": pl.String, "op": pl.String, "hand": pl.String, "derived": pl.String, "relation": pl.String}
+    pl.DataFrame(sums_cells, schema=cell_schema).write_csv(args.outdir / "g3_sums_cells.csv")
     if args.extractor == "sums":
-        write_sums_layout(args.outdir, rows, regexes)
+        write_sums_layout(args.outdir, sums_rows)
     pl.DataFrame(cells, schema={"index": pl.Int64, "group": pl.String, "name": pl.String, "op": pl.String, "hand": pl.String, "derived": pl.String, "relation": pl.String}).write_csv(args.outdir / "g3_cells.csv")
 
     summary: dict[str, Any] = {"files": len(names), "pe_files": num_pe, "precondition_files": num_pre,
@@ -477,9 +516,21 @@ def main_derive(args: Any) -> None:
     summary["cells_by_relation"] = dict(Counter(c["relation"] for c in cells))
     summary["cells_by_group_op"] = dict(Counter(f"{c['group']}/{c['op']}/{c['relation']}" for c in cells).most_common())
     summary["threat_model_changes"] = changed
+    # G3 for sums: the re-encoded groups' derived directions per threat model against the hand rules'.
+    reencoded_rows = [row for row in sums_rows if row["group"] in SUMS_GROUPS]
+    summary["sums"] = {
+        f"{tm}{key}": {"totals": dict(Counter(row[f"{tm}{key}"] for row in reencoded_rows)),
+                       "changes": [f"{row['group']}:{row['name']} {row[f'{tm}_hand']} -> {row[f'{tm}{key}']}" for row in reencoded_rows if row[f"{tm}{key}"] != row[f"{tm}_hand"]]}
+        for key in ("", "_pre") for tm in THREAT_MODELS
+    }
+    summary["sums"]["hand"] = {tm: dict(Counter(row[f"{tm}_hand"] for row in reencoded_rows)) for tm in THREAT_MODELS}
+    summary["sums"]["cells_by_group_op"] = dict(Counter(f"{c['variant']}/{c['group']}/{c['op']}/{c['relation']}" for c in sums_cells).most_common())
     (args.outdir / "g3.json").write_text(json.dumps(summary, indent=2))
     for key in ["hand"] + [f"{tm}{s}" for s in ("", "_pre") for tm in THREAT_MODELS]:
         print(f"{key:14s} {summary[key] if key == 'hand' else summary[key]['totals']}")
+    for key in ["hand"] + [f"{tm}{s}" for s in ("", "_pre") for tm in THREAT_MODELS]:
+        sums_summary = summary["sums"][key]
+        print(f"sums {key:9s} {sums_summary if key == 'hand' else sums_summary['totals']}")
     print(json.dumps({k: summary[k] for k in ("files", "pe_files", "precondition_files", "precondition_failing_at_size_cap", "past_end_kinds", "past_end_kinds_undeclared", "cells_by_relation")}, indent=2))
 
 
