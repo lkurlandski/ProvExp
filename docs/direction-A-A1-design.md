@@ -197,7 +197,7 @@ breaks PV; provenance-chosen names roughly double its success on PV-seen (11 -> 
 name lands in a trusted bucket with a negative sign often). On the unconstrained model, GAMMA API (import addition,
 which our search does not use) is stronger than our append + add-section search; that row is context, not a claim.
 
-## Re-run with derived directions (2026-10-28; runs 99-100, results pending)
+## Re-run with derived directions (2026-10-28; runs 99-100; read 2026-10-29)
 
 The C4 rows are retrained from the derived directions (run 97; `docs/item-layer-design.md`, Build status) and
 evaluated as precondition-row detectors: a file that passes the precondition check is scored by the C4 model, any other
@@ -206,4 +206,41 @@ attack query). The derived files differ from the hand rules only in entry_name_h
 security_size (down under M_full). 12 of the 100 pilot files fail the check (all malware, 8 truncated at 4 MB). The
 adaptive search is not routed: its C4 rows hold for passing files, failing files are the unconstrained row's. Decided
 (user): the strict detector is one sentence, not a row; the >4 MB files stay.
+
+**Result.** Both hypotheses hold. Test metrics are within noise of runs 77/80 under M_add and slightly better under
+M_full (security_size constrained down rather than dropped):
+
+| Detector (10% store) | AUC hand -> derived | TPR @ 1% FPR | TPR @ 0.1% FPR |
+|---|---|---|---|
+| C4 features, M_add | 0.9946 -> 0.9945 | 91.2% -> 90.9% | 78.2% -> 79.1% |
+| C4 sums, M_add | 0.9953 -> 0.9953 | 92.4% -> 92.3% | 81.1% -> 80.9% |
+| C4 features, M_full | 0.9919 -> 0.9924 | 86.7% -> 88.1% | 69.7% -> 70.8% |
+| C4 sums, M_full | 0.9930 -> 0.9935 | 88.6% -> 89.9% | 72.3% -> 75.1% |
+
+(Full store, merged imports: M_add 0.9957 -> 0.9957, 92.1% -> 92.0%; M_full 0.9930 -> 0.9934, 87.4% -> 88.6%.)
+
+Toolkit columns, routed C4 rows, evasion over detected pilot malware, split by whether the original file passes the
+precondition check (38 of 50 pilot malware pass):
+
+| Detector | Det. | Seen, pass | Held-out, pass | Seen, fail | Held-out, fail |
+|---|---|---|---|---|---|
+| Unconstrained (reference) | 47 | 8/35 | 21/35 | 0/12 | 4/12 |
+| PV, 4 seen attacks | 22 | 0/16 | 4/16 | 0/6 | 0/6 |
+| C4 features, M_add (routed) | 45 | 0/33 | 9/33* | 0/12 | 1/12* |
+| C4 sums, M_add (routed) | 44 | 0/32 | 16/32* | 0/12 | 1/12* |
+| C4 features, M_full (routed) | 40 | 0/28 | **0/28** | 0/12 | 1/12 |
+| C4 sums, M_full (routed) | 42 | 0/30 | **0/30** | 0/12 | 1/12 |
+
+\* header_fields, outside M_add (as in run 81). On passing files the M_full rows are evaded by nothing, as the guarantee
+says. The one failing-file evasion of every routed row is the same file (`480087e22a70...`, header_fields), scored by
+the reference branch; the guarantee does not cover it. On the failing files the routed rows are evaded less often than
+the reference itself (1/12 vs 4/12 held-out): the reference's other three are GAMMA API runs, a black-box search that,
+against the routed detector, is scored by the C4 model whenever its query passes the check. (Likely explanation; not
+checked per query.) Coverage of the guarantee: 38/50 pilot malware (76%); on the 2,000-file set 1,682/2,000 files pass.
+
+Adaptive column (C1-declared targeted search, M_full, full-store models, unrouted): unconstrained 10/49 (9 real), PV
+22/22 (21 real), both C4 rows 0/45 with largest score change exactly 0.0. Split by the check: the C4 rows' 0/33 on
+passing files is the guarantee; on the 12 failing files the routed detector would use the unconstrained model, which
+the search evades on 0/12, so the routed row would be 0/45 as well, provided no query moves a failing file into the
+passing branch (not checked; the search is not routed).
 

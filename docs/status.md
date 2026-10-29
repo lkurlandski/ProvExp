@@ -1,5 +1,13 @@
 # Status
 
+**2026-10-29: runs 99-100 read; both hypotheses hold.** Derived-direction C4 models: test metrics within noise of
+runs 77/80 (M_full slightly better, +1.2-1.4 points TPR at 1% FPR). Routed C4 rows (Table A1 toolkit columns): on the
+38/50 pilot malware that pass the precondition check, seen 0 everywhere and held-out 0/28, 0/30 under M_full (M_add's
+held-out evasions are all header_fields, outside M_add). On the 12 failing files every routed row is evaded once (one
+file, header_fields, via the reference branch), fewer than the reference alone (4/12). Adaptive: C4 rows 0/45; the
+unconstrained model is also 0/12 on the failing files. Recorded in `docs/direction-A-A1-design.md` ("Re-run with
+derived directions") and the run scripts. Next: the remaining witnesses (`PLAN.md`, "Next steps (2026-10-28)", item 1).
+
 **2026-10-28: locating ranges split per structure (runs 95-96); step 7's C4 engine built (run 97); signature
 witness (run 98); the user decided the precondition row and started runs 99-100 (retraining, Table A1 re-run with
 routed C4 rows) at the end of the session; read them next.** Commits 8b34250..(this wrap-up).

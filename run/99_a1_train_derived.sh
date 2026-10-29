@@ -11,6 +11,10 @@
 # M_add, all of little gain).
 #
 # Estimate: ~1-2 min per s10 model, ~6-7 min per full-store model (run 77; ~30 GB peak memory): ~20 min in all.
+# Ran 2026-10-28 (started by the user), ~20 min. Result: as hypothesised. Test AUC / TPR@1% hand -> derived: s10 M_add
+# feat 0.9946/91.2% -> 0.9945/90.9%, sums 0.9953/92.4% -> 0.9953/92.3%; M_full feat 0.9919/86.7% -> 0.9924/88.1%,
+# sums 0.9930/88.6% -> 0.9935/89.9%; full store M_add 0.9957/92.1% -> 0.9957/92.0%, M_full 0.9930/87.4% -> 0.9934/88.6%
+# (M_full slightly better: security_size kept, constrained down).
 set -euo pipefail
 cd "$(dirname "$0")/.."
 source env/bin/activate

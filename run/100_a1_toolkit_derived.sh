@@ -16,6 +16,12 @@
 #
 # Estimate: as run 81's toolkit part (~47 min on 16 workers) plus the check per query (smoke test: 2 files, padding,
 # routed runs 0.7-4 s vs 0.7-2 s unrouted), ~1-1.5 h; the adaptive search a few minutes.
+# Ran 2026-10-28 (started by the user): 1,920 attack runs in 2.4 h on 16 workers; adaptive ~20 min. Result: as
+# hypothesised on passing files (38/50 pilot malware): seen 0 for every routed row, held-out 0/28 and 0/30 for M_full
+# (M_add 9/33 and 16/32, all header_fields, outside M_add). Failing files: every routed row 0/12 seen, 1/12 held-out
+# (one file, header_fields, reference branch) against the reference's own 4/12 (three GAMMA API runs that the routed
+# search does not find). Adaptive: unconstrained 10/49, PV 22/22, both C4 rows 0/45 (0/12 on failing files, where the
+# unconstrained model is also 0/12). Details: docs/direction-A-A1-design.md, "Re-run with derived directions".
 set -euo pipefail
 cd "$(dirname "$0")/.."
 source env/bin/activate
