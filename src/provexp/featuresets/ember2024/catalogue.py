@@ -86,9 +86,11 @@ def add_section(extractor: PEFeatureExtractor, table: ItemTable, z: bytes, name:
     The declared layout puts the content at the end of the file (as Table A0's predictor does, run 79), so the file's
     byte items, windows, and length grow as for an append, and the content's strings are its own (the tool pads around
     the section). The section item gets raw and virtual size len(content), the content's entropy, and the
-    characteristics; the COFF NumberOfSections rises by one. What the declaration does not fix is the tool's layout:
-    the section-table entry, alignment padding, SizeOfImage, where the content lands relative to an overlay, and any
-    directory it moves. Those are assumption A4 and show up as the residual against the tool's output.
+    characteristics; the COFF NumberOfSections rises by one. The section's raw data then ends the file, so pefile's
+    overlay rule finds no overlay: an old overlay's bytes stay in the file but no longer form the overlay (G7, finding
+    4). What the declaration does not fix is the tool's layout: the section-table entry, alignment padding,
+    SizeOfImage, and any directory it moves. Those are assumption A4 and show up as the residual against the tool's
+    output.
 
     Args:
         extractor: The extractor whose item table `table` is.
@@ -133,6 +135,7 @@ def add_section(extractor: PEFeatureExtractor, table: ItemTable, z: bytes, name:
         data: tuple[Range, ...] = ((n, n + len(content)),) if content else ()
         ranges: dict[str, tuple[Range, ...]] = {"table": (), "name": (), "size": (), "vsize": (), "props": (), "data": data}
         removed += file_items
+        removed += [item for item in table.of_group("section") if item.kind == "overlay"]
         added += _tagged([section._file_item(len(new), file_items[0].locating), section.section_item(s, ranges, file_items[0].locating)], "section")
     for item in table.of_group("header"):
         if item.attrs.get("field") == "NumberOfSections":

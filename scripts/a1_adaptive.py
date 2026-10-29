@@ -48,22 +48,20 @@ import pefile
 from sklearn.utils import murmurhash3_32
 
 from provexp.data.tabular import load_manifest
+from provexp.featuresets.ember2024 import catalogue
 from provexp.featuresets.ember2024.features import PEFeatureExtractor
 from provexp.featuresets.ember2024.features import field_range
 from provexp.featuresets.ember2024.features import merge_import_descriptors
-from provexp.featuresets.ember2024.sums import SumsFeatureExtractor
+from provexp.items import ItemTable
+from provexp.reach import ByteEdit
+from provexp.reach import predict
 
 sys.path.insert(0, str(Path(__file__).parent))
 from a_c1_table0 import has_overrun_section  # noqa: E402
-from a_c1_table0 import predict_add_section  # noqa: E402
-from a_c1_table0 import predict_add_section_sums  # noqa: E402
-from a_c1_table0 import predict_append  # noqa: E402
-from a_c1_table0 import predict_append_sums  # noqa: E402
-from a_c1_table0 import predict_content_overwrite  # noqa: E402
 from a_pv_attacks import load_pilot  # noqa: E402
 
-__all__ = ["Donors", "HDR_FIELDS", "Operation", "add_imports", "add_section", "greedy_search", "lief_preserves",
-           "bucket_names", "menu", "rename_section", "section_bucket", "set_header_fields", "zero_directory_entry"]
+__all__ = ["Donors", "HDR_FIELDS", "Operation", "add_imports", "add_section", "engine_predictors", "greedy_search",
+           "lief_preserves", "bucket_names", "menu", "rename_section", "section_bucket", "set_header_fields", "zero_directory_entry"]
 
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -246,21 +244,20 @@ def lief_preserves(original: bytes, edited: bytes, op: str) -> bool:
 ################################################################################
 # The greedy C1 search (declared effects only)
 #
-# NOTE: this first driver covers the two operations whose C1 predictors (from scripts/a_c1_table0.py) are complete
-# over every feature they touch -- append and add-section, both in M_add and so in every threat model. They already
-# reach the histogram, byte-entropy, string, and section-bucket parts of PV selection's hole (check 2). The remaining
-# operations (the DOS/header/checksum/rename/remove overwrites, which reach the Rich header and header-field parts of
-# the hole) need their C1 predictors completing -- predict_content_overwrite models the DOS header members but not the
-# Rich header or the COFF/optional header fields -- and the sums-space defenses need their own predictors (an
-# A0-style validation). Those are the scoped remainder (docs/direction-A-A1-design.md); until then the search is run
-# against the 2,568-feature (thrember-space) defenses only, and its evasion is a conservative lower bound.
+# NOTE: the search covers append and add-section, both in M_add and so in every threat model. They reach the
+# histogram, byte-entropy, string, and section-bucket parts of PV selection's hole (check 2). Their declared effects
+# come from the C1 engine (provexp.reach.predict for the append, catalogue.add_section for the declared section, over
+# the instrumented extractor's item table; derivation step 9). The hand predictors of scripts/a_c1_table0.py remain
+# only as the engine's test oracle (tests/test_a1_adaptive.py). The engine flags an append where a structure lies past
+# the end of the file (the files that fail the precondition check); the search then skips that candidate. The
+# re-encoded groups of the sums store have no recognizers yet, so the search runs against the thrember-space
+# defenses only (as since run 100), and its evasion is a conservative lower bound.
 ################################################################################
 
 # An edit the search can try: its name, the C1 predictor of its declared effect phi(z'), the function that
 # materializes exactly that edit on the bytes, and the bytes it adds (for the byte budget).
 Operation = tuple[str, Callable[[PEFeatureExtractor, bytes], np.ndarray], Callable[[bytes], bytes], int]
-# Predictors per feature store: the thrember (merged-imports) space and the sums (re-encoded) space. Both are the
-# C1 declared-effect predictors from a_c1_table0.py; the sums ones add the four re-encoded groups.
+# The (append, add-section) C1 predictors: (extractor, z, blob) and (extractor, z, name, content, props).
 PredictorSet = tuple[Callable[..., np.ndarray], Callable[..., np.ndarray]]
 # The properties of an added data section, as the extractor reads them from add_section(..., code=False).
 DATA_PROPS = ["CNT_INITIALIZED_DATA", "MEM_READ", "MEM_WRITE"]
@@ -268,11 +265,34 @@ SECTION_BUCKETS = 50
 BUCKET_GROUPS = ("section:size_hash_", "section:vsize_hash_", "section:entropy_hash_")
 
 
-def predictors_for(sums: bool) -> PredictorSet:
-    """(append, add-section) C1 predictors for the sums store or the thrember store."""
-    if sums:
-        return predict_append_sums, predict_add_section_sums
-    return predict_append, predict_add_section
+def engine_predictors(extractor: PEFeatureExtractor) -> PredictorSet:
+    """
+    The (append, add-section) C1 predictors from the engine, over `extractor`'s item table.
+
+    Each step of the search predicts every candidate from the same state, so the item table of the last state is kept.
+    A flagged prediction raises RuntimeError (`Prediction.features`), which the search counts as a query and skips.
+
+    Args:
+        extractor: The instrumented extractor whose feature vectors the defense scores.
+
+    Returns:
+        The two predictors, with the signatures `menu` calls.
+    """
+    last: dict[str, Any] = {}
+
+    def _table(z: bytes) -> ItemTable:
+        if last.get("z") is not z:
+            last["z"], last["table"] = z, extractor.item_table(z)
+        table: ItemTable = last["table"]
+        return table
+
+    def _append(ext: PEFeatureExtractor, z: bytes, blob: bytes) -> np.ndarray:
+        return predict(_table(z), z, ByteEdit(len(z), len(z), blob), ext.recognizers).features(ext.readouts)
+
+    def _section(ext: PEFeatureExtractor, z: bytes, name: str, content: bytes, props: list[str]) -> np.ndarray:
+        return catalogue.add_section(ext, _table(z), z, name, content, props).features(ext.readouts)
+
+    return _append, _section
 
 
 def section_bucket(name: str) -> tuple[int, int]:
@@ -451,12 +471,12 @@ def main() -> None:
     defenses = _parse_defenses(args.defense)
 
     manifest = load_manifest(args.features)
-    sums = manifest["feature_set"] == "ember2024-sums"
-    if not sums and manifest["feature_set"] != "ember2024 (thrember v3)":
-        raise RuntimeError(f"Unexpected feature set {manifest['feature_set']} in {args.features.as_posix()}.")
-    extractor: PEFeatureExtractor = SumsFeatureExtractor() if sums else merge_import_descriptors(PEFeatureExtractor())
-    preds = predictors_for(sums)
-    print(f"Scoring in {'sums' if sums else 'thrember'} space ({extractor.dim} features).", flush=True)
+    if manifest["feature_set"] != "ember2024 (thrember v3)":
+        raise RuntimeError(f"Unexpected feature set {manifest['feature_set']} in {args.features.as_posix()}: the C1 "
+                           "engine has no recognizers for the sums store's re-encoded groups yet.")
+    extractor = merge_import_descriptors(PEFeatureExtractor())
+    preds = engine_predictors(extractor)
+    print(f"Scoring in thrember space ({extractor.dim} features).", flush=True)
 
     malware, goodware = load_pilot(args.pilot_files, args.db)
     if args.num_malware is not None:
