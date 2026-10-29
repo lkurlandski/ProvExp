@@ -14,6 +14,14 @@ toolkit attacks, holds against those attacks but falls to the C1-guided adaptive
 detects, and costs ~35 TPR points. Direction A's core claim stands at pilot scale. What is missing is mostly rows the
 mock planned (baselines) and breadth (a second toolkit, leave-one-out, scale), not evidence for the claim.
 
+**Update (2026-10-29): the C4 rows now use derived directions and are routed.** Retrained from the directions the
+engine derives (runs 99-100), the C4 models keep their accuracy (M_full slightly better: 88.1% / 89.9% TPR at 1% FPR).
+As precondition-row detectors (files that pass the check get the C4 model, the rest the unconstrained one), the M_full
+rows are evaded by no toolkit attack on the 38/50 pilot malware that pass the check (0/28, 0/30 held-out); on the 12
+failing files one header-field evasion, through the unconstrained branch. Every class-1 disagreement between the hand
+rules and the extractor now has a witness (runs 98, 101), and the derived directions cover all of them. Details:
+`docs/direction-A-A1-design.md`, "Re-run with derived directions".
+
 ## Checks and outcomes
 
 | Check / outcome | Criterion | Result | Verdict |

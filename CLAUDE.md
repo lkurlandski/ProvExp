@@ -58,7 +58,7 @@ and manuscript remain as source material. Deadlines and conference cycles are no
   discovery/transplant machinery (shortcuts, shortcuts_transplant). Direction A: a_directions (C4 directions per
   threat model; hand rules, or `--derive` from the item tables), a_c1_table0 (C1 predictors and Table A0), a_pv_attacks / a_pv_hole (secml-malware attacks, PV
   selection and its hole), a1_evaluate (toolkit columns), a1_adaptive (C1-guided adaptive search), a_overlay_witness
-  (the overlay gap), a_signature_witness (the signature table past the end), item_checks (derivation checks G1/G2, G5, G6). Direction A': ap_check0_solver (Kantchelian's exact GBDT encoding, HiGHS via scipy). The sums
+  (the overlay gap), a_signature_witness (the signature table past the end), a_structure_witness (the other class-1 witnesses: entry section, Rich header, exports and relocations past the end), item_checks (derivation checks G1/G2, G5, G6). Direction A': ap_check0_solver (Kantchelian's exact GBDT encoding, HiGHS via scipy). The sums
   re-encoding is `src/provexp/featuresets/ember2024/sums.py`. Dropped experiments are under `scripts/archive/`.
 - **Rankings break ties by a seeded permutation, never by position or index** (`ablation.element_order` /
   `window_order` with `tiebreak`, `pf1.feature_order`), and treat scores within 1e-9 (relative) as tied: equal scores

@@ -1,19 +1,28 @@
 # Status
 
-**2026-10-29 (later): all remaining witnesses built (run 101).** Entry section 8/8 pilot files; Rich header via stub
-extension 39/39 and via two header fields 8/39; relocations past the end 2 pilot / 151 of 2,000; exports past the end
-0 pilot / 37 of 2,000. All are covered by the derived directions (the entry and Rich cases are the precondition variant's
-differences from the hand rules; the past-the-end cases fail the precondition check). The adaptive search's split by
-the check is in `docs/direction-A-A1-design.md`. Next: step 8 (sums re-encodings in the engine), then step 6 (catalogue
-checks), the expert-set row, the A' pilot.
-
-**2026-10-29: runs 99-100 read; both hypotheses hold.** Derived-direction C4 models: test metrics within noise of
-runs 77/80 (M_full slightly better, +1.2-1.4 points TPR at 1% FPR). Routed C4 rows (Table A1 toolkit columns): on the
-38/50 pilot malware that pass the precondition check, seen 0 everywhere and held-out 0/28, 0/30 under M_full (M_add's
-held-out evasions are all header_fields, outside M_add). On the 12 failing files every routed row is evaded once (one
-file, header_fields, via the reference branch), fewer than the reference alone (4/12). Adaptive: C4 rows 0/45; the
-unconstrained model is also 0/12 on the failing files. Recorded in `docs/direction-A-A1-design.md` ("Re-run with
-derived directions") and the run scripts. Next: the remaining witnesses (`PLAN.md`, "Next steps (2026-10-28)", item 1).
+**2026-10-29: runs 99-100 read (both hypotheses hold); every remaining witness built (run 101); next: step 8.**
+Commits 2155aa8..(this wrap-up).
+- **Run 99 (retraining from the derived directions):** test metrics within noise of runs 77/80 under M_add; under
+  M_full slightly better (+1.2-1.4 points TPR at 1% FPR; security_size kept, constrained down).
+- **Run 100 (Table A1 with routed C4 rows):** 38/50 pilot malware pass the precondition check. On those, every routed
+  row is evaded by no seen attack, and the M_full rows by no held-out attack (0/28, 0/30); M_add's held-out evasions
+  are header_fields, outside M_add. On the 12 failing files every routed row is evaded once (one file, header_fields,
+  unconstrained branch), fewer than the unconstrained model alone (4/12; its other three are GAMMA API runs, likely
+  because queries that pass the check are scored by the C4 model; not checked). Adaptive search: C4 rows 0/45,
+  unconstrained 10/49, PV 22/22; the unconstrained model is 0/12 on the failing files, so a routed row would also be
+  0/45 unless a query switches branch (not checked). Run 100 took 2.4 h (estimate 1-1.5 h).
+- **Run 101 (`scripts/a_structure_witness.py`):** entry section 8/8 pilot files (an added executable section becomes
+  the entry section); Rich header via the stub extension 39/39, via TimeDateStamp/PointerToSymbolTable 8/39 (pefile
+  accepts any "Rich" marker and reads pairs from 0x90); relocations past the end 2 pilot / 151 of 2,000 (has_relocs
+  0 -> 1); exports past the end 0 pilot / 37 of 2,000 (num_exports 0 -> 128 is the known constant-128 quirk,
+  upstream-issues item 3). All covered by the derived directions: the entry and Rich cases are the precondition
+  variant's differences from the hand rules; the past-the-end cases fail the precondition check.
+- The witness script runs on a worker pool (16 by default, one read and parse per file, tqdm progress every 30 s): the
+  2,000-file step took ~4.5 min instead of an estimated 60-80 min serially (the user asked for it).
+- Recorded in `docs/direction-A-A1-design.md` ("Re-run with derived directions"), `docs/item-layer-design.md` (Build
+  status, 2026-10-29), `docs/direction-A-summary.md` (update note), and the comments of runs 99-101.
+- **Next (user, 2026-10-29): step 8** (sums re-encodings in the engine), then step 6 (catalogue checks), step 9, the
+  expert-set row, the A' pilot. `PLAN.md`, "Next steps (2026-10-29)".
 
 **2026-10-28: locating ranges split per structure (runs 95-96); step 7's C4 engine built (run 97); signature
 witness (run 98); the user decided the precondition row and started runs 99-100 (retraining, Table A1 re-run with

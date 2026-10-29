@@ -60,7 +60,24 @@ introduction and a simple baseline (writing decision for later).
   attacks (GAMMA, MAB-Malware). Harsh check first: Pierazzi et al.'s problem-space formalization and every
   "realizable attack" paper since; the novelty must be the automatic, side-effect-exact translation, not the attack.
 
-## Next steps (2026-10-28)
+## Next steps (2026-10-29)
+
+Done (`docs/status.md`): runs 99-100 read (derived C4 rows: accuracy within noise of the hand-rule models, M_full
+slightly better; routed rows evaded by nothing on passing files under M_full; Table A1 re-run recorded in
+`docs/direction-A-A1-design.md`); every remaining class-1 witness built (run 101; all covered by the derived
+directions); the adaptive search's split by the precondition check. Next, in order (recommended and accepted by the
+user, 2026-10-29: step 8 before step 6, since it is small and finishes the automation, and step 6 then checks the
+whole set):
+1. Step 8: the sums re-encodings in the engine (item filters and identity readouts over sums; checked against
+   `SumsFeatureExtractor`: G1 for sums, G3 for sums). Until then `a_directions.py --derive --extractor sums` keeps the
+   hand rules for the re-encoded groups other than merged imports.
+2. Step 6: the catalogue checks (G7): the declared changes of app/sec/imp/ext/shf/ren/rdb/rsg against re-extraction,
+   with adversarial parameter choices.
+3. Step 9: switch the scripts to the engines, keep the hand rules and predictors as test oracles; if steps 6 or 8
+   move a direction, retrain the affected C4 models and re-run Table A1's C4 rows (user-run `run/` scripts).
+4. The expert-set row of Table A1; the A' pilot.
+
+### Earlier: next steps (2026-10-28)
 
 Done (`docs/status.md`): per-structure locating ranges (runs 95-96); the C4 engine and `a_directions.py --derive`
 (run 97: precondition variant = hand rules but for three explained features; strict variant degenerate); signature
