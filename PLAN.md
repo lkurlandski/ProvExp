@@ -60,7 +60,18 @@ introduction and a simple baseline (writing decision for later).
   attacks (GAMMA, MAB-Malware). Harsh check first: Pierazzi et al.'s problem-space formalization and every
   "realizable attack" paper since; the novelty must be the automatic, side-effect-exact translation, not the attack.
 
-## Next steps (2026-10-29, second session)
+## Next steps (2026-10-29, third session)
+
+Done (`docs/status.md`): run 102 read (holds on 2,000 files); step 6, the catalogue checks (G7, run 103): four
+findings closed by general rules, including the user's decision to declare a section added after the overlay and to
+count every unclaimed run past the headers as body. Next, in order:
+1. Read run 104 (user): the re-featurized 10% sums store, G1, the derivation, and G7 on the 2,000-file set.
+2. Step 9: switch the scripts to the engines, keep the hand rules and predictors as test oracles; regenerate the
+   training inputs (overlay_size dropped, security_virtual_address up under M_add), retrain the C4 models (sums store
+   v2 and full store) and re-run Table A1's C4 rows (user-run `run/` scripts, as runs 99-100).
+3. The expert-set row of Table A1; the A' pilot.
+
+### Earlier: next steps (2026-10-29, second session)
 
 Done (`docs/status.md`): step 8, the sums re-encodings as items and identity readouts; every C4 direction is derived
 (the hand rules remain only as G3's oracle). Pilot: G1 for sums exact, G3 for sums equal to the hand rules on every

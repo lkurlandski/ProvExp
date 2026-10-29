@@ -8,6 +8,7 @@ from __future__ import annotations
 
 from pathlib import Path
 from typing import Optional
+import sys
 import warnings
 
 import numpy as np
@@ -28,6 +29,7 @@ warnings.filterwarnings("ignore", category=SyntaxWarning)
 
 
 ROOT = Path(__file__).parent.parent
+sys.path.insert(0, str(ROOT / "scripts"))
 DATA = ROOT / "tests" / "data"
 FILES = sorted(f for f in DATA.glob("*/*") if f.is_file())[:12]
 
@@ -133,6 +135,27 @@ class TestBodyRegions:
             pytest.skip("Not a PE.")
         for lo, hi in body_regions(data, pe):
             assert pe.OPTIONAL_HEADER.SizeOfHeaders <= lo < hi <= len(data) or lo == len(data) == hi
+
+    def test_section_after_overlay_keeps_body(self, sample: tuple[bytes, np.ndarray]) -> None:
+        """
+        A section added after the overlay turns it into a gap between sections (pefile finds no overlay), which stays
+        body: no re-encoded body count falls (G7), except the regexes that end in a word boundary.
+        """
+        needs_files()
+        from catalogue_checks import DATA_CHARACTERISTICS
+        from catalogue_checks import add_section
+        data, x = sample
+        pe = _parse(data)
+        if pe is None or pe.get_overlay_data_start_offset() is None:
+            pytest.skip("Not a PE with an overlay.")
+        added = add_section(data, b".pv0", bytes(range(256)) * 8, DATA_CHARACTERISTICS, before_overlay=False)
+        if added is None:
+            pytest.skip("No room for another section header.")
+        x_new = SUMS.feature_vector(added[0])  # type: ignore[no-untyped-call]
+        body = [j for j in SUMS_COLUMNS if NAMES[j].startswith("body_")]
+        lowered = [NAMES[j] for j in body if x_new[j] < x[j]]
+        boundary = {"body_strings:regex_" + k for k in ("ipv4_addr", "ipv6_addr", "mac_addr", "email_addr")}
+        assert set(lowered) <= boundary
 
 
 ################################################################################

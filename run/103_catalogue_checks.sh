@@ -20,13 +20,18 @@
 #   3. A section placed before the overlay (as LIEF places it) moves the certificate table: security_virtual_address
 #      up. Declared for sec (and so imp), as for the insertions. M_add (precondition): fixed -> up, which adds one
 #      monotone constraint to the M_add C4 models (the only training-input change; retrain in step 9).
-#   4. Open, for the user: a section placed after the overlay swallows it under pefile's overlay rule (overlay_size,
+#   4. A section placed after the overlay swallows it under pefile's overlay rule (overlay_size,
 #      overlay_entropy, max_entropy down), and the old overlay bytes leave the body regions (body_* down). Every pilot
-#      file with an overlay that passes the precondition (31). See docs/status.md.
+#      file with an overlay that passes the precondition (31).
 # (Also fixed in the check itself: on a file whose last section runs past the end, "before the overlay" must mean past
 # every section's raw data.)
 # Second pass (after the fixes): strict variant holds everywhere; precondition variant holds except finding 4
 # (124 sec + 120 imp edits, all after-overlay, 31 files); C1 exact or flagged on every in-place edit and append.
+# Finding 4, decided (user, 2026-10-29): declare it, and redefine the body regions as each section's mapped data plus
+# every run past SizeOfHeaders no section claims (the old overlay becomes a gap that keeps its bytes); sec/imp declare
+# the overlay's removal. Third pass (the steps below as they now stand): G1 for sums exact on 100/100; G7 passes on
+# every edit (135 s). Training inputs vs run 99: overlay_size dropped under every threat model, security_virtual_address
+# up under M_add. The 2,000-file steps and the re-featurized sums store: run 104.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 source env/bin/activate

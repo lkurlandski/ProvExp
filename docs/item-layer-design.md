@@ -413,7 +413,28 @@ items read their own group's items; an in-place write keeps element counts; zero
 (it moves the overlay only where the debug directory decides its start: no file of the 2,000); slack excludes
 sections of virtual size 0. Pilot: G1 for sums exact (100/100), G3 for sums equal to the hand rules on every cell
 under the precondition, training inputs unchanged (run 102; the 2,000-file steps are the user's). Every C4 direction
-is now derived; the hand rules remain only as the G3 oracle.
+is now derived; the hand rules remain only as the G3 oracle. Run 102 (2,000 files): G1 exact, G3 for sums equal per
+threat model, training inputs unchanged; per cell, the header overwrites reach section entropy on 4 files whose .bss
+section has PointerToRawData 0 (its raw data is the header; witnessed; hand rules incomplete).
+
+**2026-10-29, third session: step 6 (G7, `scripts/catalogue_checks.py`, run 103).** The user chose the direction
+check (every moved feature against the derived signs of its operation, strict and precondition variants) over exact
+prediction for all twelve operations; C1 is compared where it applies (in-place writes and appends). Our own
+byte-level edits do exactly the declared operation (no LIEF relayout), with adversarial parameters: repeated and
+case-variant DLL names, an import with no functions, empty, colliding, and case-variant section names, printable
+content next to strings, a forged Rich block in the stub and in an inserted gap, a section's data before or after the
+overlay. Findings on the pilot, each closed by one general rule: (1) a structure found by searching a range is located
+by that range also when the search finds nothing (a forged Rich block created a Rich header C1 missed); (2) every
+operation that lengthens the file gets the strict past-end flags, not only append; (3) a section placed before the
+overlay moves the certificate table (security_virtual_address up under sec/imp); (4) a section placed after the
+overlay swallows it under pefile's overlay rule (overlay_size, overlay_entropy, max_entropy down) and, with the body
+regions defined through that rule, made every body count fall. Decided (user, 2026-10-29): declare (4) (loader-safe,
+and functionality-preserving exactly when the sample does not locate its overlay from the end of the file or the end
+of the last section, the same standing as append) and redefine the body as each section's mapped data plus every run
+past SizeOfHeaders no section claims, so the old overlay becomes a gap that keeps its bytes. Pilot after the rules: G1
+for sums exact, G7 passes on every edit; training inputs change in two features (overlay_size dropped under every
+threat model, security_virtual_address up under M_add). Run 104 (user): the sums store re-featurized, G1, the
+derivation, and G7 on the 2,000-file set.
 
 ## Open decisions for the user
 

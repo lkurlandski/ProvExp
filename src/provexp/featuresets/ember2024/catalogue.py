@@ -312,16 +312,19 @@ def declared_changes(profiles: Mapping[tuple[str, str], KindProfile], regex_mono
         The changes per operation.
     """
     content = [Change("add", k) for k in CONTENT_KINDS]
-    # The content an append or an added section brings is a new body region (or the overlay's extension); an
-    # insertion's gap is not (it lies in the headers or between them and the first section's data).
-    # (Only for an extractor with the re-encoded groups.)
+    # The content an append, an added section, or a section shift brings is body (a new region, or the extension of
+    # the unclaimed run it follows: the run that ends the file, or one before the first section's data); a DOS
+    # extension's gap is not (it lies below SizeOfHeaders). (Only for an extractor with the re-encoded groups.)
     groups = {g for g, _ in profiles}
     sums = bool(groups & set(SUMS_GROUPS))
-    body = [Change("add", k) for k in BODY_KINDS] if sums else []
-    # Structural operations also write the header in place (a table entry, counts, pointers).
-    in_place = [Change(how, k) for k, how in CONTENT_KINDS.items()]
     regex = tuple((("strings:regex", j), UP if mono else BOTH) for j, mono in enumerate(regex_monotone))
     body_regex = tuple((("body_strings:regex", j), s) for (_, j), s in regex)
+    body = [Change("add", k) for k in BODY_KINDS] if sums else []
+    # An unclaimed run extends at its end (its existing windows, full by construction, stay), and so does its
+    # trailing string.
+    body_grow = [Change("grow", "body_bytes"), Change("grow", "body_string", entries=body_regex)] if sums else []
+    # Structural operations also write the header in place (a table entry, counts, pointers).
+    in_place = [Change(how, k) for k, how in CONTENT_KINDS.items()]
     sizes_up = _fields(profiles, "header", ["NumberOfSections", "SizeOfImage", "SizeOfCode", "SizeOfInitializedData", "SizeOfUninitializedData"], UP)
     # The certificate table's offset is a file offset: content inserted before it raises it.
     security_up = Change("modify", "field", group="datadirectories", families=frozenset(), entries=_fields(profiles, "datadirectories", ["IMAGE_DIRECTORY_ENTRY_SECURITY.VirtualAddress"], UP))
@@ -342,19 +345,15 @@ def declared_changes(profiles: Mapping[tuple[str, str], KindProfile], regex_mono
         Change("grow", "overlay"),
         Change("add", "overlay"),
     ]
-    if sums:
-        app += [
-            # The overlay's body region extends (its existing windows, full by construction, stay), and so does its
-            # trailing string.
-            Change("grow", "body_bytes"),
-            Change("grow", "body_string", entries=body_regex),
-        ]
-    app += past_end
-    sec = content + body + in_place + past_end + [
+    app += body_grow + past_end
+    sec = content + body + body_grow + in_place + past_end + [
         Change("add", "section"),
         Change("grow", "file"),
         # Placed before the overlay (as LIEF places it), the content moves the overlay and the certificate table in it.
         security_up,
+        # Placed after it, the section claims the file's end: pefile's overlay rule finds no overlay (G7), and the old
+        # overlay's bytes become a gap between sections (still body; padding up to FileAlignment extends it).
+        Change("remove", "overlay"),
         Change("modify", "field", group="header", families=frozenset(), entries=sizes_up),
         # Anticipated disagreement: when no section contains the entry point, the first executable section is the
         # entry section, and an added one can become it.
@@ -373,7 +372,7 @@ def declared_changes(profiles: Mapping[tuple[str, str], KindProfile], regex_mono
         # content can create, change, or end one.
         Change("flag", "rich_pair"),
     ]
-    return {"app": app, "sec": sec, "imp": imp, "ext": ext, "shf": list(insertion)}
+    return {"app": app, "sec": sec, "imp": imp, "ext": ext, "shf": insertion + body + body_grow}
 
 
 def precondition(pe: pefile.PE, table: ItemTable) -> bool:

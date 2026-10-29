@@ -13,9 +13,11 @@ The fixed imports are re-encoding 4. Every feature of the original extractor is 
 the "C4 on sums" detector and the matched "C4 on features" control (which neutralizes the four added groups).
 
 The body regions are the parts of the file M writes nowhere in place: the data of each section, without its slack
-(the raw data past its virtual size) and without anything below SizeOfHeaders, and the overlay. Adding a section or an
-import section adds a region; appending extends the overlay (or, past a section whose declared raw data overruns the
-file, that section's region); insertions move regions without changing their content.
+(the raw data past its virtual size) and without anything below SizeOfHeaders, and every run past SizeOfHeaders that
+no section's raw data claims (the gaps between sections and the overlay). Adding a section or an import section adds a
+region (and may turn the overlay into a gap, which keeps its bytes); appending extends the run that ends the file (or,
+past a section whose declared raw data overruns the file, that section's region); an insertion adds a run or extends
+one at its end, and moves the other regions without changing their content.
 
 Each group also records its items (derivation step 8, docs/item-layer-design.md: "The re-encodings come for free"):
 the byte runs, windows, and strings of each body region, and the sections with each hashed value split by its sign.
@@ -45,7 +47,6 @@ from provexp.featuresets.ember2024.features import StringExtractor
 from provexp.featuresets.ember2024.features import clipped
 from provexp.featuresets.ember2024.features import field_range
 from provexp.featuresets.ember2024.features import merge_import_descriptors
-from provexp.featuresets.ember2024.features import overlay_extents_locating
 from provexp.featuresets.ember2024.features import section_data_range
 from provexp.featuresets.ember2024.features import section_locating
 from provexp.items import Identity
@@ -92,15 +93,18 @@ class BodyRegion:
 
 def body_layout(bytez: bytes, pe: Optional[pefile.PE]) -> list[BodyRegion]:
     """
-    The body regions of a file, in section order followed by the overlay; empty if the file did not parse.
+    The body regions of a file, in section order followed by the unclaimed runs; empty if the file did not parse.
 
     Each section contributes the data `get_entropy` reads (`section_data_range`), cut at its virtual size (when
-    nonzero) and clipped to [SizeOfHeaders, len(bytez)). Regions are not merged: two sections whose raw data overlap
-    are both counted, so that adding a region never changes how an existing one is read.
+    nonzero) and clipped to [SizeOfHeaders, len(bytez)). Each maximal run of bytes past SizeOfHeaders that no section's
+    raw data claims (the gaps between sections and the overlay alike) is a region of its own. Regions are not merged:
+    two sections whose raw data overlap are both counted, so that adding a region never changes how an existing one is
+    read.
 
-    A section's region is located through the section table (`section_locating`) and SizeOfHeaders; the overlay's also
-    through every extent pefile's overlay rule reads (`overlay_extents_locating`), since it starts after the furthest of
-    them and after every section's raw data.
+    Every region is located through the section table (`section_locating`) and SizeOfHeaders. Unlike pefile's overlay
+    rule, the unclaimed runs do not depend on the data directories: a section added after the overlay turns it into a
+    gap that starts where it did and keeps its bytes (G7), an append extends the run that ends the file, and an
+    inserted gap is a run of its own or extends one at its end.
 
     NOTE: clipping at SizeOfHeaders keeps the header region out on files whose sections start inside it; the DOS
     extension (M_shift) raises SizeOfHeaders, which can move the clip on such files only (an A2 exception).
@@ -111,21 +115,24 @@ def body_layout(bytez: bytes, pe: Optional[pefile.PE]) -> list[BodyRegion]:
     floor = min(int(pe.OPTIONAL_HEADER.SizeOfHeaders), n)
     located = section_locating(pe) + (field_range(pe.OPTIONAL_HEADER, "SizeOfHeaders"),)
     regions: list[BodyRegion] = []
-    end = floor
+    claimed: list[Range] = []
     for section in pe.sections:
         lo, hi = section_data_range(section)
-        end = max(end, min(hi, n))
+        if hi > lo:
+            claimed.append((lo, hi))
         if section.Misc_VirtualSize > 0:
             hi = min(hi, lo + section.Misc_VirtualSize)
         past = ((n, hi),) if hi > n else ()
         lo, hi = max(lo, floor), min(hi, n)
         if hi > lo:
             regions.append(BodyRegion((lo, hi), located + past, bool(past)))
-    # NOTE: on truncated files pefile can place the overlay inside the headers or the sections; the overlay region
-    # starts only after every section's raw data.
-    overlay = pe.get_overlay_data_start_offset()
-    if overlay is not None and max(overlay, end) < n:
-        regions.append(BodyRegion((max(overlay, end), n), located + overlay_extents_locating(pe), True))
+    at = floor
+    for lo, hi in sorted(claimed) + [(n, n)]:
+        if lo > at:
+            regions.append(BodyRegion((at, min(lo, n)), located, lo >= n))
+        at = max(at, hi)
+        if at >= n:
+            break
     return regions
 
 

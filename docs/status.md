@@ -9,15 +9,22 @@ SizeOfRawData > 0, so its raw data is the header; witnessed on all four by rewri
 and down). No threat-model change (these operations are only in M_full, where section entropy is already two-sided).
 Recorded in `run/102_step8_sums.sh`.
 
-**Step 6 (G7) built and run on the pilot (`scripts/catalogue_checks.py`, `run/103_catalogue_checks.sh`; user chose the
-direction check over exact prediction for all twelve operations).** In-place operations and append hold. Fixed, one
-rule each: an absent Rich header is located by its search range (C1 missed a forged one); every lengthening operation
-gets the strict past-end flags; a section placed before the overlay moves the certificate table (security_virtual_address
-under M_add: fixed -> up, the only training-input change so far). **Open, for the user:** a section placed *after* the
-overlay swallows it (pefile's overlay rule): overlay_size/overlay_entropy/max_entropy down and the old overlay bytes
-leave the body regions (all body_* down), on all 31 pilot files with an overlay that pass the precondition. Options:
-declare it as is (body sums lose their one-sidedness), declare it and count the bytes between and after sections as
-body (re-featurize the sums store), or restrict sec/imp to placement before the overlay (narrows the threat model).
+**Step 6 (G7) built and run on the pilot (`scripts/catalogue_checks.py`, `run/103_catalogue_checks.sh`; the user
+chose the direction check over exact prediction for all twelve operations).** Append and the in-place operations held
+from the start. Four findings, each closed by one general rule: an absent Rich header is located by its search range
+(C1 missed a forged one); every lengthening operation gets the strict past-end flags; a section placed before the
+overlay moves the certificate table (security_virtual_address up); a section placed after the overlay swallows it
+(pefile's overlay rule). For the last, decided (user): declare it (overlay_size up -> both) and redefine the body
+regions as sections plus every unclaimed run past SizeOfHeaders, so the old overlay stays body. Discussed: the
+after-overlay layout is loader-safe and preserves functionality unless the sample locates its overlay from the end of
+the file (append breaks that too) or from the end of the last section. Pilot after the fixes: G1 for sums exact, G7
+passes on every edit, body sums keep their directions. Training inputs vs run 99: overlay_size dropped under all three
+threat models, security_virtual_address up under M_add.
+- **For the user:** `run/104_g7_body_v2.sh` (~2 h: re-featurize the 10% sums store, 0.9 h in run 80; G1, the derivation,
+  and G7 on the 2,000-file set). Read `artifacts/experiments/item_checks/exact-sums-2000-v2/report.json` and
+  `artifacts/experiments/catalogue_checks/2000/report.json`.
+- **Next:** read run 104; step 9 (switch the scripts to the engines; regenerate the full-store and sums-store training
+  inputs; retrain the C4 models on `ember2024-sums-10-v2` and the full store; re-run Table A1's C4 rows, user-run).
 
 **2026-10-29, second session: step 8 built (sums re-encodings as items); pilot checks pass; run 102's 2,000-file
 steps are for the user.** Commits ef8aa21..(this wrap-up).
