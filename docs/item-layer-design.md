@@ -449,6 +449,15 @@ the search refuses it (it has run on the thrember store since run 100). Training
 from run 99's in exactly the two features step 6 moved, in both stores. Run 105 (user) retrains the six C4 models and
 re-runs Table A1's C4 rows.
 
+**Run 104 (G7 on 2,000 files) and the plain-layout clauses.** The strict variant held on every edit; the precondition
+variant failed on 11 files in five layouts, each witnessed (`run/104_g7_body_v2.sh`). One was the check's own error
+(low-alignment images, where its shf and sec/imp edits moved raw data off its virtual address, which the loader
+rejects). The other four are layouts where the operations move more than the catalogue declares; decided (user,
+2026-10-29): the precondition check excludes them (`catalogue.plain_layout`: sections within SizeOfImage, SizeOfImage
+at most what the sections need, headers that hold only headers, pefile's overlay starting at a section's raw end),
+rather than making the affected features two-sided for every file. 8 of the 1,682 files that passed leave; no
+direction changes on the pilot. Run 107 (user) re-checks the 2,000 files.
+
 ## Open decisions for the user
 
 **Settled (user, 2026-10-27), all as recommended:** (1) add `items` now and keep `provenance` until G2 passes, then
