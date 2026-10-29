@@ -2321,8 +2321,14 @@ class RichHeader(FeatureType):
     def items(self, bytez: bytes, pe: pefile.PE | None = None) -> ItemTable:
         n = len(bytez)
         families = {"richheader:num_pairs": 1, "richheader:pairs": 32}
-        if pe is None or pe.RICH_HEADER is None:
+        if pe is None:
             return ItemTable(n, families, [])
+        if pe.RICH_HEADER is None:
+            # NOTE: a structure found by searching a range is located by that range also when the search finds nothing:
+            # a write there can create one (G7: a forged Rich block in the DOS stub). One pair with no contribution
+            # records it, so the engine flags such a write instead of predicting no change.
+            search = header_locating(pe) + ((0x80, pe.OPTIONAL_HEADER.get_file_offset()),)
+            return ItemTable(n, families, [Item("rich_pair", locating=search)])
 
         # The (compid, count) pairs, eight bytes each after the DanS signature and padding (see `provenance`).
         values = pe.RICH_HEADER.values

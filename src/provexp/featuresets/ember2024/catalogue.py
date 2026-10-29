@@ -304,8 +304,9 @@ def declared_changes(profiles: Mapping[tuple[str, str], KindProfile], regex_mono
         profiles: The kinds' vocabulary (to resolve field names to entries).
         regex_monotone: Per regex index, whether a string that matches it still does when extended
             (provexp.reach.extension_monotone).
-        strict: Whether appending may complete structures past the end of the file (strict C4); without, the
-            precondition row's files, where no locating range lies past the end.
+        strict: Whether lengthening the file (appending, adding a section or imports, inserting a gap) may complete
+            structures past its end (strict C4); without, the precondition row's files, where no locating range lies
+            past the end.
 
     Returns:
         The changes per operation.
@@ -322,11 +323,15 @@ def declared_changes(profiles: Mapping[tuple[str, str], KindProfile], regex_mono
     regex = tuple((("strings:regex", j), UP if mono else BOTH) for j, mono in enumerate(regex_monotone))
     body_regex = tuple((("body_strings:regex", j), s) for (_, j), s in regex)
     sizes_up = _fields(profiles, "header", ["NumberOfSections", "SizeOfImage", "SizeOfCode", "SizeOfInitializedData", "SizeOfUninitializedData"], UP)
-    insertion = content + in_place + [
+    # The certificate table's offset is a file offset: content inserted before it raises it.
+    security_up = Change("modify", "field", group="datadirectories", families=frozenset(), entries=_fields(profiles, "datadirectories", ["IMAGE_DIRECTORY_ENTRY_SECURITY.VirtualAddress"], UP))
+    # Every operation that lengthens the file can complete a structure located past its old end (strict only; G7).
+    past_end = [Change("flag", kind, group=group) for group, kind in PAST_END_KINDS if group in groups] if strict else []
+    insertion = content + in_place + past_end + [
         # The gap's content joins the file; every window after it is re-tiled, and strings can merge across it.
         Change("flag", "window"),
         Change("grow", "file"),
-        Change("modify", "field", group="datadirectories", families=frozenset(), entries=_fields(profiles, "datadirectories", ["IMAGE_DIRECTORY_ENTRY_SECURITY.VirtualAddress"], UP)),
+        security_up,
     ]
     app = content + body + [
         # A file shorter than two windows is one window, which every append changes.
@@ -344,11 +349,12 @@ def declared_changes(profiles: Mapping[tuple[str, str], KindProfile], regex_mono
             Change("grow", "body_bytes"),
             Change("grow", "body_string", entries=body_regex),
         ]
-    if strict:
-        app += [Change("flag", kind, group=group) for group, kind in PAST_END_KINDS if group in groups]
-    sec = content + body + in_place + [
+    app += past_end
+    sec = content + body + in_place + past_end + [
         Change("add", "section"),
         Change("grow", "file"),
+        # Placed before the overlay (as LIEF places it), the content moves the overlay and the certificate table in it.
+        security_up,
         Change("modify", "field", group="header", families=frozenset(), entries=sizes_up),
         # Anticipated disagreement: when no section contains the entry point, the first executable section is the
         # entry section, and an added one can become it.
