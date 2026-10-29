@@ -4,8 +4,9 @@ every operation of the threat models M_add, M_shift, M_full, the signs the opera
 some file; a threat model's direction is the union over its operations (fixed, up, down, both). The same for the
 feature's re-encoding as a layer-2 sum, where one exists.
 
-The per-group rules are written by hand from the extractor's code and the operations' declared side effects: a
-stand-in for C4 computed from the item table, used only for screening (go/no-go checks 2 and 3).
+By default the directions are derived (C4; see below). With `--hand`, they are read off per-group rules written by
+hand from the extractor's code and the operations' declared side effects: the stand-in for C4 used for screening
+(go/no-go checks 2 and 3), kept as the derivation's test oracle (G3) since derivation step 9.
 
 Outputs, in `{outdir}/`:
     directions.csv      one row per feature: index, name, group, the signs per operation, the direction under each
@@ -21,11 +22,11 @@ groups, which `feature_rule` covers with the re-encodings' signs). Its variants 
 sums" detector) and `{tm}-control` (the four re-encoded groups dropped: "C4 on features" on the same store);
 `reencoded.neutralize.txt` lists the four groups, for the unconstrained reference on the same store.
 
-With `--derive --extractor sums`, the variant files are written in the sums extractor's layout (`write_sums_layout`):
+Derived with `--extractor sums`, the variant files are written in the sums extractor's layout (`write_sums_layout`):
 `{tm}-pre` and `{tm}-pre-control`, as run 80's `{tm}` and `{tm}-control`.
 
-With `--derive`, the directions are computed instead of read off the hand rules (derivation step 7, C4;
-docs/item-layer-design.md, component 5): the kinds' term vocabulary and the in-place operations' changes come from the
+Derived (the default; `--derive` is accepted for the older run scripts), the directions are computed (derivation
+step 7, C4; docs/item-layer-design.md, component 5): the kinds' term vocabulary and the in-place operations' changes come from the
 item tables of the files in --files, the structural operations' changes from the catalogue
 (provexp.featuresets.ember2024.catalogue), and provexp.reach.directions turns them into signs. Two variants: strict
 (appending may complete structures past the end of the file, on any file) and the precondition row's (`-pre`: only
@@ -40,9 +41,9 @@ Also writes the comparison with the hand rules (G3):
                         (files, those with a locating range past the end, and the kinds located there)
 
 Usage:
-    python scripts/a_directions.py --outdir artifacts/experiments/a_directions
-    python scripts/a_directions.py --extractor sums --outdir artifacts/experiments/a_directions_sums
-    python scripts/a_directions.py --derive --outdir artifacts/experiments/a_directions_derived
+    python scripts/a_directions.py --outdir artifacts/experiments/a_directions_derived
+    python scripts/a_directions.py --extractor sums --outdir artifacts/experiments/a_directions_derived_sums
+    python scripts/a_directions.py --hand --outdir artifacts/experiments/a_directions
 """
 
 from __future__ import annotations
@@ -540,15 +541,22 @@ def main_derive(args: Any) -> None:
 
 def main() -> None:
     parser = ArgumentParser(description=__doc__.split("\n\n")[1])
-    parser.add_argument("--outdir", type=Path, default=Path("artifacts/experiments/a_directions"))
+    parser.add_argument("--outdir", type=Path, default=None, help="Default: artifacts/experiments/a_directions_derived "
+                        "(a_directions with --hand).")
     parser.add_argument("--extractor", type=str, choices=["ember2024", "sums"], default="ember2024")
-    parser.add_argument("--derive", action="store_true", help="Derive the directions from the item tables (C4).")
+    parser.add_argument("--hand", action="store_true", help="Read the directions off the hand rules (the G3 oracle).")
+    parser.add_argument("--derive", action="store_true", help="Derive the directions (C4): the default, kept for the "
+                        "older run scripts.")
     parser.add_argument("--files", type=Path, default=Path("artifacts/experiments/e1/seed-0/zeros/files.parquet"), help="derive: the corpus (a `name` column).")
     parser.add_argument("--db", type=Path, default=Path("/shared/datasets/EMBER-2024/data/ts"))
     parser.add_argument("--workers", type=int, default=1)
     parser.add_argument("--limit", type=int, default=0, help="derive: only the first N files (0: all).")
     args = parser.parse_args()
-    if args.derive:
+    if args.hand and args.derive:
+        raise ValueError("Pass at most one of --hand and --derive.")
+    if args.outdir is None:
+        args.outdir = Path("artifacts/experiments/a_directions" if args.hand else "artifacts/experiments/a_directions_derived")
+    if not args.hand:
         main_derive(args)
         return
     sums = args.extractor == "sums"

@@ -10,4 +10,5 @@ source env/bin/activate
 
 echo "Direction table -> artifacts/experiments/a_directions/ (directions.csv, summary.json)."
 python scripts/a_directions.py \
+    --hand \
     --outdir artifacts/experiments/a_directions

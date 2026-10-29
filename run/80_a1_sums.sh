@@ -34,6 +34,7 @@ python scripts/featurize.py \
 
 echo "Writing the directions for the sums extractor into $D."
 python scripts/a_directions.py \
+  --hand \
   --extractor sums \
   --outdir "$D"
 
