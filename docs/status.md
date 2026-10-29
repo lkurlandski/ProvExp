@@ -1,7 +1,7 @@
 # Status
 
 **2026-10-29, fourth session: run 104 read; the precondition extended by plain-layout clauses (user); step 9's code
-and the expert-set extractor built; runs 105-107 for the user.**
+and the expert-set extractor built; runs 105-107 for the user.** Commits a5e0cda..(this wrap-up).
 
 Run 104: G1 for sums exact on 2,000/2,000; the training inputs from the 2,000-file derivation are byte-identical to the
 pilot's. **G7 failed its hypothesis** for the precondition variant (the strict one holds everywhere): 100 edits on 11
@@ -14,9 +14,10 @@ data (an inserted section splits a body run).
   `catalogue.plain_layout` adds four clauses for (b)-(e); G7's edits keep low-alignment images loader-safe (a). The
   clauses exclude 74 of the 2,000 files, 8 of the 1,682 that passed before; the 11 files now pass G7; the pilot's
   training inputs are unchanged (88 pilot files pass, as before).
-- **For the user, in order:** `run/107_g7_plain_layout.sh` (~35 min: the derivation and G7 on the 2,000 files);
-  then `run/105_step9_retrain.sh` (~3 h; its inputs are unchanged, its routing uses the new check);
-  `run/106_expert_set.sh` (~1-1.5 h) any time.
+- **Running overnight (user, 2026-10-29, chained in tmux: 107; 105; 106):** `run/107_g7_plain_layout.sh` (~35 min:
+  the derivation and G7 on the 2,000 files); `run/105_step9_retrain.sh` (~3 h; inputs unchanged, routing uses the new
+  check; starts even if 107 fails, so read 107 first); `run/106_expert_set.sh` (~1-1.5 h; its training and attack steps
+  were not smoke-tested).
 - **Step 9 (code done):** `a_directions.py` derives by default (`--hand` for the oracle); the adaptive search predicts
   with the C1 engine (hand predictors as its test oracle); the engine's add-section now removes the overlay.
 - **Expert set (code done):** `provexp.featuresets.ember2024.expert`, checked against the authors' own code; their

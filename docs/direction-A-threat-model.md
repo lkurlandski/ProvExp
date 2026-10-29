@@ -49,7 +49,12 @@ from the instrumented extractor (C4 over the item table). This table is for scre
 (nothing the parse is located through lies past the end of the file), the derived directions equal these rules per
 threat model except entry_name_hash (both under M_add and M_shift), the Rich header (both under M_shift), and
 security_size (tighter). Over every possible file (strict), almost nothing stays one-sided; see
-`docs/item-layer-design.md`, Build status.
+`docs/item-layer-design.md`, Build status. Since step 9 (2026-10-29) the derived directions are the default (`--hand` gives these
+rules, kept as the test oracle), and the precondition also requires a plain layout (`catalogue.plain_layout`: sections
+within SizeOfImage, SizeOfImage at most what the sections need, headers that hold only headers, pefile's overlay
+starting at a section's raw end; run 104, decided by the user), which 8 of the 1,682 passing files of the 2,000-file set
+fail. Low-alignment images (mapped flat) admit no shift or stub extension, and an added section's raw offset equals its
+virtual address.
 
 Global soundness is strict: a feature counts as one-directional only if no file and no choice of content can move it
 the other way. Where the exception is a rare file layout (header slack that is not zero-filled), the table still says

@@ -60,7 +60,22 @@ introduction and a simple baseline (writing decision for later).
   attacks (GAMMA, MAB-Malware). Harsh check first: Pierazzi et al.'s problem-space formalization and every
   "realizable attack" paper since; the novelty must be the automatic, side-effect-exact translation, not the attack.
 
-## Next steps (2026-10-29, third session)
+## Next steps (2026-10-29, fourth session)
+
+Done (`docs/status.md`): run 104 read (G1 exact, training inputs unchanged; G7 found five rare layouts, one the check's
+own error, four closed by extending the precondition check with plain-layout clauses, decided by the user); step 9's
+code (the scripts on the engines, the hand rules and predictors as test oracles; the engine's add-section removes the
+overlay); the expert-set extractor (checked against the authors' code; quirks patched; upstream-issues item 6).
+Running overnight (user): runs 107, 105, 106. Next, in order:
+1. Read run 107 (G7 and the derivation on the 2,000 files with the plain-layout clauses). Any violation: witness it and
+   close it by a general rule; if the training inputs change, run 105 must be redone.
+2. Read run 105 (step 9: the six C4 models retrained, Table A1's C4 rows re-run on the C1 engine) against runs 99-100.
+3. Read run 106 (the expert-set row: monotone and unconstrained GBDTs on the 40 features, toolkit columns) and write it
+   into `docs/direction-A-expert-set.md` and the Table A1 design doc, under M_add and M_full.
+4. The A' pilot (`docs/direction-A-prime-mock.md`), after the reading list (HRAT, Demontis et al. TDSC 2017, Šrndić &
+   Laskov, arXiv 2402.14988; harsh read).
+
+### Earlier: next steps (2026-10-29, third session)
 
 Done (`docs/status.md`): run 102 read (holds on 2,000 files); step 6, the catalogue checks (G7, run 103): four
 findings closed by general rules, including the user's decision to declare a section added after the overlay and to
