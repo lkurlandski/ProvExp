@@ -54,6 +54,7 @@ import polars as pl
 from provexp.data.tabular import load_manifest
 from provexp.featuresets.ember2024.catalogue import passes_precondition
 from provexp.featuresets.ember2024.features import PEFeatureExtractor
+from provexp.featuresets.ember2024.expert import ExpertFeatureExtractor
 from provexp.featuresets.ember2024.features import merge_import_descriptors
 from provexp.featuresets.ember2024.sums import SumsFeatureExtractor
 
@@ -78,10 +79,15 @@ SEEN = ("padding", "gamma_sections", "gamma_shift", "content_shift")
 ################################################################################
 
 def make_extractor(features: Path) -> PEFeatureExtractor:
-    """The extractor a feature store was built with (quirk-fixed in either case), checked against its manifest."""
+    """The extractor a feature store was built with (quirk-fixed in every case), checked against its manifest."""
     manifest = load_manifest(features)
-    extractor = SumsFeatureExtractor() if manifest["feature_set"] == "ember2024-sums" \
-        else merge_import_descriptors(PEFeatureExtractor())
+    extractor: PEFeatureExtractor
+    if manifest["feature_set"] == "ember2024-sums":
+        extractor = SumsFeatureExtractor()
+    elif manifest["feature_set"] == "ember2024-expert":
+        extractor = ExpertFeatureExtractor()
+    else:
+        extractor = merge_import_descriptors(PEFeatureExtractor())
     if extractor.feature_names != manifest["feature_names"]:
         raise RuntimeError(f"The extractor does not match the feature names of {features.as_posix()}.")
     return extractor

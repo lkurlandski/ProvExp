@@ -82,3 +82,17 @@ at import; `tests/test_ember2024.py::TestDirectoryGuard`). Of the 1,235 files th
 rarer paths (`contains_rva`, `get_data`); all parse with the guard (run 94 rewrites their rows). Also
 worth reporting to thrember: `raw_features` catches `AttributeError` around `pefile.PE(...)`, so any pefile bug of
 this kind silently turns a file into a non-PE.
+
+## 6. Gimenez et al.'s expert features: two assign-instead-of-accumulate quirks and a constant DOS-stub flag (found 2026-10-29)
+
+In `static_features_extraction.py:get_features` (github.com/PFGimenez/certifiably-robust-malware-detectors-by-design),
+the per-library function counts are *assigned* per import descriptor (`features[lib.name.lower()] = len(lib.entries)`),
+so a second descriptor for a watched library (an edit in their own threat model: adding imports) replaces that
+library's count, e.g. kernel32.dll from 120 down to 1; likewise a second section named `.text`, `.data`, `.rsrc`, or
+`.rdata` replaces that name's size and entropy x size with its own. Both lower features their monotone models constrain
+to increase, so the certified robustness does not hold against these additions. A fix: accumulate (`+=`) in both
+places. Separately, `binary.dos_stub == default_dos_stub` compares a list with what current LIEF returns, a
+memoryview, so the comparison is always unequal and `modified_dos_stub` is constant 1 (`bytes(binary.dos_stub) ==
+bytes(default_dos_stub)` fixes it; which LIEF version they used is not stated). **Patched here** by accumulating
+(`provexp.featuresets.ember2024.expert`, `accumulate=True`; the quirks are witnessed in
+`tests/test_ember2024_expert.py::TestQuirks`).

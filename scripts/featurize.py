@@ -9,10 +9,13 @@ done. Interrupted runs resume where they left off. Once every shard is done, the
 With `--extractor sums`, the features are those of `provexp.featuresets.ember2024.sums.SumsFeatureExtractor` (thrember
 with merged import descriptors, plus the layer-2 re-encodings of direction A). With `--every K`, only every K-th shard
 of each split is featurized (shards are shuffled within a split, so this is a random subsample); the rows are compact.
+With `--extractor expert`, the features are Gimenez et al.'s 40 (`provexp.featuresets.ember2024.expert`, the quirks
+patched), for the expert-set row of Table A1.
 
 Usage:
     python scripts/featurize.py --splits tr vl ts --num_workers 64
     python scripts/featurize.py --extractor sums --every 10 --outdir artifacts/features/ember2024-sums-10
+    python scripts/featurize.py --extractor expert --every 10 --outdir artifacts/features/ember2024-expert-10
 """
 
 from argparse import ArgumentParser
@@ -45,7 +48,9 @@ from provexp.data.tabular import FEATURES_FILE
 from provexp.data.tabular import MANIFEST_FILE
 from provexp.data.tabular import META_FILE
 from provexp.featuresets.ember2024 import features as ember2024_features
+from provexp.featuresets.ember2024 import expert as expert_module
 from provexp.featuresets.ember2024 import sums as sums_module
+from provexp.featuresets.ember2024.expert import ExpertFeatureExtractor
 from provexp.featuresets.ember2024.features import PEFeatureExtractor
 from provexp.featuresets.ember2024.sums import SumsFeatureExtractor
 
@@ -57,6 +62,7 @@ MAX_LENGTH = 4_000_000
 EXTRACTORS: dict[str, type[PEFeatureExtractor]] = {
     "ember2024": PEFeatureExtractor,
     "sums": SumsFeatureExtractor,
+    "expert": ExpertFeatureExtractor,
 }
 
 _EXTRACTOR: Optional[PEFeatureExtractor] = None
@@ -228,6 +234,7 @@ def write_manifest(root: Path, splits: list[str], extractor: str = "ember2024", 
         "feature_names": instance.feature_names,
         "extractor_sha256": hashlib.sha256(extractor_file.read_bytes()).hexdigest(),
         "sums_sha256": hashlib.sha256(Path(sums_module.__file__).read_bytes()).hexdigest() if extractor == "sums" else None,
+        "expert_sha256": hashlib.sha256(Path(expert_module.__file__).read_bytes()).hexdigest() if extractor == "expert" else None,
         "max_length": MAX_LENGTH,
         "packages": {p: importlib.metadata.version(p) for p in ("numpy", "pefile", "signify", "scikit-learn", "py-tlsh")},
         "python": sys.version,
