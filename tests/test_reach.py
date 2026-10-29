@@ -16,6 +16,7 @@ from provexp.items import Normalized
 from provexp.items import Opaque
 from provexp.items import Ratio
 from provexp.items import Term
+from provexp.items import feature_hash
 from provexp.reach import BOTH
 from provexp.reach import DOWN
 from provexp.reach import FIXED
@@ -204,6 +205,15 @@ class TestVocabulary:
         c.add(_c4_table())
         assert b.finish()[0][("toy", "run")].items == c.finish()[0][("toy", "run")].items == 4
 
+    def test_split_index_checked(self) -> None:
+        (b,), (sign,) = feature_hash(4, ["x"])
+        right = 4 * (sign < 0) + int(b)
+        ok = ItemTable(2, {"p": 8}, [Item("x", terms=(Term("split", "p", index=right, key="x"),), group="g")])
+        profile_kinds([ok])
+        wrong = ItemTable(2, {"p": 8}, [Item("x", terms=(Term("split", "p", index=(right + 4) % 8, key="x"),), group="g")])
+        with pytest.raises(RuntimeError):
+            profile_kinds([wrong])
+
     def test_conflicting_ops(self) -> None:
         t = ItemTable(2, {"n": 1}, [Item("x", terms=(Term("count", "n"),), group="g"), Item("x", terms=(Term("slot", "n", value=1),), group="g")])
         with pytest.raises(RuntimeError):
@@ -239,6 +249,16 @@ class TestEnvelope:
         env = envelope([Change("add", "blob")], *vocab)
         assert all(env.entry("names", i) == BOTH for i in range(4))
 
+    def test_split_add(self) -> None:
+        # A key reaches the part of its bucket its hash sign picks, always up; any key reaches every part.
+        (b,), (sign,) = feature_hash(4, ["x"])
+        table = ItemTable(2, {"p": 8}, [Item("x", terms=(Term("split", "p", index=4 * (sign < 0) + int(b), value=2.0, key="x"),), group="g")])
+        vocab = profile_kinds([table])
+        env = envelope([Change("add", "x", keys=("x",))], *vocab)
+        assert env.family("p") == [UP if i == 4 * (sign < 0) + b else FIXED for i in range(8)]
+        assert envelope([Change("add", "x")], *vocab).family("p") == [UP] * 8
+        assert envelope([Change("remove", "x")], *vocab).family("p") == [DOWN] * 8
+
     def test_unknown_kind(self, vocab: tuple[dict, dict]) -> None:  # type: ignore[type-arg]
         with pytest.raises(KeyError):
             envelope([Change("add", "nothing")], *vocab)
@@ -251,6 +271,8 @@ class TestEnvelope:
         (c,) = region_changes(table, [(3, 4)], {})
         assert c.kind == "run" and dict(c.entries or ()) == {("n", 0): BOTH, ("len", 0): BOTH}
         assert region_changes(table, [], {"run": "flag"}) == []
+        # An in-place write keeps the number of elements: the blob's size (a per-element count) is not modified.
+        assert {c.kind for c in region_changes(table, [(0, 1)], {})} == {"header"}
 
 
 class TestReadoutSigns:

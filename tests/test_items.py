@@ -88,6 +88,9 @@ class TestTerm:
             {"op": "bins", "family": "f"},
             {"op": "count", "family": "f", "bin_key": np.zeros(3, dtype=np.int64)},
             {"op": "count", "family": "f", "index": -1},
+            {"op": "split", "family": "f", "value": 1.0},
+            {"op": "split", "family": "f", "value": -1.0, "key": "k"},
+            {"op": "split", "family": "f", "key": "k", "sign": -1},
         ],
     )
     def test_invalid(self, kwargs: dict[str, object]) -> None:
@@ -220,6 +223,12 @@ class TestReadouts:
         P = dense(project(table, [Max(("s", "o"), "e"), Min(("s", "o"), "e")]))
         np.testing.assert_allclose(P[:, 0], [0, 0, 0.5, 0.5, 0.25, 0.25, 0.25, 0.25])
         assert not P[:, 1].any()
+
+    def test_max_min_group(self) -> None:
+        items = [Item("s", attrs={"e": 3.0}, group="a"), Item("s", attrs={"e": 5.0}, group="b"), Item("s", attrs={"e": -1.0}, group="b")]
+        table = ItemTable(0, {}, items)
+        x = evaluate(table, [Max(("s",), "e", group="a"), Max(("s",), "e"), Min(("s",), "e", group="a"), Min(("s",), "e", group="b")])
+        np.testing.assert_array_equal(x, np.array([3, 5, 0, -1], dtype=np.float32))
 
     def test_distinct_count(self) -> None:
         items = [

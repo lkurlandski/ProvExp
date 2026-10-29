@@ -110,7 +110,7 @@ def feature_hash(n_features: int, keys: Sequence[str]) -> tuple[IntArray, IntArr
 ################################################################################
 
 
-TermOp = Literal["count", "add", "bins", "hashed", "keyed", "slot"]
+TermOp = Literal["count", "add", "bins", "hashed", "split", "keyed", "slot"]
 
 
 @dataclass(frozen=True, eq=False)
@@ -124,6 +124,10 @@ class Term:
         bins    the count of each bin of `bin_key` over `ranges`, into
                 entries `index + bin_key[i]` (nonnegative counts)           + or 0 per bin
         hashed  `sign * value` into the bucket `index` of the key `key`     + if unsigned, else the key's sign
+        split   `value`, declared nonnegative, into the part of the key's
+                bucket its hash sign picks, in a family of 2k entries: the
+                bucket b (of k) for a positive sign, k + b for a negative
+                one (a signed hash's positive and negative parts)           + or 0
         keyed   +1 to the count of `key` in bucket `index` (read by DistinctCount)  +
         slot    `value`, a field read from exactly one item                 any (modify only)
 
@@ -133,7 +137,7 @@ class Term:
         index: The entry within the family (the first entry for bins).
         value: The amount (one for count and keyed; unused for bins).
         sign: The hash sign for hashed terms, otherwise +1.
-        key: The hashed or keyed key.
+        key: The hashed, split, or keyed key.
         attr: The item attribute the value is read from, if any.
         ranges: The elements the value (and key) is read from: the term's provenance.
         per_byte: Whether the term's provenance is one unit per element (content, e.g., a size or a byte count)
@@ -153,17 +157,17 @@ class Term:
     bin_key: Optional[npt.NDArray[np.integer]] = None
 
     def __post_init__(self) -> None:
-        if self.op not in ("count", "add", "bins", "hashed", "keyed", "slot"):
+        if self.op not in ("count", "add", "bins", "hashed", "split", "keyed", "slot"):
             raise ValueError(f"Unknown term op: {self.op}")
         if self.index < 0:
             raise ValueError(f"Expected a nonnegative index. Got {self.index}.")
         if self.op in ("count", "keyed") and self.value != 1.0:
             raise ValueError(f"A {self.op} term contributes exactly one. Got {self.value}.")
-        if self.op in ("add", "hashed") and not self.value >= 0:
+        if self.op in ("add", "hashed", "split") and not self.value >= 0:
             raise ValueError(f"A {self.op} term's value is declared nonnegative. Got {self.value}.")
         if self.sign not in (-1, 1) or (self.sign != 1 and self.op != "hashed"):
             raise ValueError(f"Only hashed terms carry a sign, of +1 or -1. Got {self.sign} on a {self.op} term.")
-        if self.op in ("hashed", "keyed") and self.key is None:
+        if self.op in ("hashed", "split", "keyed") and self.key is None:
             raise ValueError(f"A {self.op} term needs a key.")
         if (self.op == "bins") != (self.bin_key is not None):
             raise ValueError("Exactly the bins terms carry a bin key.")
@@ -606,24 +610,26 @@ class Entropy(Readout):
                 out.add_unit(col, t.ranges)
 
 
-def _attr_values(table: ItemTable, kinds: tuple[str, ...], attr: str) -> list[tuple[Item, float]]:
-    return [(item, float(item.attrs[attr])) for item in table.of_kind(*kinds)]
+def _attr_values(table: ItemTable, kinds: tuple[str, ...], attr: str, group: Optional[str]) -> list[tuple[Item, float]]:
+    return [(item, float(item.attrs[attr])) for item in table.of_kind(*kinds) if group is None or item.group == group]
 
 
 @dataclass(frozen=True)
 class Max(Readout):
     """
-    The largest attribute over the items of some kinds and `floor`, divided by a sum if `divide_by` is given (by zero:
-    zero). The items that attain the maximum contribute, through their attribute's provenance.
+    The largest attribute over the items of some kinds (of one group, if `group` is given: another feature type may
+    record items of the same kind) and `floor`, divided by a sum if `divide_by` is given (by zero: zero). The items that
+    attain the maximum contribute, through their attribute's provenance.
     """
 
     kinds: tuple[str, ...]
     attr: str
     floor: float = 0.0
     divide_by: Optional[tuple[str, int]] = None
+    group: Optional[str] = None
 
     def _best(self, table: ItemTable) -> tuple[list[tuple[Item, float]], float]:
-        values = _attr_values(table, self.kinds, self.attr)
+        values = _attr_values(table, self.kinds, self.attr, self.group)
         return values, max([v for _, v in values] + [self.floor])
 
     def evaluate(self, table: ItemTable) -> FloatArray:
@@ -647,17 +653,18 @@ class Max(Readout):
 @dataclass(frozen=True)
 class Min(Readout):
     """
-    The smallest attribute over the items of some kinds and `floor`, divided as in `Max`. With nonnegative attributes
-    and a zero floor it is constant, and nothing contributes (NOTE (Axiom 3)).
+    The smallest attribute over the items of some kinds (of one group, as in `Max`) and `floor`, divided as in `Max`.
+    With nonnegative attributes and a zero floor it is constant, and nothing contributes (NOTE (Axiom 3)).
     """
 
     kinds: tuple[str, ...]
     attr: str
     floor: float = 0.0
     divide_by: Optional[tuple[str, int]] = None
+    group: Optional[str] = None
 
     def evaluate(self, table: ItemTable) -> FloatArray:
-        values = _attr_values(table, self.kinds, self.attr)
+        values = _attr_values(table, self.kinds, self.attr, self.group)
         best = min([v for _, v in values] + [self.floor])
         if self.divide_by is not None:
             d = float(table.sums[self.divide_by[0]][self.divide_by[1]])
@@ -665,7 +672,7 @@ class Min(Readout):
         return np.array([best])
 
     def project(self, table: ItemTable, out: _Projection, col: int) -> None:
-        values = _attr_values(table, self.kinds, self.attr)
+        values = _attr_values(table, self.kinds, self.attr, self.group)
         if not values or min(v for _, v in values) >= self.floor:
             return
         low = min(v for _, v in values)

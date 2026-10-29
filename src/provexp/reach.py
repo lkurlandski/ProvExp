@@ -278,7 +278,7 @@ def ratio_signs(num: Signs, den: Signs) -> Signs:
 class TermProfile:
     """
     What the terms of one kind write to one entry of a family (count, add, and slot terms) or to a whole family (bins,
-    hashed, and keyed terms, whose entry depends on content or key).
+    hashed, split, and keyed terms, whose entry depends on content or key).
 
     Attributes:
         op: The term op (one per entry and kind).
@@ -305,7 +305,7 @@ class KindProfile:
     Attributes:
         group: The feature type that records the items.
         kind: The item kind.
-        terms: Per entry (family, index), or per family (family, -1) for bins, hashed, and keyed terms.
+        terms: Per entry (family, index), or per family (family, -1) for bins, hashed, split, and keyed terms.
         attrs: The recorded range (min, max) of each numeric attribute.
         growing: The attributes read from a per-element add term (they grow when the item grows).
         fields: For items with a "field" attribute, the entries each field writes.
@@ -323,7 +323,7 @@ class KindProfile:
     items: int = 0
 
 
-_WHOLE_FAMILY = ("bins", "hashed", "keyed")
+_WHOLE_FAMILY = ("bins", "hashed", "split", "keyed")
 
 
 class Vocabulary:
@@ -336,6 +336,7 @@ class Vocabulary:
         self.profiles: dict[tuple[str, str], KindProfile] = {}
         self.sizes: dict[str, int] = {}
         self.hashed: dict[tuple[str, str, str], set[tuple[str, int]]] = {}
+        self.split: dict[tuple[str, str, str], set[tuple[str, int]]] = {}
 
     def add(self, table: ItemTable) -> None:
         """Record every item of a table."""
@@ -359,6 +360,9 @@ class Vocabulary:
                 if t.op == "hashed":
                     assert t.key is not None
                     self.hashed.setdefault((item.group, item.kind, t.family), set()).add((t.key, t.sign))
+                if t.op == "split":
+                    assert t.key is not None
+                    self.split.setdefault((item.group, item.kind, t.family), set()).add((t.key, t.index))
             for a, v in item.attrs.items():
                 if isinstance(v, (int, float)) and not isinstance(v, bool):
                     self._attr(p, a, (float(v), float(v)))
@@ -384,13 +388,16 @@ class Vocabulary:
                 p.fields.setdefault(f, set()).update(entries)
         for k, pairs in other.hashed.items():
             self.hashed.setdefault(k, set()).update(pairs)
+        for k, pairs in other.split.items():
+            self.split.setdefault(k, set()).update(pairs)
 
     def finish(self) -> tuple[dict[tuple[str, str], KindProfile], dict[str, int]]:
         """
         The profiles and the families' sizes, with each hashed family's signedness decided.
 
         Raises:
-            RuntimeError: If a hashed family applies its keys' hash signs to some terms and not to others.
+            RuntimeError: If a hashed family applies its keys' hash signs to some terms and not to others, or a split
+                term is not in the part of its key's bucket that the key's hash sign picks.
         """
         for (group, kind, family), pairs in self.hashed.items():
             keys = sorted(pairs)
@@ -405,6 +412,13 @@ class Vocabulary:
             else:
                 raise RuntimeError(f"{group}/{kind}: family {family} applies its keys' hash signs to some terms only.")
             self.profiles[(group, kind)].terms[(family, -1)].signed = signed
+        for (group, kind, family), pairs in self.split.items():
+            keys = sorted(pairs)
+            half = self.sizes[family] // 2
+            buckets, signs = feature_hash(half, [k for k, _ in keys])
+            for (key, index), b, sgn in zip(keys, buckets.tolist(), signs.tolist(), strict=True):
+                if index != b + (half if sgn < 0 else 0):
+                    raise RuntimeError(f"{group}/{kind}: key {key!r} of the split family {family} is in entry {index}; its hash picks {b + (half if sgn < 0 else 0)}.")
         return self.profiles, self.sizes
 
     def _size(self, family: str, size: int) -> None:
@@ -563,7 +577,7 @@ def _add(out: dict[Entry, Signs], entry: Entry, s: Signs) -> None:
 
 
 def _entries(key: Entry, tp: TermProfile, size: int) -> list[Entry]:
-    """The entries a term profile covers: one, or the whole family for bins, hashed, and keyed terms."""
+    """The entries a term profile covers: one, or the whole family for bins, hashed, split, and keyed terms."""
     return [(key[0], i) for i in range(size)] if tp.op in _WHOLE_FAMILY else [key]
 
 
@@ -572,6 +586,9 @@ def _added_signs(key: Entry, tp: TermProfile, size: int, keys: Optional[Sequence
     family, index = key
     if tp.op == "hashed":
         return {(family, b): (s if tp.signed else UP) for b, s in hash_image(size, keys).items()}
+    if tp.op == "split":
+        half = size // 2
+        return {(family, b + (half if c == "-" else 0)): UP for b, s in hash_image(half, keys).items() for c in s}
     if tp.op == "keyed":
         return {(family, b): UP for b in hash_image(size, keys)}
     if tp.op in ("bins", "count"):
@@ -659,7 +676,8 @@ def region_changes(table: ItemTable, region: Sequence[Range], content_kinds: Map
 
     Items whose locating ranges the region meets are flagged, unless the catalogue declares what happens to their kind
     (`declared`, e.g., "remove"); items whose members it meets are modified in the entries and attributes read from
-    the region (with zeros, their nonnegative slots fall). Items of the `content_kinds` (recognized from content
+    the region (with zeros, their nonnegative slots fall), except their element counts (per-element add terms, e.g.,
+    a length): an in-place write keeps the number of elements. Items of the `content_kinds` (recognized from content
     wherever it lies, e.g., strings and byte counts) change as the mapping says ("rewrite" or "flag").
 
     Args:
@@ -682,7 +700,7 @@ def region_changes(table: ItemTable, region: Sequence[Range], content_kinds: Map
         if any(meets(item.locating, r) for r in region):
             out.append(Change(declared.get(item.kind, "flag"), item.kind, group=item.group))
             continue
-        hit = [t for t in item.terms if any(meets(t.ranges, r) for r in region)]
+        hit = [t for t in item.terms if any(meets(t.ranges, r) for r in region) and not (t.op == "add" and t.per_byte)]
         attrs = frozenset(a for a, units in item.attr_ranges.items() if any(meets(u, r) for u in units for r in region))
         if not hit and not attrs:
             continue
@@ -701,7 +719,8 @@ def region_changes(table: ItemTable, region: Sequence[Range], content_kinds: Map
 ################################################################################
 
 
-def _item_signs(env: Envelope, kinds: Sequence[str], attr: str) -> tuple[KindDelta, list[KindProfile]]:
+def _item_signs(env: Envelope, kinds: Sequence[str], attr: str, group: Optional[str]) -> tuple[KindDelta, list[KindProfile]]:
+    # NOTE: deltas are kept per kind over every group (sound: items of the kind in another group change with it).
     delta = KindDelta()
     for k in kinds:
         d = env.kinds.get(k)
@@ -709,7 +728,7 @@ def _item_signs(env: Envelope, kinds: Sequence[str], attr: str) -> tuple[KindDel
             delta.added |= d.added
             delta.removed |= d.removed
             delta.attrs[attr] = delta.attr(attr) | d.attr(attr)
-    return delta, [p for (_, k), p in env.profiles.items() if k in kinds]
+    return delta, [p for (g, k), p in env.profiles.items() if k in kinds and (group is None or g == group)]
 
 
 def readout_signs(r: Readout, env: Envelope) -> list[Signs]:
@@ -731,11 +750,11 @@ def readout_signs(r: Readout, env: Envelope) -> list[Signs]:
     if isinstance(r, Entropy):
         return [BOTH if any(env.family(r.family)) else FIXED]
     if isinstance(r, Max):
-        delta, _ = _item_signs(env, r.kinds, r.attr)
+        delta, _ = _item_signs(env, r.kinds, r.attr, r.group)
         top = (UP if delta.added else FIXED) | (DOWN if delta.removed else FIXED) | delta.attr(r.attr)
         return [ratio_signs(top, env.entry(*r.divide_by)) if r.divide_by is not None else top]
     if isinstance(r, Min):
-        delta, profiles = _item_signs(env, r.kinds, r.attr)
+        delta, profiles = _item_signs(env, r.kinds, r.attr, r.group)
         # With every recorded value at or above the floor, the minimum is the floor (constant; see items.Min).
         if all(p.attrs.get(r.attr, (math.inf, 0.0))[0] >= r.floor for p in profiles):
             return [FIXED]
