@@ -308,6 +308,35 @@ scratch solve + `attribute` (byte-entropy points closed is the number to watch):
    any residual realization gap from looseness. On 2826a9a5 the gap is looseness, not realization, so the realizer is
    now ordered after the entropy tightening, not before it.
 
+## Built: findings (2026-10-30, fifth session: the realizer, and where the gap really is)
+
+- **Tasks 1-2 of the fourth session's list would add nothing.** The column row `colsum - 2*newnib` already caps
+  every (row, column) count (counts are non-negative, so each is at most the column total). And "low entropy per
+  window, high entropy in aggregate" is realizable (blocks each filled with one nibble), so no sound aggregate bound
+  forbids it.
+- **The fourth session's reading was premature.** Its "real file" was written naively (appended bytes in sorted order),
+  so the attribution compared the solver with a layout that never tried to hit its windows or strings. That cannot
+  separate looseness from realization.
+- **Built: `scripts/ap_realize.py`** (`realize(enc, names, x)`; round-trip tests in `tests/test_ap_realize.py`).
+  The new tail is cut into the 1,024-byte blocks the windows step over; each block is shaped *together with the block
+  before it*, so that the window they form lands in the solver's row (shaping a block alone put adjacent blocks on
+  different dominant nibbles, which adds a bit of entropy, four rows, to the window between them); rows are laid out
+  from high entropy down (the even spreads high rows need are taken first). Strings are built per block from its own
+  printable bytes, paced by its share of the printable supply, with one regex literal per match (literals that also
+  match another regex are counted for it). Containment (run 111) still holds on all 1,105 edits.
+- **2826a9a5 realized (append only, ref detector):** naive 8.63 -> realized 5.97 (the solver's own score 1.09,
+  threshold 1.10). Window rows now match the solver's per row within a few windows; numstrings 29,165 vs the solver's
+  35,929. Attribution on the realized file: byte-entropy alone 4.57, strings alone 3.99, histogram 5.74 (knife-edge:
+  the solver sits on thresholds and rounding to whole bytes tips them).
+- **What is left is genuine looseness, of a different kind than assumed.** 166 of the 198 byte-entropy cells still
+  on the wrong side are ones where the solver puts counts the realized file lacks: in the low rows (entropy < 1 bit,
+  so every window has one nibble above half its bytes) the solver spreads a row's counts over all 16 nibbles. Doing
+  that for real needs many runs with different dominant nibbles, and adjacent windows share a block, so every switch
+  makes a transition window in a higher row. The encoding treats the new windows as independent; they are not (window
+  k and k+1 share 1,024 bytes). The model splits on cells as fine as ~10 counts (thresholds ~1e-6), so each mismatch
+  matters. The string gap has the same root: the solver also does not know that printable-dominated low-entropy
+  windows leave no separators for its strings.
+
 ## Code plan (after review)
 
 - `scripts/ap_encoding.py`: build the choice block from a file's item table and a `catalogue_checks` description of the

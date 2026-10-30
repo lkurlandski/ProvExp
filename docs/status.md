@@ -1,5 +1,15 @@
 # Status
 
+**2026-10-30, fifth session: containment re-run (holds, 1,105/1,105); realizer built; 2826a9a5 realizes at 5.97
+(naive 8.63, solver 1.09); the remaining gap is that the encoding treats overlapping byte-entropy windows as
+independent. Waiting on the user: how to close it (see below).** Commits 85772c5..(this).
+- Tasks 1-2 of the fourth session's plan were dropped: both are already implied or unsound
+  (`docs/direction-A-prime-encoding.md`, "Built: findings", fifth session).
+- `scripts/ap_realize.py` + `tests/test_ap_realize.py` (25 pass). Not yet done: rounding repair for knife-edge histogram
+  splits; section entropy targets; check 1b (`run/112`).
+
+---
+
 **2026-10-30, fourth session: per-row byte-entropy cuts built and tested; their first solve failed the hypothesis
 (the byte-entropy gap is real looseness, not realization). Docs updated; code uncommitted.** Next: per-row column
 caps on the append windows, then the full check 1b.
