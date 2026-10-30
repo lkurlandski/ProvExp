@@ -1,6 +1,7 @@
 # Status
 
-**2026-10-30: runs 107, 105, 106 read; two adaptive-search bugs found and fixed (run 108).**
+**2026-10-30: runs 107, 105, 106 read; two adaptive-search bugs found and fixed (run 108). Session closed; next
+session starts the A' pilot.** Commits 7340b9e..(this wrap-up).
 - **Run 107 holds:** G7 passes on all 73,063 edits (2,000 files, twelve operations, strict and precondition
   variants); the training inputs equal the pilot's.
 - **Run 105 (step 9) holds** for test metrics (within noise of run 99) and the toolkit columns (routed rows 0 seen;
@@ -11,7 +12,12 @@
   real. 10 of 49 detected pilot malware have no room for a section header. `docs/direction-A-A1-design.md`, "Step 9".
 - **Run 106 (expert set):** monotone AUC 0.844, TPR 29% at 1% FPR (as mocked); detects 8 of 50 pilot malware, evaded
   on none; unconstrained 0.978 / 75%, evaded 24/40 under M_add. Its M_full holes are reasoned, not yet measured.
-- **Next:** the A' pilot after its reading list (`docs/literature-Aprime-2026-10-27.md`, "Not yet read").
+- **Not affected by the NaN bug** (checked): the C4 models neutralize all 88 warning features; item_checks,
+  a_c1_table0, and catalogue_checks exclude them; the toolkit columns re-extract real files. Remaining assumption in
+  the search: an append or added section leaves pefile's warnings unchanged (held on every run-108 evasion).
+- **Next:** the A' pilot, steps in `PLAN.md` "Next steps (2026-10-30)": reading list, mock refresh, check 1, then the
+  edit-choice encoding (C3, not built), checks 2-3, Table A'1. Waiting on the user later: how to build the expert row's
+  solver encoding (instrument their extractor, recommended) and how to judge check 3 on 8 detected files.
   Optional: measure the expert set's M_full holes by renaming sections on its 8 detected files.
 
 **2026-10-29, fourth session: run 104 read; the precondition extended by plain-layout clauses (user); step 9's code

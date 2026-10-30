@@ -1,29 +1,39 @@
-# Resume: ProvExp (after 2026-10-29, fourth session) — runs 107, 105, 106 ran overnight; next: read them, then A'
+# Resume: ProvExp (after 2026-10-30) — direction A's runs read and the adaptive search fixed; next: the A' pilot
 
-Read `CLAUDE.md`, then `docs/status.md`'s top block, `PLAN.md` ("Directions", A', and "Next steps (2026-10-29, fourth
-session)"), and `docs/item-layer-design.md` ("Build status" from the step 6 paragraph on: step 9, run 104 and the
-plain-layout clauses). Skim `src/provexp/featuresets/ember2024/catalogue.py` (`plain_layout`, `precondition`,
-`add_section`), `scripts/catalogue_checks.py` (G7), `scripts/a1_adaptive.py` (`engine_predictors`),
-`src/provexp/featuresets/ember2024/expert.py`, `docs/direction-A-expert-set.md`, and the three run scripts
-(`run/107_g7_plain_layout.sh`, `run/105_step9_retrain.sh`, `run/106_expert_set.sh`).
+Read `CLAUDE.md`, then `docs/status.md`'s top block, `PLAN.md` ("Directions", A', and "Next steps (2026-10-30)"),
+`docs/direction-A-prime-mock.md` (the update note at its top first, then the whole mock: Table A'1, "How a solver's
+answer becomes a file", the go/no-go checks, the harsh notes on novelty, the decisions), and
+`docs/literature-Aprime-2026-10-27.md` (incl. "Not yet read" and "Harsh read for A'"). Skim
+`scripts/ap_check0_solver.py` (Kantchelian's encoding, HiGHS via scipy; run 89), `scripts/a1_adaptive.py`
+(`engine_predictors`, `menu`, `greedy_search`), `src/provexp/reach.py` and `src/provexp/featuresets/ember2024/catalogue.py`
+(`add_section`) for what the C1 engine predicts, `docs/feature-provenance-model.md` Section on C3 (reachable sums), and
+`docs/direction-A-A1-design.md` ("Step 9", the last section).
 
 **Start by recapping for the user in plain language** where things stand and what is next, before asking anything:
 - the research in three sentences;
-- the two applications (A at pilot scale, with derived and routed C4 rows; A' mocked, check 0 passed);
-- the derivation: steps 1-9 built; every C4 direction is computed, and the hand rules and hand C1 predictors are only
-  test oracles. Last session: run 104 (G7, the catalogue check, on 2,000 files) found five rare layouts. One was our
-  check's own error: on low-alignment images, which Windows maps flat, its edits moved file data off its address. The
-  other four are now excluded by the precondition check (the user's decision), which also requires a plain layout:
-  sections within SizeOfImage, SizeOfImage no larger than the sections need, headers that hold only headers, and
-  pefile's overlay starting where a section's data ends. 8 of 1,682 passing files leave; no direction changed;
-- the expert-set row: Gimenez et al.'s 40 features re-implemented on pefile, matching their LIEF code on the test
-  files except for parser differences; their two assign-instead-of-accumulate quirks patched; their DOS-stub flag is
-  constant 1 under current LIEF;
-- what runs 107, 105, and 106 showed, once read;
-- the order of work: the A' pilot, after the reading list.
+- the two applications: A (detectors with guarantees, pilot scale, derived and routed C4 rows) and A' (worst-case
+  evaluation that can be realized as real files; mocked, check 0 passed: the exact solver decides at our model's size in
+  under 34 s, but directions alone certify nothing on a non-monotone detector, so the region needs magnitudes);
+- what last session (2026-10-30) settled:
+  - run 107: the catalogue check (G7: every edit's feature changes against the derived directions) passes on all
+    73,063 edits on the 2,000-file set; the training inputs equal the pilot's;
+  - run 105: the six C4 models retrained on the derivation after G7; test metrics within noise of run 99; on files
+    that pass the precondition check, no seen attack evades any routed C4 row and no held-out attack evades the M_full
+    rows (M_add rows only by the header-field attack, which is outside M_add);
+  - run 106, the expert-set row (Gimenez et al.'s 40 features, quirks patched): monotone AUC 0.844, TPR 29% at 1% FPR,
+    as mocked; it detects only 8 of the 50 pilot malware and no attack evades it there; unconstrained on the same
+    features 0.978, evaded 24/40 by the M_add attacks;
+  - two bugs in the adaptive search, found because its unconstrained row jumped from 10/49 to 28/49: (1) the declared
+    add-section removes the overlay, but each step was written with LIEF, which keeps it, so every later step claimed
+    the removal again; (2) the engine leaves the 88 pefile-warning features NaN, which a GBDT reads as missing. Fixed
+    (the user chose our own byte-level edit for each step; unmodeled features keep the current file's values); run 108:
+    unconstrained 4/49, PV 16/22, C4 rows 0, and every declared evasion holds on the written file. The C4 models never
+    saw the warning features, so their results did not depend on the bug. 10 of the 49 detected pilot malware have no
+    room for another section header.
+- the order of work: the A' pilot, steps 1-7 in `PLAN.md` "Next steps (2026-10-30)".
 
 For every decision you put to the user, say what the thing is, give a concrete example, and say what each choice
-changes. Never use doc-internal labels (G1, G7, M_full, C4) without saying what they are.
+changes. Never use doc-internal labels (G7, M_full, C3, C4) without saying what they are.
 
 Standing rules: be harsh about novelty; never raise deadlines; bring any no-go to the user before dropping anything;
 no result may rest on an extractor quirk, but fix a quirk only if an edit in our threat models can reach it or a result
@@ -34,52 +44,50 @@ add a `run/` script for every experiment and record its results in the script's 
 pieces after ruff and mypy pass; never edit `tests/reference/`; do not run the full test suite while the user's jobs
 run.
 
-## Do next
+## Do next (the A' pilot)
 
-The user chained the runs overnight (`bash run/107_g7_plain_layout.sh ; bash run/105_step9_retrain.sh ; bash
-run/106_expert_set.sh`); each starts even if the one before failed. Check that each finished (logs under
-`artifacts/logs/`) before reading it.
+Steps 1-3 are cheap and each can stop the direction; do them before building the encoding.
 
-1. **Read run 107** (`artifacts/experiments/catalogue_checks/2000-v3/report.json`, "pass" and per-operation
-   violations; the derivation in `artifacts/experiments/a_directions_derived_sums_2000_v3/`; the script's last step
-   prints any training-input difference from the pilot's). Hypothesis: G7 passes on every edit, strict and
-   precondition variants; the training inputs equal the pilot's. Any violation: explain and witness it with our own
-   byte-level edits (`scripts/catalogue_checks.py`), close it by a general rule, and redo run 105 if the training
-   inputs change.
-2. **Read run 105** (step 9: the six C4 models retrained into `-v2` suffixes; Table A1's toolkit columns in
-   `artifacts/experiments/a1/toolkit-v2/table.json`, the adaptive search on the C1 engine in
-   `artifacts/experiments/a1/adaptive-v2/adaptive.json`). Compare with runs 99-100. Hypothesis: test metrics within
-   noise of run 99 (overlay_size dropped, security_virtual_address up under M_add); routed C4 rows evaded by no seen
-   attack on passing files and the M_full rows by no held-out one; the adaptive C4 rows 0 by construction (a negative
-   min_delta_logit on a sound row is a bug to debug). Note that the passing set is now smaller by the plain-layout
-   clauses. Record in `docs/direction-A-A1-design.md`.
-3. **Read run 106** (the expert-set row: `-s10-expert-mono` with all 40 features constrained increasing, and the
-   unconstrained `-s10-expert`; toolkit columns in `artifacts/experiments/a1/expert/toolkit/table.json`). Its training
-   and attack steps were not smoke-tested; check the logs first. Hypothesis (from the mock): the monotone model far
-   below the derived C4 rows (AUC ~0.80, TPR at 1% FPR ~30%), the unconstrained one higher; toolkit evasion of the
-   monotone model low, any of it from the attacks outside M_add (DOS header, section renaming). Report it under M_add
-   and M_full (split the attacks by threat model) in `docs/direction-A-expert-set.md`.
-4. **The A' pilot** (`docs/direction-A-prime-mock.md`), after the reading list (`docs/literature-Aprime-2026-10-27.md`,
-   "Not yet read"; harsh read): HRAT (Zhao et al., CCS 2021; `papers/HRAT2021.pdf`), Demontis et al., "Yes, Machine
-   Learning Can Be More Secure!" (TDSC 2017), Šrndić & Laskov (S&P 2014), verifiable boosted tree ensembles (arXiv
-   2402.14988).
+1. **Reading list, harsh read** (no code): HRAT (Zhao et al., CCS 2021; `papers/HRAT2021.pdf`), Demontis et al., "Yes,
+   Machine Learning Can Be More Secure!" (TDSC 2017), Šrndić & Laskov (S&P 2014), verifiable boosted tree ensembles
+   (arXiv 2402.14988). For each: does it already compute what an edit does to the features, for an extractor with
+   hashing, normalization, ratios, and entropy? Chen et al. (USENIX Security 2020) did it for PDF tree-path features;
+   our claim is only the computed mapping for EMBER's kind. Record in `docs/literature-Aprime-2026-10-27.md`; bring
+   any threat to novelty to the user before code.
+2. **Refresh the mock** (`docs/direction-A-prime-mock.md`; fold in its update note): the pilot uses the engine; the
+   battery's measured cells (toolkit-v2 per-file results plus run 108's adaptive results, union per file); the expert
+   row's facts. Show the user what changed.
+3. **Check 1:** constraints learned from the toolkit's adversarial outputs (per feature: the directions seen and the
+   largest change seen; check 0 showed directions alone are vacuous) in the check-0 solver, on PV-seen. Go if it
+   certifies robust at least a third of the files the battery evades. Hypothesis (the mock's): it does, because
+   learned limits only cover the changes and magnitudes the seen attacks happened to produce, while the C1-guided
+   search reaches others.
+4. **The edit-choice encoding** (C3: not built yet; the main build): append and add-section first. Variables: bytes
+   appended and their byte counts; sections added, the hash bucket and sign each name hits, size, byte mix. Linear
+   features from the item table; sound bounds for ratios, normalized histograms, entropy. Test: a fixed choice
+   reproduces the engine's prediction (the engine is checked against re-extraction).
+5. **Check 2:** solver evasions on the unconstrained GBDT, written with our byte-level edits
+   (`scripts/catalogue_checks.py`: `add_section(..., before_overlay=False)`), re-extracted; go at >= 70% realized.
+6. **Check 3, the expert set** (a decision for the user when reached): instrument their extractor so the engine can
+   feed the solver (recommended; their 40 features are counts and sums) or encode it by hand; judge on its 8 detected
+   pilot files or add files from the 2,000-file set for this row.
+7. **Table A'1 at pilot scale**; a `run/` script if over ~10 min.
 
 ## Notes
 
 - `papers/`, `REVIEW*.md`, `TODO.md`, `docs/checkpoint-prompt.md`, `make-manuscript.sh`, and `slides/` are untracked;
   leave them.
-- The user still owes the upstream reports in `docs/upstream-issues.md` (now including item 6, Gimenez et al.'s
-  quirks and DOS-stub flag).
-- The adaptive search runs only on the thrember-space store: the C1 engine has no recognizers for the sums store's
-  re-encoded groups, and it cannot read the expert extractor at all. The search refuses the sums store.
-- The engine's declared add-section ends the file, so it predicts no overlay (pefile's rule). The hand predictor keeps
-  the overlay (it models LIEF), so the oracle test compares them only off the overlay features.
-- Their `modified_dos_stub` under current LIEF is constant 1; ours compares bytes. Their `nb_imported_functions` counts
-  imports by name (repeats included, ordinals left out), and section entropy is over the raw data up to the virtual
-  size: both as their code does, not as the paper reads.
+- The user still owes the upstream reports in `docs/upstream-issues.md` (incl. item 6, Gimenez et al.'s quirks).
+- The engine's feature vector is NaN where no readout models a feature (pefile's warnings). Anything that scores an
+  engine prediction with a model must fill those from the file (as `engine_predictors` now does), or drop them.
+- The adaptive search runs only on the thrember-space store (no recognizers for the sums store's re-encoded groups; the
+  engine cannot read the expert extractor). Its declared add-section ends the file (no overlay, pefile's rule) and
+  each step is written by `catalogue_checks.add_section(..., before_overlay=False)`; files with no room for another
+  section header take only appends.
 - G7's edit functions (`scripts/catalogue_checks.py`: `add_section`, `add_imports`, `insert_gap`, `forged_rich`) do
-  exactly the declared operation; reuse them for any new witness rather than LIEF, which relays out the file. On
-  low-alignment images, `add_section` puts the raw offset at the virtual address and `insert_gap` does not apply.
+  exactly the declared operation; reuse them for any new witness or realization rather than LIEF, which relays out the
+  file. On low-alignment images, `add_section` puts the raw offset at the virtual address and `insert_gap` does not
+  apply.
 - Scripts that loop over the 2,000-file set read and parse each file once and run on a worker pool with a tqdm
   progress bar (`mininterval=30`), with an `if __name__ == "__main__":` guard (forkserver).
 - Routed detectors print `tau=0.5000`: each branch decides at its own 1% FPR threshold; not a bug.

@@ -1,5 +1,13 @@
 # Direction A': mock of the paper's tables (2026-10-27)
 
+**Update 2026-10-30 (before the pilot; to be folded in at step 2 of `PLAN.md`, "Next steps (2026-10-30)").** Since
+this mock was written: the C1 and C4 engines exist (derivation steps 1-9), so the pilot uses the engine and decision 6's
+hand predictors are no longer needed; the battery's measured cells change (Table A1's toolkit columns are now
+`artifacts/experiments/a1/toolkit-v2`, the adaptive search is run 108's: unconstrained 4/49, PV 16/22, after two
+search bugs were fixed); the expert-set monotone model measured AUC 0.844, TPR 29% at 1% FPR, and detects only 8 of the
+50 pilot malware, and its extractor is not instrumented, so the solver cannot be fed by the engine for that row yet.
+C3 (the edit-choice encoding with magnitude bounds) is described in the model but not built.
+
 First draft written by a separate session from the task prompt in `docs/resume-prompt.md`; revised the same day after
 review: the "independent certificate" of our own detector was circular; the battery numbers contradicted Table A1; the
 step from a solver's answer to a real file was missing; Chen et al. (USENIX Security 2020) was missing; and the solver's

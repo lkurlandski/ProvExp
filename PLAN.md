@@ -60,7 +60,32 @@ introduction and a simple baseline (writing decision for later).
   attacks (GAMMA, MAB-Malware). Harsh check first: Pierazzi et al.'s problem-space formalization and every
   "realizable attack" paper since; the novelty must be the automatic, side-effect-exact translation, not the attack.
 
-## Next steps (2026-10-29, fourth session)
+## Next steps (2026-10-30)
+
+Done (`docs/status.md`): runs 107, 105, 106 read. G7 holds on 2,000 files (73,063 edits); step 9's C4 rows as
+hypothesised (test metrics within noise, routed rows unevaded by seen attacks, M_full rows by held-out ones); the
+expert-set row as mocked (monotone AUC 0.844, TPR 29% at 1% FPR, 8 of 50 pilot malware detected). Two bugs in the
+adaptive search found and fixed (run 108; steps written by our own byte-level edit, decided by the user; unmodeled
+pefile-warning features no longer NaN): unconstrained 4/49, PV 16/22, C4 rows 0; declared equals real. Next, the A'
+pilot, in order (steps 1-3 cheap and each can stop the direction; bring any no-go to the user):
+1. Reading list, harsh read: HRAT (`papers/HRAT2021.pdf`), Demontis et al. TDSC 2017, Šrndić & Laskov S&P 2014, arXiv
+   2402.14988. Question for each: does it already compute edit-to-feature effects for an extractor of EMBER's kind
+   (hashing, normalization, ratios, entropy)? Record in `docs/literature-Aprime-2026-10-27.md`.
+2. Refresh `docs/direction-A-prime-mock.md` (note at its top): the engine exists, so the pilot uses it, not the hand
+   predictors; the battery's measured cells change (toolkit-v2 plus run 108, per-file union); the expert row's facts
+   (8 detected pilot malware; its extractor is not instrumented). Show the user the changes.
+3. Check 1: learned constraints (per-feature directions and largest change seen in the toolkit's outputs) in the
+   check-0 solver (`scripts/ap_check0_solver.py`) on PV; go if it certifies at least a third of the files the battery
+   evades.
+4. Build the edit-choice encoding (C3; not built yet): append and add-section first (bytes and byte counts; number of
+   sections, bucket and sign per name, size, byte mix); linear features from the item table, safe bounds for ratios,
+   normalized histograms, entropy. Test: a fixed choice reproduces the engine's prediction.
+5. Check 2: solver evasions on the unconstrained GBDT, written with our byte-level edits, re-extracted; go at >= 70%.
+6. Check 3, the expert set (decision for the user then): instrument their extractor (recommended) or encode it by hand;
+   judge on its 8 detected pilot files or add files from the 2,000-file set.
+7. Table A'1 at pilot scale (a `run/` script if over ~10 min).
+
+### Earlier: next steps (2026-10-29, fourth session)
 
 Done (`docs/status.md`): run 104 read (G1 exact, training inputs unchanged; G7 found five rare layouts, one the check's
 own error, four closed by extending the precondition check with plain-layout clauses, decided by the user); step 9's
