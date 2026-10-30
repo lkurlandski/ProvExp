@@ -337,6 +337,27 @@ scratch solve + `attribute` (byte-entropy points closed is the number to watch):
   matters. The string gap has the same root: the solver also does not know that printable-dominated low-entropy
   windows leave no separators for its strings.
 
+### Fifth session, continued: two sound cuts, and the gap moves to strings (then shrinks)
+
+- **The encoding had no upper side on a window's entropy.** The per-row cuts only say "row r => entropy >= r/4"; nothing
+  stopped the solver from putting a near-uniform window in row 0. Built `dominance_cuts` (pooled, cheap): a window
+  in row r has entropy below (r+1)/4, so (min-entropy <= entropy) one nibble holds more than 2048 * 2^-((r+1)/4) of
+  it (84% in row 0, 50% in row 3); per row, integer counts of windows by dominant nibble, their dominant mass, and at
+  most (2048 - theta) counts per window outside it. Tested sound on pooled random windows.
+- **Regex counts were not tied to characters.** The solver counted 2,383 "system" strings with 1,063 s/S characters,
+  1,019 IPv4 addresses with 1,921 dots. Built `regex_requirements`: each string matching a regex holds the regex's
+  required characters (a plain word's letters, either case when the regex ignores case; a hand list for the
+  non-plain ones, e.g. three dots and four digits for IPv4), and distinct strings hold distinct characters, so
+  `mult * rg[j] <= sum of pd over those characters`. Fuzz-tested sound.
+- Containment (run 111) holds after each (1,105 of 1,105).
+- **2826a9a5, ref detector, 300 s:** with the dominance cuts the solver still evaded (1.06, found in 111 s); its answer
+  realized at 5.28 with byte-entropy no longer carrying the gap (strings did). After the realizer composed strings
+  with several regex literals each, spelled letter by letter in mixed case: **realized 2.75** (naive 8.63, threshold
+  1.10), byte-entropy sides from the solver now *worse* for the attacker than the realized file's. With the regex
+  character cut added: **undecided at 300 s** (no evasion found), where before an evasion took 111 s.
+- So the exact block model of overlapping windows (user's choice, 2026-10-30) is not obviously needed any more: the
+  pooled dominance cut removed byte-entropy from the gap on this file. To decide with the user.
+
 ## Code plan (after review)
 
 - `scripts/ap_encoding.py`: build the choice block from a file's item table and a `catalogue_checks` description of the
