@@ -59,6 +59,42 @@ GO_SHARE = 0.2
 
 
 ################################################################################
+# Attribution: which feature group a gap between two scores comes from
+################################################################################
+
+
+def sides_of(ens: Ensemble, x: np.ndarray) -> dict[tuple[int, int], bool]:
+    """The side of every split ("x_f <= t_j") a feature vector takes."""
+    return {(f, j): bool(x[f] <= t) for f, ts in ens.thresholds.items() for j, t in enumerate(ts.tolist())}
+
+
+def score_of(ens: Ensemble, sides: dict[tuple[int, int], bool]) -> float:
+    """The raw score of the path every tree takes under the given split sides."""
+    total = 0.0
+    for tree_leaves, nodes in zip(ens.leaves, ens.nodes):
+        alive = set(tree_leaves)
+        for f, j, left, right in nodes:
+            alive.difference_update(right if sides[(f, j)] else left)
+        if len(alive) != 1:
+            raise RuntimeError(f"Split sides leave {len(alive)} leaves in a tree.")
+        total += float(ens.values[alive.pop()])
+    return total
+
+
+def attribute(ens: Ensemble, solver: dict[tuple[int, int], bool], x_real: np.ndarray, groups: dict[str, list[int]]) -> dict[str, float]:
+    """
+    Per feature group, the score when that group's splits take the solver's sides and every other split the real
+    (written and re-extracted) file's: the groups whose score falls far below the real one carry the gap.
+    """
+    real = sides_of(ens, x_real)
+    out = {"solver": score_of(ens, solver), "real": score_of(ens, real)}
+    for g, feats in groups.items():
+        fs = set(feats)
+        out[g] = score_of(ens, {key: (solver[key] if key[0] in fs else side) for key, side in real.items()})
+    return out
+
+
+################################################################################
 # Main
 ################################################################################
 
