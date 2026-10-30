@@ -1,0 +1,29 @@
+#!/bin/bash
+# A' go/no-go check 1b (docs/direction-A-prime-mock.md, decision 7): does the computed region certify? The exact solver
+# over the edit-choice encoding (scripts/ap_encoding.py: up to 3 added sections, then an append, budget max(5%, 512 KB))
+# on the unconstrained 10% detector, for the detected files the battery (toolkit run 105 + adaptive run 109) does not
+# evade. Go if it certifies at least 20% of them (4 of 20; 7 fail the precondition, so 4 of the 13 covered).
+# Hypothesis (to restate after tightening): a minority certify, concentrated on large files.
+# NOT YET RUN. Before running: tighten the byte-entropy windows (docs/direction-A-prime-encoding.md, "Still open") and
+# re-run run/111. Smoke at 300 s (2026-10-30, before tightening): 0 certified, 10 undecided, 3 solver evasions.
+#
+# Estimate: 13 solves in parallel, 1,800 s limit each: ~30 min wall.
+set -euo pipefail
+cd "$(dirname "$0")/.."
+source env/bin/activate
+export PYTHONHASHSEED=0
+export OMP_NUM_THREADS=1
+
+M=artifacts/models/gbdt
+E=artifacts/experiments
+LOG=artifacts/logs/ap_check1b.log
+echo "Check 1b: the computed region in the exact solver. Log: $LOG"
+python scripts/ap_check1b.py \
+  --outdir $E/ap_check1b \
+  --defense ref=$M/seed-0-s10-ref \
+  --skip_battery_evaded \
+  --time_limit 1800 \
+  --workers 16 \
+  &> "$LOG"
+
+echo "Done. Report: $E/ap_check1b/report.json"

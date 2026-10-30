@@ -1,0 +1,1069 @@
+"""
+Direction A', step 4: the edit-choice encoding (docs/direction-A-prime-encoding.md).
+
+The solver's variables are the attacker's choices in the edit catalogue (add up to K sections, then append), and every
+feature those edits move is written as a function of the choices, starting from the file's item table: the old sums
+plus what the added items contribute (C1, now over a whole family of edits), and the readouts on top (C3). Sums,
+counts, hashed buckets, and ratios are exact (a ratio's split clears its positive denominator); entropies are bounded
+soundly from concavity (Gibbs' inequality above, chords below); the bytes the edits write into the header (the
+section-table entry, the rewritten size fields) are free bytes. Every relaxation widens: the encoded region contains
+every file the catalogue can produce, so a proof that no point in it evades is a certificate.
+
+The edits are those of `scripts/catalogue_checks.py` (`add_section(..., before_overlay=False)`, then concatenation),
+which also writes the files the encoding is tested against (`scripts/ap_containment.py`).
+"""
+
+from __future__ import annotations
+
+from collections.abc import Iterable
+from collections.abc import Sequence
+from dataclasses import dataclass
+import math
+from pathlib import Path
+import re
+import sys
+from typing import Any
+from typing import Optional
+from typing import Union
+import warnings
+
+import numpy as np
+import pefile
+from scipy.optimize import LinearConstraint
+from scipy.optimize import milp
+from scipy.sparse import coo_matrix
+
+from provexp.featuresets.ember2024.catalogue import precondition
+from provexp.featuresets.ember2024.features import PEFeatureExtractor
+from provexp.featuresets.ember2024.features import field_range
+from provexp.items import Entropy
+from provexp.items import Identity
+from provexp.items import Item
+from provexp.items import ItemTable
+from provexp.items import Max
+from provexp.items import Min
+from provexp.items import Normalized
+from provexp.items import Ratio
+from provexp.items import Selection
+from provexp.items import feature_hash
+
+sys.path.insert(0, str(Path(__file__).parent))
+from ap_check0_solver import Ensemble  # noqa: E402
+from catalogue_checks import PAGE  # noqa: E402
+from catalogue_checks import add_section  # noqa: E402
+
+__all__ = [
+    "Choice",
+    "Encoding",
+    "Ent",
+    "FLAGS",
+    "Frac",
+    "Lin",
+    "MaxOf",
+    "NotCovered",
+    "Program",
+    "budget",
+    "certify",
+    "link_ensemble",
+    "props_of",
+    "write",
+]
+
+# The section flags an added section may carry (loader-safe; single bits, so pefile's flag names are exact).
+FLAGS: dict[str, int] = {
+    "CNT_CODE": 0x00000020,
+    "CNT_INITIALIZED_DATA": 0x00000040,
+    "MEM_DISCARDABLE": 0x02000000,
+    "MEM_EXECUTE": 0x20000000,
+    "MEM_READ": 0x40000000,
+    "MEM_WRITE": 0x80000000,
+}
+# The header fields an added section rewrites, with their sizes in bytes.
+FIELDS: dict[str, int] = {"NumberOfSections": 2, "SizeOfImage": 4, "SizeOfCode": 4, "SizeOfInitializedData": 4}
+# A section name's options: the 100 (bucket, sign) pairs of the 50-bucket signed hash, then the empty name.
+BUCKETS = 50
+EMPTY = 2 * BUCKETS
+WINDOW, STEP = 2048, 1024
+PRINTABLE = (0x20, 0x80)
+SECTION_ENTRY = 40
+# NOTE: tolerances that widen every split (features are float32; thresholds float64): relative for ratios and
+# integer-valued features, absolute for entropies.
+TOL_REL = 1e-6
+TOL_ENT = 1e-5
+# Coefficients smaller than this (relative to a row's largest) are folded into its bounds (HiGHS drops them).
+SMALL_COEF = 1e-8
+# The largest unit a continuous variable is scaled by for the solver.
+MAX_UNIT = np.inf
+# HiGHS's feasibility tolerances (on the scaled program): one byte in half a million needs well below the default 1e-7.
+FEASIBILITY_TOL = 1e-9
+# The Gibbs reference distributions mix the old distribution with the uniform one by these weights.
+GIBBS_MIX = (1e-3, 0.05, 0.3)
+# The pefile warnings the catalogue reaches, and their number.
+WARN_BYTE = "pefilewarnings:warning_Byte 0x..."
+WARN_FLAGS = "pefilewarnings:warning_Suspicious flags set for section..."
+WARN_COUNT = "pefilewarnings:num_warnings"
+# The names of the choice variables (reported with a solver's evasion).
+CHOICE = re.compile(r"^(D|A|a\d+|s\d+|on\d+|m\d+|c\d+|pages\d+|e\d+|y\d+_\d+|fl\d+_\w+|q\d+_\w+)$")
+
+
+class NotCovered(Exception):
+    """A file the encoding does not cover (precondition, layout); it gets no certificate."""
+
+
+################################################################################
+# Linear expressions and the values features take
+################################################################################
+
+
+class Lin:
+    """A linear expression `const + sum(coef * var)` over the program's variables."""
+
+    __slots__ = ("const", "terms")
+
+    def __init__(self, const: float = 0.0, terms: Optional[dict[int, float]] = None) -> None:
+        self.const = float(const)
+        self.terms: dict[int, float] = terms if terms is not None else {}
+
+    @staticmethod
+    def of(var: int, coef: float = 1.0) -> Lin:
+        return Lin(0.0, {var: float(coef)})
+
+    @staticmethod
+    def total(parts: Iterable[Union[Lin, float]]) -> Lin:
+        """The sum of the parts, accumulated in one expression."""
+        out = Lin()
+        for p in parts:
+            out._iadd(p, 1.0)
+        return out
+
+    def _iadd(self, other: Union[Lin, float], k: float) -> None:
+        if isinstance(other, Lin):
+            self.const += k * other.const
+            for v, c in other.terms.items():
+                self.terms[v] = self.terms.get(v, 0.0) + k * c
+        else:
+            self.const += k * float(other)
+
+    def __add__(self, other: Union[Lin, float]) -> Lin:
+        out = Lin(self.const, dict(self.terms))
+        out._iadd(other, 1.0)
+        return out
+
+    __radd__ = __add__
+
+    def __sub__(self, other: Union[Lin, float]) -> Lin:
+        out = Lin(self.const, dict(self.terms))
+        out._iadd(other, -1.0)
+        return out
+
+    def __rsub__(self, other: Union[Lin, float]) -> Lin:
+        return (-1.0) * self + other
+
+    def __mul__(self, k: float) -> Lin:
+        return Lin(self.const * k, {v: c * k for v, c in self.terms.items()})
+
+    __rmul__ = __mul__
+
+    def __neg__(self) -> Lin:
+        return self * -1.0
+
+    def __repr__(self) -> str:
+        return f"Lin({self.const:g} + {len(self.terms)} terms)"
+
+
+@dataclass(frozen=True)
+class Frac:
+    """num / den with den >= 0 (a ratio readout, a normalized bin, a size over the file size)."""
+
+    num: Lin
+    den: Lin
+
+
+@dataclass(frozen=True)
+class Ent:
+    """
+    The entropy (bits) of the distribution counts / total. `lo` and `hi` bound each share over the whole region (for the
+    chords); `refs` are the reference distributions of Gibbs' inequality (each entry positive); `floor` is a lower bound
+    on entropy * total (`mixture_floor`).
+    """
+
+    counts: tuple[Lin, ...]
+    total: Lin
+    lo: np.ndarray
+    hi: np.ndarray
+    refs: tuple[np.ndarray, ...]
+    floor: Lin
+
+
+@dataclass(frozen=True)
+class MaxOf:
+    """The maximum of some candidate values and a constant (the old items' values and the floor)."""
+
+    candidates: tuple[Value, ...]
+    const: float
+
+
+FREE = "free"
+Value = Union[float, Lin, Frac, Ent, MaxOf, str]
+
+
+def _plogp(p: float) -> float:
+    return -p * math.log2(p) if p > 0 else 0.0
+
+
+def share_bounds(c_old: np.ndarray, rem: np.ndarray, h: float, t_lo: float, t_hi: float, gmax: float) -> tuple[np.ndarray, np.ndarray]:
+    """
+    Bounds on each share c / T when each count c is its old value less at most `rem` plus at most `h + g` and the total
+    T lies in [t_lo + g, t_hi] for a gain g in [0, gmax]: the lower bound at the largest total, the upper bound at an
+    end of the gain's range ((c + h + g) / (t_lo + g) is monotone in g).
+    """
+    lo = np.clip((c_old - rem) / max(t_hi, 1.0), 0.0, 1.0)
+    f0 = (c_old + h) / max(t_lo, 1.0)
+    f1 = (c_old + h + gmax) / max(t_lo + gmax, 1.0)
+    hi = np.clip(np.maximum(f0, f1), 0.0, 1.0)
+    return lo, np.maximum(hi, lo)
+
+
+def mixture_floor(total: float, entropy: float, removed: float, symbols: int) -> float:
+    """
+    A lower bound on H' * T' for a distribution made from an old one (T counts, entropy H) by removing at most `removed`
+    counts and adding any. By concavity (the entropy of a mixture is at least its weighted entropies), adding never
+    lowers H * T; removing R counts lowers it by at most R log2(symbols) + T h(R / T), with h the binary entropy
+    (the entropy of a mixture is at most its weighted entropies plus the mixing weights' entropy).
+    """
+    if total <= 0 or entropy <= 0:
+        return 0.0
+    r = min(removed, total)
+    if r >= total / 2:
+        return 0.0
+    w = r / total
+    h = -w * math.log2(w) - (1 - w) * math.log2(1 - w) if 0 < w < 1 else 0.0
+    return max(0.0, total * entropy - r * math.log2(symbols) - total * h)
+
+
+def references(dists: Sequence[np.ndarray]) -> tuple[np.ndarray, ...]:
+    """Gibbs reference distributions: each given distribution mixed with the uniform one."""
+    out = []
+    for d in dists:
+        total = float(d.sum())
+        p = d / total if total > 0 else np.full(d.size, 1.0 / d.size)
+        out += [(1.0 - w) * p + w / d.size for w in GIBBS_MIX]
+    return tuple(out)
+
+
+################################################################################
+# The program
+################################################################################
+
+
+class Program:
+    """A mixed-integer linear program built row by row (HiGHS through scipy)."""
+
+    def __init__(self) -> None:
+        self.lb: list[float] = []
+        self.ub: list[float] = []
+        self.integer: list[bool] = []
+        self.names: list[str] = []
+        self._rows: list[int] = []
+        self._cols: list[int] = []
+        self._vals: list[float] = []
+        self.rlo: list[float] = []
+        self.rhi: list[float] = []
+        self.switch: list[int] = []
+        # Binaries fixed both ways (a held-fixed feature on the wrong side of a fixed split): the program is infeasible.
+        self.conflicts: list[str] = []
+
+    def var(self, name: str, lb: float = 0.0, ub: float = 1.0, integer: bool = False) -> int:
+        if not lb <= ub:
+            raise ValueError(f"Empty bounds for {name}: [{lb}, {ub}].")
+        self.lb.append(float(lb))
+        self.ub.append(float(ub))
+        self.integer.append(integer)
+        self.names.append(name)
+        return len(self.lb) - 1
+
+    def binary(self, name: str) -> int:
+        return self.var(name, 0.0, 1.0, integer=True)
+
+    def fix(self, var: int, value: float) -> None:
+        self.lb[var] = self.ub[var] = float(value)
+
+    def bounds(self, x: Lin) -> tuple[float, float]:
+        """Interval bounds of an expression from its variables' bounds."""
+        lo = hi = x.const
+        for v, c in x.terms.items():
+            if c > 0:
+                lo += c * self.lb[v]
+                hi += c * self.ub[v]
+            else:
+                lo += c * self.ub[v]
+                hi += c * self.lb[v]
+        return lo, hi
+
+    def row(self, x: Lin, lo: float = -np.inf, hi: float = np.inf, switch: int = -1) -> None:
+        """lo <= x <= hi (scaled when solved, ignoring a big-M `switch` binary's coefficient)."""
+        terms = {v: c for v, c in x.terms.items() if c != 0.0}
+        if not terms:
+            if not lo - 1e-9 <= x.const <= hi + 1e-9:
+                raise ValueError(f"Infeasible constant row: {lo} <= {x.const} <= {hi}.")
+            return
+        r = len(self.rlo)
+        for v, c in terms.items():
+            self._rows.append(r)
+            self._cols.append(v)
+            self._vals.append(c)
+        self.rlo.append(lo - x.const)
+        self.rhi.append(hi - x.const)
+        self.switch.append(switch)
+
+    def restrict(self, z: int, value: float) -> None:
+        """Fix a binary, recording a conflict if it was already fixed to the other value."""
+        lo, hi = max(self.lb[z], value), min(self.ub[z], value)
+        if lo > hi:
+            self.conflicts.append(self.names[z])
+            return
+        self.lb[z], self.ub[z] = lo, hi
+
+    def at_most_when(self, x: Lin, z: int, when: int) -> None:
+        """x <= 0 whenever the binary z equals `when` (big-M from the bounds)."""
+        lo, hi = self.bounds(x)
+        if hi <= 0:
+            return
+        if lo > 0:  # x <= 0 is impossible: z cannot take the value `when`
+            self.restrict(z, 1.0 - when)
+            return
+        # when = 1: x <= hi * (1 - z); when = 0: x <= hi * z.
+        self.row(x + Lin.of(z, hi) if when == 1 else x - Lin.of(z, hi), hi=hi if when == 1 else 0.0, switch=z)
+
+    def link(self, value: Value, t: float, z: int, integral: bool = False) -> None:
+        """
+        z = 1 if the value is at most t, 0 if above (soundly widened: ties and rounding allow both sides). An
+        `integral` value (a count, a size) is at most floor(t) or at least floor(t) + 1.
+        """
+        if isinstance(value, str):
+            return
+        if isinstance(value, (int, float)):
+            self.restrict(z, float(float(value) <= t))
+            return
+        if isinstance(value, Lin) and integral:
+            self.at_most_when(value - math.floor(t), z, when=1)
+            self.at_most_when((math.floor(t) + 1) - value, z, when=0)
+            return
+        if isinstance(value, Lin):
+            d = TOL_REL * max(1.0, abs(t))
+            self.at_most_when(value - (t + d), z, when=1)
+            self.at_most_when((t - d) - value, z, when=0)
+            return
+        if isinstance(value, Frac):
+            # NOTE: relative only: shares are split at thresholds as small as 1e-35, and float32 division is off by at
+            # most ~6e-8 of the value.
+            d = TOL_REL * abs(t)
+            self.at_most_when(value.num - (t + d) * value.den, z, when=1)
+            if 0 <= t and t * self.bounds(value.den)[1] < 1:
+                # Below one count's share: above it means at least one count (the numerators are counts or sizes).
+                self.at_most_when(1.0 - value.num, z, when=0)
+            else:
+                self.at_most_when((t - d) * value.den - value.num, z, when=0)
+            return
+        if isinstance(value, Ent):
+            self._link_entropy(value, t, z)
+            return
+        if isinstance(value, MaxOf):
+            if value.const > t:
+                self.restrict(z, 0.0)
+                return
+            ws = []
+            for k, cand in enumerate(value.candidates):
+                w = self.binary(f"max_w{k}")
+                self.link(cand, t, w)
+                self.row(Lin.of(z) - Lin.of(w), hi=0.0)  # max <= t -> every candidate <= t
+                ws.append(w)
+            if not ws:
+                self.restrict(z, 1.0)
+                return
+            # max > t -> some candidate > t.
+            self.row(Lin.of(z) - Lin.total(Lin.of(w) for w in ws), lo=1.0 - len(ws))
+            return
+        raise TypeError(f"Unknown value {value!r}.")
+
+    def _link_entropy(self, e: Ent, t: float, z: int) -> None:
+        # H <= t (z = 1): the chords of -p log p lie below it on each share's range, so their sum is <= H <= t.
+        chord = Lin()
+        for c, lo, hi in zip(e.counts, e.lo.tolist(), e.hi.tolist(), strict=True):
+            slope = (_plogp(hi) - _plogp(lo)) / (hi - lo) if hi - lo > 1e-12 else 0.0
+            chord._iadd(e.total, _plogp(lo) - slope * lo)
+            chord._iadd(c, slope)
+        self.at_most_when(chord - (t + TOL_ENT) * e.total, z, when=1)
+        # H <= t (z = 1) also needs H * T, at least the mixture floor, to be at most t * T.
+        self.at_most_when(e.floor - (t + TOL_ENT) * e.total, z, when=1)
+        # H > t (z = 0): Gibbs' inequality H(p) <= -sum p log q for every distribution q, so each such sum is > t.
+        for q in e.refs:
+            gibbs = Lin.total(c * float(-math.log2(w)) for c, w in zip(e.counts, q.tolist(), strict=True))
+            self.at_most_when((t - TOL_ENT) * e.total - gibbs, z, when=0)
+
+    def product(self, name: str, x: Lin, ub: float, b: int) -> int:
+        """A variable equal to x * b for a binary b and 0 <= x <= ub (exact)."""
+        p = self.var(name, 0.0, ub)
+        self.row(Lin.of(p) - Lin.of(b, ub), hi=0.0)
+        self.row(Lin.of(p) - x, hi=0.0)
+        self.row(Lin.of(p) - x - Lin.of(b, ub), lo=-ub)
+        return p
+
+    def solve(self, objective: Optional[dict[int, float]] = None, time_limit: float = 60.0) -> Any:
+        """
+        Solve with HiGHS. NOTE: byte amounts reach millions next to 0/1 binaries in the same rows, which stalls even
+        the LP relaxation, while some splits need single-byte precision (a share of 1e-7 is one count in a 4 MB
+        file). So the solver sees each continuous variable in units of its largest magnitude capped at MAX_UNIT (the
+        feasibility tolerance stays far below one byte), and each row divided by its largest coefficient other than its
+        big-M switch's. HiGHS drops coefficients below 1e-9, which could tighten a row and exclude real files, so
+        coefficients below SMALL_COEF of a row's scale are removed here and the row's bounds widened by their largest
+        effect: rows only loosen. The returned `x` is in the original units.
+        """
+        if self.conflicts:
+            return _Infeasible(f"conflicting fixed binaries: {self.conflicts[:5]}")
+        n = len(self.lb)
+        lb, ub = np.array(self.lb), np.array(self.ub)
+        unit = np.where(np.array(self.integer), 1.0, np.clip(np.maximum(np.abs(lb), np.abs(ub)), 1.0, MAX_UNIT))
+        rows, cols = np.array(self._rows, dtype=np.int64), np.array(self._cols, dtype=np.int64)
+        vals = np.array(self._vals) * unit[cols]
+        rlo, rhi = np.array(self.rlo), np.array(self.rhi)
+        if rows.size:
+            s = np.zeros(len(rlo))
+            switch = np.array(self.switch, dtype=np.int64)
+            own = cols != switch[rows]
+            np.maximum.at(s, rows[own], np.abs(vals[own]))
+            s = np.where(s > 0, s, 1.0)
+            small = (np.abs(vals) < SMALL_COEF * s[rows]) & own
+            # Each dropped term moves its row by at most |coefficient| * max |scaled variable| (<= 1 for continuous).
+            slack = np.zeros(len(rlo))
+            np.add.at(slack, rows[small], np.abs(vals[small]) * np.maximum(np.abs(lb), np.abs(ub))[cols[small]] / unit[cols[small]])
+            rlo, rhi = (rlo - slack) / s, (rhi + slack) / s
+            keep = ~small
+            rows, cols, vals = rows[keep], cols[keep], vals[keep] / s[rows[keep]]
+        a = coo_matrix((vals, (rows, cols)), shape=(len(rlo), n)).tocsr()
+        c = np.zeros(n)
+        for v, k in (objective or {}).items():
+            c[v] = k
+        c = c * unit
+        constraints = LinearConstraint(a, rlo, rhi) if len(rlo) else ()
+        with warnings.catch_warnings():
+            # scipy passes the options it does not know (the tolerances) to HiGHS verbatim, with a warning.
+            warnings.filterwarnings("ignore", "Unrecognized options", RuntimeWarning)
+            res = milp(c, integrality=np.array(self.integer, dtype=float), bounds=(lb / unit, ub / unit),
+                       constraints=constraints, options={
+                           "time_limit": time_limit, "disp": False,
+                           "primal_feasibility_tolerance": FEASIBILITY_TOL, "dual_feasibility_tolerance": FEASIBILITY_TOL,
+                           "mip_feasibility_tolerance": FEASIBILITY_TOL})
+        if res.x is not None:
+            res.x = res.x * unit
+        return res
+
+
+@dataclass
+class _Infeasible:
+    """A solver result for a program infeasible by its bounds alone."""
+
+    message: str
+    status: int = 2
+    x: Optional[np.ndarray] = None
+
+
+################################################################################
+# The catalogue: add up to K sections, then append
+################################################################################
+
+
+@dataclass(frozen=True)
+class Choice:
+    """One edit of the catalogue: sections (name, content, characteristics) added in order, then an append."""
+
+    sections: tuple[tuple[bytes, bytes, int], ...]
+    append: bytes
+
+
+def budget(n: int, frac: float, minimum: int) -> int:
+    """The byte budget of Table A1's protocol: max(frac of the file's size, minimum)."""
+    return max(int(frac * n), minimum)
+
+
+def write(z: bytes, choice: Choice) -> Optional[bytes]:
+    """The edited file, written by our own byte-level edits, or None if a section header does not fit."""
+    for name, content, characteristics in choice.sections:
+        out = add_section(z, name, content, characteristics, before_overlay=False)
+        if out is None:
+            return None
+        z = out[0]
+    return z + choice.append
+
+
+def props_of(characteristics: int) -> list[str]:
+    """The flag names thrember hashes for a section's characteristics (pefile's flags whose bits overlap)."""
+    return [k[len("IMAGE_SCN_"):] for k, v in pefile.section_characteristics if v & characteristics]
+
+
+def name_key(name: bytes) -> str:
+    """A section name as thrember reads it."""
+    return name.strip(b"\x00").decode(errors="ignore").lower()
+
+
+def option(key: str, empty: bool = True) -> int:
+    """The name option a key hashes to: 2 * bucket (+ 1 for a negative sign), or EMPTY for the empty name."""
+    if key == "" and empty:
+        return EMPTY
+    (b,), (s,) = feature_hash(BUCKETS, [key])
+    return 2 * int(b) + (0 if s > 0 else 1)
+
+
+def _align(x: int, a: int) -> int:
+    return (x + a - 1) // a * a if a else x
+
+
+def free_slots(pe: pefile.PE, z: bytes) -> list[int]:
+    """The offsets of the free section-header slots, in the order `add_section` fills them."""
+    start = pe.DOS_HEADER.e_lfanew + 4 + 20 + pe.FILE_HEADER.SizeOfOptionalHeader
+    slot = start + SECTION_ENTRY * pe.FILE_HEADER.NumberOfSections
+    first = min((s.PointerToRawData for s in pe.sections if s.SizeOfRawData and s.PointerToRawData), default=len(z))
+    limit = min(pe.OPTIONAL_HEADER.SizeOfHeaders, first, len(z))
+    out = []
+    while slot + SECTION_ENTRY <= limit and not any(z[slot:slot + SECTION_ENTRY]):
+        out.append(slot)
+        slot += SECTION_ENTRY
+    return out
+
+
+def _printable(b: int) -> bool:
+    return PRINTABLE[0] <= b < PRINTABLE[1]
+
+
+def _widen(z: bytes, lo: int, hi: int) -> tuple[int, int]:
+    """A written range widened to the printable runs around it (a string's extent depends only on its neighbors)."""
+    while lo > 0 and _printable(z[lo - 1]):
+        lo -= 1
+    while hi < len(z) and _printable(z[hi]):
+        hi += 1
+    return lo, hi
+
+
+def _merge(ranges: Iterable[tuple[int, int]]) -> list[tuple[int, int]]:
+    out: list[tuple[int, int]] = []
+    for lo, hi in sorted(ranges):
+        if out and lo <= out[-1][1]:
+            out[-1] = (out[-1][0], max(out[-1][1], hi))
+        else:
+            out.append((lo, hi))
+    return out
+
+
+def _meets(item: Item, ranges: Sequence[tuple[int, int]]) -> bool:
+    return any(lo < b and a < hi for a, b in item.members for lo, hi in ranges)
+
+
+def _sums(table: ItemTable, items: Sequence[Item]) -> dict[str, np.ndarray]:
+    return ItemTable(table.num_elements, table.families, list(items)).sums
+
+
+################################################################################
+# The encoding of one file
+################################################################################
+
+
+class Encoding:
+    """
+    The choice block of one file and the value of every feature as a function of it.
+
+    Attributes:
+        program: The program (choice variables and their rows; the ensemble is linked by `link_ensemble`).
+        values: Feature index -> its value (a constant when no edit in the catalogue moves it).
+        x0: The file's feature vector.
+        k: The number of section slots encoded (min(K, free header slots)).
+        budget: The byte budget.
+    """
+
+    def __init__(self, extractor: PEFeatureExtractor, z: bytes, budget_bytes: int, max_sections: int) -> None:
+        pe = pefile.PE(data=z)
+        table = extractor.item_table(z)
+        if not precondition(pe, table):
+            raise NotCovered("precondition")
+        oh = pe.OPTIONAL_HEADER
+        fa, sa = int(oh.FileAlignment), int(oh.SectionAlignment)
+        if sa < PAGE or fa <= 0 or sa % fa:
+            raise NotCovered(f"alignment (FileAlignment {fa}, SectionAlignment {sa})")
+        n = len(z)
+        if n < 2 * WINDOW:
+            raise NotCovered("shorter than two windows")
+        self.z, self.n, self.fa, self.sa = z, n, fa, sa
+        self.x0 = np.asarray(extractor.feature_vector(z), dtype=np.float64)  # type: ignore[no-untyped-call]
+        self.budget = B = int(budget_bytes)
+        slots = free_slots(pe, z)
+        self.k = k = min(max_sections, len(slots))
+        sums = table.sums
+        P = self.program = Program()
+
+        # The amounts: bytes added in all (D), appended (A, a), added as section content (s).
+        D = P.var("D", 0, B)
+        A = P.var("A", 0, B)
+        a = [P.var(f"a{v}", 0, B) for v in range(256)]
+        s = [P.var(f"s{v}", 0, B) for v in range(256)]
+        P.row(Lin.total(Lin.of(x) for x in a) - Lin.of(A), 0, 0)
+
+        # The sections.
+        self.on = on = [P.binary(f"on{i}") for i in range(k)]
+        self.zs = zs = [P.binary(f"zs{i}") for i in range(k)]
+        self.m = m = [P.var(f"m{i}", 0, B // fa, integer=True) for i in range(k)]
+        self.c = c = [P.var(f"c{i}", 0, B) for i in range(k)]
+        self.pages = pages = [P.var(f"pages{i}", 0, B // sa + 1, integer=True) for i in range(k)]
+        self.e = e = [P.var(f"e{i}", 0, 8) for i in range(k)]
+        self.y = y = [[P.binary(f"y{i}_{o}") for o in range(EMPTY + 1)] for i in range(k)]
+        self.fl = fl = [{f: P.binary(f"fl{i}_{f}") for f in FLAGS} for i in range(k)]
+        self.prop_names = {f: props_of(bit) for f, bit in FLAGS.items()}
+        self.q = q = [{(f, pn): [P.binary(f"q{i}_{pn}_{o}") for o in range(EMPTY)] for f in FLAGS for pn in self.prop_names[f]}
+                      for i in range(k)]
+        raw = [Lin.of(m[i], fa) for i in range(k)]
+        rx: list[int] = []
+        rc: list[int] = []
+        for i in range(k):
+            if i:
+                P.row(Lin.of(on[i]) - Lin.of(on[i - 1]), hi=0)
+            P.row(raw[i] - Lin.of(c[i]), 0, fa - 1)  # padding to FileAlignment, exact
+            P.row(Lin.of(m[i]) - Lin.of(on[i], B // fa), hi=0)
+            P.row(Lin.of(zs[i]) - Lin.of(on[i]), hi=0)
+            P.row(Lin.of(m[i]) + Lin.of(zs[i], B // fa), hi=B // fa)  # zero-size -> no raw data
+            P.row(Lin.of(m[i]) - Lin.of(on[i]) + Lin.of(zs[i]), lo=0)  # added and not zero-size -> raw data
+            P.row(Lin.of(pages[i], sa) - raw[i], 0, sa - fa)  # virtual pages, exact
+            P.row(Lin.of(e[i]) - Lin.of(on[i], 8), hi=0)
+            P.row(Lin.total(Lin.of(v) for v in y[i]) - Lin.of(on[i]), 0, 0)
+            for f in FLAGS:
+                P.row(Lin.of(fl[i][f]) - Lin.of(on[i]), hi=0)
+                for pn in self.prop_names[f]:
+                    P.row(Lin.total(Lin.of(v) for v in q[i][(f, pn)]) - Lin.of(fl[i][f]), 0, 0)
+            r_, x_ = fl[i]["MEM_READ"], fl[i]["MEM_EXECUTE"]
+            rx.append(P.binary(f"rx{i}"))
+            P.row(Lin.of(rx[i]) - Lin.of(r_), hi=0)
+            P.row(Lin.of(rx[i]) - Lin.of(x_), hi=0)
+            P.row(Lin.of(rx[i]) - Lin.of(r_) - Lin.of(x_), lo=-1)
+            rc.append(P.product(f"rc{i}", raw[i], B, fl[i]["CNT_CODE"]))
+        P.row(Lin.total(Lin.of(x) for x in s) - Lin.total(Lin.of(x) for x in c), 0, 0)
+        on0 = Lin.of(on[0]) if k else Lin()
+        gap = _align(n, fa) - n
+        pad = gap * on0 + Lin.total(raw[i] - Lin.of(c[i]) for i in range(k))
+        P.row(Lin.of(D) - pad - Lin.total(Lin.of(c[i]) for i in range(k)) - Lin.of(A), 0, 0)
+        P.row(Lin.of(D), hi=B)
+        self.D, self.A, self.a, self.s = D, A, a, s
+        n1 = n + Lin.of(D)  # the new length
+
+        # The header bytes the sections write: their table entries and the rewritten fields.
+        fields = {f: field_range(pe.FILE_HEADER if f == "NumberOfSections" else oh, f) for f in FIELDS}
+        written = [(slots[i], slots[i] + SECTION_ENTRY) for i in range(k)] + list(fields.values()) if k else []
+        field_bytes = np.bincount(np.frombuffer(b"".join(z[lo:hi] for lo, hi in fields.values()), dtype=np.uint8), minlength=256)
+        h_max = SECTION_ENTRY * k + sum(FIELDS.values())
+        hb = [P.var(f"hb{v}", 0, h_max) for v in range(256)]
+        P.row(Lin.total(Lin.of(x) for x in hb) - Lin.total(Lin.of(o, SECTION_ENTRY) for o in on) - sum(FIELDS.values()) * on0, 0, 0)
+        if not k:
+            for x in hb:
+                P.fix(x, 0)
+
+        # Byte counts (general:bytes and histogram:counts are the same counts).
+        counts = []
+        for v in range(256):
+            x = float(sums["histogram:counts"][v]) + Lin.of(a[v]) + Lin.of(s[v]) + Lin.of(hb[v]) - float(field_bytes[v]) * on0
+            if v == 0:
+                x = x + pad - Lin.total(Lin.of(o, SECTION_ENTRY) for o in on)
+            counts.append(x)
+        rem = field_bytes.astype(np.float64)
+        rem[0] += SECTION_ENTRY * k
+        old_counts = np.asarray(sums["histogram:counts"], dtype=np.float64)
+        lo, hi = share_bounds(old_counts, rem, h_max, n, n + B, B)
+        h_bytes = float(self.x0[extractor.feature_names.index("general:entropy")])
+        # The floor's correction for overwritten bytes applies only when a section is added.
+        penalty = n * h_bytes - mixture_floor(n, h_bytes, h_max, 256)
+        bytes_ent = Ent(tuple(counts), n1, lo, hi, references([old_counts]), n * h_bytes - penalty * on0)
+
+        # Byte-entropy windows: the new windows over the new tail, and the header windows the writes touch.
+        w0 = (n - WINDOW) // STEP + 1
+        w1 = P.var("windows", w0, (n + B - WINDOW) // STEP + 1, integer=True)
+        P.row(Lin.of(w1, STEP) - Lin.of(D), hi=n - WINDOW + STEP)  # STEP * (w1 - 1) <= n1 - WINDOW
+        P.row(Lin.of(D) - Lin.of(w1, STEP), hi=-n + WINDOW - 1)  # n1 - WINDOW < STEP * w1
+        we_max = WINDOW * ((n + B - WINDOW) // STEP + 1 - w0)
+        rows_new = [P.var(f"wr{r}", 0, we_max / WINDOW) for r in range(16)]
+        we = [[P.var(f"we{r}_{col}", 0, we_max) for col in range(16)] for r in range(16)]
+        P.row(Lin.total(Lin.of(x) for x in rows_new) - Lin.of(w1) + w0, 0, 0)
+        for r in range(16):
+            P.row(Lin.total(Lin.of(x) for x in we[r]) - Lin.of(rows_new[r], WINDOW), 0, 0)
+        tail = np.bincount(np.frombuffer(z[w0 * STEP:], dtype=np.uint8) >> 4, minlength=16)
+        for col in range(16):
+            newnib = Lin.total(Lin.of(a[v]) + Lin.of(s[v]) for v in range(16 * col, 16 * col + 16))
+            if col == 0:
+                newnib = newnib + pad
+            colsum = Lin.total(Lin.of(we[r][col]) for r in range(16))
+            # Each new byte lies in at most two new windows, all but the last ~3 KB in exactly two; the old tail too.
+            P.row(colsum - 2 * newnib, -3 * STEP, 2 * float(tail[col]))
+        ent_counts = [float(sums["byteentropy:counts"][16 * r + col]) + Lin.of(we[r][col]) for r in range(16) for col in range(16)]
+        hdr_windows = [w for w in table.of_group("byteentropy") if w.kind == "window" and _meets(w, written)] if k else []
+        for h, w in enumerate(hdr_windows):
+            lo_, hi_ = w.attrs["span"]
+            oc = np.bincount(np.frombuffer(z[lo_:hi_], dtype=np.uint8) >> 4, minlength=16)
+            nh = sum(max(0, min(hi_, b) - max(lo_, a_)) for a_, b in written)
+            h0 = int(w.attrs["Hbin"])
+            u = [P.var(f"hw{h}_u{r}") for r in range(16)]
+            xw = [[P.var(f"hw{h}_{r}_{col}", 0, WINDOW) for col in range(16)] for r in range(16)]
+            P.row(Lin.total(Lin.of(x) for x in u), 1, 1)
+            P.row(Lin.of(u[h0]) + on0, lo=1)  # unchanged unless a section is added
+            for r in range(16):
+                P.row(Lin.total(Lin.of(x) for x in xw[r]) - Lin.of(u[r], WINDOW), 0, 0)
+            for col in range(16):
+                colsum = Lin.total(Lin.of(xw[r][col]) for r in range(16))
+                P.row(colsum - float(oc[col]) - nh * on0, hi=0)
+                P.row(colsum - float(oc[col]) + nh * on0, lo=0)
+                ent_counts[16 * h0 + col] = ent_counts[16 * h0 + col] - float(oc[col])
+                for r in range(16):
+                    ent_counts[16 * r + col] = ent_counts[16 * r + col] + Lin.of(xw[r][col])
+
+        # Strings: the new region (the new bytes and the printable run the old file ends in) and the header.
+        st = [i for i in table.of_group("strings") if i.kind == "string"]
+        run = 0
+        while run < n and _printable(z[n - 1 - run]):
+            run += 1
+        run_chars = np.bincount(np.frombuffer(z[n - run:], dtype=np.uint8) - PRINTABLE[0], minlength=96).astype(np.float64)
+        tail_string = [i for i in st if i.members and i.members[-1][1] == n] if run >= 5 else []
+        if run >= 5 and len(tail_string) != 1:
+            raise RuntimeError(f"Expected one string item ending the file; found {len(tail_string)}.")
+        t_sums = _sums(table, tail_string)
+        dT = P.binary("drop_tail") if tail_string else None
+        regexes = len(sums["strings:regex"])
+        ns = P.var("ns", 0, (B + run + 1) / 6)
+        pd = [P.var(f"pd{ch}", 0, B + run) for ch in range(96)]
+        rg = [P.var(f"rg{j}", 0, (B + run + 1) / 6) for j in range(regexes)]
+        for ch in range(96):
+            v = ch + PRINTABLE[0]
+            avail = Lin.of(a[v]) + Lin.of(s[v]) + (Lin.of(dT, run_chars[ch]) if dT is not None else run_chars[ch])
+            P.row(Lin.of(pd[ch]) - avail, hi=0)
+        np_new = Lin.total(Lin.of(x) for x in pd)
+        if dT is not None:
+            # The tail string changes only by merging with added bytes, into a string that holds all of its characters.
+            P.row(Lin.of(dT) - Lin.of(D), hi=0)
+            P.row(Lin.of(ns) - Lin.of(dT), lo=0)
+            for ch in range(96):
+                P.row(Lin.of(pd[ch]) - Lin.of(dT, run_chars[ch]), lo=0)
+        P.row(Lin.of(ns, 5) - np_new, hi=0)
+        P.row(Lin.of(ns, 6) - Lin.of(D), hi=run + 1)
+        for j in range(regexes):
+            P.row(Lin.of(rg[j]) - Lin.of(ns), hi=0)
+        hranges = _merge(_widen(z, lo_, hi_) for lo_, hi_ in written)
+        if hranges and run and hranges[-1][1] > n - run:
+            raise NotCovered("header strings meet the tail run")
+        h_strings = [i for i in st if _meets(i, hranges)]
+        h_sums = _sums(table, h_strings)
+        h_len = sum(hi_ - lo_ for lo_, hi_ in hranges)
+        h_chars = np.zeros(96)
+        for lo_, hi_ in hranges:
+            arr = np.frombuffer(z[lo_:hi_], dtype=np.uint8)
+            arr = arr[(arr >= PRINTABLE[0]) & (arr < PRINTABLE[1])]
+            h_chars += np.bincount(arr - PRINTABLE[0], minlength=96)
+        h_written = sum(hi_ - lo_ for lo_, hi_ in written)
+        dH = P.binary("drop_header_strings")
+        hs = P.var("hs", 0, (h_len + len(hranges)) / 6 + 1)
+        hpd = [P.var(f"hpd{ch}", 0, h_len) for ch in range(96)]
+        hrg = [P.var(f"hrg{j}", 0, (h_len + len(hranges)) / 6 + 1) for j in range(regexes)]
+        P.row(Lin.of(dH) - on0, hi=0)
+        for ch in range(96):
+            P.row(Lin.of(hpd[ch]) - (h_written + h_chars[ch]) * on0, hi=0)
+        P.row(Lin.total(Lin.of(x) for x in hpd) - h_len * on0, hi=0)
+        P.row(Lin.of(hs, 5) - Lin.total(Lin.of(x) for x in hpd), hi=0)
+        P.row(Lin.of(hs, 6) - (h_len + len(hranges)) * on0, hi=0)
+        for j in range(regexes):
+            P.row(Lin.of(hrg[j]) - Lin.of(hs), hi=0)
+
+        def dropped(family: str, i: int) -> Lin:
+            out = Lin()
+            if dT is not None:
+                out._iadd(Lin.of(dT, float(t_sums[family][i])), 1.0)
+            out._iadd(Lin.of(dH, float(h_sums[family][i])), 1.0)
+            return out
+
+        num_strings = float(sums["strings:numstrings"][0]) - dropped("strings:numstrings", 0) + Lin.of(ns) + Lin.of(hs)
+        printables = (float(sums["strings:printables"][0]) - dropped("strings:printables", 0) + np_new
+                      + Lin.total(Lin.of(x) for x in hpd))
+        pdist = [float(sums["strings:printabledist"][ch]) - dropped("strings:printabledist", ch) + Lin.of(pd[ch]) + Lin.of(hpd[ch])
+                 for ch in range(96)]
+        regex = [float(sums["strings:regex"][j]) - dropped("strings:regex", j) + Lin.of(rg[j]) + Lin.of(hrg[j]) for j in range(regexes)]
+        old_pd = np.asarray(sums["strings:printabledist"], dtype=np.float64)
+        rem_pd = np.asarray(t_sums["strings:printabledist"], dtype=np.float64) + np.asarray(h_sums["strings:printabledist"], dtype=np.float64)
+        old_p = float(sums["strings:printables"][0])
+        lo, hi = share_bounds(old_pd, rem_pd, h_len + run, old_p - float(rem_pd.sum()), old_p + B + h_len + run, B)
+        h_strings = float(self.x0[extractor.feature_names.index("strings:entropy")])
+        strings_ent = Ent(tuple(pdist), printables, lo, hi, references([old_pd]),
+                          old_p * h_strings - (old_p * h_strings - mixture_floor(old_p, h_strings, float(rem_pd.sum()), 96))
+                          * (Lin.of(dH) + (Lin.of(dT) if dT is not None else 0.0)))
+
+        # The section group.
+        sec = [i for i in table.of_group("section") if i.kind == "section"]
+        overlay = [i for i in table.of_group("section") if i.kind == "overlay"]
+        ov_start = int(overlay[0].attrs["start"]) if overlay else n
+        ov_counts = np.bincount(np.frombuffer(z[ov_start:], dtype=np.uint8), minlength=256).astype(np.float64)
+        keep = 1.0 - on0  # the old overlay survives only if no section is added
+        ov_size = (n - ov_start) * keep + Lin.of(A)
+        h_overlay = float(self.x0[extractor.feature_names.index("section:overlay_entropy")])
+        ov_ent = Ent(tuple(float(ov_counts[v]) * keep + Lin.of(a[v]) for v in range(256)), ov_size,
+                     np.zeros(256), np.ones(256), references([ov_counts, old_counts]),
+                     mixture_floor(n - ov_start, h_overlay, 0.0, 256) * keep)
+        counts_sec = [float(x) for x in sums["section:counts"]]
+        sec_counts = [
+            counts_sec[0] + Lin.total(Lin.of(o) for o in on),
+            counts_sec[1] + Lin.total(Lin.of(x) for x in zs),
+            counts_sec[2] + Lin.total(Lin.of(y[i][EMPTY]) for i in range(k)),
+            counts_sec[3] + Lin.total(Lin.of(x) for x in rx),
+            counts_sec[4] + Lin.total(Lin.of(fl[i]["MEM_WRITE"]) for i in range(k)),
+        ]
+        empty_option = option("", empty=False)
+        hashes: dict[str, list[Lin]] = {}
+        for fam, qty, ub in (("section:size_hash", raw, B), ("section:vsize_hash", [Lin.of(x) for x in c], B),
+                             ("section:entropy_hash", [Lin.of(x) for x in e], 8.0)):
+            col = [Lin(float(v)) for v in sums[fam]]
+            for i in range(k):
+                for o in range(EMPTY + 1):
+                    p = P.product(f"{fam}{i}_{o}", qty[i], ub, y[i][o])
+                    oo = empty_option if o == EMPTY else o
+                    col[oo // 2] = col[oo // 2] + Lin.of(p, 1.0 if oo % 2 == 0 else -1.0)
+            hashes[fam] = col
+        chars = [Lin(float(v)) for v in sums["section:characteristics_hash"]]
+        for i in range(k):
+            for key, vs in q[i].items():
+                for o, v in enumerate(vs):
+                    chars[o // 2] = chars[o // 2] + Lin.of(v, 1.0 if o % 2 == 0 else -1.0)
+        hashes["section:characteristics_hash"] = chars
+
+        # The header fields.
+        index = {item.attrs.get("field"): item.terms[0].index for item in table.of_group("header") if item.kind == "field"}
+        hdr = [Lin(float(v)) for v in sums["header:fields"]]
+        old = {f: float(sums["header:fields"][index[f]]) for f in FIELDS}
+        end0 = max([int(x.VirtualAddress) + max(int(x.Misc_VirtualSize), int(x.SizeOfRawData)) for x in pe.sections] + [0])
+        rva1 = _align(max(end0, int(oh.SizeOfHeaders)), sa)
+        code = Lin.total(Lin.of(x) for x in rc)
+        hdr[index["NumberOfSections"]] = old["NumberOfSections"] + Lin.total(Lin.of(o) for o in on)
+        hdr[index["SizeOfImage"]] = old["SizeOfImage"] * keep + rva1 * on0 + Lin.total(Lin.of(x, sa) for x in pages)
+        hdr[index["SizeOfCode"]] = old["SizeOfCode"] + code
+        hdr[index["SizeOfInitializedData"]] = old["SizeOfInitializedData"] + Lin.total(raw) - code
+
+        self.fam: dict[str, list[Any]] = {
+            "general:size": [n1],
+            "general:bytes": counts,
+            "histogram:counts": counts,
+            "byteentropy:counts": ent_counts,
+            "strings:numstrings": [num_strings],
+            "strings:printables": [printables],
+            "strings:printabledist": pdist,
+            "strings:regex": regex,
+            "header:fields": hdr,
+            "section:file_size": [n1],
+            "section:counts": sec_counts,
+            "section:overlay": [ov_size, ov_ent],
+            **hashes,
+        }
+        totals: dict[str, Lin] = {"histogram:counts": n1, "byteentropy:counts": Lin.of(w1, WINDOW), "strings:printabledist": printables}
+        entropies: dict[str, Ent] = {"general:bytes": bytes_ent, "strings:printabledist": strings_ent}
+        # The attributes the added sections and the new overlay take (the Max readouts' candidates).
+        new_items: dict[str, list[Value]] = {
+            "entropy": [Lin.of(x) for x in e],
+            "size": list(raw),
+            "vsize_ratio": [Frac(raw[i], Lin.of(c[i])) for i in range(k)],
+        }
+        new_overlay: dict[str, Value] = {"entropy": ov_ent, "size": ov_size}
+        entry = next((i for i in table.of_group("section") if i.kind == "entry"), None)
+
+        # The value of every feature.
+        self.values: dict[int, Value] = {}
+        col = 0
+        for fe in extractor.features:
+            readouts = fe.readouts() if callable(fe.readouts) else fe.readouts
+            for r in readouts:
+                for j, v in enumerate(self._values(r, totals, entropies, new_items, new_overlay, sec, n1, entry)):
+                    # Constants (and expressions no choice enters) keep the file's extracted value.
+                    if not isinstance(v, (int, float)) and not (isinstance(v, Lin) and not v.terms):
+                        self.values[col + j] = v
+                col += r.dim
+
+        # pefile's warnings (outside the model; the extractor's flags of warning types and their number). Two of them
+        # are functions of the choices: a byte value making up more than 50% (zero) or 15% (any other) of the file,
+        # and an added section both writable and executable. The others are held at the file's values (an assumption
+        # the containment test checks).
+        names = {name: i for i, name in enumerate(extractor.feature_names)}
+        byte_w, flags_w = names[WARN_BYTE], names[WARN_FLAGS]
+        old_byte, old_flags = float(self.x0[byte_w]), float(self.x0[flags_w])
+        dominant = P.binary("warn_byte")
+        shares = []
+        for v in range(256):
+            share = P.binary(f"share{v}")  # 1: byte v makes up at most its threshold
+            P.link(Frac(counts[v], n1), 0.5 if v == 0 else 0.15, share)
+            P.row(Lin.of(dominant) + Lin.of(share), lo=1)
+            shares.append(share)
+        P.row(Lin.of(dominant) + Lin.total(Lin.of(x) for x in shares), hi=256)
+        suspicious = P.binary("warn_flags")
+        added_wx = []
+        for i in range(k):
+            wx = P.binary(f"wx{i}")
+            w_, x_ = fl[i]["MEM_WRITE"], fl[i]["MEM_EXECUTE"]
+            P.row(Lin.of(wx) - Lin.of(w_), hi=0)
+            P.row(Lin.of(wx) - Lin.of(x_), hi=0)
+            if not pe.is_driver():
+                # NOTE: pefile spares a driver's section named PAGE; for a driver the warning is left free below.
+                P.row(Lin.of(wx) - Lin.of(w_) - Lin.of(x_), lo=-1)
+            P.row(Lin.of(suspicious) - Lin.of(wx), lo=0)
+            added_wx.append(wx)
+        P.row(Lin.of(suspicious) - Lin.total(Lin.of(x) for x in added_wx), hi=old_flags)
+        if old_flags:
+            P.fix(suspicious, 1)
+        self.values[byte_w] = Lin.of(dominant)
+        self.values[flags_w] = Lin.of(suspicious)
+        self.values[names[WARN_COUNT]] = float(self.x0[names[WARN_COUNT]]) - old_byte - old_flags + Lin.of(dominant) + Lin.of(suspicious)
+        # The features whose values are whole numbers (counts, sizes, fields, flags; not the entropy-hash buckets).
+        self.integral = {f for f, v in self.values.items() if isinstance(v, Lin) and not extractor.feature_names[f].startswith("section:entropy_hash")}
+
+    def _values(self, r: Any, totals: dict[str, Lin], entropies: dict[str, Ent], new_items: dict[str, list[Value]],
+                new_overlay: dict[str, Value], sec: list[Item], n1: Lin, entry: Optional[Item]) -> list[Value]:
+        """The values of one readout's features (constants for the ones the catalogue does not move)."""
+        const: list[Value] = [0.0] * r.dim
+        if isinstance(r, Selection):
+            # NOTE: an added section never holds the entry point; it can become the entry section only through the
+            # fallback (no section holds it), and then the hashed name is left free.
+            return [FREE] * r.dim if entry is not None and entry.attrs["name"] == "" else const
+        if isinstance(r, Identity):
+            return list(self.fam[r.family][r.start:r.start + r.size]) if r.family in self.fam else const
+        if isinstance(r, Normalized):
+            if r.family not in self.fam:
+                return const
+            return [Frac(x, totals[r.family]) for x in self.fam[r.family]]
+        if isinstance(r, Ratio):
+            if r.num[0] not in self.fam or r.den[0] not in self.fam:
+                raise NotImplementedError(f"A ratio over a moved and an unmoved family: {r!r}.")
+            return [Frac(self.fam[r.num[0]][r.num[1]], self.fam[r.den[0]][r.den[1]])]
+        if isinstance(r, Entropy):
+            return [entropies[r.family]] if r.family in entropies else const
+        if isinstance(r, Max) and r.group == "section":
+            # The old sections' values, the added sections', and the overlay's (old or new; it replaces the old one).
+            olds = [float(i.attrs[r.attr]) for i in sec if i.kind in r.kinds]
+            cands = list(new_items[r.attr]) + ([new_overlay[r.attr]] if "overlay" in r.kinds else [])
+            if r.divide_by is not None:
+                if r.divide_by != ("section:file_size", 0) or not all(isinstance(x, Lin) for x in cands):
+                    raise NotImplementedError(f"Unexpected Max readout {r!r}.")
+                return [MaxOf(tuple(Frac(x, n1) for x in cands) + tuple(Frac(Lin(v), n1) for v in olds), r.floor)]  # type: ignore[arg-type]
+            return [MaxOf(tuple(cands), max(olds + [r.floor]))]
+        if isinstance(r, Min) and r.floor == 0.0:
+            return const  # constant zero: the attributes are nonnegative
+        return const
+
+    def resolve(self, f: int) -> Value:
+        """The value of feature f (its current value when no edit moves it)."""
+        return self.values.get(f, float(self.x0[f]))
+
+    def fixed_value(self, f: int) -> Optional[float]:
+        """Feature f's value when every variable it depends on is fixed (an exact feature under `fix`), else None."""
+        P = self.program
+
+        def ev(x: Lin) -> Optional[float]:
+            if any(P.lb[v] != P.ub[v] for v in x.terms):
+                return None
+            return x.const + sum(c * P.lb[v] for v, c in x.terms.items())
+
+        v = self.values.get(f)
+        if isinstance(v, Lin):
+            return ev(v)
+        if isinstance(v, Frac):
+            num, den = ev(v.num), ev(v.den)
+            return None if num is None or den is None else (num / den if den else 0.0)
+        return None
+
+    def fix(self, choice: Choice, edited: bytes) -> None:
+        """Fix the choice variables to one edit (for the containment test); `edited` is the written file."""
+        P = self.program
+        if len(choice.sections) > self.k:
+            raise ValueError(f"{len(choice.sections)} sections, {self.k} encoded.")
+        pe = pefile.PE(data=edited)
+        added = list(pe.sections)[len(pe.sections) - len(choice.sections):]
+        for i in range(self.k):
+            on = i < len(choice.sections)
+            name, content, characteristics = choice.sections[i] if on else (b"", b"", 0)
+            raw = _align(len(content), self.fa)
+            P.fix(self.on[i], on)
+            P.fix(self.m[i], raw // self.fa)
+            P.fix(self.c[i], len(content))
+            P.fix(self.pages[i], -(-raw // self.sa))
+            P.fix(self.zs[i], on and raw == 0)
+            P.fix(self.e[i], added[i].get_entropy() if on else 0.0)
+            key = name_key(name)
+            for o, v in enumerate(self.y[i]):
+                P.fix(v, on and o == option(key))
+            for f, bit in FLAGS.items():
+                P.fix(self.fl[i][f], on and bool(characteristics & bit))
+                for pn in self.prop_names[f]:
+                    hit = option(f"{key}:{pn}", empty=False) if on and characteristics & bit else -1
+                    for o, v in enumerate(self.q[i][(f, pn)]):
+                        P.fix(v, o == hit)
+        content = b"".join(c for _, c, _ in choice.sections)
+        for v, x in enumerate(np.bincount(np.frombuffer(choice.append, dtype=np.uint8), minlength=256).tolist()):
+            P.fix(self.a[v], x)
+        for v, x in enumerate(np.bincount(np.frombuffer(content, dtype=np.uint8), minlength=256).tolist()):
+            P.fix(self.s[v], x)
+        P.fix(self.A, len(choice.append))
+        P.fix(self.D, len(edited) - self.n)
+
+
+################################################################################
+# Linking the ensemble
+################################################################################
+
+
+def link_ensemble(enc: Encoding, ens: Ensemble, sides: Optional[np.ndarray] = None) -> dict[tuple[int, int], int]:
+    """
+    One binary per (feature, threshold), "x_f <= t_j", linked to the feature's value (or fixed to `sides`' side of
+    each split, a feature vector, for the containment test).
+
+    Returns:
+        (feature, threshold index) -> the binary's variable.
+    """
+    P = enc.program
+    out: dict[tuple[int, int], int] = {}
+    for f, ts in ens.thresholds.items():
+        value = enc.resolve(f)
+        for j, t in enumerate(ts.tolist()):
+            z = out[(f, j)] = P.binary(f"split{f}_{j}")
+            if sides is not None:
+                P.fix(z, float(sides[f]) <= t)
+            P.link(value, t, z, integral=f in enc.integral)
+        if sides is None:
+            for j in range(ts.size - 1):
+                P.row(Lin.of(out[(f, j)]) - Lin.of(out[(f, j + 1)]), hi=0)
+    return out
+
+
+def certify(enc: Encoding, ens: Ensemble, below: float, time_limit: float) -> dict[str, Any]:
+    """
+    Decide whether some edit in the encoded catalogue brings the ensemble's raw score below `below`.
+
+    Returns:
+        status, message, seconds, evaded (a choice was found), certified (proved infeasible), the found score, the
+        program's size, and (if evaded) the choice variables' values.
+    """
+    import time
+
+    P = enc.program
+    z = link_ensemble(enc, ens)
+    leaves = [P.var(f"leaf{i}", 0, 1) for i in range(ens.values.size)]
+    for tree_leaves, nodes in zip(ens.leaves, ens.nodes):
+        P.row(Lin.total(Lin.of(leaves[i]) for i in tree_leaves), 1, 1)
+        for f, j, left, right in nodes:
+            P.row(Lin.total(Lin.of(leaves[i]) for i in left) - Lin.of(z[(f, j)]), hi=0)
+            P.row(Lin.total(Lin.of(leaves[i]) for i in right) + Lin.of(z[(f, j)]), hi=1)
+    score = Lin.total(Lin.of(leaves[i], float(v)) for i, v in enumerate(ens.values.tolist()))
+    P.row(score, hi=below)
+    t0 = time.time()
+    res = P.solve(time_limit=time_limit)
+    seconds = time.time() - t0
+    out: dict[str, Any] = {
+        "status": int(res.status), "message": str(res.message), "seconds": seconds,
+        "evaded": res.x is not None, "certified": res.status == 2,
+        "variables": len(P.lb), "rows": len(P.rlo), "binaries": int(sum(P.integer)),
+    }
+    if res.x is not None:
+        out["score"] = float(ens.values @ res.x[leaves[0]:leaves[0] + len(leaves)])
+        out["choice"] = {name: float(res.x[i]) for i, name in enumerate(P.names) if CHOICE.match(name) and abs(res.x[i]) > 1e-9}
+    return out
