@@ -14,6 +14,7 @@ catalogue: header fields, imports, renames, shifts), so those are listed for ins
 Outputs, in `{outdir}/`:
     solves.parquet   one row per (defense, file): covered (or why not), battery evaded, certified, solver evaded,
                      undecided, seconds, program size, file size and budget, the evading choice
+    solutions/       per solver evasion, the solution vector ({defense}_{file}.npy)
     report.json      per defense: detected, covered, battery evaded; among the files the battery does not evade:
                      certified, solver-evaded, undecided, split by whether the budget exceeds the file's size; the verdict
 
@@ -118,6 +119,12 @@ def _job(job: tuple[str, str, bytes, float, float, bool]) -> dict[str, Any]:
     row.update(covered=True, reason=None, k=enc.k, build_seconds=time.time() - t0)
     r = certify(enc, _STATE["ensembles"][defense], tau_raw - TOL, args.time_limit)
     choice = r.pop("choice", None)
+    r.pop("sides", None)
+    x = r.pop("x", None)
+    if x is not None:
+        # The solution, for writing the evasion as a file later (`ap_realize.realize`; the names come from the encoding).
+        (args.outdir / "solutions").mkdir(parents=True, exist_ok=True)
+        np.save(args.outdir / "solutions" / f"{defense}_{name}.npy", x)
     row.update(r)
     row["choice"] = json.dumps(choice) if choice is not None else None
     print(f"  {defense} {name[:12]}: {r['message'][:40]!r} {r['seconds']:.0f}s certified={r['certified']} "

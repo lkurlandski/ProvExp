@@ -6,7 +6,9 @@
 # Hypothesis (2026-10-30, after the per-row, dominance, and regex-character cuts): still a no-go, but fewer solver
 # evasions than the smoke run's 3; a certificate, if any, on a large file (budget small against the file). On 2826a9a5
 # (4 MB) the solver went from an evasion in 111 s to undecided at 300 s after the last two cuts.
-# NOT YET RUN. run/111 holds on the current encoding. Smoke at 300 s (2026-10-30, before tightening): 0 certified, 10
+# Smoke (2026-10-30, fifth session, first 30 pilot malware, 60 s): 12 solves, 5 fail the precondition, 7 undecided,
+# none evaded (the smoke before the cuts found 3 quick evasions). Evading solutions are saved under solutions/ for
+# check 2. NOT YET RUN in full. run/111 holds on the current encoding. Smoke at 300 s (2026-10-30, before tightening): 0 certified, 10
 # undecided, 3 solver evasions.
 #
 # Estimate: 13 solves in parallel, 1,800 s limit each: ~30 min wall.
