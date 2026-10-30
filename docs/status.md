@@ -1,7 +1,8 @@
 # Status
 
 **2026-10-30, second session: A' pilot steps 1-3; check 1 failed its hypothesis; Table A'1 re-aimed (user,
-decision 7 in `docs/direction-A-prime-mock.md`).** Commits 177341b..(this one).
+decision 7 in `docs/direction-A-prime-mock.md`). Session closed; step 4 not started.** Commits 177341b..(this
+wrap-up).
 - **Step 1, reading list:** HRAT, Demontis et al., Šrndić & Laskov, verifiable boosted trees; none computes edit-to-
   feature effects for an extractor of EMBER's kind. HRAT (edits the call graph, the extractor's own input) means
   "edit an intermediate structure, not the features" must not be claimed. Šrndić & Laskov state the problem we answer
@@ -19,7 +20,15 @@ decision 7 in `docs/direction-A-prime-mock.md`).** Commits 177341b..(this one).
   region certifies") and build step 4; new check 1b: the computed region certifies >= 20% of the unconstrained
   model's detected files the battery does not evade. The four options and their reasoning are recorded (decision 7)
   for revisiting.
-- **Next:** step 4, the edit-choice encoding (append and add-section, layout bytes included), then check 1b.
+- **Step 4 groundwork (no code yet):** under the precondition, append moves six groups: general (size up, entropy
+  both), byte histogram, byte entropy, strings, five section features (the overlay), and the pefile warnings (held at
+  the file's values, as in the adaptive search). The catalogue's declared add-section (`catalogue.add_section`)
+  covers the content's bytes and strings, the new section's record (name bucket and sign, size, vsize, entropy,
+  characteristics), the overlay's removal, and NumberOfSections + 1. It leaves out the section-table entry, the
+  alignment padding, and SizeOfImage (A4). A design note was started and not written: write it first next session,
+  framed around the certificate (variables, linear features, sound bounds for ratios, histograms, entropy, and the test
+  against re-extraction).
+- **Next:** step 4's design note, then the encoding (append and add-section, layout bytes included), then check 1b.
 
 **2026-10-30: runs 107, 105, 106 read; two adaptive-search bugs found and fixed (run 108). Session closed; next
 session starts the A' pilot.** Commits 7340b9e..(this wrap-up).
