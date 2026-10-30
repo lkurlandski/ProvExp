@@ -1,5 +1,26 @@
 # Status
 
+**2026-10-30, second session: A' pilot steps 1-3; check 1 failed its hypothesis; Table A'1 re-aimed (user,
+decision 7 in `docs/direction-A-prime-mock.md`).** Commits 177341b..(this one).
+- **Step 1, reading list:** HRAT, Demontis et al., Šrndić & Laskov, verifiable boosted trees; none computes edit-to-
+  feature effects for an extractor of EMBER's kind. HRAT (edits the call graph, the extractor's own input) means
+  "edit an intermediate structure, not the features" must not be claimed. Šrndić & Laskov state the problem we answer
+  ("neither feasible to enumerate all feature interdependencies ... a priori").
+- **Battery on one set of detectors (run 109):** the adaptive search now scores the 10% models (their neutralized
+  sums columns padded with zeros; `a1_adaptive.padded_booster`); union with the toolkit, real evasions only:
+  unconstrained 27/47, PV-seen 15/22, PV-all 15/22. Three declared evasions on PV did not realize: the declared
+  add-section leaves out the layout bytes (section-table entry, padding), and PV splits on byte-histogram bins they move.
+  Step 4 must include them.
+- **Check 1 (run 110, `scripts/ap_check1_learned.py`):** learned per-feature regions certify nothing (0/47
+  unconstrained, 0/22 PV-seen from all eight attacks); wrong certificates (15/15) only where the region is learned from
+  the attacks PV was built from (by construction; A's PV hole again). Cause: pooled limits and no coupling between
+  features (too loose), not missing directions (too narrow).
+- **Decided (user):** re-aim Table A'1 ("learned and budget-only regions are vacuous or circular; only the computed
+  region certifies") and build step 4; new check 1b: the computed region certifies >= 20% of the unconstrained
+  model's detected files the battery does not evade. The four options and their reasoning are recorded (decision 7)
+  for revisiting.
+- **Next:** step 4, the edit-choice encoding (append and add-section, layout bytes included), then check 1b.
+
 **2026-10-30: runs 107, 105, 106 read; two adaptive-search bugs found and fixed (run 108). Session closed; next
 session starts the A' pilot.** Commits 7340b9e..(this wrap-up).
 - **Run 107 holds:** G7 passes on all 73,063 edits (2,000 files, twelve operations, strict and precondition

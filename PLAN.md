@@ -59,8 +59,27 @@ introduction and a simple baseline (writing decision for later).
   (hand-written problem-space modifiers, feature-space side effects found by trial), and query-based problem-space
   attacks (GAMMA, MAB-Malware). Harsh check first: Pierazzi et al.'s problem-space formalization and every
   "realizable attack" paper since; the novelty must be the automatic, side-effect-exact translation, not the attack.
+  **Current framing (mock, decisions 1-7):** realizable worst-case evaluation of a detector with an exact solver over
+  edit choices. After check 1 (2026-10-30, decision 7): learned regions are vacuous or circular, so the claim is that
+  only the computed region, which keeps how one edit moves features together, certifies anything on a non-monotone
+  detector; check 1b decides it after the step-4 build.
 
-## Next steps (2026-10-30)
+## Next steps (2026-10-30, after A' steps 1-3)
+
+Done: the A' reading list (no threat to the computed-mapping claim; `docs/literature-Aprime-2026-10-27.md`); the battery
+measured on the 10% detectors the solver uses (run 109: union with the toolkit, unconstrained 27/47, PV-seen 15/22,
+PV-all 15/22); check 1 (run 110) **failed its hypothesis**: learned regions certify nothing (0/47, 0/22) except in the
+circular case (PV from the same attacks, 15/15 wrong). Decided (user, 2026-10-30): re-aim Table A'1 to "learned and
+budget-only regions are vacuous or circular; only the computed region certifies" and build the encoding; the problem,
+the four options, and the reasoning are in `docs/direction-A-prime-mock.md`, decision 7. Next, in order:
+1. Step 4, the edit-choice encoding (append and add-section first), **including the layout bytes an added section
+   brings** (section-table entry, padding; run 109 showed PV flips on them). Test: a fixed choice reproduces
+   re-extraction (not only the declared prediction).
+2. Check 1b (decision 7): the computed region certifies at least 20% of the unconstrained model's detected files the
+   battery does not evade. Bring a no-go to the user (decision 7's options 3, then 2).
+3. Check 2 (>= 70% of solver evasions realize), check 3 (expert set; user decision), Table A'1.
+
+### Earlier: next steps (2026-10-30, start of session)
 
 Done (`docs/status.md`): runs 107, 105, 106 read. G7 holds on 2,000 files (73,063 edits); step 9's C4 rows as
 hypothesised (test metrics within noise, routed rows unevaded by seen attacks, M_full rows by held-out ones); the

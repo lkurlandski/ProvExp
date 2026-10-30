@@ -1,12 +1,23 @@
 # Direction A': mock of the paper's tables (2026-10-27)
 
-**Update 2026-10-30 (before the pilot; to be folded in at step 2 of `PLAN.md`, "Next steps (2026-10-30)").** Since
-this mock was written: the C1 and C4 engines exist (derivation steps 1-9), so the pilot uses the engine and decision 6's
-hand predictors are no longer needed; the battery's measured cells change (Table A1's toolkit columns are now
-`artifacts/experiments/a1/toolkit-v2`, the adaptive search is run 108's: unconstrained 4/49, PV 16/22, after two
-search bugs were fixed); the expert-set monotone model measured AUC 0.844, TPR 29% at 1% FPR, and detects only 8 of the
-50 pilot malware, and its extractor is not instrumented, so the solver cannot be fed by the engine for that row yet.
-C3 (the edit-choice encoding with magnitude bounds) is described in the model but not built.
+**Refreshed 2026-10-30 (A' pilot, steps 1-3).** What changed since the first draft:
+- The C1 and C4 engines exist (derivation steps 1-9), so the pilot uses the engine; decision 6's hand predictors are
+  no longer needed. C3 (the edit-choice encoding with magnitude bounds) is described in the model but not built.
+- **One set of detectors throughout:** the 10%-subsample GBDTs (`seed-0-s10-ref`, `-s10-pv-seen`, `-s10-pv-all`),
+  which the toolkit columns (run 105, `artifacts/experiments/a1/toolkit-v2`) and check 0 (run 89) already use. The
+  adaptive search was re-run on them (run 109); run 108's numbers are for the full-data models and are not mixed in.
+- **The battery is measured** (per-file union of the eight toolkit attacks and the adaptive search, real re-extracted
+  evasions only): unconstrained 27/47, PV-seen 15/22, PV-all 15/22.
+- **Check 1 failed its hypothesis** (run 110): learned regions give wrong certificates only in the circular case, and
+  certify nothing otherwise. Table A'1's contrast is re-aimed accordingly (decision 7, below); the first draft's
+  "learned constraints give unsound certificates" reading is withdrawn.
+- **The declared add-section leaves out layout bytes** (the section-table entry and padding; A4). Run 109 found three
+  declared evasions on the PV models that do not hold on the written file (a split on byte-histogram bins the header
+  entry moves). The solver's encoding (step 4) must include those bytes.
+- The literature read for A' is complete (`docs/literature-Aprime-2026-10-27.md`): no threat to the computed-mapping
+  claim; HRAT means "edit an intermediate structure, not the features" must not be claimed.
+- Expert set: the monotone model measured AUC 0.844, TPR 29% at 1% FPR, detects 8 of the 50 pilot malware, evaded by no
+  toolkit attack there; its extractor is not instrumented, so the engine cannot feed the solver for that row yet.
 
 First draft written by a separate session from the task prompt in `docs/resume-prompt.md`; revised the same day after
 review: the "independent certificate" of our own detector was circular; the battery numbers contradicted Table A1; the
@@ -43,7 +54,8 @@ a different way:
    7 relations for their PE feature set; Sheatsley et al. and Bostani et al. learn constraints from data). Hand
    constraints for a real extractor's 2,568 features, including the hashed and aggregate ones Severi et al. excluded
    outright, have not been written by anyone. Learned constraints only contain the changes the training attacks
-   happened to make, so a certificate based on them can be wrong.
+   happened to make, and they lose how features move together (one edit changes many features at once, in fixed
+   relationships); check 1 measured that they certify nothing or, where they certify, only by construction.
 4. **Do what Chen et al. did for PDF** (USENIX Security 2020): map each file edit to an over-approximated set of
    feature vectors, then verify the detector against that set. This is exactly the right recipe, and it is the
    closest prior work on the same task. It was easy for them because their PDF features *are* paths in the file's
@@ -97,24 +109,30 @@ file size, 512 KB).
 
 | Detector | Attack battery: toolkit + our search (lower bound) | Solver, budget only | Solver, constraints learned from the toolkit | **Solver, computed (ours): certified / realized** | Solve time / file |
 |---|---|---|---|---|---|
-| Unconstrained GBDT | 57% (27/47) *(measured)* | 100% | 31% | **88% / 79%** | 4 min |
-| PV, 4 seen attacks (Gimenez et al.) | 95% (21/22) *(measured)* | 100% | 5% | **100% / 95%** | 3 min |
-| PV, all 8 attacks | 100% (22/22) *(measured)* | 100% | 0% | **100% / 100%** | 3 min |
-| Expert set, monotone (Gimenez et al.'s 40 features) | 20% | 100% | 0% | **45% / 38%** | 1 min |
+| Unconstrained GBDT | 57% (27/47) *(measured)* | 100% | 100% *(measured)* | **70% / 62%** | 4 min |
+| PV, 4 seen attacks (Gimenez et al.) | 68% (15/22) *(measured)* | 100% | 100% *(measured)*; 0% if learned from its own 4 attacks† | **80% / 73%** | 3 min |
+| PV, all 8 attacks | 68% (15/22) *(measured)* | 100% | 0% *(measured)*† | **80% / 73%** | 3 min |
+| Expert set, monotone (Gimenez et al.'s 40 features) | 0/8 detected pilot files *(measured)* | 100% | — | **45% / 38%** | 1 min |
 | C4 on sums (ours, from A): sanity check | 0% *(measured)* | 100% | 0% | 0% / 0% (by construction) | 1 min |
 
-All numbers outside the *(measured)* cells are invented. The shape to read:
+Detectors: the 10%-subsample GBDTs (runs 89, 105, 109, 110). "Learned" = each feature may move by up to the largest
+decrease and increase the eight toolkit attacks produced on any pilot file (run 110). † Circular: PV built from attack
+set S is monotone in exactly the features S never lowered, so a region learned from S certifies it by construction
+(15 of 15 battery evasions certified as safe). All numbers outside the *(measured)* cells are invented. The shape to
+read:
 
-- **The learned constraints give unsound certificates.** They certify PV robust (0-5%) while the battery evades it on
-  21-22 of 22 files. A certificate built from what past attacks happened to change misses what they didn't change.
-  This ties A' to A's main result (PV's hole).
+- **Learned regions are vacuous or circular** (measured, check 1). Learned from attacks other than the ones a defense
+  was built from, they certify nothing (0/47, 0/22): pooled per-feature limits with no coupling between features are
+  as loose as the byte budget alone. Learned from the same attacks, they certify PV on every file, wrongly on all 15
+  the battery evades, which restates A's PV hole rather than adding to it. **The computed region must be the only one
+  that certifies anything** on a non-monotone detector; that is untested until step 4 (decision 7).
 - **Defended detectors built without our constraints are where A' says something new.** The expert-set row is the
   strongest case. Gimenez et al.'s detector is certified robust *under their own hand-written add-only threat model*.
   Under computed M_full constraints, the solver finds which of their assumptions fail (reading their code suggests 12
   of their 40 features can be lowered under M_full; `docs/direction-A-expert-set.md`), and the realized column shows
   real files that evade. Adversarially trained models (Table A'2) would be a further row of this kind.
-- **The battery understates the undefended detector** (57% found versus 79-88% realizable) but not PV, which our own
-  C1-guided search already breaks almost completely. A' adds a certificate and the full count, not a stronger attack.
+- **The battery may understate the detectors** (57% found on the unconstrained one), and only the computed region
+  says by how much. A' adds a certificate and the full count, not a stronger attack.
 - **The C4-on-sums row is a sanity check, not evidence.** It is monotone in the same directions the solver uses, so
   0% is guaranteed. Its only value is catching a bug in the solver's encoding.
 
@@ -122,9 +140,9 @@ Components behind the columns:
 - *Attack battery*: no model component; secml-malware's eight attacks plus the C1-guided adaptive search of Table A2,
   union per file (the measured cells are Table A1's "detected after every attack").
 - *Solver, budget only*: the exact solver over the GBDT with only a box and the budget on the feature vector.
-- *Solver, learned constraints*: the same solver, with each feature allowed to move only in the directions the
-  toolkit's adversarial outputs moved it (Bostani/Sheatsley-style learning, or equivalently Labaca-Castro et al.'s
-  empirical per-feature change probabilities thresholded at zero). The realistic data-driven alternative.
+- *Solver, learned constraints*: the same solver, with each feature allowed to move by up to the largest decrease and
+  increase the toolkit's adversarial outputs produced (Šrndić & Laskov's per-feature bounds; Bostani/Sheatsley-style
+  learning). The realistic data-driven alternative (`scripts/ap_check1_learned.py`, run 110).
 - *Solver, computed, certified*: the solver over edit choices, with features computed by C1 and nonlinear ones bounded
   by C3. Sound over the catalogue, so 0% here is a certificate against every edit in it.
 - *Solver, computed, realized*: the certified evasions, materialized, re-extracted, and kept only if the real file
@@ -132,10 +150,11 @@ Components behind the columns:
 - *Solve time*: wall-clock per file, against ~100 re-extractions per file per toolkit attack. Check 0 decides whether
   it is minutes or hours.
 
-Paper sentence this table must support (mock): "Constraints learned from eight attacks certify a feature-selection
-defense robust on nearly every file, yet a cheap adaptive search evades it on 21 of 22. Computing the reachable set
-from the extractor instead gives certificates that hold, and every evasion the solver reports re-extracts as a real
-file. The same evaluation shows where a published certifiably robust detector's threat-model assumptions break under
+Paper sentence this table must support (mock, re-aimed after check 1): "Constraints learned from attack outputs are
+too loose to certify any file, because they lose how one edit moves many features together; where they do certify a
+defense, it is only because the defense was built from the same attacks, and a cheap adaptive search evades it on 15
+of 22. Computing the reachable set from the extractor keeps that coupling: it certifies files no other region can,
+and every evasion the solver reports re-extracts as a real file. The same evaluation shows where a published certifiably robust detector's threat-model assumptions break under
 a broader but realistic attacker."
 
 ## Table A'2: realizable examples for adversarial training (second use, not the main result)
@@ -228,10 +247,20 @@ Each is a short job on the pilot, on today's hand-coded predictors.
    solver certifies robust at least a third of the files the battery evades. *No-go:* if learned constraints already
    agree with the battery, data-driven constraints suffice for this use and the contrast with ours is thin; lead with
    the expert-set row or Table A'2 instead.
+   **Result (run 110, 2026-10-30): hypothesis failed, in an unexpected direction.** The learned region is too loose,
+   not too narrow. Learned from all eight attacks (2,014 features free), it certifies 0/22 on PV-seen and 0/47 on the
+   unconstrained model; the solver finds a feature-space evasion for every file, in under 10 s. Wrong certificates
+   appear only where the region is learned from the attacks the PV detector was built from (15/15 battery evasions
+   certified), which holds by construction. Neither outcome the check anticipated occurred: the learned region does
+   not agree with the battery, and it does not give wrong certificates outside the circular case. See decision 7.
 2. **The solver's evasions realize.** On the unconstrained GBDT, encode the append and add-section edits as solver
    choices (the two edits with exact C1 predictors in Table A0), materialize each evasion, and re-extract. *Go* if at
    least 70% still evade. *No-go:* the nonlinear bounds are too loose; tighten them (C3 step 3) before calling the
    result realizable.
+1b. **The computed region certifies** (added by decision 7, 2026-10-30, after check 1). Once append and add-section
+   are in the solver (step 4, layout bytes included), on the unconstrained GBDT: *go* if the computed region certifies
+   at least 20% of the files it detects that the battery does not evade (20 of 47 at pilot scale). *No-go:* the
+   region is as loose as the learned one; A' is then a realizable lower bound only; revisit decision 7's options.
 3. **The computed constraints matter on a defended detector built without them.** On the expert-set detector (once
    its row exists), the computed-constraint solver must find realized evasions on a material share (say 10% or more)
    of the files it detects. *No-go:* if their hand-written add-only assumptions already hold under M_full, the
@@ -275,7 +304,7 @@ real behavior, not a bug to patch. It is one of the features where computed and 
 
 The user accepted every recommendation below on 2026-10-27; they stand until the checks say otherwise.
 
-1. **Which use leads the paper.** *Recommended: Table A'1 (exact evaluation).* A'1 says "constraints learned from
+1. **Which use leads the paper.** *Recommended: Table A'1 (exact evaluation); its contrast re-aimed by decision 7.* A'1 says "constraints learned from
    attacks certify a defense that a cheap search breaks; computed ones give certificates that hold and evasions that
    re-extract". A'2 says "training on realizable edits beats problem-space adversarial training at a fraction of the
    cost". A'1 reuses A's detectors; A'2 needs a training loop and is closer to Level Up and Chen et al.
@@ -292,3 +321,45 @@ The user accepted every recommendation below on 2026-10-27; they stand until the
    the fallback if check 0 fails.
 6. **Pilot on today's hand-coded predictors, or wait for the engine.** *Recommended: run checks 0-2 now* on the hand
    predictors (check 0 needs none), clearly flagged; the paper's numbers come from the engine.
+7. **After check 1 (user, 2026-10-30): re-aim Table A'1 and build the encoding.** Recorded in full so the choice can
+   be revisited.
+
+   *The problem.* The mock's main contrast was "learned constraints give wrong certificates; computed ones give
+   correct ones". Check 1 (run 110) showed learned regions are vacuous instead. Two causes:
+   - *pooling*: each feature's limit is the largest change seen on any file by any attack (one GAMMA run added ~400 KB
+     of sections, so every file may grow by 400 KB);
+   - *no coupling*: each feature moves independently, while a real edit moves many features together by tied amounts
+     (appending zeros raises the size, raises the zero-byte share, and lowers every other share at once).
+
+   The solver combines changes no single edit produces and beats every non-monotone detector. The only wrong
+   certificates are circular (PV from attack set S, region learned from S) and restate direction A's PV hole. The
+   reasoning error in the hypothesis: we assumed missing directions (too narrow) would dominate; missing coupling
+   (too loose) dominates.
+
+   *Options considered.*
+   1. **Re-aim and build (chosen).** The contrast becomes "learned and budget-only regions are vacuous or circular;
+      the computed region is the only one that certifies anything on a non-monotone detector, and its evasions
+      realize". It rests on what provenance uniquely records: how one edit moves features together. New go/no-go
+      after step 4 (append and add-section in the solver, layout bytes included): the computed region certifies at
+      least 20% of the files the unconstrained model detects and the battery does not evade, and check 2's at least
+      70% of solver evasions realize. Cost: the step-4 build before knowing. Risk: our region may also be loose
+      (appending 5% of a file with chosen bytes moves the histogram; added sections steer the name buckets).
+   2. **A tighter learned baseline first** (e.g., each feature's 95th-percentile change instead of the largest;
+      ~1 min). It might give non-circular wrong certificates. Not chosen: adjusting a baseline until it fails risks a
+      strawman; any per-feature box still lacks coupling, which is the actual argument. It stays available as a
+      sensitivity row, reported whichever way it falls.
+   3. **Lead A' with another use:** the expert-set row (does Gimenez et al.'s add-only certificate survive M_full?)
+      or Table A'2 (training on realizable edits), with Table A'1 as support. Not chosen yet: both also need the
+      encoding (the expert row needs its extractor instrumented as well), so step 4 comes first either way.
+   4. **Pause A'** and spend the time on scaling A or the manuscript. Not chosen: check 0 showed tight regions do
+      certify (an L0 budget of 1 feature certified the unconstrained model on 5/5 files), so the computed region has a
+      real chance.
+
+   *What each outcome of the new check means.* If the computed region certifies a material share, A' contributes the
+   first worst-case robustness numbers for an EMBER-style detector that are both provable and tied to real files. If it
+   certifies little, A' is a realizable worst-case lower bound (solver evasions that are exact edit lists and hold on
+   real files), closer to "a better attack", which is weak against undefended detectors; then revisit options 3 and 2
+   in that order.
+
+   *Revisit this decision* if the step-4 go/no-go fails, or if a reviewer-facing argument needs a non-circular wrong
+   certificate (then run option 2 as a sensitivity row).
