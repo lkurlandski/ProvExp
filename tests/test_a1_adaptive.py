@@ -21,7 +21,10 @@ warnings.filterwarnings("ignore", category=SyntaxWarning)
 ROOT = Path(__file__).parent.parent
 sys.path.insert(0, str(ROOT / "scripts"))
 from a1_adaptive import DATA_PROPS  # noqa: E402
+from a1_adaptive import Donors  # noqa: E402
+from a1_adaptive import bucket_names  # noqa: E402
 from a1_adaptive import engine_predictors  # noqa: E402
+from a1_adaptive import menu  # noqa: E402
 from a_c1_table0 import predict_add_section  # noqa: E402
 from a_c1_table0 import predict_append  # noqa: E402
 from catalogue_checks import add_section as write_section  # noqa: E402
@@ -119,6 +122,20 @@ class TestEnginePredictors:
         x = EXTRACTOR.feature_vector(written[0])  # type: ignore[no-untyped-call]
         assert x[INDEX["section:overlay_size"]] == 0
 
+    def test_no_missing_values(self, sample: bytes) -> None:
+        needs_files()
+        # The unmodeled features (pefile's warnings) keep the file's values: a NaN would read as missing to a GBDT.
+        append, section = engine_predictors(EXTRACTOR)
+        x = EXTRACTOR.feature_vector(sample)  # type: ignore[no-untyped-call]
+        y = section(EXTRACTOR, sample, ".pv0", bytes(range(256)) * 16, DATA_PROPS)
+        assert not np.isnan(y).any()
+        np.testing.assert_array_equal(y[~MODELED], x[~MODELED])
+        try:
+            y = append(EXTRACTOR, sample, b"\x00" * 4096)
+        except RuntimeError:
+            return
+        assert not np.isnan(y).any()
+
     def test_table_kept_per_state(self, sample: bytes) -> None:
         needs_files()
         append, _ = engine_predictors(EXTRACTOR)
@@ -131,3 +148,29 @@ class TestEnginePredictors:
         grown = sample + blob
         y = append(EXTRACTOR, grown, blob)
         np.testing.assert_array_equal(y[MODELED], predict_append(EXTRACTOR, grown, blob)[MODELED])
+
+
+################################################################################
+# The search's steps
+################################################################################
+
+
+class TestSearchSteps:
+
+    def test_section_step_ends_overlay(self, sample: bytes) -> None:
+        needs_files()
+        if not _overlay(sample):
+            pytest.skip("No overlay.")
+        # The search materializes a chosen add-section with our own byte-level edit, after the overlay, as the engine
+        # declares it: the written file has no overlay left, so a later step cannot claim its removal again (run 105).
+        donors = Donors([(f.name, f.read_bytes()) for f in FILES])
+        names = bucket_names()
+        ops = menu(donors, np.random.default_rng(0), 12, engine_predictors(EXTRACTOR), list(names)[:8], names)
+        op = next(o for o in ops if o[0] == "sec")
+        try:
+            op[1](EXTRACTOR, sample)
+        except RuntimeError:
+            pytest.skip("No room for another section header.")
+        written = op[2](sample)
+        assert not _overlay(written)
+        assert len(written) > len(sample)

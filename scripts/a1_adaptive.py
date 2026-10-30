@@ -10,10 +10,12 @@ evasion. For the PV-seen row, which is sound only against the attacks it was bui
 hole check 2 measured. Nothing is deployed; files are written only so their features can be re-extracted and re-scored.
 
 The search decides by C1 predictions of each candidate edit's *declared* effect (the attacker's reachable set under M;
-decided 2026-10-24), never by re-extracting a written file: LIEF's writer relays out the file (A4) outside M, so a
-real re-extraction would mix M effects with the tool's. The C4 rows are therefore 0 by construction here; the
-C1-vs-reextraction gap (A4) is a separate number A0 already measures. This part provides the material (goodware
-donors), the loader-safe edits (used only to materialize a file for the A4-gap report), and the greedy search over C1.
+decided 2026-10-24), never by re-extracting a written file: the declared effect leaves out the layout bytes (padding,
+the section-table entry, SizeOfImage; A4), so a real re-extraction would mix M effects with the layout's. The C4 rows
+are therefore 0 by construction here; the C1-vs-reextraction gap (A4) is reported alongside (`p_adv_real`). Each
+chosen step is materialized by our own byte-level edit (scripts/catalogue_checks.py), exactly the declared operation,
+so the next step starts from the file the declaration describes. This part provides the material (goodware donors),
+the loader-safe edits, and the greedy search over C1.
 
 Every edit keeps the original content in place -- each section's raw data, the overlay, the DOS header and stub, and
 the header fields it does not itself set -- so it stays inside M and does not exploit the writing tool's layout
@@ -59,6 +61,7 @@ from provexp.reach import predict
 sys.path.insert(0, str(Path(__file__).parent))
 from a_c1_table0 import has_overrun_section  # noqa: E402
 from a_pv_attacks import load_pilot  # noqa: E402
+from catalogue_checks import add_section as write_section  # noqa: E402
 
 __all__ = ["Donors", "HDR_FIELDS", "Operation", "add_imports", "add_section", "engine_predictors", "greedy_search",
            "lief_preserves", "bucket_names", "menu", "rename_section", "section_bucket", "set_header_fields", "zero_directory_entry"]
@@ -259,8 +262,10 @@ def lief_preserves(original: bytes, edited: bytes, op: str) -> bool:
 Operation = tuple[str, Callable[[PEFeatureExtractor, bytes], np.ndarray], Callable[[bytes], bytes], int]
 # The (append, add-section) C1 predictors: (extractor, z, blob) and (extractor, z, name, content, props).
 PredictorSet = tuple[Callable[..., np.ndarray], Callable[..., np.ndarray]]
-# The properties of an added data section, as the extractor reads them from add_section(..., code=False).
+# The properties of an added data section, as the extractor reads them from add_section(..., code=False), and its
+# characteristics as the byte-level edit writes them.
 DATA_PROPS = ["CNT_INITIALIZED_DATA", "MEM_READ", "MEM_WRITE"]
+DATA_CHARACTERISTICS = 0xC0000040
 SECTION_BUCKETS = 50
 BUCKET_GROUPS = ("section:size_hash_", "section:vsize_hash_", "section:entropy_hash_")
 
@@ -271,6 +276,8 @@ def engine_predictors(extractor: PEFeatureExtractor) -> PredictorSet:
 
     Each step of the search predicts every candidate from the same state, so the item table of the last state is kept.
     A flagged prediction raises RuntimeError (`Prediction.features`), which the search counts as a query and skips.
+    The features no readout models (pefile's warnings) are NaN in the engine's vector; they keep the state's values,
+    as in the hand predictors.
 
     Args:
         extractor: The instrumented extractor whose feature vectors the defense scores.
@@ -282,15 +289,27 @@ def engine_predictors(extractor: PEFeatureExtractor) -> PredictorSet:
 
     def _table(z: bytes) -> ItemTable:
         if last.get("z") is not z:
-            last["z"], last["table"] = z, extractor.item_table(z)
+            last["z"], last["table"], last["x"] = z, extractor.item_table(z), None
         table: ItemTable = last["table"]
         return table
 
+    def _fill(z: bytes, y: np.ndarray) -> np.ndarray:
+        # NOTE: a NaN would read as a missing value, which a GBDT sends down its default branch: the unmodeled warning
+        # features then moved the unconstrained model's declared score by up to ~3 in logit (run 108's first try).
+        missing = np.isnan(y)
+        if missing.any():
+            if last["x"] is None:
+                last["x"] = extractor.feature_vector(z)  # type: ignore[no-untyped-call]
+            y = np.where(missing, last["x"], y)
+        return y
+
     def _append(ext: PEFeatureExtractor, z: bytes, blob: bytes) -> np.ndarray:
-        return predict(_table(z), z, ByteEdit(len(z), len(z), blob), ext.recognizers).features(ext.readouts)
+        table = _table(z)
+        return _fill(z, predict(table, z, ByteEdit(len(z), len(z), blob), ext.recognizers).features(ext.readouts))
 
     def _section(ext: PEFeatureExtractor, z: bytes, name: str, content: bytes, props: list[str]) -> np.ndarray:
-        return catalogue.add_section(ext, _table(z), z, name, content, props).features(ext.readouts)
+        table = _table(z)
+        return _fill(z, catalogue.add_section(ext, table, z, name, content, props).features(ext.readouts))
 
     return _append, _section
 
@@ -342,8 +361,22 @@ def menu(donors: Donors, rng: np.random.Generator, candidates: int, preds: Predi
         return ("app", lambda ext, z: predict_app(ext, z, blob), lambda z: z + blob, len(blob))
 
     def _section(op: str, name: str, content: bytes) -> Operation:
-        return (op, lambda ext, z: predict_sec(ext, z, name, content, DATA_PROPS),
-                lambda z: add_section(z, name, content, False), len(content))
+        # NOTE: the step is materialized by our own byte-level edit, exactly the declared add-section (the section ends
+        # the file, so an overlay before it is no longer one), not by LIEF: LIEF puts the section before the overlay and
+        # keeps it, so every later step would claim the overlay's removal again (run 105). A file whose headers have no
+        # room for another section header cannot take the edit in place; the candidate is skipped.
+        def _predict(ext: PEFeatureExtractor, z: bytes) -> np.ndarray:
+            if write_section(z, name.encode(), content, DATA_CHARACTERISTICS, before_overlay=False) is None:
+                raise RuntimeError("No room for another section header.")
+            return predict_sec(ext, z, name, content, DATA_PROPS)
+
+        def _write(z: bytes) -> bytes:
+            written = write_section(z, name.encode(), content, DATA_CHARACTERISTICS, before_overlay=False)
+            if written is None:
+                raise RuntimeError("No room for another section header.")
+            return written[0]
+
+        return (op, _predict, _write, len(content))
 
     size = int(rng.choice([4096, 65536]))
     ops.append(_append(b"\x00" + rng.integers(0, 256, size=size, dtype=np.uint8).tobytes()))

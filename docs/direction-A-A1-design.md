@@ -277,12 +277,18 @@ malware still pass.
 files the header attack happens to cross). The failing-file evasion is again `480087e22a70...` (header_fields,
 reference branch).
 
-Adaptive column: both C4 rows 0 (0/47, 0/41), largest declared score change exactly 0.0. The unconstrained row rose to
-28/49 (run 100: 10/49), but **this number is inflated by a bug** found while reading it: the engine's declared
-add-section ends the file, so it removes the overlay (pefile's rule, G7 finding 4), while the search builds each step's
-file with LIEF, which puts the section before the overlay and keeps it; the next add-section step then claims the
-overlay's removal again. An append creates an overlay that a later step "removes" the same way. Witnessed on 4 of 5
-files (e.g. `9e584121f2...`: -2.84 declared on the first step, -2.63 again from LIEF's file). The C4 rows do not see the
-overlay features. Also measured: on these files our own byte-level edit (exactly the declared add-section, after the
-overlay) realizes far less of the declared drop (e.g. -0.35 vs -2.84), because the declared effect leaves out the
-layout bytes (padding, the section-table entry, SizeOfImage), as the hand predictor did. Fix pending (user).
+Adaptive column: both C4 rows 0 (0/47, 0/41), largest declared score change exactly 0.0. The unconstrained row first
+read 28/49 (run 100: 10/49), **inflated by two bugs in the search**, both fixed on 2026-10-30 (run 108): (1) the
+engine's declared add-section ends the file and so removes the overlay (pefile's rule, G7 finding 4), but the search
+built each step's file with LIEF, which puts the section before the overlay and keeps it, so every later step claimed
+the overlay's removal again (an append creates an overlay the same way); (2) the engine leaves the features no readout
+models (pefile's 88 warning flags) NaN, which a GBDT reads as missing and sends down its default branch (up to ~3 in
+logit on one file). Decided (user): each step is now written by our own byte-level edit (`scripts/catalogue_checks.py`),
+exactly the declared operation, and the unmodeled features keep the current file's values, as the hand predictors did.
+
+**After the fix (run 108):** unconstrained **4/49**, PV **16/22**, both C4 rows **0** (min_delta_logit exactly 0).
+Declared and real scores agree (median gap < 1e-4; every declared evasion holds on the written, re-extracted file),
+so the adaptive column no longer has an A4 gap of its own. The evasion is lower than run 100's because 10 of the 49
+detected pilot malware have no room for another section header (the search can only append to them; 5 of PV's 6
+losses, the sixth ends at 0.817 against a threshold of 0.811), and because run 100's steps started from LIEF's
+relayout, which mixed the tool's layout changes into the score.
