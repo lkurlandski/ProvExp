@@ -11,8 +11,9 @@
 # Estimate: ~1,300 edits at 2-6 s each on 16 workers: ~3-6 min.
 # Ran 2026-10-30 (Claude, 7 min 40 s): hypothesis holds. 85 of 100 files covered (12 fail the precondition, 1 low
 # alignment, 2 under 4 KB); 1,105 edits written; contained 1,105, exact 1,105, held-fixed unchanged 1,105.
-# NOTE: the encoding changed after this run (solver scaling and tolerances, whole-number splits, entropy floor, the
-# tail-string merge rule); re-run before relying on it.
+# Re-ran 2026-10-30 (Claude, fifth session, ~8 min), after the solver numerics, whole-number splits, entropy floor,
+# tail-string merge rule, and the per-row entropy cuts with exact header-window rows: hypothesis holds again. 85 covered;
+# 1,105 edits written; contained, exact, and held-fixed unchanged on all 1,105.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 source env/bin/activate

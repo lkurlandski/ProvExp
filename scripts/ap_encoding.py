@@ -251,6 +251,69 @@ def references(dists: Sequence[np.ndarray]) -> tuple[np.ndarray, ...]:
     return tuple(out)
 
 
+def boundary_references(h: float, size: int = 16) -> tuple[np.ndarray, ...]:
+    """
+    Distributions of entropy exactly h (bits) concentrated on one symbol or two, mixed with the uniform one: Gibbs
+    cuts at them are tangent to {H >= h} near its sharpest corners (the low-entropy distributions).
+    """
+    if not 0 < h < math.log2(size):
+        raise ValueError(f"Entropy {h} outside (0, {math.log2(size)}).")
+    out = []
+    for centre in [[c] for c in range(size)] + [[c, d] for c in range(size) for d in range(c + 1, size)]:
+        if len(centre) == 2 and h <= 1.0:
+            continue  # the uniform pair already has entropy 1
+        e = np.zeros(size)
+        e[centre] = 1.0 / len(centre)
+        lo, hi = 0.0, 1.0  # the entropy of (1 - w) e + w u rises with w from log2(len(centre)) to log2(size)
+        for _ in range(60):
+            w = (lo + hi) / 2
+            q = (1.0 - w) * e + w / size
+            if -float(np.sum(q * np.log2(q))) < h:
+                lo = w
+            else:
+                hi = w
+        out.append((1.0 - hi) * e + hi / size)
+    return tuple(out)
+
+
+# The Gibbs references of each byte-entropy row r >= 1 (a window in row r has nibble entropy at least r / 4).
+ROW_REFS: dict[int, tuple[np.ndarray, ...]] = {r: boundary_references(r / 4 - TOL_ENT) for r in range(1, 16)}
+
+
+def reachable_rows(counts: np.ndarray, moved: int) -> range:
+    """
+    The byte-entropy rows a window's nibble counts can reach when at most `moved` of its bytes are rewritten: the
+    entropy is Schur-concave, so its extremes move counts one at a time from the largest to the smallest (highest) or
+    from the smallest nonzero to the largest (lowest). Widened by TOL_ENT at both ends.
+    """
+    def row(c: np.ndarray, side: float) -> int:
+        p = c[c > 0] / c.sum()
+        h = float(-np.sum(p * np.log2(p))) + side * TOL_ENT
+        return min(15, max(0, int(math.floor(4 * h))))
+
+    hi, lo = counts.astype(np.int64).copy(), counts.astype(np.int64).copy()
+    for _ in range(moved):
+        hi[np.argmax(hi)] -= 1
+        hi[np.argmin(hi)] += 1
+        nz = np.flatnonzero(lo)
+        if nz.size > 1:
+            src = nz[np.argmin(lo[nz])]
+            lo[src] -= 1
+            lo[np.argmax(lo)] += 1
+    return range(row(lo, -1.0), row(hi, 1.0) + 1)
+
+
+def row_cuts(P: Program, counts: Sequence[Lin], windows: Lin, r: int) -> None:
+    """
+    A byte-entropy row's nibble counts (over `windows` windows of WINDOW bytes, all in row r): each window has nibble
+    entropy at least r / 4, so by concavity their pooled distribution does too, and by Gibbs' inequality
+    sum_c counts_c * (-log2 q_c) >= (r / 4) * WINDOW * windows for every distribution q (linear).
+    """
+    for q in ROW_REFS.get(r, ()):
+        cross = Lin.total(x * float(-math.log2(w)) for x, w in zip(counts, q.tolist(), strict=True))
+        P.row(cross - windows * ((r / 4 - TOL_ENT) * WINDOW), lo=0.0)
+
+
 ################################################################################
 # The program
 ################################################################################
@@ -689,6 +752,7 @@ class Encoding:
         P.row(Lin.total(Lin.of(x) for x in rows_new) - Lin.of(w1) + w0, 0, 0)
         for r in range(16):
             P.row(Lin.total(Lin.of(x) for x in we[r]) - Lin.of(rows_new[r], WINDOW), 0, 0)
+            row_cuts(P, [Lin.of(x) for x in we[r]], Lin.of(rows_new[r]), r)
         tail = np.bincount(np.frombuffer(z[w0 * STEP:], dtype=np.uint8) >> 4, minlength=16)
         for col in range(16):
             newnib = Lin.total(Lin.of(a[v]) + Lin.of(s[v]) for v in range(16 * col, 16 * col + 16))
@@ -704,12 +768,17 @@ class Encoding:
             oc = np.bincount(np.frombuffer(z[lo_:hi_], dtype=np.uint8) >> 4, minlength=16)
             nh = sum(max(0, min(hi_, b) - max(lo_, a_)) for a_, b in written)
             h0 = int(w.attrs["Hbin"])
-            u = [P.var(f"hw{h}_u{r}") for r in range(16)]
+            u = [P.binary(f"hw{h}_u{r}") for r in range(16)]
             xw = [[P.var(f"hw{h}_{r}_{col}", 0, WINDOW) for col in range(16)] for r in range(16)]
             P.row(Lin.total(Lin.of(x) for x in u), 1, 1)
+            reach = reachable_rows(oc, nh)
+            for r in range(16):
+                if r not in reach:
+                    P.fix(u[r], 0)
             P.row(Lin.of(u[h0]) + on0, lo=1)  # unchanged unless a section is added
             for r in range(16):
                 P.row(Lin.total(Lin.of(x) for x in xw[r]) - Lin.of(u[r], WINDOW), 0, 0)
+                row_cuts(P, [Lin.of(x) for x in xw[r]], Lin.of(u[r]), r)
             for col in range(16):
                 colsum = Lin.total(Lin.of(xw[r][col]) for r in range(16))
                 P.row(colsum - float(oc[col]) - nh * on0, hi=0)
@@ -1041,7 +1110,7 @@ def certify(enc: Encoding, ens: Ensemble, below: float, time_limit: float) -> di
 
     Returns:
         status, message, seconds, evaded (a choice was found), certified (proved infeasible), the found score, the
-        program's size, and (if evaded) the choice variables' values.
+        program's size, and (if evaded) the choice variables' values, the side of every split, and the solution.
     """
     import time
 
@@ -1066,4 +1135,7 @@ def certify(enc: Encoding, ens: Ensemble, below: float, time_limit: float) -> di
     if res.x is not None:
         out["score"] = float(ens.values @ res.x[leaves[0]:leaves[0] + len(leaves)])
         out["choice"] = {name: float(res.x[i]) for i, name in enumerate(P.names) if CHOICE.match(name) and abs(res.x[i]) > 1e-9}
+        # The solver's side of every split (for attributing a gap between its score and a written file's).
+        out["sides"] = {key: bool(res.x[v] > 0.5) for key, v in z.items()}
+        out["x"] = res.x
     return out

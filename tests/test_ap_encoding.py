@@ -12,13 +12,18 @@ import numpy as np
 import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
+from ap_encoding import ROW_REFS  # noqa: E402
+from ap_encoding import WINDOW  # noqa: E402
 from ap_encoding import Ent  # noqa: E402
 from ap_encoding import Frac  # noqa: E402
 from ap_encoding import Lin  # noqa: E402
 from ap_encoding import MaxOf  # noqa: E402
+from ap_encoding import boundary_references  # noqa: E402
 from ap_encoding import mixture_floor  # noqa: E402
 from ap_encoding import Program  # noqa: E402
+from ap_encoding import reachable_rows  # noqa: E402
 from ap_encoding import references  # noqa: E402
+from ap_encoding import row_cuts  # noqa: E402
 from ap_encoding import share_bounds  # noqa: E402
 
 __all__: list[str] = []
@@ -130,3 +135,68 @@ class TestMixtureFloor:
     def test_exact_without_edits(self) -> None:
         old = np.array([5.0, 3.0, 2.0])
         assert mixture_floor(10.0, _entropy(old), 0.0, 3) == pytest.approx(10.0 * _entropy(old))
+
+
+################################################################################
+# Byte-entropy rows
+################################################################################
+
+
+def _window(rng: np.random.Generator) -> np.ndarray:
+    """The nibble counts of a random 2,048-byte window (runs of a few values, random bytes, or a mix)."""
+    kind = rng.integers(3)
+    if kind == 0:
+        values = rng.integers(0, 256, rng.integers(1, 6))
+        a = rng.choice(values, WINDOW)
+    elif kind == 1:
+        a = rng.integers(0, 256, WINDOW)
+    else:
+        a = np.where(rng.random(WINDOW) < rng.random(), rng.integers(0, 256, WINDOW), rng.integers(0, 256))
+    return np.bincount(a.astype(np.uint8) >> 4, minlength=16)
+
+
+def _row(c: np.ndarray) -> int:
+    return min(15, int(2 * 2 * _entropy(c)))
+
+
+class TestRows:
+
+    @pytest.mark.parametrize("r", range(1, 16))
+    def test_references_on_the_boundary(self, r: int) -> None:
+        for q in boundary_references(r / 4):
+            assert q.min() > 0 and q.sum() == pytest.approx(1.0)
+            assert _entropy(q) == pytest.approx(r / 4, abs=1e-9)
+
+    @pytest.mark.parametrize("seed", range(20))
+    def test_cuts_hold_on_pooled_windows(self, seed: int) -> None:
+        # The windows of one row, pooled, satisfy every cut of that row.
+        rng = np.random.default_rng(seed)
+        windows = [_window(rng) for _ in range(60)]
+        for r in range(1, 16):
+            pooled = sum((w for w in windows if _row(w) == r), np.zeros(16))
+            m = pooled.sum() / WINDOW
+            for q in ROW_REFS[r]:
+                assert float(pooled @ -np.log2(q)) >= (r / 4) * WINDOW * m - 1e-6
+
+    def test_cuts_exclude_low_entropy(self) -> None:
+        # A window of a single nibble cannot sit in row 8 (it has entropy 0).
+        p = Program()
+        xs = [p.var(f"x{c}", 0, WINDOW) for c in range(16)]
+        for c, x in enumerate(xs):
+            p.fix(x, WINDOW if c == 3 else 0)
+        row_cuts(p, [Lin.of(x) for x in xs], Lin(1.0), 8)
+        assert p.solve().status == 2
+
+    @pytest.mark.parametrize("seed", range(30))
+    def test_reachable_rows_sound(self, seed: int) -> None:
+        rng = np.random.default_rng(seed)
+        a = np.frombuffer(rng.integers(0, 256, WINDOW, dtype=np.uint8).tobytes(), dtype=np.uint8).copy()
+        if seed % 2:
+            a[: rng.integers(0, WINDOW)] = 0
+        moved = int(rng.integers(0, 200))
+        reach = reachable_rows(np.bincount(a >> 4, minlength=16), moved)
+        for _ in range(20):
+            b = a.copy()
+            at = rng.choice(WINDOW, moved, replace=False)
+            b[at] = rng.choice([0, int(rng.integers(256))], moved) if rng.random() < 0.5 else rng.integers(0, 256, moved)
+            assert _row(np.bincount(b >> 4, minlength=16)) in reach
