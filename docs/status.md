@@ -1,5 +1,33 @@
 # Status
 
+**2026-10-30, fourth session: per-row byte-entropy cuts built and tested; their first solve failed the hypothesis
+(the byte-entropy gap is real looseness, not realization). Docs updated; code uncommitted.** Next: per-row column
+caps on the append windows, then the full check 1b.
+- **Built (uncommitted):** `scripts/ap_encoding.py` — `boundary_references`, `ROW_REFS`, `row_cuts` (per-row Gibbs
+  cuts tying each new byte-entropy window's row to at least that row's nibble entropy, for the appended-tail and the
+  header windows); `reachable_rows` + binary row indicator for the header windows (one window, one row, limited to
+  the rows a rewrite can reach; sound, checked). `scripts/ap_check1b.py` — `sides_of`, `score_of`, `attribute` (the
+  gap-attribution logic, kept for check 2); `certify` now returns the solver's split sides and solution.
+  `tests/test_ap_encoding.py`: 160 pass (new tests: references on the boundary, cuts hold on pooled windows / exclude
+  low entropy, `reachable_rows` sound).
+- **Hypothesis failed.** The cuts were meant to close the byte-entropy part of the 2826a9a5 gap. They did not: at
+  300 s the solver still evades (raw 1.09 vs real 8.63, append only, 4 MB file, budget 512 KB). Attribution (one
+  group on the solver's sides, the rest on the re-extracted file's): byte-entropy alone 8.63 -> 5.8, strings -> 4.96,
+  every other group unchanged. So the looseness is **real, not a realization gap**: a row's entropy is now bounded,
+  but the joint placement of appended nibbles across rows and columns is not — the append block can still put almost
+  any nibble mix in almost any row within the aggregate floor.
+- **Not done this session:** ruff/mypy, re-running containment (`run/111`, required before check 1b — the encoding
+  changed), the realizer, the full check 1b.
+- **Next (in order; each sound, each re-measured on 2826a9a5 by a single-file scratch solve + `attribute`):** (1)
+  per-row column caps on the append windows (confirm whether `colsum - 2*newnib` is per-(row,column) or only pooled;
+  likeliest cause of the remaining 3.8 byte-entropy points); (2) an aggregate chord lower bound on the appended tail
+  as one distribution; (3) piecewise bound for overlay/section entropies; (4) the realizer, now ordered *after* the
+  entropy tightening since 2826a9a5's gap is looseness, not realization. Then re-run `run/111`, hand `run/112` (full
+  check 1b, ~30 min) to the user. `docs/direction-A-prime-encoding.md`, "Built: findings" (fourth session), has the
+  detail. See `docs/resume-prompt.md`.
+
+---
+
 **2026-10-30, third session: A' step 4 built (the edit-choice encoding); containment holds; check 1b smoke run:
 0/13 certified, encoded evasions do not realize. Session closed mid-tightening.** Commit: this wrap-up.
 - **Design note** `docs/direction-A-prime-encoding.md`, reviewed by the user. Decisions (user, both flags): budget

@@ -64,21 +64,28 @@ introduction and a simple baseline (writing decision for later).
   only the computed region, which keeps how one edit moves features together, certifies anything on a non-monotone
   detector; check 1b decides it after the step-4 build.
 
-## Next steps (2026-10-30, third session: step 4 built, tightening before check 1b)
+## Next steps (2026-10-30, fourth session: per-row entropy cuts built; the byte-entropy gap is real looseness)
 
-Done: step 4's design (`docs/direction-A-prime-encoding.md`, user decisions: budget max(5%, 512 KB), K = 3), the
-encoding (`scripts/ap_encoding.py`), its containment test (run 111: 1,105/1,105 edits contained, before the last
-changes), the check 1b script, and a 300 s smoke run of check 1b: 0/13 covered files certified, 10 undecided, 3 encoded
-evasions that do not realize when written naively. Diagnosis: the byte-entropy windows are loose (a new window's
-entropy row is not tied to its bytes); the string gap is mostly the realizer. Decided (user): tighten, then run the
-full check 1b. Next, in order:
-1. Tie each new window's entropy row to its bytes (Gibbs cuts per row: a row r aggregate needs nibble entropy at least
-   r/4, by concavity); consider a piecewise entropy lower bound for the overlay and section entropies.
-2. A realizer: lay out the solver's answer as a file (the chosen strings, including regex matches; window runs per
-   entropy row; section names from the name search). Needed for check 2 and to tell looseness from realization gaps.
-3. Re-run containment (`run/111`, ~8 min) after every encoding change; then the full check 1b as `run/112` (~30 min,
+Done: per-row Gibbs cuts tying each new byte-entropy window (appended-tail and header) to at least its row's nibble
+entropy (`row_cuts`, `ROW_REFS`, `boundary_references`); the header windows made exact in their row (binary indicator +
+`reachable_rows`); the gap-attribution logic kept as functions in `scripts/ap_check1b.py` (`sides_of`, `score_of`,
+`attribute`); 160 tests pass. **The hypothesis that these close the byte-entropy gap failed:** on 2826a9a5 the solver
+still evades (raw 1.09 vs real 8.63), and attribution shows the gap is real looseness in byte-entropy and strings, not
+realization — a row's entropy is bounded but the joint placement of appended nibbles across rows and columns is not.
+Code uncommitted; ruff/mypy and a containment re-run still owed. Next, in order (each sound, each re-measured on
+2826a9a5 by a single-file scratch solve + `attribute`):
+1. **Per-row column caps on the append windows** (confirm whether `colsum - 2*newnib` is per-(row,column) or pooled;
+   if pooled, cap `we[r][col]` by the appended nibble supply of that column). Likeliest cause of the remaining
+   byte-entropy points.
+2. **An aggregate chord lower bound on the appended tail as one distribution** (as the overlay has), so low per-window
+   entropy and the high-entropy aggregate cannot both be claimed.
+3. A piecewise lower bound for the overlay and section entropies (section entropies still free in [0, 8]).
+4. **The realizer** (`realize(choice) -> bytes`): strings as printable runs with a literal per matched regex, window
+   runs per entropy row, section names from the name search. Now ordered *after* the entropy tightening (2826a9a5's
+   gap is looseness, not realization). Needed for check 2.
+5. Re-run containment (`run/111`, ~8 min) after the encoding changes; then the full check 1b as `run/112` (~30 min,
    for the user). A no-go goes to the user with decision 7's options (3, then 2).
-4. Check 2 (>= 70% of solver evasions realize), check 3 (expert set; user decision), Table A'1.
+6. Check 2 (>= 70% of solver evasions realize), check 3 (expert set; user decision), Table A'1.
 
 ### Earlier: next steps (2026-10-30, after A' steps 1-3)
 

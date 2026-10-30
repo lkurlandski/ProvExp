@@ -265,7 +265,12 @@ Each is a short job on the pilot, on today's hand-coded predictors.
    precondition (no certificate possible; at most 13 can be certified, so the go needs 4 of 13); 0 certified, 10
    undecided, 3 encoded evasions, of which the two append-only ones do not realize when written naively (real 5.0-9.2,
    threshold 1.1). Diagnosis: byte-entropy windows are loose; strings need a realizer that writes the chosen strings.
-   Tightening first, then the full run (`docs/direction-A-prime-encoding.md`, "Built: findings").
+   **Tightening, first result (2026-10-30, fourth session):** per-row entropy cuts added for the new and header
+   windows (`docs/direction-A-prime-encoding.md`, "Built: findings", fourth session); the hypothesis that they close
+   the byte-entropy gap **failed**. On 2826a9a5 the solver still evades (raw 1.09 vs real 8.63); attribution shows the
+   gap is real looseness (byte-entropy and strings), not a realization gap: tying each row's entropy down does not tie
+   the joint placement of appended nibbles across rows and columns. Next: per-row column caps on the append windows,
+   then an aggregate chord bound on the appended tail, before the full run.
 3. **The computed constraints matter on a defended detector built without them.** On the expert-set detector (once
    its row exists), the computed-constraint solver must find realized evasions on a material share (say 10% or more)
    of the files it detects. *No-go:* if their hand-written add-only assumptions already hold under M_full, the

@@ -270,9 +270,43 @@ What changed from the design above while building, and why:
   do not realize; attribution on one file: byte-entropy windows (true looseness: a new window's entropy row is not
   tied to its bytes) and strings (mostly realization: regex-matching strings the solver counts were not written).
 
-Still open: per-row entropy cuts for the new windows (row r needs aggregate nibble entropy >= r/4, by concavity; Gibbs
-cuts at distributions concentrated on each nibble); a piecewise lower bound for the overlay and section entropies
-(section entropies are free in [0, 8] today); the realizer.
+## Built: findings (2026-10-30, fourth session: the per-row entropy cuts, and why they are not enough)
+
+The per-row cuts left open above are now built and tested (160 tests pass), but the first solve shows they do not close
+the byte-entropy gap. What changed:
+- **Per-row cuts for the new windows** (`row_cuts`, `ROW_REFS`, `boundary_references`). A new window in entropy row r
+  has nibble entropy at least r/4; by concavity a row's pooled new windows do too, so by Gibbs' inequality
+  `sum_c we[r, c] * (-log2 q_c) >= (r/4) * 2048 * (windows in row r)` for every reference distribution q. The
+  references are distributions *of entropy exactly r/4* concentrated on one or two nibbles (`boundary_references`, by
+  bisection), the sharpest corners of {H >= r/4}. Added for both the appended-tail windows and the header windows.
+- **Header windows made exact in their row.** The row indicator `u` is now binary (one window sits in one row, not a
+  fraction spread across rows), and `reachable_rows(counts, moved)` fixes to zero every row the window cannot reach
+  when at most `moved` of its bytes are rewritten (entropy is Schur-concave; the extreme rewrites move counts one at a
+  time). Both are sound (checked: every random rewrite of a window lands in `reachable_rows`).
+- **Attribution kept as functions** in `scripts/ap_check1b.py` (`sides_of`, `score_of`, `attribute`) for check 2;
+  `certify` now also returns the solver's side of every split and the solution vector (in memory, not written).
+
+**The hypothesis failed.** On 2826a9a5 (the 4 MB file, budget 512 KB, append only, 300 s), the solver still evades at
+raw 1.09 against the real 8.63. Attribution (the solver's sides for one group, the real file's elsewhere): byte-entropy
+alone drops 8.63 -> 5.8 and strings -> 4.96; every other group leaves it at 8.63. So the looseness is **real, not a
+realization gap**: the solver's byte-entropy and string *sides*, transplanted onto a re-extracted file, would still
+lower the score far. The per-row cut bounds a row's entropy but not the *joint* placement of appended nibbles across
+rows and columns: the append block (`a[v]`, `we[r][col]`) can still put almost any nibble mix into almost any row
+within the aggregate floor. Tying a row's entropy down is necessary but not sufficient.
+
+Still open, in the order to try (cheapest first), each sound and each to be re-measured on 2826a9a5 by the single-file
+scratch solve + `attribute` (byte-entropy points closed is the number to watch):
+1. **Per-row column caps on the append windows.** Confirm whether the `colsum - 2*newnib` constraint is per-(row,
+   column) or only pooled across rows; if pooled, add `we[r][col] <= 2 * (appended nibbles of col) + slack` so a row
+   cannot claim columns the append does not supply. This is the likeliest cause of the remaining 3.8 byte-entropy
+   points.
+2. **A single aggregate chord lower bound on the appended tail as one distribution** (as the overlay already has), so
+   the solver cannot simultaneously claim low per-window entropy and the high-entropy aggregate the appended bytes have.
+3. **A piecewise lower bound for the overlay and section entropies** (section entropies are still free in [0, 8]).
+4. **The realizer** (`realize(choice) -> bytes`): strings as printable runs separated by zero bytes with a literal per
+   matched regex; window runs per entropy row; section names from the name search. Needed for check 2 and to separate
+   any residual realization gap from looseness. On 2826a9a5 the gap is looseness, not realization, so the realizer is
+   now ordered after the entropy tightening, not before it.
 
 ## Code plan (after review)
 
