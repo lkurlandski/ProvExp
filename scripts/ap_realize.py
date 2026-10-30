@@ -168,11 +168,10 @@ def shape_block(fixed: np.ndarray, free: int, avail: np.ndarray, target: np.ndar
 
 
 def regex_literals(regexes: dict[str, re.Pattern[str]]) -> dict[str, str]:
-    """A string matching each regex (its own pattern where that is plain text), padded with spaces to 5 characters."""
+    """A string matching each regex (its own pattern where that is plain text)."""
     out = {}
     for k, r in regexes.items():
         lit = HAND_LITERALS.get(k, r.pattern.replace("\\b", "").replace("\\", ""))
-        lit = lit.ljust(5)
         if not r.search(lit):
             raise RuntimeError(f"Literal {lit!r} does not match regex {k!r}.")
         out[k] = lit
@@ -181,31 +180,29 @@ def regex_literals(regexes: dict[str, re.Pattern[str]]) -> dict[str, str]:
 
 @dataclass
 class Strings:
-    """The strings still to write: regex literals, how many strings in all, and the characters they still need."""
+    """
+    The strings still to write: how many, the regex matches they still carry, each regex's spellings (case variants
+    for the case-insensitive ones), the characters they still need, and the number of string characters.
+    """
 
-    literals: list[bytes]
     left: int
+    rg: dict[str, int]
+    spellings: dict[str, list[bytes]]
+    regexes: dict[str, re.Pattern[str]]
     need: np.ndarray
     chars: int
     carry: float = 0.0
 
 
 def plan_strings(ns: int, pd: np.ndarray, rg: dict[str, int], regexes: dict[str, re.Pattern[str]]) -> Strings:
-    """
-    The strings to write: a literal per regex match the solver counts (longest first, counting every regex a literal
-    matches, e.g. "powershell" also counts for "shell"), and `ns` strings in all over the characters `pd` (96 counts).
-    """
-    literals = regex_literals(regexes)
-    got = dict.fromkeys(regexes, 0)
-    out = []
-    for k in sorted(rg, key=lambda k: -len(literals[k])):
-        while got[k] < rg[k]:
-            out.append(literals[k].encode())
-            for j, r in regexes.items():
-                got[j] += bool(r.search(literals[k]))
+    """The plan for `ns` strings over the characters `pd` (96 counts) carrying `rg` regex matches."""
+    spellings = {}
+    for k, lit in regex_literals(regexes).items():
+        variants = [lit, lit.lower(), lit.upper()] if regexes[k].flags & re.IGNORECASE else [lit]
+        spellings[k] = [s.encode() for s in dict.fromkeys(variants) if regexes[k].search(s)]
     need = np.zeros(256, dtype=np.int64)
     need[0x20:0x80] = pd
-    return Strings(out, max(ns, len(out)), need, int(pd.sum()))
+    return Strings(max([ns, *rg.values()]), dict(rg), spellings, regexes, need, int(pd.sum()))
 
 
 ################################################################################
@@ -242,12 +239,75 @@ def search_name(name_option: int, flag_options: dict[str, int], tries: int, rng:
 ################################################################################
 
 
+def _spell(literal: bytes, ignore_case: bool, avail: np.ndarray) -> Optional[bytes]:
+    """The literal spelled from the available bytes (each letter in the case with more left, when case is ignored)."""
+    left = avail.copy()
+    out = bytearray()
+    for ch in literal:
+        options = {ch, ord(chr(ch).lower()), ord(chr(ch).upper())} if ignore_case else {ch}
+        best = max(options, key=lambda o: left[o])
+        if left[best] <= 0:
+            return None
+        left[best] -= 1
+        out.append(best)
+    return bytes(out)
+
+
+def _strings(printable: np.ndarray, k: int, length: int, plan: Strings) -> tuple[list[bytes], np.ndarray]:
+    """
+    k strings of `length` characters in all from the printable bytes (most needed first): each carries its share of
+    the regex matches still owed, as literals spelled from the bytes, then filler characters. Returns the strings and
+    the printable bytes left over. The matches are counted on the strings as written.
+    """
+    avail = np.bincount(printable, minlength=256)
+    parts: list[bytearray] = [bytearray() for _ in range(k)]
+    space = ord(" ")
+    for j in sorted(plan.rg, key=lambda j: -plan.rg[j]):
+        quota = min(k, math.ceil(k * plan.rg[j] / max(plan.left, 1)))
+        for s in range(k):
+            if quota <= 0:
+                break
+            # The literal spelled from the bytes, after a space where they have one (word-bounded regexes need it).
+            sp = _spell(plan.spellings[j][0], bool(plan.regexes[j].flags & re.IGNORECASE), avail)
+            if sp is None or not plan.regexes[j].search(sp.decode()):
+                continue
+            for sep in (True, False) if parts[s] else (False,):
+                c = np.bincount(np.frombuffer(sp, dtype=np.uint8), minlength=256)
+                c[space] += sep
+                if np.all(c <= avail) and sum(len(x) for x in parts) + int(c.sum()) <= length:
+                    avail -= c
+                    if sep:
+                        parts[s].append(space)
+                    parts[s] += sp
+                    quota -= 1
+                    break
+    # Filler: the rest of the string characters, the ones the strings need first, topping short strings up to 5.
+    pool = np.repeat(np.arange(256), avail)
+    wanted = plan.need[pool] > 0
+    order = np.concatenate([pool[wanted], pool[~wanted]])
+    fill = max(0, min(order.size, length - sum(len(x) for x in parts)))
+    chars, rest = order[:fill].tolist(), order[fill:]
+    for s in range(k):
+        short = max(0, 5 - len(parts[s]))
+        parts[s] += bytes(chars[:short])
+        chars = chars[short:]
+    for s, chunk in enumerate(np.array_split(np.asarray(chars, dtype=np.int64), k) if k else []):
+        parts[s] += bytes(chunk.tolist())
+    out = [bytes(x) for x in parts]
+    for x in out:
+        for j, r in plan.regexes.items():
+            if j in plan.rg and r.search(x.decode()):
+                plan.rg[j] = max(0, plan.rg[j] - 1)
+        plan.need -= np.minimum(plan.need, np.bincount(np.frombuffer(x, dtype=np.uint8), minlength=256))
+    return out, rest
+
+
 def _place(cols: np.ndarray, pool: np.ndarray, plan: Strings, share: float, first: bool) -> bytes:
     """
     The bytes of one block segment with nibble counts `cols`, drawn from `pool` (256 counts, updated): a non-printable
-    byte first (when `first`), then the regex literals that fit, then the block's `share` of the other strings (made
-    of its printable bytes, the characters the strings need first), each ended by a non-printable byte, then the other
-    printable bytes in runs of at most four. Printable bytes the separators cannot break up lengthen the strings.
+    byte first (when `first`), then the block's `share` of the strings (`_strings`), each ended by a non-printable
+    byte, then the other printable bytes in runs of at most four. Printable bytes the separators cannot break up
+    lengthen the strings.
     """
     cols = cols.copy()
 
@@ -258,60 +318,29 @@ def _place(cols: np.ndarray, pool: np.ndarray, plan: Strings, share: float, firs
         pool[sl] -= c
         return np.repeat(np.arange(16 * col, 16 * col + 16), c).tolist()
 
-    def take_nonprint() -> Optional[int]:
-        for col in NONPRINT_COLS:
-            if cols[col] > 0 and pool[16 * col:16 * col + 16].sum() > 0:
-                cols[col] -= 1
-                return draw(col, 1)[0]
-        return None
-
     out = bytearray()
-    if first:
-        b = take_nonprint()
-        if b is not None:
-            out.append(b)
-    i = 0
-    while i < len(plan.literals) and i < 200 and any(cols[c] > 0 for c in NONPRINT_COLS):
-        s = plan.literals[i]
-        need = np.bincount(np.frombuffer(s, dtype=np.uint8), minlength=256)
-        if np.any(need > pool) or np.any(np.bincount(np.frombuffer(s, dtype=np.uint8) >> 4, minlength=16) > cols):
-            i += 1
-            continue
-        pool -= need
-        plan.need -= np.minimum(plan.need, need)
-        plan.chars -= len(s)
-        plan.left -= 1
-        cols -= np.bincount(np.frombuffer(s, dtype=np.uint8) >> 4, minlength=16)
-        out += s
-        term = take_nonprint()
-        if term is not None:
-            out.append(term)
-        plan.literals.pop(i)
-
-    printable = np.asarray([v for col in PRINT_COLS for v in draw(col, int(cols[col]), plan.need)], dtype=np.int64)
+    # The characters the strings still need, the literals' owed matches included.
+    prefer = plan.need.astype(np.float64)
+    for j, c in plan.rg.items():
+        if c and plan.spellings[j]:
+            prefer += c * np.bincount(np.frombuffer(plan.spellings[j][0], dtype=np.uint8), minlength=256)
+    printable = np.asarray([v for col in PRINT_COLS for v in draw(col, int(cols[col]), prefer)], dtype=np.int64)
     nonprint = [v for col in NONPRINT_COLS for v in draw(col, int(cols[col]))]
-    # The block's strings (pacing the remaining ones by its share of the printable supply).
-    plan.carry += max(plan.left - len(plan.literals), 0) * share
-    k = min(math.ceil(plan.carry), max(plan.left - len(plan.literals), 0), len(nonprint), printable.size // 5)
+    if first and nonprint:
+        out.append(nonprint.pop())
+    plan.carry += plan.left * share
+    k = min(math.ceil(plan.carry), plan.left, len(nonprint), printable.size // 5)
     plan.carry -= k
-    wanted = np.zeros(printable.size, dtype=bool)
-    left = plan.need.copy()
-    for idx, b in enumerate(printable.tolist()):
-        if left[b] > 0:
-            left[b] -= 1
-            wanted[idx] = True
-    order = np.concatenate([printable[wanted], printable[~wanted]])
     length = min(printable.size, max(5 * k, round(plan.chars * share))) if k else 0
     spare = len(nonprint) - k
-    if printable.size - length > 4 * spare:
-        length = printable.size - 4 * spare if k else length
-    chars, rest = order[:length], order[length:]
-    for chunk in (np.array_split(chars, k) if k else []):
-        out += bytes(chunk.tolist())
+    if k and printable.size - length > 4 * spare:
+        length = printable.size - 4 * spare
+    strings, rest = _strings(printable, k, length, plan)
+    for s in strings:
+        out += s
         out.append(nonprint.pop())
     plan.left -= k
     plan.chars -= int(length)
-    plan.need -= np.minimum(plan.need, np.bincount(chars, minlength=256))
     rest_l = rest.tolist()
     for j in range(0, len(rest_l), 4):
         out += bytes(rest_l[j:j + 4])

@@ -25,6 +25,7 @@ from ap_encoding import Encoding  # noqa: E402
 from ap_encoding import NotCovered  # noqa: E402
 from ap_encoding import name_key  # noqa: E402
 from ap_encoding import option  # noqa: E402
+from ap_realize import _strings  # noqa: E402
 from ap_realize import allocate  # noqa: E402
 from ap_realize import plan_strings  # noqa: E402
 from ap_realize import realize  # noqa: E402
@@ -75,17 +76,27 @@ class TestPieces:
 
     def test_literals_match(self) -> None:
         for k, lit in regex_literals(REGEXES).items():
-            assert len(lit) >= 5 and REGEXES[k].search(lit)
+            assert REGEXES[k].search(lit)
 
     def test_plan_strings(self) -> None:
         pd = np.zeros(96, dtype=np.int64)
         pd[ord("a") - 0x20:ord("z") - 0x20 + 1] = 20
-        plan = plan_strings(30, pd, {"shell": 2, "powershell": 1}, REGEXES)
-        assert plan.left == 30 and plan.chars == pd.sum()
-        assert all(len(s) >= 5 for s in plan.literals)
-        # "powershell" also counts for "shell": one more "shell" literal is enough.
-        assert sum(bool(REGEXES["shell"].search(s.decode())) for s in plan.literals) == 2
-        assert len(plan.literals) == 2
+        plan = plan_strings(30, pd, {"shell": 2, "system": 40}, REGEXES)
+        assert plan.left == 40 and plan.chars == pd.sum()
+        # Case-insensitive regexes get three spellings, each matching.
+        assert len(plan.spellings["shell"]) == 2 and all(REGEXES["shell"].search(s.decode()) for s in plan.spellings["shell"])
+        assert plan.spellings["dos_msg"] == [b"!This program "]
+
+    def test_strings_carry_matches(self) -> None:
+        # Two strings from letters: the owed matches are spelled into them and counted as written.
+        pd = np.zeros(96, dtype=np.int64)
+        plan = plan_strings(2, pd, {"system": 2, "token": 1}, REGEXES)
+        printable = np.frombuffer(b"systemsystemtokenabcdefgh", dtype=np.uint8).astype(np.int64)
+        out, rest = _strings(printable, 2, 25, plan)
+        assert len(out) == 2 and all(len(s) >= 5 for s in out)
+        assert sum(bool(REGEXES["system"].search(s.decode())) for s in out) == 2
+        assert sum(bool(REGEXES["token"].search(s.decode())) for s in out) == 1
+        assert plan.rg["system"] == 0 and plan.rg["token"] == 0 and rest.size == 0
 
     def test_search_name_hits_option(self) -> None:
         rng = np.random.default_rng(0)
