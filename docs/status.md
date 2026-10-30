@@ -1,5 +1,32 @@
 # Status
 
+**2026-10-30, third session: A' step 4 built (the edit-choice encoding); containment holds; check 1b smoke run:
+0/13 certified, encoded evasions do not realize. Session closed mid-tightening.** Commit: this wrap-up.
+- **Design note** `docs/direction-A-prime-encoding.md`, reviewed by the user. Decisions (user, both flags): budget
+  max(5%, 512 KB) as in Table A1 (on the pilot it is 512 KB for every file, since all are <= 4 MB); at most K = 3 added
+  sections. Defaults kept: sections then the append; name and flag-string buckets chosen independently.
+- **Built:** `scripts/ap_encoding.py` (the choice block over append + up to 3 sections, every moved feature as a
+  function of it: sizes, counts, buckets, header fields exact; ratios exact by clearing the denominator; entropies by
+  Gibbs cuts above, chords and a mixture floor below; header bytes the section writes as free bytes; pefile's byte-
+  dominance and W+X-section warnings modeled), `scripts/ap_containment.py` (`run/111`), `scripts/ap_check1b.py`,
+  `tests/test_ap_encoding.py` (94 pass; soundness of every bound).
+- **Containment (run 111, before the last encoding changes): holds.** 1,105 random edits on the 85 covered pilot files
+  (malware + goodware): all contained, exact features exact, held-fixed features unchanged. Not covered: 12 fail the
+  precondition, 1 low alignment, 2 under 4 KB. **Must be re-run** (encoding changed since: scaling, tolerances,
+  whole-number splits, entropy floor, string-merge rule).
+- **Solver numerics (fixed):** HiGHS dropped tiny coefficients (an unsound exclusion of the real file), stalled on the
+  LP, and pruned feasible points. Now: columns scaled by their bounds, rows by their non-switch coefficients, tiny
+  coefficients folded into widened bounds, feasibility tolerances 1e-9 (passed to HiGHS through scipy's options).
+- **Check 1b smoke (ref, 300 s, the 20 files the battery misses):** 7 fail the precondition (no certificate possible),
+  13 covered: **0 certified, 10 undecided, 3 solver evasions**. Two (append-only) written as files: real scores 5.0-9.2
+  vs encoded 0.9-1.1, so they do not realize. Attribution on 2826a9a5 (real 6.96, encoded 0.90): the solver's sides in
+  byte-entropy alone give 4.57 (true looseness: a new window's entropy row is free of its bytes), in strings alone 3.38
+  (mostly the realizer: the solver counts regex-matching strings, e.g. "http://", that an attacker can write but the
+  naive test files did not contain); other groups no effect.
+- **Decided (user):** tighten the loose parts, then run the full check 1b (`run/112`, ~30 min, for the user). User
+  rule restated: any Python job over ~15 min goes to the user as a `run/` script.
+- **Next:** see `docs/resume-prompt.md`.
+
 **2026-10-30, second session: A' pilot steps 1-3; check 1 failed its hypothesis; Table A'1 re-aimed (user,
 decision 7 in `docs/direction-A-prime-mock.md`). Session closed; step 4 not started.** Commits 177341b..(this
 wrap-up).

@@ -64,7 +64,23 @@ introduction and a simple baseline (writing decision for later).
   only the computed region, which keeps how one edit moves features together, certifies anything on a non-monotone
   detector; check 1b decides it after the step-4 build.
 
-## Next steps (2026-10-30, after A' steps 1-3)
+## Next steps (2026-10-30, third session: step 4 built, tightening before check 1b)
+
+Done: step 4's design (`docs/direction-A-prime-encoding.md`, user decisions: budget max(5%, 512 KB), K = 3), the
+encoding (`scripts/ap_encoding.py`), its containment test (run 111: 1,105/1,105 edits contained, before the last
+changes), the check 1b script, and a 300 s smoke run of check 1b: 0/13 covered files certified, 10 undecided, 3 encoded
+evasions that do not realize when written naively. Diagnosis: the byte-entropy windows are loose (a new window's
+entropy row is not tied to its bytes); the string gap is mostly the realizer. Decided (user): tighten, then run the
+full check 1b. Next, in order:
+1. Tie each new window's entropy row to its bytes (Gibbs cuts per row: a row r aggregate needs nibble entropy at least
+   r/4, by concavity); consider a piecewise entropy lower bound for the overlay and section entropies.
+2. A realizer: lay out the solver's answer as a file (the chosen strings, including regex matches; window runs per
+   entropy row; section names from the name search). Needed for check 2 and to tell looseness from realization gaps.
+3. Re-run containment (`run/111`, ~8 min) after every encoding change; then the full check 1b as `run/112` (~30 min,
+   for the user). A no-go goes to the user with decision 7's options (3, then 2).
+4. Check 2 (>= 70% of solver evasions realize), check 3 (expert set; user decision), Table A'1.
+
+### Earlier: next steps (2026-10-30, after A' steps 1-3)
 
 Done: the A' reading list (no threat to the computed-mapping claim; `docs/literature-Aprime-2026-10-27.md`); the battery
 measured on the 10% detectors the solver uses (run 109: union with the toolkit, unconstrained 27/47, PV-seen 15/22,

@@ -261,6 +261,11 @@ Each is a short job on the pilot, on today's hand-coded predictors.
    are in the solver (step 4, layout bytes included), on the unconstrained GBDT: *go* if the computed region certifies
    at least 20% of the files it detects that the battery does not evade (20 of 47 at pilot scale). *No-go:* the
    region is as loose as the learned one; A' is then a realizable lower bound only; revisit decision 7's options.
+   **Smoke run (2026-10-30, third session; 300 s per solve, not the verdict):** of the 20 files, 7 fail the
+   precondition (no certificate possible; at most 13 can be certified, so the go needs 4 of 13); 0 certified, 10
+   undecided, 3 encoded evasions, of which the two append-only ones do not realize when written naively (real 5.0-9.2,
+   threshold 1.1). Diagnosis: byte-entropy windows are loose; strings need a realizer that writes the chosen strings.
+   Tightening first, then the full run (`docs/direction-A-prime-encoding.md`, "Built: findings").
 3. **The computed constraints matter on a defended detector built without them.** On the expert-set detector (once
    its row exists), the computed-constraint solver must find realized evasions on a material share (say 10% or more)
    of the files it detects. *No-go:* if their hand-written add-only assumptions already hold under M_full, the
