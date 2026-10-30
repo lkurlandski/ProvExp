@@ -1,5 +1,18 @@
 # Status
 
+**2026-10-30: runs 107, 105, 106 read; a bug in the adaptive search found; its fix waits on the user.**
+- **Run 107 holds:** G7 passes on all 73,063 edits (2,000 files, twelve operations, strict and precondition
+  variants); the training inputs equal the pilot's.
+- **Run 105 (step 9) holds** for test metrics (within noise of run 99) and the toolkit columns (routed rows 0 seen;
+  M_full rows 0 held-out on passing files; M_add held-out evasion all header_fields, outside M_add). Adaptive: C4
+  rows 0 by construction. **The unconstrained row's 28/49 (run 100: 10/49) is inflated by a search bug:** the declared
+  add-section removes the overlay, but each step's file is built with LIEF, which keeps it, so later steps claim the
+  removal again. Details: `docs/direction-A-A1-design.md`, "Step 9". Proposed fix: build each step with our own
+  byte-level edit (`scripts/catalogue_checks.py`), which does exactly the declared operation (~6 min re-run).
+- **Run 106 (expert set):** monotone AUC 0.844, TPR 29% at 1% FPR (as mocked); detects 8 of 50 pilot malware, evaded
+  on none; unconstrained 0.978 / 75%, evaded 24/40 under M_add. Its M_full holes are reasoned, not yet measured.
+- **Next:** the search fix (user's decision), then the A' pilot after its reading list.
+
 **2026-10-29, fourth session: run 104 read; the precondition extended by plain-layout clauses (user); step 9's code
 and the expert-set extractor built; runs 105-107 for the user.** Commits a5e0cda..(this wrap-up).
 

@@ -11,6 +11,9 @@
 # to the v2 ones (88 pilot files pass, as before), so run 105's inputs are unchanged.
 # Hypothesis: G7 passes on every edit, strict and precondition variants; the derivation's training inputs equal the
 # pilot's (a_directions_derived_sums_v2).
+# Ran 2026-10-29 (started by the user, overnight): derivation ~35 min, G7 25 min. Result (read 2026-10-30): as
+# hypothesised. G7 passes on all 73,063 edits of the twelve operations, strict and precondition variants (0 violations);
+# the twelve M_*-pre* training-input files are byte-identical to the pilot's, so run 105's inputs stand.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 source env/bin/activate

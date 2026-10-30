@@ -20,6 +20,18 @@
 # one; the adaptive C4 rows 0 by construction).
 #
 # Estimate: training ~20 min (run 99); the toolkit columns ~2.4 h (run 100); the adaptive search ~20 min: ~3 h in all.
+# Ran 2026-10-29 (started by the user, overnight): ~2.7 h. Result (read 2026-10-30):
+# - Test metrics within noise of run 99 (AUC within 0.0003, TPR at 1% FPR within 0.9 points; e.g. sums M_full
+#   0.99347 -> 0.99352, 89.9% -> 89.6%).
+# - Toolkit columns (passing files): every routed row 0 seen; M_full rows 0/28 and 0/30 held-out; M_add 13/33 and
+#   11/31 held-out, all header_fields (outside M_add; run 100: 9/33, 16/32). Failing files 0/12 seen, 1/12 held-out (the
+#   same header_fields file as run 100). Reference 8/35, 21/35; PV 0/16, 4/16. As hypothesised.
+# - Adaptive: C4 rows 0/47 and 0/41, min_delta_logit exactly 0 (as hypothesised); unconstrained 28/49 (run 100:
+#   10/49), PV 22/22. The 28 is inflated by a bug in the search: each step's declared add-section puts the section
+#   after the overlay (removing it, step 9), but the search materializes the step with LIEF, which puts it before the
+#   overlay and keeps it, so the next add-section step claims the overlay's removal again (witnessed on 4 of 5 files,
+#   e.g. 9e584121f2: -2.84, then -2.63 again from LIEF's file). An append creates an overlay the same way. The C4 rows
+#   are unaffected (overlay_size is dropped). The unconstrained and PV numbers are not to be used until fixed.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 source env/bin/activate

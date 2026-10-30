@@ -20,6 +20,12 @@
 #
 # Estimate: featurization ~12-20 min (smoke test: 2 ts shards in 42 s on 2 workers; ~280 shards on 16 workers);
 # training ~2 min each; the toolkit columns for two defenses ~30-60 min (run 100: six defenses in 2.4 h).
+# Ran 2026-10-29 (started by the user, overnight): featurization 13 min, training 1 min, toolkit 10 min. Result (read
+# 2026-10-30): the monotone model as the mock predicted: AUC 0.844, TPR 29.1% at 1% FPR, 14.8% at 0.1% (it saturates:
+# validation AUC flat at ~0.855 from round 10, no positive-gain split left; best iteration 15). Unconstrained on the same
+# 40 features: AUC 0.978, 75.1% / 56.1%. At its 1% FPR threshold the monotone model detects only 8 of the 50 pilot
+# malware, and no attack evades it on those 8 (0/8 under M_add and M_full). The unconstrained one: 40 detected, evaded
+# on 24/40 by the M_add attacks (GAMMA API 24, GAMMA sections 3) and 25/40 by all attacks (one format_exploit run).
 set -euo pipefail
 cd "$(dirname "$0")/.."
 source env/bin/activate

@@ -80,3 +80,18 @@ search does not cover this row: the C1 engine reads only the instrumented extrac
 
 Cost: re-implementation and tests ~half a day; featurizing the 10% store with a 40-feature pefile extractor is
 probably 10-20 min on 16 workers (a `run/` script for the user; estimate to be smoke-tested); training ~2 min.
+
+## Result (run 106, read 2026-10-30)
+
+As the mock predicted for accuracy. Monotone (all 40 increasing): AUC 0.844, TPR 29.1% at 1% FPR and 14.8% at 0.1%
+(the model saturates: validation AUC flat at ~0.855 from round 10, no split with positive gain left). Unconstrained on
+the same 40 features: AUC 0.978, 75.1% and 56.1%. For comparison, the derived C4 sums row under M_full: 0.9935, 89.6%,
+74.8%.
+
+Toolkit columns (pilot, unrouted): at its own 1% FPR threshold the monotone model detects only 8 of the 50 pilot
+malware, and no attack evades it on them (0/8 under M_add, i.e. padding, GAMMA sections, GAMMA API; 0/8 under M_full,
+all eight attacks). The unconstrained model detects 40 and is evaded on 24/40 by the M_add attacks (GAMMA API 24, GAMMA
+sections 3) and 25/40 by all eight (one format_exploit run). The M_full holes reasoned above (rename, slack, DOS stub)
+are not exercised by the toolkit's attacks, and the adaptive search cannot run on this extractor (the C1 engine reads
+only the instrumented one), so for now they rest on the reading of the code and the patched-variant witnesses, not on a
+measured evasion.

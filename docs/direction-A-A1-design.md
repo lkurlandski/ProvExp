@@ -244,3 +244,45 @@ passing files is the guarantee; on the 12 failing files the routed detector woul
 the search evades on 0/12, so the routed row would be 0/45 as well, provided no query moves a failing file into the
 passing branch (not checked; the search is not routed).
 
+
+## Step 9: C4 rows on the derived directions after G7 (2026-10-29; run 105; read 2026-10-30)
+
+The six C4 models retrained (`-v2`) on the directions after G7's fixes and the new body regions (run 104); the only
+training-input changes from run 99 are overlay_size (dropped under every threat model) and security_virtual_address (up
+under M_add). Run 107 confirmed these inputs on the 2,000-file set (G7 passes on all 73,063 edits; the inputs are
+byte-identical to the pilot's). The precondition check now includes the plain-layout clauses; 38 of the 50 pilot
+malware still pass.
+
+**Result.** Test metrics within noise of run 99 (AUC within 0.0003, TPR at 1% FPR within 0.9 points):
+
+| Detector (10% store) | AUC run 99 -> v2 | TPR @ 1% FPR | TPR @ 0.1% FPR |
+|---|---|---|---|
+| C4 features, M_add | 0.9945 -> 0.9943 | 90.9% -> 90.4% | 79.1% -> 77.2% |
+| C4 sums, M_add | 0.9953 -> 0.9952 | 92.3% -> 92.2% | 80.9% -> 79.8% |
+| C4 features, M_full | 0.9924 -> 0.9922 | 88.1% -> 87.2% | 70.8% -> 71.0% |
+| C4 sums, M_full | 0.9935 -> 0.9935 | 89.9% -> 89.6% | 75.1% -> 74.8% |
+
+(Full store, merged imports: M_add 0.9957 -> 0.9955, 92.0% -> 92.0%; M_full 0.9934 -> 0.9932, 88.6% -> 88.7%.)
+
+| Detector | Det. | Seen, pass | Held-out, pass | Seen, fail | Held-out, fail |
+|---|---|---|---|---|---|
+| Unconstrained (reference) | 47 | 8/35 | 21/35 | 0/12 | 4/12 |
+| PV, 4 seen attacks | 22 | 0/16 | 4/16 | 0/6 | 0/6 |
+| C4 features, M_add (routed) | 45 | 0/33 | 13/33* | 0/12 | 1/12* |
+| C4 sums, M_add (routed) | 43 | 0/31 | 11/31* | 0/12 | 1/12* |
+| C4 features, M_full (routed) | 40 | 0/28 | **0/28** | 0/12 | 1/12 |
+| C4 sums, M_full (routed) | 42 | 0/30 | **0/30** | 0/12 | 1/12 |
+
+\* header_fields, outside M_add, as in runs 81 and 100 (there 9/33 and 16/32; the retrained models differ in which
+files the header attack happens to cross). The failing-file evasion is again `480087e22a70...` (header_fields,
+reference branch).
+
+Adaptive column: both C4 rows 0 (0/47, 0/41), largest declared score change exactly 0.0. The unconstrained row rose to
+28/49 (run 100: 10/49), but **this number is inflated by a bug** found while reading it: the engine's declared
+add-section ends the file, so it removes the overlay (pefile's rule, G7 finding 4), while the search builds each step's
+file with LIEF, which puts the section before the overlay and keeps it; the next add-section step then claims the
+overlay's removal again. An append creates an overlay that a later step "removes" the same way. Witnessed on 4 of 5
+files (e.g. `9e584121f2...`: -2.84 declared on the first step, -2.63 again from LIEF's file). The C4 rows do not see the
+overlay features. Also measured: on these files our own byte-level edit (exactly the declared add-section, after the
+overlay) realizes far less of the declared drop (e.g. -0.35 vs -2.84), because the declared effect leaves out the
+layout bytes (padding, the section-table entry, SizeOfImage), as the hand predictor did. Fix pending (user).
