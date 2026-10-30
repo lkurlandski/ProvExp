@@ -56,6 +56,7 @@ from a_pv_attacks import load_pilot  # noqa: E402
 
 __all__ = [
     "Ensemble",
+    "forced_box",
     "load_directions",
     "solve",
     "main",
@@ -160,8 +161,31 @@ def forced(ens: Ensemble, x: np.ndarray, direction: dict[int, str]) -> tuple[np.
     return lo, hi
 
 
+def forced_box(ens: Ensemble, low: np.ndarray, high: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+    """
+    Bounds on each binary "x_f <= t_j" for a region given per feature as an interval [low_f, high_f].
+
+    Args:
+        ens: the flattened ensemble.
+        low: per feature, the lowest value allowed.
+        high: per feature, the highest value allowed.
+
+    Returns:
+        (lower, upper) bounds for the binaries.
+    """
+    if np.any(low > high):
+        raise ValueError(f"Empty interval for features {np.flatnonzero(low > high)[:5].tolist()}.")
+    lo, hi = np.zeros(ens.num_binaries), np.ones(ens.num_binaries)
+    for f, ts in ens.thresholds.items():
+        idx = np.array([ens.var[(f, j)] for j in range(ts.size)])
+        lo[idx[float(high[f]) <= ts]] = 1.0  # every allowed value lies at or below the threshold
+        hi[idx[float(low[f]) > ts]] = 0.0  # every allowed value lies above it
+    return lo, hi
+
+
 def solve(ens: Ensemble, x: np.ndarray, direction: dict[int, str], time_limit: float,
-          below: Optional[float] = None, max_changed: Optional[int] = None) -> dict[str, Any]:
+          below: Optional[float] = None, max_changed: Optional[int] = None,
+          box: Optional[tuple[np.ndarray, np.ndarray]] = None) -> dict[str, Any]:
     """
     Minimize the ensemble's raw score over a region, or (with `below`) decide whether it can go below a value.
 
@@ -174,13 +198,14 @@ def solve(ens: Ensemble, x: np.ndarray, direction: dict[int, str], time_limit: f
             The objective is then zero, so the first such vector ends the search; infeasibility is a certificate.
         max_changed: if given, at most this many features may leave their current split interval (an L0 budget,
             Kantchelian et al.'s; one indicator per feature).
+        box: if given, the region is this (low, high) interval per feature instead of `direction`; it must contain x.
 
     Returns:
         status, seconds, best (lowest score found; in the decision version, the found vector's score),
         dual_bound (proved lower bound; in the decision version, `below` if proved infeasible), gap, nodes, size.
     """
     nb, nl = ens.num_binaries, ens.values.size
-    blo, bhi = forced(ens, x, direction)
+    blo, bhi = forced(ens, x, direction) if box is None else forced_box(ens, *box)
     current = np.zeros(nb)
     for f, ts in ens.thresholds.items():
         for j in range(ts.size):

@@ -458,6 +458,37 @@ def greedy_search(booster: lightgbm.Booster, extractor: PEFeatureExtractor, z: b
 # Main
 ################################################################################
 
+class _Padded(lightgbm.Booster):
+    """A booster on a store that extends the thrember features with neutralized columns, scored on thrember vectors."""
+
+    def __init__(self, model_file: str, dim: int) -> None:
+        super().__init__(model_file=model_file)
+        self.pad = self.num_feature() - dim
+
+    def predict(self, data: Any, *args: Any, **kwargs: Any) -> Any:
+        x = np.asarray(data, dtype=np.float64)
+        return super().predict(np.hstack([x, np.zeros((x.shape[0], self.pad))]), *args, **kwargs)
+
+
+def padded_booster(mdir: Path, dim: int) -> lightgbm.Booster:
+    """Load a defense; a model on more than the `dim` thrember features must have every extra column neutralized.
+
+    `train_classic.py --neutralize` sets those columns to zero in every split, so padding the engine's vectors with
+    zeros reproduces exactly what the model saw (e.g. the `seed-0-s10-*` models on the sums store, whose 1,087 sums
+    columns are neutralized), and the search can score them.
+    """
+    booster = lightgbm.Booster(model_file=str(mdir / "model.txt"))
+    n = booster.num_feature()
+    if n == dim:
+        return booster
+    neutralized = set(json.loads((mdir / "metrics.json").read_text()).get("neutralized") or [])
+    missing = sorted(set(range(dim, n)) - neutralized)
+    if n < dim or missing:
+        raise RuntimeError(f"{mdir.as_posix()}: {n} features, of which {len(missing)} past the {dim} thrember ones are "
+                           "not neutralized; the C1 engine cannot score it.")
+    return _Padded(str(mdir / "model.txt"), dim)
+
+
 def _parse_defenses(specs: list[str]) -> dict[str, Path]:
     out: dict[str, Path] = {}
     for spec in specs:
@@ -504,10 +535,10 @@ def main() -> None:
     defenses = _parse_defenses(args.defense)
 
     manifest = load_manifest(args.features)
-    if manifest["feature_set"] != "ember2024 (thrember v3)":
-        raise RuntimeError(f"Unexpected feature set {manifest['feature_set']} in {args.features.as_posix()}: the C1 "
-                           "engine has no recognizers for the sums store's re-encoded groups yet.")
     extractor = merge_import_descriptors(PEFeatureExtractor())
+    if manifest["feature_names"][: extractor.dim] != extractor.feature_names:
+        raise RuntimeError(f"The store {args.features.as_posix()} ({manifest['feature_set']}) does not start with the "
+                           "thrember features: the C1 engine has no recognizers for other layouts.")
     preds = engine_predictors(extractor)
     print(f"Scoring in thrember space ({extractor.dim} features).", flush=True)
 
@@ -521,7 +552,7 @@ def main() -> None:
 
     rows: list[dict[str, Any]] = []
     for d, mdir in defenses.items():
-        booster = lightgbm.Booster(model_file=str(mdir / "model.txt"))
+        booster = padded_booster(mdir, extractor.dim)
         tau = _threshold(mdir / "ts_predictions.parquet", args.fpr)
         targets = [(b, sign) for b in target_buckets(booster, extractor.feature_names, args.target_buckets)
                    for sign in (-1, 1)]
