@@ -35,6 +35,7 @@ from scipy.sparse import coo_matrix
 
 from provexp.featuresets.ember2024.catalogue import precondition
 from provexp.featuresets.ember2024.features import PEFeatureExtractor
+from provexp.featuresets.ember2024.features import StringExtractor
 from provexp.featuresets.ember2024.features import field_range
 from provexp.items import Entropy
 from provexp.items import Identity
@@ -64,8 +65,10 @@ __all__ = [
     "Program",
     "budget",
     "certify",
+    "dominance_cuts",
     "link_ensemble",
     "props_of",
+    "regex_requirements",
     "write",
 ]
 
@@ -104,6 +107,9 @@ WARN_FLAGS = "pefilewarnings:warning_Suspicious flags set for section..."
 WARN_COUNT = "pefilewarnings:num_warnings"
 # The names of the choice variables (reported with a solver's evasion).
 CHOICE = re.compile(r"^(D|A|a\d+|s\d+|on\d+|m\d+|c\d+|pages\d+|e\d+|y\d+_\d+|fl\d+_\w+|q\d+_\w+)$")
+
+
+_STRINGS = StringExtractor()  # type: ignore[no-untyped-call]
 
 
 class NotCovered(Exception):
@@ -312,6 +318,62 @@ def row_cuts(P: Program, counts: Sequence[Lin], windows: Lin, r: int) -> None:
     for q in ROW_REFS.get(r, ()):
         cross = Lin.total(x * float(-math.log2(w)) for x, w in zip(counts, q.tolist(), strict=True))
         P.row(cross - windows * ((r / 4 - TOL_ENT) * WINDOW), lo=0.0)
+
+
+def dominance_cuts(P: Program, counts: Sequence[Lin], windows: Lin, r: int, name: str, most: float) -> None:
+    """
+    The upper side of byte-entropy row r (the lower side is `row_cuts`): a window in row r has nibble entropy below
+    (r + 1) / 4, and min-entropy is at most entropy, so one nibble holds more than theta = WINDOW * 2^-((r + 1) / 4)
+    of its counts. Pooled over the row's `windows` windows (at most `most`): `n_c` of them dominated by nibble c,
+    holding at least theta and at most WINDOW of c each (`m_c`, at most the row's count of c), and the counts outside
+    the dominant nibbles at most (WINDOW - theta) per window. Sound: every real window meets it, so their sums do.
+    """
+    if r >= 15:
+        return  # row 15 has no upper side
+    theta = WINDOW * 2.0 ** -((r + 1) / 4 + TOL_ENT)
+    n = [P.var(f"{name}n{r}_{c}", 0, most, integer=True) for c in range(16)]
+    m = [P.var(f"{name}m{r}_{c}", 0, most * WINDOW) for c in range(16)]
+    P.row(Lin.total(Lin.of(x) for x in n) - windows, 0, 0)
+    for c in range(16):
+        P.row(Lin.of(m[c]) - Lin.of(n[c], theta), lo=0)
+        P.row(Lin.of(m[c]) - Lin.of(n[c], WINDOW), hi=0)
+        P.row(Lin.of(m[c]) - counts[c], hi=0)
+    P.row(Lin.total(counts) - Lin.total(Lin.of(x) for x in m) - windows * (WINDOW - theta), hi=0)
+
+
+_HEX = frozenset(b"0123456789abcdefABCDEF")
+_DIGITS = frozenset(b"0123456789")
+# The characters every match of a non-plain regex holds (a sound minimum; base64string is left out).
+_REQUIRED: dict[str, list[tuple[frozenset[int], int]]] = {
+    ".click(": [(frozenset(b"cC"), 2), (frozenset(b"lL"), 1), (frozenset(b"iI"), 1), (frozenset(b"kK"), 1)],
+    "ipv4_addr": [(frozenset(b"."), 3), (_DIGITS, 4)],
+    "ipv6_addr": [(frozenset(b":"), 2)],
+    "mac_addr": [(frozenset(b":-"), 5), (_HEX, 12)],
+    "email_addr": [(frozenset(b":-"), 5), (_HEX, 12)],
+    "url": [(frozenset(b":"), 1), (frozenset(b"/"), 2)],
+    "registry_key": [(frozenset(b"K"), 1), (frozenset(b"H"), 1)],
+    "btc_wallet": [(frozenset(b"13"), 1), (frozenset(b"123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz"), 26)],
+}
+
+
+def regex_requirements(regexes: dict[str, re.Pattern[str]]) -> dict[str, list[tuple[frozenset[int], int]]]:
+    """
+    Per regex, the characters every string matching it holds: (the byte values that count, how many). A plain word
+    (its pattern without word boundaries has no special character) holds each of its characters, either case when the
+    regex ignores case; the others are listed by hand (`_REQUIRED`).
+    """
+    out: dict[str, list[tuple[frozenset[int], int]]] = {}
+    for k, r in regexes.items():
+        word = r.pattern.replace("\\b", "")
+        if k in _REQUIRED:
+            out[k] = _REQUIRED[k]
+        elif not set(word) & set(".^$*+?{}[]()|\\"):
+            counts: dict[frozenset[int], int] = {}
+            for ch in word:
+                key = frozenset({ord(ch.lower()), ord(ch.upper())} if r.flags & re.IGNORECASE else {ord(ch)})
+                counts[key] = counts.get(key, 0) + 1
+            out[k] = list(counts.items())
+    return out
 
 
 ################################################################################
@@ -753,6 +815,7 @@ class Encoding:
         for r in range(16):
             P.row(Lin.total(Lin.of(x) for x in we[r]) - Lin.of(rows_new[r], WINDOW), 0, 0)
             row_cuts(P, [Lin.of(x) for x in we[r]], Lin.of(rows_new[r]), r)
+            dominance_cuts(P, [Lin.of(x) for x in we[r]], Lin.of(rows_new[r]), r, "wd", we_max / WINDOW)
         tail = np.bincount(np.frombuffer(z[w0 * STEP:], dtype=np.uint8) >> 4, minlength=16)
         for col in range(16):
             newnib = Lin.total(Lin.of(a[v]) + Lin.of(s[v]) for v in range(16 * col, 16 * col + 16))
@@ -817,6 +880,14 @@ class Encoding:
         P.row(Lin.of(ns, 6) - Lin.of(D), hi=run + 1)
         for j in range(regexes):
             P.row(Lin.of(rg[j]) - Lin.of(ns), hi=0)
+        # A string matching a regex holds the characters the regex requires, and distinct strings hold distinct ones.
+        regex_names = sorted(_STRINGS.regex_idxs, key=lambda k: _STRINGS.regex_idxs[k])
+        required = regex_requirements(_STRINGS._regexes)
+        if len(regex_names) != regexes:
+            raise RuntimeError(f"{len(regex_names)} regexes, {regexes} regex features.")
+        for j, name in enumerate(regex_names):
+            for vals, mult in required.get(name, []):
+                P.row(Lin.of(rg[j], mult) - Lin.total(Lin.of(pd[v - PRINTABLE[0]]) for v in vals), hi=0)
         hranges = _merge(_widen(z, lo_, hi_) for lo_, hi_ in written)
         if hranges and run and hranges[-1][1] > n - run:
             raise NotCovered("header strings meet the tail run")
@@ -841,6 +912,8 @@ class Encoding:
         P.row(Lin.of(hs, 6) - (h_len + len(hranges)) * on0, hi=0)
         for j in range(regexes):
             P.row(Lin.of(hrg[j]) - Lin.of(hs), hi=0)
+            for vals, mult in required.get(regex_names[j], []):
+                P.row(Lin.of(hrg[j], mult) - Lin.total(Lin.of(hpd[v - PRINTABLE[0]]) for v in vals), hi=0)
 
         def dropped(family: str, i: int) -> Lin:
             out = Lin()

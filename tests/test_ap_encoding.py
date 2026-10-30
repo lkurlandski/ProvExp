@@ -6,10 +6,13 @@ from __future__ import annotations
 
 import math
 from pathlib import Path
+import re
 import sys
 
 import numpy as np
 import pytest
+
+from provexp.featuresets.ember2024.features import StringExtractor
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 from ap_encoding import ROW_REFS  # noqa: E402
@@ -19,9 +22,11 @@ from ap_encoding import Frac  # noqa: E402
 from ap_encoding import Lin  # noqa: E402
 from ap_encoding import MaxOf  # noqa: E402
 from ap_encoding import boundary_references  # noqa: E402
+from ap_encoding import dominance_cuts  # noqa: E402
 from ap_encoding import mixture_floor  # noqa: E402
 from ap_encoding import Program  # noqa: E402
 from ap_encoding import reachable_rows  # noqa: E402
+from ap_encoding import regex_requirements  # noqa: E402
 from ap_encoding import references  # noqa: E402
 from ap_encoding import row_cuts  # noqa: E402
 from ap_encoding import share_bounds  # noqa: E402
@@ -187,6 +192,31 @@ class TestRows:
         row_cuts(p, [Lin.of(x) for x in xs], Lin(1.0), 8)
         assert p.solve().status == 2
 
+    @pytest.mark.parametrize("seed", range(20))
+    def test_dominance_holds_on_pooled_windows(self, seed: int) -> None:
+        # The windows of one row, pooled, satisfy that row's dominance cuts.
+        rng = np.random.default_rng(seed)
+        windows = [_window(rng) for _ in range(60)]
+        for r in range(15):
+            mine = [w for w in windows if _row(w) == r]
+            p = Program()
+            xs = [p.var(f"x{c}", 0, WINDOW * 60) for c in range(16)]
+            pooled = sum(mine, np.zeros(16))
+            for c, x in enumerate(xs):
+                p.fix(x, float(pooled[c]))
+            dominance_cuts(p, [Lin.of(x) for x in xs], Lin(float(len(mine))), r, "d", 60.0)
+            assert p.solve().status == 0, f"row {r}: {len(mine)} windows"
+
+    def test_dominance_excludes_spread(self) -> None:
+        # An even spread over the 16 nibbles (entropy 4) cannot sit in row 0, nor two windows spread over 16 nibbles.
+        for windows in (1.0, 2.0):
+            p = Program()
+            xs = [p.var(f"x{c}", 0, WINDOW * 2) for c in range(16)]
+            for x in xs:
+                p.fix(x, windows * WINDOW / 16)
+            dominance_cuts(p, [Lin.of(x) for x in xs], Lin(windows), 0, "d", 2.0)
+            assert p.solve().status == 2
+
     @pytest.mark.parametrize("seed", range(30))
     def test_reachable_rows_sound(self, seed: int) -> None:
         rng = np.random.default_rng(seed)
@@ -200,3 +230,39 @@ class TestRows:
             at = rng.choice(WINDOW, moved, replace=False)
             b[at] = rng.choice([0, int(rng.integers(256))], moved) if rng.random() < 0.5 else rng.integers(0, 256, moved)
             assert _row(np.bincount(b >> 4, minlength=16)) in reach
+
+
+################################################################################
+# Strings
+################################################################################
+
+
+REGEXES: dict[str, re.Pattern[str]] = StringExtractor()._regexes  # type: ignore[no-untyped-call]
+FRAGMENTS = ["http://a.b/c", "ftp://x", "10.20.30.40", "1:2:3:4:5:6:7:8", "a::b", "00-11-22-33-44-55", "HKCU", "C:/w",
+             "1BoatSLRHtKNngkdXEeobR76b53LETtpyT", "!This program ", "x.click(", "Invoke-Command"]
+
+
+class TestRegexRequirements:
+
+    @pytest.mark.parametrize("seed", range(10))
+    def test_matches_hold_the_required_characters(self, seed: int) -> None:
+        rng = np.random.default_rng(seed)
+        req = regex_requirements(REGEXES)
+        words = [r.pattern for k, r in REGEXES.items() if k in req and k not in ("ipv4_addr",)] + FRAGMENTS
+        alphabet = np.frombuffer(bytes(range(0x20, 0x80)), dtype=np.uint8)
+        checked = 0
+        for _ in range(300):
+            parts = []
+            for _ in range(int(rng.integers(1, 4))):
+                w = str(rng.choice(words)).replace("\\b", "").replace("\\", "")
+                w = "".join(c.upper() if rng.random() < 0.5 else c for c in w)
+                parts.append(w)
+                parts.append(bytes(rng.choice(alphabet, int(rng.integers(0, 4)))).decode())
+            s = "".join(parts)
+            counts = np.bincount(np.frombuffer(s.encode(), dtype=np.uint8), minlength=256)
+            for k, r in REGEXES.items():
+                if k in req and r.search(s):
+                    checked += 1
+                    for vals, mult in req[k]:
+                        assert sum(int(counts[v]) for v in vals) >= mult, (k, s)
+        assert checked > 100

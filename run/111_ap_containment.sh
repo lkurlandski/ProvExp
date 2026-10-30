@@ -14,6 +14,8 @@
 # Re-ran 2026-10-30 (Claude, fifth session, ~8 min), after the solver numerics, whole-number splits, entropy floor,
 # tail-string merge rule, and the per-row entropy cuts with exact header-window rows: hypothesis holds again. 85 covered;
 # 1,105 edits written; contained, exact, and held-fixed unchanged on all 1,105.
+# Re-ran twice more (2026-10-30, fifth session, ~8 min each): after the pooled dominance cuts on the new windows, and
+# after the regex character requirements on the strings: holds both times (1,105 of 1,105 on every check).
 set -euo pipefail
 cd "$(dirname "$0")/.."
 source env/bin/activate

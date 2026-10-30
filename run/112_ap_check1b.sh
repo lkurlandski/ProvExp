@@ -3,9 +3,11 @@
 # over the edit-choice encoding (scripts/ap_encoding.py: up to 3 added sections, then an append, budget max(5%, 512 KB))
 # on the unconstrained 10% detector, for the detected files the battery (toolkit run 105 + adaptive run 109) does not
 # evade. Go if it certifies at least 20% of them (4 of 20; 7 fail the precondition, so 4 of the 13 covered).
-# Hypothesis (to restate after tightening): a minority certify, concentrated on large files.
-# NOT YET RUN. Before running: tighten the byte-entropy windows (docs/direction-A-prime-encoding.md, "Still open") and
-# re-run run/111. Smoke at 300 s (2026-10-30, before tightening): 0 certified, 10 undecided, 3 solver evasions.
+# Hypothesis (2026-10-30, after the per-row, dominance, and regex-character cuts): still a no-go, but fewer solver
+# evasions than the smoke run's 3; a certificate, if any, on a large file (budget small against the file). On 2826a9a5
+# (4 MB) the solver went from an evasion in 111 s to undecided at 300 s after the last two cuts.
+# NOT YET RUN. run/111 holds on the current encoding. Smoke at 300 s (2026-10-30, before tightening): 0 certified, 10
+# undecided, 3 solver evasions.
 #
 # Estimate: 13 solves in parallel, 1,800 s limit each: ~30 min wall.
 set -euo pipefail
