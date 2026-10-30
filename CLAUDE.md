@@ -60,7 +60,9 @@ and manuscript remain as source material. Deadlines and conference cycles are no
   threat model; derived from the item tables by default, `--hand` for the hand rules), a_c1_table0 (hand C1 predictors, the engine's oracle, and Table A0), a_pv_attacks / a_pv_hole (secml-malware attacks, PV
   selection and its hole), a1_evaluate (toolkit columns), a1_adaptive (C1-guided adaptive search), a_overlay_witness
   (the overlay gap), a_signature_witness (the signature table past the end), a_structure_witness (the other class-1 witnesses: entry section, Rich header, exports and relocations past the end), item_checks (derivation checks G1/G2, G5, G6), catalogue_checks (G7: every operation applied by our own byte-level edits, checked
-  against the derived directions). Direction A': ap_check0_solver (Kantchelian's exact GBDT encoding, HiGHS via scipy). The sums
+  against the derived directions). Direction A': ap_check0_solver (Kantchelian's exact GBDT encoding, HiGHS via scipy), ap_check1_learned (learned
+  regions), ap_encoding (the edit-choice encoding: append + up to 3 added sections), ap_containment (it must contain
+  every real edit; run 111), ap_check1b (certification; run 112), ap_realize (a solver answer written as a file). The sums
   re-encoding is `src/provexp/featuresets/ember2024/sums.py`. Dropped experiments are under `scripts/archive/`.
 - **Rankings break ties by a seeded permutation, never by position or index** (`ablation.element_order` /
   `window_order` with `tiebreak`, `pf1.feature_order`), and treat scores within 1e-9 (relative) as tied: equal scores

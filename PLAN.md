@@ -62,9 +62,29 @@ introduction and a simple baseline (writing decision for later).
   **Current framing (mock, decisions 1-7):** realizable worst-case evaluation of a detector with an exact solver over
   edit choices. After check 1 (2026-10-30, decision 7): learned regions are vacuous or circular, so the claim is that
   only the computed region, which keeps how one edit moves features together, certifies anything on a non-monotone
-  detector; check 1b decides it after the step-4 build.
+  detector; check 1b decides it (step 4 built and tightened, 2026-10-30; check 1b handed to the user).
 
-## Next steps (2026-10-30, fourth session: per-row entropy cuts built; the byte-entropy gap is real looseness)
+## Next steps (2026-10-30, fifth session: realizer built; two sound cuts; check 1b handed to the user)
+
+Done: the realizer (`scripts/ap_realize.py`: windows shaped in adjacent pairs and laid out from high entropy down;
+strings built per block carrying regex literals, spelled in mixed case); two sound cuts in the encoding: the upper side
+of a window's entropy (`dominance_cuts`: a low-entropy window has one dominant nibble) and regex counts tied to the
+characters they need (`regex_requirements`); containment (run 111) holds after each (1,105/1,105). The fourth session's
+items 1-2 were dropped (already implied; unsound) and its "real looseness" reading was premature (naive file). On
+2826a9a5 the solver went from an evasion realizing at 8.63 (naive) / 5.97 / 2.75 to undecided at 300 s. Decided (user):
+check 1b before the exact block model of overlapping windows. Next, in order:
+1. **Read check 1b** (`run/112`, ~30 min, run by the user): certified / undecided / solver-evaded per file, split by
+   budget vs file size; record in the script's comments and the mock. Go: >= 4 of the 13 covered certified. A no-go goes
+   to the user with decision 7's options (3: lead with another use; then 2: a tighter learned baseline).
+2. **Every solver evasion: realize it** (`realize` on `solutions/{defense}_{file}.npy`), re-extract, score, attribute by
+   group. Where byte-entropy still carries a gap: the exact block model of overlapping windows (user's earlier choice,
+   deferred); where strings or histogram do: the realizer repairs below.
+3. Realizer repairs for check 2: knife-edge histogram splits (nudge byte counts by one to match the solver's sides);
+   section contents aimed at the solver's section entropies; `drop_tail` honored.
+4. Check 2 (>= 70% of solver evasions realize), check 3 (expert set; user decision on instrumenting their extractor),
+   Table A'1 at pilot scale.
+
+### Earlier: next steps (2026-10-30, fourth session: per-row entropy cuts built)
 
 Done: per-row Gibbs cuts tying each new byte-entropy window (appended-tail and header) to at least its row's nibble
 entropy (`row_cuts`, `ROW_REFS`, `boundary_references`); the header windows made exact in their row (binary indicator +

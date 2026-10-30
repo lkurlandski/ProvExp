@@ -1,14 +1,20 @@
 # Status
 
-**2026-10-30, fifth session: realizer built; two new sound cuts (window-entropy upper side by dominant nibble; regex
-counts tied to characters); containment holds after each; 2826a9a5 went from a solver evasion (realizing at 8.63 naive,
-5.97, then 2.75) to undecided at 300 s. Waiting on the user: block model of overlapping windows now, or check 1b
-(`run/112`, ~30 min) first.** Commits 85772c5..(this).
-- Tasks 1-2 of the fourth session's plan were dropped (already implied, or unsound); the "real looseness" reading
-  of the fourth session was premature (naive file). Detail: `docs/direction-A-prime-encoding.md`, "Built: findings",
-  fifth session.
-- `scripts/ap_realize.py` + `tests/test_ap_realize.py` (26 pass). Not yet done: rounding repair for knife-edge
-  histogram splits (the solver sits on thresholds); section entropy targets in the realizer.
+**2026-10-30, fifth session: realizer built; two new sound cuts (a window's entropy ceiling by dominant nibble; regex
+counts tied to characters); containment holds after each (1,105/1,105); 2826a9a5 went from a solver evasion (its
+answer realizing at 8.63 naive, 5.97, 2.75) to undecided at 300 s. Waiting on the user: run check 1b
+(`bash run/112_ap_check1b.sh`, ~30 min).** Commits 85772c5..(this wrap-up).
+- Dropped: the fourth session's per-row column caps (already implied by the column rows) and aggregate chord bound
+  (unsound: per-window low entropy with a high-entropy aggregate is realizable). Its "real looseness" reading was
+  premature: the file it compared with was written naively.
+- Built: `scripts/ap_realize.py` + `tests/test_ap_realize.py` (26 pass); `dominance_cuts` and `regex_requirements` in
+  `scripts/ap_encoding.py` (tests: pooled random windows, fuzzed strings); check 1b saves evading solutions
+  (`solutions/*.npy`) for check 2.
+- Decided (user): check 1b before the exact block model of overlapping windows (built only if byte-entropy still carries
+  a gap on other files).
+- Smoke of check 1b (first 30 pilot malware, 60 s): 7 covered, all undecided, none evaded.
+- Open: realizer repairs (knife-edge histogram splits; section entropies; `drop_tail`). Detail:
+  `docs/direction-A-prime-encoding.md`, "Built: findings", fifth session. Next: `docs/resume-prompt.md`.
 
 ---
 

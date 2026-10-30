@@ -1,6 +1,7 @@
 # Direction A', step 4: the edit-choice encoding (design note, 2026-10-30)
 
-Status: **reviewed by the user (2026-10-30); built in `scripts/ap_encoding.py`, tested by `scripts/ap_containment.py`.**
+Status: **reviewed by the user (2026-10-30); built in `scripts/ap_encoding.py`, tested by `scripts/ap_containment.py`;
+answers written as files by `scripts/ap_realize.py`.**
 Decisions below ("Decisions"). Implements `docs/feature-provenance-model.md`, Section 4a, C3
 (reachable sums and features under add-only edits), for the two edits with exact C1 predictors: append and add-section.
 Feeds check 1b and check 2 (`docs/direction-A-prime-mock.md`).
@@ -355,8 +356,20 @@ scratch solve + `attribute` (byte-entropy points closed is the number to watch):
   with several regex literals each, spelled letter by letter in mixed case: **realized 2.75** (naive 8.63, threshold
   1.10), byte-entropy sides from the solver now *worse* for the attacker than the realized file's. With the regex
   character cut added: **undecided at 300 s** (no evasion found), where before an evasion took 111 s.
-- So the exact block model of overlapping windows (user's choice, 2026-10-30) is not obviously needed any more: the
-  pooled dominance cut removed byte-entropy from the gap on this file. To decide with the user.
+- So the exact block model of overlapping windows is not obviously needed any more: the pooled dominance cut removed
+  byte-entropy from the gap on this file. **Decided (user): check 1b first**; the block model only where a realized
+  evasion still shows a byte-entropy gap. Its design, if needed: the new tail as 1 KB blocks with nibble counts, window
+  k = blocks k and k+1, one row binary per window, per-(window, row, nibble) counts z with sum_r z = window counts and
+  sum_c z = 2048 * row binary (exact, no big-M), the row cuts per window, a dominant-nibble binary per window; ~8K
+  extra binaries and ~150K rows per file.
+
+Still open (fifth session):
+1. Read check 1b (`run/112`); realize every solver evasion and attribute its gap.
+2. Realizer repairs: knife-edge histogram splits (the solver sits on thresholds; rounding to whole bytes tips them;
+   nudge counts by one toward the solver's side); section contents aimed at the solver's e[i]; `drop_tail` (the
+   first appended byte must be non-printable when the tail string is kept; today every block starts with one, which
+   suffices unless the block has none).
+3. The block model, only if a realized evasion still shows a byte-entropy gap.
 
 ## Code plan (after review)
 
