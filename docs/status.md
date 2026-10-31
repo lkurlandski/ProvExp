@@ -1,5 +1,15 @@
 # Status
 
+**2026-10-31: check 1b read: no-go. 0 of 13 covered files certified, 6 solver evasions, 7 undecided at 1,800 s;
+written as files, 0 of 6 evasions evade (real raw 3.40-6.76 vs threshold 1.10). Waiting on the user: decision 7's
+options.** Detail in `run/112`'s comments and the mock's check 1b.
+- The gap is spread over byte-entropy, strings, and section entropies; no single group closes it alone. Whether the
+  remainder is looseness in the encoding or weakness of the realizer is not separated yet.
+- Realizations: scratch driver (encoding rebuilt from the saved solution, `realize`, re-extract, `attribute` by feature
+  group); not committed.
+
+---
+
 **2026-10-30, fifth session: realizer built; two new sound cuts (a window's entropy ceiling by dominant nibble; regex
 counts tied to characters); containment holds after each (1,105/1,105); 2826a9a5 went from a solver evasion (its
 answer realizing at 8.63 naive, 5.97, 2.75) to undecided at 300 s. Waiting on the user: run check 1b

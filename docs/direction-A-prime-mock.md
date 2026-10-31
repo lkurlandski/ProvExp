@@ -274,8 +274,13 @@ Each is a short job on the pilot, on today's hand-coded predictors.
    **Tightening, second result (2026-10-30, fifth session):** a realizer that lays the solver's windows and strings out
    (`scripts/ap_realize.py`) and two sound cuts (a low-entropy window has one dominant nibble; regex counts need their
    characters). On 2826a9a5 the solver's answers realized at 5.97, then 2.75 (threshold 1.10), and after the second
-   cut the solver found no evasion in 300 s. Smoke at 60 s on 7 covered files: all undecided, none evaded. The full
-   check 1b (`run/112`) is with the user.
+   cut the solver found no evasion in 300 s. Smoke at 60 s on 7 covered files: all undecided, none evaded.
+   **Result (`run/112`, 1,800 s per solve; read 2026-10-31): no-go.** Of the 13 covered files: 0 certified, 6 solver
+   evasions (269-576 s; 2826a9a5 among them at 507 s), 7 undecided. The hypothesis (fewer evasions than the smoke's 3)
+   failed. Written as files, **0 of 6 evade** (real raw 3.40-6.76 vs the solver's 0.77-1.10; threshold 1.10), so the
+   evasions are artifacts of looseness or of the realizer, not attacks. The gap is spread: with one group's splits on
+   the solver's sides, byte-entropy alone reaches 1.96-5.37, strings 2.15-4.50, section entropies 3.27-5.65; none
+   reaches the threshold alone. Revisit decision 7 (with the user).
 3. **The computed constraints matter on a defended detector built without them.** On the expert-set detector (once
    its row exists), the computed-constraint solver must find realized evasions on a material share (say 10% or more)
    of the files it detects. *No-go:* if their hand-written add-only assumptions already hold under M_full, the
