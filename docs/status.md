@@ -1,12 +1,15 @@
 # Status
 
-**2026-10-31: check 1b read: no-go. 0 of 13 covered files certified, 6 solver evasions, 7 undecided at 1,800 s;
-written as files, 0 of 6 evasions evade (real raw 3.40-6.76 vs threshold 1.10). Waiting on the user: decision 7's
-options.** Detail in `run/112`'s comments and the mock's check 1b.
-- The gap is spread over byte-entropy, strings, and section entropies; no single group closes it alone. Whether the
-  remainder is looseness in the encoding or weakness of the realizer is not separated yet.
-- Realizations: scratch driver (encoding rebuilt from the saved solution, `realize`, re-extract, `attribute` by feature
-  group); not committed.
+**2026-10-31 (session 1): check 1b read: no-go. 0 of 13 covered files certified, 6 solver evasions, 7 undecided at
+1,800 s; written as files, 0 of 6 evasions evade (real raw 3.40-6.76 vs threshold 1.10). Waiting on the user:
+decision 7's options (bounded tightening round with a stop rule, recommended; lead A' with another use; tighter learned
+baseline as a sensitivity row; pause A').** Commits e783464..(this wrap-up).
+- The gap is spread over byte-entropy, strings, and section entropies; no single group closes it alone. Looseness vs
+  realizer weakness not separated yet. Per-file table: `docs/direction-A-prime-encoding.md`, "Built: findings
+  (2026-10-31)"; also `run/112`'s comments and the mock's check 1b.
+- Both hypotheses failed (fewer evasions than the smoke's 3; byte-entropy the main carrier).
+- Realizations came from a scratch driver (not committed; its recipe is in `docs/resume-prompt.md`).
+- Next: `docs/resume-prompt.md`.
 
 ---
 

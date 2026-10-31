@@ -371,6 +371,35 @@ Still open (fifth session):
    suffices unless the block has none).
 3. The block model, only if a realized evasion still shows a byte-entropy gap.
 
+## Built: findings (2026-10-31): check 1b, and its evasions written as files
+
+- **Check 1b (`run/112`, ref detector, 1,800 s per solve): no-go.** 13 covered files: 0 certified, 6 solver evasions
+  (269-576 s: 6927e052, 1161236b, 511c7d1a, 9613981f, 2826a9a5, 29718ff5), 7 undecided (303ef5c9, 6af84b58, 1ecc877f,
+  b1d6d149, 9e584121, 49768265, 3eb8b6d9; mostly small files, 82 KB-1.8 MB, one 4 MB). 2826a9a5, undecided at 300 s
+  last session, evaded at 507 s.
+- **None of the 6 realizes.** Each solution rebuilt (encoding, `link_ensemble`, leaf variables, so the names match the
+  saved vector), written by `realize`, re-extracted, scored on the ref model:
+
+  | file | size | added | solver | real | byte-entropy alone | strings alone | sections alone | histogram alone |
+  |---|---|---|---|---|---|---|---|---|
+  | 29718ff5 | 234 KB | 427 KB | 1.09 | 3.40 | 1.96 | 2.74 | 3.27 | 2.96 |
+  | 1161236b | 479 KB | 524 KB | 0.77 | 5.37 | 3.23 | 3.47 | 4.94 | 5.44 |
+  | 2826a9a5 | 4 MB | 524 KB | 1.10 | 4.13 | 2.95 | 2.15 | — | 3.98 |
+  | 9613981f | 2.9 MB | 524 KB | 0.95 | 5.43 | 3.50 | 4.38 | 4.52 | 5.20 |
+  | 511c7d1a | 4 MB | 524 KB | 1.10 | 6.76 | 5.37 | 4.50 | 4.89 | 6.55 |
+  | 6927e052 | 3.1 MB | 524 KB | 1.01 | 6.11 | 5.35 | 2.63 | 5.65 | 6.05 |
+
+  ("X alone": X's splits on the solver's sides, all others on the written file's; "—": no change.) Splits that differ
+  are only in general, histogram, byte-entropy (292-1,490), strings (393-1,150), and section (0-168).
+- Reading: the gap is spread over byte-entropy, strings, and section entropies; each tightening so far has moved it
+  rather than closed it. Not yet separated: how much is looseness (the solver claims what no file has) and how much
+  the realizer (a file exists, we do not build it). Section entropies are still nearly free in the encoding (the
+  third item of the fourth session's list was never built).
+- Hypotheses failed: fewer evasions than the smoke's 3 (6); byte-entropy the main carrier (strings as large on 2 files).
+- Decision 7's options went to the user (status, PLAN). Still open, if tightening is chosen: the block model of
+  overlapping windows (design above), a sound bound on added-section entropies, the realizer repairs above, then
+  re-solve and re-realize the 6 files with a stop rule (>= 3 still not realizing -> lead A' with another use).
+
 ## Code plan (after review)
 
 - `scripts/ap_encoding.py`: build the choice block from a file's item table and a `catalogue_checks` description of the

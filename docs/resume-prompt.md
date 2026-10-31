@@ -1,71 +1,79 @@
-# Resume: ProvExp (after 2026-10-30, fifth session): realizer built, two sound cuts, check 1b with the user; next: read check 1b and realize its evasions
+# Resume: ProvExp (after 2026-10-31): check 1b read, no-go, its evasions do not realize; next: the user's decision 7 choice, then act on it
 
-Read `CLAUDE.md`, then `docs/status.md`'s top block (fifth session), `PLAN.md` ("Next steps (2026-10-30, fifth
-session)"), and `docs/direction-A-prime-encoding.md` from "Built: findings (2026-10-30, fourth session)" to the end of
-"Built: findings (2026-10-30, fifth session)" (incl. "Fifth session, continued" and its "Still open"). Then
-`docs/direction-A-prime-mock.md`: Table A'1, "How a solver's answer becomes a file", check 1b (smoke, fourth- and
-fifth-session results) and check 2, and decision 7. Skim `scripts/ap_encoding.py` (`row_cuts`, `dominance_cuts`,
-`regex_requirements`, `Encoding.__init__`'s windows and strings blocks, `certify`), `scripts/ap_realize.py` (`realize`,
-`shape_block`, `_strings`, `_place`, `_spell`, `search_name`), and `scripts/ap_check1b.py` (`attribute`, `_job`).
+Read `CLAUDE.md`, then `docs/status.md`'s top block (2026-10-31), `PLAN.md` ("Next steps (2026-10-31)"), and
+`docs/direction-A-prime-encoding.md` from "Fifth session, continued" to the end of "Built: findings (2026-10-31)" (the
+per-file table and the block model's design). Then `docs/direction-A-prime-mock.md`: Table A'1, check 1b (with its
+2026-10-31 result), check 2, check 3, and decision 7 (its four options and "what each outcome means"). Skim
+`scripts/ap_encoding.py` (`row_cuts`, `dominance_cuts`, `regex_requirements`, the sections' entropy rows,
+`link_ensemble`, `certify`), `scripts/ap_realize.py` (`realize`, `shape_block`, `_strings`, `_place`), and
+`scripts/ap_check1b.py` (`attribute`, `_job`).
 
 **Start by recapping for the user in plain language** where things stand and what is next, before asking anything:
 - the research in three sentences;
 - A' in two: a detector's true worst case against edits an attacker can make, from an exact solver over the attacker's
   choices; a certificate when no edit evades, edits written as a real file when one does;
-- last session (2026-10-30, fifth): the realizer was built (it writes the solver's answer as a file, shaping each
-  1 KB block with its neighbour so every 2 KB byte-entropy window lands in the solver's row, and building strings per
-  block that carry several regex words, spelled in mixed case). It showed that the fourth session's "real looseness"
-  reading was premature (that file was written naively), and it found two genuine loose spots, both fixed soundly:
-  nothing capped how random a window could be for its row (now: a low-entropy window has one dominant nibble, e.g. over
-  84% of its bytes in row 0), and regex-match counts were not tied to their characters (the solver claimed 2,383
-  "system" strings with s's for 531). Containment held after each (1,105 of 1,105 random real edits). On the 4 MB file
-  2826a9a5 the solver went from a fake evasion (its answer realizing at 8.63 naive, then 5.97, then 2.75 against the
-  threshold 1.10) to finding no evasion in 300 s. A 60 s smoke of check 1b on 7 covered files: all undecided, none
-  evaded;
-- the user chose to run check 1b before building the exact model of overlapping windows; check 1b (`run/112`, ~30
-  min) was handed to the user.
+- last session (2026-10-31): check 1b (run by the user, 30 min per file) was a **no-go**: of the 13 files the solver
+  can cover, 0 certified, 6 solver evasions, 7 undecided (the go was >= 4 certified). All 6 evasions written as files:
+  **none evades** (real scores 3.4-6.8 vs the solver's 0.8-1.1; threshold 1.10). The gap is spread over byte-entropy
+  (how random each 2 KB stretch is), strings (readable-text counts and matches like URLs), and added sections' entropy;
+  no single group closes it alone, and we have not separated looseness in the solver's model from a realizer that
+  does not build the file well enough. Each tightening so far moved the gap rather than closing it;
+- the decision put to the user (decision 7), unless they already answered it in their first message:
+  1. *(recommended)* one bounded tightening round: the exact block model of overlapping byte-entropy windows (designed,
+     not built), a sound bound on added sections' entropy, the realizer's string and section repairs; re-solve and
+     re-realize the 6 files; stop rule: if >= 3 still do not evade as files, go to 2;
+  2. lead A' with another use: the expert-set row (does Gimenez et al.'s add-only guarantee survive our edits; needs
+     their extractor instrumented and evasions that realize) or Table A'2 (training on realizable edits; can use our
+     own byte-level edits from `catalogue_checks`, without the solver);
+  3. the tighter learned baseline (95th-percentile change per feature, ~1 min): a sensitivity row only, does not fix
+     the no-go;
+  4. pause A' for scaling direction A or the manuscript.
+  A longer time limit is not a fix (with a loose model more time mostly finds more fake evasions).
 
 For every decision you put to the user, say what the thing is, give a concrete example, and say what each choice
 changes. Never use doc-internal labels (C3, A4, M_full, G7) without saying what they are.
 
 ## State of the code
 
-Everything is committed (last session's commits 85772c5..the wrap-up); ruff and mypy pass; `run/111` (containment)
-holds on the current encoding. `tests/test_ap_encoding.py` and `tests/test_ap_realize.py` pass (light checks only; the
-full suite was not run).
+Everything is committed (e783464 and the 2026-10-31 wrap-up); ruff and mypy pass on the committed code; `run/111`
+(containment) holds on the current encoding (unchanged since). `tests/test_ap_encoding.py` and
+`tests/test_ap_realize.py` pass (light checks only). The realization driver of last session was scratch (recipe below).
 
-## Tasks, in order
+## Tasks, depending on the user's choice
 
-1. **Read check 1b.** Ask the user whether `bash run/112_ap_check1b.sh` has run (log `artifacts/logs/ap_check1b.log`,
-   report `artifacts/experiments/ap_check1b/report.json`, solutions under `.../ap_check1b/solutions/`). If not, wait
-   or hand it again; do not run it yourself (~30 min). Read: certified / undecided / solver-evaded on the 13 covered
-   files the battery does not evade, split by budget vs file size; the go is >= 4 certified. Record the result in
-   `run/112`'s comments (against its hypothesis line), the mock's check 1b, and `docs/status.md`. A no-go goes to the
-   user with decision 7's options (3: lead with another use; then 2: a tighter learned baseline), together with what
-   the undecided count suggests (a longer time limit is an option to weigh, not a fix).
-2. **Realize every solver evasion** (`ap_realize.realize(enc, names, x)`: rebuild `Encoding(SumsFeatureExtractor(), z,
-   budget(len(z), 0.05, 524288), 3)`, rebuild the split and leaf variables with `certify`'s construction or compare
-   only the encoding's name prefix; load `x` from the `.npy`). Re-extract, score, and attribute by feature group
-   (`ap_check1b.attribute` needs the solver's sides: recompute them from `x` and `link_ensemble`'s binaries). State a
-   hypothesis first. Where byte-entropy still carries a gap, the exact block model of overlapping windows (its design
-   is in the encoding note) goes to the user; where strings or the histogram do, the realizer repairs below.
-3. **Realizer repairs** (needed for check 2): knife-edge histogram splits (the solver sits on thresholds and rounding
-   to whole bytes tips them: nudge byte counts by one toward the solver's side); section contents aimed at the solver's
-   section entropies; honoring `drop_tail`. Add a test for each; keep the round-trip test green.
-4. Then check 2 (at least 70% of solver evasions realize), check 3 (expert set; user decision on instrumenting their
-   extractor), Table A'1 at pilot scale.
+**Option 1 (tightening round).** State a hypothesis first (which group should drop out of the gap and why). In order,
+each sound, each with a test, re-running `run/111` (~8 min) after every encoding change:
+1. Section entropies: a sound bound tying each added section's entropy to its byte counts (they are nearly free in
+   [0, 8] today; they carry the gap on 4 of 6 files).
+2. The exact block model of overlapping windows (design in the encoding note: 1 KB blocks with nibble counts, window k
+   = blocks k and k+1, one row binary per window, per-(window, row, nibble) counts, ~8K extra binaries, ~150K rows).
+   Check the program still builds and solves in reasonable time on 2826a9a5 before anything else.
+3. Realizer repairs: knife-edge histogram splits (nudge byte counts by one toward the solver's side), section contents
+   aimed at the solver's section entropies, `drop_tail` honored; strings: compare the solver's string counts with the
+   written file's to see whether the gap there is the realizer or the encoding.
+4. Re-solve the 6 evading files (600-1,800 s each: as a `run/113` script for the user if over ~15 min in total) and
+   re-realize them; apply the stop rule. Then, if it passes, re-run check 1b in full (user).
 
-## Scratch drivers you will want (re-create; the scratchpad is session-local)
+**Option 2.** Re-open the mock for the chosen use (screening criteria, the table with the model component behind each
+column, a falsifiable go/no-go) before any code; be harsh about novelty against the closest work.
 
-- `solve_one.py PREFIX SECONDS OUT.pkl`: load the pilot (`a_pv_attacks.load_pilot`), the ref detector
-  (`artifacts/models/gbdt/seed-0-s10-ref`, threshold from `ts_predictions.parquet` at 1% FPR: raw 1.103), build the
-  encoding, `certify(enc, ens, tau_raw - TOL, SECONDS)`, print only the outcome fields and the `wr*` occupancies, and
-  pickle `{name, x, names, sides}`.
-- `realize_one.py OUT.pkl`: rebuild the encoding (assert the saved names start with `enc.program.names`), `realize`,
-  re-extract, print the real raw score, `attribute(...)` by feature-name prefix, and the splits whose sides differ
-  (solver value from `enc.resolve(f)` evaluated at `x`, real value, threshold). One solve of 2826a9a5 takes ~2 min to
-  build plus the time limit; one realization ~2 min.
-- **Never print the full `choice` dict or the 256 append-byte variables** (large; it tripped a content filter before).
+**Option 3.** Add the 95th-percentile learned region to `scripts/ap_check1_learned.py` as a flag; report it whichever
+way it falls.
+
+## Scratch driver you will want (re-create; the scratchpad is session-local)
+
+`realize_all.py OUTDIR [PREFIX ...]`: for each `artifacts/experiments/ap_check1b/solutions/ref_{name}.npy`, in a fork
+pool (one worker per file): load the pilot malware (`a_pv_attacks.load_pilot`), the ref booster
+(`artifacts/models/gbdt/seed-0-s10-ref/model.txt`) and `Ensemble(booster)`; rebuild
+`Encoding(SumsFeatureExtractor(), z, budget(len(z), 0.05, 524288), 3)`, then `split = link_ensemble(enc, ens)` and
+`P.var(f"leaf{i}", 0, 1)` for every leaf, so `len(P.names) == x.size` (assert it); solver sides
+`{k: x[v] > 0.5 for k, v in split.items()}`; `realize(enc, P.names, x)`; re-extract and score raw; `attribute(ens,
+sides, x_real, groups)` with groups by feature-name prefix before ":"; count differing splits per group (the solver's
+value: evaluate `enc.resolve(f)` at `x` for float / `Lin` / `Frac`, else None). Each file: ~2 min build + ~2 min
+realize; all 6 in parallel ~6 min. **Never print the full `choice` dict or the 256 append-byte variables.**
+
+For a single re-solve: load as above, `certify(enc, ens, tau_raw - TOL, SECONDS)` (tau_raw 1.103 from
+`ts_predictions.parquet` at 1% FPR), print only the outcome fields, save `x`.
 
 ## Standing rules
 
@@ -73,9 +81,9 @@ Be harsh about novelty; never raise deadlines; bring any no-go to the user befor
 on an extractor quirk; keep the experiments' complexity down; **run only jobs of ~10 minutes or less yourself (anything
 over ~15 minutes goes to the user as a `run/` script); estimate from the slowest case before starting**; default 16
 workers, never cap workers in Python; state a short hypothesis before each run; add a `run/` script for every experiment
-(next number: 113) and record its results in the script's comments once read; re-run `run/111` (~8 min; you may run it)
-after any change to the encoding, and it must contain every edit; commit in logical pieces after ruff and mypy pass;
-never edit `tests/reference/`; do not run the full test suite while the user's jobs run.
+(next number: 113) and record its results in the script's comments once read; re-run `run/111` after any change to the
+encoding, and it must contain every edit; commit in logical pieces after ruff and mypy pass; never edit
+`tests/reference/`; do not run the full test suite while the user's jobs run.
 
 ## Notes
 
@@ -86,6 +94,8 @@ never edit `tests/reference/`; do not run the full test suite while the user's j
   never split on). Thresholds at 1% FPR from each model's `ts_predictions.parquet`.
 - Pilot facts: every pilot file is <= 4 MB, so the budget is 512 KB everywhere. The battery misses 20 of the
   unconstrained model's 47 detected files; 7 of those fail the precondition (so check 1b's go needs 4 of 13).
+- Check 1b outputs: `artifacts/experiments/ap_check1b/{report.json,solves.parquet,solutions/}`; log
+  `artifacts/logs/ap_check1b.log`. The 7 undecided files are mostly small (82 KB-1.8 MB, one 4 MB).
 - Realizer facts: a byte is printable (thrember's strings: 0x20-0x7f) exactly when its high nibble is 2-7, so the
   window plan fixes each block's printable count; regex literals that also match another regex (e.g. "powershell" and
   "shell") are counted on the strings as written.

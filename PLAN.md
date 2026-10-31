@@ -62,9 +62,25 @@ introduction and a simple baseline (writing decision for later).
   **Current framing (mock, decisions 1-7):** realizable worst-case evaluation of a detector with an exact solver over
   edit choices. After check 1 (2026-10-30, decision 7): learned regions are vacuous or circular, so the claim is that
   only the computed region, which keeps how one edit moves features together, certifies anything on a non-monotone
-  detector; check 1b decides it (step 4 built and tightened, 2026-10-30; check 1b handed to the user).
+  detector; check 1b decides it. **Check 1b (2026-10-31): no-go** (0/13 certified, 6 solver evasions, 0 of 6 realize);
+  decision 7's options are with the user.
 
-## Next steps (2026-10-30, fifth session: realizer built; two sound cuts; check 1b handed to the user)
+## Next steps (2026-10-31: check 1b read, no-go; decision 7 with the user)
+
+Done: check 1b (`run/112`, 1,800 s per solve, run by the user) read: of the 13 covered files, 0 certified, 6 solver
+evasions, 7 undecided (go was >= 4 certified). All 6 evasions written as files (`ap_realize.realize`, re-extracted):
+**0 of 6 evade** (real raw 3.40-6.76 vs the solver's 0.77-1.10; threshold 1.10). Attribution by feature group (one group
+on the solver's sides, the rest on the written file's): byte-entropy 1.96-5.37, strings 2.15-4.50, section entropies
+3.27-5.65 (4 files), histogram about unchanged; no group alone closes the gap, and looseness vs realizer weakness is not
+yet separated. Both hypotheses failed (fewer evasions than the smoke's 3; byte-entropy the main carrier). Next:
+1. **The user decides** among (recommended first): (a) one bounded tightening round — the exact block model of
+   overlapping windows, a bound on added-section entropies, realizer repairs for strings and sections — re-measured on
+   the 6 files, with a stop rule (if >= 3 still do not realize, go to (b)); (b) decision 7's option 3, lead A' with
+   another use (expert-set row, or Table A'2 on our own byte-level edits); (c) option 2, the tighter learned baseline,
+   as a sensitivity row only (~1 min); (d) pause A' for scaling A or the manuscript. A longer time limit is not a fix.
+2. Then as decided; check 2 (>= 70% of solver evasions realize) stands at 0/6 today.
+
+### Earlier: next steps (2026-10-30, fifth session: realizer built; two sound cuts; check 1b handed to the user)
 
 Done: the realizer (`scripts/ap_realize.py`: windows shaped in adjacent pairs and laid out from high entropy down;
 strings built per block carrying regex literals, spelled in mixed case); two sound cuts in the encoding: the upper side
