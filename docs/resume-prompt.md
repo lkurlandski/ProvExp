@@ -33,6 +33,15 @@ for claims C1-C4 if needed to explain what provenance provides.
 - The user's decision 6, accepted: A' stands on its own only if it rests on what A does not use (how far features move
   and how they move together under combined edits, claims C2-C3) and shows a result directions alone cannot.
 
+## First: read `run/116` if it ran overnight
+
+`run/116_ap_certified_budget.sh` (evidence for option (a)): containment on the new solver path, then the certified
+budget at 1, 4, 16, 32 KB (undefended: append and sections; PV: sections). Check `artifacts/experiments/ap_containment/
+report.json` (must contain every edit), `artifacts/experiments/ap_bracket/budget/{ref,pv}_*/report.json`, and the logs
+`artifacts/logs/ap_bracket_budget_*.log`; record the result in the script's comments (only once it has finished), and
+bring it into the decision: option (a) is worth discussing only if certified budgets spread out across files and
+detectors rather than all sitting at 1-4 KB. If it did not run, decide without it.
+
 ## The decision session
 
 Points to cover (follow the user's lead):
@@ -66,8 +75,8 @@ HiGHS directly through `highspy`, added to `requirements.txt`, so a timeout keep
 confirmed without presolve; `certify(..., minimize=True)` returns a proven floor), `scripts/ap_bracket.py` (the
 bracket per detector, edit family, and file; `--budget_frac 0 --budget_min B` for a fixed budget; `--max_sections`).
 Results: `artifacts/experiments/ap_bracket/` (`precheck` from `run/114`; `ref_append_{4096,65536,524288}` and
-`pv_sections_k1` from `run/115`). The full containment run (`run/111`) has not been re-run since the switch to
-`highspy` (a 48-edit smoke held); re-run it before any further result rests on the solver.
+`pv_sections_k1` from `run/115`). The full containment run (`run/111`) is step 1 of `run/116`; until it has passed on
+the `highspy` path (a 48-edit smoke held), no further result should rest on the solver.
 
 ## Standing rules
 
@@ -75,7 +84,7 @@ Be harsh about novelty; never raise deadlines; bring any no-go to the user befor
 on an extractor quirk; keep experiments' complexity down; run only jobs of ~10 minutes or less yourself (anything
 over ~15 minutes goes to the user as a `run/` script); estimate from the slowest case first; default 16 workers, never
 cap workers in Python; state a short hypothesis before each run; add a `run/` script for every experiment (next
-number: 116) and record results in its comments; commit in logical pieces after ruff and mypy pass; never edit
+number: 117) and record results in its comments; commit in logical pieces after ruff and mypy pass; never edit
 `tests/reference/`; answer methodology questions by reasoning, not by running data first.
 
 ## Notes
