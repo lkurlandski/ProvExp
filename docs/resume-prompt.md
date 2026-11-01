@@ -1,4 +1,4 @@
-# Resume: ProvExp (after 2026-11-01): the tightening round built; `run/113` is its verdict; read it, apply the stop rule
+# Resume: ProvExp (after 2026-11-01): the tightening round built; `run/113` (re-run after a solver fix) is its verdict
 
 Read `CLAUDE.md`, then `docs/status.md`'s top block (2026-11-01), `PLAN.md` ("Next steps (2026-11-01)"), and
 `docs/direction-A-prime-encoding.md` from "Built: findings (2026-10-31)" to the end of "Built: the tightening round".
@@ -18,7 +18,9 @@ decision 7 (its options). Skim `run/113_ap_tightening.sh` (hypothesis and the pr
   float32 tolerance of thresholds; the written strings held far more characters than planned). After the section
   step alone, the 3 files still evading wrote at 2.54-4.73 (were 4.13-6.76; threshold 1.10). With everything, a 480 s
   diagnostic left all 6 files undecided;
-- `run/113` (the user's): containment, the 6 files at 1,800 s, any evasion written as a file.
+- `run/113` (the user's): containment, the 6 files at 1,800 s, any evasion written as a file. Its first run stopped at
+  containment (1,104/1,105): HiGHS's presolve declared a feasible program infeasible; every infeasibility is now
+  confirmed without presolve (5b05181). It must be re-run.
 
 ## If `run/113` has run
 

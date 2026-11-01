@@ -1,5 +1,13 @@
 # Status
 
+**2026-11-01 (later): `run/113` stopped at its containment step (1,104 of 1,105 edits). The failure was HiGHS's
+presolve declaring a feasible program infeasible, not an unsound row; fixed (every infeasibility is confirmed without
+presolve; commit 5b05181). Waiting on the user: re-run `bash run/113_ap_tightening.sh` (~1 h).** No re-solve or
+realization has run on the tightened encoding beyond the 480 s diagnostic (all 6 undecided). Check 1b: still 0 of 4
+certificates needed.
+
+---
+
 **2026-11-01: decision 7 answered (user: option 1, the bounded tightening round); the round is built; its verdict is
 `run/113` (waiting on the user, ~1 h: containment, then the 6 files at 1,800 s, then any evasion written as a file).**
 Commits 7d002a4, ce584b8, (this wrap-up).

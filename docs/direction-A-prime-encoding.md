@@ -452,6 +452,14 @@ verdict is `run/113` at 1,800 s):
   undecided: the round removed the fake evasions but certified nothing; check 1b stays a no-go and decision 7 returns
   to the user.
 
+- **`run/113`, first run: stopped at containment (1,104 of 1,105).** The failing edit (goodware 22169273, 448 bytes
+  appended) is feasible once its string variables are pinned to the real file's values, and feasible unpinned with
+  HiGHS's presolve off or its default tolerances: presolve, at our 1e-9 tolerances, declared a feasible program
+  infeasible. A false infeasibility in check 1b would be a false certificate, so `Program.solve` now confirms every
+  infeasibility with a solve without presolve. (No certificate has ever been issued, so no earlier result is
+  affected.) Remaining risk: certificates rest on a floating-point MILP solver; a final certificate should be
+  re-checked independently (e.g., by a second solver or exact arithmetic) before it is reported.
+
 ## Code plan (after review)
 
 - `scripts/ap_encoding.py`: build the choice block from a file's item table and a `catalogue_checks` description of the
