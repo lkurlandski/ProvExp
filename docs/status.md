@@ -2,8 +2,8 @@
 
 **2026-11-01 (end of session): A' under review. After days on A', the user doubts it can give a result a security
 reviewer would find practically useful; the next session decides whether A' is salvaged or dropped (folded into A, or
-to the graveyard). Optional overnight run for the user: `run/116` (containment on the new solver path, then the certified budget at
-1-32 KB; ~3 h on 16 workers), evidence for option (a).** Commits 40affec..(this wrap-up).
+to the graveyard). **`run/116` is running** (started by the user 2026-11-01 16:37: containment on the new solver path, then the
+certified budget at 1-32 KB; ~2-3 h), evidence for option (a); read it first next session.** Commits 40affec..(this wrap-up).
 - This session: A' re-planned and adopted (`docs/direction-A-prime-plan.md`: brackets of each hardened detector's
   worst case, per edit family and combined; go/no-go G0-G3); `run/113` read (all 6 undecided at 30 min); step 1 built
   (`scripts/ap_bracket.py`; the solver minimizes and calls HiGHS directly via `highspy`, so floors survive timeouts);

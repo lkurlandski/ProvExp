@@ -71,10 +71,12 @@ Done this session: A' re-planned (`docs/direction-A-prime-plan.md`, adopted); st
 `run/115`): certificates only where the edits barely touch the detector (append on PV, partly circular) or at small
 budgets (4 KB); the relaxation is too loose above a few KB; G2 untested (no adversarially trained rows). The user doubts
 A' can give a practically useful result. Next:
-1. **Decide A''s fate with the user** (`docs/resume-prompt.md`): salvage (in what form, for which reviewer-relevant
+1. **Read `run/116`** (running since 2026-11-01 16:37: containment on the `highspy` path, then the certified budget
+   at 1-32 KB on the undefended model and PV), the evidence for the certified-budget salvage option.
+2. **Decide A''s fate with the user** (`docs/resume-prompt.md`): salvage (in what form, for which reviewer-relevant
    claim, against what alternative), fold into A, or drop to the graveyard. Bring the evidence (plan Section 12) and
    judge by the screening criteria (the gap only provenance makes cheap, a realistic competitor, a falsifiable check).
-2. If dropped or folded: return to A (scale-up, the adversarial-training baseline, a second toolkit) or screen B / C.
+3. If dropped or folded: return to A (scale-up, the adversarial-training baseline, a second toolkit) or screen B / C.
 
 ### Earlier: next steps (2026-11-01, planning session: A' re-planned)
 

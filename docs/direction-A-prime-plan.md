@@ -294,7 +294,10 @@ large budgets (risky: the relaxation, not the solver, is what fails).
 The user's assessment at the end of the session: after several days on A', it may not work out in any way a security
 reviewer would find practically useful. The next session decides whether A' can be salvaged to give a meaningful
 benefit to the research, or is dropped (folded into A, or recorded in `docs/graveyard.md`). Option (a) of Section 11
-(the certified budget) was not adopted; it was recommended for discussion only. Nothing is waiting to run.
+(the certified budget) was not adopted; it was recommended for discussion only. Its evidence is `run/116` (started by
+the user at the end of the session: containment on the `highspy` path, then the certified budget at 1, 4, 16, 32 KB;
+the undefended model with append and sections, PV with sections). Reading agreed in advance: (a) is worth discussing
+only if certified budgets spread out across files and detectors rather than all sitting at 1-4 KB.
 
 What A' has shown, for that decision:
 - **Sound:** the region contains every real edit (1,105 of 1,105); no certificate has ever landed on a file a real

@@ -1,4 +1,4 @@
-# Resume: ProvExp (after 2026-11-01, end of session): decide whether A' can be salvaged
+# Resume: ProvExp (after 2026-11-01, end of session): read run/116, then decide whether A' can be salvaged
 
 This session is a **decision, not a build**. After several days on direction A', the user doubts it can give a result
 a security reviewer would find practically useful. Decide with the user whether A' is salvaged (in what form, with
@@ -33,14 +33,19 @@ for claims C1-C4 if needed to explain what provenance provides.
 - The user's decision 6, accepted: A' stands on its own only if it rests on what A does not use (how far features move
   and how they move together under combined edits, claims C2-C3) and shows a result directions alone cannot.
 
-## First: read `run/116` if it ran overnight
+## First: read `run/116` (started by the user 2026-11-01 16:37)
 
 `run/116_ap_certified_budget.sh` (evidence for option (a)): containment on the new solver path, then the certified
 budget at 1, 4, 16, 32 KB (undefended: append and sections; PV: sections). Check `artifacts/experiments/ap_containment/
 report.json` (must contain every edit), `artifacts/experiments/ap_bracket/budget/{ref,pv}_*/report.json`, and the logs
 `artifacts/logs/ap_bracket_budget_*.log`; record the result in the script's comments (only once it has finished), and
 bring it into the decision: option (a) is worth discussing only if certified budgets spread out across files and
-detectors rather than all sitting at 1-4 KB. If it did not run, decide without it.
+detectors rather than all sitting at 1-4 KB. If it is still running, say so and do not edit the script; if it failed,
+report how (a containment failure stops it at step 1: then no certificate on the new solver path can be trusted).
+
+Summarize it per detector and family as: files certified at each budget, and each file's largest certified budget
+(the certified budget is monotone: certified at B implies certified at every smaller budget, so a file certified at a
+larger budget but not a smaller one would be a bug, and a timeout at a smaller budget only means undecided).
 
 ## The decision session
 
