@@ -22,6 +22,13 @@
 # evade as files; if there are none because every file is undecided, the round has removed the fake evasions but
 # certified nothing, check 1b is still a no-go, and decision 7 returns to the user with that result.
 #
+# First run (user, 2026-11-01): stopped at step 1. Containment held on 1,104 of 1,105 edits; the one failure (goodware
+# 22169273, 448 bytes appended) was not an unsound row: with its string variables pinned to the real file's values the
+# program is feasible, and with presolve off (or HiGHS's default tolerances) the unpinned program is feasible too.
+# HiGHS's presolve declared a feasible program infeasible at our 1e-9 tolerances. Fixed in Program.solve: an
+# infeasibility now stands only if a solve without presolve confirms it (this also guards check 1b's certificates).
+# Steps 2-3 did not run. To re-run in full.
+#
 # Steps: (1) containment (run 111; the encoding changed; it must hold on every edit, ~25 min: the block model made
 # each check ~6x slower), (2) the 6 files at 1,800 s each in parallel (~32 min), (3) the evasions written as files
 # and scored (~5 min).

@@ -251,6 +251,22 @@ class TestEntropyCuts:
         assert _feasible(build, True)
 
 
+class TestSolve:
+
+    def test_infeasible_confirmed_without_presolve(self) -> None:
+        # x + y >= 3 with x, y binary: infeasible, and still so once confirmed without presolve.
+        p = Program()
+        x, y = p.binary("x"), p.binary("y")
+        p.row(Lin.of(x) + Lin.of(y), lo=3.0)
+        assert p.solve(time_limit=10).status == 2
+
+    def test_feasible(self) -> None:
+        p = Program()
+        x, y = p.binary("x"), p.binary("y")
+        p.row(Lin.of(x) + Lin.of(y), lo=2.0)
+        assert p.solve(time_limit=10).status == 0
+
+
 class TestMixtureFloor:
 
     @pytest.mark.parametrize("seed", range(50))

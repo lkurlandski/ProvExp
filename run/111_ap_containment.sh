@@ -19,6 +19,9 @@
 # Re-ran 2026-11-01 (Claude, ~8 min), after per-section byte counts tied to each added section's entropy (Pinsker
 # above, the dominant share below; Pinsker also on the file's, the overlay's, and the strings' entropies): holds
 # (1,105 of 1,105 on every check).
+# Re-ran 2026-11-01 (user, step 1 of run 113, ~25 min), after the block model: 1,104 of 1,105 contained (exact and
+# held-fixed 1,105); the failure was HiGHS's presolve declaring a feasible program infeasible, not an unsound row
+# (feasible with presolve off). Program.solve now confirms every infeasibility without presolve.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 source env/bin/activate

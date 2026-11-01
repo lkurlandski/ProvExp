@@ -22,6 +22,7 @@ import math
 from pathlib import Path
 import re
 import sys
+import time
 from typing import Any
 from typing import Optional
 from typing import Union
@@ -627,7 +628,10 @@ class Program:
         # H > t (z = 0): within Pinsker's L1 distance of uniform (useful only below the trivial distance 2).
         r = pinsker_radius(t, e.symbols)
         if e.dev is not None and r < 2.0:
-            self.at_most_when(e.dev - r * e.total, z, when=0)
+            # Big-M from the L1 distance's own bound (at most 2 * total, with each deviation at its least), far smaller
+            # than one from the deviation variables' bounds (the symbol count times the largest total).
+            m = (2.0 - r) * self.bounds(e.total)[1]
+            self.row(e.dev - r * e.total - Lin.of(z, m), hi=0.0, switch=z)
         # H > t (z = 0) near the maximum: every symbol holds at least the least share.
         least = least_share(t, e.symbols)
         if least > 0.0:
@@ -702,14 +706,23 @@ class Program:
             c[v] = k
         c = c * unit
         constraints = LinearConstraint(a, rlo, rhi) if len(rlo) else ()
-        with warnings.catch_warnings():
-            # scipy passes the options it does not know (the tolerances) to HiGHS verbatim, with a warning.
-            warnings.filterwarnings("ignore", "Unrecognized options", RuntimeWarning)
-            res = milp(c, integrality=np.array(self.integer, dtype=float), bounds=(lb / unit, ub / unit),
-                       constraints=constraints, options={
-                           "time_limit": time_limit, "disp": False,
-                           "primal_feasibility_tolerance": FEASIBILITY_TOL, "dual_feasibility_tolerance": FEASIBILITY_TOL,
-                           "mip_feasibility_tolerance": FEASIBILITY_TOL})
+        def run(presolve: bool, seconds: float) -> Any:
+            with warnings.catch_warnings():
+                # scipy passes the options it does not know (the tolerances) to HiGHS verbatim, with a warning.
+                warnings.filterwarnings("ignore", "Unrecognized options", RuntimeWarning)
+                return milp(c, integrality=np.array(self.integer, dtype=float), bounds=(lb / unit, ub / unit),
+                            constraints=constraints, options={
+                                "time_limit": seconds, "disp": False, "presolve": presolve,
+                                "primal_feasibility_tolerance": FEASIBILITY_TOL, "dual_feasibility_tolerance": FEASIBILITY_TOL,
+                                "mip_feasibility_tolerance": FEASIBILITY_TOL})
+
+        t0 = time.time()
+        res = run(True, time_limit)
+        if res.status == 2:
+            # NOTE: HiGHS's presolve has declared a feasible program infeasible at these tolerances (containment, run
+            # 113): an infeasibility stands only if the solve without presolve confirms it (given the remaining time,
+            # and at least a minute); otherwise that solve's outcome is returned.
+            res = run(False, max(60.0, time_limit - (time.time() - t0)))
         if res.x is not None:
             res.x = res.x * unit
         return res
@@ -1430,8 +1443,6 @@ def certify(enc: Encoding, ens: Ensemble, below: float, time_limit: float) -> di
         status, message, seconds, evaded (a choice was found), certified (proved infeasible), the found score, the
         program's size, and (if evaded) the choice variables' values, the side of every split, and the solution.
     """
-    import time
-
     P = enc.program
     z = link_ensemble(enc, ens)
     leaves = [P.var(f"leaf{i}", 0, 1) for i in range(ens.values.size)]
