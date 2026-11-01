@@ -65,7 +65,17 @@ introduction and a simple baseline (writing decision for later).
   detector; check 1b decides it. **Check 1b (2026-10-31): no-go** (0/13 certified, 6 solver evasions, 0 of 6 realize);
   decision 7's options are with the user.
 
-## Next steps (2026-11-01, end of session: A' to be re-planned from scratch)
+## Next steps (2026-11-01, planning session: A' re-planned)
+
+A' plan adopted (`docs/direction-A-prime-plan.md`); `run/113` read (all 6 undecided). Next, in order (plan Section 6):
+1. **Pre-check on PV (G1):** solver minimizes the score and records its proven bound; a cheap per-tree floor; a static
+   count of splits on movable features; per family (append only, sections only) and combined; `run/114` for the user
+   on PV-seen / PV-all files no attack evades, the undefended model's 13 as reference.
+2. **Hardened rows:** adversarial training on our search's edits and on the toolkit's outputs (`run/` scripts for the
+   user), the battery re-run on each.
+3. **Main table at pilot scale (G2, G3).** 4. Scale only when the user decides.
+
+### Earlier: next steps (2026-11-01, end of session: A' to be re-planned from scratch)
 
 Done this session: the tightening round (decision 7 option 1) built and tested (commits 7d002a4, ce584b8, 5b05181);
 the histogram and most of the strings gap were realizer bugs, now fixed; a HiGHS presolve false infeasibility found and

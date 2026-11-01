@@ -23,8 +23,9 @@ and manuscript remain as source material. Deadlines and conference cycles are no
   Table A0 in S6), and `docs/direction-A-A1-design.md` (Table A1/A2 design, decisions, and results).
   `docs/upstream-issues.md`: thrember (and secml-malware) bugs for the user to report upstream.
 - Direction A' (second application, chosen 2026-10-27): `docs/literature-Aprime-2026-10-27.md` (closest work, harsh
-  read); `docs/direction-A-prime-mock.md` (the mock: Table A'1, realizable worst-case evaluation, is the main
-  result; decisions accepted, check 0 passed). The automatic derivation both A and A' rest on:
+  read); **`docs/direction-A-prime-plan.md` (the adopted plan, 2026-11-01: brackets of each hardened detector's worst
+  case, per edit family and combined; go/no-go G0-G3; read first)**; `docs/direction-A-prime-mock.md` (the earlier
+  mock and its history: checks 0-2, 1b, decision 7, the re-evaluation). The automatic derivation both A and A' rest on:
   `docs/item-layer-design.md` (A's directions and predictors are still hand-written until it is built). The expert-set
   row: `docs/direction-A-expert-set.md`.
 - `docs/graveyard.md`: ideas and directions that did not pan out and why.

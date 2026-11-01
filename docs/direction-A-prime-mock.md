@@ -1,5 +1,9 @@
 # Direction A': mock of the paper's tables (2026-10-27)
 
+**Superseded 2026-11-01 by `docs/direction-A-prime-plan.md`** (the re-planned A': brackets per hardened detector, per
+edit family and combined; the go/no-go G0-G3; adopted by the user). This document keeps the history: checks 0-2 and
+1b, decision 7, and the re-evaluation.
+
 **Refreshed 2026-10-30 (A' pilot, steps 1-3).** What changed since the first draft:
 - The C1 and C4 engines exist (derivation steps 1-9), so the pilot uses the engine; decision 6's hand predictors are
   no longer needed. C3 (the edit-choice encoding with magnitude bounds) is described in the model but not built.

@@ -1,5 +1,20 @@
 # Status
 
+**2026-11-01 (planning session): A' re-planned and adopted (`docs/direction-A-prime-plan.md`). `run/113` read: all 6
+files undecided at 30 min (containment 1,105/1,105), no certificate, no solver evasion. Next: step 1, the pre-check on
+PV (`run/114`).**
+- The plan: audit hardened detectors by a bracket of each file's worst case (floor: the solver's proven bound over the
+  computed region; ceiling: the best real attack), per edit family (append only, sections only) and combined; the
+  budget-only and learned regions as the contrast. Go/no-go G0 (soundness), G1 (at most half open on PV at 30 min),
+  G2 (an adversarially trained detector certifies >= 10% of the files no attack evades: A' must show what directions
+  alone cannot), G3 (the contrast holds).
+- User's decisions: brackets as the headline; start with undefended, PV-seen, PV-all, two adversarially trained rows
+  (our search's edits; the toolkit's, required), A's detector as sanity; more defenses later; per family and combined;
+  expert-set row dropped; if G2 fails, A' folds into A (it must explore another angle of the model to stand alone).
+- Dropped: check 2 (writing solver evasions as files), the expert-set row, Table A'2 as a standalone.
+
+---
+
 **2026-11-01 (end of session): A' is on hold for a fresh planning session (user). Check 1b's go/no-go was
 re-evaluated and judged poorly built: its no-go does not show A' is a dead end. `run/113` (the tightening round's
 verdict, re-run by the user after the solver fix) is running or done; read it in the planning session.**
