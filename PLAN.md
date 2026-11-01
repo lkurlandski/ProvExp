@@ -65,7 +65,24 @@ introduction and a simple baseline (writing decision for later).
   detector; check 1b decides it. **Check 1b (2026-10-31): no-go** (0/13 certified, 6 solver evasions, 0 of 6 realize);
   decision 7's options are with the user.
 
-## Next steps (2026-11-01: the tightening round built; `run/113` with the user)
+## Next steps (2026-11-01, end of session: A' to be re-planned from scratch)
+
+Done this session: the tightening round (decision 7 option 1) built and tested (commits 7d002a4, ce584b8, 5b05181);
+the histogram and most of the strings gap were realizer bugs, now fixed; a HiGHS presolve false infeasibility found and
+guarded. Then the user and Claude re-evaluated check 1b: it tested certification on the undefended EMBER GBDT (failure
+expected; EMBER models are known to be fragile), its 20% threshold was ungrounded, it counted undecided as failure,
+and check 2 is not a prerequisite for certificates. The no-go does not decide A'; decision 7's remaining options
+(expert-set row, Table A'2, tighter learned baseline, pause) are not to be chosen on its basis. The user doubts the
+expert-set row's value (a little-cited paper) and Table A'2's novelty (Level Up, Chen et al.); option 3 is welcome as
+a column. Next:
+1. **Fresh planning and brainstorming session for A'** (new chat, `docs/resume-prompt.md`): settle the aim, the
+   table with the model component behind each column, and a go/no-go that tests the claim on informative cases.
+   Candidate starting point: compare hardenings (undefended, PV-seen/PV-all, adversarially trained, trained on
+   realizable edits, monotone) by certified / evaded (battery and adaptive search) / undecided, with learned and
+   budget-only constraints as the contrast. Main risk: tractability (the program is ~225 K variables, ~43 K binaries).
+2. Read `run/113` (containment, the 6 files at 1,800 s, any evasion written) as input to that session.
+
+### Earlier: next steps (2026-11-01: the tightening round built; `run/113` with the user)
 
 Done: the user chose decision 7's option 1. Built (commits 7d002a4, ce584b8): section entropies tied to per-section
 counts; the exact block model of the byte-entropy windows; realizer repairs (sections, blocks, string reserve,

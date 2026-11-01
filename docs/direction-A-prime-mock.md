@@ -284,6 +284,8 @@ Each is a short job on the pilot, on today's hand-coded predictors.
    **Tightening round (decision 7 option 1, user, 2026-11-01): built; verdict pending (`run/113`).** Section entropies
    tied to their byte counts, the exact block model of the windows, realizer repairs. The histogram and most of the
    strings gap were the realizer; sections now track. At 480 s all 6 files are undecided.
+   **Re-evaluated (2026-11-01, with the user): this check was poorly built; its no-go does not decide A'.** See
+   "Re-evaluation of the go/no-go" below.
 3. **The computed constraints matter on a defended detector built without them.** On the expert-set detector (once
    its row exists), the computed-constraint solver must find realized evasions on a material share (say 10% or more)
    of the files it detects. *No-go:* if their hand-written add-only assumptions already hold under M_full, the
@@ -297,6 +299,44 @@ the end of the file when it locates the overlay, so appending can lower `section
 the 11 overrun files are cut at the dataset's 4 MB cap). The `body_*` sums are not affected (checked on all 100 pilot
 files). The constraints treat `overlay_size` as able to move both ways under appending. This is the extractor's
 real behavior, not a bug to patch. It is one of the features where computed and hand rules differ, with a witness.
+
+## Re-evaluation of the go/no-go (2026-11-01, with the user)
+
+Checks 1b and 2 were judged poorly constructed, and A' is to be re-planned in a fresh session before any switch of
+direction. The reasons, kept here so the next plan avoids them:
+
+- **The wrong detector.** Both checks ran on the undefended 10% GBDT (`seed-0-s10-ref`, standard thrember features).
+  EMBER models are known to be very vulnerable, so failing to certify files there is expected and says little about
+  the tool. This document's own novelty notes already put A's value on defended detectors built without our
+  constraints; the check drifted from that.
+- **An ungrounded threshold.** 20% of the battery-surviving files came from the contrast "only the computed region
+  certifies anything"; the only evidence was check 0, whose region (an L0 budget of one feature) is far smaller than
+  append + 3 sections within 512 KB.
+- **Undecided counted as failure.** 7 of 13 files were undecided at 1,800 s: a tractability limit, not looseness and
+  not vulnerability. A check must report undecided separately.
+- **Pass or fail, the contribution stays unclear.** "4 of 13 certified on one undefended model" would not have been a
+  strong result either.
+- **Check 2 is not a prerequisite for certificates.** A certificate needs only that the region contains every real
+  file (containment); solver evasions need not realize for the certified share to mean something. The attack side can
+  come from the battery and the adaptive search, which report only re-extracted evasions. Realizing the solver's
+  evasions is a separate (and hard) claim: byte-order features (byte-entropy windows, strings) are over-approximated,
+  and the solver finds evasions in that slack. Much of the past days' gap was the realizer; checking the realizer's
+  fidelity in isolation first would have found that sooner.
+
+**Candidate re-aim (not adopted; for the planning session).** "Under realistic edits, which defenses are provably
+robust?" Per detector: certified % (sound lower bound on robustness), evaded % by real attacks (sound lower bound on
+vulnerability), undecided (the bracket's width), and the same solver with learned and budget-only constraints as the
+practitioner's alternatives (decision 7's option 3, the 95th-percentile learned region, fits as a column). Rows:
+undefended, PV-seen, PV-all, adversarially trained (toolkit), trained on realizable edits (Table A'2 as a row), maybe
+a monotone (Incer-style) model; our own C4 detector certifies by construction (sanity only). A sketch of a
+go/no-go: (1) discrimination: some hardened detector certifies materially more (say 15 points) than the undefended
+one, and the ranking agrees with real attack success; (2) tractability: at most about half undecided on hardened rows
+at 30 min; (3) soundness: no certificate on a file evaded with in-catalogue edits; certificates confirmed without
+presolve and re-checked by a second method before reporting; (4) contrast: learned or budget-only constraints give a
+materially different picture on some row. Cheap pre-check proposed: the existing pipeline on the PV models for a few
+files. Risks: tractability (~225 K variables, ~43 K binaries now) and brackets too wide on every row to rank anything.
+User's view of decision 7's other options: the expert-set row buys little (a little-cited paper); Table A'2's novelty
+is doubtful as a standalone (Level Up, Chen et al.); a tighter learned baseline is welcome.
 
 ## Harsh notes on novelty
 

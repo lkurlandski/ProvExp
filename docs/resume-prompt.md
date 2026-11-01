@@ -1,73 +1,95 @@
-# Resume: ProvExp (after 2026-11-01): the tightening round built; `run/113` (re-run after a solver fix) is its verdict
+# Resume: ProvExp (after 2026-11-01): fresh planning and brainstorming session for direction A'
 
-Read `CLAUDE.md`, then `docs/status.md`'s top block (2026-11-01), `PLAN.md` ("Next steps (2026-11-01)"), and
-`docs/direction-A-prime-encoding.md` from "Built: findings (2026-10-31)" to the end of "Built: the tightening round".
-Then `docs/direction-A-prime-mock.md`: check 1b (with its 2026-10-31 result and the tightening round), check 2, and
-decision 7 (its options). Skim `run/113_ap_tightening.sh` (hypothesis and the proposed reading), `scripts/ap_encoding.py`
-(`pinsker_radius`, `dominant_share`, `least_share`, `fano_share`, `Encoding._blocks`, `Program.tied`, `Encoding.fix`),
-`scripts/ap_realize.py` (`count_bounds`, `nudge`, `_place`, `realize`), and `scripts/ap_check2_realize.py`.
+This session is for **planning, not building**. The user wants to think A' through from scratch before anything else
+is run: its aim, what it claims, against what, and a go/no-go that actually tests that claim. Do not write code or start
+experiments until the user agrees on a plan.
 
-**Start by recapping for the user in plain language** where things stand, before asking anything:
-- the research in three sentences; A' in two (a detector's true worst case against edits an attacker can make, from an
-  exact solver over the attacker's choices; a certificate when no edit evades, edits written as a real file when one
-  does);
-- check 1b (2026-10-31) was a no-go: 0 certified of 13, 6 solver evasions, none evading as files;
-- last session (2026-11-01, user chose the bounded tightening round): built section entropies tied to each section's
-  byte counts, the exact model of the overlapping 2 KB entropy windows, and realizer repairs. The histogram gap and
-  most of the strings gap were the realizer, not the solver's model (the solver's fractional byte counts sat within a
-  float32 tolerance of thresholds; the written strings held far more characters than planned). After the section
-  step alone, the 3 files still evading wrote at 2.54-4.73 (were 4.13-6.76; threshold 1.10). With everything, a 480 s
-  diagnostic left all 6 files undecided;
-- `run/113` (the user's): containment, the 6 files at 1,800 s, any evasion written as a file. Its first run stopped at
-  containment (1,104/1,105): HiGHS's presolve declared a feasible program infeasible; every infeasibility is now
-  confirmed without presolve (5b05181). It must be re-run.
+## Read first
 
-## If `run/113` has run
+`CLAUDE.md`; `docs/status.md`'s top block (2026-11-01, end of session); `PLAN.md` ("Next steps (2026-11-01, end of
+session)"); `docs/direction-A-prime-mock.md` in full, especially "The pitch in plain terms", Table A'1, Table A'2, the
+checks, **"Re-evaluation of the go/no-go (2026-11-01)"**, "Harsh notes on novelty", and decision 7;
+`docs/literature-Aprime-2026-10-27.md` (closest work: Kantchelian et al., Chen et al. 2020 for PDF, Simonetto,
+Sheatsley, Bostani's Level Up, Incer et al., HRAT); `docs/direction-A-summary.md` (where direction A stands: A' must
+complement it); `docs/direction-A-prime-encoding.md`, skimming to "Built: the tightening round" (what the encoding can
+and cannot do). Skim `docs/feature-provenance-model.md` (claims C1-C4) if needed to explain what provenance provides.
 
-1. Containment: `artifacts/experiments/ap_containment/report.json` must contain every edit (the script stops if not).
-   Record it in `run/111`'s comments.
-2. Solves: `artifacts/experiments/ap_tightening/{report.json,solves.parquet}`; written files:
-   `realized/realized.parquet` (solver vs real score, per-group attribution, differing splits). Logs:
-   `artifacts/logs/ap_tightening_{solve,realize}.log`.
-3. Apply the stop rule: >= 3 solver evasions that do not evade as files -> decision 7 option 2 (lead A' with another
-   use; re-open the mock first). If every file is undecided, the reading proposed in `run/113` (fake evasions gone,
-   nothing certified, check 1b still a no-go) needs the user's confirmation; bring it and the options to the user.
-   If most evasions realize, propose re-running check 1b in full on the tightened encoding (user, ~30 min+).
-4. Record the results in `run/113`'s comments, the encoding note, the mock (check 1b, check 2), status, PLAN.
+## Then, before asking anything, recap for the user in plain language
 
-## If it has not run
+- The research in three sentences, and direction A in two.
+- What A' set out to do: a detector's true worst case against realistic file edits, from an exact solver over the
+  attacker's choices, with every feature written as a function of those choices (computed from the extractor through
+  provenance); certificates when no edit evades.
+- What happened: check 1b (certify >= 4 of 13 battery-surviving files on the undefended GBDT) failed: 0 certified,
+  6 solver "evasions" that did not work as files, 7 undecided. A bounded tightening round (2026-11-01) tied section
+  entropies to their bytes, modeled the overlapping byte-entropy windows exactly, and fixed the realizer (the
+  histogram gap and most of the strings gap were realizer bugs, not looseness); a 480 s diagnostic left all 6 files
+  undecided. A HiGHS presolve false "infeasible" was found and guarded (every infeasibility is now confirmed without
+  presolve).
+- The re-evaluation: the checks ran on the undefended EMBER model (failure expected), the threshold was ungrounded,
+  undecided was counted as failure, and realizing solver evasions is not needed for certificates. So the no-go does
+  not decide A'.
+- `run/113`'s result (the tightening round's verdict at 1,800 s on the 6 files), if it has run: read
+  `artifacts/experiments/ap_containment/report.json` (must contain every edit), `artifacts/experiments/ap_tightening/`
+  (`report.json`, `solves.parquet`, `realized/realized.parquet`) and the logs `artifacts/logs/ap_tightening_*.log`;
+  record it in `run/113`'s and `run/111`'s comments (only once the script has finished; never edit a running script).
 
-Ask the user to run `bash run/113_ap_tightening.sh` (~1 h). Do not run it yourself.
+## The planning session
+
+Brainstorm with the user, openly and critically. Points to cover (not a script; follow the user's lead):
+
+1. **The aim.** What question does A' answer that matters to the community, and for whom? The candidate on the
+   table (not adopted): compare hardenings by what can be proved about them under realistic edits: certified %,
+   evaded % by real attacks, undecided, with learned and budget-only constraints as the practitioner's alternatives.
+   Also weigh alternatives the user or you raise (e.g., where certification is the wrong tool and something else
+   provenance enables is better; whether A' should be about defenses, constraints, or evaluation methodology).
+2. **Novelty, harshly.** Against Chen et al. 2020 (verified PDF classifiers with edit-derived regions), Kantchelian,
+   Simonetto/Sheatsley/Bostani (constraints), Level Up (realizable adversarial training), Incer (monotone). What is
+   only possible because the mapping is computed from the extractor? The user doubts the expert-set row (a
+   little-cited paper) and Table A'2 as a standalone (Level Up, Chen et al.); a tighter learned baseline is welcome as
+   a column.
+3. **Which detectors.** Defenses built without our constraints: undefended, PV-seen, PV-all (exist), adversarially
+   trained (toolkit), trained on realizable edits, monotone. Our own C4 detector certifies by construction (sanity
+   only).
+4. **Feasibility.** Tractability is the main risk: the program is ~225 K variables, ~230 K rows, ~43 K binaries on a
+   4 MB file; most solves were undecided at 30 min. Options to discuss: smaller catalogues or budgets, per-file time
+   budgets, decomposition, a better solver (only HiGHS via scipy is installed), certifying on hardened models that
+   split on fewer reachable features. A cheap pre-check was proposed: the existing pipeline on the PV models for a few
+   files (a `run/` script for the user; > 15 min).
+5. **The go/no-go.** It must test the claim on informative cases, keep undecided separate, ground its thresholds, and
+   validate each stage in isolation. A sketch is in the mock's re-evaluation section.
+6. **The mock.** End with a revised mock of the main table (each column's model component, invented numbers marked),
+   the screening criteria, and the go/no-go, written into `docs/direction-A-prime-mock.md` once the user agrees.
+
+For every decision you put to the user: say what it is, give a concrete example, and say what each choice changes.
+Never use doc-internal labels (C3, M_full, G7, A4) without saying what they are.
 
 ## State of the code
 
-Committed (7d002a4, ce584b8, and the wrap-up); ruff and mypy pass; `tests/test_ap_encoding.py` and
-`tests/test_ap_realize.py` pass (light checks). Containment: 1,105/1,105 after the section step; after the block model
-only a 16-edit smoke (all contained). The block model made the program ~4x larger (~225 K variables, ~230 K rows, ~43 K
-binaries) and each containment check ~6x slower.
-
-Open realizer items, if needed: about 10-20% of the remaining differing byte-entropy and string splits are knife-edge
-(within a count of the threshold); `drop_tail` is still not honored. The pooled-window path of the realizer
-(`shape_block`, used when an answer has no block counts) is kept only for answers from older encodings.
+All committed; ruff and mypy pass; `tests/test_ap_encoding.py` and `tests/test_ap_realize.py` pass. Main pieces:
+`scripts/ap_encoding.py` (the edit-choice encoding: append + up to 3 sections within the budget; per-section counts;
+the block model of windows; Pinsker / dominant-share / least-share / Fano cuts; `Program.solve` confirms
+infeasibility without presolve), `scripts/ap_realize.py` (writes a solver answer as a file), `scripts/ap_check1b.py`
+(certification runs; `--names` filter), `scripts/ap_check2_realize.py` (writes, scores, and attributes solver
+evasions), `scripts/ap_containment.py` (`run/111`). Saved solutions only load with the encoding they were solved with.
 
 ## Standing rules
 
 Be harsh about novelty; never raise deadlines; bring any no-go to the user before dropping anything; no result may rest
-on an extractor quirk; keep the experiments' complexity down; **run only jobs of ~10 minutes or less yourself (anything
-over ~15 minutes goes to the user as a `run/` script); estimate from the slowest case before starting**; default 16
-workers, never cap workers in Python; state a short hypothesis before each run; add a `run/` script for every experiment
-(next number: 114) and record its results in the script's comments once read; re-run `run/111` after any change to the
-encoding, and it must contain every edit; commit in logical pieces after ruff and mypy pass; never edit
-`tests/reference/`; do not run the full test suite while the user's jobs run.
+on an extractor quirk; keep experiments' complexity down; **run only jobs of ~10 minutes or less yourself (anything
+over ~15 minutes goes to the user as a `run/` script); estimate from the slowest case first**; default 16 workers,
+never cap workers in Python; state a short hypothesis before each run; add a `run/` script for every experiment (next
+number: 114) and record results in its comments; re-run `run/111` after any change to the encoding; commit in logical
+pieces after ruff and mypy pass; never edit `tests/reference/`; do not run the full test suite while the user's jobs
+run; answer methodology questions by reasoning, not by running data first.
 
 ## Notes
 
-- `papers/`, `REVIEW*.md`, `TODO.md`, `docs/checkpoint-prompt.md`, `make-manuscript.sh`, and `slides/` are untracked;
-  leave them.
-- The user still owes the upstream reports in `docs/upstream-issues.md` (incl. item 6, Gimenez et al.'s quirks).
+- Untracked, leave alone: `papers/`, `REVIEW*.md`, `TODO.md`, `docs/checkpoint-prompt.md`, `make-manuscript.sh`,
+  `slides/`.
+- The user still owes the upstream reports in `docs/upstream-issues.md`.
 - A' detectors: `artifacts/models/gbdt/seed-0-s10-{ref,pv-seen,pv-all}`; thresholds at 1% FPR from each model's
-  `ts_predictions.parquet` (ref: raw 1.103).
-- Saved solutions only load with the encoding they were solved with (variable names must match; `ap_check2_realize`
-  checks the count). Run 112's solutions are from the encoding before 7d002a4.
-- Solver: HiGHS through `scipy.optimize.milp`; unknown options (the 1e-9 tolerances) pass through verbatim.
-- Kill background jobs by PID, not with `pkill -f` on a pattern that also matches your own shell's command line.
+  `ts_predictions.parquet` (ref: raw 1.103). Battery evasions: unconstrained 27/47, PV-seen 15/22, PV-all 15/22. The
+  expert-set monotone model (run 106) detects 8 of 50 pilot malware.
+- Kill background jobs by PID, never with `pkill -f`/`pgrep -f` on a pattern that matches your own shell's command
+  line (it happened again this session).

@@ -1,5 +1,23 @@
 # Status
 
+**2026-11-01 (end of session): A' is on hold for a fresh planning session (user). Check 1b's go/no-go was
+re-evaluated and judged poorly built: its no-go does not show A' is a dead end. `run/113` (the tightening round's
+verdict, re-run by the user after the solver fix) is running or done; read it in the planning session.**
+Commits 7d002a4..(this wrap-up).
+- This session: the bounded tightening round (decision 7 option 1) built: per-section counts tied to section
+  entropy; the exact block model of the byte-entropy windows; realizer repairs (string reserve, knife-edge nudge, block
+  and section counts). The histogram and most of the strings gap were the realizer. First `run/113`: containment
+  1,104/1,105, the miss a false "infeasible" from HiGHS's presolve (fixed: every infeasibility confirmed without
+  presolve; this also guards certificates).
+- Re-evaluation (user + Claude): checks 1b and 2 ran on the *undefended* EMBER GBDT, the least informative case;
+  1b's 20% threshold had no basis; "undecided" (tractability) was counted as failure; and check 2 (solver evasions
+  realize) is not needed for certification. Candidate re-aim (not adopted; to be planned fresh): compare hardenings
+  by certified / evaded / undecided, with learned and budget-only constraints as the contrast.
+  `docs/direction-A-prime-mock.md`, "Re-evaluation of the go/no-go (2026-11-01)".
+- Waiting on the user: a new chat for A' planning and brainstorming (`docs/resume-prompt.md`).
+
+---
+
 **2026-11-01 (later): `run/113` stopped at its containment step (1,104 of 1,105 edits). The failure was HiGHS's
 presolve declaring a feasible program infeasible, not an unsound row; fixed (every infeasibility is confirmed without
 presolve; commit 5b05181). Waiting on the user: re-run `bash run/113_ap_tightening.sh` (~1 h).** No re-solve or
