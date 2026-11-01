@@ -288,3 +288,23 @@ Options for the user: (a) re-aim the headline to the certified budget per file a
 at the full budget beside it, and G2 as "adversarial training raises the certified budget"; (b) fold A' into A as a
 section (PV's append certificates, the contrast with learned constraints); (c) invest in a different formulation for
 large budgets (risky: the relaxation, not the solver, is what fails).
+
+## 12. End of session (2026-11-01): A' under review
+
+The user's assessment at the end of the session: after several days on A', it may not work out in any way a security
+reviewer would find practically useful. The next session decides whether A' can be salvaged to give a meaningful
+benefit to the research, or is dropped (folded into A, or recorded in `docs/graveyard.md`). Option (a) of Section 11
+(the certified budget) was not adopted; it was recommended for discussion only. Nothing is waiting to run.
+
+What A' has shown, for that decision:
+- **Sound:** the region contains every real edit (1,105 of 1,105); no certificate has ever landed on a file a real
+  attack evaded; every infeasibility is confirmed without presolve.
+- **Certifies only where the edits barely touch the detector:** append on PV (13% of its splits on moved features),
+  every covered file in ~10 s; partly circular, since PV was built from padding and section attacks. Against the
+  non-circular learned region (0 of PV-seen's 22 certified, run 110) that is a real contrast.
+- **Fails wherever the detector relies on movable features:** the undefended model at 64 KB and above, PV under
+  added sections, with the relaxation both slow (one block per KB) and far too loose (LP floor -10.8 at 64 KB against
+  a threshold of 1.10). Small budgets (4 KB) give real floors and some certificates (2 of 13).
+- **Coverage gaps:** many files cannot take an added section (no free section-table slot), so the per-family and
+  combined comparison (decision 4) reaches few files.
+- **Not built:** the adversarially trained rows (G2 untested); a second check of certificates by another method.

@@ -1,9 +1,21 @@
 # Status
 
-**2026-11-01 (planning session): A' re-planned and adopted (`docs/direction-A-prime-plan.md`). `run/113` read: all 6
-files undecided at 30 min (containment 1,105/1,105), no certificate, no solver evasion. `run/114` read: G1
-passes for append, fails for sections. `run/115`: certificates only at small budgets (4 KB: 2 of 13 on the undefended
-model); the relaxation is too loose above a few KB. Decision on the headline waiting on the user.**
+**2026-11-01 (end of session): A' under review. After days on A', the user doubts it can give a result a security
+reviewer would find practically useful; the next session decides whether A' is salvaged or dropped (folded into A, or
+to the graveyard). Nothing is running or waiting to run.** Commits 40affec..(this wrap-up).
+- This session: A' re-planned and adopted (`docs/direction-A-prime-plan.md`: brackets of each hardened detector's
+  worst case, per edit family and combined; go/no-go G0-G3); `run/113` read (all 6 undecided at 30 min); step 1 built
+  (`scripts/ap_bracket.py`; the solver minimizes and calls HiGHS directly via `highspy`, so floors survive timeouts);
+  `run/114` (G1 passes for append on PV, fails for sections; the undefended model certifies nothing); `run/115` (append
+  budgets on the undefended model: 4 KB certifies 2 of 13, 64 KB and 512 KB nothing; one section on PV: 0 of 4). The
+  LP relaxation grows with the budget and is far too loose above a few KB (plan Sections 9-12).
+- Open options (none adopted): (a) a certified budget per file (largest append or section proven not to evade, up to
+  ~16-32 KB) beside the attack ceiling; (b) fold A' into A as a section (PV's append certificates vs learned
+  constraints); (c) a new large-budget formulation (risky). Next: `docs/resume-prompt.md`.
+
+---
+
+**2026-11-01 (planning session, superseded by the block above): A' re-planned and adopted.**
 - The plan: audit hardened detectors by a bracket of each file's worst case (floor: the solver's proven bound over the
   computed region; ceiling: the best real attack), per edit family (append only, sections only) and combined; the
   budget-only and learned regions as the contrast. Go/no-go G0 (soundness), G1 (at most half open on PV at 30 min),

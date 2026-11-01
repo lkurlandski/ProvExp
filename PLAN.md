@@ -65,7 +65,18 @@ introduction and a simple baseline (writing decision for later).
   detector; check 1b decides it. **Check 1b (2026-10-31): no-go** (0/13 certified, 6 solver evasions, 0 of 6 realize);
   decision 7's options are with the user.
 
-## Next steps (2026-11-01, planning session: A' re-planned)
+## Next steps (2026-11-01, end of session: decide whether A' is salvaged)
+
+Done this session: A' re-planned (`docs/direction-A-prime-plan.md`, adopted); step 1 built and run (`run/114`,
+`run/115`): certificates only where the edits barely touch the detector (append on PV, partly circular) or at small
+budgets (4 KB); the relaxation is too loose above a few KB; G2 untested (no adversarially trained rows). The user doubts
+A' can give a practically useful result. Next:
+1. **Decide A''s fate with the user** (`docs/resume-prompt.md`): salvage (in what form, for which reviewer-relevant
+   claim, against what alternative), fold into A, or drop to the graveyard. Bring the evidence (plan Section 12) and
+   judge by the screening criteria (the gap only provenance makes cheap, a realistic competitor, a falsifiable check).
+2. If dropped or folded: return to A (scale-up, the adversarial-training baseline, a second toolkit) or screen B / C.
+
+### Earlier: next steps (2026-11-01, planning session: A' re-planned)
 
 A' plan adopted (`docs/direction-A-prime-plan.md`); `run/113` read (all 6 undecided). Next, in order (plan Section 6):
 1. **Pre-check on PV (G1):** built (`scripts/ap_bracket.py`) and smoked (plan Section 9). **The user runs `run/114`**
