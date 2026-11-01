@@ -68,9 +68,8 @@ introduction and a simple baseline (writing decision for later).
 ## Next steps (2026-11-01, planning session: A' re-planned)
 
 A' plan adopted (`docs/direction-A-prime-plan.md`); `run/113` read (all 6 undecided). Next, in order (plan Section 6):
-1. **Pre-check on PV (G1):** solver minimizes the score and records its proven bound; a cheap per-tree floor; a static
-   count of splits on movable features; per family (append only, sections only) and combined; `run/114` for the user
-   on PV-seen / PV-all files no attack evades, the undefended model's 13 as reference.
+1. **Pre-check on PV (G1):** built (`scripts/ap_bracket.py`) and smoked (plan Section 9). **The user runs `run/114`**
+   (~1.5 h); then read it, and raise the section-slot coverage (few files can take an added section) with the user.
 2. **Hardened rows:** adversarial training on our search's edits and on the toolkit's outputs (`run/` scripts for the
    user), the battery re-run on each.
 3. **Main table at pilot scale (G2, G3).** 4. Scale only when the user decides.

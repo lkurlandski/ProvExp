@@ -212,3 +212,37 @@ The options as they were put to the user, each with an example and what it chang
   visible rather than hiding it.
 - **Only near-monotone detectors certify** (G2): then A' restates A; Decision 6 decides the fallback in advance.
 - **Floating-point certificates:** confirmed twice (G0); an exact re-check remains future work, stated as such.
+
+## 9. Step 1 built; smoke (2026-11-01)
+
+Built: `scripts/ap_bracket.py` (the bracket per detector, family, and file; tests in `tests/test_ap_bracket.py`) and
+`certify(..., minimize=True)` in `scripts/ap_encoding.py` (the solver minimizes the score below the threshold, so its
+dual bound is a proven floor even at a timeout; infeasibility is still confirmed without presolve). Two cheap
+quantities per file: the number of the detector's splits on features the family moves, and a per-tree floor (each
+tree's lowest leaf with those splits free), which certifies without a solve when it clears the threshold. Every floor
+is checked to lie at or below the file's clean score (the empty edit is reachable; a violation stops the run).
+
+Smoke on the files no real attack evades (30 s per solve on PV, 10 s on the undefended model; `run/114` is the
+1,800 s run, for the user):
+
+| Detector | Moved splits: append / sections (of all) | Certified: append | Certified: sections | Certified: both |
+|---|---|---|---|---|
+| Undefended | 21,883 / 24,123 (of 31,500) | 0 / 13 | 0 / 9 | 0 / 13 |
+| PV-seen | 1,367 / 5,458 (of 10,702) | 5 / 5 (1 by the cheap floor) | 0 / 3 | 2 / 5 |
+| PV-all | 1,444 / 6,405 (of 10,711) | 6 / 6 | 0 / 1 | 5 / 6 |
+
+(certified / covered; ~10 s per append certificate.) What it shows, and what it changes:
+- **Tractability follows the moved splits.** Append moves 13% of PV's splits and 69% of the undefended model's; PV
+  certifies in seconds, the undefended model does not. Sections move half of PV's splits and nothing certifies at 30 s.
+- **Append certificates on PV are close to circular.** PV's attacks include padding (an append) and gamma_sections,
+  so PV dropped the features they lower; certifying PV against appends partly restates how PV was built (as the
+  learned region did in check 1). They still contrast with the non-circular learned region (learned from all eight
+  attacks, it certified 0 of PV-seen's 22 files; run 110). The informative family on PV is sections, the one the
+  adaptive search evades PV with.
+- **Section coverage is thin.** Many files have no free section-table slot (PV-all 5 of 6 covered, PV-seen 2 of 5,
+  undefended 4 of 13), so for them "both" is append only, and the per-family vs combined comparison (decision 4)
+  reaches only the files with a slot. Making room (shifting the section data to grow the header) is an edit of the
+  wider threat model, outside the catalogue; adding it would widen the coverage at the cost of a new encoding step.
+  To raise with the user after `run/114`.
+- **No proven floor on open files at 30 s** (HiGHS had not finished the root relaxation); whether 1,800 s gives
+  useful floors is part of what `run/114` measures.

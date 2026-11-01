@@ -1435,13 +1435,19 @@ def link_ensemble(enc: Encoding, ens: Ensemble, sides: Optional[np.ndarray] = No
     return out
 
 
-def certify(enc: Encoding, ens: Ensemble, below: float, time_limit: float) -> dict[str, Any]:
+def certify(enc: Encoding, ens: Ensemble, below: float, time_limit: float, minimize: bool = False) -> dict[str, Any]:
     """
     Decide whether some edit in the encoded catalogue brings the ensemble's raw score below `below`.
 
+    With `minimize`, the solver also minimizes the score among the edits that go below `below`, so that a solve
+    stopped by the time limit still returns a proven floor: HiGHS's dual bound d bounds the lowest score over the
+    edits below `below`; if there are none, the true lowest score is above `below` >= d. Either way d is a lower bound
+    on the lowest score any edit in the catalogue reaches (the bracket's floor; docs/direction-A-prime-plan.md).
+
     Returns:
         status, message, seconds, evaded (a choice was found), certified (proved infeasible), the found score, the
-        program's size, and (if evaded) the choice variables' values, the side of every split, and the solution.
+        program's size, and (if evaded) the choice variables' values, the side of every split, and the solution. With
+        `minimize`, also `floor` (the proven lower bound; `below` when certified, None if the solver proved nothing).
     """
     P = enc.program
     z = link_ensemble(enc, ens)
@@ -1453,14 +1459,19 @@ def certify(enc: Encoding, ens: Ensemble, below: float, time_limit: float) -> di
             P.row(Lin.total(Lin.of(leaves[i]) for i in right) + Lin.of(z[(f, j)]), hi=1)
     score = Lin.total(Lin.of(leaves[i], float(v)) for i, v in enumerate(ens.values.tolist()))
     P.row(score, hi=below)
+    objective = {leaves[i]: float(v) for i, v in enumerate(ens.values.tolist())} if minimize else None
     t0 = time.time()
-    res = P.solve(time_limit=time_limit)
+    res = P.solve(objective=objective, time_limit=time_limit)
     seconds = time.time() - t0
     out: dict[str, Any] = {
         "status": int(res.status), "message": str(res.message), "seconds": seconds,
         "evaded": res.x is not None, "certified": res.status == 2,
         "variables": len(P.lb), "rows": len(P.rlo), "binaries": int(sum(P.integer)),
     }
+    if minimize:
+        dual = getattr(res, "mip_dual_bound", None)
+        floor = below if res.status == 2 else (None if dual is None or not np.isfinite(dual) else float(dual))
+        out.update(floor=floor, gap=getattr(res, "mip_gap", None), nodes=getattr(res, "mip_node_count", None))
     if res.x is not None:
         out["score"] = float(ens.values @ res.x[leaves[0]:leaves[0] + len(leaves)])
         out["choice"] = {name: float(res.x[i]) for i, name in enumerate(P.names) if CHOICE.match(name) and abs(res.x[i]) > 1e-9}
