@@ -28,6 +28,12 @@
 # HiGHS's presolve declared a feasible program infeasible at our 1e-9 tolerances. Fixed in Program.solve: an
 # infeasibility now stands only if a solve without presolve confirms it (this also guards check 1b's certificates).
 # Steps 2-3 did not run. To re-run in full.
+# Second run (user, 2026-11-01, 32 workers, ~1 h): containment 1,105 of 1,105. All 6 files undecided at 1,800 s
+# (time limit, no feasible evasion found; ~223-229 K variables, ~209-234 K rows, ~40-44 K binaries; built in 4-9 s);
+# 0 certified, 0 solver evasions, nothing to write. As predicted: the round removed run 112's 6 fake evasions but
+# certified nothing. Check 1b stays a no-go on the undefended model; per the re-evaluation (docs/direction-A-prime-mock.md)
+# that no-go does not decide A', which goes to a fresh planning session. The decision version of the solve reports no
+# bound, so it does not say how far any file is from a certificate.
 #
 # Steps: (1) containment (run 111; the encoding changed; it must hold on every edit, ~25 min: the block model made
 # each check ~6x slower), (2) the 6 files at 1,800 s each in parallel (~32 min), (3) the evasions written as files
@@ -61,7 +67,7 @@ python scripts/ap_check1b.py \
   --skip_battery_evaded \
   --names 6927e052 1161236b 511c7d1a 9613981f 2826a9a5 29718ff5 \
   --time_limit 1800 \
-  --workers 16 \
+  --workers 32 \
   &> "$LOG"
 
 LOG=artifacts/logs/ap_tightening_realize.log
@@ -71,7 +77,7 @@ if ls $OUT/solutions/*.npy &> /dev/null; then
     --solutions $OUT/solutions \
     --outdir $OUT/realized \
     --defense ref=$M/seed-0-s10-ref \
-    --workers 16 \
+    --workers 32 \
     &> "$LOG"
 else
   echo "No solver evasions to write." | tee "$LOG"

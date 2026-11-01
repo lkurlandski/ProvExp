@@ -22,6 +22,8 @@
 # Re-ran 2026-11-01 (user, step 1 of run 113, ~25 min), after the block model: 1,104 of 1,105 contained (exact and
 # held-fixed 1,105); the failure was HiGHS's presolve declaring a feasible program infeasible, not an unsound row
 # (feasible with presolve off). Program.solve now confirms every infeasibility without presolve.
+# Re-ran 2026-11-01 (user, step 1 of run 113's second run, 32 workers, ~25 min), after the presolve guard: holds
+# (1,105 of 1,105 contained, exact, and held-fixed).
 set -euo pipefail
 cd "$(dirname "$0")/.."
 source env/bin/activate
@@ -35,7 +37,7 @@ python scripts/ap_containment.py \
   --outdir $E/ap_containment \
   --goodware \
   --edits 12 \
-  --workers 16 \
+  --workers 32 \
   &> "$LOG"
 
 echo "Done. Report: $E/ap_containment/report.json"
