@@ -262,3 +262,29 @@ model, so as things stand it would be open too, and building those rows (hours o
 Proposed before building them (each a short job): (1) recover the floors; (2) a budget sweep on the undefended model's
 append family (does a small enough append certify? the largest certified budget per file is a "certified radius" in
 bytes, a magnitude result A cannot give); (3) one added section instead of three on the 4 PV files with a slot.
+
+## 11. Steps 1-3 after `run/114` (2026-11-01, `run/115`)
+
+- **Floors recovered.** The solver now calls HiGHS directly (`highspy`), so a timeout keeps the dual bound; tested
+  against scipy's `milp`; containment smoke 48 of 48.
+- **Append-budget sweep, undefended model (300 s per solve):** 4 KB certifies 2 of 13, and the other 11 have real
+  floors from -13.1 to 1.07 (three within about 1.0 of the threshold 1.10); 64 KB and 512 KB certify none, and their
+  solves never finish the root LP relaxation, so the floor is only the cheap per-tree one (about -35).
+- **One section instead of three on PV:** 0 of 4, no root LP in 300 s either.
+- **Why (diagnostic on one file):** the program grows with the budget (58 K variables at 4 KB, 78 K at 64 KB, 223 K at
+  512 KB; the block model of the byte-entropy windows has one block per KB), its LP relaxation takes 2 s / 6 min /
+  over 7 min, and the relaxation's own floor falls from -0.04 to -10.8 between 4 and 64 KB (threshold 1.10). Above a
+  few KB the relaxation is too loose to certify without exploring thousands of branches over ~25 K on/off choices. The
+  obstacle at the plan's 512 KB budget is the formulation, not solver speed; a coarser (budget-independent) model of
+  the windows would be smaller but looser still.
+
+What this means for the plan. At the full budget, certificates exist only where the edits barely touch what the
+detector uses (append on PV); every detector that relies on movable features stays open, with a floor no better than
+the trivial one. A hardened detector that uses all features (adversarial training) would very likely behave the same
+at 512 KB, so G2 as stated (at least 10% certified at the full budget) is unlikely to be met by building those rows.
+What does work is small budgets: a per-file **certified budget** (the largest append, or section, proven not to evade)
+is tractable up to roughly 16-32 KB and is a statement about how far the edits move the features, the angle A lacks.
+Options for the user: (a) re-aim the headline to the certified budget per file and detector, with the attack ceiling
+at the full budget beside it, and G2 as "adversarial training raises the certified budget"; (b) fold A' into A as a
+section (PV's append certificates, the contrast with learned constraints); (c) invest in a different formulation for
+large budgets (risky: the relaxation, not the solver, is what fails).

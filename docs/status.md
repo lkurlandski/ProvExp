@@ -2,7 +2,8 @@
 
 **2026-11-01 (planning session): A' re-planned and adopted (`docs/direction-A-prime-plan.md`). `run/113` read: all 6
 files undecided at 30 min (containment 1,105/1,105), no certificate, no solver evasion. `run/114` read: G1
-passes for append, fails for sections; no floors (scipy drops the bound). Next short jobs proposed to the user.**
+passes for append, fails for sections. `run/115`: certificates only at small budgets (4 KB: 2 of 13 on the undefended
+model); the relaxation is too loose above a few KB. Decision on the headline waiting on the user.**
 - The plan: audit hardened detectors by a bracket of each file's worst case (floor: the solver's proven bound over the
   computed region; ceiling: the best real attack), per edit family (append only, sections only) and combined; the
   budget-only and learned regions as the contrast. Go/no-go G0 (soundness), G1 (at most half open on PV at 30 min),
@@ -18,8 +19,12 @@ passes for append, fails for sections; no floors (scipy drops the bound). Next s
   the undefended model certifies nothing (69% of its splits sit on features appending moves).
 - `run/114` read (plan Section 10): G1 passes for append (PV: all covered files certified in ~10 s), fails for sections
   (0 of the 13 files that can take a section, any detector); the undefended model certifies nothing. No floors: scipy
-  drops HiGHS's bound at a timeout with no feasible point. Waiting on the user: the proposed next short jobs (recover
-  floors; append budget sweep on the undefended model; one section instead of three) before building the hardened rows.
+  drops HiGHS's bound at a timeout with no feasible point.
+- Steps 1-3 done (plan Section 11, `run/115`): HiGHS called directly (`highspy`; floors survive timeouts). Undefended,
+  append: 4 KB certifies 2/13 with real floors on the rest; 64 KB and 512 KB nothing, root LP unfinished in 300 s.
+  One section on PV: 0/4. The LP relaxation grows with the budget and is far too loose above a few KB. **Waiting on
+  the user: (a) re-aim to a certified budget per file (recommended to discuss), (b) fold A' into A, (c) a new
+  large-budget formulation.**
 
 ---
 
