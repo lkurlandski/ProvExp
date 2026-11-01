@@ -26,13 +26,12 @@ import time
 from typing import Any
 from typing import Optional
 from typing import Union
-import warnings
 
+import highspy
 import numpy as np
 import pefile
-from scipy.optimize import LinearConstraint
-from scipy.optimize import milp
 from scipy.sparse import coo_matrix
+from scipy.sparse import csc_matrix
 
 from provexp.featuresets.ember2024.catalogue import precondition
 from provexp.featuresets.ember2024.features import ByteEntropyHistogram
@@ -705,16 +704,10 @@ class Program:
         for v, k in (objective or {}).items():
             c[v] = k
         c = c * unit
-        constraints = LinearConstraint(a, rlo, rhi) if len(rlo) else ()
-        def run(presolve: bool, seconds: float) -> Any:
-            with warnings.catch_warnings():
-                # scipy passes the options it does not know (the tolerances) to HiGHS verbatim, with a warning.
-                warnings.filterwarnings("ignore", "Unrecognized options", RuntimeWarning)
-                return milp(c, integrality=np.array(self.integer, dtype=float), bounds=(lb / unit, ub / unit),
-                            constraints=constraints, options={
-                                "time_limit": seconds, "disp": False, "presolve": presolve,
-                                "primal_feasibility_tolerance": FEASIBILITY_TOL, "dual_feasibility_tolerance": FEASIBILITY_TOL,
-                                "mip_feasibility_tolerance": FEASIBILITY_TOL})
+        integer = np.array(self.integer, dtype=bool)
+
+        def run(presolve: bool, seconds: float) -> _Result:
+            return _highs(c, integer, lb / unit, ub / unit, a, rlo, rhi, presolve, seconds)
 
         t0 = time.time()
         res = run(True, time_limit)
@@ -726,6 +719,67 @@ class Program:
         if res.x is not None:
             res.x = res.x * unit
         return res
+
+
+@dataclass
+class _Result:
+    """A solver result: scipy's `milp` status codes (0 optimal, 1 limit, 2 infeasible, 4 other), the solution if one
+    was found, and HiGHS's MIP statistics (the dual bound survives a time limit, unlike scipy's wrapper's)."""
+
+    status: int
+    message: str
+    x: Optional[np.ndarray]
+    mip_dual_bound: Optional[float]
+    mip_gap: Optional[float]
+    mip_node_count: Optional[int]
+
+
+def _highs(c: np.ndarray, integer: np.ndarray, lb: np.ndarray, ub: np.ndarray, a: Any, rlo: np.ndarray,
+           rhi: np.ndarray, presolve: bool, seconds: float) -> _Result:
+    """
+    Minimize c @ x subject to rlo <= a @ x <= rhi and lb <= x <= ub, `integer` columns integral, with HiGHS (highspy).
+
+    NOTE: called directly rather than through `scipy.optimize.milp`, whose wrapper drops the dual bound when the time
+    limit stops a solve that found no feasible point (every open solve of run 114), which is the bracket's floor.
+    """
+    inf = highspy.kHighsInf
+    lp = highspy.HighsLp()
+    lp.num_col_, lp.num_row_ = int(c.size), int(len(rlo))
+    lp.col_cost_ = np.asarray(c, dtype=np.float64)
+    lp.col_lower_ = np.where(np.isfinite(lb), lb, -inf)
+    lp.col_upper_ = np.where(np.isfinite(ub), ub, inf)
+    lp.row_lower_ = np.where(np.isfinite(rlo), rlo, -inf)
+    lp.row_upper_ = np.where(np.isfinite(rhi), rhi, inf)
+    m = csc_matrix(a) if lp.num_row_ else csc_matrix((0, c.size))
+    lp.a_matrix_.format_ = highspy.MatrixFormat.kColwise
+    lp.a_matrix_.num_col_, lp.a_matrix_.num_row_ = lp.num_col_, lp.num_row_
+    lp.a_matrix_.start_ = m.indptr.astype(np.int32)
+    lp.a_matrix_.index_ = m.indices.astype(np.int32)
+    lp.a_matrix_.value_ = m.data.astype(np.float64)
+    lp.integrality_ = [highspy.HighsVarType.kInteger if i else highspy.HighsVarType.kContinuous for i in integer]
+    h = highspy.Highs()  # type: ignore[no-untyped-call]
+    for k, v in {"output_flag": False, "threads": 1, "time_limit": float(seconds), "presolve": "on" if presolve else "off",
+                 "primal_feasibility_tolerance": FEASIBILITY_TOL, "dual_feasibility_tolerance": FEASIBILITY_TOL,
+                 "mip_feasibility_tolerance": FEASIBILITY_TOL}.items():
+        h.setOptionValue(k, v)
+    h.passModel(lp)
+    h.run()
+    ms = h.getModelStatus()
+    info = h.getInfo()
+    S = highspy.HighsModelStatus
+    if ms == S.kOptimal:
+        status = 0
+    elif ms in (S.kTimeLimit, S.kIterationLimit, S.kSolutionLimit, S.kInterrupt):
+        status = 1
+    elif ms == S.kInfeasible:
+        status = 2
+    else:
+        status = 4  # including "unbounded or infeasible": never read as a certificate
+    feasible = info.primal_solution_status == highspy.SolutionStatus.kSolutionStatusFeasible
+    x = np.array(h.getSolution().col_value) if feasible else None
+    dual = float(info.mip_dual_bound)
+    return _Result(status, h.modelStatusToString(ms), x, dual if abs(dual) < inf else None,
+                   float(info.mip_gap), int(info.mip_node_count))
 
 
 @dataclass

@@ -409,3 +409,40 @@ class TestRegexRequirements:
                     for vals, mult in req[k]:
                         assert sum(int(counts[v]) for v in vals) >= mult, (k, s)
         assert checked > 100
+
+
+################################################################################
+# The HiGHS call
+################################################################################
+
+
+class TestHighs:
+
+    @pytest.mark.parametrize("seed", [0, 1, 2, 3])
+    def test_matches_scipy_milp(self, seed: int) -> None:
+        from scipy.optimize import LinearConstraint
+        from scipy.optimize import milp
+
+        rng = np.random.default_rng(seed)
+        n, m = 12, 8
+        P = Program()
+        xs = [P.var(f"x{i}", 0, 5, integer=bool(i % 2)) for i in range(n)]
+        a = rng.integers(-3, 4, size=(m, n)).astype(float)
+        hi = rng.integers(2, 10, size=m).astype(float)
+        for r in range(m):
+            P.row(Lin.total(Lin.of(xs[i], a[r, i]) for i in range(n) if a[r, i]), hi=hi[r])
+        cost = rng.normal(size=n)
+        res = P.solve({xs[i]: float(cost[i]) for i in range(n)}, time_limit=30)
+        ref = milp(cost, integrality=np.array([i % 2 for i in range(n)], dtype=float), bounds=(0, 5),
+                   constraints=LinearConstraint(a, -np.inf, hi))
+        assert res.status == ref.status == 0
+        assert float(cost @ res.x) == pytest.approx(ref.fun, abs=1e-6)
+        assert res.mip_dual_bound == pytest.approx(ref.fun, abs=1e-6)
+
+    def test_infeasible(self) -> None:
+        P = Program()
+        x = P.var("x", 0, 3, integer=True)
+        P.row(Lin.of(x, 2.0), lo=3.0, hi=3.0)  # 2x = 3 has no integer solution
+        res = P.solve(time_limit=30)
+        assert res.status == 2
+        assert res.x is None
