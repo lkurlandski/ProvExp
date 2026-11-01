@@ -20,6 +20,16 @@
 # model has no certificate in any family. G1 (at most half of the covered files open on PV) then passes for append and
 # fails for sections and both.
 #
+# Ran 2026-11-01 (user, 32 workers, ~1 h): the same counts as the smoke. Of the covered files no attack evades,
+# certified (append / sections / both): undefended 0/13, 0/9, 0/13; PV-seen 5/5, 0/3, 2/5; PV-all 6/6, 0/1, 5/6. Every
+# "both" certificate is on a file with no free section-table slot (there "both" is append only): on the 13 files that
+# can take an added section (4 PV, 9 undefended), nothing is certified in any family that includes sections. G0 holds
+# (no certificate on an evaded file; floors at or below clean). Hypothesis: append as predicted; sections failed (0,
+# not a minority). G1: passes for append, fails for sections and both.
+# No floor on any open file (43 solves): scipy's HiGHS wrapper drops the dual bound when the time limit stops a MIP
+# with no feasible point found (scipy/optimize/_highspy/_highs_wrapper.py), which is every open solve here. A tool
+# limitation, not a measurement; the floors need HiGHS called so the bound survives.
+#
 # Estimate: ~45 solves that do not finish early (undefended 35, PV ~8) at 1,800 s on 16 workers: ~3 rounds, ~1.5 h.
 # (32 workers ran run 113 without trouble; with 32, ~1 h.)
 set -euo pipefail
@@ -41,7 +51,7 @@ python scripts/ap_bracket.py \
   --defense pv-all=$M/seed-0-s10-pv-all \
   --family append sections both \
   --time_limit 1800 \
-  --workers 16 \
+  --workers 32 \
   &> "$LOG"
 
 echo "Done. Report: $E/ap_bracket/precheck/report.json; per file: $E/ap_bracket/precheck/brackets.parquet"

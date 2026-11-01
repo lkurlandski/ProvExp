@@ -246,3 +246,19 @@ Smoke on the files no real attack evades (30 s per solve on PV, 10 s on the unde
   To raise with the user after `run/114`.
 - **No proven floor on open files at 30 s** (HiGHS had not finished the root relaxation); whether 1,800 s gives
   useful floors is part of what `run/114` measures.
+
+## 10. `run/114` read (2026-11-01): G1 passes for append, fails for sections
+
+At 1,800 s the counts are the smoke's: append certifies every covered PV file in ~10 s and nothing on the undefended
+model; on the 13 files that can take an added section (4 PV, 9 undefended) nothing is certified in any family that
+includes sections. G0 holds. No open file has a floor: scipy's HiGHS wrapper drops the dual bound when the time limit
+stops a MIP that found no feasible point, which is every open solve, so the bracket's lower end is missing (a tool
+limitation, fixable by calling HiGHS so the bound survives).
+
+The reading: certificates appear only where few of the detector's splits sit on features the edits move (append on
+PV: 13%). Every detector that uses movable features (the undefended model under any family; PV under sections) is
+open at 30 min. That is the main risk for G2: an adversarially trained GBDT uses all features, like the undefended
+model, so as things stand it would be open too, and building those rows (hours of attack runs) would not decide G2.
+Proposed before building them (each a short job): (1) recover the floors; (2) a budget sweep on the undefended model's
+append family (does a small enough append certify? the largest certified budget per file is a "certified radius" in
+bytes, a magnitude result A cannot give); (3) one added section instead of three on the 4 PV files with a slot.
