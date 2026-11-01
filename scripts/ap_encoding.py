@@ -34,6 +34,7 @@ from scipy.optimize import milp
 from scipy.sparse import coo_matrix
 
 from provexp.featuresets.ember2024.catalogue import precondition
+from provexp.featuresets.ember2024.features import ByteEntropyHistogram
 from provexp.featuresets.ember2024.features import PEFeatureExtractor
 from provexp.featuresets.ember2024.features import StringExtractor
 from provexp.featuresets.ember2024.features import field_range
@@ -67,6 +68,8 @@ __all__ = [
     "certify",
     "dominance_cuts",
     "dominant_share",
+    "fano_share",
+    "least_share",
     "link_ensemble",
     "pinsker_radius",
     "props_of",
@@ -103,6 +106,8 @@ MAX_UNIT = np.inf
 FEASIBILITY_TOL = 1e-9
 # The Gibbs reference distributions mix the old distribution with the uniform one by these weights.
 GIBBS_MIX = (1e-3, 0.05, 0.3)
+# The entropy levels of the per-window Gibbs references (each level's 16 one-nibble boundary distributions).
+GIBBS_LEVELS = (0.5, 1.0, 2.0, 3.0)
 # The thresholds every added section's entropy variable is tied to its byte counts at (besides the ensemble's own
 # thresholds on the section-entropy maxima): for the entropy-hash buckets, whose splits are on sums of them.
 SECTION_GRID = tuple(float(t) for t in np.arange(0.5, 8.0, 0.5))
@@ -115,6 +120,7 @@ CHOICE = re.compile(r"^(D|A|a\d+|s\d+|on\d+|m\d+|c\d+|pages\d+|e\d+|y\d+_\d+|fl\
 
 
 _STRINGS = StringExtractor()  # type: ignore[no-untyped-call]
+_BYTE_ENTROPY = ByteEntropyHistogram(STEP, WINDOW)  # type: ignore[no-untyped-call]
 
 
 class NotCovered(Exception):
@@ -282,6 +288,56 @@ def dominant_share(t: float) -> float:
                 hi = mid
         out = max(out, lo)
     return float(out)
+
+
+def least_share(t: float, symbols: int) -> float:
+    """
+    The least share every symbol must have in a distribution of entropy above t (widened by TOL_ENT): grouping one
+    symbol against the rest, H <= h(p) + (1 - p) log2(symbols - 1), which increases in p on [0, 1 / symbols] from
+    log2(symbols - 1); so above that entropy every symbol is present. Zero for t at most log2(symbols - 1).
+    """
+    t = t - TOL_ENT
+    floor = math.log2(symbols - 1)
+    if t <= floor:
+        return 0.0
+
+    def g(p: float) -> float:
+        h = -p * math.log2(p) - (1 - p) * math.log2(1 - p) if 0 < p < 1 else 0.0
+        return h + (1 - p) * floor
+
+    lo, hi = 0.0, 1.0 / symbols
+    for _ in range(60):
+        mid = (lo + hi) / 2
+        if g(mid) < t:
+            lo = mid
+        else:
+            hi = mid
+    return float(lo)
+
+
+def fano_share(t: float, symbols: int = 16) -> float:
+    """
+    The largest share a distribution over `symbols` symbols with entropy at least t can have (widened by TOL_ENT):
+    Fano's bound H <= h(p_max) + (1 - p_max) log2(symbols - 1), whose right side decreases in p_max on [1/symbols, 1].
+    """
+    t = t - TOL_ENT
+    if t <= 0:
+        return 1.0
+    if t >= math.log2(symbols):
+        return 1.0 / symbols
+
+    def g(p: float) -> float:
+        h = -p * math.log2(p) - (1 - p) * math.log2(1 - p) if 0 < p < 1 else 0.0
+        return h + (1 - p) * math.log2(symbols - 1)
+
+    lo, hi = 1.0 / symbols, 1.0
+    for _ in range(60):
+        mid = (lo + hi) / 2
+        if g(mid) >= t:
+            lo = mid
+        else:
+            hi = mid
+    return float(hi)
 
 
 def references(dists: Sequence[np.ndarray]) -> tuple[np.ndarray, ...]:
@@ -572,6 +628,11 @@ class Program:
         r = pinsker_radius(t, e.symbols)
         if e.dev is not None and r < 2.0:
             self.at_most_when(e.dev - r * e.total, z, when=0)
+        # H > t (z = 0) near the maximum: every symbol holds at least the least share.
+        least = least_share(t, e.symbols)
+        if least > 0.0:
+            for c in e.counts:
+                self.at_most_when(e.total * least - c, z, when=0)
         # H <= t (z = 1): some symbol holds at least the dominant share.
         if e.top is not None and t < math.log2(e.symbols):
             self.at_most_when(dominant_share(t) * e.total - e.top, z, when=1)
@@ -893,23 +954,14 @@ class Encoding:
         w1 = P.var("windows", w0, (n + B - WINDOW) // STEP + 1, integer=True)
         P.row(Lin.of(w1, STEP) - Lin.of(D), hi=n - WINDOW + STEP)  # STEP * (w1 - 1) <= n1 - WINDOW
         P.row(Lin.of(D) - Lin.of(w1, STEP), hi=-n + WINDOW - 1)  # n1 - WINDOW < STEP * w1
+        we, rows_new = self._blocks(z, D, w1, [Lin.total(Lin.of(a[v]) + Lin.of(s[v]) for v in range(16 * col, 16 * col + 16))
+                                               + (pad if col == 0 else 0.0) for col in range(16)])
         we_max = WINDOW * ((n + B - WINDOW) // STEP + 1 - w0)
-        rows_new = [P.var(f"wr{r}", 0, we_max / WINDOW) for r in range(16)]
-        we = [[P.var(f"we{r}_{col}", 0, we_max) for col in range(16)] for r in range(16)]
-        P.row(Lin.total(Lin.of(x) for x in rows_new) - Lin.of(w1) + w0, 0, 0)
         for r in range(16):
-            P.row(Lin.total(Lin.of(x) for x in we[r]) - Lin.of(rows_new[r], WINDOW), 0, 0)
-            row_cuts(P, [Lin.of(x) for x in we[r]], Lin.of(rows_new[r]), r)
-            dominance_cuts(P, [Lin.of(x) for x in we[r]], Lin.of(rows_new[r]), r, "wd", we_max / WINDOW)
-        tail = np.bincount(np.frombuffer(z[w0 * STEP:], dtype=np.uint8) >> 4, minlength=16)
-        for col in range(16):
-            newnib = Lin.total(Lin.of(a[v]) + Lin.of(s[v]) for v in range(16 * col, 16 * col + 16))
-            if col == 0:
-                newnib = newnib + pad
-            colsum = Lin.total(Lin.of(we[r][col]) for r in range(16))
-            # Each new byte lies in at most two new windows, all but the last ~3 KB in exactly two; the old tail too.
-            P.row(colsum - 2 * newnib, -3 * STEP, 2 * float(tail[col]))
-        ent_counts = [float(sums["byteentropy:counts"][16 * r + col]) + Lin.of(we[r][col]) for r in range(16) for col in range(16)]
+            # Implied by the windows' own cuts (on the pooled counts, with more references): cheap, kept.
+            row_cuts(P, we[r], rows_new[r], r)
+            dominance_cuts(P, we[r], rows_new[r], r, "wd", we_max / WINDOW)
+        ent_counts = [float(sums["byteentropy:counts"][16 * r + col]) + we[r][col] for r in range(16) for col in range(16)]
         hdr_windows = [w for w in table.of_group("byteentropy") if w.kind == "window" and _meets(w, written)] if k else []
         for h, w in enumerate(hdr_windows):
             lo_, hi_ = w.attrs["span"]
@@ -955,6 +1007,7 @@ class Encoding:
             avail = Lin.of(a[v]) + Lin.of(s[v]) + (Lin.of(dT, run_chars[ch]) if dT is not None else run_chars[ch])
             P.row(Lin.of(pd[ch]) - avail, hi=0)
         np_new = Lin.total(Lin.of(x) for x in pd)
+        P.row(self.forced_chars - np_new, hi=0)
         if dT is not None:
             # The tail string changes only by merging with added bytes, into a string that holds all of its characters.
             P.row(Lin.of(dT) - Lin.of(D), hi=0)
@@ -1146,6 +1199,85 @@ class Encoding:
         # The features whose values are whole numbers (counts, sizes, fields, flags; not the entropy-hash buckets).
         self.integral = {f for f, v in self.values.items() if isinstance(v, Lin) and not extractor.feature_names[f].startswith("section:entropy_hash")}
 
+    def _blocks(self, z: bytes, D: int, w1: int, newnib: Sequence[Lin]) -> tuple[list[list[Lin]], list[Lin]]:
+        """
+        The new byte-entropy windows, exactly (up to the byte order inside a block): the new tail as blocks of STEP
+        bytes with nibble counts (`bk{i}_{c}`; block 0 also holds the old file's last partial block), window i the
+        blocks i - 1 and i (block -1 is the old file's last full block), active (`bact{i}`) for the first w1 - w0, each
+        active window in one entropy row (`bu{i}_{r}`) and its counts split exactly by row (`bz{i}_{r}_{c}`, nonzero
+        only in its row). Each window's row bounds its nibble counts: Gibbs (cross-entropy at least the window's
+        entropy, at least r / 4), Pinsker and Fano (no nibble above the largest share entropy r / 4 allows) above;
+        the dominant share below (a nibble holds at least what entropy (r + 1) / 4 needs).
+
+        Returns:
+            The (row, nibble) counts over the new windows, and the number of new windows per row.
+        """
+        P, n, B = self.program, self.n, self.budget
+        nb0 = n // STEP
+        w0 = (n - WINDOW) // STEP + 1
+        nw = (n + B - WINDOW) // STEP + 1 - w0
+        nb = -(-(n + B) // STEP) - nb0
+        part = np.bincount(np.frombuffer(z[nb0 * STEP:], dtype=np.uint8) >> 4, minlength=16).astype(np.float64)
+        prev = np.bincount(np.frombuffer(z[(nb0 - 1) * STEP:nb0 * STEP], dtype=np.uint8) >> 4, minlength=16).astype(np.float64)
+        bk = [[P.var(f"bk{i}_{c}", 0, STEP) for c in range(16)] for i in range(nb)]
+        self.bk = bk
+        # Printable bytes outside strings come in runs of at most four, so a block's new bytes hold at least
+        # printable - 4 (non-printable + 1) string characters (high nibbles 2-7 are the printable bytes).
+        self.forced_chars = Lin()
+        for i in range(nb):
+            y = P.var(f"by{i}", 0, STEP)
+            pr = Lin.total(Lin.of(bk[i][c]) for c in range(2, 8))
+            np_ = Lin.total(Lin.of(bk[i][c]) for c in range(16) if not 2 <= c < 8)
+            P.row(Lin.of(y) - pr + np_ * 4.0, lo=-4.0)
+            self.forced_chars._iadd(Lin.of(y), 1.0)
+        blk = [[Lin.of(bk[i][c]) + (float(part[c]) if i == 0 else 0.0) for c in range(16)] for i in range(nb)]
+        for c in range(16):
+            P.row(Lin.total(Lin.of(bk[i][c]) for i in range(nb)) - newnib[c], 0, 0)
+        act = [P.binary(f"bact{i}") for i in range(nw)]
+        self.bact = act
+        self.bu: list[list[int]] = []
+        self.bz: list[list[list[int]]] = []
+        self.bdom: list[list[int]] = []
+        P.row(Lin.total(Lin.of(x) for x in act) - Lin.of(w1) + w0, 0, 0)
+        for i in range(nb):
+            P.row(Lin.total(blk[i]), hi=STEP)
+            if i < nw:
+                P.row(Lin.total(blk[i]) - Lin.of(act[i], STEP), lo=0)  # an active window's blocks are full
+            if 0 < i < nw:
+                P.row(Lin.of(act[i]) - Lin.of(act[i - 1]), hi=0)
+        theta = [dominant_share((r + 1) / 4) if r < 15 else 0.0 for r in range(16)]
+        rho = [min(2.0, pinsker_radius(r / 4, 16)) for r in range(16)]
+        phi = [fano_share(r / 4) for r in range(16)]
+        refs = [q for lvl in GIBBS_LEVELS for q in boundary_references(lvl)[:16]]
+        we = [[Lin() for _ in range(16)] for _ in range(16)]
+        rows = [Lin() for _ in range(16)]
+        for i in range(nw):
+            cnt = [(blk[i - 1][c] if i else Lin(float(prev[c]))) + blk[i][c] for c in range(16)]
+            u = [P.binary(f"bu{i}_{r}") for r in range(16)]
+            self.bu.append(u)
+            P.row(Lin.total(Lin.of(x) for x in u) - Lin.of(act[i]), 0, 0)
+            bz = [[P.var(f"bz{i}_{r}_{c}", 0, WINDOW) for c in range(16)] for r in range(16)]
+            self.bz.append(bz)
+            for r in range(16):
+                P.row(Lin.total(Lin.of(x) for x in bz[r]) - Lin.of(u[r], WINDOW), 0, 0)
+                rows[r]._iadd(Lin.of(u[r]), 1.0)
+                for c in range(16):
+                    we[r][c]._iadd(Lin.of(bz[r][c]), 1.0)
+            for c in range(16):
+                P.row(Lin.total(Lin.of(bz[r][c]) for r in range(16)) - cnt[c], hi=0)  # equal when active (both sum to WINDOW)
+            idle = 1.0 - Lin.of(act[i])
+            level = Lin.total(Lin.of(u[r], WINDOW * (r / 4 - TOL_ENT)) for r in range(1, 16))
+            for q in refs:
+                P.row(Lin.total(x * float(-math.log2(w)) for x, w in zip(cnt, q.tolist(), strict=True)) - level, lo=0)
+            dev = P.deviation(f"bw{i}", cnt, Lin.of(act[i], WINDOW))
+            P.row(dev - Lin.total(Lin.of(u[r], WINDOW * rho[r]) for r in range(16)) - idle * (2 * WINDOW), hi=0)
+            for c in range(16):
+                P.row(cnt[c] - Lin.total(Lin.of(u[r], WINDOW * phi[r]) for r in range(16)) - idle * WINDOW, hi=0)
+            top = P.largest(f"bw{i}", cnt, float(WINDOW))
+            self.bdom.append([v for v in range(len(P.names) - 16, len(P.names))])
+            P.row(top - Lin.total(Lin.of(u[r], WINDOW * theta[r]) for r in range(16)), lo=0)
+        return we, rows
+
     def _values(self, r: Any, totals: dict[str, Lin], entropies: dict[str, Ent], new_items: dict[str, list[Value]],
                 new_overlay: dict[str, Value], sec: list[Item], n1: Lin, entry: Optional[Item]) -> list[Value]:
         """The values of one readout's features (constants for the ones the catalogue does not move)."""
@@ -1237,6 +1369,29 @@ class Encoding:
             P.fix(self.s[v], x)
         P.fix(self.A, len(choice.append))
         P.fix(self.D, len(edited) - self.n)
+        # The block model: the written file's new bytes per block, and which new windows exist.
+        nb0, w0 = self.n // STEP, (self.n - WINDOW) // STEP + 1
+        nib = np.frombuffer(edited, dtype=np.uint8) >> 4
+        for i, row in enumerate(self.bk):
+            lo, hi = max((nb0 + i) * STEP, self.n), min((nb0 + i + 1) * STEP, len(edited))
+            got = np.bincount(nib[lo:hi], minlength=16) if hi > lo else np.zeros(16, dtype=np.int64)
+            for c, v in enumerate(row):
+                P.fix(v, float(got[c]))
+        windows = (len(edited) - WINDOW) // STEP + 1 - w0
+        for i, v in enumerate(self.bact):
+            P.fix(v, float(i < windows))
+            # An existing window's row (thrember's own computation), its counts by row, and its dominant nibble.
+            block = np.frombuffer(edited[(w0 + i) * STEP:(w0 + i) * STEP + WINDOW], dtype=np.uint8)
+            if i < windows:
+                row, counts = _BYTE_ENTROPY._entropy_bin_counts(block)  # type: ignore[no-untyped-call]
+            else:
+                row, counts = -1, np.zeros(16, dtype=np.int64)
+            for r in range(16):
+                P.fix(self.bu[i][r], float(r == row))
+                for c in range(16):
+                    P.fix(self.bz[i][r][c], float(counts[c]) if r == row else 0.0)
+            for c, d in enumerate(self.bdom[i]):
+                P.fix(d, float(c == int(np.argmax(counts))))
 
 
 ################################################################################

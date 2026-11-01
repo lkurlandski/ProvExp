@@ -141,6 +141,7 @@ def main() -> None:
     parser.add_argument("--pilot_files", type=Path, default=ROOT / "artifacts/experiments/e1/seed-0/zeros/files.parquet")
     parser.add_argument("--db", type=Path, default=Path("/shared/datasets/EMBER-2024/data/ts"))
     parser.add_argument("--num_malware", type=int, default=None)
+    parser.add_argument("--names", nargs="*", default=None, help="Solve only the files whose names start with these.")
     parser.add_argument("--fpr", type=float, default=0.01)
     parser.add_argument("--max_sections", type=int, default=3, help="K: at most this many added sections.")
     parser.add_argument("--budget_frac", type=float, default=0.05)
@@ -156,6 +157,8 @@ def main() -> None:
     malware, _ = load_pilot(args.pilot_files, args.db)
     if args.num_malware is not None:
         malware = malware[: args.num_malware]
+    if args.names:
+        malware = [(n, z) for n, z in malware if any(n.startswith(p) for p in args.names)]
     vectors = {n: extractor.feature_vector(z).astype(np.float32) for n, z in malware}  # type: ignore[no-untyped-call]
     _STATE.update(extractor=extractor, args=args, ensembles={})
 

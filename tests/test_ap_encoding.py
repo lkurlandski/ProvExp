@@ -24,6 +24,8 @@ from ap_encoding import MaxOf  # noqa: E402
 from ap_encoding import boundary_references  # noqa: E402
 from ap_encoding import dominance_cuts  # noqa: E402
 from ap_encoding import dominant_share  # noqa: E402
+from ap_encoding import fano_share  # noqa: E402
+from ap_encoding import least_share  # noqa: E402
 from ap_encoding import mixture_floor  # noqa: E402
 from ap_encoding import pinsker_radius  # noqa: E402
 from ap_encoding import Program  # noqa: E402
@@ -161,6 +163,35 @@ class TestEntropyCuts:
         h = _entropy(c)
         for t in (h, h + 1e-3, h + 0.1, h + 1.0):
             assert c.max() / c.sum() >= dominant_share(t) - 1e-12
+
+    @pytest.mark.parametrize("seed", range(40))
+    def test_fano_share_sound(self, seed: int) -> None:
+        c = _window(np.random.default_rng(seed)).astype(float)
+        h = _entropy(c)
+        for t in (h, h - 1e-3, h - 0.1, h - 1.0):
+            assert c.max() / c.sum() <= fano_share(t) + 1e-12
+
+    @pytest.mark.parametrize("seed", range(40))
+    def test_least_share_sound(self, seed: int) -> None:
+        rng = np.random.default_rng(seed)
+        c = rng.integers(900, 1100, 256).astype(float)
+        c[rng.integers(256)] = float(rng.integers(0, 40))  # one rare symbol (or a missing one)
+        h = _entropy(c)
+        for t in (h, h - 1e-4, h - 1e-3):
+            assert c.min() / c.sum() >= least_share(t, 256) - 1e-12
+
+    def test_least_share_excludes_a_missing_symbol(self) -> None:
+        assert least_share(math.log2(255) + 1e-3, 256) > 0.0
+        assert least_share(math.log2(255) - 1e-3, 256) == 0.0
+        c = np.full(256, 1000.0)
+        c[7] = 0.0  # entropy log2(255) = 7.9944: "above 7.995" is excluded
+        assert not _feasible(TestEntropyCuts._build(c, 7.995), False)
+        assert _feasible(TestEntropyCuts._build(c, 7.995), True)
+
+    def test_fano_share_ends(self) -> None:
+        assert fano_share(0.0) == 1.0
+        assert fano_share(4.0) == pytest.approx(1 / 16, abs=1e-3)
+        assert fano_share(2.0) < 1.0
 
     def test_dominant_share_tight_cases(self) -> None:
         # k equal symbols: entropy log2 k, largest share 1/k (min-entropy equals entropy).

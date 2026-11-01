@@ -27,6 +27,7 @@ from ap_encoding import name_key  # noqa: E402
 from ap_encoding import option  # noqa: E402
 from ap_realize import _strings  # noqa: E402
 from ap_realize import allocate  # noqa: E402
+from ap_realize import nudge  # noqa: E402
 from ap_realize import plan_strings  # noqa: E402
 from ap_realize import realize  # noqa: E402
 from ap_realize import regex_literals  # noqa: E402
@@ -56,6 +57,20 @@ def _entropy(c: np.ndarray) -> float:
 
 
 class TestPieces:
+
+    @pytest.mark.parametrize("seed", range(5))
+    def test_nudge_meets_bounds_within_nibbles(self, seed: int) -> None:
+        rng = np.random.default_rng(seed)
+        z = rng.integers(0, 256, 20_000).astype(np.uint8).tobytes()
+        counts = np.bincount(np.frombuffer(z, dtype=np.uint8), minlength=256)
+        lo, hi = np.zeros(256, dtype=np.int64), np.full(256, len(z), dtype=np.int64)
+        lo[0x41], hi[0x10], hi[0x9F] = counts[0x41] + 3, counts[0x10] - 2, counts[0x9F] - 1
+        out, left = nudge(z, (1000, len(z)), lo, hi, rng)
+        got = np.bincount(np.frombuffer(out, dtype=np.uint8), minlength=256)
+        assert left == 0 and np.all(got >= lo) and np.all(got <= hi)
+        assert out[:1000] == z[:1000] and len(out) == len(z)
+        # Same-nibble moves only: the nibble histogram is unchanged.
+        assert np.array_equal(got.reshape(16, 16).sum(axis=1), counts.reshape(16, 16).sum(axis=1))
 
     @pytest.mark.parametrize("seed", range(10))
     def test_allocate_sums_and_caps(self, seed: int) -> None:

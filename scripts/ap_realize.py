@@ -41,6 +41,7 @@ from ap_encoding import FLAGS  # noqa: E402
 from ap_encoding import STEP  # noqa: E402
 from ap_encoding import Choice  # noqa: E402
 from ap_encoding import Encoding  # noqa: E402
+from ap_encoding import Frac  # noqa: E402
 from ap_encoding import props_of  # noqa: E402
 from ap_encoding import write  # noqa: E402
 
@@ -48,6 +49,8 @@ __all__ = [
     "Answer",
     "Strings",
     "allocate",
+    "count_bounds",
+    "nudge",
     "plan_strings",
     "realize",
     "regex_literals",
@@ -235,6 +238,87 @@ def search_name(name_option: int, flag_options: dict[str, int], tries: int, rng:
 
 
 ################################################################################
+# Knife-edge histogram splits
+################################################################################
+
+
+def count_bounds(enc: Encoding, sides: dict[tuple[int, int], bool], thresholds: dict[int, np.ndarray],
+                 length: int) -> tuple[np.ndarray, np.ndarray]:
+    """
+    Per byte value, the least and most whole counts (in a file of `length` bytes) that keep its share on the solver's
+    side of every split on it (as the model reads it: float32(count / length) <= t, or above).
+    """
+    index = {id(x): v for v, x in enumerate(enc.fam["histogram:counts"])}
+    lo = np.zeros(256, dtype=np.int64)
+    hi = np.full(256, length, dtype=np.int64)
+    for (f, j), at_most in sides.items():
+        val = enc.resolve(f)
+        if not isinstance(val, Frac) or id(val.num) not in index:
+            continue
+        v, t = index[id(val.num)], float(thresholds[f][j])
+        k = int(math.floor(t * length))  # the largest count whose share is at most t
+        while k >= 0 and float(np.float32(k / length)) > t:
+            k -= 1
+        while float(np.float32((k + 1) / length)) <= t:
+            k += 1
+        if at_most:
+            hi[v] = min(hi[v], k)
+        else:
+            lo[v] = max(lo[v], k + 1)
+    return lo, hi
+
+
+def nudge(z: bytes, region: tuple[int, int], lo: np.ndarray, hi: np.ndarray, rng: np.random.Generator) -> tuple[bytes, int]:
+    """
+    Rewrite single bytes in `region` so that each byte value's count lies in [lo, hi]: a value short of its least
+    count takes a byte from one with room to give, one over its most gives a byte to one with room to take, from the
+    same high nibble where possible (so that no byte-entropy window and no printable run changes).
+
+    Returns:
+        The rewritten file and the number of byte values still out of their bounds.
+    """
+    buf = bytearray(z)
+    counts = np.bincount(np.frombuffer(z, dtype=np.uint8), minlength=256).astype(np.int64)
+    arr = np.frombuffer(z[region[0]:region[1]], dtype=np.uint8)
+    where: list[list[int]] = [[] for _ in range(256)]
+    for pos in (rng.permutation(arr.size) + region[0]).tolist():
+        where[buf[pos]].append(pos)
+
+    def move(u: int, v: int) -> None:
+        pos = where[u].pop()
+        buf[pos] = v
+        where[v].append(pos)
+        counts[u] -= 1
+        counts[v] += 1
+
+    def pick(v: int, give: bool) -> Optional[int]:
+        same = range(16 * (v >> 4), 16 * (v >> 4) + 16)
+        for pool in (same, range(256)):
+            if give:  # values that can give one byte (in the region) and stay at or above their least
+                ok = [u for u in pool if u != v and where[u] and counts[u] - 1 >= lo[u]]
+                key = lambda u: counts[u] - max(lo[u], min(hi[u], counts[u]))  # noqa: E731 (surplus first)
+            else:  # values that can take one byte and stay at or below their most
+                ok = [u for u in pool if u != v and counts[u] + 1 <= hi[u]]
+                key = lambda u: hi[u] - counts[u]  # noqa: E731
+            if ok:
+                return max(ok, key=key)
+        return None
+
+    for v in range(256):
+        while counts[v] < lo[v]:
+            u = pick(v, give=True)
+            if u is None:
+                break
+            move(u, v)
+        while counts[v] > hi[v] and where[v]:
+            u = pick(v, give=False)
+            if u is None:
+                break
+            move(v, u)
+    return bytes(buf), int(((counts < lo) | (counts > hi)).sum())
+
+
+################################################################################
 # Realizing an answer
 ################################################################################
 
@@ -302,46 +386,62 @@ def _strings(printable: np.ndarray, k: int, length: int, plan: Strings) -> tuple
     return out, rest
 
 
-def _place(cols: np.ndarray, pool: np.ndarray, plan: Strings, share: float, first: bool) -> bytes:
+def _place(cols: np.ndarray, pool: np.ndarray, spool: np.ndarray, plan: Strings, frac: float, first: bool) -> bytes:
     """
-    The bytes of one block segment with nibble counts `cols`, drawn from `pool` (256 counts, updated): a non-printable
-    byte first (when `first`), then the block's `share` of the strings (`_strings`), each ended by a non-printable
-    byte, then the other printable bytes in runs of at most four. Printable bytes the separators cannot break up
-    lengthen the strings.
+    The bytes of one block segment with nibble counts `cols`, drawn from `pool` (256 counts, updated), of which
+    `spool` (updated) is reserved for the strings: the segment's `frac` of the strings still to write, with at least
+    five characters each, at least as many as the separators force, and otherwise its `frac` of the string
+    characters; then the other printable bytes; a non-printable byte first (when `first`); the string characters as
+    strings (`_strings`; regex literals first), each ended by a non-printable byte; the other printable bytes in runs
+    of at most four. Printable bytes the separators cannot break up lengthen the strings.
     """
-    cols = cols.copy()
 
-    def draw(col: int, k: int, prefer: Optional[np.ndarray] = None) -> list[int]:
-        sl = slice(16 * col, 16 * col + 16)
-        w = (np.maximum(prefer[sl], 0) + 1e-3) if prefer is not None else pool[sl].astype(np.float64)
-        c = allocate(k, w, pool[sl])
+    def take(sl: slice, k: int, avail: np.ndarray) -> list[int]:
+        c = allocate(k, avail[sl].astype(np.float64), avail[sl])
         pool[sl] -= c
-        return np.repeat(np.arange(16 * col, 16 * col + 16), c).tolist()
+        return np.repeat(np.arange(sl.start, sl.stop), c).tolist()
 
     out = bytearray()
-    # The characters the strings still need, the literals' owed matches included.
-    prefer = plan.need.astype(np.float64)
-    for j, c in plan.rg.items():
-        if c and plan.spellings[j]:
-            prefer += c * np.bincount(np.frombuffer(plan.spellings[j][0], dtype=np.uint8), minlength=256)
-    printable = np.asarray([v for col in PRINT_COLS for v in draw(col, int(cols[col]), prefer)], dtype=np.int64)
-    nonprint = [v for col in NONPRINT_COLS for v in draw(col, int(cols[col]))]
+    chars: list[int] = []
+    others: list[int] = []
+    # How many string characters: at least what the separators force (the other printable bytes need one non-printable
+    # byte per four), else the reserve's share of the printable bytes left. Within a column, string characters and
+    # other printable bytes change no window.
+    pr = sum(int(cols[c]) for c in PRINT_COLS)
+    q = sum(int(cols[c]) for c in NONPRINT_COLS)
+    forced = max(0, pr - 4 * max(q - 1, 0))
+    plan.carry += plan.left * frac
+    k_want = min(math.ceil(plan.carry), plan.left)
+    room = np.asarray([min(int(cols[c]), int(spool[16 * c:16 * c + 16].sum())) for c in PRINT_COLS], dtype=np.int64)
+    want = max(forced, round(plan.chars * frac), 5 * k_want)
+    want = min(want, max(forced, 5 * k_want, plan.chars - 5 * (plan.left - k_want)))  # leave five per string still owed
+    per_col = allocate(min(int(room.sum()), want), room.astype(np.float64), room)
+    # A column short of other printable bytes takes the difference from its reserve.
+    short = np.asarray([max(0, int(cols[c]) - int((pool - spool)[16 * c:16 * c + 16].sum())) for c in PRINT_COLS], dtype=np.int64)
+    per_col = np.minimum(np.maximum(per_col, short), room)
+    for col, ks in zip(PRINT_COLS, per_col.tolist(), strict=True):
+        sl = slice(16 * col, 16 * col + 16)
+        k = int(cols[col])
+        got = take(sl, ks, spool.copy())
+        spool[sl] -= np.bincount(np.asarray(got, dtype=np.int64), minlength=256)[sl] if got else 0
+        chars += got
+        others += take(sl, k - ks, pool - spool)
+    nonprint = [v for col in NONPRINT_COLS for v in take(slice(16 * col, 16 * col + 16), int(cols[col]), pool)]
     if first and nonprint:
         out.append(nonprint.pop())
-    plan.carry += plan.left * share
-    k = min(math.ceil(plan.carry), plan.left, len(nonprint), printable.size // 5)
+    printable = np.asarray(chars, dtype=np.int64)
+    k = min(k_want, len(nonprint), printable.size // 5)
     plan.carry -= k
-    length = min(printable.size, max(5 * k, round(plan.chars * share))) if k else 0
-    spare = len(nonprint) - k
-    if k and printable.size - length > 4 * spare:
-        length = printable.size - 4 * spare
-    strings, rest = _strings(printable, k, length, plan)
-    for s in strings:
-        out += s
+    if k:
+        strings, rest = _strings(printable, k, printable.size, plan)
+    else:
+        strings, rest = [], printable
+    for st in strings:
+        out += st
         out.append(nonprint.pop())
     plan.left -= k
-    plan.chars -= int(length)
-    rest_l = rest.tolist()
+    plan.chars -= int(printable.size)
+    rest_l = rest.tolist() + others
     for j in range(0, len(rest_l), 4):
         out += bytes(rest_l[j:j + 4])
         if nonprint:
@@ -351,7 +451,8 @@ def _place(cols: np.ndarray, pool: np.ndarray, plan: Strings, share: float, firs
 
 
 def realize(enc: Encoding, names: Sequence[str], x: np.ndarray, regexes: Optional[dict[str, re.Pattern[str]]] = None,
-            name_tries: int = 200_000, seed: int = 0, descending: bool = True) -> bytes:
+            name_tries: int = 200_000, seed: int = 0, descending: bool = True,
+            sides: Optional[dict[tuple[int, int], bool]] = None, thresholds: Optional[dict[int, np.ndarray]] = None) -> bytes:
     """
     The file an answer of the encoding describes (sections, then the append), with its new bytes ordered to hit the
     solver's windows and strings.
@@ -365,11 +466,15 @@ def realize(enc: Encoding, names: Sequence[str], x: np.ndarray, regexes: Optiona
         seed: Seeds the string fillers and the name search.
         descending: Lay the windows' rows out from the highest entropy down (the even spreads the high rows need are
             taken while the supply still has them; the low rows need only one plentiful nibble).
+        sides, thresholds: The solver's side of every split and the splits' thresholds: when given, byte counts are
+            nudged onto the solver's side of the histogram splits (`nudge`; the solver's counts are fractional and
+            sit within the encoding's tolerance of the thresholds, so rounding can tip them).
 
     Returns:
         The edited file.
     """
     v = Answer(names, x)
+    blocks = "bk0_0" in v.values  # the encoding's block model: the solver chose every block's nibble counts
     rng = np.random.default_rng(seed)
     if regexes is None:
         regexes = StringExtractor()._regexes  # type: ignore[no-untyped-call]
@@ -428,6 +533,14 @@ def realize(enc: Encoding, names: Sequence[str], x: np.ndarray, regexes: Optiona
     pd = np.rint(v.array("pd{}", 96)).astype(np.int64)
     rg = {k: round(v(f"rg{j}")) for j, k in enumerate(sorted(regexes))}
     plan = plan_strings(round(v("ns")), pd, {k: c for k, c in rg.items() if c > 0}, regexes)
+    # The string characters, reserved in the pools that hold them (the rest of the printable bytes stay outside strings).
+    spools = [np.zeros(256, dtype=np.int64) for _ in pools]
+    have = np.stack(pools)
+    for c in range(96):
+        col = have[:, 0x20 + c]
+        for q, amount in enumerate(allocate(min(int(pd[c]), int(col.sum())), col.astype(np.float64), col).tolist()):
+            spools[q][0x20 + c] = amount
+    plan.chars = int(sum(int(q.sum()) for q in spools))
 
     tail = bytearray(total)
     prev = np.bincount(np.frombuffer(enc.z[(n // STEP - 1) * STEP:n // STEP * STEP], dtype=np.uint8) >> 4, minlength=16)
@@ -442,16 +555,26 @@ def realize(enc: Encoding, names: Sequence[str], x: np.ndarray, regexes: Optiona
         old = np.frombuffer(enc.z[lo:min(hi, n)], dtype=np.uint8)
         own = np.bincount(old >> 4, minlength=16) + np.asarray([int(mask[len(old):].sum())] + [0] * 15)
         fixed = prev + own
+        want: Optional[np.ndarray] = None
+        if blocks:
+            # The solver's nibble counts for this block's new bytes, less the zero padding the layout puts there.
+            new_here = sum(s1 - s0 for s0, s1, _ in segs) + int(mask[len(old):].sum())
+            bk = np.maximum(v.array(f"bk{j - n // STEP}_{{}}", 16), 0.0)
+            want = round_counts(bk, new_here) if new_here and bk.sum() > 0 else np.zeros(16, dtype=np.int64)
+            want[0] = max(0, int(want[0]) - int(mask[len(old):].sum()))
         for s0, s1, p in segs:
             avail = pools[p].reshape(16, 16).sum(axis=1)
-            if row >= 0 and row < 16:
+            if want is not None:
+                cols = allocate(s1 - s0, want, avail)
+                want = np.maximum(want - cols, 0)
+            elif row >= 0 and row < 16:
                 cols = shape_block(fixed, s1 - s0, avail, np.maximum(target[row], 0), row)
                 target[row] = np.maximum(target[row] - cols, 0)
             else:
                 cols = allocate(s1 - s0, avail, avail)
-            supply = sum(int(q[0x20:0x80].sum()) for q in pools)
-            share = float(cols[2:8].sum()) / supply if supply else 0.0
-            body = _place(cols, pools[p], plan, share, first=True)
+            supply = sum(int(x[0x20:0x80].sum()) for x in pools)
+            frac = float(cols[2:8].sum()) / supply if supply else 0.0
+            body = _place(cols, pools[p], spools[p], plan, frac, first=True)
             if len(body) != s1 - s0:
                 raise RuntimeError(f"Block {j}: wrote {len(body)} bytes for {s1 - s0}.")
             tail[s0 - n:s1 - n] = body
@@ -470,4 +593,8 @@ def realize(enc: Encoding, names: Sequence[str], x: np.ndarray, regexes: Optiona
         raise RuntimeError("A section header did not fit.")
     if len(edited) != end:
         raise RuntimeError(f"Wrote {len(edited)} bytes, expected {end}.")
+    if sides is not None and thresholds is not None:
+        lo, hi = count_bounds(enc, sides, thresholds, end)
+        region = (a0, a1) if a1 - a0 >= STEP else (n, end)
+        edited, _ = nudge(edited, region, lo, hi, rng)
     return edited
