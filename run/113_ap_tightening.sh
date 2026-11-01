@@ -14,8 +14,13 @@
 #      (the solver's counts are fractional and sit within the encoding's float32 tolerance of the thresholds).
 # Hypothesis: section entropies and the histogram drop out of the gap (they did on the 3 files a 480 s diagnostic
 # solve after step 1 evaded on: real 2.54-4.73 after the nudge, from 4.13-6.76); byte-entropy shrinks with the block
-# model; strings remain the largest part. Expected outcome: fewer solver evasions (several undecided at 1,800 s), and
-# still at least 3 of 6 not evading as files -> the stop rule applies.
+# model; strings remain the largest part. A 480 s diagnostic solve with all three steps (2026-11-01): all 6 undecided
+# (program ~225 K variables, ~230 K rows, ~43 K binaries). Expected at 1,800 s: few or no solver evasions, most files
+# undecided, no certificate; any evasion that is found comes closer to the threshold as a file than in run 112 but
+# does not evade.
+# Proposed reading (Claude, 2026-11-01; for the user to confirm): the stop rule counts solver evasions that do not
+# evade as files; if there are none because every file is undecided, the round has removed the fake evasions but
+# certified nothing, check 1b is still a no-go, and decision 7 returns to the user with that result.
 #
 # Steps: (1) containment (run 111; the encoding changed; it must hold on every edit, ~25 min: the block model made
 # each check ~6x slower), (2) the 6 files at 1,800 s each in parallel (~32 min), (3) the evasions written as files

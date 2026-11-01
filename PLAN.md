@@ -65,7 +65,19 @@ introduction and a simple baseline (writing decision for later).
   detector; check 1b decides it. **Check 1b (2026-10-31): no-go** (0/13 certified, 6 solver evasions, 0 of 6 realize);
   decision 7's options are with the user.
 
-## Next steps (2026-10-31: check 1b read, no-go; decision 7 with the user)
+## Next steps (2026-11-01: the tightening round built; `run/113` with the user)
+
+Done: the user chose decision 7's option 1. Built (commits 7d002a4, ce584b8): section entropies tied to per-section
+counts; the exact block model of the byte-entropy windows; realizer repairs (sections, blocks, string reserve,
+knife-edge nudge); `scripts/ap_check2_realize.py`. The histogram and most of the strings gap turned out to be the
+realizer. Diagnostic at 480 s: all 6 files undecided. Next:
+1. **The user runs `run/113`** (~1 h): containment (must hold on every edit), the 6 files at 1,800 s, any evasion
+   written as a file. Apply the stop rule: >= 3 solver evasions still not evading as files -> decision 7 option 2.
+   If every file is undecided (proposed reading, to confirm): fake evasions gone, nothing certified, check 1b still a
+   no-go -> decision 7 returns to the user with that result.
+2. If evasions realize (check 2's 70%) on most of the 6: re-run check 1b in full on the tightened encoding (user).
+
+### Earlier: next steps (2026-10-31: check 1b read, no-go; decision 7 with the user)
 
 Done: check 1b (`run/112`, 1,800 s per solve, run by the user) read: of the 13 covered files, 0 certified, 6 solver
 evasions, 7 undecided (go was >= 4 certified). All 6 evasions written as files (`ap_realize.realize`, re-extracted):

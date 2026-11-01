@@ -281,6 +281,9 @@ Each is a short job on the pilot, on today's hand-coded predictors.
    evasions are artifacts of looseness or of the realizer, not attacks. The gap is spread: with one group's splits on
    the solver's sides, byte-entropy alone reaches 1.96-5.37, strings 2.15-4.50, section entropies 3.27-5.65; none
    reaches the threshold alone. Revisit decision 7 (with the user).
+   **Tightening round (decision 7 option 1, user, 2026-11-01): built; verdict pending (`run/113`).** Section entropies
+   tied to their byte counts, the exact block model of the windows, realizer repairs. The histogram and most of the
+   strings gap were the realizer; sections now track. At 480 s all 6 files are undecided.
 3. **The computed constraints matter on a defended detector built without them.** On the expert-set detector (once
    its row exists), the computed-constraint solver must find realized evasions on a material share (say 10% or more)
    of the files it detects. *No-go:* if their hand-written add-only assumptions already hold under M_full, the

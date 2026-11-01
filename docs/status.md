@@ -1,5 +1,25 @@
 # Status
 
+**2026-11-01: decision 7 answered (user: option 1, the bounded tightening round); the round is built; its verdict is
+`run/113` (waiting on the user, ~1 h: containment, then the 6 files at 1,800 s, then any evasion written as a file).**
+Commits 7d002a4, ce584b8, (this wrap-up).
+- Built (each sound and tested): each added section's own byte counts tied to its entropy (Pinsker above, the
+  dominant share below, every byte value present near 8 bits); the exact block model of the overlapping byte-entropy
+  windows; realizer repairs (each section from its own counts, each block from the solver's block counts, the
+  solver's string characters reserved and written as strings, byte counts nudged onto the solver's side of the
+  histogram splits). `scripts/ap_check2_realize.py` replaces the scratch realization driver.
+- Found: the histogram gap and most of the strings gap were the realizer, not looseness (the solver's fractional
+  counts sit within the float32 tolerance of thresholds; the written strings held 24-60% more characters than the
+  solver's). Sections now track. After the section step alone, the 3 files still evading wrote at 2.54-4.73 (were
+  4.13-6.76); threshold 1.10.
+- Diagnostic with all three steps (480 s): all 6 undecided. Containment smoke (16 edits) holds; the full `run/111`
+  takes ~25 min now and is step 1 of `run/113`.
+- Waiting on the user: run `bash run/113_ap_tightening.sh`; confirm the proposed reading of the stop rule if every
+  file is undecided (round removed fake evasions, certified nothing: check 1b still no-go, decision 7 back to the
+  user). Detail: `docs/direction-A-prime-encoding.md`, "Built: the tightening round". Next: `docs/resume-prompt.md`.
+
+---
+
 **2026-10-31 (session 1): check 1b read: no-go. 0 of 13 covered files certified, 6 solver evasions, 7 undecided at
 1,800 s; written as files, 0 of 6 evasions evade (real raw 3.40-6.76 vs threshold 1.10). Waiting on the user:
 decision 7's options (bounded tightening round with a stop rule, recommended; lead A' with another use; tighter learned

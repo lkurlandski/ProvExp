@@ -400,6 +400,58 @@ Still open (fifth session):
   overlapping windows (design above), a sound bound on added-section entropies, the realizer repairs above, then
   re-solve and re-realize the 6 files with a stop rule (>= 3 still not realizing -> lead A' with another use).
 
+## Built: the tightening round (2026-11-01; decision 7, option 1)
+
+The user chose the bounded round. What was built, in order, with what each showed (diagnostic solves at 480 s; the
+verdict is `run/113` at 1,800 s):
+
+- **Sections (commit 7d002a4).** The solver chose added-section content as one pooled count per byte value, and each
+  section's entropy as a free number in [0, 8]: it claimed sections at 0.27 bits and at exactly 8.0 side by side, and
+  the realizer, splitting the pool proportionally, wrote every section at the same entropy. Now each section has its
+  own counts (`s{i}_{v}`, summing to `s`), and its entropy variable is tied to them (`Program.tied`: a split on the
+  variable also gets the entropy's rows; a 0.5-bit grid of splits serves the entropy-hash buckets). The rows: Pinsker's
+  inequality above (entropy within d of the maximum puts the distribution within sqrt(2 ln2 d) of uniform in L1;
+  `pinsker_radius`, on every entropy of the encoding), the dominant share below (min-entropy and the binary entropy;
+  `dominant_share`), and every byte value present above log2(255) (`least_share`; a single missing value costs 0.0056
+  bits, which Pinsker cannot see). The realizer writes each section from its own counts (section entropy does not
+  depend on order, so it is exact up to rounding). Containment held, 1,105/1,105.
+  Re-solved: 3 of 6 still evade in the solver (6927e052, 511c7d1a, 2826a9a5), 3 undecided at 480 s. Written: the
+  sections track (511c7d1a claimed 8.0 / 2.0 / 4.0, written 7.996 / 1.61 / 3.71), and real scores fell (2826a9a5 4.13
+  -> 3.19, 511c7d1a 6.76 -> 4.11, 6927e052 6.11 -> 4.88). Sections are no longer a main carrier.
+- **The histogram is a realization gap, now closed.** All 74-87 differing histogram splits sat 0.02 counts from their
+  thresholds, on the solver's side only through the encoding's float32 tolerance (1e-6 relative): with fractional byte
+  counts the solver parks in the band and every whole-byte file lands on the other side. The realizer now nudges
+  counts onto the solver's side (`count_bounds`, `nudge`: single bytes of the appended region rewritten within the same
+  high nibble, so no window or printable run changes). 0-3 histogram splits differ afterwards; 2826a9a5 realized at
+  2.54. About 10-20% of the differing byte-entropy and string splits are the same knife edge; the rest are hundreds to
+  thousands of counts off, a real gap.
+- **The strings gap was mostly the realizer.** The written strings held 187 K characters against the solver's 151 K
+  (2826a9a5; 151 K vs 93 K on 6927e052), an L1 difference of 67-93 K between the character distributions, while the
+  encoding's sound run constraint (strings + non-string printables / 4 <= non-printables + 2) had ample slack. The
+  realizer drew string characters block by block with soft preferences and lengthened strings with what was left.
+  Now the solver's string characters are reserved in the pools up front, each block takes its share of strings (five
+  characters each, at least what its separators force), and only reserved characters go into strings; the L1 fell to
+  16 K on 2826a9a5. What remains comes from blocks with too few non-printable bytes for their printable ones, which the
+  pooled windows let the realizer choose; the block model hands that choice to the solver.
+- **The exact block model of the overlapping windows (commit ce584b8).** As designed, with one simplification: the
+  per-window Gibbs cuts do not need per-row copies (cross-entropy is at least the window's entropy whatever its row,
+  so `cross(q) >= 2048 * sum_r (r/4) u_r` holds for every reference q), which removes ~100 K rows. Per window: one row
+  binary, counts split exactly by row (`bz`, nonzero only in its row), Gibbs (4 levels x 16 one-nibble references),
+  Pinsker and Fano (no nibble above the share entropy r/4 allows; `fano_share`) for the lower side of the row, the
+  dominant share for its upper side. Per block, the separator constraint: printable bytes outside strings come in runs
+  of at most four, so each block's new bytes hold at least printable - 4 (non-printable + 1) string characters, and
+  their sum is at most the new strings' characters. The pooled row and dominance cuts are kept (cheap, more
+  references). The realizer takes each block's nibble counts from the solver. Program on 2826a9a5: 222 K variables,
+  203 K rows, 40 K binaries (was 57 K / 116 K / 23 K); it builds in seconds. `Encoding.fix` pins the block variables
+  to the written file (block counts, active windows, rows by thrember's own computation, dominant nibbles), so
+  containment checks the file's own point; even so each check is ~6x slower (~25 min for `run/111`). Containment smoke
+  (4 files, 16 edits): all contained.
+- **Diagnostic solve with all three steps (480 s, the 6 files): all undecided** (~225 K variables, ~230 K rows, ~43 K
+  binaries). No fake evasion within that time, and no certificate. The verdict is `run/113` (containment first, then
+  1,800 s per file, then any evasion written by `scripts/ap_check2_realize.py`). Proposed reading if every file is
+  undecided: the round removed the fake evasions but certified nothing; check 1b stays a no-go and decision 7 returns
+  to the user.
+
 ## Code plan (after review)
 
 - `scripts/ap_encoding.py`: build the choice block from a file's item table and a `catalogue_checks` description of the
