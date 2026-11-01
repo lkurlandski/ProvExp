@@ -392,11 +392,17 @@ def realize(enc: Encoding, names: Sequence[str], x: np.ndarray, regexes: Optiona
     total = gap + sum(r for _, _, r, _ in sections) + A
 
     # The byte pools: each section's content and the append.
-    s = round_counts(v.array("s{}", 256), sum(c for _, c, _, _ in sections)) if sections else np.zeros(256, dtype=np.int64)
+    # Each section's own counts (its entropy depends on them alone); an answer without them splits the pooled counts.
     pools = []
-    for i, (_, c, _, _) in enumerate(sections):
-        pools.append(s.copy() if i == len(sections) - 1 else allocate(c, s, s))
-        s = s - pools[-1]
+    if sections and any(f"s0_{u}" in v.values for u in range(256)):
+        for i, (_, c, _, _) in enumerate(sections):
+            own = v.array(f"s{i}_{{}}", 256)
+            pools.append(round_counts(own, c) if c else np.zeros(256, dtype=np.int64))
+    else:
+        s = round_counts(v.array("s{}", 256), sum(c for _, c, _, _ in sections)) if sections else np.zeros(256, dtype=np.int64)
+        for i, (_, c, _, _) in enumerate(sections):
+            pools.append(s.copy() if i == len(sections) - 1 else allocate(c, s, s))
+            s = s - pools[-1]
     a = v.array("a{}", 256)
     pools.append(round_counts(a, A) if A else np.zeros(256, dtype=np.int64))
 

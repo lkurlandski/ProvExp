@@ -16,6 +16,9 @@
 # 1,105 edits written; contained, exact, and held-fixed unchanged on all 1,105.
 # Re-ran twice more (2026-10-30, fifth session, ~8 min each): after the pooled dominance cuts on the new windows, and
 # after the regex character requirements on the strings: holds both times (1,105 of 1,105 on every check).
+# Re-ran 2026-11-01 (Claude, ~8 min), after per-section byte counts tied to each added section's entropy (Pinsker
+# above, the dominant share below; Pinsker also on the file's, the overlay's, and the strings' entropies): holds
+# (1,105 of 1,105 on every check).
 set -euo pipefail
 cd "$(dirname "$0")/.."
 source env/bin/activate

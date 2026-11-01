@@ -66,7 +66,9 @@ __all__ = [
     "budget",
     "certify",
     "dominance_cuts",
+    "dominant_share",
     "link_ensemble",
+    "pinsker_radius",
     "props_of",
     "regex_requirements",
     "write",
@@ -101,6 +103,9 @@ MAX_UNIT = np.inf
 FEASIBILITY_TOL = 1e-9
 # The Gibbs reference distributions mix the old distribution with the uniform one by these weights.
 GIBBS_MIX = (1e-3, 0.05, 0.3)
+# The thresholds every added section's entropy variable is tied to its byte counts at (besides the ensemble's own
+# thresholds on the section-entropy maxima): for the entropy-hash buckets, whose splits are on sums of them.
+SECTION_GRID = tuple(float(t) for t in np.arange(0.5, 8.0, 0.5))
 # The pefile warnings the catalogue reaches, and their number.
 WARN_BYTE = "pefilewarnings:warning_Byte 0x..."
 WARN_FLAGS = "pefilewarnings:warning_Suspicious flags set for section..."
@@ -190,7 +195,9 @@ class Ent:
     """
     The entropy (bits) of the distribution counts / total. `lo` and `hi` bound each share over the whole region (for the
     chords); `refs` are the reference distributions of Gibbs' inequality (each entry positive); `floor` is a lower bound
-    on entropy * total (`mixture_floor`).
+    on entropy * total (`mixture_floor`). Optionally (`Program.deviation`, `Program.largest`): `dev` is at least the L1
+    distance of the counts from the uniform split of the total over `symbols` symbols (for `pinsker_radius`), and
+    `top` at most the largest count (for `dominant_share`).
     """
 
     counts: tuple[Lin, ...]
@@ -199,6 +206,9 @@ class Ent:
     hi: np.ndarray
     refs: tuple[np.ndarray, ...]
     floor: Lin
+    dev: Optional[Lin] = None
+    top: Optional[Lin] = None
+    symbols: int = 256
 
 
 @dataclass(frozen=True)
@@ -245,6 +255,33 @@ def mixture_floor(total: float, entropy: float, removed: float, symbols: int) ->
     w = r / total
     h = -w * math.log2(w) - (1 - w) * math.log2(1 - w) if 0 < w < 1 else 0.0
     return max(0.0, total * entropy - r * math.log2(symbols) - total * h)
+
+
+def pinsker_radius(t: float, symbols: int) -> float:
+    """
+    Pinsker's inequality in bits, D(p || u) >= ||p - u||_1^2 / (2 ln 2), with D(p || u) = log2(symbols) - H(p): a
+    distribution of entropy above t lies within this L1 distance of the uniform one (widened by TOL_ENT).
+    """
+    return math.sqrt(2.0 * math.log(2.0) * max(0.0, math.log2(symbols) - t + TOL_ENT))
+
+
+def dominant_share(t: float) -> float:
+    """
+    The least largest share of a distribution of entropy at most t (widened by TOL_ENT): min-entropy is at most entropy
+    (p_max >= 2^-t), and H >= h(p_max), the binary entropy, which below one bit puts p_max above h's inverse on [1/2, 1].
+    """
+    t = t + TOL_ENT
+    out = 2.0 ** -t
+    if t < 1.0:
+        lo, hi = 0.5, 1.0  # h decreases on [1/2, 1]
+        for _ in range(60):
+            mid = (lo + hi) / 2
+            if -mid * math.log2(mid) - (1 - mid) * math.log2(1 - mid) > t:
+                lo = mid
+            else:
+                hi = mid
+        out = max(out, lo)
+    return float(out)
 
 
 def references(dists: Sequence[np.ndarray]) -> tuple[np.ndarray, ...]:
@@ -397,6 +434,8 @@ class Program:
         self.switch: list[int] = []
         # Binaries fixed both ways (a held-fixed feature on the wrong side of a fixed split): the program is infeasible.
         self.conflicts: list[str] = []
+        # Variables equal to an entropy: a split on the variable also gets the entropy's rows.
+        self.tied: dict[int, Ent] = {}
 
     def var(self, name: str, lb: float = 0.0, ub: float = 1.0, integer: bool = False) -> int:
         if not lb <= ub:
@@ -478,6 +517,10 @@ class Program:
             d = TOL_REL * max(1.0, abs(t))
             self.at_most_when(value - (t + d), z, when=1)
             self.at_most_when((t - d) - value, z, when=0)
+            if value.const == 0.0 and len(value.terms) == 1:
+                (v, coef), = value.terms.items()
+                if coef == 1.0 and v in self.tied:
+                    self._link_entropy(self.tied[v], t, z)
             return
         if isinstance(value, Frac):
             # NOTE: relative only: shares are split at thresholds as small as 1e-35, and float32 division is off by at
@@ -525,6 +568,33 @@ class Program:
         for q in e.refs:
             gibbs = Lin.total(c * float(-math.log2(w)) for c, w in zip(e.counts, q.tolist(), strict=True))
             self.at_most_when((t - TOL_ENT) * e.total - gibbs, z, when=0)
+        # H > t (z = 0): within Pinsker's L1 distance of uniform (useful only below the trivial distance 2).
+        r = pinsker_radius(t, e.symbols)
+        if e.dev is not None and r < 2.0:
+            self.at_most_when(e.dev - r * e.total, z, when=0)
+        # H <= t (z = 1): some symbol holds at least the dominant share.
+        if e.top is not None and t < math.log2(e.symbols):
+            self.at_most_when(dominant_share(t) * e.total - e.top, z, when=1)
+
+    def deviation(self, name: str, counts: Sequence[Lin], total: Lin) -> Lin:
+        """A sum of variables at least the L1 distance of `counts` from total / len(counts) each (Ent.dev)."""
+        ub = self.bounds(total)[1]
+        out = Lin()
+        for v, c in enumerate(counts):
+            d = self.var(f"{name}dev{v}", 0.0, ub)
+            self.row(Lin.of(d) - c + total * (1.0 / len(counts)), lo=0.0)
+            self.row(Lin.of(d) + c - total * (1.0 / len(counts)), lo=0.0)
+            out._iadd(Lin.of(d), 1.0)
+        return out
+
+    def largest(self, name: str, counts: Sequence[Lin], ub: float) -> Lin:
+        """A variable at most the largest of `counts` (each at most `ub`): at most the count of a chosen symbol (Ent.top)."""
+        top = self.var(f"{name}top", 0.0, ub)
+        d = [self.binary(f"{name}dom{v}") for v in range(len(counts))]
+        self.row(Lin.total(Lin.of(x) for x in d), 1, 1)
+        for c, x in zip(counts, d, strict=True):
+            self.row(Lin.of(top) - c + Lin.of(x, ub), hi=ub, switch=x)
+        return Lin.of(top)
 
     def product(self, name: str, x: Lin, ub: float, b: int) -> int:
         """A variable equal to x * b for a binary b and 0 <= x <= ub (exact)."""
@@ -768,12 +838,26 @@ class Encoding:
             P.row(Lin.of(rx[i]) - Lin.of(r_) - Lin.of(x_), lo=-1)
             rc.append(P.product(f"rc{i}", raw[i], B, fl[i]["CNT_CODE"]))
         P.row(Lin.total(Lin.of(x) for x in s) - Lin.total(Lin.of(x) for x in c), 0, 0)
+        # Each section's own content counts (they sum to s), its data (content, then zero padding), and its entropy.
+        self.sv = sv = [[P.var(f"s{i}_{v}", 0, B) for v in range(256)] for i in range(k)]
+        for i in range(k):
+            P.row(Lin.total(Lin.of(x) for x in sv[i]) - Lin.of(c[i]), 0, 0)
+            P.row(Lin.of(e[i]) + Lin.of(zs[i], 8), hi=8)  # no data, entropy zero
+        if k:
+            for v in range(256):
+                P.row(Lin.of(s[v]) - Lin.total(Lin.of(sv[i][v]) for i in range(k)), 0, 0)
         on0 = Lin.of(on[0]) if k else Lin()
         gap = _align(n, fa) - n
         pad = gap * on0 + Lin.total(raw[i] - Lin.of(c[i]) for i in range(k))
         P.row(Lin.of(D) - pad - Lin.total(Lin.of(c[i]) for i in range(k)) - Lin.of(A), 0, 0)
         P.row(Lin.of(D), hi=B)
         self.D, self.A, self.a, self.s = D, A, a, s
+        for i in range(k):
+            data = [Lin.of(sv[i][v]) + ((raw[i] - Lin.of(c[i])) if v == 0 else 0.0) for v in range(256)]
+            P.tied[e[i]] = Ent(tuple(data), raw[i], np.zeros(256), np.ones(256), references([np.ones(256)]), Lin(),
+                               dev=P.deviation(f"sec{i}", data, raw[i]), top=P.largest(f"sec{i}", data, float(B)))
+            for t in SECTION_GRID:
+                P.link(Lin.of(e[i]), t, P.binary(f"egrid{i}_{t}"))
         n1 = n + Lin.of(D)  # the new length
 
         # The header bytes the sections write: their table entries and the rewritten fields.
@@ -801,7 +885,8 @@ class Encoding:
         h_bytes = float(self.x0[extractor.feature_names.index("general:entropy")])
         # The floor's correction for overwritten bytes applies only when a section is added.
         penalty = n * h_bytes - mixture_floor(n, h_bytes, h_max, 256)
-        bytes_ent = Ent(tuple(counts), n1, lo, hi, references([old_counts]), n * h_bytes - penalty * on0)
+        bytes_ent = Ent(tuple(counts), n1, lo, hi, references([old_counts]), n * h_bytes - penalty * on0,
+                        dev=P.deviation("bytes", counts, n1))
 
         # Byte-entropy windows: the new windows over the new tail, and the header windows the writes touch.
         w0 = (n - WINDOW) // STEP + 1
@@ -935,7 +1020,8 @@ class Encoding:
         h_strings = float(self.x0[extractor.feature_names.index("strings:entropy")])
         strings_ent = Ent(tuple(pdist), printables, lo, hi, references([old_pd]),
                           old_p * h_strings - (old_p * h_strings - mixture_floor(old_p, h_strings, float(rem_pd.sum()), 96))
-                          * (Lin.of(dH) + (Lin.of(dT) if dT is not None else 0.0)))
+                          * (Lin.of(dH) + (Lin.of(dT) if dT is not None else 0.0)),
+                          dev=P.deviation("strings", pdist, printables), symbols=96)
 
         # The section group.
         sec = [i for i in table.of_group("section") if i.kind == "section"]
@@ -945,9 +1031,9 @@ class Encoding:
         keep = 1.0 - on0  # the old overlay survives only if no section is added
         ov_size = (n - ov_start) * keep + Lin.of(A)
         h_overlay = float(self.x0[extractor.feature_names.index("section:overlay_entropy")])
-        ov_ent = Ent(tuple(float(ov_counts[v]) * keep + Lin.of(a[v]) for v in range(256)), ov_size,
-                     np.zeros(256), np.ones(256), references([ov_counts, old_counts]),
-                     mixture_floor(n - ov_start, h_overlay, 0.0, 256) * keep)
+        ov_data = tuple(float(ov_counts[v]) * keep + Lin.of(a[v]) for v in range(256))
+        ov_ent = Ent(ov_data, ov_size, np.zeros(256), np.ones(256), references([ov_counts, old_counts]),
+                     mixture_floor(n - ov_start, h_overlay, 0.0, 256) * keep, dev=P.deviation("overlay", ov_data, ov_size))
         counts_sec = [float(x) for x in sums["section:counts"]]
         sec_counts = [
             counts_sec[0] + Lin.total(Lin.of(o) for o in on),
@@ -1141,6 +1227,10 @@ class Encoding:
                     for o, v in enumerate(self.q[i][(f, pn)]):
                         P.fix(v, o == hit)
         content = b"".join(c for _, c, _ in choice.sections)
+        for i in range(self.k):
+            own = choice.sections[i][1] if i < len(choice.sections) else b""
+            for v, x in enumerate(np.bincount(np.frombuffer(own, dtype=np.uint8), minlength=256).tolist()):
+                P.fix(self.sv[i][v], x)
         for v, x in enumerate(np.bincount(np.frombuffer(choice.append, dtype=np.uint8), minlength=256).tolist()):
             P.fix(self.a[v], x)
         for v, x in enumerate(np.bincount(np.frombuffer(content, dtype=np.uint8), minlength=256).tolist()):

@@ -138,7 +138,7 @@ class TestRoundTrip:
             s = np.zeros(256)
             s[0], s[0x41] = 1000, 2000
             for v in range(256):
-                x[idx[f"s{v}"]] = s[v]
+                x[idx[f"s{v}"]] = x[idx[f"s0_{v}"]] = s[v]
         edited = realize(enc, names, x, name_tries=50_000)
         tail = np.frombuffer(edited[-int(a.sum()):], dtype=np.uint8)
         assert np.array_equal(np.bincount(tail, minlength=256), a)

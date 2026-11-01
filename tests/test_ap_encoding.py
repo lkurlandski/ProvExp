@@ -23,7 +23,9 @@ from ap_encoding import Lin  # noqa: E402
 from ap_encoding import MaxOf  # noqa: E402
 from ap_encoding import boundary_references  # noqa: E402
 from ap_encoding import dominance_cuts  # noqa: E402
+from ap_encoding import dominant_share  # noqa: E402
 from ap_encoding import mixture_floor  # noqa: E402
+from ap_encoding import pinsker_radius  # noqa: E402
 from ap_encoding import Program  # noqa: E402
 from ap_encoding import reachable_rows  # noqa: E402
 from ap_encoding import regex_requirements  # noqa: E402
@@ -122,6 +124,100 @@ class TestLink:
 
         assert _feasible(build, False)
         assert not _feasible(build, True)
+
+
+def _distribution(rng: np.random.Generator, symbols: int) -> np.ndarray:
+    """Random counts: near uniform, concentrated on a few symbols, or one dominant symbol over a spread rest."""
+    kind = rng.integers(3)
+    if kind == 0:
+        return rng.integers(900, 1100, symbols).astype(float)
+    if kind == 1:
+        c = np.zeros(symbols)
+        c[rng.choice(symbols, rng.integers(1, 6), replace=False)] = rng.integers(1, 1000, 1).astype(float) + rng.integers(0, 50)
+        return c
+    c = rng.integers(0, 20, symbols).astype(float)
+    c[rng.integers(symbols)] += float(rng.integers(0, 50_000))
+    return c
+
+
+class TestEntropyCuts:
+
+    @pytest.mark.parametrize("seed", range(40))
+    @pytest.mark.parametrize("symbols", [96, 256])
+    def test_pinsker_sound(self, seed: int, symbols: int) -> None:
+        c = _distribution(np.random.default_rng(seed), symbols)
+        if c.sum() == 0:
+            return
+        h = _entropy(c)
+        l1 = float(np.abs(c / c.sum() - 1.0 / symbols).sum())
+        for t in (h - 1e-3, h - 0.1, h - 1.0):
+            assert l1 <= pinsker_radius(t, symbols) + 1e-12
+
+    @pytest.mark.parametrize("seed", range(40))
+    def test_dominant_share_sound(self, seed: int) -> None:
+        c = _distribution(np.random.default_rng(seed), 256)
+        if c.sum() == 0:
+            return
+        h = _entropy(c)
+        for t in (h, h + 1e-3, h + 0.1, h + 1.0):
+            assert c.max() / c.sum() >= dominant_share(t) - 1e-12
+
+    def test_dominant_share_tight_cases(self) -> None:
+        # k equal symbols: entropy log2 k, largest share 1/k (min-entropy equals entropy).
+        for k in (1, 2, 4, 16):
+            assert dominant_share(math.log2(k)) == pytest.approx(1.0 / k, rel=1e-4)
+        # Below one bit the binary entropy decides: two symbols at 0.9 / 0.1 have entropy 0.469.
+        assert dominant_share(0.469) == pytest.approx(0.9, abs=1e-3)
+
+    @staticmethod
+    def _build(c: np.ndarray, t: float) -> object:
+        def build(p: Program, z: int) -> None:
+            xs = [p.var(f"x{i}", 0, float(c.sum())) for i in range(c.size)]
+            for x, v in zip(xs, c.tolist()):
+                p.fix(x, v)
+            counts = tuple(Lin.of(x) for x in xs)
+            total = Lin.total(counts)
+            e = Ent(counts, total, np.zeros(c.size), np.ones(c.size), references([np.ones(c.size)]), Lin(),
+                    dev=p.deviation("e", counts, total), top=p.largest("e", counts, float(c.sum())), symbols=c.size)
+            p.link(e, t, z)
+        return build
+
+    @pytest.mark.parametrize("seed", range(20))
+    def test_link_true_side(self, seed: int) -> None:
+        rng = np.random.default_rng(seed)
+        c = _distribution(rng, 256)
+        if c.sum() == 0:
+            return
+        h = _entropy(c)
+        t = float(np.clip(h + rng.choice([-0.3, -0.01, 0.01, 0.3]), 0.05, 7.99))
+        assert _feasible(self._build(c, t), h <= t)
+
+    def test_link_excludes_far_sides(self) -> None:
+        # Half the bytes one value, the rest spread: entropy ~5 bits; "above 7.9" breaks Pinsker, "at most 0.5" the
+        # dominant share.
+        c = np.full(256, 10.0)
+        c[0] = 2550.0
+        assert not _feasible(self._build(c, 7.9), False)
+        assert not _feasible(self._build(c, 0.5), True)
+
+    def test_tied_variable(self) -> None:
+        # A variable tied to an entropy gets the entropy's rows when a split is on the variable itself.
+        c = np.full(256, 10.0)
+        c[0] = 2550.0
+
+        def build(p: Program, z: int) -> None:
+            xs = [p.var(f"x{i}", 0, float(c.sum())) for i in range(256)]
+            for x, v in zip(xs, c.tolist()):
+                p.fix(x, v)
+            counts = tuple(Lin.of(x) for x in xs)
+            total = Lin.total(counts)
+            e = p.var("e", 0, 8)
+            p.tied[e] = Ent(counts, total, np.zeros(256), np.ones(256), references([np.ones(256)]), Lin(),
+                            dev=p.deviation("e", counts, total), top=p.largest("e", counts, float(c.sum())))
+            p.link(Lin.of(e), 7.9, z)
+
+        assert not _feasible(build, False)
+        assert _feasible(build, True)
 
 
 class TestMixtureFloor:
