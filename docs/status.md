@@ -8,7 +8,10 @@ accomplished, then decide the next work (the user leans toward formalizing the f
 - Decision: A' to `docs/graveyard.md`; folded into A (`docs/direction-A-summary.md`, end): the region's soundness for
   combined edits (run 111) and the learned-constraints contrast (run 110). Record: `docs/direction-A-prime-plan.md`,
   Section 13.
-- Next: the stock-take (`docs/resume-prompt.md`); no new experiments until it is done.
+- Discussed (not decided): the user leans toward formalizing the framework next; Claude agrees on the condition that
+  every definition and theorem serves A's results or predicts something checkable (not method first again).
+- Next (user, 2026-11-02): the stock-take in a new session (`docs/resume-prompt.md`); no new experiments until it is
+  done and the next work is decided. Commits 0c1b312, (this wrap-up).
 
 ---
 

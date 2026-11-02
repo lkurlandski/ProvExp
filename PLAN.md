@@ -59,8 +59,10 @@ introduction and a simple baseline (writing decision for later).
 
 A' dropped and folded into A (above). The user wants a pause: a deep look at what the project has accomplished before
 choosing further work. The user leans toward formalizing the framework (the model and its claims, C1-C4) rather than
-new applications (B, C) or strengthening A, and is open to the alternatives. Next:
-1. **Stock-take** (`docs/resume-prompt.md`): what is established (model, engines, direction A's results, what A'
+new applications (B, C) or strengthening A, and is open to the alternatives. Claude agrees, on the condition that every
+definition and theorem serves A's results or predicts something checkable against re-extraction (the old direction
+failed by building method first). Next:
+1. **Stock-take, in a new session** (`docs/resume-prompt.md`): what is established (model, engines, direction A's results, what A'
    showed), what is claimed but unproven, and what the thesis needs.
 2. Then decide the next work: formalization, A's gaps, or screening B / C.
 

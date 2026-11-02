@@ -32,7 +32,12 @@ Options to weigh with the user, each with a concrete example of the work, what i
 - **Formalize the framework** (the user's lean): definitions, theorems with proofs for C1-C4, the assumptions under
   which they hold, perhaps a second feature set or format to show the model is domain-agnostic. Be harsh on novelty:
   what does the formalization say that Pierazzi et al.'s formalization and data-flow / taint-tracking theory do not?
-  What would a reviewer gain from it beyond direction A?
+  What would a reviewer gain from it beyond direction A? Claude's view at the end of 2026-11-02 (discussed, not
+  decided): formalizing first is right, on one condition. Every definition and theorem must be one that A's results
+  rest on, or one that predicts something checkable against re-extraction. Otherwise it repeats the failure of the
+  explanation-provenance direction (method first, applications found afterwards; `docs/graveyard.md`). Strengthening A
+  is mostly execution and need not come first; screening B or C is premature until we know what the formal model
+  offers them.
 - **Strengthen A** (`docs/direction-A-summary.md`: adversarial-training baseline, second toolkit, leave-one-out PV,
   scale).
 - **Screen B or C** (`PLAN.md`, Directions).
