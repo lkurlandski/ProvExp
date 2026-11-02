@@ -1,61 +1,34 @@
 # Status
 
-**2026-11-02 (paper mock written): `docs/paper-mock.md`.** Thesis, four contributions, outline with word budgets
-(body ~9,500; framework 2,500), Tables 1-3 (correct; vs hand and learned; detectors) with measured EMBER cells and
-missing CTU-13 cells, candidate Table 4 (CTU-13 detector vs FENCE/MoEvA2). Next: the framework section in `.tex`
-(can start now), and the CTU-13 instance (first: what the MoEvA2 package ships). Open (user): Drebin as instance;
-the coupling row.
-
----
-
-**2026-11-02 (feasibility reading done): CTU-13 with Chernikova and Oprea's features is the cheapest and strongest
-breadth instance; Drebin second; CICFlowMeter stays the running example. Next: the paper mock.**
-- *Traffic, CTU-13 / FENCE features:* raw captures public (CC-BY). The features are Zeek connection records aggregated
-  per internal host, port (17 + other), and one-minute window into 756 totals, minima, and maxima: items are
-  connections, the readouts are identity and pools; the attack inserts connections (stated in items, so the
-  format-dependent requirements are not needed). Simonetto et al. wrote 360 constraints by hand (326 linear, 34
-  non-linear; MoEvA2 replication package on GitHub), a direct baseline for derived constraints. No released FENCE
-  extractor found; reimplementing it from the paper's table is small. Attacks: FENCE, MoEvA2, C-PGD (feature space).
-- *Android, Drebin:* raw APKs from AndroZoo (academic key). No official extractor; Python reimplementations on
-  Androguard (annamalai-nr/drebin, Python 2.7; a Python 3 fork). Baseline: Pierazzi et al. estimate side effects by
-  injecting each gadget into a minimal app and re-extracting; Theorem 1 computes them. Directions are near-trivial
-  (Demontis et al.). Corrected our text: a used permission needs the permission requested *and* a call needing it.
-- *Traffic, CICFlowMeter:* open (Java), CIC-IDS2017 pcaps public, Engelen et al.'s corrected fork. Corrected our
-  text: lengths are payload bytes; the 120 s timeout runs from the flow's first packet; a FIN ends a flow only after
-  both sides send one (the code's check reads the backward count twice, a likely bug). Mostly non-malware traffic.
-- Pierazzi et al.'s wording checked; our paraphrase holds (quotes in `docs/formalization.md`, Section 10).
-- Not checked: whether Pierazzi et al.'s attack code is public; whether the MoEvA2 package includes the raw-to-feature
-  pipeline.
-
----
-
-**2026-11-02 (reassessment, end of session): `docs/formalization.md` frozen at revision 5 (13,100 words: source
-material, not a draft). Next: feasibility reading for breadth domains, then the paper mock, then the framework section
-in `.tex`.** Order of work: `PLAN.md`, "Reassessed".
-- The user found the formalization sprawling (paper text, appendix proofs, and project notes in one file; nothing
-  pruned). Agreed: freeze it, skip its Section 10, mock the paper first, and draft the framework to a budget (~2,500
-  words).
-- Settled (user): the domain is adversarial examples in practical security tasks; the framework is as agnostic as
-  Pierazzi et al.'s; PE is the inspiration and main instance; other domains are breadth. Paper text goes straight into
-  `.tex` (`CLAUDE.md` updated: the manuscript rewrite has begun with the framework section).
-
----
-
-**2026-11-02 (formalization round 2, end of session): `docs/formalization.md` at revision 5. The user delegated the
-round-2 review (too early to spend effort on); next: write Section 10's results.** Commits 40bc8ae (revision 4),
-204457a (revision 5), (this wrap-up).
-- Revision 4 (`docs/feedback.md`, items 6-12, Claude's points, user-delegated): Requirement 3 allows *end-anchored*
-  items (the overlay grows under appending, which the old wording forbade); presence rule fixed to $E_s \cup \{0\}$;
-  pattern counts are 0/1 add terms, not count terms; "needs no attack" qualified (element-stated operations get
-  per-input signatures from the item table, valid for the corpus's layouts; `file_region_changes` applies no edit);
-  pattern lemma moved into 6.2 (Lemma 5), readout rules are Lemma 6, single-input tests are Lemma 7 in Section 10.1;
-  Corollary 2 now a remark; Section 8 separates format-free conditions from per-format instrumentation.
-- Revision 5 (item 13, user's question): Section 2 is a short primer on the three domains; the p/d/c feature labels are
-  gone, features are named in plain words where used. Open for the paper: three domains per definition, or one main
-  example plus the concept-by-domain table.
-- Next: Section 10 (coupling, reachable region, projection, tightness, cost, positioning), then the light verification
-  reading (Drebin API lists and permission map, CICFlowMeter definitions, FENCE's constraint count, Pierazzi's wording).
-- No code or runs this session.
+**2026-11-02 (end of session): reassessed; paper mock written; next: the framework section in `.tex` (new chat,
+`docs/resume-prompt.md`).** Commits 40bc8ae, 204457a, 65e6082, 1e683a4, 89a8fb9, 2814e8a, (this wrap-up). No code or
+runs.
+- **Formalization, round 2 (delegated by the user), revisions 4-5** (`docs/feedback.md`, items 6-13): end-anchored
+  items in Requirement 3 (appending lengthens the overlay); presence rule $E_s \cup \{0\}$; pattern counts as 0/1 add
+  terms; layout-dependent signatures stated honestly; lemmas regrouped (Lemma 7, single-input tests, to Section 10.1);
+  Corollary 2 now a remark; Section 2 a short primer; features named in plain words, no p/d/c labels.
+- **Reassessment (user).** `docs/formalization.md` had reached 13,100 words, mixing paper text, appendix proofs, and
+  project notes: it is **frozen** as the reference and appendix source, and its Section 10 is not written. Settled:
+  the domain is *adversarial examples in practical security tasks*; the framework is as agnostic as Pierazzi et al.'s;
+  PE malware is the inspiration and main instance; other domains are breadth (`CLAUDE.md`, "Framework conventions").
+  Paper text goes straight into `.tex`; no markdown drafts of paper text.
+- **Feasibility reading.** CTU-13 with Chernikova and Oprea's features is the cheapest and strongest breadth instance:
+  raw captures public; Zeek connection records aggregated per host, port, and minute into 756 totals, minima, and
+  maxima; the attack inserts connections (stated in items); Simonetto et al.'s 360 hand-written constraints (326
+  linear, 34 non-linear; MoEvA2 package) are the baseline. No released FENCE extractor; rebuilding it is small. Drebin
+  second (AndroZoo key; old Python reimplementations; head-to-head with Pierazzi et al. on side effects; directions
+  near-trivial). CICFlowMeter stays the running example (open, mostly non-malware). Facts corrected in the
+  formalization: Drebin's used permissions need the permission requested *and* a call needing it; CICFlowMeter lengths
+  are payload bytes, the 120 s timeout runs from the flow's first packet, a FIN ends a flow only after both sides send
+  one (the code reads the backward count twice, a likely bug); the 360 constraints are Simonetto et al.'s; Pierazzi
+  et al.'s wording supports our paraphrase. Unchecked: whether Pierazzi et al.'s code is public; whether the MoEvA2
+  package ships the raw-to-feature pipeline.
+- **Paper mock** (`docs/paper-mock.md`): thesis; four contributions; outline with word budgets (body ~9,500,
+  framework 2,500); Table 1 (side effects correct), Table 2 (vs hand analysis and learned constraints), Table 3
+  (detectors), candidate Table 4 (CTU-13 detector vs FENCE/MoEvA2); EMBER cells measured at pilot scale, CTU-13 cells
+  missing, with a go/no-go. Open (user): Drebin as an instance (default: examples only); the coupling row (default:
+  out).
+- Next: the framework section in `.tex`; then the CTU-13 instance (first: what the MoEvA2 package ships); then A's gaps.
 
 ---
 

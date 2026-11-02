@@ -13,8 +13,11 @@ and manuscript remain as source material. Deadlines and conference cycles are no
 - `docs/status.md`: current state, what is waiting on the user, and what to do next. **Update it at the end of
   every session.** `docs/resume-prompt.md`: where to pick up next.
 - `PLAN.md`: thesis, the model, directions A (core), B, C, next steps, settled decisions.
-- `docs/formalization.md`: the formal model (current work; three running domains: EMBER, Drebin, CICFlowMeter) and
-  `docs/feedback.md`, the user's review log for it (one item per point; apply in one pass when a round ends).
+- `docs/paper-mock.md`: the paper's thesis, contributions, outline with word budgets, and tables (measured vs
+  missing). It decides what goes into the paper; check new work against it.
+- `docs/formalization.md`: the formal model, **frozen** (2026-11-02) as the reference and appendix source for the
+  paper's framework section (three example domains: EMBER, Drebin, CICFlowMeter); only factual corrections. Its review
+  log: `docs/feedback.md`.
 - `docs/feature-provenance-model.md` (the three-layer model, claims C1-C4 with proof sketches and assumptions A1-A4,
   worked example, coverage of real transformations) and `docs/literature-2026-10-22.md` (related work for the new
   direction). Be harsh about our own novelty: read the closest work on the same *task* before building (user,
