@@ -263,3 +263,19 @@ material for the reachable region.
 ## 12. Pierazzi et al.'s wording
 
 **Decision:** added to Section 10's "To verify".
+
+## 13. Is the running-examples section needed? Features by name, not by label
+
+**User.** Is Section 2 needed, and would it be better to name features directly instead of by aliases (p1-p9,
+d1-d4, c1-c8)? The feature sets still need describing in a background or experimental-setup section.
+
+**Discussion (Claude).** The labels are the same problem as the A-codes of round 1: the reader must remember what
+"p8" means by Section 6. The fixed feature lists do no work, since each example needs different features. A short
+primer on each format (overlay and section table; manifest and bytecode; flows and the forward direction) is needed
+before Section 3's examples. In the paper it becomes the background section; full feature-set descriptions go to the
+experimental setup. Open for the paper: all three domains through every definition, or one main example plus the
+concept-by-domain table (three per definition is likely appendix length).
+
+**Decision (user).** Apply: Section 2 becomes "Three domains", one paragraph each, no feature lists; features are
+named in plain words where used, with the extractor's name in code font at first use; the Section 3 tables use plain
+names. **Applied in revision 5.**

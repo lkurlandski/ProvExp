@@ -11,7 +11,8 @@ Draft started 2026-11-02. Revision 3 (the same day) applies the user's feedback 
 Revision 4 (the same day; `docs/feedback.md`, items 6-12, delegated by the user) fixes two errors (appending and
 Requirement 3; the presence rule), qualifies the "no attack needed" claim for layout-dependent signatures, moves the
 pattern lemma next to the term rules and the single-input tests to Section 10, and turns the routing corollary into a
-remark.
+remark. Revision 5 (`docs/feedback.md`, item 13) shortens Section 2 to a primer on the three
+domains and names features in plain words where they are used, without labels.
 
 **Status.** Sections 1-7 are written for review, with full proofs of the side-effect, direction, and robustness
 theorems. Section 8 assesses how general the model is, Section 9 holds the EMBER instance, and Section 10 lists what
@@ -101,73 +102,47 @@ prediction is right. Section 6 predicts which way each feature can move under an
 7 turns that into detectors no such edit can evade. Section 8 asks how general the class is, and Section 9 gives the
 instance we have built.
 
-## 2. Three running examples
+## 2. Three domains
 
 The definitions below are abstract, so each is tried on three real extractors, one from each of three security
 domains where adversarial examples are studied. They are chosen to differ as much as possible. A Windows executable
 is a raw binary full of pointers, edited byte by byte. An Android app is a container whose features are sets of
 names, edited by adding code and declarations. A network trace is a stream with no pointers at all, whose features
-are statistics. From each extractor we take a handful of features, named as the extractor names them.
+are statistics. This section says only what the later examples need about each; features are introduced where they
+are used, in plain words, with the extractor's own name in code font at first use.
 
-### 2.1 Windows executables and EMBER
+**Windows executables and EMBER.** A Windows executable (a PE file) is a byte sequence. Its headers hold a *section
+table*, whose entries give each section's name, the offset where its raw data lies in the file, its size, and its
+permissions. Bytes after the last section are the *overlay*, often appended data. EMBER, the standard static feature
+set for Windows malware (here its 2024 version, computed by the `thrember` extractor), computes about 2,500 features:
+the byte histogram and entropies, statistics of the printable strings (runs of at least 5 bytes in the range
+`0x20`-`0x7f`), header fields, per-section statistics, and the imported libraries and functions. Attacks on PE
+detectors edit bytes: they append data to the overlay, write into the slack space at the end of a section, overwrite
+header bytes the loader ignores, or add a section.
 
-A Windows executable (a PE file) is a byte sequence. Its headers hold a *section table*, whose entries give each
-section's name, the offset where its raw data lies in the file, its size, and its permissions. Bytes after the last
-section are the *overlay*, often appended data. EMBER, the standard static feature set for Windows malware (here its
-2024 version, computed by the `thrember` extractor), computes about 2,500 features. We use these:
-- (p1) `numstrings`: the number of printable strings (runs of at least 5 bytes in the range `0x20`-`0x7f`);
-- (p2) `avlength`: the average string length;
-- (p3) `string_counts[url]`: the number of strings containing a URL;
-- (p4) `histogram`: the byte histogram, normalized to sum to 1;
-- (p5) `general.entropy`: the entropy of the whole file;
-- (p6) the number of sections;
-- (p7) section sizes hashed by name into 50 buckets, each section adding its size, with a sign of $\pm 1$, to bucket
-  $\mathrm{hash}(\text{name})$;
-- (p8) the largest section entropy (the overlay counts as a section here);
-- (p9) the number of distinct imported libraries.
+**Android apps and Drebin.** An Android app (an APK) is a ZIP archive. Two of its files matter here: the *manifest*,
+which declares the permissions the app requests, its components (activities, services, receivers), the intents they
+listen for, and the hardware it uses; and the *bytecode*, which holds the app's code and string constants. Drebin,
+which the Android malware literature still uses almost exclusively (or small variations of it), extracts eight sets of
+strings: hardware components, requested permissions, app components, filtered intents, restricted API calls, used
+permissions, suspicious API calls, and network addresses. Every string ever seen becomes one binary feature, set if
+the app contains it. Used permissions are derived from the API calls through a fixed map: a call to `getDeviceId`
+sets the used-permission feature for `READ_PHONE_STATE`. Attacks on Drebin edit the app at the level of its
+declarations and code: they add manifest entries, or, as Pierazzi et al. do, transplant pieces of code from benign
+apps. Removing features is harder, since the app must keep working, but obfuscation can hide API calls (behind
+reflection) and strings (by encrypting them).
 
-Attacks on PE detectors edit bytes: they append data to the overlay, write into the slack space at the end of a
-section, overwrite header bytes the loader ignores, or add a section.
-
-### 2.2 Android apps and Drebin
-
-An Android app (an APK) is a ZIP archive. Two of its files matter here: the *manifest*, which declares the
-permissions the app requests, its components (activities, services, receivers), the intents they listen for, and the
-hardware it uses; and the *bytecode*, which holds the app's code and string constants. Drebin, which the Android
-malware literature still uses almost exclusively (or small variations of it), extracts eight sets of strings: hardware
-components, requested permissions, app components, filtered intents, restricted API calls, used permissions,
-suspicious API calls, and network addresses. Every string ever seen becomes one binary feature, set if the app
-contains it. We use these:
-- (d1) `permission::READ_PHONE_STATE`: the app requests this permission in its manifest;
-- (d2) `api_call::getDeviceId`: the bytecode calls this suspicious API;
-- (d3) `used_permission::READ_PHONE_STATE`: some API call that needs this permission is present (Drebin derives used
-  permissions from the API calls through a fixed map);
-- (d4) `url::evil.example`: the bytecode contains this network address.
-
-Attacks on Drebin edit the app at the level of its declarations and code: they add manifest entries, or, as Pierazzi
-et al. do, transplant pieces of code from benign apps. Removing features is harder, since the app must keep working,
-but obfuscation can hide API calls (behind reflection) and strings (by encrypting them).
-
-### 2.3 Network traffic and CICFlowMeter
-
-A packet trace is a sequence of packets in time order. Each packet has header fields (addresses, ports, protocol,
-TCP flags, window size), a length, and a timestamp. CICFlowMeter, the feature extractor behind the most widely used
-intrusion-detection datasets (CIC-IDS2017 and its successors), groups packets into bidirectional *flows*: one per
-(addresses, ports, protocol) tuple, ended by a FIN flag or a timeout. The direction that opened the flow is
-*forward*. It computes about 80 statistics per flow. We use these:
-- (c1) `Total Fwd Packets`: the number of forward packets;
-- (c2) `Total Length of Fwd Packets`;
-- (c3) `Fwd Packet Length Max` and `Fwd Packet Length Min`;
-- (c4) `Fwd Packet Length Mean` and `Fwd Packet Length Std`;
-- (c5) `Flow IAT Mean` and `Flow IAT Max`: the mean and largest gap between consecutive packets of the flow;
-- (c6) `Flow Bytes/s`: the flow's bytes divided by its duration (last timestamp minus first);
-- (c7) `SYN Flag Count`;
-- (c8) `Init_Win_bytes_forward`: the TCP window size of the first forward packet.
-
-Attacks on flow-based detectors edit traffic the attacker controls: they pad packets, delay them, inject extra
-packets, or split one packet into two. Much of this literature works in feature space and writes the dependencies
-between features by hand; the botnet dataset of Chernikova and Oprea (CTU-13, used by FENCE and later work) comes with
-360 hand-written constraints. Section 8 returns to this as the alternative the model replaces.
+**Network traffic and CICFlowMeter.** A packet trace is a sequence of packets in time order. Each packet has header
+fields (addresses, ports, protocol, TCP flags, window size), a length, and a timestamp. CICFlowMeter, the feature
+extractor behind the most widely used intrusion-detection datasets (CIC-IDS2017 and its successors), groups packets
+into bidirectional *flows*: one per (addresses, ports, protocol) tuple, ended by a FIN flag or a timeout. The
+direction that opened the flow is *forward*. It computes about 80 statistics per flow: packet counts and lengths per
+direction (total, mean, standard deviation, minimum, maximum), the gaps between consecutive packets, flag counts,
+bytes and packets per second, and the first packet's TCP window size. Attacks on flow-based detectors edit traffic the
+attacker controls: they pad packets, delay them, inject extra packets, or split one packet into two. Much of this
+literature works in feature space and writes the dependencies between features by hand; the botnet dataset of
+Chernikova and Oprea (CTU-13, used by FENCE and later work) comes with 360 hand-written constraints. Section 8 returns
+to this as the alternative the model replaces.
 
 ## 3. The shape of a feature extractor: items, sums, readouts
 
@@ -211,7 +186,7 @@ scanning, not by following a pointer. Each byte is an item too, for the histogra
 
 In an APK, each permission declaration in the manifest is an item, and so is each API call site and each string
 constant in the bytecode. In a trace, each packet is an item, and so is each pair of consecutive packets in a flow
-(for the gaps, c5). A packet's addresses, ports, and protocol are locating positions: they decide which flow it
+(for the gaps between packets). A packet's addresses, ports, and protocol are locating positions: they decide which flow it
 belongs to. So are its FIN flag, which ends the flow, and its timestamp, since a long enough gap starts a new flow.
 Its length, other flags, and window size are content.
 
@@ -240,10 +215,11 @@ item $\iota$ has a *contribution* $\mathbf{v}(\iota)$: the amount it adds to eac
 touch. The *sum vector* $\mathbf{s}(z)$ holds each sum's total over all items of $z$. Most sums add their items'
 contributions. A few, called *pools*, keep their maximum (or minimum) instead.
 
-In EMBER, the string count (p1) is a sum to which every string contributes 1, and the total string length (the
-numerator of p2) one to which it contributes its length. Each section-name bucket (p7) is a sum to which a section
-contributes $\pm$ its size if its name hashes there. Each histogram bin (p4) is a sum to which every byte contributes
-1 in its own bin. The largest section entropy (p8) is a pool. In Drebin, each string in the vocabulary has a sum
+In EMBER, the number of printable strings (`numstrings`) is a sum to which every string contributes 1, and the total
+string length (the numerator of the average length, `avlength`) one to which it contributes its length. EMBER also
+hashes section names into 50 buckets, and each bucket is a sum to which a section contributes its size, with a sign of
+$\pm 1$, if its name hashes there. Each bin of the byte histogram is a sum to which every byte contributes 1 in its own
+bin. The largest section entropy is a pool. In Drebin, each string in the vocabulary has a sum
 counting its occurrences, and one item can write several: a call to `getDeviceId` contributes 1 to the count of
 `api_call::getDeviceId` and 1 to the count of `used_permission::READ_PHONE_STATE`. In CICFlowMeter, each flow keeps,
 for its forward packets, a count, a total length, and a total of squared lengths, and pools for the largest and
@@ -266,14 +242,14 @@ removed, or changed.
 
 | Term | What the item adds | Sign | EMBER | Drebin | CICFlowMeter |
 |---|---|---|---|---|---|
-| count | 1 to one sum | $+$ | p1, p6 | — | c1, c7 |
-| add | a nonnegative attribute (a length, a size; 0 or 1 for a pattern match) | $\ge 0$ | total string length (p2), URL matches (p3) | — | c2, total of squares (c4) |
-| bins | nonnegative counts to a family of sums | $\ge 0$ per bin | p4 | — | — |
-| hashed | an attribute (or 1) to bucket $\mathrm{hash}(\text{key})$, times $\pm 1$ if the hash is signed | the hash's sign, if signed | p7 | — | — |
-| keyed | 1 to the count of its key | $+$ | p9 | d1-d4 | — |
-| slot | the value of a field that exactly one item holds | any | header fields | — | c8 |
+| count | 1 to one sum | $+$ | string count, section count | — | forward packet count, SYN flag count |
+| add | a nonnegative attribute (a length, a size; 0 or 1 for a pattern match) | $\ge 0$ | total string length, URL matches | — | total forward length, total of squared lengths |
+| bins | nonnegative counts to a family of sums | $\ge 0$ per bin | byte histogram | — | — |
+| hashed | an attribute (or 1) to bucket $\mathrm{hash}(\text{key})$, times $\pm 1$ if the hash is signed | the hash's sign, if signed | section sizes by name | — | — |
+| keyed | 1 to the count of its key | $+$ | imported libraries | permissions, API calls, URLs | — |
+| slot | the value of a field that exactly one item holds | any | header fields | — | initial window size |
 | opaque | a value computed by code the model does not open, within a declared range | within the range | signature checks | — | — |
-| pool | an attribute into a maximum (or minimum) | $\ge 0$ | p8 | — | c3, c5 (max gap), timestamps |
+| pool | an attribute into a maximum (or minimum) | $\ge 0$ | largest section entropy | — | longest and shortest forward packet, longest gap, timestamps |
 
 ### 3.3 Readouts: the formula per feature
 
@@ -283,18 +259,18 @@ feature's direction (Section 6).
 
 | Readout | Formula | EMBER | Drebin | CICFlowMeter |
 |---|---|---|---|---|
-| identity | the sum itself | p1, p3, p6, p7 | — | c1, c2, c7 |
-| presence | $\min(1, s)$, or any nondecreasing function of one sum | — | d1-d4 | — |
-| ratio | one sum divided by another | p2 | — | c4 (mean), c5 (mean) |
-| normalized vector | each bin divided by the bins' total | p4 | — | — |
-| entropy | the entropy of a normalized vector | p5 | — | — |
-| max or min | a pool's value | p8 | — | c3, c5 (max) |
-| distinct count | the number of keys with a positive count | p9 | — | — |
+| identity | the sum itself | string count, URL count, section count, name buckets | — | forward packet count, total forward length, SYN flag count |
+| presence | $\min(1, s)$, or any nondecreasing function of one sum | — | every feature | — |
+| ratio | one sum divided by another | average string length | — | mean forward length, mean gap |
+| normalized vector | each bin divided by the bins' total | byte histogram | — | — |
+| entropy | the entropy of a normalized vector | file entropy | — | — |
+| max or min | a pool's value | largest section entropy | — | longest and shortest forward packet, longest gap |
+| distinct count | the number of keys with a positive count | number of imported libraries | — | — |
 | field transform | a bit test or table lookup of one slot | header flags | — | — |
-| selection | an attribute of the one item a rule picks | the entry section's name | — | c8 |
+| selection | an attribute of the one item a rule picks | the entry section's name | — | initial window size |
 | opaque with default | an opaque value, or a default when its item is absent | signature features | — | — |
-| standard deviation | $\sqrt{Q/N - (T/N)^2}$ over a count $N$, total $T$, total of squares $Q$ | — | — | c4 (std) |
-| rate | a sum divided by the difference of two pools | — | — | c6 |
+| standard deviation | $\sqrt{Q/N - (T/N)^2}$ over a count $N$, total $T$, total of squares $Q$ | — | — | standard deviation of forward lengths |
+| rate | a sum divided by the difference of two pools | — | — | bytes per second |
 
 The first ten types are what EMBER and Drebin use. CICFlowMeter needs the last two, which shows how the list grows: a
 new readout type costs one new rule in Section 6 and nothing else. The list is closed in one respect. Every readout is
@@ -424,29 +400,33 @@ when the requirements hold.
 
 **EMBER: append a URL.** Append the 20 bytes `\0http://evil.example` to a PE file. The leading zero byte keeps the
 text from joining a string that ended at the old end of the file. The edit adds 20 byte items and one string of 19
-characters, and it extends the overlay. So the string count (p1) rises by one; the average string length (p2) has 19
-added to its numerator and 1 to its denominator; the URL count (p3) rises by one; the 20 bytes' histogram bins (p4)
-rise by their counts and the bins' total by 20, from which the new entropy (p5) follows; the overlay's entropy is
-recomputed, and if it exceeds every section's, so is the largest section entropy (p8). No section table entry is
-touched, so p6, p7, and p9 stay fixed. One side effect is easy to miss by hand: EMBER divides each section's size by
+characters, and it extends the overlay. So the number of strings (`numstrings`) rises by one; the average string
+length (`avlength`) has 19 added to its numerator and 1 to its denominator; the number of strings containing a URL
+(`string_counts[url]`) rises by one; the 20 bytes' histogram bins rise by their counts and the bins' total by 20, from
+which the file's new entropy (`general.entropy`) follows; the overlay's entropy is recomputed, and if it exceeds every
+section's, so is the largest section entropy (the overlay counts as a section there). No section table entry is
+touched, so the number of sections, the section-name buckets, and the number of imported libraries stay fixed. One side effect is easy to miss by hand: EMBER divides each section's size by
 the file's size, so every section's size ratio falls, because the file grew.
 
 **Drebin: transplant a gadget.** Transplant a code fragment that calls `getDeviceId` and contains the string
 `http://evil.example`, and add the `READ_PHONE_STATE` permission the call needs. The edit adds an API call site, a
-string constant, and a permission declaration. So the counts of `api_call::getDeviceId` (d2), of
-`used_permission::READ_PHONE_STATE` (d3, through the API-to-permission map), of `url::evil.example` (d4), and of
-`permission::READ_PHONE_STATE` (d1) each rise by one, and each presence bit is set. If the app already requested the
-permission, d1's count goes from 1 to 2 and its bit stays set: the recipe gets this right because it counts first and
-reads out presence afterwards. The used-permission bit (d3) is the kind of side effect Pierazzi et al. observed by
+string constant, and a permission declaration. So the counts of the suspicious API call (`api_call::getDeviceId`), of
+the used permission (`used_permission::READ_PHONE_STATE`, through the API-to-permission map), of the network address
+(`url::evil.example`), and of the requested permission (`permission::READ_PHONE_STATE`) each rise by one, and each
+presence bit is set. If the app already requested the
+permission, the requested permission's count goes from 1 to 2 and its bit stays set: the recipe gets this right because it counts first and
+reads out presence afterwards. The used-permission bit is the kind of side effect Pierazzi et al. observed by
 re-extraction.
 
 **CICFlowMeter: inject a packet.** Inject a forward packet of length $m$ between two packets of a flow, $\Delta_1$
 after the first and $\Delta_2$ before the second. The edit adds one packet, removes the consecutive pair with gap
-$\Delta_1 + \Delta_2$, and adds two pairs with gaps $\Delta_1$ and $\Delta_2$. So the forward packet count (c1) rises
-by one, the total forward length (c2) by $m$, and the total of squares by $m^2$, from which the mean and standard
-deviation (c4) follow; the largest and smallest forward lengths (c3) become $\max(\cdot, m)$ and $\min(\cdot, m)$. The
-total gap is unchanged while the number of gaps rises by one, so the mean gap (c5) falls. The duration is unchanged
-while the bytes rise, so `Flow Bytes/s` (c6) rises. The largest gap (c5) needs more care: if the removed pair held it,
+$\Delta_1 + \Delta_2$, and adds two pairs with gaps $\Delta_1$ and $\Delta_2$. So the forward packet count (`Total Fwd Packets`)
+rises by one, the total forward length (`Total Length of Fwd Packets`) by $m$, and the total of squared lengths by
+$m^2$, from which the mean and standard deviation of forward lengths (`Fwd Packet Length Mean`, `Fwd Packet Length
+Std`) follow; the longest and shortest forward packet (`Fwd Packet Length Max`, `Min`) become $\max(\cdot, m)$ and
+$\min(\cdot, m)$. The total gap is unchanged while the number of gaps rises by one, so the mean gap (`Flow IAT Mean`)
+falls. The duration is unchanged while the bytes rise, so the bytes per second (`Flow Bytes/s`) rise. The longest gap
+(`Flow IAT Max`) needs more care: if the removed pair held it,
 the new largest gap is the largest of the *other* gaps, which the item table lists and the old maximum does not reveal.
 
 ### 5.2 How the recipe can go wrong, and what we require
@@ -578,7 +558,7 @@ modification.
    determine the new one. (Section 3.2: $\max$ has no inverse.)
 3. By Requirement 1. ∎
 
-Together, Lemma 1 and Theorem 1 cover every edit except undeclared structural ones, which are flagged. The largest-gap
+Together, Lemma 1 and Theorem 1 cover every edit except undeclared structural ones, which are flagged. The longest-gap
 case in Section 5.1 is part 2 at work. Incremental view maintenance in databases knows the same fact: a maximum needs
 auxiliary state to survive deletions.
 
@@ -691,7 +671,7 @@ The sign sum is the sign domain of abstract interpretation: $\mathrm{sgn}(x + y)
 In the examples: transplanting a gadget gives $\{0, +\}$ on every Drebin count (an item is added, or nothing is).
 Injecting a forward packet gives $\{+\}$ on the forward count, $\{0, +\}$ on the total length and total of squares, and
 $\{0, +\}$ on the max pool and $\{-, 0\}$ on the min pool of lengths. Adding a PE section gives $\{+\}$ on the number of
-sections (p6) and, if the attacker picks the name, possibly both signs on the section-name buckets (p7); which buckets
+sections and, if the attacker picks the name, possibly both signs on the section-name buckets; which buckets
 is the next lemma's question.
 
 **Lemma 4 (which hash buckets an attacker can reach).** For a signed hashed term whose key the attacker picks from a set
@@ -715,7 +695,7 @@ for constructs that look before the match.
 *Proof.* Without such constructs, whether $P$ matches a substring depends only on that substring, which an extension
 does not change. ∎
 
-EMBER's URL pattern (p3) begins with a word boundary and has nothing after the match, so extending a string on the
+EMBER's URL pattern begins with a word boundary and has nothing after the match, so extending a string on the
 right can only create a URL match, but prefixing it with a letter can destroy one (`xhttp://` has no word boundary
 before the `h`). The test reads the parsed pattern; it is sound, and may call a pattern two-sided when it is not.
 
