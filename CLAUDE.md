@@ -38,11 +38,11 @@ and manuscript remain as source material. Deadlines and conference cycles are no
 - **State a hypothesis before running an experiment** (what you expect and why), and report a failed check as such.
   Keep it short and proportionate: a sentence or two, not an elaborate pre-registered reading for every outcome
   (user, 2026-10-09).
-- The manuscript will be rewritten once the new direction's applications survive screening; until then do not edit
-  it. Write continuous prose rather than stacks of labeled paragraphs (user, 2026-10-14); no internal IDs in the paper.
-
-## Layout
-
+- The manuscript is being rewritten (user, 2026-11-02): the framework section goes straight into `.tex`
+  (`manuscript/`), drafted from a paper mock to a word budget (about 2,500 words); no new markdown drafts of paper
+  text. `docs/formalization.md` is frozen as the reference and appendix source. Other sections stay untouched until
+  their turn. Write continuous prose rather than stacks of labeled paragraphs (user, 2026-10-14); no internal IDs in
+  the paper.
 - `src/provexp/`: `boxmatrix.py` (sparse boxes), `provenance.py` (P, transfers, statistics, round trips), `items.py`
   (the item layer: items, terms, readouts as data, projection), `reach.py` (the C1 and C4 engines),
   `featuresets/ember2024/catalogue.py` (the edit catalogue: add_section, the operations as C4 changes, the
@@ -138,11 +138,12 @@ Follow `/home/lk3591/Documents/code/SSViT/exeformer/exeformer.py` (ignore that i
   lazily.
 - Features with no contributions go to the null element (`empty="null"`, the default; `uniform`/`ignore` also exist).
 - All explainers attribute the malware log-odds (GBDT raw score; logit₁ − logit₀ for neural networks).
-- **Provenance is domain-agnostic; the research is malware-specific** (user, 2026-10-22). The model depends only on
-  elements, items, and features, never on what they mean. Applications may use PE specifics (loader-ignored bytes,
-  sections, appended content) where they serve the argument, but frame everything as generically for malware as
-  possible; format minutiae turn reviewers off. Format-structure stratifications of the old kind still need a concrete
-  reason (`docs/graveyard.md`).
+- **The domain is adversarial examples in practical security tasks** (user, 2026-11-02; settled, do not reopen). The
+  core framework is as agnostic as Pierazzi et al.'s: it depends only on elements, items, sums, and readouts, never on
+  what they mean, and should apply to as many kinds of malware and security domains as possible (executables, apps,
+  documents, traffic, ...). PE malware detection is the user's expertise and the primary inspiration, guidance, and
+  experimental instance; other domains are breadth. PE specifics are allowed where they serve an experiment, never in
+  the framework; format minutiae turn reviewers off.
 - **Coverage, localizability, and the null element's share are not contributions** (old direction; still applies to
   explanation-style analyses).
 - **Each application must cross the feature-problem gap in a way only feature provenance makes cheap**, against the

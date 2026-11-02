@@ -95,24 +95,34 @@ introduction and a simple baseline (writing decision for later).
   and no raw files. Raw APKs: AndroZoo (academic key). Traffic: public pcaps (CTU-13 / Stratosphere, CIC-IDS2017/2018,
   with Engelen et al.'s corrected CICFlowMeter).
 
-**Order of work (agreed with the user, 2026-11-02):**
-1. **Formalization** (`docs/formalization.md`, revision 5; review log `docs/feedback.md`, items 1-13 applied; next: Section 10's results): definitions, the extractor class
-   and its per-kind obligations, every theorem we judge important, each tagged with the evaluation check that tests it.
-2. **Paper mock** (`docs/paper-mock.md`): contributions list, section outline, every table and figure with the model
-   component behind each column, measured cells vs missing ones, and the four-part evaluation above. Candidate extra
-   rows, each mocked with a go/no-go before code: coupling against Severi et al.'s hand exclusions (which of their
-   dropped features are in fact separable); coverage weighted by attack success; the share of detector gain on the 88
-   pefile-warning features outside the model.
-3. **Harsh simulated tier-1 review of the mock; decision point** (user): A alone, A plus a second domain, or A plus a
-   second application (an attack-side use of the same machinery is a better candidate than B / C, which lean on the
-   flat P).
-4. **A's gaps, by reviewer weight:** adversarial-training baseline; held-out attacks from a second toolkit
-   (MAB-Malware); scale (seeds 0-2, full splits, more malware; user's decision); leave-one-out PV; cost column
-   (bookkeeping, can come anytime). Large runs are `run/` scripts for the user (next number 117).
-5. **Drebin and CICFlowMeter instances** (now planned, not optional: see "Revised" above): a feasibility pass per
-   domain first (raw data with labels, an open extractor, an existing attack or hand-written constraints to compare
-   against), then the model's checks on each; their depth relative to A is decided at step 3.
-6. **Manuscript rewrite**, body first, introduction and conclusion last.
+**Reassessed (user, 2026-11-02, end of the formalization rounds).** `docs/formalization.md` reached 13,100 words,
+mixing paper text, appendix proofs, and project notes; it is **frozen** as the reference and appendix source, and its
+Section 10 is not written (each remaining result only if the mock needs it). Settled (user): the domain is
+*adversarial examples in practical security tasks*; the framework is as agnostic as Pierazzi et al.'s; PE malware is
+the inspiration, guidance, and main instance; other domains are breadth, as many as possible. This replaces "three
+domains emphasized about equally" above. Paper text goes straight into `.tex`.
+
+**Order of work (revised with the user, 2026-11-02):**
+1. **Feasibility reading for breadth instances** (light, no code): per candidate domain (Android apps with Drebin;
+   traffic with CICFlowMeter or CTU-13/FENCE; others if cheaper), whether raw data with labels, an open extractor, and
+   an attack or hand-written constraints to compare against exist. Fold in the facts to verify (Drebin's API lists and
+   permission map, CICFlowMeter's definitions, FENCE's constraint count, Pierazzi et al.'s wording). Output: which
+   breadth instances the paper can show, and at what depth.
+2. **Paper mock** (`docs/paper-mock.md`, at most two pages): contributions; section outline with a word budget per
+   section (framework about 2,500 words); every table and figure with the model component behind each column, measured
+   cells vs missing ones; the four-part evaluation above. Candidate extra rows, each with a go/no-go before code:
+   coupling against Severi et al.'s hand exclusions; coverage weighted by attack success; the detector-gain share of the
+   88 pefile-warning features outside the model.
+3. **Framework section in `.tex`** (`manuscript/`), to its budget: the problem, the model with one main example (PE)
+   and a cross-domain table, the side-effect and direction theorems with the requirements as a compact list; proofs
+   and lemmas in the appendix, drawn from `docs/formalization.md`.
+4. **Harsh simulated tier-1 review of the mock and framework; decision point** (user): breadth instances and a
+   possible second application.
+5. **A's gaps, by reviewer weight:** adversarial-training baseline; held-out attacks from a second toolkit
+   (MAB-Malware); scale (seeds 0-2, full splits, more malware; user's decision); leave-one-out PV; cost column. Large
+   runs are `run/` scripts for the user (next number 117).
+6. **Breadth instances** chosen at step 4, then the rest of the manuscript, body first, introduction and conclusion
+   last.
 
 The stock-take that led here: `docs/status.md` (2026-11-02, stock-take). Next session: `docs/resume-prompt.md`.
 

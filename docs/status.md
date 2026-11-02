@@ -1,5 +1,17 @@
 # Status
 
+**2026-11-02 (reassessment, end of session): `docs/formalization.md` frozen at revision 5 (13,100 words: source
+material, not a draft). Next: feasibility reading for breadth domains, then the paper mock, then the framework section
+in `.tex`.** Order of work: `PLAN.md`, "Reassessed".
+- The user found the formalization sprawling (paper text, appendix proofs, and project notes in one file; nothing
+  pruned). Agreed: freeze it, skip its Section 10, mock the paper first, and draft the framework to a budget (~2,500
+  words).
+- Settled (user): the domain is adversarial examples in practical security tasks; the framework is as agnostic as
+  Pierazzi et al.'s; PE is the inspiration and main instance; other domains are breadth. Paper text goes straight into
+  `.tex` (`CLAUDE.md` updated: the manuscript rewrite has begun with the framework section).
+
+---
+
 **2026-11-02 (formalization round 2, end of session): `docs/formalization.md` at revision 5. The user delegated the
 round-2 review (too early to spend effort on); next: write Section 10's results.** Commits 40bc8ae (revision 4),
 204457a (revision 5), (this wrap-up).
