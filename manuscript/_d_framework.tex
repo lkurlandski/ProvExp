@@ -1,5 +1,5 @@
 % Section 3: the framework (items, sums, readouts; exact side effects; sound directions). Budget: about 2,500 words
-% (docs/paper-mock.md). Source: docs/formalization.md, Sections 1 and 3-7 (frozen). Proofs: _m_framework_proofs.tex.
+% (docs/paper-mock.md). Source: docs/formalization.md, Sections 1 and 3-7 (frozen). Proofs: _j_proofs.tex.
 
 \subsection{The Problem}
 \label{sec:fw:problem}
@@ -188,7 +188,7 @@ Each way the recipe can go wrong becomes a requirement, stated per item kind:
   \item \emph{Self-contained contributions.} An item's contribution depends only on its kind and content. EMBER
     breaks this in three of the ways Pierazzi et al.\ list as obstacles: it divides a section's size by the file's
     (repaired by moving the division into the readout), counts each library once (repaired by a count per name), and
-    lets a second import descriptor overwrite the first (patched; \Cref{sec:XML:Setup}).
+    lets a second import descriptor overwrite the first (patched; \Cref{sec:instances}).
   \item \emph{Complete record of structure.} An in-place edit that writes no recorded locating position leaves every
     parsed item with its identity, members, and locating positions, and adds none, except that an \emph{end-anchored}
     item (an overlay, trailing data) gains or loses the positions at the end.
@@ -289,4 +289,4 @@ $h(\varphi(z')) \ge h(\varphi(z))$ for every $z \in F$ and every $z' \in \mathrm
 
 \noindent A gradient-boosted tree model with monotone constraints is such a score. What Theorem~\ref{thm:fw:directions}
 adds to Gimenez et al.'s route is the table, computed for every feature. Global program analyses, learned
-representations, and time-decayed statistics fall outside the class (\Cref{sec:XML:Discussion}).
+representations, and time-decayed statistics fall outside the class (\Cref{sec:discussion}).

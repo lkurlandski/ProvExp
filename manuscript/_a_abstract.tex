@@ -1,18 +1,1 @@
-% NOTE: PB1/CM numbers are from the pilot (100 files, one seed; 6.1's prediction 500 files), update after the scale-up;
-% AU's evasion numbers are final for seed 0 (runs 47-49: 902 detected held-out malware, loader-safe changes).
-Static malware detectors come in two kinds: models over engineered features, such as gradient-boosted trees on EMBER
-features, and deep networks that read a file's raw bytes. Their explanations live in different spaces. A feature-based
-detector's explanation names features without saying where in the file their evidence lies; a raw-byte detector's
-explanation marks bytes that have no name and mean something different in every file. We observe that every engineered
-feature is computed from specific bytes, and record this by instrumenting the feature extractor as a \emph{provenance
-matrix}: each byte's share of each feature, grounded in the Shapley value. This one matrix transfers explanations in
-both directions. The \emph{pullback} places feature attributions on the bytes, exactly for linear models over additive
-features; the \emph{pushforward} places byte attributions in named features, a first step toward inverting the
-pullback that already comes close to the exact inverse. On EMBER-2024 with a gradient-boosted tree and MalConv, the
-pullback is as faithful as window occlusion at about a hundredth of its time and, at byte resolution, removes more
-evidence than any direct explanation, from one feature extraction instead of tens of thousands. Comparing the two
-detectors file by file, it predicts which of the tree's detections an attacker guided only by MalConv also weakens
-(Spearman 0.48, against 0.21 for occlusion). Pushed forward, MalConv's per-file explanations become named, recurring
-reliance, about twice as faithful as a surrogate model's: changing the confirmed fields only as the Windows loader
-allows evades 12.4\% of detected held-out malware, twice the rate of other loader-ignored fields, and zeroing them
-before scoring halves the strongest such attack.
+% Abstract: written last (CLAUDE.md).
