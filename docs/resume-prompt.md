@@ -8,7 +8,7 @@
   2,500), with its proofs in Appendix A (`manuscript/_j_proofs.tex`). The old manuscript is deleted (in git history);
   every other section is an empty stub whose comment states its content and word budget (one file per section).
 - **Sections 4 and 5 are written** (`_e_instances.tex`, EMBER only, 1,038/1,000 words; `_f_evaluation.tex`, ~1,900/3,000,
-  Tables 6-8 of the PDF = the mock's Tables 1-3). Synthetic cells (blue) and the runs that replace them: see
+  Tables 5-7 of the PDF = the mock's Tables 1-3). Synthetic cells (blue) and the runs that replace them: see
   `docs/status.md`, top block.
 - `docs/formalization.md` is **frozen** (reference and appendix source; factual corrections only).
 - **Settled, do not reopen:** the domain is adversarial examples in practical security tasks; the framework is as

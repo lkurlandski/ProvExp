@@ -2,12 +2,12 @@
 
 **2026-11-02 (later still): Section 5 (Evaluation) written on EMBER; waiting for the user's read.**
 `manuscript/_f_evaluation.tex`, about 1,900 words against 3,000 (the rest of the budget is for a breadth instance and
-the missing cells; not padded). Setup; side effects exact (Table 6: append 89/11 flagged, DOS 100/100, random writes
-1,791/209 flagged, combined 1,105/1,105, add-section synthetic); directions (Table 7: every hand-rule disagreement,
-each witnessed, none the other way; G7's 73,063 edits; learned constraints from run 110 in prose); detectors (Table 8:
+the missing cells; not padded). Setup; side effects exact (Table 5: append 89/11 flagged, DOS 100/100, random writes
+1,791/209 flagged, combined 1,105/1,105, add-section synthetic); directions (Table 6: every hand-rule disagreement,
+each witnessed, none the other way; G7's 73,063 edits; learned constraints from run 110 in prose); detectors (Table 7:
 latest numbers, run 105 metrics and run 108 adaptive: PV-seen 16/22, monotone rows 0 with smallest change 0.0; expert
 set; additions threat model in prose). **Synthetic (blue):** the adversarial-training row; PV-8 under the fixed
-adaptive search; the extraction count of the adaptive search after the fix; the cost figures; Table 6's add-section
+adaptive search; the extraction count of the adaptive search after the fix; the cost figures; Table 5's add-section
 exactness. Each has a `% SYNTHETIC` comment naming what replaces it. Corrections while writing: the expert set's M_full
 holes come from reading its code, not from our derivation (the engine reads only the instrumented extractor); PV's
 hole is 44.4% for PV-seen (37.8% for PV-all). Citations added: kantchelian2016evasion, demetrio2021functionality;
