@@ -1,5 +1,13 @@
 # Resume: ProvExp (after 2026-11-02): write the formalization
 
+## Update (2026-11-02, later): revision 2 written, awaiting the user's review
+
+`docs/formalization.md` exists (Sections 1-10 written, 11 is the to-do list) and was revised once after the user's
+first review (organization, clarity, symbols, agnosticism; `docs/status.md`, top block). Start by asking for the
+user's review of revision 2. Then write Section 11's results in the same style: narrative titles, a reason before each
+definition, every symbol in the notation table, each result tried on both running examples (container and flow), and
+EMBER facts only in Section 10.
+
 ## Where we are
 
 On 2026-11-02 the exact-solver direction (A') was dropped, and the stock-take of everything done since the

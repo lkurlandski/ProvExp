@@ -1,5 +1,22 @@
 # Status
 
+**2026-11-02 (formalization, revision 2): `docs/formalization.md` revised after the user's first review and waiting
+for the user's second review.** The previous session was killed mid-revision; this session recovered its state from
+the transcript and finished the revision. The user's criticisms (read up to Section 1.5 of the first draft):
+organization (no narrative, "Definitions/Theorems" headings), structure, clarity (undefined symbols, unclear concepts),
+and agnosticism (parts read as built on top of EMBER, e.g. the locality properties).
+- Revision 2: narrative section titles with reasons for each part; a full notation table (Pierazzi's symbols reused:
+  Gamma, Omega, eta, delta*); two running examples, a generic container (ZIP/APK, OLE, PDF, ELF, PE share its shape) and
+  a flow extractor (no pointers); items as "what the extractor's loops iterate over", with identity defined; operations
+  carry an item signature; the properties split into three needed by every result (A0 representable, A2 local
+  contributions, A4 faithful signatures) and two needed only for edits stated in raw elements (A1, A3: incremental
+  parsing's damage-region conditions; the only place the format enters); Section 9 tabulates what each result needs;
+  EMBER facts moved to Section 10. The two caveats (population, closure; checks P1/P2) kept short, appendix material.
+- Next: the user's review of revision 2; then the remaining theorems (Section 11: coupling, reachable region,
+  projection, tightness, cost, positioning).
+
+---
+
 **2026-11-02 (stock-take, end of session): plan agreed (user). Framing: one strong paper, direction A with the model
 as its framing section. Next: write the formalization (`docs/formalization.md`).** Order of work in `PLAN.md`, "Next
 steps (2026-11-02, stock-take done)"; next session: `docs/resume-prompt.md`. No code or runs this session; commits
