@@ -1,5 +1,16 @@
 # Status
 
+**2026-11-02 (formalization, revision 3): feedback round 1 applied (`docs/feedback.md`, items 1-5); waiting for the
+user's read of Sections 6-8.** Decisions: three running domains with real features (PE/EMBER, APK/Drebin,
+traffic/CICFlowMeter; CTU-13 with the FENCE features and its hand-written constraints is the candidate experimental
+instance for traffic, pending a deeper literature pass); the old Sections 5-6 merged into "Predicting what one edit
+does to the features" (recipe, failures, requirements named by meaning, theorem, checks); a short algebraic remark
+(sums as a monoid homomorphism; groups allow removal, max does not; Gray et al.'s algebraic vs holistic aggregates).
+Facts to verify before the paper: Drebin's API lists and permission map, CICFlowMeter's feature definitions, FENCE's
+constraint count (formalization Section 10).
+
+---
+
 **2026-11-02 (formalization, revision 2): `docs/formalization.md` revised after the user's first review and waiting
 for the user's second review.** The previous session was killed mid-revision; this session recovered its state from
 the transcript and finished the revision. The user's criticisms (read up to Section 1.5 of the first draft):
