@@ -20,7 +20,7 @@ black-box window explainers), and the security outcomes weak or already known (h
 field attack beside the paper's own 81% stub attack; a predicted drop a defender could simulate). Structural reason:
 where flat P is precise (named header fields) it is not needed; where it would be needed (hashed and aggregate
 features) it is diffuse. The user judged the draft a strong reject (2026-10-22). Manuscript, plan
-(`docs/archive/PLAN-explanation-provenance-2026-10-21.md`), and the 2026-10-21 simulated review (`REVIEW-2026-10-21.md`)
+(`docs/archive/PLAN-explanation-provenance-2026-10-21.md`), and the 2026-10-21 simulated review (`docs/reviews/explanation-provenance/2026-10-21-ccs.md`)
 remain as source material.
 
 ### A': realizable worst-case evaluation of a detector (dropped 2026-11-02; two pieces folded into A)

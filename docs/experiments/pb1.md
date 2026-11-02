@@ -600,7 +600,7 @@ baseline on 79–85 of 100 files (p ≤ 6e-12). Details in `docs/experiments/pb1
 
 ## Field-occlusion oracle baseline (run 56, 2026-10-14)
 
-**Why.** The self-review (`docs/review-2026-10-14.md`, W2/W4) flagged that "byte resolution is out of reach" rests on
+**Why.** The self-review (`docs/reviews/explanation-provenance/2026-10-14-self-review.md`, W2/W4) flagged that "byte resolution is out of reach" rests on
 *uniform* occlusion, and that the byte-level pullback's win could be dismissed as "it just knows the parser's read
 set." The field-occlusion oracle answers both: it is a direct, structure-aware explainer that occludes each parsed PE
 field and section (one extraction each) and ranks bytes by their region's drop, under the same PE-aware deletion

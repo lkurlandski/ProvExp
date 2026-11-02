@@ -1,6 +1,6 @@
 # Revision plan (2026-10-14)
 
-Next steps from the self-review (`docs/review-2026-10-14.md`) after the user's feedback. Grouped by what each needs,
+Next steps from the self-review (`docs/reviews/explanation-provenance/2026-10-14-self-review.md`) after the user's feedback. Grouped by what each needs,
 cheapest first. Decisions already made are at the bottom.
 
 ## A. Writing only, no experiments — DONE 2026-10-14 (commits ff29a9e, e0d45dd, 363fba1)

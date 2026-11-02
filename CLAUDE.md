@@ -33,12 +33,12 @@ and manuscript remain as source material. Deadlines and conference cycles are no
   (`scripts/ap_*`) remain as source material. The automatic derivation A rests on: `docs/item-layer-design.md`. The
   expert-set row: `docs/direction-A-expert-set.md`.
 - `docs/graveyard.md`: ideas and directions that did not pan out and why.
-- `docs/review-prompt.md`: the harsh simulated review for the current draft (body only; output `REVIEW-<date>.md`).
+- `docs/reviews/review-prompt.md`: the harsh simulated review for the current draft (body only; output `docs/reviews/<date>-<stage>.md`; index: `docs/reviews/README.md`).
   Update it when the draft's stage changes (e.g., once the introduction exists). Latest output:
-  `REVIEW-2026-11-02.md` (body-only draft; risk register R1-R16), to be triaged into a plan with the user.
+  `docs/reviews/2026-11-02-body.md` (body-only draft; risk register R1-R16), to be triaged into a plan with the user.
 - Old direction, for reference only: `docs/archive/PLAN-explanation-provenance-2026-10-21.md`, `docs/experiments/`
   (cp, pb1, pf1, trigger, cm, audit), `docs/theory.md`, `docs/appendix.md`, `docs/related_work.md`,
-  the old manuscript (deleted 2026-11-02; in git history before the commit that removed it), `REVIEW-2026-10-21.md`. Some artifact paths use
+  the old manuscript (deleted 2026-11-02; in git history before the commit that removed it), `docs/reviews/explanation-provenance/2026-10-21-ccs.md`. Some artifact paths use
   retired IDs (e.g. `artifacts/experiments/e1/` is PB1). `docs/design.md` (package design, provenance conventions,
   thrember quirks) and `docs/style_guide.md` still apply.
 - **State a hypothesis before running an experiment** (what you expect and why), and report a failed check as such.

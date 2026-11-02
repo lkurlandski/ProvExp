@@ -1,6 +1,6 @@
 # Strengthening Section 3 (opened 2026-10-16)
 
-Answer to W1 of `docs/review-2026-10-14.md` (thin technical novelty). Two theoretical pillars for Section 3, a go/no-go
+Answer to W1 of `docs/reviews/explanation-provenance/2026-10-14-self-review.md` (thin technical novelty). Two theoretical pillars for Section 3, a go/no-go
 for the second, and case-study ideas parked for later. Both pillars are in Section 3 of the manuscript (2026-10-16).
 
 ## Decisions so far (user, 2026-10-16)
@@ -54,7 +54,7 @@ the baseline. Under the Shapley target this happens wherever an element enters a
 Pros of signed P:
 - It is the exact Shapley target, so the pullback-exactness theorem covers more features.
 - Its support is literal influence (denominators included), which resolves the tension between Definition 3's
-  Influence axiom and the instrumentation conventions (S1 in `docs/review-sections-3-5-2026-10-14.md`).
+  Influence axiom and the instrumentation conventions (S1 in `docs/reviews/explanation-provenance/2026-10-14-sections-3-5.md`).
 
 Cons, most serious first:
 1. **It breaks the pushforward's foundations.** Row sums D_ii can be zero or negative, so D† is undefined or

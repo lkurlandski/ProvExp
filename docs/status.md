@@ -3,7 +3,7 @@
 **2026-11-02 (end of session): harsh simulated review of the body done; next: a plan to address its findings, with
 the user, in a fresh session (`docs/resume-prompt.md`).** No code, runs, or manuscript changes.
 
-- **Review:** `REVIEW-2026-11-02.md` (repo root, untracked like the other review files), from `docs/review-prompt.md`.
+- **Review:** `docs/reviews/2026-11-02-body.md` (all reviews now live in `docs/reviews/`, indexed in its README), from `docs/reviews/review-prompt.md`.
   Three simulated reviews: formal methods Weak reject, adversarial ML for malware Weak reject, systems security Weak
   accept; meta-review: reject with encouragement, borderline accept once the top risks are fixed. Contents: claims
   vs the mock's contributions; what each empty section must do (key-insight sentence drafted); framework correctness
@@ -38,7 +38,7 @@ the user, in a fresh session (`docs/resume-prompt.md`).** No code, runs, or manu
 ---
 
 **2026-11-02 (end of session): the body is drafted in `.tex` (Sections 3-5, Appendix A); the old manuscript is
-deleted; next: a harsh simulated review in a fresh chat (`docs/review-prompt.md`), then the user's read.** Commits
+deleted; next: a harsh simulated review in a fresh chat (`docs/reviews/review-prompt.md`), then the user's read.** Commits
 61b19dc..(this wrap-up). No code or runs.
 
 - **Manuscript layout.** The old direction's sections, `archive/`, `assets/`, and `supp.tex` are deleted (git history).
@@ -78,9 +78,9 @@ deleted; next: a harsh simulated review in a fresh chat (`docs/review-prompt.md`
   Unverified page ranges: Incer, Chen, Simonetto.
 - **Decided (user):** which breadth domain is used is unimportant and interchangeable, never the next priority (twice
   this session; memory updated). One file per section.
-- **Docs:** `docs/review-prompt.md` rewritten for a body-only draft (the old-direction prompt is in git history);
+- **Docs:** `docs/reviews/review-prompt.md` rewritten for a body-only draft (the old-direction prompt is in git history);
   `PLAN.md` order of work, `docs/paper-mock.md` "What is missing", `CLAUDE.md` (layout, review prompt) updated.
-- **Next:** the review (fresh chat, `docs/review-prompt.md`); the user's read of Sections 3-5; triage; then the
+- **Next:** the review (fresh chat, `docs/reviews/review-prompt.md`); the user's read of Sections 3-5; triage; then the
   synthetic cells, A's gaps, and the remaining sections (`PLAN.md`, steps 4-8; `docs/resume-prompt.md`).
 
 ---
@@ -916,7 +916,7 @@ classification and direction A took shape:
 - **Why:** the user judged the explanation-provenance paper far below CCS (not novel; no compelling security utility)
   and agreed with the diagnosis (method first, applications after the fact; flat P is precise only where it is not
   needed). Old plan archived (`docs/archive/PLAN-explanation-provenance-2026-10-21.md`); graveyard entry added. The
-  simulated review is in `REVIEW-2026-10-21.md` (untracked, left for the user).
+  simulated review is in `docs/reviews/explanation-provenance/2026-10-21-ccs.md` (untracked, left for the user).
 - **New thesis and plan:** `PLAN.md`. Directions A (threat models to feature space; the core), B (auditing raw-byte
   detectors for backdoors/shortcuts), C (evasion diagnosis across heterogeneous ensemble members).
 - **Literature read** (`docs/literature-2026-10-22.md`): Pierazzi, Labaca-Castro, Gimenez, Severi, Rosenberg,
@@ -939,7 +939,7 @@ classification and direction A took shape:
   occlusion (0.21) and the pullback (0.48). If KernelSHAP reaches the pullback, 6.1's claim weakens: stop and decide.
 - Manuscript (blue, as if run): Table 2's KernelSHAP row (rho 0.31, AUC 0.65), 6.1's prediction paragraph (CI of the
   difference 0.09-0.26; 32,770 queries vs. one extraction), the "realistic alternative" sentence, the intro's
-  comparison. `docs/review-prompt.md` now tells the reviewer how to treat blue placeholders.
+  comparison. `docs/reviews/review-prompt.md` now tells the reviewer how to treat blue placeholders.
 
 **2026-10-21 (later): front matter, background, discussion, conclusion brought up to date; end-to-end pass.**
 - Abstract and introduction: the cost ratio was stale (1/135 -> "about a hundredth of its time", 5.1's 1/95); byte
@@ -994,7 +994,7 @@ classification and direction A took shape:
   at 5,000 benign files; at most one sentence later). Sentence-level rewordings (the 6.2 "attack surface" sentence,
   "for any extractor") ignored for now.
 - **Next:** read run 74 and update Figures 3-4 and Section 5; a fresh critical review of the current draft
-  (`REVIEW.md` predates the reorganization and most results); the W7 decision (Android vs. scoped claims; the blue
+  (`docs/reviews/explanation-provenance/2026-10-16-ccs.md` predates the reorganization and most results); the W7 decision (Android vs. scoped claims; the blue
   Android sentence must go or be filled); then abstract, introduction, conclusion.
 
 **2026-10-20 (end of morning session): Section 5, 6.2, and Appendix C filled; 6.1's claim decided, waiting on
@@ -1048,7 +1048,7 @@ together). Reasons: the paper is a method plus two security applications; the pu
 pushforward (W6); the applications already cross operators; the field-level baselines (REVIEW risks 1-2) have a natural
 home. Labels `sec:XML:PullbackTrigger`/`PushforwardTrigger` merged into `sec:XML:Trigger`; new `sec:XML:Evaluation`,
 `Applications`, `Together`. Text otherwise unchanged except seams (section openers/closers, duplicated motivation
-trimmed, intro's "three questions" and contribution pointers). `REVIEW.md`'s file:line references point to the old
+trimmed, intro's "three questions" and contribution pointers). `docs/reviews/explanation-provenance/2026-10-16-ccs.md`'s file:line references point to the old
 files (`_e_pullback.tex`, `_f_pushforward.tex`).
 
 **Experiment code written (2026-10-19), not yet run at scale.** WP0-WP5, WP7 (implementation plan): adaptive
@@ -1068,7 +1068,7 @@ paragraph stays until the user decides. Run numbers in the implementation plan n
 B, then WP0.
 
 **Manuscript carries the new methodology (fd814be)** with blue placeholders for every new result. **REVIEW
-reassessed** (`docs/review-reassessment-2026-10-19.md`): every WP answers a named review risk; low-hanging fruit listed
+reassessed** (`docs/reviews/explanation-provenance/2026-10-19-reassessment.md`): every WP answers a named review risk; low-hanging fruit listed
 (axiom and notation fix, overclaims, additive-share and worst-case numbers, adjudication pre-check on pilot files,
 stronger attacker on the mitigated MalConv, related work, Part A covariates); open decision: keep the identifiability
 result as an illustration in Section 3.
@@ -1143,7 +1143,7 @@ Last updated: 2026-10-16 (end of session). **Section 3 now carries real theory (
   Deletion (operator + evidence-removed protocol + ties, moved from 5.1), 4.4 Windows of Bytes. 17 pages; one 2 pt
   overfull vbox on the last page (float reflow, harmless).
 
-- **Pre-submission review (2026-10-16, read-only):** `REVIEW.md` in the repo root (simulated CCS review, claim audit,
+- **Pre-submission review (2026-10-16, read-only):** `docs/reviews/explanation-provenance/2026-10-16-ccs.md` in the repo root (simulated CCS review, claim audit,
   threat models, risk register, action plan, draft abstract/contributions/threat models). Top risks: no per-field
   IG baseline for the audit/MalConv test (the oracle's parser map already exists), byte vs. field resolution
   unablated (W4), triage without a security outcome; synthetic blue results must go before submission.
@@ -1203,7 +1203,7 @@ Sections 3-5 are revised for presentation.** Today, in order:
   8.2% (pushforward's 8 fields) / 2.9% (both methods' 12) at 2.0 / 3.5 pts of detection. Framed as a trade-off: the
   point is that the pushforward identifies actionable issues (user). Retraining half stays blue.
 - **W6 writing:** comparison threat model (stand-ins), audit vs. surrogate backed by M1 ("use both").
-- **Sections 3-5 revised** (`docs/review-sections-3-5-2026-10-14.md`, "Outcome"): three pgfplots result figures,
+- **Sections 3-5 revised** (`docs/reviews/explanation-provenance/2026-10-14-sections-3-5.md`, "Outcome"): three pgfplots result figures,
   conventions and audited-fields tables, validity fixes, sharper novelty, no self-deprecating labels.
 
 **Current goal:** the user reads Sections 3-5 (pp. 3-11 of `manuscript/main.pdf`); then the same treatment for the

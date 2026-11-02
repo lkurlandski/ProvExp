@@ -7,7 +7,7 @@ abandoned is in `docs/graveyard.md`. Deadlines and conference cycles are not a p
 ## Why we restarted (2026-10-22)
 
 The explanation-provenance paper was built method first, with applications found afterwards. A simulated CCS review
-(`REVIEW-2026-10-21.md`) rated it weak reject; the user judged it far weaker (strong reject: not novel, no compelling
+(`docs/reviews/explanation-provenance/2026-10-21-ccs.md`) rated it weak reject; the user judged it far weaker (strong reject: not novel, no compelling
 utility to the security community) and agreed with the diagnosis: where flat provenance is precise (named header
 fields) it is not needed, where it would be needed (hashed and aggregate features) it is diffuse, and every
 application landed on the first side. We had also misjudged our novelty by not grasping the related work.
@@ -57,7 +57,7 @@ introduction and a simple baseline (writing decision for later).
 
 ## Next steps (2026-11-02, review done: plan the response)
 
-The harsh simulated review of the body is done (`REVIEW-2026-11-02.md`, repo root, untracked). Scores, assuming the
+The harsh simulated review of the body is done (`docs/reviews/2026-11-02-body.md`). Scores, assuming the
 empty sections are written well: formal methods Weak reject, adversarial ML for malware Weak reject, systems security
 Weak accept; likely reject with encouragement, borderline accept once its top risks are fixed. **Next (a fresh
 session, `docs/resume-prompt.md`): turn the review into a plan with the user.** Triage each risk (fix now in `.tex`;
@@ -152,7 +152,7 @@ domains emphasized about equally" above. Paper text goes straight into `.tex`.
    words against 2,500; proofs in Appendix A, `_j_proofs.tex`), Section 4 EMBER instance (`_e_instances.tex`, 1,038
    against 1,000), Section 5 evaluation (`_f_evaluation.tex`, ~1,900 against 3,000; the mock's Tables 1-3 are Tables
    5-7 of the PDF). The old manuscript is deleted; one file per section, empty stubs for the rest.
-4. **Harsh simulated review of the body** (done 2026-11-02: `REVIEW-2026-11-02.md`; next: plan the response, see
+4. **Harsh simulated review of the body** (done 2026-11-02: `docs/reviews/2026-11-02-body.md`; next: plan the response, see
    "Next steps (2026-11-02, review done)" above), then the user's read of Sections 3-5; triage both together. Decision point (user): what the
    review says the paper needs (a second instance or not, further baselines, framing).
 5. **Replace the synthetic cells** (each marked `% SYNTHETIC` in the source; `docs/status.md`, top block): the

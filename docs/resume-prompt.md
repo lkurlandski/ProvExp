@@ -7,11 +7,12 @@
   - Section 4, the EMBER instance (`_e_instances.tex`).
   - Section 5, the evaluation (`_f_evaluation.tex`). The mock's Tables 1-3 are Tables 5-7 of the PDF.
   - Every other section is an empty stub. Its comment states the planned content and word budget.
-- **The harsh simulated review is done:** `REVIEW-2026-11-02.md` in the repo root. Read it first, in full.
+- **The harsh simulated review is done:** `docs/reviews/2026-11-02-body.md` (index of all reviews:
+  `docs/reviews/README.md`). Read it first, in full.
   - Scores: formal methods Weak reject, adversarial ML for malware Weak reject, systems security Weak accept.
   - Likely outcome: reject with encouragement; borderline accept once its top risks are fixed.
   - Its Section 6 is the risk register (R1-R16) and its Section 7 the proposed action plan.
-  - Ignore `REVIEW.md` and `REVIEW-2026-10-21.md`: they are about the abandoned direction.
+  - Ignore `docs/reviews/explanation-provenance/`: those reviews are about the abandoned direction.
 - **Planning documents:**
   - `docs/status.md`, top block: what the review found, and which findings were verified against the docs.
   - `PLAN.md`, "Next steps (2026-11-02, review done)": the findings in order of weight, and their effect on the
@@ -32,7 +33,7 @@
 
 This session produces a plan, agreed with the user. It does not run experiments or rewrite sections.
 
-1. **Read** `REVIEW-2026-11-02.md`, then the status top block and the PLAN section named above.
+1. **Read** `docs/reviews/2026-11-02-body.md`, then the status top block and the PLAN section named above.
 2. **Check the review before trusting it.** Its "verified" list is in its last paragraph and in `docs/status.md`.
    Spot-check anything a decision will rest on, especially:
    - the adaptive search's operations and its 8% on the unconstrained model;
@@ -73,7 +74,7 @@ This session produces a plan, agreed with the user. It does not run experiments 
 
 ## Notes
 
-- Untracked, leave alone: `papers/`, `REVIEW*.md`, `TODO.md`, `docs/checkpoint-prompt.md`, `make-manuscript.sh`,
+- Untracked, leave alone: `papers/`, `TODO.md`, `docs/checkpoint-prompt.md`, `make-manuscript.sh`,
   `slides/`.
 - Bib page ranges not verified: Incer et al., Chen et al. (CCS 2021), Simonetto et al.
 - The user still owes the upstream reports in `docs/upstream-issues.md`.

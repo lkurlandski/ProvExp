@@ -87,7 +87,7 @@ EMBER rows only.
 4. **A breadth instance, if the review says the paper needs one.** Which domain is unimportant and interchangeable
    (user, 2026-11-02); the CTU-13 rows above are one option, not a plan. Late.
 
-**After the review (2026-11-02, `REVIEW-2026-11-02.md`; to be triaged with the user before any of it is adopted).**
+**After the review (2026-11-02, `docs/reviews/2026-11-02-body.md`; to be triaged with the user before any of it is adopted).**
 The review judges these to move the verdict most, and none is yet decided:
 - Table 3 (PDF Table 7): an adaptive search over all twelve operations that beats GAMMA API on the unconstrained
   model; the toolkit columns split into in-catalogue and out-of-catalogue outputs; a "still detected after every

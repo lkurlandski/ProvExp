@@ -4,7 +4,7 @@
 > decide whether to run them and how they would be presented (the "mock the result first" rule). No number here comes
 > from a run. Each table is labelled FAKE. Delete or replace a block the moment the real experiment lands.
 
-Created 2026-10-14, in response to the self-review (`docs/review-2026-10-14.md`). These cover the three items that
+Created 2026-10-14, in response to the self-review (`docs/reviews/explanation-provenance/2026-10-14-self-review.md`). These cover the three items that
 touch MalConv or retraining, which we are not ready to run: the pushforward's faithfulness measured on MalConv (review
 item 3), the header-attack comparison for the audit (item 4), and the audit's mitigation (item 10/W6).
 

@@ -58,12 +58,12 @@ sink the paper), say so once, in the risk register, with the reason; otherwise l
 
 ## Ground rules
 
-1. **Read-only.** Do not modify the manuscript or the docs. Write all output to `REVIEW-<YYYY-MM-DD>.md` in the repo
-   root (today's date). Put any drafted text in that file, labeled with the section and the file and line it would
+1. **Read-only.** Do not modify the manuscript or the docs. Write all output to `docs/reviews/<YYYY-MM-DD>-<stage>.md`
+   (today's date; e.g. `2026-11-02-body.md`), and add a line for it to `docs/reviews/README.md`. Put any drafted text in that file, labeled with the section and the file and line it would
    replace or fill.
 2. **Read everything first:** `manuscript/main.tex` and every `\input` (stubs included), `main.bib`, then
    `docs/paper-mock.md`. Build the PDF with `make` in `manuscript/` if you need to see the layout.
-3. **Do not read** `REVIEW.md`, `REVIEW-2026-10-21.md`, or `docs/review-reassessment-2026-10-19.md`. They review the
+3. **Do not read** anything under `docs/reviews/explanation-provenance/`. Those files review the
    abandoned direction (explanation provenance) and would only mislead you.
 4. Cite locations precisely (section, and file + line) for every finding.
 5. Separate what you *verified* (checked against the source docs, a paper, or the code) from what you *infer*. If unsure
@@ -177,7 +177,7 @@ sections, as replacement text.
 
 ## Output requirements
 
-- Everything goes in `REVIEW-<YYYY-MM-DD>.md`, with the sections above as headers.
+- Everything goes in `docs/reviews/<YYYY-MM-DD>-<stage>.md`, with the sections above as headers.
 - Start the file with a 5-line executive summary: the three scores and the likely outcome, the top three risks, and
   the single most important thing to fix.
 - When done, tell me in the chat where the file is and give me the executive summary.
