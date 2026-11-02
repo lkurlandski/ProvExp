@@ -114,16 +114,23 @@ domains emphasized about equally" above. Paper text goes straight into `.tex`.
    cells vs missing ones; the four-part evaluation above. Candidate extra rows, each with a go/no-go before code:
    coupling against Severi et al.'s hand exclusions; coverage weighted by attack success; the detector-gain share of the
    88 pefile-warning features outside the model.
-3. **Framework section in `.tex`** (done 2026-11-02: `manuscript/_d_framework.tex`, 2,568 words; proofs in `_j_proofs.tex`) (`manuscript/`), to its budget: the problem, the model with one main example (PE)
-   and a cross-domain table, the side-effect and direction theorems with the requirements as a compact list; proofs
-   and lemmas in the appendix, drawn from `docs/formalization.md`.
-4. **Harsh simulated tier-1 review of the mock and framework; decision point** (next, after the user reads the section) (user): breadth instances and a
-   possible second application.
-5. **A's gaps, by reviewer weight:** adversarial-training baseline; held-out attacks from a second toolkit
-   (MAB-Malware); scale (seeds 0-2, full splits, more malware; user's decision); leave-one-out PV; cost column. Large
-   runs are `run/` scripts for the user (next number 117).
-6. **Breadth instances** chosen at step 4, then the rest of the manuscript, body first, introduction and conclusion
-   last.
+3. **Body in `.tex`** (done 2026-11-02, this session): Section 3 framework (`manuscript/_d_framework.tex`, 2,568
+   words against 2,500; proofs in Appendix A, `_j_proofs.tex`), Section 4 EMBER instance (`_e_instances.tex`, 1,038
+   against 1,000), Section 5 evaluation (`_f_evaluation.tex`, ~1,900 against 3,000; the mock's Tables 1-3 are Tables
+   5-7 of the PDF). The old manuscript is deleted; one file per section, empty stubs for the rest.
+4. **Harsh simulated review of the body** (next, a fresh chat with `docs/review-prompt.md`; output
+   `REVIEW-<date>.md`), then the user's read of Sections 3-5; triage both together. Decision point (user): what the
+   review says the paper needs (a second instance or not, further baselines, framing).
+5. **Replace the synthetic cells** (each marked `% SYNTHETIC` in the source; `docs/status.md`, top block): the
+   add-section exactness check and the cost bookkeeping (small; run directly); PV with 8 attacks under the fixed
+   adaptive search; the adversarial-training row (a `run/` script for the user; next number 117).
+6. **A's remaining gaps, by reviewer weight:** held-out attacks from a second toolkit (MAB-Malware); leave-one-out PV;
+   scale (seeds 0-2, full splits, more malware; user's decision).
+7. **The remaining sections:** Background (800 words), Related work (700), Discussion (500), then the introduction
+   (1,000) and abstract last; Figure 1 of the mock (one edit becoming an item delta, adjusted sums, and new features,
+   against re-extraction) in Section 3.
+8. **A breadth instance**, if the review says the paper needs one: late and interchangeable; which domain does not
+   matter (user, 2026-11-02).
 
 The stock-take that led here: `docs/status.md` (2026-11-02, stock-take). Next session: `docs/resume-prompt.md`.
 

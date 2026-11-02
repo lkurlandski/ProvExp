@@ -1,63 +1,50 @@
 # Status
 
-**2026-11-02 (later still): Section 5 (Evaluation) written on EMBER; waiting for the user's read.**
-`manuscript/_f_evaluation.tex`, about 1,900 words against 3,000 (the rest of the budget is for a breadth instance and
-the missing cells; not padded). Setup; side effects exact (Table 5: append 89/11 flagged, DOS 100/100, random writes
-1,791/209 flagged, combined 1,105/1,105, add-section synthetic); directions (Table 6: every hand-rule disagreement,
-each witnessed, none the other way; G7's 73,063 edits; learned constraints from run 110 in prose); detectors (Table 7:
-latest numbers, run 105 metrics and run 108 adaptive: PV-seen 16/22, monotone rows 0 with smallest change 0.0; expert
-set; additions threat model in prose). **Synthetic (blue):** the adversarial-training row; PV-8 under the fixed
-adaptive search; the extraction count of the adaptive search after the fix; the cost figures; Table 5's add-section
-exactness. Each has a `% SYNTHETIC` comment naming what replaces it. Corrections while writing: the expert set's M_full
-holes come from reading its code, not from our derivation (the engine reads only the instrumented extractor); PV's
-hole is 44.4% for PV-seen (37.8% for PV-all). Citations added: kantchelian2016evasion, demetrio2021functionality;
-LIEF's bib entry fixed. Next: the user reads Sections 3-5; then the harsh simulated review (PLAN step 4); runs that
-replace the synthetic cells are the user's (adversarial training, PV-8 adaptive, cost bookkeeping, add-section C1).
+**2026-11-02 (end of session): the body is drafted in `.tex` (Sections 3-5, Appendix A); the old manuscript is
+deleted; next: a harsh simulated review in a fresh chat (`docs/review-prompt.md`), then the user's read.** Commits
+61b19dc..(this wrap-up). No code or runs.
 
----
-
-**2026-11-02 (later): Section 4 (Instances) written on EMBER; waiting for the user's read.** `manuscript/_e_instances.tex`,
-1,038 words against 1,000 (the budget also covered a breadth instance, which is not written; which domain is
-interchangeable, user). Subsections: what is recorded (2,480 of 2,568 modeled; kinds; locating positions and the
-single-byte-flip completion, 58,666 flips; margins), three repairs (size ratios, library set, the import-overwrite
-patch), reading the sums directly (the four re-encodings behind Table 3's "over sums" row; not in the mock's list),
-the edit catalogue (Table: twelve operations, stated in elements/items, three nested threat models; own byte-level
-edits, not LIEF; the plain-layout population, 1,674 of 2,000). Section 3's readout table gained the missing "opaque
-with default" row. Next: Section 5 (Evaluation, Tables 1-3 on EMBER at pilot scale; missing cells as \synthetic).
-
----
-
-**2026-11-02 (end of session): framework section written in `.tex`; waiting for the user's read.** Commits: bib
-entries, the section with its appendix, (this wrap-up). No code or runs.
-- `manuscript/_d_framework.tex` replaces Section 3 (now "Computing What Edits Do to Features"; label
-  `sec:XML:Framework` kept); `_c_method.tex` stays on disk, unused. Six subsections per the mock: problem (Pierazzi's
-  symbols), items/sums/readouts (definition, three tables: cross-domain, terms with their item-change signs, readouts
-  with their direction rules), edits as item deltas with the four classes, exact side effects ((R1)-(R5) as one list,
-  Theorem 1), sound directions (sign sets, envelopes, Theorem 2), robust detectors (Corollary 1, Gimenez et al.).
-  Running example: append `\0http://evil.example`; the traffic example only for the longest gap and the mean gap.
-  The term-sign and readout-rule tables of the formalization (Lemmas 3, 6) are folded into the term and readout
-  tables, which saves the directions part its own tables.
-- Words (texcount, text + headers + captions, table cells included): 2,568 against 2,500. Per part: problem 219/300,
-  model 738/700, edits 338/300, side effects 619/600, directions 535/500, robustness 119/100.
-- Appendix A "Proofs for the Framework" (`_j_proofs.tex`, ~1,100 words): finding the delta, adjusting the
-  sums, signatures of element-stated operations, envelopes, hashed keys, patterns under extension, readout rules,
-  Theorems 2 and Corollary 1. No EMBER checks or caveats.
-- Citations added to `main.bib`: gimenez2025certifiably (IFIP SEC 2025), incer2018adversarially, demontis2019yes,
+- **Manuscript layout.** The old direction's sections, `archive/`, `assets/`, and `supp.tex` are deleted (git history).
+  `main.tex` is a skeleton in the mock's outline, one file per section (user's choice): `_a_abstract`,
+  `_b_introduction`, `_c_background`, `_d_framework`, `_e_instances`, `_f_evaluation`, `_g_related_work`,
+  `_h_discussion`; appendices `_j_proofs`, `_k_ethics`, `_l_open_science`. Each empty stub's comment states its content
+  and word budget. Working title "Computing What Adversarial Edits Do to Features" (user to decide); no conclusion
+  section (the mock lists none; user to decide). `\corollary` header added; theorem references use `Theorem~\ref`
+  (cleveref has no name for the custom counters). `make check` clean, 8 pages.
+- **Section 3, the framework** (`_d_framework.tex`, 2,568 words against 2,500; per part: problem 219/300, model
+  738/700, edits 338/300, side effects 619/600, directions 535/500, robustness 119/100). Pierazzi et al.'s symbols;
+  items, sums, readouts with three tables (cross-domain; terms with their item-change signs; readouts with their
+  direction rules, which absorb the formalization's Lemmas 3 and 6); edits as item deltas and four classes; (R1)-(R5)
+  as one list and Theorem 1 (Lemma 1 folded in as part i); sign sets, envelopes, Theorem 2; Corollary 1 (robustness,
+  Gimenez et al.). Running example: append `\0http://evil.example`; traffic only for the longest and the mean gap.
+  Appendix A (`_j_proofs.tex`, ~1,100 words): the proofs and the lemmas on hashed keys and patterns; no EMBER checks.
+- **Section 4, the EMBER instance** (`_e_instances.tex`, 1,038 against 1,000; no breadth instance): what is recorded
+  (2,480 of 2,568 modeled; kinds; locating positions completed by single-byte flips, 58,666; margins), three repairs
+  (two bookkeeping, one bug: the import overwrite, patched), reading the sums directly (the four re-encodings; not in
+  the mock's list), the edit catalogue (Table 4: twelve operations, three nested threat models; own byte-level edits;
+  the plain-layout population, 1,674 of 2,000).
+- **Section 5, the evaluation** (`_f_evaluation.tex`, ~1,900 against 3,000; not padded). Table 5 side effects (append
+  89 exact / 11 flagged, DOS 100/100, random writes 1,791 / 209 flagged, combined 1,105/1,105, 0 wrong); Table 6 every
+  hand-rule disagreement, each witnessed, none the other way, plus G7's 73,063 edits and run 110's learned constraints
+  in prose; Table 7 detectors with the latest numbers (run 105 metrics, run 108 adaptive: unconstrained 8%, PV-seen
+  16/22, monotone rows 0 with smallest change 0.0; expert set 29.1% TPR; the additions threat model in prose).
+- **Synthetic cells (blue, each with a `% SYNTHETIC` comment):** Table 5's add-section exactness (C1 vs re-extraction
+  of our own edit; run directly, small); the cost figures (bookkeeping from the logs of runs 97/107 and 78); PV with 8
+  attacks under the fixed adaptive search (run 108 protocol); the adaptive search's extraction count after the fix;
+  the adversarial-training row (new `run/` script for the user, number 117).
+- **Corrections made while writing:** the expert set's M_full holes come from reading its code, not from our
+  derivation (the engine reads only the instrumented extractor); PV's hole is 44.4% for PV-seen (37.8% for PV-all;
+  both measured with the hand rules, run 78); Section 3's readout table gained "opaque with default".
+- **Citations added:** gimenez2025certifiably (IFIP SEC 2025), incer2018adversarially, demontis2019yes,
   chen2021learning, gray1997data, wagner1998efficient, sharafaldin2018toward, engelen2021troubleshooting,
-  chernikova2022fence, simonetto2022unified. Demontis, Chen (CCS 2021), Engelen, Chernikova, Simonetto are in the bib
-  but not yet cited (they belong to Background, Instances, Related work).
-- Build: `make` passes; `make check` lists only undefined references from old sections to labels of the retired
-  `_c_method.tex`, and a 1.7 pt overfull vbox on the last page (old open-science text); expected while the other
-  sections are old.
-- `main.tex` gained a `\corollary` header macro (same style as `\theorem`); theorem references use
-  `Theorem~\ref{...}`, since cleveref has no name for the custom counters.
-- **Old manuscript deleted (user):** every old-direction fragment, `archive/`, `assets/` (old figures and their data),
-  and `supp.tex` are removed (recoverable from git history). `main.tex` is a skeleton in the mock's outline (1
-  Introduction, 2 Background, 3 Framework, 4 Instances, 5 Evaluation, 6 Related work, 7 Discussion; appendices: proofs,
-  ethics, open science), one file per section, each stub stating its content and budget. Working title "Computing What
-  Adversarial Edits Do to Features" (user to decide); keywords updated. `make check` is clean (5 pages).
-- Next: the user reads Section 3; then PLAN step 4 (harsh review, decision point); then the CTU-13 instance (first:
-  what the MoEvA2 package ships).
+  chernikova2022fence, simonetto2022unified, kantchelian2016evasion, demetrio2021functionality; LIEF's entry fixed.
+  Unverified page ranges: Incer, Chen, Simonetto.
+- **Decided (user):** which breadth domain is used is unimportant and interchangeable, never the next priority (twice
+  this session; memory updated). One file per section.
+- **Docs:** `docs/review-prompt.md` rewritten for a body-only draft (the old-direction prompt is in git history);
+  `PLAN.md` order of work, `docs/paper-mock.md` "What is missing", `CLAUDE.md` (layout, review prompt) updated.
+- **Next:** the review (fresh chat, `docs/review-prompt.md`); the user's read of Sections 3-5; triage; then the
+  synthetic cells, A's gaps, and the remaining sections (`PLAN.md`, steps 4-8; `docs/resume-prompt.md`).
 
 ---
 

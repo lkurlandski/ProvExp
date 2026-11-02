@@ -75,16 +75,17 @@ change exactly 0.0; PV falls to the adaptive search on 21-22/22; expert set AUC 
 MoEvA2. MoEvA2 evades Simonetto et al.'s constraint-augmented model 80% of the time; hypothesis: 0% on ours for
 in-model insertions, at a few points of AUC. Adopt it if Table 1's CTU-13 row passes.
 
-## What is missing, in order
+## What is missing, in order (updated 2026-11-02, after the body was drafted)
 
-1. **CTU-13 instance.** Rebuild Chernikova and Oprea's 756 features from the CTU-13 captures (Zeek connection logs,
-   per host, port, and minute), record them as items and sums, run Tables 1 and 2. *Go/no-go:* the rebuilt features
-   match the published vectors on at least 99% of entries, and every hand constraint is either implied by the derived
-   ones or violated by a witnessed real insertion. A start, in order: check what the MoEvA2 package ships (raw
-   pipeline or only vectors).
-2. **A's gaps:** adversarial-training row, a second toolkit (MAB-Malware) for the held-out column, the cost column,
-   scale (seeds 0-2, full splits, more malware).
-3. **Framework section in `.tex`**, from `docs/formalization.md`, to its 2,500 words; it can be drafted now.
+Sections 3-5 and Appendix A are drafted in `.tex` (`manuscript/`); the mock's Tables 1-3 are Tables 5-7 of the PDF,
+EMBER rows only.
+1. **The synthetic cells** of Section 5's tables (`% SYNTHETIC` in the source): add-section exactness, cost,
+   PV with 8 attacks under the fixed adaptive search, the adversarial-training row.
+2. **A's gaps:** a second toolkit (MAB-Malware) for the held-out column, leave-one-out PV, scale (seeds 0-2, full
+   splits, more malware; user's decision).
+3. **The remaining sections** (background, related work, discussion; introduction and abstract last) and Figure 1.
+4. **A breadth instance, if the review says the paper needs one.** Which domain is unimportant and interchangeable
+   (user, 2026-11-02); the CTU-13 rows above are one option, not a plan. Late.
 
 ## Open decisions (user)
 

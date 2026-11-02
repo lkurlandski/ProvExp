@@ -33,18 +33,19 @@ and manuscript remain as source material. Deadlines and conference cycles are no
   (`scripts/ap_*`) remain as source material. The automatic derivation A rests on: `docs/item-layer-design.md`. The
   expert-set row: `docs/direction-A-expert-set.md`.
 - `docs/graveyard.md`: ideas and directions that did not pan out and why.
+- `docs/review-prompt.md`: the harsh simulated review for the current draft (body only; output `REVIEW-<date>.md`).
+  Update it when the draft's stage changes (e.g., once the introduction exists).
 - Old direction, for reference only: `docs/archive/PLAN-explanation-provenance-2026-10-21.md`, `docs/experiments/`
   (cp, pb1, pf1, trigger, cm, audit), `docs/theory.md`, `docs/appendix.md`, `docs/related_work.md`,
-  `docs/review-prompt.md`, the old manuscript (deleted 2026-11-02; in git history before the commit that removed it), `REVIEW-2026-10-21.md`. Some artifact paths use
+  the old manuscript (deleted 2026-11-02; in git history before the commit that removed it), `REVIEW-2026-10-21.md`. Some artifact paths use
   retired IDs (e.g. `artifacts/experiments/e1/` is PB1). `docs/design.md` (package design, provenance conventions,
   thrember quirks) and `docs/style_guide.md` still apply.
 - **State a hypothesis before running an experiment** (what you expect and why), and report a failed check as such.
   Keep it short and proportionate: a sentence or two, not an elaborate pre-registered reading for every outcome
   (user, 2026-10-09).
-- The manuscript is being rewritten (user, 2026-11-02): the framework section goes straight into `.tex`
-  (`manuscript/`), drafted from a paper mock to a word budget (about 2,500 words); no new markdown drafts of paper
-  text. `docs/formalization.md` is frozen as the reference and appendix source. Other sections stay untouched until
-  their turn. Write continuous prose rather than stacks of labeled paragraphs (user, 2026-10-14); no internal IDs in
+- The manuscript is being rewritten (user, 2026-11-02): each section goes straight into `.tex` (`manuscript/`),
+  drafted from the paper mock (`docs/paper-mock.md`) to its word budget; no markdown drafts of paper text.
+  `docs/formalization.md` is frozen as the reference and appendix source. Written so far: Sections 3-5 and Appendix A. Write continuous prose rather than stacks of labeled paragraphs (user, 2026-10-14); no internal IDs in
   the paper.
 - `src/provexp/`: `boxmatrix.py` (sparse boxes), `provenance.py` (P, transfers, statistics, round trips), `items.py`
   (the item layer: items, terms, readouts as data, projection), `reach.py` (the C1 and C4 engines),
