@@ -35,7 +35,7 @@ and manuscript remain as source material. Deadlines and conference cycles are no
 - `docs/graveyard.md`: ideas and directions that did not pan out and why.
 - Old direction, for reference only: `docs/archive/PLAN-explanation-provenance-2026-10-21.md`, `docs/experiments/`
   (cp, pb1, pf1, trigger, cm, audit), `docs/theory.md`, `docs/appendix.md`, `docs/related_work.md`,
-  `docs/review-prompt.md`, the manuscript under `manuscript/`, `REVIEW-2026-10-21.md`. Some artifact paths use
+  `docs/review-prompt.md`, the old manuscript (deleted 2026-11-02; in git history before the commit that removed it), `REVIEW-2026-10-21.md`. Some artifact paths use
   retired IDs (e.g. `artifacts/experiments/e1/` is PB1). `docs/design.md` (package design, provenance conventions,
   thrember quirks) and `docs/style_guide.md` still apply.
 - **State a hypothesis before running an experiment** (what you expect and why), and report a failed check as such.
@@ -60,7 +60,7 @@ and manuscript remain as source material. Deadlines and conference cycles are no
   cp_coarsening, cp_blackbox); PB1 (discover_protected_fields, header_typical_values, faithfulness, pb1_tables);
   the trigger (trigger_select, trigger_poison, trigger_validate, trigger_explain, trigger_tables); PF1 (pf1,
   pf1_resolution, pf_malconv); 3-A (cm_check, cm_shared, cm_triage, cm_tables); 3-C audit (audit_*, incl. audit_mitigate;
-  cm_global); the manuscript's figure data (paper_figures -> `manuscript/assets/data/`); shared
+  cm_global); the old manuscript's figure data (paper_figures; its output directory was deleted with the old manuscript); shared
   discovery/transplant machinery (shortcuts, shortcuts_transplant). Direction A: a_directions (C4 directions per
   threat model; derived from the item tables by default, `--hand` for the hand rules), a_c1_table0 (hand C1 predictors, the engine's oracle, and Table A0), a_pv_attacks / a_pv_hole (secml-malware attacks, PV
   selection and its hole), a1_evaluate (toolkit columns), a1_adaptive (C1-guided adaptive search), a_overlay_witness
@@ -107,6 +107,8 @@ and manuscript remain as source material. Deadlines and conference cycles are no
   Full suite: `env/bin/pytest -n 16 tests` (~4 min).
 - Before committing: `env/bin/ruff check src tests scripts` and `env/bin/mypy src tests scripts` (strict) must pass.
 - **Compile the manuscript with `make` in `manuscript/`** (user-space TeX Live in `~/texlive`, latexmk + pdflatex).
+  One file per section (`_a_abstract.tex` ... `_h_discussion.tex`, appendices `_j_proofs.tex` ...), in the mock's
+  outline order; each stub's comment states its content and word budget. Count words with `texcount` per file.
   `main.tex` is the complete document (ACM `acmart` `sigconf`, the CCS format; do not change fonts, margins, or spacing) and
   `\input`s the section fragments. After editing, run `make` and `make check` (undefined refs/citations, overfull boxes).
 - **Early drafting stage (user, 2026-10-14):** (1) exceeding the page limit does not matter yet; do not cut or compress

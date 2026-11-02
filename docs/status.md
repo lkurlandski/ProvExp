@@ -2,7 +2,7 @@
 
 **2026-11-02 (end of session): framework section written in `.tex`; waiting for the user's read.** Commits: bib
 entries, the section with its appendix, (this wrap-up). No code or runs.
-- `manuscript/_c_framework.tex` replaces Section 3 (now "Computing What Edits Do to Features"; label
+- `manuscript/_d_framework.tex` replaces Section 3 (now "Computing What Edits Do to Features"; label
   `sec:XML:Framework` kept); `_c_method.tex` stays on disk, unused. Six subsections per the mock: problem (Pierazzi's
   symbols), items/sums/readouts (definition, three tables: cross-domain, terms with their item-change signs, readouts
   with their direction rules), edits as item deltas with the four classes, exact side effects ((R1)-(R5) as one list,
@@ -12,7 +12,7 @@ entries, the section with its appendix, (this wrap-up). No code or runs.
   tables, which saves the directions part its own tables.
 - Words (texcount, text + headers + captions, table cells included): 2,568 against 2,500. Per part: problem 219/300,
   model 738/700, edits 338/300, side effects 619/600, directions 535/500, robustness 119/100.
-- Appendix A "Proofs for the Framework" (`_m_framework_proofs.tex`, ~1,100 words): finding the delta, adjusting the
+- Appendix A "Proofs for the Framework" (`_j_proofs.tex`, ~1,100 words): finding the delta, adjusting the
   sums, signatures of element-stated operations, envelopes, hashed keys, patterns under extension, readout rules,
   Theorems 2 and Corollary 1. No EMBER checks or caveats.
 - Citations added to `main.bib`: gimenez2025certifiably (IFIP SEC 2025), incer2018adversarially, demontis2019yes,
@@ -24,6 +24,11 @@ entries, the section with its appendix, (this wrap-up). No code or runs.
   sections are old.
 - `main.tex` gained a `\corollary` header macro (same style as `\theorem`); theorem references use
   `Theorem~\ref{...}`, since cleveref has no name for the custom counters.
+- **Old manuscript deleted (user):** every old-direction fragment, `archive/`, `assets/` (old figures and their data),
+  and `supp.tex` are removed (recoverable from git history). `main.tex` is a skeleton in the mock's outline (1
+  Introduction, 2 Background, 3 Framework, 4 Instances, 5 Evaluation, 6 Related work, 7 Discussion; appendices: proofs,
+  ethics, open science), one file per section, each stub stating its content and budget. Working title "Computing What
+  Adversarial Edits Do to Features" (user to decide); keywords updated. `make check` is clean (5 pages).
 - Next: the user reads Section 3; then PLAN step 4 (harsh review, decision point); then the CTU-13 instance (first:
   what the MoEvA2 package ships).
 
