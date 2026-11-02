@@ -109,7 +109,7 @@ domains emphasized about equally" above. Paper text goes straight into `.tex`.
    an attack or hand-written constraints to compare against exist. Fold in the facts to verify (Drebin's API lists and
    permission map, CICFlowMeter's definitions, FENCE's constraint count, Pierazzi et al.'s wording). Output: which
    breadth instances the paper can show, and at what depth.
-2. **Paper mock** (`docs/paper-mock.md`, at most two pages): contributions; section outline with a word budget per
+2. **Paper mock** (done 2026-11-02: `docs/paper-mock.md`; open: Drebin as instance, coupling row) (`docs/paper-mock.md`, at most two pages): contributions; section outline with a word budget per
    section (framework about 2,500 words); every table and figure with the model component behind each column, measured
    cells vs missing ones; the four-part evaluation above. Candidate extra rows, each with a go/no-go before code:
    coupling against Severi et al.'s hand exclusions; coverage weighted by attack success; the detector-gain share of the

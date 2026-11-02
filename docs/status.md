@@ -1,5 +1,13 @@
 # Status
 
+**2026-11-02 (paper mock written): `docs/paper-mock.md`.** Thesis, four contributions, outline with word budgets
+(body ~9,500; framework 2,500), Tables 1-3 (correct; vs hand and learned; detectors) with measured EMBER cells and
+missing CTU-13 cells, candidate Table 4 (CTU-13 detector vs FENCE/MoEvA2). Next: the framework section in `.tex`
+(can start now), and the CTU-13 instance (first: what the MoEvA2 package ships). Open (user): Drebin as instance;
+the coupling row.
+
+---
+
 **2026-11-02 (feasibility reading done): CTU-13 with Chernikova and Oprea's features is the cheapest and strongest
 breadth instance; Drebin second; CICFlowMeter stays the running example. Next: the paper mock.**
 - *Traffic, CTU-13 / FENCE features:* raw captures public (CC-BY). The features are Zeek connection records aggregated
