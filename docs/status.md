@@ -1,5 +1,16 @@
 # Status
 
+**2026-11-02 (later): Section 4 (Instances) written on EMBER; waiting for the user's read.** `manuscript/_e_instances.tex`,
+1,038 words against 1,000 (the budget also covered a breadth instance, which is not written; which domain is
+interchangeable, user). Subsections: what is recorded (2,480 of 2,568 modeled; kinds; locating positions and the
+single-byte-flip completion, 58,666 flips; margins), three repairs (size ratios, library set, the import-overwrite
+patch), reading the sums directly (the four re-encodings behind Table 3's "over sums" row; not in the mock's list),
+the edit catalogue (Table: twelve operations, stated in elements/items, three nested threat models; own byte-level
+edits, not LIEF; the plain-layout population, 1,674 of 2,000). Section 3's readout table gained the missing "opaque
+with default" row. Next: Section 5 (Evaluation, Tables 1-3 on EMBER at pilot scale; missing cells as \synthetic).
+
+---
+
 **2026-11-02 (end of session): framework section written in `.tex`; waiting for the user's read.** Commits: bib
 entries, the section with its appendix, (this wrap-up). No code or runs.
 - `manuscript/_d_framework.tex` replaces Section 3 (now "Computing What Edits Do to Features"; label

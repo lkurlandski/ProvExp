@@ -7,6 +7,8 @@
 - **Section 3 is written** in `manuscript/_d_framework.tex` ("Computing What Edits Do to Features", 2,568 words against
   2,500), with its proofs in Appendix A (`manuscript/_j_proofs.tex`). The old manuscript is deleted (in git history);
   every other section is an empty stub whose comment states its content and word budget (one file per section).
+- **Section 4 is written** in `manuscript/_e_instances.tex` (EMBER only, 1,038 words against 1,000). Next to write:
+  Section 5 (Evaluation), Tables 1-3 on EMBER from the measured pilot numbers, missing cells in `\synthetic`.
 - `docs/formalization.md` is **frozen** (reference and appendix source; factual corrections only).
 - **Settled, do not reopen:** the domain is adversarial examples in practical security tasks; the framework is as
   agnostic as Pierazzi et al.'s; PE malware is the inspiration and main instance; paper text goes straight into
@@ -19,8 +21,7 @@
    `manuscript/`; count with `texcount -sub=subsection _d_framework.tex` (in `~/texlive/2026/bin/x86_64-linux`).
 2. **PLAN step 4:** a harsh simulated tier-1 review of the mock and the framework section; decision point with the user
    (breadth instances, a possible second application).
-3. **The CTU-13 instance.** First, find out what the MoEvA2 replication package ships (the raw-to-feature pipeline, or
-   only feature vectors). Go/no-go in `docs/paper-mock.md`.
+3. **A breadth instance** (any domain; which one is unimportant, user 2026-11-02): late and interchangeable.
 4. Then A's gaps (adversarial-training row, MAB-Malware, cost column, scale on the user's decision).
 
 ## Open decisions for the user
