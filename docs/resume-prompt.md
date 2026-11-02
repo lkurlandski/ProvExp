@@ -7,8 +7,9 @@
 - **Section 3 is written** in `manuscript/_d_framework.tex` ("Computing What Edits Do to Features", 2,568 words against
   2,500), with its proofs in Appendix A (`manuscript/_j_proofs.tex`). The old manuscript is deleted (in git history);
   every other section is an empty stub whose comment states its content and word budget (one file per section).
-- **Section 4 is written** in `manuscript/_e_instances.tex` (EMBER only, 1,038 words against 1,000). Next to write:
-  Section 5 (Evaluation), Tables 1-3 on EMBER from the measured pilot numbers, missing cells in `\synthetic`.
+- **Sections 4 and 5 are written** (`_e_instances.tex`, EMBER only, 1,038/1,000 words; `_f_evaluation.tex`, ~1,900/3,000,
+  Tables 6-8 of the PDF = the mock's Tables 1-3). Synthetic cells (blue) and the runs that replace them: see
+  `docs/status.md`, top block.
 - `docs/formalization.md` is **frozen** (reference and appendix source; factual corrections only).
 - **Settled, do not reopen:** the domain is adversarial examples in practical security tasks; the framework is as
   agnostic as Pierazzi et al.'s; PE malware is the inspiration and main instance; paper text goes straight into
