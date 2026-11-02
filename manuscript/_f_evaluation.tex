@@ -230,11 +230,13 @@ The closest baseline is Gimenez et al.'s feature selection from perturbation vec
 malware, keep the features no attack lowered, and train a monotone model on them. It resists the attacks it was built
 from, by construction, and costs over 35 points of detection. It also has a hole that the derivation computes before
 any attack runs: 44.4\% of the PV model's gain lies in features the derived table proves lowerable, most of it in
-section-name hash buckets that no toolkit attack happened to lower.
+section-name hash buckets that no toolkit attack happened to lower. A further third of its gain rests on the
+parser's warning flags, which the derivation cannot vouch for in either direction and the derived detectors drop.
 % Measured with the derived table under the precondition (a_pv_hole.py --variant pre-quirkfixed on
 % a_directions_derived_v2, model seed-0-s10-pv-seen; artifacts/experiments/a_pv/derived-pre): the same hole as the
 % hand rules', group by group. The 44.4% excludes pefile's warning flags, which the table leaves free as residual
-% features rather than proving them lowerable; with them, 77.5% of the gain (one flag alone ~30%). Open: user. The adaptive search fills the hole. It picks
+% features rather than proving them lowerable; with them, 77.5% of the gain (one flag alone ~30%; 33.2% from the
+% warnings). Decided (user left it to Claude, 2026-11-02): keep 44.4% as proved, add the warnings as a separate clause. The adaptive search fills the hole. It picks
 section names whose hash lands in buckets the model trusts, with the sign that lowers them, and evades PV on 16 of the
 22 files it detects, using \synthetic{a handful of} extractions per file. Building PV from all eight attacks does not
 close the hole: \synthetic{17 of 22}. Of the six files the search does not evade, five have no room for another
@@ -252,11 +254,6 @@ Deriving the table costs one pass of the instrumented extractor over the corpus 
 and operation: about 5 minutes on 2,000 files with 16 workers. PV needs every attack run against every training
 malware, 3.2 CPU-hours for our 50 pilot malware at the toolkit's small budget (about 4 minutes per file, two fifths of
 it GAMMA's import injection), and must be repeated for every new attack. The derivation's cost is paid once per
-extractor instead: instrumenting EMBER added 1,739 lines to its 1,104, purely as additions, and took
-\synthetic{about three days}, with at most three rounds of fixes before every requirement check passed.
+extractor instead.
 % Cost sources: run 97 step 2 (derivation, 2,000 files, ~5 min, 16 workers); run 78 summary.json (8 attacks x 50 files,
-% 11,601 CPU-seconds); features.py vs tests/reference/thrember_features.py (diff: 1,739 lines added, 0 removed; includes
-% the provenance recording from the explanation work); item layer and engines committed 2026-10-27 to 10-29 (G5, G6:
-% one fix round each; G7: runs 103, 104, 107). Generic engines not counted: items.py 866 lines, reach.py 815.
-% SYNTHETIC: the person-days (the user to confirm: the item layer's commits span 2026-10-27 to 10-29, on top of the
-% provenance recording begun 2026-10-06).
+% 11,601 CPU-seconds). No claim about instrumentation effort (person-days, lines, rounds) in this form (user, 2026-11-02).
