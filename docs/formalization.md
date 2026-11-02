@@ -652,7 +652,7 @@ has a sign fixed by the term and by whether the item is added, removed, or modif
 
 | Term | Item added | Item removed | Item modified |
 |---|---|---|---|
-| count, keyed | $\{+\}$ | $\{-\}$ | $\{0\}$ (cancels) |
+| count, keyed | $\{+\}$ | $\{-\}$ | $\{0\}$ (cancels) if the key is unchanged; otherwise $\{-\}$ on the old key's count and $\{+\}$ on the new key's |
 | add, bins, unsigned hashed, max pool | $\{0, +\}$ | $\{-, 0\}$ | $\{-, 0, +\}$ |
 | signed hashed | in each bucket, the signs of the keys that can land there | the negation | every sign, in the old bucket and the new |
 | slot | — | — | every sign, unless the operation fixes the new value |

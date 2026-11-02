@@ -4,7 +4,7 @@
 This appendix proves the results of \Cref{sec:framework}. Throughout, an edit takes $z$ to $z'$ with written set
 $W$ and item delta $\Delta = (I^-, I^+, I^\sim, I^\to)$.
 
-\paragraph{Finding the changed items (Theorem~\ref{thm:fw:side-effects}, part i).}
+\paragraph{Finding the changed items (Proposition~\ref{prop:fw:side-effects}, part i).}
 Let the edit write no locating position. By (R3), every parsed item of $z$ survives in $z'$ with the same identity,
 members, and locating positions, and no parsed item appears, except that an end-anchored item's members gain or lose
 positions at the end, which lie in $W$. A parsed item whose members avoid $W$ is unchanged, since $z'$ equals $z$
@@ -15,7 +15,7 @@ recognizer on the margin alone (part iii), and comparing the two by identity giv
 declared structural edit, (R5) says that the declared delta is the parsed part, and the scanned kinds are handled as
 above with the declared range in place of the margin.
 
-\paragraph{Adjusting the sums (Theorem~\ref{thm:fw:side-effects}, parts ii--iv).}
+\paragraph{Adjusting the sums (Proposition~\ref{prop:fw:side-effects}, parts ii--iv).}
 (ii) The items of $z'$ split into the unchanged items, $I^+$, the modified items after the edit, and the moved items;
 those of $z$ into the unchanged items, $I^-$, the modified items before the edit, and the moved items. An additive sum
 splits over any partition of the items it adds. The unchanged items have the same content in both inputs, and so, by
@@ -37,7 +37,7 @@ a locating position, and such inputs must be excluded by the precondition or tre
 \paragraph{Envelopes from signatures.}
 By (R2) and (R5), an edit's effect on a sum is the total of the term changes of the items in its delta, and each term
 change has a sign in the corresponding entry of \Cref{tab:fw:terms}, by the term's declared range. For a modified
-item, a count term contributes $+1 - 1 = 0$. Since $\mathrm{sgn}(x + y) \in \mathrm{sgn}(x) \boxplus \mathrm{sgn}(y)$,
+item, a count term contributes $+1 - 1 = 0$ to its key's count when the key is unchanged, and $-1$ to the old key's count and $+1$ to the new key's when it changes. Since $\mathrm{sgn}(x + y) \in \mathrm{sgn}(x) \boxplus \mathrm{sgn}(y)$,
 the sign of the total lies in the sign sum of the entries over the item changes the signature allows. A flagged change
 contributes $\{-, 0, +\}$ to every sum its kind writes.
 
