@@ -126,22 +126,24 @@ listen for, and the hardware it uses; and the *bytecode*, which holds the app's 
 which the Android malware literature still uses almost exclusively (or small variations of it), extracts eight sets of
 strings: hardware components, requested permissions, app components, filtered intents, restricted API calls, used
 permissions, suspicious API calls, and network addresses. Every string ever seen becomes one binary feature, set if
-the app contains it. Used permissions are derived from the API calls through a fixed map: a call to `getDeviceId`
-sets the used-permission feature for `READ_PHONE_STATE`. Attacks on Drebin edit the app at the level of its
+the app contains it. A *used* permission is one the app both requests and needs for some API call in its code
+(Drebin matches calls to permissions with Felt et al.'s map): a call to `getDeviceId` and a request for
+`READ_PHONE_STATE` together set the used-permission feature for `READ_PHONE_STATE`. Attacks on Drebin edit the app at the level of its
 declarations and code: they add manifest entries, or, as Pierazzi et al. do, transplant pieces of code from benign
 apps. Removing features is harder, since the app must keep working, but obfuscation can hide API calls (behind
 reflection) and strings (by encrypting them).
 
 **Network traffic and CICFlowMeter.** A packet trace is a sequence of packets in time order. Each packet has header
-fields (addresses, ports, protocol, TCP flags, window size), a length, and a timestamp. CICFlowMeter, the feature
+fields (addresses, ports, protocol, TCP flags, window size), a payload length, and a timestamp. CICFlowMeter, the feature
 extractor behind the most widely used intrusion-detection datasets (CIC-IDS2017 and its successors), groups packets
-into bidirectional *flows*: one per (addresses, ports, protocol) tuple, ended by a FIN flag or a timeout. The
-direction that opened the flow is *forward*. It computes about 80 statistics per flow: packet counts and lengths per
+into bidirectional *flows*: one per (addresses, ports, protocol) tuple. A flow ends at a FIN exchange or a reset, or when a packet arrives more than 120 seconds after
+the flow's first packet, which starts a new flow. The direction that opened the flow is *forward*. It computes about 80 statistics per flow: packet counts and payload lengths per
 direction (total, mean, standard deviation, minimum, maximum), the gaps between consecutive packets, flag counts,
 bytes and packets per second, and the first packet's TCP window size. Attacks on flow-based detectors edit traffic the
 attacker controls: they pad packets, delay them, inject extra packets, or split one packet into two. Much of this
-literature works in feature space and writes the dependencies between features by hand; the botnet dataset of
-Chernikova and Oprea (CTU-13, used by FENCE and later work) comes with 360 hand-written constraints. Section 8 returns
+literature works in feature space and writes the dependencies between features by hand. For Chernikova and Oprea's
+botnet features (CTU-13 connections aggregated per port and minute into 756 totals, minima, and maxima, used by FENCE),
+Simonetto et al. wrote 360 constraints by hand (326 linear, 34 non-linear). Section 8 returns
 to this as the alternative the model replaces.
 
 ## 3. The shape of a feature extractor: items, sums, readouts
@@ -187,7 +189,7 @@ scanning, not by following a pointer. Each byte is an item too, for the histogra
 In an APK, each permission declaration in the manifest is an item, and so is each API call site and each string
 constant in the bytecode. In a trace, each packet is an item, and so is each pair of consecutive packets in a flow
 (for the gaps between packets). A packet's addresses, ports, and protocol are locating positions: they decide which flow it
-belongs to. So are its FIN flag, which ends the flow, and its timestamp, since a long enough gap starts a new flow.
+belongs to. So are its FIN flag, which ends the flow, and its timestamp, since a packet more than the timeout after the flow's first packet starts a new flow.
 Its length, other flags, and window size are content.
 
 **Members and location answer different questions.** Membership answers "if this element changes, whose content
@@ -221,7 +223,7 @@ hashes section names into 50 buckets, and each bucket is a sum to which a sectio
 $\pm 1$, if its name hashes there. Each bin of the byte histogram is a sum to which every byte contributes 1 in its own
 bin. The largest section entropy is a pool. In Drebin, each string in the vocabulary has a sum
 counting its occurrences, and one item can write several: a call to `getDeviceId` contributes 1 to the count of
-`api_call::getDeviceId` and 1 to the count of `used_permission::READ_PHONE_STATE`. In CICFlowMeter, each flow keeps,
+`api_call::getDeviceId` and 1 to the count of calls needing `READ_PHONE_STATE`. In CICFlowMeter, each flow keeps,
 for its forward packets, a count, a total length, and a total of squared lengths, and pools for the largest and
 smallest length.
 
@@ -260,7 +262,7 @@ feature's direction (Section 6).
 | Readout | Formula | EMBER | Drebin | CICFlowMeter |
 |---|---|---|---|---|
 | identity | the sum itself | string count, URL count, section count, name buckets | — | forward packet count, total forward length, SYN flag count |
-| presence | $\min(1, s)$, or any nondecreasing function of one sum | — | every feature | — |
+| presence | $\min(1, s)$, or any nondecreasing function of one or more sums | — | every feature (a used permission needs two sums positive) | — |
 | ratio | one sum divided by another | average string length | — | mean forward length, mean gap |
 | normalized vector | each bin divided by the bins' total | byte histogram | — | — |
 | entropy | the entropy of a normalized vector | file entropy | — | — |
@@ -384,8 +386,8 @@ The written set and the locating positions together decide how much the model ca
 Whether an edit writes a locating position follows from the item table and $W$ alone, by an interval query, without
 parsing $z'$. The classification is therefore automatic, and it catches structural edits a human would miss. On a PE
 file whose section table points past the end of the (truncated) file, appending writes a locating position, because
-it decides whether that section's raw data now exists. Delaying a packet is a content edit only while every gap stays
-below the flow timeout; past it, the delay splits the flow.
+it decides whether that section's raw data now exists. Delaying a packet is a content edit only while the packet stays
+within the timeout of its flow's first packet; past it, the delay splits the flow.
 
 ## 5. Predicting what one edit does to the features
 
@@ -411,9 +413,10 @@ the file's size, so every section's size ratio falls, because the file grew.
 **Drebin: transplant a gadget.** Transplant a code fragment that calls `getDeviceId` and contains the string
 `http://evil.example`, and add the `READ_PHONE_STATE` permission the call needs. The edit adds an API call site, a
 string constant, and a permission declaration. So the counts of the suspicious API call (`api_call::getDeviceId`), of
-the used permission (`used_permission::READ_PHONE_STATE`, through the API-to-permission map), of the network address
-(`url::evil.example`), and of the requested permission (`permission::READ_PHONE_STATE`) each rise by one, and each
-presence bit is set. If the app already requested the
+the calls needing `READ_PHONE_STATE`, of the network address (`url::evil.example`), and of the requested permission
+(`permission::READ_PHONE_STATE`) each rise by one, and their presence bits are set. The used permission
+(`used_permission::READ_PHONE_STATE`) is set too, because both of its sums are now positive; had the gadget not
+brought the permission, the call alone would not set it. If the app already requested the
 permission, the requested permission's count goes from 1 to 2 and its bit stays set: the recipe gets this right because it counts first and
 reads out presence afterwards. The used-permission bit is the kind of side effect Pierazzi et al. observed by
 re-extraction.
@@ -704,7 +707,9 @@ before the `h`). The test reads the parsed pattern; it is sound, and may call a 
 **Lemma 6 (one rule per readout type).** Let $E_s$ be an operation's envelope on sum $s$. For every input, the change
 of a feature has a sign in the set below.
 - *Identity:* $E_s$.
-- *Presence* (nondecreasing): within $E_s \cup \{0\}$, since a count can rise while its bit stays set.
+- *Presence* (nondecreasing): within $E_s \cup \{0\}$, since a count can rise while its bit stays set. Over several
+  sums (Drebin's used permissions): up if every envelope lies within $\{0, +\}$, down if every one lies within
+  $\{-, 0\}$, otherwise every sign.
 - *Ratio* $a/b$, with $a \ge 0$ and $b > 0$ before and after: $E_a \boxplus ((-E_b) \cup \{0\})$. In words: the ratio
   can rise only if the numerator can rise or the denominator can fall. If $b$ can reach or leave zero, add every sign,
   unless the readout's default value is declared to lie on one side.
@@ -946,10 +951,15 @@ settle them (not run; each takes minutes at pilot scale):
   polyhedral domains); taint tracking and Cheney et al.'s dependency provenance; Treant and Chen et al. (CCS 2021) as
   consumers of the output; Demontis et al.'s secure Drebin classifiers; the hand-written feature constraints of the
   traffic literature (FENCE, Simonetto et al., Dyrmishi et al.) as what Theorem 2 replaces.
-- **To verify** before the examples reach the paper: Drebin's suspicious-API list and API-to-permission map
-  (`getDeviceId`, `READ_PHONE_STATE`); CICFlowMeter's exact feature definitions (which lengths count, how flows end);
-  the FENCE constraint count; Pierazzi et al.'s exact wording on computing side effects in advance (Sections 1 and 5
-paraphrase it as "infeasible").
+- **Verified (2026-11-02, from the papers and the CICFlowMeter source):** Drebin lists `getDeviceId` among its
+  suspicious API calls; used permissions are permissions both requested and needed by a call, via Felt et al.'s map.
+  CICFlowMeter's length statistics count payload bytes (headers are separate features); `Flow Bytes/s` is the payload
+  of both directions over the duration; a flow times out 120 s after its *first* packet; a reset ends a flow, and a FIN
+  ends it only once both sides have sent one (the code's check reads the backward FIN count twice, a likely bug).
+  The 360 constraints (326 linear, 34 non-linear) are Simonetto et al.'s, for Chernikova and Oprea's 756 features.
+  Pierazzi et al. write that consolidation operations "cannot be feasibly computed in advance for each possible
+  object", and that it is "generally infeasible or impossible to compute the exact impact of side-effect features on
+  the objective function in advance", because $\Gamma$ has no closed form.
 
 ### 10.1 Sharper tests for one input (written; for the reachable region)
 

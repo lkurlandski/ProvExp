@@ -10,6 +10,8 @@ breadth. Do not reopen this. Paper text goes straight into `.tex`.
 
 ## The work, in order
 
+0. Done: the feasibility reading (`docs/status.md`, top block). Start at step 2.
+
 1. **Feasibility reading for breadth instances** (light; no code, no instances): for Android apps with Drebin and
    traffic with CICFlowMeter or CTU-13/FENCE (others if cheaper), check whether raw labeled data, an open extractor,
    and an attack or hand-written constraints to compare against exist. Verify on the way: Drebin's suspicious-API list

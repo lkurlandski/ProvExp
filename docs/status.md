@@ -1,5 +1,26 @@
 # Status
 
+**2026-11-02 (feasibility reading done): CTU-13 with Chernikova and Oprea's features is the cheapest and strongest
+breadth instance; Drebin second; CICFlowMeter stays the running example. Next: the paper mock.**
+- *Traffic, CTU-13 / FENCE features:* raw captures public (CC-BY). The features are Zeek connection records aggregated
+  per internal host, port (17 + other), and one-minute window into 756 totals, minima, and maxima: items are
+  connections, the readouts are identity and pools; the attack inserts connections (stated in items, so the
+  format-dependent requirements are not needed). Simonetto et al. wrote 360 constraints by hand (326 linear, 34
+  non-linear; MoEvA2 replication package on GitHub), a direct baseline for derived constraints. No released FENCE
+  extractor found; reimplementing it from the paper's table is small. Attacks: FENCE, MoEvA2, C-PGD (feature space).
+- *Android, Drebin:* raw APKs from AndroZoo (academic key). No official extractor; Python reimplementations on
+  Androguard (annamalai-nr/drebin, Python 2.7; a Python 3 fork). Baseline: Pierazzi et al. estimate side effects by
+  injecting each gadget into a minimal app and re-extracting; Theorem 1 computes them. Directions are near-trivial
+  (Demontis et al.). Corrected our text: a used permission needs the permission requested *and* a call needing it.
+- *Traffic, CICFlowMeter:* open (Java), CIC-IDS2017 pcaps public, Engelen et al.'s corrected fork. Corrected our
+  text: lengths are payload bytes; the 120 s timeout runs from the flow's first packet; a FIN ends a flow only after
+  both sides send one (the code's check reads the backward count twice, a likely bug). Mostly non-malware traffic.
+- Pierazzi et al.'s wording checked; our paraphrase holds (quotes in `docs/formalization.md`, Section 10).
+- Not checked: whether Pierazzi et al.'s attack code is public; whether the MoEvA2 package includes the raw-to-feature
+  pipeline.
+
+---
+
 **2026-11-02 (reassessment, end of session): `docs/formalization.md` frozen at revision 5 (13,100 words: source
 material, not a draft). Next: feasibility reading for breadth domains, then the paper mock, then the framework section
 in `.tex`.** Order of work: `PLAN.md`, "Reassessed".

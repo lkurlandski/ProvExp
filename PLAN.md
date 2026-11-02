@@ -103,7 +103,8 @@ the inspiration, guidance, and main instance; other domains are breadth, as many
 domains emphasized about equally" above. Paper text goes straight into `.tex`.
 
 **Order of work (revised with the user, 2026-11-02):**
-1. **Feasibility reading for breadth instances** (light, no code): per candidate domain (Android apps with Drebin;
+1. **Feasibility reading for breadth instances** (done 2026-11-02, `docs/status.md`: CTU-13/FENCE first, Drebin
+   second, CICFlowMeter as the running example) (light, no code): per candidate domain (Android apps with Drebin;
    traffic with CICFlowMeter or CTU-13/FENCE; others if cheaper), whether raw data with labels, an open extractor, and
    an attack or hand-written constraints to compare against exist. Fold in the facts to verify (Drebin's API lists and
    permission map, CICFlowMeter's definitions, FENCE's constraint count, Pierazzi et al.'s wording). Output: which
