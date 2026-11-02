@@ -78,8 +78,25 @@ introduction and a simple baseline (writing decision for later).
    attacks, (iv) useful (sound detectors). The defense route (monotone classifiers) is Gimenez's and Incer's; the
    contribution is deriving the threat model's effects, and the detector shows why it matters.
 
+**Revised (user, 2026-11-02, formalization review round 1; `docs/feedback.md`):**
+- **Three domains, emphasized about equally for now**, replacing item 2's "second domain later": Windows executables
+  with EMBER (built), Android apps with Drebin (the Android literature uses Drebin or small variants almost
+  exclusively), and network traffic with CICFlowMeter (the most widely used flow features; CTU-13 with Chernikova and
+  Oprea's FENCE features and their ~360 hand-written constraints is the candidate experimental instance and baseline,
+  pending a deeper literature pass). Three domains would justify a single main application (A). Revisit if data is
+  lacking, or if Drebin adds little beyond EMBER; then a different domain where adversarial examples are popular may
+  replace it.
+- **The formalization uses small real examples from the three domains throughout** (no toy formats), names its
+  requirements by meaning (faithful recording, self-contained contributions, complete record of structure, changes stay
+  near the edit, honest tools; formerly A0, A2, A1, A3, A4), and opens every section with its question and an example
+  before definitions. A short algebraic remark (sums as a monoid homomorphism; Gray et al.'s algebraic vs holistic
+  aggregates) explains why maxima need the item table and where the class ends.
+- Data: PE and ELF raw files are local (EMBER-2024); EMBER-2024's APK/PDF records carry only format-agnostic features
+  and no raw files. Raw APKs: AndroZoo (academic key). Traffic: public pcaps (CTU-13 / Stratosphere, CIC-IDS2017/2018,
+  with Engelen et al.'s corrected CICFlowMeter).
+
 **Order of work (agreed with the user, 2026-11-02):**
-1. **Formalization** (`docs/formalization.md`, outline in `docs/resume-prompt.md`): definitions, the extractor class
+1. **Formalization** (`docs/formalization.md`, revision 3; review log `docs/feedback.md`): definitions, the extractor class
    and its per-kind obligations, every theorem we judge important, each tagged with the evaluation check that tests it.
 2. **Paper mock** (`docs/paper-mock.md`): contributions list, section outline, every table and figure with the model
    component behind each column, measured cells vs missing ones, and the four-part evaluation above. Candidate extra
@@ -92,7 +109,9 @@ introduction and a simple baseline (writing decision for later).
 4. **A's gaps, by reviewer weight:** adversarial-training baseline; held-out attacks from a second toolkit
    (MAB-Malware); scale (seeds 0-2, full splits, more malware; user's decision); leave-one-out PV; cost column
    (bookkeeping, can come anytime). Large runs are `run/` scripts for the user (next number 117).
-5. **Second domain** (breadth; e.g., a flow-statistics extractor), if step 3 calls for it.
+5. **Drebin and CICFlowMeter instances** (now planned, not optional: see "Revised" above): a feasibility pass per
+   domain first (raw data with labels, an open extractor, an existing attack or hand-written constraints to compare
+   against), then the model's checks on each; their depth relative to A is decided at step 3.
 6. **Manuscript rewrite**, body first, introduction and conclusion last.
 
 The stock-take that led here: `docs/status.md` (2026-11-02, stock-take). Next session: `docs/resume-prompt.md`.

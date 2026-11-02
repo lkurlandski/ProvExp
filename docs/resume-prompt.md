@@ -1,118 +1,83 @@
-# Resume: ProvExp (after 2026-11-02): write the formalization
-
-## Update (2026-11-02, later): revision 2 written, awaiting the user's review
-
-`docs/formalization.md` exists (Sections 1-10 written, 11 is the to-do list) and was revised once after the user's
-first review (organization, clarity, symbols, agnosticism; `docs/status.md`, top block). Start by asking for the
-user's review of revision 2. Then write Section 11's results in the same style: narrative titles, a reason before each
-definition, every symbol in the notation table, each result tried on both running examples (container and flow), and
-EMBER facts only in Section 10.
+# Resume: ProvExp (after 2026-11-02): formalization review, round 2
 
 ## Where we are
 
-On 2026-11-02 the exact-solver direction (A') was dropped, and the stock-take of everything done since the
-2026-10-22 restart is finished (`docs/status.md`, top block). The user decided:
+The formal model is in `docs/formalization.md`, at revision 3. It has been through one round of the user's review,
+logged in `docs/feedback.md` (items 1-5, all applied). The user has read up to the old Section 5. The new Sections
+5-8 have not been reviewed yet.
 
-- **Framing:** one strong paper. It is direction A (sound detectors whose feature directions come from the
-  instrumented extractor), with the model as its framing section, not "several applications under one framework".
-  A second application is a goal, not a requirement.
-- **Next: formalize the framework**, in the PE malware domain. Work through every theorem we judge important, not
-  only those A rests on today. Pruning, or moving some to an appendix, is a later writing decision.
-- **The formalization is a significant contribution in its own right** (user). Keep judging novelty harshly, but
-  position it fairly against prior work rather than dismissing it as "incremental view maintenance plus sign
-  analysis".
-- **A second domain comes later, as breadth** (e.g., a flow-statistics extractor for network traffic). Establish the
-  method on PE malware first.
-- **The evaluation is organized around the model's claims.** The computed answer is (i) correct: side effects match
-  re-extraction, and the computed region contains every real combined edit; (ii) more correct than careful hand
-  analysis: every disagreement with the old hand rules was the hand rules' error, each witnessed; (iii) more complete
-  than constraints learned from attacks: PV's hole, found by our adaptive search; (iv) useful: detectors no attack
-  moves. The defense route (monotone classifiers) is Gimenez et al.'s and Incer et al.'s. Our contribution is deriving
-  the threat model's effects, and the detector shows why that matters.
+The user's round-1 criticisms, and how revision 3 answers them:
+- **Organization and structure.** Revision 2 had "Definitions/Theorems" headings and a lead the user found
+  unintelligible. Every section now opens with its question and an example. The old Sections 5 and 6 are merged into
+  "Predicting what one edit does to the features", in this order: the recipe, how it fails, the requirements, the
+  theorem, the checks.
+- **Clarity.** There is a full notation table, reusing Pierazzi et al.'s symbols. The requirements are named by meaning:
+  faithful recording, self-contained contributions, complete record of structure, changes stay near the edit, honest
+  tools. The old codes were A0, A2, A1, A3, A4.
+- **Agnosticism.** Small real examples from three domains run through every section: PE files with EMBER, APKs with
+  Drebin, and traffic with CICFlowMeter. Operations carry an item signature. Format-dependent requirements are needed
+  only for edits stated in raw elements, and Section 8 tabulates what each result needs.
+- **Algebra.** There is a short remark on sums as a monoid homomorphism. Addition can be undone, a maximum cannot,
+  which is why the item table is kept. Gray et al.'s algebraic vs holistic aggregates mark where the class ends.
 
-The order of work agreed with the user is in `PLAN.md`, "Next steps (2026-11-02, stock-take done)":
-1. the formalization (this session);
-2. a paper mock;
-3. a harsh simulated tier-1 review and a decision point;
-4. A's gaps (adversarial-training baseline, second toolkit, scale, leave-one-out PV, cost column);
-5. a second domain if the review calls for it;
-6. the manuscript.
+Decisions this session (`PLAN.md`, "Revised"; `docs/status.md`, top block):
+- **Three domains, emphasized about equally for now:** PE/EMBER, APK/Drebin, traffic/CICFlowMeter. This replaces "a
+  second domain later". Revisit if data is lacking, or if Drebin adds little beyond EMBER.
+- **Traffic:** CICFlowMeter features serve as the examples. CTU-13 with Chernikova and Oprea's FENCE features is the
+  candidate experimental instance and baseline: its roughly 360 hand-written constraints are what Theorem 2 would
+  derive. A deeper literature pass comes later.
 
-Tier-1 assessment from the stock-take: not sufficient today. It becomes competitive at CCS, USENIX Security and NDSS
-once the formalization, the adversarial-training baseline, a second toolkit, and scale are in. A second domain likely
-decides it at S&P.
+## The work this session
+
+1. **Ask the user for round 2 of the review.** Start with the new Sections 5-8, then Section 9 (EMBER) and Section 10
+   (still to write). Discuss interactively and log each point in `docs/feedback.md` as a new item: the user's point,
+   the discussion, the decision. Do not edit `docs/formalization.md` until the user says to apply the feedback. Then
+   revise in one pass and mark the items applied.
+2. **After the review, write the remaining results in Section 10, in the same style:**
+   - coupling;
+   - the reachable region;
+   - the provenance matrix as a projection;
+   - tightness;
+   - cost;
+   - positioning.
+
+   The style: question first, then an example from each domain, then each term when it is needed, then the result,
+   then the proof.
+3. **Before the examples reach the paper, verify the facts listed in Section 10 ("To verify"):**
+   - Drebin's suspicious-API list and API-to-permission map (`getDeviceId`, `READ_PHONE_STATE`);
+   - CICFlowMeter's feature definitions: which lengths count, and how flows end (FIN flags, timeout);
+   - FENCE's constraint count.
+
+   This is light reading. Do not start building instances for Drebin or CICFlowMeter.
+
+Later steps (`PLAN.md`, "Order of work"): a paper mock, a harsh simulated review and a decision point, A's gaps, and
+then the Drebin and CICFlowMeter instances, each after a feasibility pass. The feasibility pass covers raw data with
+labels, an open extractor, and an attack or hand-written constraints to compare against. Data: PE and ELF files are
+local; raw APKs come from AndroZoo (academic key); traffic comes from public pcaps (CTU-13 / Stratosphere,
+CIC-IDS2017/2018 with Engelen et al.'s corrected CICFlowMeter).
 
 ## Read first
 
 - `CLAUDE.md`
 - `docs/status.md`, top block
-- `PLAN.md`: Thesis, The model, and Next steps (2026-11-02, stock-take done)
-- `docs/feature-provenance-model.md`, in full. It is the starting point: the three layers (items, sums, readouts),
-  edits as item operations, the claims C1-C4 with proof sketches, the assumptions A1-A4, and coverage.
-- `docs/item-layer-design.md`: the contribution vocabulary, the ten readout types, and the checks G1-G7. These checks
-  become how the EMBER instance discharges the model's obligations; their results are in "Build status".
-- `docs/direction-A-summary.md`: A's results and their gaps.
-- `docs/literature-2026-10-22.md`: Pierazzi et al.'s problem-space formalization, Cheney et al.'s dependency
-  provenance, Incer et al., Gimenez et al., Chen et al., Treant.
-
-## The work: `docs/formalization.md`
-
-Agree on the outline with the user first, then write. The document holds definitions, theorems, and full proofs. It
-later becomes the source for the paper's framework section and its appendix. Proposed outline:
-
-1. **Definitions.**
-   - Elements and inputs.
-   - Items, with membership (which elements an item is made of) and location (which elements decide whether an item
-     exists and where).
-   - The contribution vocabulary: count, add, bins, hashed (signed and unsigned), keyed, slot, opaque.
-   - Sums: additive sums, and the max/min pools.
-   - Readouts: the ten types.
-   - The class of sum-then-readout extractors.
-   - Edits as item deltas: add, remove, modify, move. Edit classes: content, item-creating, declared structural,
-     undeclared structural.
-   - A threat model as a catalogue of operations with parameter domains.
-2. **Obligations.**
-   - The assumptions A1-A4, stated as properties of an extractor per item kind: complete location, local
-     contributions, local recognition, faithful declaration.
-   - What a check must show to discharge each one on an instance (G1-G7 on EMBER).
-   - What checks on natural files cannot catch: locality failures that only adversarial parameters trigger, such as
-     the duplicate-DLL quirk.
-3. **Theorems.**
-   - Exact side effects (C1), for additive sums and max/min pools.
-   - Coupling (C2): co-movement, and inseparability (the cone criterion; the shared-denominator case).
-   - Soundness of the reachable region (C3): the cone, readout intervals, the mediant bound for ratios, the histogram
-     polytope, the entropy interval, and boundary effects between added chunks.
-   - Directions (C4): the per-file tests (sign, ratio, cross-entropy), the global union, and soundness of the derived
-     table.
-   - The composition: derived directions plus a monotone classifier give robustness under the threat model (with
-     Gimenez et al.'s Proposition 1).
-   - The flat provenance matrix P as a projection of the model.
-   - Also consider: when the direction table is tight (every declared direction is realized by some edit), and what
-     flagged or undeclared edits cost (soundness by declaring "both").
-4. **For each theorem:** the checkable prediction it makes, and the run or check that tests it on EMBER (G1-G7; runs
-   79, 92-93, 103-104, 111). If none exists, propose a cheap new check: state the hypothesis first, and put jobs
-   over ~10 minutes in a `run/` script (next number: 117).
-5. **Positioning.** What the formalization says beyond each of these, stated plainly and fairly:
-   - Pierazzi et al. (side effects estimated empirically; the extractor treated as a black box);
-   - incremental view maintenance and incremental computation;
-   - abstract interpretation (sign and interval domains);
-   - taint and dependency tracking.
-
-This is writing, not building. No code or experiments unless a theorem needs a new check, and then only after the
-user agrees.
+- `PLAN.md`: "Next steps (2026-11-02 ...)", including "Revised"
+- `docs/formalization.md`, in full
+- `docs/feedback.md`, in full: what the user has asked for so far, and why
 
 ## Standing rules
 
-- Explain plainly.
-- Never use doc-internal labels (C3, M_full, G2) without saying what they are.
+- Explain plainly. Lead with the question and an example. Define every symbol. Never use doc-internal labels (C3,
+  A1, G2) without saying what they are.
 - Answer methodology questions by reasoning, not by running data first.
-- Never raise deadlines.
-- Do not edit the manuscript.
+- In the formalization, keep PE minutiae in Section 9. Frame the general sections generically for malware and traffic.
+- Never raise deadlines. Do not edit the manuscript.
 - At the end of the session, update `docs/status.md`, `PLAN.md`, and this file.
-- Commit in logical pieces; run ruff and mypy first if code changed.
+- Commit in logical pieces.
 
 ## Notes
 
 - Untracked, leave alone: `papers/`, `REVIEW*.md`, `TODO.md`, `docs/checkpoint-prompt.md`, `make-manuscript.sh`,
   `slides/`.
+- `TODO.md` (the user's) lists reading Demontis et al., "Yes, Machine Learning Can Be More Secure!". It is relevant to
+  the Drebin domain and to positioning.
 - The user still owes the upstream reports in `docs/upstream-issues.md`.

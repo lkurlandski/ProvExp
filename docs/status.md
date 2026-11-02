@@ -1,13 +1,24 @@
 # Status
 
-**2026-11-02 (formalization, revision 3): feedback round 1 applied (`docs/feedback.md`, items 1-5); waiting for the
-user's read of Sections 6-8.** Decisions: three running domains with real features (PE/EMBER, APK/Drebin,
-traffic/CICFlowMeter; CTU-13 with the FENCE features and its hand-written constraints is the candidate experimental
-instance for traffic, pending a deeper literature pass); the old Sections 5-6 merged into "Predicting what one edit
-does to the features" (recipe, failures, requirements named by meaning, theorem, checks); a short algebraic remark
-(sums as a monoid homomorphism; groups allow removal, max does not; Gray et al.'s algebraic vs holistic aggregates).
-Facts to verify before the paper: Drebin's API lists and permission map, CICFlowMeter's feature definitions, FENCE's
-constraint count (formalization Section 10).
+**2026-11-02 (end of session): formalization at revision 3, after one round of user review. Waiting for the user's
+read of the new Sections 5-8.** Commits c019883 (revision 2), 7f16308 (revision 3), (this wrap-up).
+- Recovered the killed session from its transcript: revision 2 (narrative, notation, generic examples) had been
+  written but never reviewed. Finished and committed it.
+- Review round 1 (`docs/feedback.md`, items 1-5, all applied): (1) toy examples replaced by small real examples;
+  (2) three domains emphasized about equally: PE/EMBER, APK/Drebin, traffic/CICFlowMeter (`PLAN.md`, "Revised");
+  (3) light traffic literature pass: CICFlowMeter for the examples, CTU-13 with the FENCE features and ~360
+  hand-written constraints as the candidate experimental instance and baseline; Kitsune's time-decayed features as a
+  stress case outside the class; (4) algebraic remark (monoid homomorphism; group vs max; algebraic vs holistic
+  aggregates); (5) old Sections 5-6 merged into "Predicting what one edit does to the features", requirements named
+  by meaning, every section question-first.
+- Revision 3 layout: 1 problem; 2 three examples; 3 items/sums/readouts (with a domain-by-concept table); 4 edits,
+  deltas, operations and signatures, edit classes; 5 one edit (recipe on three examples, five requirements,
+  Lemma 1 + Theorem 1, checks); 6 directions (Lemmas 2-7, Theorem 2); 7 detectors (Theorem 3, routing corollary);
+  8 generality (what each result needs; where each domain stands); 9 EMBER instance (checks table, P1/P2 proposed);
+  10 still to write.
+- Open: facts to verify before the paper (Drebin's API lists and permission map, CICFlowMeter feature definitions,
+  FENCE's constraint count); P1/P2 (closure, envelope stability) proposed, not run; the user reads Sections 5-8 next.
+- No code or runs this session.
 
 ---
 
