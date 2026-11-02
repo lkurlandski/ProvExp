@@ -96,7 +96,7 @@ introduction and a simple baseline (writing decision for later).
   with Engelen et al.'s corrected CICFlowMeter).
 
 **Order of work (agreed with the user, 2026-11-02):**
-1. **Formalization** (`docs/formalization.md`, revision 3; review log `docs/feedback.md`): definitions, the extractor class
+1. **Formalization** (`docs/formalization.md`, revision 5; review log `docs/feedback.md`, items 1-13 applied; next: Section 10's results): definitions, the extractor class
    and its per-kind obligations, every theorem we judge important, each tagged with the evaluation check that tests it.
 2. **Paper mock** (`docs/paper-mock.md`): contributions list, section outline, every table and figure with the model
    component behind each column, measured cells vs missing ones, and the four-part evaluation above. Candidate extra

@@ -1,5 +1,23 @@
 # Status
 
+**2026-11-02 (formalization round 2, end of session): `docs/formalization.md` at revision 5. The user delegated the
+round-2 review (too early to spend effort on); next: write Section 10's results.** Commits 40bc8ae (revision 4),
+204457a (revision 5), (this wrap-up).
+- Revision 4 (`docs/feedback.md`, items 6-12, Claude's points, user-delegated): Requirement 3 allows *end-anchored*
+  items (the overlay grows under appending, which the old wording forbade); presence rule fixed to $E_s \cup \{0\}$;
+  pattern counts are 0/1 add terms, not count terms; "needs no attack" qualified (element-stated operations get
+  per-input signatures from the item table, valid for the corpus's layouts; `file_region_changes` applies no edit);
+  pattern lemma moved into 6.2 (Lemma 5), readout rules are Lemma 6, single-input tests are Lemma 7 in Section 10.1;
+  Corollary 2 now a remark; Section 8 separates format-free conditions from per-format instrumentation.
+- Revision 5 (item 13, user's question): Section 2 is a short primer on the three domains; the p/d/c feature labels are
+  gone, features are named in plain words where used. Open for the paper: three domains per definition, or one main
+  example plus the concept-by-domain table.
+- Next: Section 10 (coupling, reachable region, projection, tightness, cost, positioning), then the light verification
+  reading (Drebin API lists and permission map, CICFlowMeter definitions, FENCE's constraint count, Pierazzi's wording).
+- No code or runs this session.
+
+---
+
 **2026-11-02 (end of session): formalization at revision 3, after one round of user review. Waiting for the user's
 read of the new Sections 5-8.** Commits c019883 (revision 2), 7f16308 (revision 3), (this wrap-up).
 - Recovered the killed session from its transcript: revision 2 (narrative, notation, generic examples) had been
