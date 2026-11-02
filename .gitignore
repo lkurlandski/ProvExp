@@ -25,6 +25,18 @@ manuscript/*.pdf
 manuscript/*.bbl
 manuscript/*.blg
 
+# Slides build artifacts
+slides/*.aux
+slides/*.log
+slides/*.out
+slides/*.nav
+slides/*.pdf
+slides/*.snm
+slides/*.toc
+slides/*.vrb
+slides/*.fls
+slides/*.fdb_latexmk
+
 # Paywalled PDFs
 papers
 
