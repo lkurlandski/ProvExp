@@ -96,3 +96,9 @@ scale-up, on the user's decision.
 **Flip side noted (2026-10-26):** the same machinery may give a second application, A' — realizing feature-space
 attacks in the problem space (including hashed features, by inverting the hash for the bucket and sign wanted). Table
 A2's search is half of it. Recorded in `PLAN.md` (Directions, A'); to be screened next to B and C.
+
+**Folded in from A' (2026-11-02, A' dropped; `docs/graveyard.md`):** (1) the computed region is sound for combined
+edits: every one of 1,105 real edits (0-3 added sections plus an append, on 85 pilot files) lands inside it with
+exact features (run 111), evidence that the model captures how one edit moves many features together, not only their
+directions; (2) constraints learned from attack outputs are too loose to certify anything on PV, or certify only by
+construction when learned from PV's own attacks (run 110). Each is at most a paragraph in A's paper.

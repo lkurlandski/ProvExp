@@ -22,12 +22,11 @@ and manuscript remain as source material. Deadlines and conference cycles are no
   `docs/direction-A-threat-model.md` (threat models M_add / M_shift / M_full, the direction table and re-encodings,
   Table A0 in S6), and `docs/direction-A-A1-design.md` (Table A1/A2 design, decisions, and results).
   `docs/upstream-issues.md`: thrember (and secml-malware) bugs for the user to report upstream.
-- Direction A' (second application, chosen 2026-10-27): `docs/literature-Aprime-2026-10-27.md` (closest work, harsh
-  read); **`docs/direction-A-prime-plan.md` (the plan adopted 2026-11-01 and its results; A' is under review: whether
-  it is salvaged, folded into A, or dropped is to be decided; Section 12 summarizes the evidence; read first)**; `docs/direction-A-prime-mock.md` (the earlier
-  mock and its history: checks 0-2, 1b, decision 7, the re-evaluation). The automatic derivation both A and A' rest on:
-  `docs/item-layer-design.md` (A's directions and predictors are still hand-written until it is built). The expert-set
-  row: `docs/direction-A-expert-set.md`.
+- Direction A' (realizable worst-case evaluation with an exact solver) was **dropped on 2026-11-02**
+  (`docs/graveyard.md`; record: `docs/direction-A-prime-plan.md`, Section 13); two pieces fold into A. Its documents
+  (`docs/direction-A-prime-plan.md`, `docs/direction-A-prime-mock.md`, `docs/literature-Aprime-2026-10-27.md`) and code
+  (`scripts/ap_*`) remain as source material. The automatic derivation A rests on: `docs/item-layer-design.md`. The
+  expert-set row: `docs/direction-A-expert-set.md`.
 - `docs/graveyard.md`: ideas and directions that did not pan out and why.
 - Old direction, for reference only: `docs/archive/PLAN-explanation-provenance-2026-10-21.md`, `docs/experiments/`
   (cp, pb1, pf1, trigger, cm, audit), `docs/theory.md`, `docs/appendix.md`, `docs/related_work.md`,
@@ -61,7 +60,7 @@ and manuscript remain as source material. Deadlines and conference cycles are no
   threat model; derived from the item tables by default, `--hand` for the hand rules), a_c1_table0 (hand C1 predictors, the engine's oracle, and Table A0), a_pv_attacks / a_pv_hole (secml-malware attacks, PV
   selection and its hole), a1_evaluate (toolkit columns), a1_adaptive (C1-guided adaptive search), a_overlay_witness
   (the overlay gap), a_signature_witness (the signature table past the end), a_structure_witness (the other class-1 witnesses: entry section, Rich header, exports and relocations past the end), item_checks (derivation checks G1/G2, G5, G6), catalogue_checks (G7: every operation applied by our own byte-level edits, checked
-  against the derived directions). Direction A': ap_check0_solver (Kantchelian's exact GBDT encoding, HiGHS via scipy), ap_check1_learned (learned
+  against the derived directions). Direction A' (dropped; kept as source material): ap_check0_solver (Kantchelian's exact GBDT encoding, HiGHS via scipy), ap_check1_learned (learned
   regions), ap_encoding (the edit-choice encoding: append + up to 3 added sections), ap_containment (it must contain
   every real edit; run 111), ap_check1b (certification; run 112), ap_realize (a solver answer written as a file), ap_bracket (the adopted plan's
   bracket per detector and edit family: solver floor, real-attack ceiling; run 114). The sums

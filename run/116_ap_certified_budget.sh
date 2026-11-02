@@ -12,6 +12,23 @@
 # files with a slot. Reading for the decision: option (a) is worth discussing only if the certified budgets spread out
 # (differ between files and detectors) rather than all sitting at 1-4 KB.
 #
+#
+# Result (run 2026-11-01 16:37-18:55, ~2.3 h on 16 workers; containment took ~19 min):
+#   (1) containment holds: 1,105 of 1,105 edits inside the region (exact and held-out), no failing feature.
+#   (2) files certified (of those covered) at 1 / 4 / 16 / 32 KB:
+#         undefended, append    10/13, 2/13, 0/13, 0/13 (median floor 1.10, -1.48, -7.04, -9.97; tau 1.10)
+#         undefended, sections   3/9,  2/9,  0/9,  0/9  (median floor -1.09, -5.47, -11.5, -14.0)
+#         PV-seen, sections      1/3,  1/3,  0/3,  0/3  (the same file; the other two never certify)
+#         PV-all, sections       0/1 at every budget
+#       Largest certified budget per file: 4 KB (undefended: 2 append, 2 sections; PV-seen: 1 sections), 1 KB (8
+#       append, 1 sections), none (3 append, 6 sections, 2+1 PV). Monotone everywhere (no file certified at a budget
+#       above one it failed). No file certifies at 16 KB on any detector; most solves at 16 KB and up hit the 600 s
+#       limit with floors far below the threshold. Coverage: 7 files fail the precondition, 4 more have no free
+#       section-table slot.
+#   Hypothesis: held for the undefended model; for PV under sections only 1 of 3 certifies (predicted most). The
+#   reading agreed in advance fails: certified budgets do not spread out; all sit at 1-4 KB, below the 5-12 KB the
+#   adaptive search needed to evade PV.
+#
 # Estimate: containment ~25 min on 32 workers (~50 min on 16); the sweep per budget ~2 rounds of 600 s (undefended,
 # 22 solves) plus 1 round (PV, 4 solves) on 16 workers, ~30 min, so ~2 h for the four budgets.
 # In all ~3 h on 16 workers (~2 h on 32: set --workers in run 111 and below).

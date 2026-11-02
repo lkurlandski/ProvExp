@@ -311,3 +311,19 @@ What A' has shown, for that decision:
 - **Coverage gaps:** many files cannot take an added section (no free section-table slot), so the per-family and
   combined comparison (decision 4) reaches few files.
 - **Not built:** the adversarially trained rows (G2 untested); a second check of certificates by another method.
+
+## 13. Decision (2026-11-02): A' dropped; two pieces folded into A
+
+`run/116` read: containment holds on the `highspy` path (1,105 of 1,105). Files certified at 1 / 4 / 16 / 32 KB:
+undefended append 10/13, 2/13, 0, 0; undefended sections 3/9, 2/9, 0, 0; PV-seen sections 1/3, 1/3, 0, 0; PV-all
+sections 0/1 throughout. No file certifies at 16 KB on any detector; every file's largest certified budget is at most
+4 KB, below the 5-12 KB the adaptive search needs on PV. The reading agreed in advance (option (a) only if certified
+budgets spread out) fails. Details in the comments of `run/116_ap_certified_budget.sh`.
+
+Decision (user, 2026-11-02): **A' is dropped** (`docs/graveyard.md`). Option (a) failed its reading; option (c), a new
+large-budget formulation, is high risk and would still meet "why not use A's sound detector?". Folded into A (option
+(b), reduced): the region's soundness (every real edit inside it, run 111) as evidence that the computed region
+captures joint feature movement, and one sentence on learned constraints (too loose, or certifying only by
+construction, run 110). PV's append certificates are not presented as a result (close to circular). Next: a pause to
+take stock of what the project has accomplished before choosing further work (the user leans toward formalizing the
+framework over new applications or strengthening A).

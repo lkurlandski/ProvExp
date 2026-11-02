@@ -48,24 +48,23 @@ introduction and a simple baseline (writing decision for later).
 - **C. Diagnosing evasion through disagreement between heterogeneous ensemble members.** Baseline: Smutz & Stavrou's
   mutual agreement (score disagreement); C must win where scores are silent (e.g., both members evaded) or classify
   the cause. PASA is the nearest attribution-based detector (not malware).
-- **A' (chosen 2026-10-27; mock `docs/direction-A-prime-mock.md`, check 0 passed). The flip side of A:
-  realizing feature-space attacks in the problem space.** A feature-space attacker (gradient or search on the feature
-  vector) produces a target vector; C1/C4 tell which loader-safe edits in M reach which feature changes, so the
-  provenance can turn the target into concrete file edits, including through hashed features (pick a section name
-  or import by inverting the hash for the bucket and sign wanted), which Severi et al. ruled out ("preimage
-  resistance") and Rosenberg et al. handle with hand-written modifiers. Table A2's adaptive search is already half of
-  it (C1-scored candidates, provenance-chosen section names, 3-4.5 extractions per file vs ~100 per toolkit attack).
-  Baselines to beat: Severi et al. (17 hand-picked non-hashed features), Rosenberg et al. / Pierazzi et al.
-  (hand-written problem-space modifiers, feature-space side effects found by trial), and query-based problem-space
-  attacks (GAMMA, MAB-Malware). Harsh check first: Pierazzi et al.'s problem-space formalization and every
-  "realizable attack" paper since; the novelty must be the automatic, side-effect-exact translation, not the attack.
-  **Current framing (mock, decisions 1-7):** realizable worst-case evaluation of a detector with an exact solver over
-  edit choices. After check 1 (2026-10-30, decision 7): learned regions are vacuous or circular, so the claim is that
-  only the computed region, which keeps how one edit moves features together, certifies anything on a non-monotone
-  detector; check 1b decides it. **Check 1b (2026-10-31): no-go** (0/13 certified, 6 solver evasions, 0 of 6 realize);
-  decision 7's options are with the user.
+- **A' (chosen 2026-10-27, dropped 2026-11-02; `docs/graveyard.md`).** Realizable worst-case evaluation of a
+  detector: an exact solver over edit choices, every feature computed through provenance, a proven floor beside the
+  best real attack. Sound throughout, but certified budgets never exceed 4 KB (run 116) and appending on PV certifies
+  only near-circularly; A already builds detectors these edits cannot move. Folded into A: the region's soundness for
+  combined edits (run 111, 1,105 of 1,105) and the learned-constraints contrast (run 110). Record:
+  `docs/direction-A-prime-plan.md`, Section 13.
 
-## Next steps (2026-11-01, end of session: decide whether A' is salvaged)
+## Next steps (2026-11-02: A' dropped; pause and take stock)
+
+A' dropped and folded into A (above). The user wants a pause: a deep look at what the project has accomplished before
+choosing further work. The user leans toward formalizing the framework (the model and its claims, C1-C4) rather than
+new applications (B, C) or strengthening A, and is open to the alternatives. Next:
+1. **Stock-take** (`docs/resume-prompt.md`): what is established (model, engines, direction A's results, what A'
+   showed), what is claimed but unproven, and what the thesis needs.
+2. Then decide the next work: formalization, A's gaps, or screening B / C.
+
+### Earlier: next steps (2026-11-01, end of session: decide whether A' is salvaged)
 
 Done this session: A' re-planned (`docs/direction-A-prime-plan.md`, adopted); step 1 built and run (`run/114`,
 `run/115`): certificates only where the edits barely touch the detector (append on PV, partly circular) or at small

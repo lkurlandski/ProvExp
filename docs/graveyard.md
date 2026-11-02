@@ -23,6 +23,34 @@ features) it is diffuse. The user judged the draft a strong reject (2026-10-22).
 (`docs/archive/PLAN-explanation-provenance-2026-10-21.md`), and the 2026-10-21 simulated review (`REVIEW-2026-10-21.md`)
 remain as source material.
 
+### A': realizable worst-case evaluation of a detector (dropped 2026-11-02; two pieces folded into A)
+
+**Idea.** Prove a detector's worst case under realistic file edits (appending, added sections) with an exact solver
+over the attacker's edit choices (Kantchelian et al.'s GBDT encoding), every feature computed from those choices
+through provenance, including how one edit moves many features together (claims C2-C3). Per file, a bracket: a proven
+floor on the lowest reachable score beside the best real attack. Budget-only and learned regions (constraints learned
+from attack outputs) as the practitioner's alternatives. Working documents: `docs/direction-A-prime-plan.md` (the
+adopted plan and every result, Sections 9-13), `docs/direction-A-prime-mock.md` (checks 0-2, 1b, decision 7), and
+`docs/literature-Aprime-2026-10-27.md`.
+
+**Why it failed.** Sound throughout, but it certifies only where the edits barely touch the detector or the budget is
+tiny. Appending on PV certifies every covered file, but PV was built from padding attacks, so that is close to
+circular. Elsewhere the certified budget per file never exceeds 4 KB (run 116: undefended model, append 10/13 at 1 KB,
+2/13 at 4 KB, 0 at 16-32 KB; sections and PV similar or worse), below the 5-12 KB our own adaptive search needs to
+evade PV, and far below what attackers append. The cause is the relaxation, not the solver: the byte-entropy windows
+add a block per KB, and the bound is far too loose above a few KB (LP floor -10.8 at 64 KB against a threshold of
+1.10). Many files cannot take an added section at all (no free section-table slot). Writing the solver's evasions as
+files (check 2) failed earlier (0 of 6 realized). Structural reason: direction A already builds detectors these edits
+cannot move (score change exactly 0), so certifying a fragile detector up to a few KB answers a question a reviewer
+would not ask ("why not use the sound detector?"). The adversarially trained rows were never built.
+
+**What survives.** (1) The region's soundness: every real edit lands inside it (run 111, 1,105 of 1,105 edits on 85
+pilot files, re-checked on every solver change), direct evidence that the computed region captures how one edit moves
+many features together; folded into A. (2) The contrast with learned constraints: learned from all toolkit attacks they
+are too loose to certify anything on PV, and learned from PV's own attacks they certify by construction (run 110);
+one sentence in A. Code kept in place (`scripts/ap_encoding.py`, `scripts/ap_bracket.py`, `scripts/ap_containment.py`,
+the HiGHS path via `highspy`, tests); runs 109-116 and their artifacts under `artifacts/experiments/ap_*`.
+
 ## Dropped experiments (within the old direction)
 
 ### 3-B — Spurious correlations via the pullback (dropped 2026-10-12)

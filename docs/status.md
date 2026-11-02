@@ -1,5 +1,17 @@
 # Status
 
+**2026-11-02: A' dropped (user); two pieces folded into A. Next: a pause to take stock of what the project has
+accomplished, then decide the next work (the user leans toward formalizing the framework).**
+- `run/116` read: containment holds on the new solver path (1,105 of 1,105); files certified at 1 / 4 / 16 / 32 KB:
+  undefended append 10/13, 2/13, 0, 0; undefended sections 3/9, 2/9, 0, 0; PV-seen sections 1/3, 1/3, 0, 0; PV-all
+  0/1. No file certifies at 16 KB; the reading agreed in advance (certified budgets must spread out) fails.
+- Decision: A' to `docs/graveyard.md`; folded into A (`docs/direction-A-summary.md`, end): the region's soundness for
+  combined edits (run 111) and the learned-constraints contrast (run 110). Record: `docs/direction-A-prime-plan.md`,
+  Section 13.
+- Next: the stock-take (`docs/resume-prompt.md`); no new experiments until it is done.
+
+---
+
 **2026-11-01 (end of session): A' under review. After days on A', the user doubts it can give a result a security
 reviewer would find practically useful; the next session decides whether A' is salvaged or dropped (folded into A, or
 to the graveyard). **`run/116` is running** (started by the user 2026-11-01 16:37: containment on the new solver path, then the
