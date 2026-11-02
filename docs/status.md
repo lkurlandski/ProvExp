@@ -1,7 +1,9 @@
 # Status
 
-**2026-11-02 (stock-take): decided to formalize the framework next (user).** Recorded in `PLAN.md`, "Next steps
-(2026-11-02, stock-take done)"; next session: `docs/resume-prompt.md`.
+**2026-11-02 (stock-take, end of session): plan agreed (user). Framing: one strong paper, direction A with the model
+as its framing section. Next: write the formalization (`docs/formalization.md`).** Order of work in `PLAN.md`, "Next
+steps (2026-11-02, stock-take done)"; next session: `docs/resume-prompt.md`. No code or runs this session; commits
+4bc31b9, 6991877, (this wrap-up).
 - Stock-take, established: the three-layer model is implemented for all 12 EMBER groups and checked (readouts
   reproduce the extractor bit-exactly on 100 + 2,000 files; locating ranges survive ~59 K byte flips; local writes
   exact); exact side effects (C1) match re-extraction for append, DOS overwrite, add-section, and every catalogue

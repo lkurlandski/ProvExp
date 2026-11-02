@@ -78,7 +78,7 @@ introduction and a simple baseline (writing decision for later).
    attacks, (iv) useful (sound detectors). The defense route (monotone classifiers) is Gimenez's and Incer's; the
    contribution is deriving the threat model's effects, and the detector shows why it matters.
 
-**Order of work:**
+**Order of work (agreed with the user, 2026-11-02):**
 1. **Formalization** (`docs/formalization.md`, outline in `docs/resume-prompt.md`): definitions, the extractor class
    and its per-kind obligations, every theorem we judge important, each tagged with the evaluation check that tests it.
 2. **Paper mock** (`docs/paper-mock.md`): contributions list, section outline, every table and figure with the model

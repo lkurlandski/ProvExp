@@ -1,59 +1,110 @@
-# Resume: ProvExp (after 2026-11-02 stock-take): formalize the framework
+# Resume: ProvExp (after 2026-11-02): write the formalization
 
-The stock-take is done (`docs/status.md`, top block) and the user decided (`PLAN.md`, "Next steps (2026-11-02,
-stock-take done)"): **formalize the framework next, in the PE malware domain**, working through every theorem we judge
-important, not only those direction A rests on today (pruning or an appendix is a later writing decision). A second
-domain (e.g., flow statistics) comes later, as breadth. One application with enough depth is a solid paper; a second
-is a goal, not a requirement. The user judges the formalization a significant contribution in itself: keep judging
-novelty harshly, but position it fairly against prior work rather than dismissing it.
+## Where we are
 
-**Framing (user, 2026-11-02):** one strong paper, direction A with the model as its framing section, not "several
-applications under one framework". The evaluation is to be organized around the model's claims: the computed answer
-is correct (side effects vs re-extraction, the region's soundness), more correct than hand analysis (the witnessed
-hand-rule errors), more complete than constraints learned from attacks (PV's hole), and useful (sound detectors). The
-order of work after the formalization is in `PLAN.md`, "Next steps (2026-11-02, stock-take done)", steps 2-6.
+On 2026-11-02 the exact-solver direction (A') was dropped, and the stock-take of everything done since the
+2026-10-22 restart is finished (`docs/status.md`, top block). The user decided:
+
+- **Framing:** one strong paper. It is direction A (sound detectors whose feature directions come from the
+  instrumented extractor), with the model as its framing section, not "several applications under one framework".
+  A second application is a goal, not a requirement.
+- **Next: formalize the framework**, in the PE malware domain. Work through every theorem we judge important, not
+  only those A rests on today. Pruning, or moving some to an appendix, is a later writing decision.
+- **The formalization is a significant contribution in its own right** (user). Keep judging novelty harshly, but
+  position it fairly against prior work rather than dismissing it as "incremental view maintenance plus sign
+  analysis".
+- **A second domain comes later, as breadth** (e.g., a flow-statistics extractor for network traffic). Establish the
+  method on PE malware first.
+- **The evaluation is organized around the model's claims.** The computed answer is (i) correct: side effects match
+  re-extraction, and the computed region contains every real combined edit; (ii) more correct than careful hand
+  analysis: every disagreement with the old hand rules was the hand rules' error, each witnessed; (iii) more complete
+  than constraints learned from attacks: PV's hole, found by our adaptive search; (iv) useful: detectors no attack
+  moves. The defense route (monotone classifiers) is Gimenez et al.'s and Incer et al.'s. Our contribution is deriving
+  the threat model's effects, and the detector shows why that matters.
+
+The order of work agreed with the user is in `PLAN.md`, "Next steps (2026-11-02, stock-take done)":
+1. the formalization (this session);
+2. a paper mock;
+3. a harsh simulated tier-1 review and a decision point;
+4. A's gaps (adversarial-training baseline, second toolkit, scale, leave-one-out PV, cost column);
+5. a second domain if the review calls for it;
+6. the manuscript.
+
+Tier-1 assessment from the stock-take: not sufficient today. It becomes competitive at CCS, USENIX Security and NDSS
+once the formalization, the adversarial-training baseline, a second toolkit, and scale are in. A second domain likely
+decides it at S&P.
 
 ## Read first
 
-`CLAUDE.md`; `docs/status.md`'s top block; `PLAN.md` (Thesis, The model, Next steps 2026-11-02);
-`docs/feature-provenance-model.md` in full (it is the starting point: three layers, edits, C1-C4 with proof sketches,
-A1-A4, coverage); `docs/item-layer-design.md` (the contribution vocabulary, the ten readout types, the checks G1-G7,
-which become the instance's discharge of the obligations); `docs/literature-2026-10-22.md` (Pierazzi et al.'s
-problem-space formalization, Cheney et al.'s dependency provenance, Incer, Gimenez, Chen et al., Treant).
+- `CLAUDE.md`
+- `docs/status.md`, top block
+- `PLAN.md`: Thesis, The model, and Next steps (2026-11-02, stock-take done)
+- `docs/feature-provenance-model.md`, in full. It is the starting point: the three layers (items, sums, readouts),
+  edits as item operations, the claims C1-C4 with proof sketches, the assumptions A1-A4, and coverage.
+- `docs/item-layer-design.md`: the contribution vocabulary, the ten readout types, and the checks G1-G7. These checks
+  become how the EMBER instance discharges the model's obligations; their results are in "Build status".
+- `docs/direction-A-summary.md`: A's results and their gaps.
+- `docs/literature-2026-10-22.md`: Pierazzi et al.'s problem-space formalization, Cheney et al.'s dependency
+  provenance, Incer et al., Gimenez et al., Chen et al., Treant.
 
-## The work
+## The work: `docs/formalization.md`
 
-Plan first, with the user, then write. Deliverable: a new document, `docs/formalization.md` (definitions, theorems,
-full proofs), later the source for the paper's framework section and appendix. Proposed outline, to agree on:
-1. **Definitions.** Elements and inputs; items with membership and location; the contribution vocabulary (count, add,
-   bins, hashed signed/unsigned, keyed, slot, opaque); sums (additive and max/min pools); readouts (the ten types);
-   the class of sum-then-readout extractors. Edits as item deltas (add, remove, modify, move); content, item-creating,
-   declared and undeclared structural edits; a threat model as a catalogue of operations with parameter domains.
-2. **Obligations.** A1-A4 stated as properties of an extractor per item kind, and what a check must show to discharge
-   each on an instance (G1-G7 on EMBER), including what checks on natural files cannot catch (adversarial parameters).
-3. **Theorems.** C1 exact side effects (additive and max/min pools); C2 co-movement and inseparability (the cone
-   criterion; the shared-denominator case); C3 soundness of the reachable region (cone, readout intervals, the mediant
-   bound, the histogram polytope, the entropy interval, boundary effects between added chunks); C4 per-file direction
-   tests (sign, ratio, cross-entropy), the global union, and soundness of the derived table; the composition: derived
-   directions plus a monotone classifier give robustness under the threat model (with Gimenez et al.'s Proposition 1);
-   the flat P as a projection of the model. Consider also: when C4 is tight (every declared direction is realized by
-   some edit), and what undeclared or flagged edits cost (soundness by "both").
-4. **For each theorem:** the checkable prediction it makes and the run or check that tests it on EMBER (G1-G7, runs
-   79, 92-93, 103-104, 111), or a cheap new check if none exists (state the hypothesis first; jobs over ~10 minutes go
-   to a `run/` script, next number 117).
-5. **Positioning:** what the formalization says beyond Pierazzi et al. (side effects estimated empirically, the
-   extractor a black box), incremental view maintenance and incremental computation, abstract interpretation (sign and
-   interval domains), and taint / dependency tracking. State what is new plainly and fairly.
+Agree on the outline with the user first, then write. The document holds definitions, theorems, and full proofs. It
+later becomes the source for the paper's framework section and its appendix. Proposed outline:
+
+1. **Definitions.**
+   - Elements and inputs.
+   - Items, with membership (which elements an item is made of) and location (which elements decide whether an item
+     exists and where).
+   - The contribution vocabulary: count, add, bins, hashed (signed and unsigned), keyed, slot, opaque.
+   - Sums: additive sums, and the max/min pools.
+   - Readouts: the ten types.
+   - The class of sum-then-readout extractors.
+   - Edits as item deltas: add, remove, modify, move. Edit classes: content, item-creating, declared structural,
+     undeclared structural.
+   - A threat model as a catalogue of operations with parameter domains.
+2. **Obligations.**
+   - The assumptions A1-A4, stated as properties of an extractor per item kind: complete location, local
+     contributions, local recognition, faithful declaration.
+   - What a check must show to discharge each one on an instance (G1-G7 on EMBER).
+   - What checks on natural files cannot catch: locality failures that only adversarial parameters trigger, such as
+     the duplicate-DLL quirk.
+3. **Theorems.**
+   - Exact side effects (C1), for additive sums and max/min pools.
+   - Coupling (C2): co-movement, and inseparability (the cone criterion; the shared-denominator case).
+   - Soundness of the reachable region (C3): the cone, readout intervals, the mediant bound for ratios, the histogram
+     polytope, the entropy interval, and boundary effects between added chunks.
+   - Directions (C4): the per-file tests (sign, ratio, cross-entropy), the global union, and soundness of the derived
+     table.
+   - The composition: derived directions plus a monotone classifier give robustness under the threat model (with
+     Gimenez et al.'s Proposition 1).
+   - The flat provenance matrix P as a projection of the model.
+   - Also consider: when the direction table is tight (every declared direction is realized by some edit), and what
+     flagged or undeclared edits cost (soundness by declaring "both").
+4. **For each theorem:** the checkable prediction it makes, and the run or check that tests it on EMBER (G1-G7; runs
+   79, 92-93, 103-104, 111). If none exists, propose a cheap new check: state the hypothesis first, and put jobs
+   over ~10 minutes in a `run/` script (next number: 117).
+5. **Positioning.** What the formalization says beyond each of these, stated plainly and fairly:
+   - Pierazzi et al. (side effects estimated empirically; the extractor treated as a black box);
+   - incremental view maintenance and incremental computation;
+   - abstract interpretation (sign and interval domains);
+   - taint and dependency tracking.
+
+This is writing, not building. No code or experiments unless a theorem needs a new check, and then only after the
+user agrees.
 
 ## Standing rules
 
-Explain plainly; never use doc-internal labels (C3, M_full, G2) without saying what they are; answer methodology
-questions by reasoning, not by running data first; do not edit the manuscript; commit in logical pieces after ruff and
-mypy pass (if code changes).
+- Explain plainly.
+- Never use doc-internal labels (C3, M_full, G2) without saying what they are.
+- Answer methodology questions by reasoning, not by running data first.
+- Never raise deadlines.
+- Do not edit the manuscript.
+- At the end of the session, update `docs/status.md`, `PLAN.md`, and this file.
+- Commit in logical pieces; run ruff and mypy first if code changed.
 
 ## Notes
 
 - Untracked, leave alone: `papers/`, `REVIEW*.md`, `TODO.md`, `docs/checkpoint-prompt.md`, `make-manuscript.sh`,
   `slides/`.
 - The user still owes the upstream reports in `docs/upstream-issues.md`.
-- The user's comments on the stock-take ended at an empty item 5; ask whether anything was meant there.
