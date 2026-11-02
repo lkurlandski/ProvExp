@@ -25,9 +25,11 @@ For the in-place operations and appends, the C1 engine (provexp.reach.predict, t
 imports) also predicts the edited file, which extends G6's random writes with the adversarial contents.
 
 Outputs, in `{outdir}/`:
-    edits.parquet   one row per (file, operation, instance): applies, parses, precondition, features changed,
-                    violations under each variant, the C1 result
-    report.json     per operation: edits, violations by feature, observed (feature, sign) cells; the verdict
+    edits.parquet   one row per (file, operation, instance): applies, parses, precondition, the precondition on the
+                    edited file (P1, closure; for files that pass), features changed, violations under each
+                    variant, the C1 result
+    report.json     per operation: edits, violations by feature, observed (feature, sign) cells, edits that take a
+                    passing file to a failing one; the verdicts (`pass`: G7; `closed`: P1)
 
 Usage (smoke on three files):
     PYTHONHASHSEED=0 python scripts/catalogue_checks.py --outdir artifacts/experiments/catalogue_checks/smoke --num_files 3
@@ -441,10 +443,13 @@ def _check_file(task: tuple[str, int]) -> list[dict[str, Any]]:
     for op, label, edited, edits in instances(z, pe, table, np.random.default_rng([seed, int(name[:8], 16)])):
         row: dict[str, Any] = {"name": name, "op": op, "instance": label, "applies": edited is not None,
                                "precondition": pre, "parses": False, "changed": 0, "violations_strict": [],
-                               "violations_pre": [], "c1": "", "c1_mismatches": 0, "seconds": 0.0}
+                               "violations_pre": [], "c1": "", "c1_mismatches": 0, "precondition_after": None,
+                               "seconds": 0.0}
         if edited is not None:
             t0 = time.perf_counter()
             row["parses"] = _parse(edited) is not None
+            # P1, closure: the edited file passes the precondition whenever the original did.
+            row["precondition_after"] = passes_precondition(merged, edited) if pre else None
             moves = observed_signs(before, np.asarray(sums.feature_vector(edited)))  # type: ignore[no-untyped-call]
             row["changed"] = len(moves)
             row["moves"] = [f"{names[i]} {s}" for i, s in sorted(moves.items())]
@@ -509,15 +514,20 @@ def main() -> None:
             "violations_pre": Counter(v.split(" (")[0] for r in done for v in r["violations_pre"]).most_common(),
             "instances": Counter(r["instance"] for r in done).most_common(),
             "c1": Counter(r["c1"] for r in done if r["c1"]).most_common(),
+            "applied_on_passing": sum(bool(r["precondition"]) for r in done),
+            "leaving_population": sum(r["precondition_after"] is False for r in done),
+            "leaving_population_instances": Counter(r["instance"] for r in done if r["precondition_after"] is False).most_common(),
             "observed_cells": len(cells),
         }
     report["pass"] = all(report[op]["edits_violating_strict"] == 0 and report[op]["edits_violating_pre"] == 0 for op in OPS)
+    report["closed"] = all(report[op]["leaving_population"] == 0 for op in OPS)
 
     args.outdir.mkdir(parents=True, exist_ok=True)
     pl.DataFrame(rows, infer_schema_length=None).write_parquet(args.outdir / "edits.parquet")
     (args.outdir / "report.json").write_text(json.dumps(report, indent=2))
-    print(json.dumps({op: {k: report[op][k] for k in ("applied", "not_parsing", "edits_violating_strict", "edits_violating_pre", "c1")} for op in OPS}, indent=1))
-    print(f"pass: {report['pass']}")
+    print(json.dumps({op: {k: report[op][k] for k in ("applied", "not_parsing", "edits_violating_strict", "edits_violating_pre", "c1",
+                                               "applied_on_passing", "leaving_population")} for op in OPS}, indent=1))
+    print(f"pass: {report['pass']}, closed: {report['closed']}")
 
 
 if __name__ == "__main__":
