@@ -64,12 +64,14 @@
 \newcounter{xmldefinition}
 \newcounter{xmltheorem}
 \newcounter{xmlproposition}
+\newcounter{xmlcorollary}
 \newcommand{\xmlthmlike}[3]{%
   \par\medskip\noindent\refstepcounter{#3}%
   \textbf{#1~\csname the#3\endcsname\ifblank{#2}{}{ (#2)}.}\ }
 \newcommand{\definition}[1][]{\xmlthmlike{Definition}{#1}{xmldefinition}}
 \newcommand{\theorem}[1][]{\xmlthmlike{Theorem}{#1}{xmltheorem}}
 \newcommand{\proposition}[1][]{\xmlthmlike{Proposition}{#1}{xmlproposition}}
+\newcommand{\corollary}[1][]{\xmlthmlike{Corollary}{#1}{xmlcorollary}}
 
 % --- boxed environments ---
 \newtcolorbox{notationbox}{colback=blue!3,colframe=blue!40!black,boxrule=0.4pt,arc=2pt,left=2mm,right=2mm,top=1mm,bottom=1mm}
@@ -112,9 +114,9 @@
 \label{sec:XML:Background}
 \input{_b2_background}
 
-\section{Transferring Explanations with Provenance}
+\section{Computing What Edits Do to Features}
 \label{sec:XML:Framework}
-\input{_c_method}
+\input{_c_framework}
 
 \section{Experimental Setup}
 \label{sec:XML:Setup}
@@ -141,6 +143,10 @@
 
 % Appendices go after the bibliography (CCS CfP); reviewers are not required to read them.
 \appendix
+
+\section{Proofs for the Framework}
+\label{sec:fw:proofs}
+\input{_m_framework_proofs}
 
 \section{Attribution the Input Cannot Carry}
 \input{_j_appendix}
