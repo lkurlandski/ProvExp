@@ -72,6 +72,28 @@ introduction and a simple baseline (writing decision for later).
    and breadth is a solid paper; tying in a second application is welcome if it comes.
 4. Strengthening A (adversarial-training row, second toolkit, leave-one-out PV, scale, cost column) and screening B / C
    wait until the formal model is written; B / C are screened against what it offers them.
+5. **Framing (user, later 2026-11-02): one strong paper**, direction A with the model as its framing section, not
+   "several applications under one framework". The evaluation is organized around the model's claims: the computed
+   answer is (i) correct, (ii) more correct than hand analysis, (iii) more complete than constraints learned from
+   attacks, (iv) useful (sound detectors). The defense route (monotone classifiers) is Gimenez's and Incer's; the
+   contribution is deriving the threat model's effects, and the detector shows why it matters.
+
+**Order of work:**
+1. **Formalization** (`docs/formalization.md`, outline in `docs/resume-prompt.md`): definitions, the extractor class
+   and its per-kind obligations, every theorem we judge important, each tagged with the evaluation check that tests it.
+2. **Paper mock** (`docs/paper-mock.md`): contributions list, section outline, every table and figure with the model
+   component behind each column, measured cells vs missing ones, and the four-part evaluation above. Candidate extra
+   rows, each mocked with a go/no-go before code: coupling against Severi et al.'s hand exclusions (which of their
+   dropped features are in fact separable); coverage weighted by attack success; the share of detector gain on the 88
+   pefile-warning features outside the model.
+3. **Harsh simulated tier-1 review of the mock; decision point** (user): A alone, A plus a second domain, or A plus a
+   second application (an attack-side use of the same machinery is a better candidate than B / C, which lean on the
+   flat P).
+4. **A's gaps, by reviewer weight:** adversarial-training baseline; held-out attacks from a second toolkit
+   (MAB-Malware); scale (seeds 0-2, full splits, more malware; user's decision); leave-one-out PV; cost column
+   (bookkeeping, can come anytime). Large runs are `run/` scripts for the user (next number 117).
+5. **Second domain** (breadth; e.g., a flow-statistics extractor), if step 3 calls for it.
+6. **Manuscript rewrite**, body first, introduction and conclusion last.
 
 The stock-take that led here: `docs/status.md` (2026-11-02, stock-take). Next session: `docs/resume-prompt.md`.
 

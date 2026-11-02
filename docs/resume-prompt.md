@@ -7,6 +7,12 @@ domain (e.g., flow statistics) comes later, as breadth. One application with eno
 is a goal, not a requirement. The user judges the formalization a significant contribution in itself: keep judging
 novelty harshly, but position it fairly against prior work rather than dismissing it.
 
+**Framing (user, 2026-11-02):** one strong paper, direction A with the model as its framing section, not "several
+applications under one framework". The evaluation is to be organized around the model's claims: the computed answer
+is correct (side effects vs re-extraction, the region's soundness), more correct than hand analysis (the witnessed
+hand-rule errors), more complete than constraints learned from attacks (PV's hole), and useful (sound detectors). The
+order of work after the formalization is in `PLAN.md`, "Next steps (2026-11-02, stock-take done)", steps 2-6.
+
 ## Read first
 
 `CLAUDE.md`; `docs/status.md`'s top block; `PLAN.md` (Thesis, The model, Next steps 2026-11-02);

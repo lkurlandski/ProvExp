@@ -18,6 +18,12 @@
 - Decisions (user): formalize all theorems we judge important (not only those A uses; prune later); PE malware first,
   a second domain (e.g., flow statistics) later as breadth; the formalization is a significant contribution by itself
   (Claude's critique was judged a little too harsh, though harshness stays the right default).
+- Tier-1 assessment (discussed): not sufficient today; competitive at CCS / USENIX / NDSS once the formalization,
+  adversarial-training baseline, second toolkit, and scale are in; a second domain likely decides S&P. Committing
+  does not tie us down (the formal model serves every narrative; B / C are weak for their own reasons).
+- Framing (user): one strong paper, A with the model as its framing section. Order of work: `PLAN.md`, "Next steps
+  (2026-11-02, stock-take done)" (formalization, paper mock, harsh review and decision point, A's gaps, second domain,
+  manuscript).
 
 ---
 
