@@ -1,5 +1,44 @@
 # Status
 
+**2026-11-02 (end of session): the response to the review is planned and agreed (`PLAN.md`, "Next steps (2026-11-02,
+the response to the review)"); next: tier 1 (`docs/resume-prompt.md`).** No runs or manuscript changes; read-only
+checks of existing artifacts only.
+
+- **The review's premises, checked:**
+  - *Adaptive search:* holds (append and add-section only; 4/49 on the unconstrained model vs GAMMA API 24/47; full
+    store, unrouted). Also: it has no import operation, and 10 of the 49 files have no room for a section header.
+  - *Toolkit outside the catalogue:* **2 of 8, not "five"**: GAMMA sections and GAMMA API go through LIEF; padding,
+    dos_extend, content_shift, gamma_shift, format_exploit, header_fields are byte-level edits matching catalogue
+    operations. Run 105, passing files: LIEF attacks evade the M_full rows 0/56 and 0/60 (reference 27/70).
+  - *Out-of-catalogue as independent evidence:* **mostly fails.** A monotone model cannot drop on any edit whose real
+    delta respects the derived signs. Run 78's deltas, passing files: 284 of 288 toolkit outputs respect the M_full
+    derived table; the 4 that do not are LIEF relayouts (gamma_api 2, gamma_sections 2: section counts, SizeOfHeaders,
+    import counts fall). Supports "real tools' outputs stay inside the derived table", not "robust beyond the theorem".
+  - *Hand vs derived in the population:* holds in substance, out of date in detail. Current training inputs
+    (`a_directions` vs `a_directions_derived_v2`, `-pre-quirkfixed`): M_full differs in security_size (derived down,
+    hand dropped) and overlay_size (hand up, derived dropped); M_add in entry_name_hash bins, overlay_size, and
+    security_virtual_address. **overlay_size is an in-population hand error** (add-section after the overlay removes
+    it; G7 run 103), not in Table 6, which shows only the truncated-file witness.
+  - *P2:* **answered at the threat-model level**: all 13 direction files of `a_directions_derived_sums_pilot_g7` and
+    `..._2000_v3` are byte-identical. *P1:* not run (G7 checks the precondition on the original file only).
+  - *Exactness (R14):* G7 (`catalogue_checks/2000-v3`) already logged C1 for 8 operations, 0 mismatches: append 5,133
+    exact / 867 flagged, slack 5,106/0, checksum 6,000/0, DOS 1,689/5,739, header fields 0/6,000, rename 0/9,990,
+    remove debug 0/1,110, remove signature 0/658. Add section, add imports, and both gap insertions have no C1 path.
+  - *Expert set:* the holes under M_full are reasoned; its two per-name quirks (23 of 40 features lowerable under
+    additions, unpatched) are already witnessed with our own edits.
+  - Pierazzi's eta (R5), keyed count (R10), R4's clause numbering (F4): hold.
+- **Triage:** every risk sorted (`PLAN.md`): tier 1 (hours) P1, toolkit split, still detected, PV hole with the derived
+  table, untruncated coverage, timing, instrumentation cost, and the `.tex` fixes; tier 2 (days) item-level exactness
+  for every item-stated operation, the adaptive search over all twelve operations (go/no-go: at least 24/47 on the
+  unconstrained model), a hand-table detector, adversarial training, the expert set instrumented; tier 3 the
+  second-instance decision. Rejected: R16. Deferred: MAB-Malware.
+- **Decided (user):** the 0.0 is an implementation check, and the evidence is the full-catalogue search, real tools'
+  outputs inside the derived table, and "still detected"; Table 6 keeps its framing plus an in-population column and
+  the overlay row; the scope is reduced in the text now, second instance reconsidered after tier 2; Theorem 1 ->
+  Proposition 1. Deferred: the introduction's lead.
+
+---
+
 **2026-11-02 (end of session): harsh simulated review of the body done; next: a plan to address its findings, with
 the user, in a fresh session (`docs/resume-prompt.md`).** No code, runs, or manuscript changes.
 

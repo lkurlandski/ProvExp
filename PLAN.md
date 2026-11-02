@@ -55,7 +55,71 @@ introduction and a simple baseline (writing decision for later).
   combined edits (run 111, 1,105 of 1,105) and the learned-constraints contrast (run 110). Record:
   `docs/direction-A-prime-plan.md`, Section 13.
 
-## Next steps (2026-11-02, review done: plan the response)
+## Next steps (2026-11-02, the response to the review, agreed with the user)
+
+The triage of `docs/reviews/2026-11-02-body.md` (R1-R16), after checking its premises against the artifacts. What the
+checks changed and the user's decisions are in `docs/status.md` (top block). In short: only 2 of the 8 toolkit attacks
+(GAMMA sections, GAMMA API) are outside the catalogue (LIEF), and 284 of 288 toolkit outputs on files in the
+population stay inside the derived M_full directions anyway, so the 0.0 of the monotone rows is a check and the
+independent evidence must come from a stronger adaptive search; P2 is answered at the level detectors consume (the
+direction files from 100 and from 2,000 files are byte-identical); the hand table has one in-population error Table 6
+omits (overlay_size under add-section, G7 run 103); exactness data for 8 of 12 operations already exists (G7, 2,000
+files, 0 wrong).
+
+**Decided (user, 2026-11-02):** (1) Table 7: the 0.0 is presented as an implementation check; the evidence is the
+full-catalogue adaptive search, real tools' outputs staying inside the derived table, and "still detected".
+(2) Table 6 keeps "every disagreement is a hand error", gains an in-population column and the add-section/overlay
+row. (3) Scope reduced in the text now (Table 1 shrunk; "shown on EMBER, sketched for two others"); a second instance is
+reconsidered after tier 2. (4) Theorem 1 becomes Proposition 1; Theorem 2 is the main theorem. Deferred: whether the
+introduction leads with the detector (decide when the introduction is written; lean: framework first, results paragraph
+around the detector).
+
+**Tier 1 (hours; existing data or runs under ~10 min, Claude):**
+1. **P1, closure (R2).** Add a precondition-on-the-edited-file column to `scripts/catalogue_checks.py`; run the pilot
+   (~3 min). *Hypothesis:* no edit takes a passing file to a failing one. Go/no-go: 0 such edits; a failure means that
+   operation's declaration or the precondition changes. 2,000 files: `run/117_p1_closure.sh` for the user (G7 took 25
+   min in run 107; estimate 30-40 min).
+2. **P2 (R2).** Already answered at the threat-model level (pilot and 2,000-file `*-pre*` files byte-identical); one
+   sentence, and the per-cell comparison from the two `g3_cells.csv` files if it is quick.
+3. **Toolkit split and coverage (R1b).** Per attack: catalogue status (LIEF vs byte-level), evasion on passing files
+   (run 105), and whether its real delta respects the derived table (run 78 deltas: 284/288 do; the 4 that don't are
+   LIEF relayouts). A small script, not a run.
+4. **"Still detected after every attack" (R1d)** from run 105 and run 108 (toolkit only: monotone sums 41/42, reference
+   21/47); recomputed after tier 2's adaptive search.
+5. **PV's hole with the derived table (R12)** (`a_pv_hole.py`, minutes). **Coverage on untruncated files** and the
+   benign base rate of non-plain layouts (R7), from the 2,000-file precondition report. **Timing** of prediction vs
+   re-extraction, from run logs (R9). **Instrumentation cost** (lines of code, flip-test rounds; R13).
+6. **Writing fixes in `.tex`:** Pierazzi's eta and consolidation (R5, F7); the keyed-count entry (R10; also
+   `docs/formalization.md` Lemma 3, a factual correction); R4's clauses numbered (F4); the ratio rule (F5); residual
+   features dropped by the detector (F6); Omega used or dropped; the novelty paragraph (classical vs new; IVM,
+   provenance semirings, self-adjusting computation, Cousot; R6) and Theorem 1 -> Proposition 1; Table 6's
+   in-population column and overlay row (R3a); Table 5's rows for the 8 operations G7 already checked (R14, partial);
+   the detector paragraph rewritten (the 0.0 as a check; R1c), with the additions block in Table 7 (expert set 29.1% vs
+   92.2%, both sound; R8); research questions in Section 5; scope reduction (Table 1 shrunk; R4).
+
+**Tier 2 (days; runs over 10 min go to `run/118`+ for the user):**
+7. **Item-level exactness for every item-stated operation** (add section, add imports, both gap insertions, rename,
+   both removals; R14). It also scores the adaptive search's candidates, so build it once. Go/no-go: 0 wrong on the
+   2,000 files (flagged allowed, reported).
+8. **The adaptive search over all twelve operations** (R1a, R11), steps written by our own byte-level edits, on the
+   routed 10%-store models of Table 7. *Hypothesis:* with imports, rename, header, and DOS operations it beats GAMMA
+   API on the unconstrained model. Go/no-go: at least 24/47 there; if it fails, it is not used as the adaptive column
+   until strengthened. Monotone rows stay at 0.0 (the check).
+9. **A detector on the hand table** (new row or ablation). *Hypothesis:* the search, adding a section after the overlay,
+   evades it on some in-population files. Go/no-go: at least one in-population evasion; otherwise report the
+   in-population difference as immaterial to the detector.
+10. **The adversarial-training row** (synthetic now), against step 8's search.
+11. **The expert set instrumented** (`featuresets/ember2024/expert.py`; R3c, R8): the engine finds its two quirks and
+    its M_full holes, each witnessed by our own edits; an adaptive cell. Go/no-go: the derived holes match the reasoned
+    12 of 40 under M_full (any difference is investigated).
+
+**Tier 3:** the second-instance decision (user), after tier 2. Not planned: MAB-Malware (deferred; the full search is
+the stronger evidence), more Table 6 rows from PE corner cases, anything from A'. Rejected: R16 (the prose already
+leads with the three general causes; the witness column needs the PE detail). R15: already in `_e:74-75`; one
+Discussion sentence. After tiers 1-2: the remaining sections (background with the Pierazzi distinction, related work,
+discussion with routing and instrumentation cost, Figure 1), introduction and abstract last.
+
+### Earlier: next steps (2026-11-02, review done: plan the response)
 
 The harsh simulated review of the body is done (`docs/reviews/2026-11-02-body.md`). Scores, assuming the
 empty sections are written well: formal methods Weak reject, adversarial ML for malware Weak reject, systems security

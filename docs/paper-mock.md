@@ -87,18 +87,24 @@ EMBER rows only.
 4. **A breadth instance, if the review says the paper needs one.** Which domain is unimportant and interchangeable
    (user, 2026-11-02); the CTU-13 rows above are one option, not a plan. Late.
 
-**After the review (2026-11-02, `docs/reviews/2026-11-02-body.md`; to be triaged with the user before any of it is adopted).**
-The review judges these to move the verdict most, and none is yet decided:
-- Table 3 (PDF Table 7): an adaptive search over all twelve operations that beats GAMMA API on the unconstrained
-  model; the toolkit columns split into in-catalogue and out-of-catalogue outputs; a "still detected after every
-  attack" column; the expert set compared under additions first; one adaptive-search protocol on the same models as
-  the other columns. The adversarial-training row waits for the stronger search.
-- Table 1 (PDF Table 5): exactness rows for all twelve operations.
-- Table 2 (PDF Table 6): which disagreements lie in the population; possibly an independent hand analysis (Gimenez et
-  al.'s 40 features, instrumented).
-- Appendix checks: closure (P1) and envelope stability (P2).
-- Contribution 2/3's second instance: build one compared against constraints published by others, or reduce the scope
-  in the text.
+**After the review (2026-11-02, `docs/reviews/2026-11-02-body.md`; triaged with the user, `PLAN.md` "Next steps").**
+- Table 3 (PDF Table 7), **adopted:** the adaptive search over all twelve operations on the same routed models as the
+  other columns (go/no-go: beats GAMMA API, 24/47, on the unconstrained model); a "still detected after every attack"
+  column; the additions block first (expert set 29.1% vs 92.2%, both sound); a hand-table detector row; the expert set
+  instrumented with an adaptive cell. The adversarial-training row waits for the stronger search. **Changed:** the
+  toolkit split is reported per attack (2 of 8 are LIEF relayouts outside the catalogue), but it is not the
+  independent evidence the review proposed: 284 of 288 toolkit outputs on in-population files stay inside the derived
+  table, so a monotone model could not drop on them anyway. The 0.0 is stated as an implementation check (user); the
+  evidence is the adaptive search, real tools' outputs staying inside the derived table, and "still detected".
+- Table 1 (PDF Table 5), **adopted:** rows for every operation: 8 from G7's existing data (0 wrong; header fields,
+  rename, and the removals all flagged), the item-stated ones once their exactness check exists.
+- Table 2 (PDF Table 6), **adopted:** an in-population column and the add-section/overlay row (in-population, found by
+  G7); the framing "every disagreement is a hand error" stays (user). Gimenez et al.'s 40 features, instrumented, are
+  the independent hand analysis (their two per-name quirks, their M_full holes).
+- Appendix checks, **adopted:** P1 (closure; to run) and P2 (answered: the pilot and 2,000-file direction tables are
+  byte-identical).
+- Second instance, **deferred:** the scope is reduced in the text now (Table 1 shrunk; contributions 2-3 EMBER only,
+  the other domains sketched); reconsidered after tier 2 (user). Theorem 1 becomes Proposition 1 (user).
 
 ## Open decisions (user)
 
