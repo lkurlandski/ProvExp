@@ -1,5 +1,46 @@
 # Status
 
+**2026-11-02 (end of session 2): tier 1 of the response to the review is done, except P1 on the 2,000 files
+(`run/117_p1_closure.sh`, ~35 min, for the user); next: tier 2, item 7 (`docs/resume-prompt.md`).**
+
+- **P1 (closure), pilot:** `catalogue_checks.py` now evaluates the precondition on every edited file
+  (`precondition_after`; report keys `leaving_population`, `closed`). Pilot (`catalogue_checks/pilot-p1`, 189 s): 0 of
+  3,188 edits on passing files leave the population, all twelve operations; G7 still passes. As hypothesised.
+- **P2:** the pilot (`a_directions_derived_sums_v2`) and 2,000-file (`..._2000_v3`) `directions_sums.csv` are equal in
+  every threat-model column (strict, precondition, hand) and every per-operation precondition column. Only the strict
+  per-operation columns of six in-place operations (slk, dos, hdr, chk, rdb, rsg) gain 766 cells on 2,000 files, all
+  widenings, from files outside the population.
+- **Toolkit split (`scripts/a1_toolkit_split.py`, `artifacts/experiments/a1/toolkit-split/split.json`):**
+  **correction: 252 of 288, not 284**, toolkit outputs on passing files (run 78) respect the derived M_full table. The
+  premise check counted only monotone features' signs (284); a fixed feature is an unconstrained input of the detector,
+  so moving one is outside the table too. All 36 outside come from the two LIEF attacks (18 each, the same 18 files),
+  mostly `resource_size` (fixed) changing as LIEF rebuilds resources. LIEF outputs evade the M_full rows 0/56, 0/60
+  (reference 27/70). Still detected after every toolkit attack (run 105): mfull-sums 41/42 (30/30 passing), mfull-feat
+  39/40 (28/28), madd-sums 31/43, madd-feat 31/45, PV-seen 18/22, reference 21/47 (13/35).
+- **PV's hole with the derived table:** the same hole as the hand rules', group by group (`a_pv/derived-pre`). **Bug
+  found and fixed in `a_pv_hole.py`:** it split the neutralize files on whitespace, so pefile's warning features (names
+  with spaces) never counted as decreasable. Without them: 37.8% (PV-all) and 44.3% (PV-seen, s10), as recorded. With
+  them: 72.0% and 77.5%; one flag (`Suspicious flags set for section`) carries ~30% of the PV model's gain. The
+  warnings are residual (left free, not proven lowerable), so the paper keeps 44.4% "proves lowerable"; **open (user):**
+  whether to also say that PV leans on features the table cannot vouch for. Run 78's `report*.json` are left as they
+  were. The strict derived table (no precondition) marks 2,559 of 2,568 features lowerable, so its hole is
+  uninformative.
+- **Coverage (R7):** untruncated files pass the precondition at 94.4% (1,576/1,670; benign 924/938, malware 652/732);
+  truncated 98/330. Non-plain layouts among untruncated benign files: 1.5%. Pilot detected malware: untruncated 31/35.
+- **Timing (R9):** prediction is *not* faster than re-extraction: per in-place write (G6, 2,000 writes) median 50 ms vs
+  53 ms (mean 102 vs 116 ms); flagged writes return in 0.4 ms. So Theorem 1 (now Proposition 1) is argued by
+  per-edit soundness and explanation, not speed; the paper makes no speed claim. Adaptive search queries per file
+  (run 108): unconstrained median 48, PV 24, monotone rows 12.
+- **Cost (R13):** derivation ~5 min on 2,000 files (run 97, 16 workers); PV's attacks 3.2 CPU-hours on 50 pilot malware
+  (run 78; gamma_api 39%); instrumentation +1,739 lines to thrember's 1,104 (pure additions; includes the old
+  provenance recording), item layer committed 2026-10-27..29; person-days in blue for the user to confirm.
+- **`.tex` (all of PLAN tier 1 item 6):** see the commit "Tier 1 writing fixes". New blue cells: 73,063 edits closed
+  (run 117), "about three days". Noted, not fixed: Table 7's sums rows show adaptive 0%, but the search ran on the
+  full-store feature models (run 108); tier 2's search should run on the routed 10%-store models as planned.
+- **Formalization:** Lemma 3's keyed count corrected (factual).
+
+---
+
 **2026-11-02 (end of session): the response to the review is planned and agreed (`PLAN.md`, "Next steps (2026-11-02,
 the response to the review)"); next: tier 1 (`docs/resume-prompt.md`).** No runs or manuscript changes; read-only
 checks of existing artifacts only.

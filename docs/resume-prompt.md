@@ -1,54 +1,36 @@
-# Resume: ProvExp (after 2026-11-02): tier 1 of the response to the review
+# Resume: ProvExp (after 2026-11-02, session 2): tier 2 of the response to the review
 
 ## Where we are
 
-- **The body is drafted in `.tex`** (`manuscript/`): Section 3 (framework, `_d_framework.tex`), Section 4 (EMBER,
-  `_e_instances.tex`), Section 5 (evaluation, `_f_evaluation.tex`), Appendix A (`_j_proofs.tex`). Other sections are
-  stubs. `make` and `make check` clean.
-- **The harsh review** (`docs/reviews/2026-11-02-body.md`) is triaged with the user. The plan is `PLAN.md`, "Next
-  steps (2026-11-02, the response to the review, agreed with the user)": tier 1 (hours), tier 2 (days), tier 3 (the
-  second-instance decision). `docs/status.md`'s top block records which of the review's premises held and the user's
-  four decisions; `docs/paper-mock.md`, "After the review", records which table changes were adopted.
-- **Decided (user, 2026-11-02):**
-  - Table 7: the monotone rows' 0.0 is an implementation check. The evidence is (a) the full-catalogue adaptive search
-    (tier 2), (b) real tools' outputs staying inside the derived table (284 of 288 in-population toolkit outputs; the 4
-    others are LIEF relayouts, and none evades), and (c) "still detected after every attack".
-  - Table 6 keeps "every disagreement is a hand error"; it gains an in-population column and the add-section/overlay
-    row (an in-population hand error found by G7, run 103).
-  - The scope is reduced in the text now (Table 1 shrunk; "shown on EMBER, sketched for two others"); a second instance
-    is reconsidered after tier 2.
-  - Theorem 1 becomes Proposition 1; Theorem 2 is the main theorem.
-  - Deferred: whether the introduction leads with the detector (lean: framework first, results paragraph around it).
+- **The body is drafted in `.tex`** (`manuscript/`): Section 3 (framework), Section 4 (EMBER), Section 5 (evaluation),
+  Appendix A. Tier 1's writing fixes are in (Proposition 1 + Theorem 1 as the main theorem, novelty paragraph, Table 1
+  shrunk, research questions, Tables 5-7 updated, the detector paragraph rewritten). `make` and `make check` clean.
+- **Tier 1 is done** (`docs/status.md`, top block), except P1 on the 2,000 files: `run/117_p1_closure.sh` (~35 min) is
+  with the user. When its report arrives (`artifacts/experiments/catalogue_checks/2000-p1/report.json`, keys `closed`
+  and `<op>.leaving_population`), read it, record the result in `run/117`'s header, and replace the blue
+  `\synthetic{73,063}` in `_f_evaluation.tex` (the `% SYNTHETIC` comment names the run). If any edit leaves the
+  population, that operation's declaration or the precondition changes (go/no-go of PLAN tier 1, item 1).
+- **Open for the user:** (1) PV's hole: the paper says 44.4% "proved lowerable"; with pefile's residual warning
+  features, which the table leaves free, it is 77.5% (one flag carries ~30% of PV's gain). Whether to say PV leans on
+  features the table cannot vouch for. (2) The person-days for instrumentation (blue, "about three days").
+- **Corrections recorded:** 252 of 288 toolkit outputs respect the derived table (not 284); prediction is not faster
+  than re-extraction (no speed claim anywhere).
 
-## The task: tier 1
+## The task: tier 2 (PLAN.md, "Tier 2")
 
-Do these in order. Each is minutes, on existing data, or a run under ~10 minutes. State the hypothesis before each run.
-1. **P1 (closure).** Add a column to `scripts/catalogue_checks.py`: the precondition evaluated on each edited file.
-   Run it on the pilot (~3 min). Go/no-go: no edit takes a passing file to a failing one. Write
-   `run/117_p1_closure.sh` for the 2,000-file set (estimate 30-40 min; G7 took 25 min) and hand it to the user.
-2. **P2:** one sentence (the pilot and 2,000-file direction tables are byte-identical); the per-cell comparison of the
-   two `g3_cells.csv` files if quick.
-3. **The toolkit split and "still detected"**: a small script over `artifacts/experiments/a1/toolkit-v2/results.parquet`
-   (run 105), `artifacts/experiments/a1/adaptive-v3` (run 108; check which directory is run 108's), and
-   `artifacts/experiments/a_pv/deltas.parquet` (run 78), giving per attack: catalogue status, evasion on passing files,
-   outputs respecting the derived table; and per detector: still detected after every attack.
-4. **PV's hole with the derived table** (`scripts/a_pv_hole.py`); **coverage on untruncated files** and the benign
-   rate of non-plain layouts; **timing** (prediction vs re-extraction, from the logs); **instrumentation cost** (lines of
-   code, flip-test rounds).
-5. **The `.tex` fixes** listed in `PLAN.md` tier 1, item 6. Also: the keyed-count correction in
-   `docs/formalization.md` Lemma 3 (factual, allowed under the freeze). Run `make` and `make check` after editing. New
-   numbers that wait on a run go in blue (`\synthetic{}`) with a `% SYNTHETIC` comment naming the run.
-
-Then start tier 2 with item 7 (item-level exactness for the item-stated operations), which the adaptive search over all
-twelve operations (item 8) reuses.
+Start with item 7: **item-level exactness for every item-stated operation** (add section, add imports, both gap
+insertions, rename, both removals; R14). Build it once: it also scores item 8's adaptive search candidates. Go/no-go:
+0 wrong on the 2,000 files (flagged allowed, reported). It replaces Table 5's blue add-section row and adds rows.
+Then item 8 (the adaptive search over all twelve operations, on the routed 10%-store models of Table 7; go/no-go: at
+least 24/47 on the unconstrained model), items 9-11. State the hypothesis before each run; runs over ~10 minutes go to
+`run/118`+ for the user after a smoke test.
 
 ## Notes
 
 - Untracked, leave alone: `papers/`, `TODO.md`, `docs/checkpoint-prompt.md`, `make-manuscript.sh`, `slides/`.
+- Table 7's sums rows show adaptive 0%, but run 108's search ran on the full-store feature models; item 8 should run on
+  the routed 10%-store models so every cell of a row comes from one model.
 - Bib page ranges not verified: Incer et al., Chen et al. (CCS 2021), Simonetto et al. The related work the review
-  found missing is listed in `docs/status.md` (2026-11-02, the review's block).
+  found missing is listed in `docs/status.md` (the review's block).
 - The user still owes the upstream reports in `docs/upstream-issues.md`.
-- Runs: only jobs under ~10 minutes yourself (estimate from the slowest case); otherwise smoke-test and write a `run/`
-  script for the user (next number 117).
-- At the end of each session: update `docs/status.md`, `PLAN.md`, and this file. Commit in logical pieces; do not
-  push.
+- At the end of each session: update `docs/status.md`, `PLAN.md`, and this file. Commit in logical pieces; do not push.

@@ -74,7 +74,11 @@ reconsidered after tier 2. (4) Theorem 1 becomes Proposition 1; Theorem 2 is the
 introduction leads with the detector (decide when the introduction is written; lean: framework first, results paragraph
 around the detector).
 
-**Tier 1 (hours; existing data or runs under ~10 min, Claude):**
+**Tier 1 (hours; existing data or runs under ~10 min, Claude): done 2026-11-02 except P1 on the 2,000 files
+(`run/117_p1_closure.sh`, user).** Results in `docs/status.md` (top block). Two corrections to the premise check above:
+252 of 288 toolkit outputs respect the derived table (not 284: fixed features count), and PV's hole excluded the
+warning features by a parsing bug (fixed; the paper's 44.4% stands as "proved lowerable"; with the warnings 77.5%,
+open for the user). Prediction is not faster than re-extraction (median 50 vs 53 ms), so no speed claim.
 1. **P1, closure (R2).** Add a precondition-on-the-edited-file column to `scripts/catalogue_checks.py`; run the pilot
    (~3 min). *Hypothesis:* no edit takes a passing file to a failing one. Go/no-go: 0 such edits; a failure means that
    operation's declaration or the precondition changes. 2,000 files: `run/117_p1_closure.sh` for the user (G7 took 25
