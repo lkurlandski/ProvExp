@@ -114,10 +114,10 @@ domains emphasized about equally" above. Paper text goes straight into `.tex`.
    cells vs missing ones; the four-part evaluation above. Candidate extra rows, each with a go/no-go before code:
    coupling against Severi et al.'s hand exclusions; coverage weighted by attack success; the detector-gain share of the
    88 pefile-warning features outside the model.
-3. **Framework section in `.tex`** (next, new chat: `docs/resume-prompt.md`) (`manuscript/`), to its budget: the problem, the model with one main example (PE)
+3. **Framework section in `.tex`** (done 2026-11-02: `manuscript/_c_framework.tex`, 2,568 words; proofs in `_m_framework_proofs.tex`) (`manuscript/`), to its budget: the problem, the model with one main example (PE)
    and a cross-domain table, the side-effect and direction theorems with the requirements as a compact list; proofs
    and lemmas in the appendix, drawn from `docs/formalization.md`.
-4. **Harsh simulated tier-1 review of the mock and framework; decision point** (user): breadth instances and a
+4. **Harsh simulated tier-1 review of the mock and framework; decision point** (next, after the user reads the section) (user): breadth instances and a
    possible second application.
 5. **A's gaps, by reviewer weight:** adversarial-training baseline; held-out attacks from a second toolkit
    (MAB-Malware); scale (seeds 0-2, full splits, more malware; user's decision); leave-one-out PV; cost column. Large

@@ -1,5 +1,34 @@
 # Status
 
+**2026-11-02 (end of session): framework section written in `.tex`; waiting for the user's read.** Commits: bib
+entries, the section with its appendix, (this wrap-up). No code or runs.
+- `manuscript/_c_framework.tex` replaces Section 3 (now "Computing What Edits Do to Features"; label
+  `sec:XML:Framework` kept); `_c_method.tex` stays on disk, unused. Six subsections per the mock: problem (Pierazzi's
+  symbols), items/sums/readouts (definition, three tables: cross-domain, terms with their item-change signs, readouts
+  with their direction rules), edits as item deltas with the four classes, exact side effects ((R1)-(R5) as one list,
+  Theorem 1), sound directions (sign sets, envelopes, Theorem 2), robust detectors (Corollary 1, Gimenez et al.).
+  Running example: append `\0http://evil.example`; the traffic example only for the longest gap and the mean gap.
+  The term-sign and readout-rule tables of the formalization (Lemmas 3, 6) are folded into the term and readout
+  tables, which saves the directions part its own tables.
+- Words (texcount, text + headers + captions, table cells included): 2,568 against 2,500. Per part: problem 219/300,
+  model 738/700, edits 338/300, side effects 619/600, directions 535/500, robustness 119/100.
+- Appendix A "Proofs for the Framework" (`_m_framework_proofs.tex`, ~1,100 words): finding the delta, adjusting the
+  sums, signatures of element-stated operations, envelopes, hashed keys, patterns under extension, readout rules,
+  Theorems 2 and Corollary 1. No EMBER checks or caveats.
+- Citations added to `main.bib`: gimenez2025certifiably (IFIP SEC 2025), incer2018adversarially, demontis2019yes,
+  chen2021learning, gray1997data, wagner1998efficient, sharafaldin2018toward, engelen2021troubleshooting,
+  chernikova2022fence, simonetto2022unified. Demontis, Chen (CCS 2021), Engelen, Chernikova, Simonetto are in the bib
+  but not yet cited (they belong to Background, Instances, Related work).
+- Build: `make` passes; `make check` lists only undefined references from old sections to labels of the retired
+  `_c_method.tex`, and a 1.7 pt overfull vbox on the last page (old open-science text); expected while the other
+  sections are old.
+- `main.tex` gained a `\corollary` header macro (same style as `\theorem`); theorem references use
+  `Theorem~\ref{...}`, since cleveref has no name for the custom counters.
+- Next: the user reads Section 3; then PLAN step 4 (harsh review, decision point); then the CTU-13 instance (first:
+  what the MoEvA2 package ships).
+
+---
+
 **2026-11-02 (end of session): reassessed; paper mock written; next: the framework section in `.tex` (new chat,
 `docs/resume-prompt.md`).** Commits 40bc8ae, 204457a, 65e6082, 1e683a4, 89a8fb9, 2814e8a, (this wrap-up). No code or
 runs.
