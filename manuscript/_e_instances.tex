@@ -1,1 +1,112 @@
-% Section 4, Instances (about 1,000 words): EMBER (what is recorded, the three repairs, the import-overwrite patch); CTU-13 features; the edit catalogues.
+% Section 4, Instances (about 1,000 words; docs/paper-mock.md): the EMBER instance (what is recorded, the three
+% repairs, the import-overwrite patch, the edit catalogue). Sources: docs/formalization.md Section 9,
+% docs/item-layer-design.md, docs/direction-A-threat-model.md, docs/upstream-issues.md. The requirement checks
+% (single-byte flips, random writes) and the population/closure caveats go to the appendix.
+% A second instance from another domain, if one is added, gets a short subsection here (about 250 words); which
+% domain is interchangeable.
+
+Our main instance is EMBER~\cite{anderson2018ember} in its 2024 version~\cite{joyce2025ember}, the standard static
+feature set for Windows executables. Its extractor computes 2,568 features from a PE file: the byte histogram and
+byte-entropy histogram, statistics of the printable strings, header fields, per-section statistics, imported
+libraries and functions, exports, data directories, and the Authenticode signature. We instrument it without changing
+what it computes: each feature group gains a method that returns its items from the same parse, and each feature a
+declared readout.
+
+\subsection{What the Instrumented Extractor Records}
+\label{sec:instances:record}
+
+Of the 2,568 features, 2,480 are modeled; the residual is the 88 warning flags the PE parser raises, which have no
+items. The scanned kinds are bytes, byte-entropy windows (2,048 bytes at steps of 1,024), printable strings, and the
+Rich header, which the parser searches for within a fixed range. The parsed kinds are sections, the overlay, header
+fields, imports, libraries, exports, the certificate table, and the entry section, which a selection readout picks.
+Every readout type of \Cref{tab:fw:readouts} occurs except presence, rate, and standard deviation. On 2,000 files,
+the readouts applied to the recorded sums reproduce the original extractor bit for bit on all 2,480 modeled features.
+
+Most of the instrumentation effort goes into locating positions. For each kind, they are the header fields and table
+bytes the parser reads to find its items, together with kind-level positions such as the section count and the
+bounds of the Rich header's search range. Some are easy to miss: the overlay starts where the last section or data
+directory ends, so every section's and directory's extent locates it. Others lie past the end of the file, when a
+section table points to raw data that a truncated file no longer contains; on such a file, appending is structural.
+We completed the record by changing single bytes and checking whether the parse changed where no locating position
+was recorded. A first round found three parser rules the record had missed; after recording them, no flip among
+58,666 across headers and directory data changed the parse unannounced. The margins are those of
+\Cref{sec:fw:side-effects}: strings reach the nearest non-printable byte, windows reach the windows overlapping the
+write (and, under appending, the last 1,024 bytes before the old end), and the Rich header's margin is its whole search
+range.
+
+\subsection{Three Repairs}
+\label{sec:instances:repairs}
+
+EMBER breaks self-contained contributions (R2) in three places. Two are matters of bookkeeping. Each section's size
+is divided by the file's size, so a section's contribution would change whenever the file grows; we let the section
+contribute its raw size and move the division into the readout, where the file's size is itself a sum. The imported
+libraries are kept as a set; we keep a count per library and read out the number of libraries with a positive count.
+Both repairs leave every feature value unchanged.
+
+The third is a bug. EMBER~2024 stores each library's imported functions under the library's name, so when a file has
+two import descriptors for the same library, the second replaces the first one's functions. The original EMBER
+guarded against this, and the reimplementation lost the guard. The effect is not subtle: adding one descriptor that
+imports \texttt{Sleep} from \texttt{KERNEL32.dll} to a file that already imports 114 functions from it lowers the
+import count from 116 to 3, and hides the other imports from the model. No model of contributions can repair a
+contribution that depends on whether another item exists, so we patch the extractor, as a pure addition that restores
+EMBER's original behavior, and run every experiment on the patched variant. On natural files the patch rarely
+matters; for an attacker it is a way to remove features, which no add-only threat model would anticipate.
+
+\subsection{Reading the Sums Directly}
+\label{sec:instances:sums}
+
+Because the record exposes the sums, a detector need not read the features at all. Most features that can move both
+ways do so because of their readout, not their items: a normalized histogram can fall when any bin outside it rises.
+Reading the sums instead keeps their directions. We use four such re-encodings: raw byte counts instead of normalized
+frequencies; counts over section bodies and the overlay only, the regions no in-place operation writes; signed
+section-name buckets split into their positive and negative parts; and import counts with the patch above. Each is
+an identity readout over recorded sums, so \Cref{thm:fw:directions} gives its directions with no rule of its own, and
+the same bit-exact check covers it.
+
+\subsection{The Edit Catalogue}
+\label{sec:instances:catalogue}
+
+The threat model is a catalogue of the twelve operations the public attack toolkits apply to PE
+files~\cite{demetrio2021adversarial,song2022mab,kreuk2018deceiving,suciu2019exploring}, with all content (bytes,
+section names and properties, imported names) chosen by the attacker within a byte budget
+(\Cref{tab:instances:catalogue}). They form three nested threat models: \emph{additions}, which monotone detectors
+are designed for; \emph{shifts}, which adds the two insertions that move existing content; and \emph{full}, which adds
+every in-place overwrite and removal the toolkits use. Rewriting code and packing are outside all three: they are
+whole-file rewrites, undeclared structural edits by nature.
+
+\begin{table}[t]
+  \caption{The edit catalogue. Operations stated in elements get their signatures per file from the item table;
+  the others declare their item deltas.}
+  \label{tab:instances:catalogue}
+  \small
+  \begin{tabular}{@{}lll@{}}
+    \toprule
+    Operation & Stated in & Threat model \\
+    \midrule
+    append bytes at the end & elements & additions \\
+    add a section (any name, properties, content) & items & additions \\
+    add imports (any library and function names) & items & additions \\
+    insert a gap before the PE header & items & shifts \\
+    insert a gap before the first section & items & shifts \\
+    overwrite section slack & elements & full \\
+    overwrite the DOS header and stub & elements & full \\
+    overwrite loader-ignored header fields & elements & full \\
+    overwrite the checksum & elements & full \\
+    rename a section (any 8-byte name) & items & full \\
+    remove the debug directory entry & items & full \\
+    remove the signature directory entry & items & full \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+Each operation stated in items declares its delta, including the fields it must update: adding a section raises the
+section count and the image size and writes a new section table entry. Each operation stated in elements declares only
+the region it writes and its content domain, and the engine derives the rest. All edits are written by our own
+byte-level code, which does exactly what the operation declares. A general editing library such as LIEF~\cite{lief}
+rebuilds the file's layout when it adds a section, which breaks honest tools (R5).
+
+Directions hold over a population (\Cref{sec:fw:directions}), and ours is the files whose layout is plain: nothing
+the parse locates lies past the end of the file, sections lie within the image, and the headers hold only headers.
+Of 2,000 files, 1,674 qualify; most of the rest are files our dataset truncates at 4~MB. A detector checks the
+condition at inference and sends the other files to an unconstrained model, which carries no guarantee
+(\Cref{sec:evaluation}).
