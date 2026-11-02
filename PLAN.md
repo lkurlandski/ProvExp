@@ -78,7 +78,12 @@ around the detector).
 (`run/117_p1_closure.sh`, user).** Results in `docs/status.md` (top block). Two corrections to the premise check above:
 252 of 288 toolkit outputs respect the derived table (not 284: fixed features count), and PV's hole excluded the
 warning features by a parsing bug (fixed; the paper's 44.4% stands as "proved lowerable"; with the warnings 77.5%,
-open for the user). Prediction is not faster than re-extraction (median 50 vs 53 ms), so no speed claim.
+decided below). Prediction is not faster than re-extraction (median 50 vs 53 ms), so no speed claim.
+**Decided (user, 2026-11-02, after tier 1):** (1) PV's hole: left to Claude; the paper keeps 44.4% as proved lowerable and
+adds a clause that a further third of PV's gain rests on parser warnings the derivation cannot vouch for and the
+derived detectors drop. (2) **No claim about instrumentation effort in this form** (person-days, lines of code, fix
+rounds): R13 is answered only by "paid once per extractor, not once per attack". Run 117 (P1, 2,000 files) started by
+the user.
 1. **P1, closure (R2).** Add a precondition-on-the-edited-file column to `scripts/catalogue_checks.py`; run the pilot
    (~3 min). *Hypothesis:* no edit takes a passing file to a failing one. Go/no-go: 0 such edits; a failure means that
    operation's declaration or the precondition changes. 2,000 files: `run/117_p1_closure.sh` for the user (G7 took 25
@@ -92,7 +97,7 @@ open for the user). Prediction is not faster than re-extraction (median 50 vs 53
    21/47); recomputed after tier 2's adaptive search.
 5. **PV's hole with the derived table (R12)** (`a_pv_hole.py`, minutes). **Coverage on untruncated files** and the
    benign base rate of non-plain layouts (R7), from the 2,000-file precondition report. **Timing** of prediction vs
-   re-extraction, from run logs (R9). **Instrumentation cost** (lines of code, flip-test rounds; R13).
+   re-extraction, from run logs (R9). ~~Instrumentation cost (lines of code, flip-test rounds; R13)~~ dropped (user).
 6. **Writing fixes in `.tex`:** Pierazzi's eta and consolidation (R5, F7); the keyed-count entry (R10; also
    `docs/formalization.md` Lemma 3, a factual correction); R4's clauses numbered (F4); the ratio rule (F5); residual
    features dropped by the detector (F6); Omega used or dropped; the novelty paragraph (classical vs new; IVM,
@@ -121,7 +126,7 @@ open for the user). Prediction is not faster than re-extraction (median 50 vs 53
 the stronger evidence), more Table 6 rows from PE corner cases, anything from A'. Rejected: R16 (the prose already
 leads with the three general causes; the witness column needs the PE detail). R15: already in `_e:74-75`; one
 Discussion sentence. After tiers 1-2: the remaining sections (background with the Pierazzi distinction, related work,
-discussion with routing and instrumentation cost, Figure 1), introduction and abstract last.
+discussion with routing, Figure 1), introduction and abstract last.
 
 ### Earlier: next steps (2026-11-02, review done: plan the response)
 

@@ -1,7 +1,13 @@
 # Status
 
-**2026-11-02 (end of session 2): tier 1 of the response to the review is done, except P1 on the 2,000 files
-(`run/117_p1_closure.sh`, ~35 min, for the user); next: tier 2, item 7 (`docs/resume-prompt.md`).**
+**2026-11-02 (end of session 2): tier 1 of the response to the review is done; P1 on the 2,000 files
+(`run/117_p1_closure.sh`, ~35 min) is running (started by the user). Next: read run 117, then tier 2, item 7
+(`docs/resume-prompt.md`).**
+
+- **Decided (user, after tier 1):** (1) PV's hole left to Claude: 44.4% stays as "proves lowerable", plus one sentence
+  that a further third of PV's gain rests on parser warnings the derivation cannot vouch for and the derived detectors
+  drop (in `_f_evaluation.tex`). (2) No instrumentation-effort claim in this form (person-days, lines, rounds): the
+  sentence and its blue "about three days" are removed; the cost paragraph ends with "paid once per extractor".
 
 - **P1 (closure), pilot:** `catalogue_checks.py` now evaluates the precondition on every edited file
   (`precondition_after`; report keys `leaving_population`, `closed`). Pilot (`catalogue_checks/pilot-p1`, 189 s): 0 of
@@ -21,8 +27,8 @@
   found and fixed in `a_pv_hole.py`:** it split the neutralize files on whitespace, so pefile's warning features (names
   with spaces) never counted as decreasable. Without them: 37.8% (PV-all) and 44.3% (PV-seen, s10), as recorded. With
   them: 72.0% and 77.5%; one flag (`Suspicious flags set for section`) carries ~30% of the PV model's gain. The
-  warnings are residual (left free, not proven lowerable), so the paper keeps 44.4% "proves lowerable"; **open (user):**
-  whether to also say that PV leans on features the table cannot vouch for. Run 78's `report*.json` are left as they
+  warnings are residual (left free, not proven lowerable), so the paper keeps 44.4% "proves lowerable" and adds the
+  warnings as a separate clause (decided above). Run 78's `report*.json` are left as they
   were. The strict derived table (no precondition) marks 2,559 of 2,568 features lowerable, so its hole is
   uninformative.
 - **Coverage (R7):** untruncated files pass the precondition at 94.4% (1,576/1,670; benign 924/938, malware 652/732);
@@ -33,9 +39,9 @@
   (run 108): unconstrained median 48, PV 24, monotone rows 12.
 - **Cost (R13):** derivation ~5 min on 2,000 files (run 97, 16 workers); PV's attacks 3.2 CPU-hours on 50 pilot malware
   (run 78; gamma_api 39%); instrumentation +1,739 lines to thrember's 1,104 (pure additions; includes the old
-  provenance recording), item layer committed 2026-10-27..29; person-days in blue for the user to confirm.
-- **`.tex` (all of PLAN tier 1 item 6):** see the commit "Tier 1 writing fixes". New blue cells: 73,063 edits closed
-  (run 117), "about three days". Noted, not fixed: Table 7's sums rows show adaptive 0%, but the search ran on the
+  provenance recording), item layer committed 2026-10-27..29. Not used in the paper (user: no effort claim).
+- **`.tex` (all of PLAN tier 1 item 6):** see the commit "Tier 1 writing fixes". New blue cell: 73,063 edits closed
+  (run 117). Noted, not fixed: Table 7's sums rows show adaptive 0%, but the search ran on the
   full-store feature models (run 108); tier 2's search should run on the routed 10%-store models as planned.
 - **Formalization:** Lemma 3's keyed count corrected (factual).
 
