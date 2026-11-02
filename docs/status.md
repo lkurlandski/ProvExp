@@ -1,5 +1,26 @@
 # Status
 
+**2026-11-02 (stock-take): decided to formalize the framework next (user).** Recorded in `PLAN.md`, "Next steps
+(2026-11-02, stock-take done)"; next session: `docs/resume-prompt.md`.
+- Stock-take, established: the three-layer model is implemented for all 12 EMBER groups and checked (readouts
+  reproduce the extractor bit-exactly on 100 + 2,000 files; locating ranges survive ~59 K byte flips; local writes
+  exact); exact side effects (C1) match re-extraction for append, DOS overwrite, add-section, and every catalogue
+  operation on 2,000 files (73,063 edits); directions (C4) are derived automatically, and every disagreement with the
+  former hand rules was the hand rules' error, each witnessed; A's sound detectors are never moved (score change 0.0) at
+  88-89% TPR, PV falls to the adaptive search on 21-22/22, the expert set reaches AUC 0.844; from A', the region is
+  sound for combined edits (1,105/1,105).
+- Claimed, not shown: C1's proof is short, its content is in A1-A4, which are checked on EMBER, not proved, and not
+  stated for extractors in general; C4 is sketched (ratio and cross-entropy lemmas) with no soundness theorem; C3 sound
+  (run 111) but loose; C2 a corollary nothing uses yet; coverage counted by transformation, not by attack success; the
+  88 pefile-warning features outside the model; domain independence shown on one extractor.
+- Missing for the paper: the formal model (now next); A's adversarial-training row, second toolkit, leave-one-out PV,
+  scale, cost column; a second application (a goal, not a requirement: user).
+- Decisions (user): formalize all theorems we judge important (not only those A uses; prune later); PE malware first,
+  a second domain (e.g., flow statistics) later as breadth; the formalization is a significant contribution by itself
+  (Claude's critique was judged a little too harsh, though harshness stays the right default).
+
+---
+
 **2026-11-02: A' dropped (user); two pieces folded into A. Next: a pause to take stock of what the project has
 accomplished, then decide the next work (the user leans toward formalizing the framework).**
 - `run/116` read: containment holds on the new solver path (1,105 of 1,105); files certified at 1 / 4 / 16 / 32 KB:

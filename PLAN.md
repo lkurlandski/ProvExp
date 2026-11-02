@@ -55,7 +55,27 @@ introduction and a simple baseline (writing decision for later).
   combined edits (run 111, 1,105 of 1,105) and the learned-constraints contrast (run 110). Record:
   `docs/direction-A-prime-plan.md`, Section 13.
 
-## Next steps (2026-11-02: A' dropped; pause and take stock)
+## Next steps (2026-11-02, stock-take done: formalize the framework)
+
+**Decided (user, 2026-11-02, after the stock-take):**
+1. **Formalize the framework next**, in the PE malware domain. Work through *every* theorem we judge important (C1
+   exact side effects, C2 coupling, C3 reachable region, C4 directions, the composition with a monotone classifier,
+   and any others that turn up), not only those A rests on today; pruning or moving some to an appendix is a later
+   writing decision. The user judges the formalization (a precise class of "sum-then-readout" extractors with
+   per-kind obligations A1-A4 under which side effects, directions, and regions are computable) a significant
+   contribution in itself; keep judging novelty harshly, but do not dismiss it as "incremental view maintenance plus
+   sign analysis".
+2. **A second domain later, as breadth** (e.g., a flow-statistics extractor for network traffic, which exercises
+   every readout type). Applicability beyond malware is a strength, but establish the method and core contributions
+   on PE malware first.
+3. **"Several problems" is a goal, not a requirement.** A strong framework plus one application (A) with enough depth
+   and breadth is a solid paper; tying in a second application is welcome if it comes.
+4. Strengthening A (adversarial-training row, second toolkit, leave-one-out PV, scale, cost column) and screening B / C
+   wait until the formal model is written; B / C are screened against what it offers them.
+
+The stock-take that led here: `docs/status.md` (2026-11-02, stock-take). Next session: `docs/resume-prompt.md`.
+
+### Earlier: next steps (2026-11-02: A' dropped; pause and take stock)
 
 A' dropped and folded into A (above). The user wants a pause: a deep look at what the project has accomplished before
 choosing further work. The user leans toward formalizing the framework (the model and its claims, C1-C4) rather than
