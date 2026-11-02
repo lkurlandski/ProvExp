@@ -45,6 +45,8 @@ import lightgbm
 import numpy as np
 import polars as pl
 
+from provexp.featuresets.ember2024.sums import SumsFeatureExtractor
+
 __all__ = ["decreasable_features", "pv_kept"]
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -66,19 +68,21 @@ def pv_kept(deltas: np.ndarray, names: list[str], tol: float) -> set[str]:
     return {names[j] for j in range(len(names)) if bool(kept_mask[j])}
 
 
-def decreasable_features(directions_dir: Path, tm: str) -> set[str]:
-    """Features C4 proves decreasable under `tm` (quirk-fixed): direction "both" (dropped) or "down".
+def decreasable_features(directions_dir: Path, tm: str, variant: str = "quirkfixed") -> set[str]:
+    """Features C4 proves decreasable under `tm`: direction "both" (dropped) or "down".
 
     Args:
         directions_dir: The a_directions output directory.
         tm: A threat-model name, e.g. "M_full".
+        variant: The training-input variant, e.g. "quirkfixed" or "pre-quirkfixed" (under the precondition).
 
     Returns:
         The set of C4-decreasable feature names.
     """
-    both = set((directions_dir / f"{tm}-quirkfixed.neutralize.txt").read_text().split())
+    # One name per line: pefile's warning features have spaces in their names.
+    both = set((directions_dir / f"{tm}-{variant}.neutralize.txt").read_text().splitlines()) - {""}
     down = set()
-    for line in (directions_dir / f"{tm}-quirkfixed.monotone.tsv").read_text().splitlines():
+    for line in (directions_dir / f"{tm}-{variant}.monotone.tsv").read_text().splitlines():
         name, sign = line.split("\t")
         if sign.strip() == "-1":
             down.add(name)
@@ -92,6 +96,8 @@ def main() -> None:
     parser.add_argument("--outdir", type=Path, required=True)
     parser.add_argument("--model", type=Path, default=ROOT / "artifacts/models/gbdt/seed-0/model.txt",
                         help="GBDT whose split gain weights the hole; pass the PV-selected GBDT for the decisive read.")
+    parser.add_argument("--variant", type=str, default="quirkfixed",
+                        help="The directions' training-input variant ('pre-quirkfixed': under the precondition).")
     parser.add_argument("--tol", type=float, default=1e-6)
     parser.add_argument("--attacks", nargs="+", default=None, help="Derive PV from these attacks only (default: all).")
     parser.add_argument("--tag", type=str, default="", help="Suffix of the output files, e.g. '-seen'.")
@@ -112,11 +118,18 @@ def main() -> None:
     booster = lightgbm.Booster(model_file=str(args.model))
     # The model stores features positionally (generic "Column_j" names); its order is the extractor index order, the
     # same order a_pv_attacks wrote the delta columns in (verified: directions index == extractor order == GBDT index).
-    if booster.num_feature() != len(names):
-        raise RuntimeError(f"The model has {booster.num_feature()} features, the deltas have {len(names)}.")
     gain = np.asarray(booster.feature_importance(importance_type="gain"), dtype=float)
     gain_total = float(gain.sum())
-    gain_of = {names[j]: float(gain[j]) for j in range(len(names))}
+    if booster.num_feature() == len(names):
+        gain_of = {names[j]: float(gain[j]) for j in range(len(names))}
+    else:
+        # A model on the sums store (the 10% models of Table A1): thrember's features keep their names there, in the
+        # sums extractor's order; the re-encoded groups' gain counts in the total only.
+        model_names = SumsFeatureExtractor().feature_names
+        if booster.num_feature() != len(model_names) or not set(names) <= set(model_names):
+            raise RuntimeError(f"The model has {booster.num_feature()} features, the deltas have {len(names)}.")
+        by_name = dict(zip(model_names, gain.tolist()))
+        gain_of = {n: float(by_name[n]) for n in names}
 
     kept = pv_kept(deltas, names, args.tol)
     min_delta = {names[j]: float(deltas[:, j].min()) for j in range(len(names))}
@@ -128,12 +141,13 @@ def main() -> None:
         "num_features": len(names),
         "tol": args.tol,
         "model": str(args.model),
+        "directions": f"{args.directions_dir}/*-{args.variant}",
         "features_moved_by_some_attack": len(moved),
         "pv_kept": len(kept),
     }
     hole_rows: list[dict[str, object]] = []
     for tm in THREAT_MODELS:
-        decreasable = decreasable_features(args.directions_dir, tm)
+        decreasable = decreasable_features(args.directions_dir, tm, args.variant)
         hole = kept & decreasable
         pv_gain = sum(gain_of[n] for n in kept)
         hole_gain = sum(gain_of[n] for n in hole)
