@@ -25,6 +25,9 @@ manuscript/*.pdf
 manuscript/*.bbl
 manuscript/*.blg
 
+# Paywalled PDFs
+papers
+
 # Model checkpoints
 checkpoints/
 
