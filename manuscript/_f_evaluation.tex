@@ -1,1 +1,211 @@
-% Section 5, Evaluation (about 3,000 words): Tables 1-4 of docs/paper-mock.md.
+% Section 5, Evaluation (about 3,000 words; docs/paper-mock.md): Tables 1-3 on EMBER at pilot scale. Sources:
+% docs/direction-A-A1-design.md (runs 99-100, 105, 108), docs/direction-A-threat-model.md S6 (run 79),
+% docs/item-layer-design.md (runs 88-107), docs/direction-A-expert-set.md (run 106), docs/status.md (runs 110, 111).
+% A breadth instance, if added, adds rows to Tables 1 and 2 (and possibly a detector table); the domain is
+% interchangeable.
+
+We evaluate the three claims of the framework on the EMBER instance: that the side effects it computes are exact
+(\Cref{sec:eval:side-effects}), that the directions it derives are more correct than a careful hand analysis and more
+complete than constraints learned from attacks (\Cref{sec:eval:directions}), and that detectors built on them resist
+every edit in the threat model, including an adaptive attacker who uses the same machinery
+(\Cref{sec:eval:detectors}).
+
+\subsection{Setup}
+\label{sec:eval:setup}
+
+All numbers are at pilot scale: one seed, a 10\% subsample of each EMBER~2024 split for training and testing, and a
+pilot set of 100 files, half malware, for the edits and attacks. Detectors are gradient-boosted
+trees~\cite{ke2017lightgbm}, with monotone constraints where a row calls for them. Each detector's threshold is set to
+a 1\% false-positive rate on the benign test files, and an attack counts as an evasion when it drives a detected
+malware sample below that threshold. Every attacked file is written to disk and extracted again, so no reported score
+rests on our own predictions. Unless stated otherwise, the threat model is the full catalogue of
+\Cref{tab:instances:catalogue}, with a byte budget of 5\% of the file or 512~KB, whichever is larger.
+
+The attacks come from two sources. The \emph{toolkit} attacks are the eight secml-malware
+attacks~\cite{demetrio2021adversarial} that Gimenez et al.\ evaluate against: padding, GAMMA section
+injection~\cite{demetrio2021functionality}, GAMMA import injection, two content shifts, DOS-header extension, header
+fields, and a format exploit, each with a population of 10 for 10 iterations. We split them into four \emph{seen}
+attacks, from which the baseline below is built, and four \emph{held-out} ones. The \emph{adaptive} attack is ours. It
+searches the catalogue greedily for the edit that lowers a given detector's score most, scoring each candidate on the
+feature vector Theorem~\ref{thm:fw:side-effects} predicts instead of extracting it. It appends bytes and adds
+sections, and it aims section names at the hash
+buckets the detector relies on (\Cref{sec:fw:directions}). It is a white-box attacker with the same budget of 100
+scored candidates as the toolkit attacks, and it writes each kept step to disk with our own byte-level edits.
+
+\subsection{Side Effects Are Exact}
+\label{sec:eval:side-effects}
+
+Theorem~\ref{thm:fw:side-effects} says that, under the requirements, the features of an edited file follow from the item
+table of the original and the edit. We test it the way Pierazzi et al.\ obtain side effects: apply the edit, extract
+the features again, and compare all 2,480 modeled features with the prediction. \Cref{tab:eval:side-effects} reports
+the result per operation. A prediction is exact when every feature matches to the extractor's float precision; an edit
+is flagged when the engine declines to predict because the edit writes a locating position.
+
+\begin{table}[t]
+  \caption{Predicted side effects against re-extraction, on all 2,480 modeled features. Flagged: the engine declined
+  to predict (the edit writes a locating position).}
+  \label{tab:eval:side-effects}
+  \small
+  \begin{tabular}{@{}lrrrr@{}}
+    \toprule
+    Operation & Edits & Exact & Flagged & Wrong \\
+    \midrule
+    append bytes & 100 & 89 & 11 & 0 \\
+    overwrite the DOS header & 100 & 100 & 0 & 0 \\
+    random in-place writes & 2,000 & 1,791 & 209 & 0 \\
+    add a section & 100 & \synthetic{100} & \synthetic{0} & \synthetic{0} \\
+    up to three sections, then append & 1,105 & 1,105 & 0 & 0 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+% SYNTHETIC: the add-section row (exact prediction of the declared delta against re-extraction of our own byte-level
+% edit, 100 pilot files). Measured so far: equal to the hand predictor on all 100 files (run 92), and directions
+% correct on every edit (run 107). Replace with a C1-exactness run over every declared operation.
+
+No prediction is wrong. The 11 appends the engine flags are exactly the files whose section table points past their
+truncated end, where the appended bytes become a section's raw data; the engine finds them by an interval query of the
+written positions against the recorded locating positions, with no rule written for this case. The flagged in-place
+writes are, likewise, the writes that land on a header field or table entry the parser reads. Combined edits, up to
+three added sections followed by an append, are predicted exactly by carrying the item table forward one edit at a
+time.
+
+Exactness matters most where hand analysis is weakest: the side effects that are easy to miss. Appending to a file
+lowers every section's size ratio, since EMBER divides each section's size by the file's size; it can raise the
+largest section entropy, since the overlay counts as a section there; and when the appended bytes follow printable
+text, it extends the last string rather than adding one. Each of these follows from the item table without a rule of
+its own. The same record supports the other requirement checks, which we report in the appendix: no single-byte change
+among 58,666 alters the parse without touching a recorded locating position, and the readouts reproduce the extractor
+bit for bit on 2,000 files.
+
+\subsection{Directions: Correct and Complete}
+\label{sec:eval:directions}
+
+Before the derivation existed, we wrote the direction table by hand: for each of EMBER's feature groups and each of
+the twelve operations, we read the extractor's code and the operation's declared effects and recorded which way the
+group's features could move. This is the realistic alternative to the derivation, done by people who knew the
+extractor well and had its source open. We then compared it with the table Theorem~\ref{thm:fw:directions} derives.
+
+\begin{table*}[t]
+  \caption{Every disagreement between the hand-written direction table and the derived one. In each case the hand rule
+  is wrong, and a real file and edit, extracted again, moves the feature in the direction the hand rule excluded. No
+  disagreement goes the other way.}
+  \label{tab:eval:directions}
+  \small
+  \begin{tabular}{@{}p{0.17\textwidth}p{0.17\textwidth}lp{0.45\textwidth}@{}}
+    \toprule
+    Feature & Operation & Hand $\to$ derived & Witness \\
+    \midrule
+    overlay size & append & up $\to$ both & the appended bytes complete a section that pointed past the truncated end, and
+      the overlay shrinks (4 pilot files; e.g.\ 31,482 to 4,096 bytes) \\
+    entry section's name & add a section & fixed $\to$ both & on files whose entry point lies in no section, the added
+      executable section becomes the entry section (8 pilot files) \\
+    Rich header & insert a gap before the PE header & fixed $\to$ both & the parser searches a range that contains the
+      gap; content written there creates a Rich header (all 39 pilot files without one) \\
+    Rich header & overwrite header fields & fixed $\to$ both & three header fields lie in the same search range (8 of
+      the 39) \\
+    number of certificates & append & down $\to$ both & completing a signature table past the end adds a certificate (2
+      pilot files) \\
+    has relocations, exports & append & fixed $\to$ both & completing a directory past the end (relocations: 151 of
+      2,000 files; exports: 37) \\
+    section entropy & overwrite header fields & fixed $\to$ both & a section whose raw data starts at offset 0 is the
+      header (4 of 2,000 files) \\
+    \bottomrule
+  \end{tabular}
+\end{table*}
+
+On every other feature the two tables agree per threat model, and on one feature, the size of the signature table,
+the derived direction is tighter than the hand rule. \Cref{tab:eval:directions} lists the disagreements, and each
+is the hand rule's error. None of them is exotic. They come from three facts about the parser that are visible only in
+its code: it ignores structures that lie past the end of the file, so appending can bring them into existence; it
+searches a fixed range for the Rich header, wherever the PE header happens to start; and it picks the entry section by
+a rule with a fallback. The derivation needs none of these facts stated: they are locating positions in the item
+table, and the interval query does the rest. The first row is the one that would have mattered most, since the overlay
+size was constrained as up-only in our first monotone detectors; the adaptive search could not have found the hole,
+because its own hand-written predictor shared the same blind spot.
+
+The derived table is sound in the other sense as well. We applied every operation of the catalogue, with adversarial
+parameters (repeated, colliding, and case-variant names, empty imports, printable content next to existing strings,
+a forged Rich header in the inserted gap), to the 2,000-file set, written by our own byte-level code and extracted
+again. Across 73,063 edits, no feature moved in a direction the derived table excludes.
+
+The other realistic alternative is to learn the constraints from attacks. We let each feature move as far as the eight
+toolkit attacks moved it, and asked an exact solver for tree ensembles~\cite{kantchelian2016evasion} whether any point
+in that region evades each detector. The learned region certifies none of the 47 files the unconstrained detector
+catches and none of the 22 the baseline below catches: ranges learned per feature ignore that one edit moves many
+features together, and the region they span contains evasions no edit can produce. Learned from the attacks a
+defense was built on, the region certifies that defense by construction, including on files our adaptive attack
+evades. Computed directions avoid both failures, because they come from what each operation can do rather than from
+what a sample of attacks happened to do.
+
+\subsection{Detectors No In-Model Edit Can Evade}
+\label{sec:eval:detectors}
+
+Corollary~\ref{cor:fw:robustness} turns the derived table into detectors: drop the features marked both, constrain the rest to
+be nondecreasing in the up features and nonincreasing in the down ones, and the score can never fall under any
+sequence of edits in the threat model. We train such a detector on the features as they are and on the recorded sums
+(\Cref{sec:instances:sums}), and compare it with the alternatives a practitioner would use.
+
+\begin{table*}[t]
+  \caption{Detectors under the full threat model. Evasion is over the detected pilot malware. Seen and held-out are
+  the toolkit attacks; adaptive is our search. The monotone rows send files outside the population to the
+  unconstrained detector.}
+  \label{tab:eval:detectors}
+  \small
+  \begin{tabular}{@{}lrrrrrr@{}}
+    \toprule
+    Detector & AUC & TPR at 1\% FPR & Detected & Seen & Held-out & Adaptive \\
+    \midrule
+    unconstrained & 0.996 & 93.5\% & 47/50 & 17\% & 53\% & 8\% \\
+    adversarial training on the toolkit & \synthetic{0.995} & \synthetic{92.0\%} & \synthetic{46/50} & \synthetic{2\%} & \synthetic{30\%} & \synthetic{20\%} \\
+    feature selection from attacks (PV), 4 attacks & 0.954 & 56.2\% & 22/50 & 0\% & 18\% & 73\% \\
+    feature selection from attacks (PV), 8 attacks & 0.944 & 53.8\% & 22/50 & 0\% & --- & \synthetic{77\%} \\
+    expert set (40 features), monotone & 0.844 & 29.1\% & 8/50 & 0\% & 0\% & --- \\
+    monotone on derived directions, features & 0.992 & 87.2\% & 40/50 & 0\% & 3\%$^\dagger$ & 0\% \\
+    monotone on derived directions, sums & 0.994 & 89.6\% & 42/50 & 0\% & 2\%$^\dagger$ & 0\% \\
+    \bottomrule
+  \end{tabular}
+  \\[2pt]
+  {\footnotesize $^\dagger$ One header-field evasion, on a file outside the population, scored by the unconstrained
+  detector. On files in the population: 0/28 and 0/30.}
+\end{table*}
+% SYNTHETIC: the adversarial-training row (toolkit adversarial examples added to training; run to be scripted), and
+% PV with 8 attacks under the adaptive search after the search fix (run 108 re-ran PV with 4 attacks only; before the
+% fix it read 22/22). The expert set has no adaptive cell: the search predicts with the instrumented extractor only.
+
+\Cref{tab:eval:detectors} gives the results. Both monotone rows are evaded by no seen or held-out toolkit attack on
+the files the guarantee covers, and by nothing the adaptive search finds: on every file and every candidate edit, the
+largest score drop it can produce is exactly 0.0. This is Corollary~\ref{cor:fw:robustness} measured: no edit in the catalogue
+lowers a feature the detector reads in the direction it trusts, so the search has nothing to work with. The single
+held-out evasion is a header-field attack on a file whose layout is not plain, which the detector routes to the
+unconstrained model, where the guarantee does not apply; 38 of the 50 pilot malware, and 1,674 of the 2,000 files,
+lie inside the population. Soundness costs a few points of detection: 89.6\% at 1\% false positives on the sums,
+against 93.5\% unconstrained. Reading the sums instead of the features recovers about two of those points, because
+the re-encodings keep features one-sided that their normalized readouts made two-sided.
+
+The guarantee is per threat model, and the table shows what that means. Under the additions threat model, the monotone
+detectors keep more features and detect more (92.2\% on the sums), and the header-field attacks, which lie outside
+that threat model, evade them on a third of the files. A derived table is only as wide as the catalogue it was derived
+from, and a narrower catalogue buys accuracy at the price of the edits it leaves out.
+
+The closest baseline is Gimenez et al.'s feature selection from perturbation vectors (PV): run attacks on the training
+malware, keep the features no attack lowered, and train a monotone model on them. It resists the attacks it was built
+from, by construction, and costs over 35 points of detection. It also has a hole that the derivation computes before
+any attack runs: 44.4\% of the PV model's gain lies in features the derived table marks as lowerable, most of it in
+section-name hash buckets that no toolkit attack happened to lower. The adaptive search fills the hole. It picks
+section names whose hash lands in buckets the model trusts, with the sign that lowers them, and evades PV on 16 of the
+22 files it detects, using \synthetic{a handful of} extractions per file. Building PV from all eight attacks does not
+close the hole: \synthetic{17 of 22}. Of the six files the search does not evade, five have no room for another
+section header, and the sixth ends just above the threshold. Adversarial training on the toolkit's outputs keeps the unconstrained detector's accuracy
+but, like PV, is robust only to what it was shown: \synthetic{the adaptive search evades it on a fifth of the files}.
+
+The expert set is Gimenez et al.'s 40 hand-picked features, each argued to grow under additions. With the extractor's
+two quirks patched it holds under additions, and no toolkit attack evades it, but 40 features keep little signal: it
+detects 8 of the 50 pilot malware, at 29.1\% detection. Under the full threat model, 12 of its 40 features can be
+lowered by renaming a section, overwriting slack, or rewriting the DOS stub, edits the expert analysis, made for
+additions only, does not consider. A hand-picked set inherits the threat model its authors had in mind; a derived one
+is recomputed for each catalogue.
+
+Deriving the table costs one pass of the instrumented extractor over the corpus and a sign computation per feature
+and operation, \synthetic{about 20 minutes on 2,000 files}. PV needs every attack run against every training malware,
+\synthetic{about 40 CPU-hours} at our pilot's budget, and must be repeated for every new attack.
+% SYNTHETIC: the cost figures (bookkeeping from the logs of runs 97/107 and 78; not yet collected).
