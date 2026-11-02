@@ -8,6 +8,11 @@ Draft started 2026-11-02. Revision 3 (the same day) applies the user's feedback 
 - the requirements are named by what they mean, not by codes;
 - a short algebraic remark (sums as a monoid homomorphism) explains why maxima need more bookkeeping than sums.
 
+Revision 4 (the same day; `docs/feedback.md`, items 6-12, delegated by the user) fixes two errors (appending and
+Requirement 3; the presence rule), qualifies the "no attack needed" claim for layout-dependent signatures, moves the
+pattern lemma next to the term rules and the single-input tests to Section 10, and turns the routing corollary into a
+remark.
+
 **Status.** Sections 1-7 are written for review, with full proofs of the side-effect, direction, and robustness
 theorems. Section 8 assesses how general the model is, Section 9 holds the EMBER instance, and Section 10 lists what
 remains: coupling, the reachable region, the provenance matrix as a projection, tightness, cost, and positioning.
@@ -84,7 +89,10 @@ learned constraints miss whatever the observed attacks did not do.
 itself. The class is the extractors that find pieces of the input, add up what each piece contributes, and apply a
 formula per feature. Instrumenting such an extractor once, to record its pieces, its totals, and its formulas, turns
 $\Gamma \vdash \Omega$ from a relation one estimates into a computation. The computation is exact for the side effects
-of one edit and sound for the directions of a whole threat model, and it needs no attack to be run.
+of one edit and sound for the directions of a whole threat model. It needs no attack to be run: the directions follow
+from what each operation can add, remove, or change. For operations stated in raw elements, what they can change
+depends on the input's layout, and is computed per input from its recorded structure; such directions hold for the
+population of inputs they were computed over (Section 6.2).
 
 The document proceeds as follows. Section 2 introduces three real feature extractors from three security domains,
 which every later definition is tried on. Section 3 describes the class of extractors, and Section 4 describes an
@@ -258,8 +266,8 @@ removed, or changed.
 
 | Term | What the item adds | Sign | EMBER | Drebin | CICFlowMeter |
 |---|---|---|---|---|---|
-| count | 1 to one sum | $+$ | p1, p3, p6 | — | c1, c7 |
-| add | a nonnegative attribute (a length, a size) | $\ge 0$ | total string length (p2) | — | c2, total of squares (c4) |
+| count | 1 to one sum | $+$ | p1, p6 | — | c1, c7 |
+| add | a nonnegative attribute (a length, a size; 0 or 1 for a pattern match) | $\ge 0$ | total string length (p2), URL matches (p3) | — | c2, total of squares (c4) |
 | bins | nonnegative counts to a family of sums | $\ge 0$ per bin | p4 | — | — |
 | hashed | an attribute (or 1) to bucket $\mathrm{hash}(\text{key})$, times $\pm 1$ if the hash is signed | the hash's sign, if signed | p7 | — | — |
 | keyed | 1 to the count of its key | $+$ | p9 | d1-d4 | — |
@@ -482,7 +490,15 @@ consults to decide what exists and where.
 
 > **Requirement 3 (complete record of structure; formerly A1).** If an in-place edit writes no recorded locating
 > position, then every parsed item is still there afterwards, with the same identity, members, and locating
-> positions, and no parsed item appears. Only content may differ.
+> positions, and no parsed item appears. Only content may differ, with one exception: an *end-anchored* item, whose
+> members the parser defines as running to the end of the input, gains or loses the positions added or removed at the
+> end.
+
+End-anchored items exist because appending is the most common edit of all. The overlay of a PE file is everything
+after the last section, so appending lengthens it; trailing data after the last structure of any container behaves the
+same way. Treating the end of the input as a locating position instead would make every append structural, and the
+model could say nothing about it. Where the parser reads structure *from* the end, as a ZIP archive's central directory
+is, appending does move a locating position and the edit is structural.
 
 A missed locating position is found by changing single elements and checking whether the parse changes although the
 element is not recorded as locating. For CICFlowMeter, the requirement holds if each packet's addresses, ports,
@@ -529,8 +545,10 @@ of $z$, the written set $W$, and the elements of $z'$ inside the margins (or, fo
 declares).
 
 *Proof.* For an edit that writes no locating position, Requirement 3 says every parsed item survives with the same
-identity and members. A parsed item whose members avoid $W$ is unchanged, since $z'$ equals $z$ outside $W$. A parsed
-item whose members meet $W$ gets its new content from $z'$, and goes into $I^\sim$ if the content differs. For each
+identity and members, except that an end-anchored item's members gain or lose positions at the end, and those
+positions lie in $W$ (Definition 5). A parsed item whose members avoid $W$ is unchanged, since $z'$ equals $z$ outside
+$W$. A parsed item whose members meet $W$ gets its new content from $z'$, and goes into $I^\sim$ if the content
+differs. For each
 scanned kind, Requirement 4 (parts i and ii) says the items outside the margin are the same in $z$ and $z'$. The items
 of $z$ that overlap the margin are read from the item table, and the items of $z'$ that overlap it are found by the
 recognizer (part iii). Comparing them by identity gives that kind's part of the delta. For a declared edit,
@@ -638,6 +656,12 @@ The lemma's condition must hold on every input in $F$, not only on those seen. A
 most PE files, but on a file whose section table points past its end it does. Such inputs must be excluded from $F$ by
 the precondition, or the operation treated as structural on them.
 
+Lemma 2 gives a signature per input: which parsed items an edit's written set meets, and which scanned items lie near
+it, are read from that input's item table. No edit is applied and nothing is re-extracted, but the result depends on
+the input's layout. An operation's signature over a population is the union of these per-input signatures, and it holds
+for the layouts the population contains. An operation stated in items has the same signature on every input. This is
+the one place where a direction table depends on the corpus it was computed over (Section 6.4).
+
 With signatures in hand, the signs follow from the vocabulary.
 
 **Lemma 3 (envelopes from signatures).** Under Requirements 2 and 5, the change one item makes to one of its terms
@@ -651,7 +675,9 @@ has a sign fixed by the term and by whether the item is added, removed, or modif
 | slot | — | — | every sign, unless the operation fixes the new value |
 | opaque | the sign of (value $-$ default), over the declared range | the negation | every sign |
 
-A min pool behaves as a max pool with the signs flipped. An operation's envelope on a sum is contained in the sign sum,
+A min pool behaves as a max pool with the signs flipped. A count that depends on the item's content, such as a string
+that counts toward the URL feature only if it matches the pattern, is an add term with value 0 or 1, not a count term,
+since a modification can change whether it matches. An operation's envelope on a sum is contained in the sign sum,
 over all the item changes in its signature, of the entries above for the terms that write that sum. A flagged change
 contributes $\{-, 0, +\}$ to every sum its kind writes.
 
@@ -677,12 +703,28 @@ gives witnesses, and once they cover every pair, the answer is exact.
 This answers Severi et al.'s remark that hashed features resist targeting because the hash is hard to invert. With a few
 dozen buckets, a key landing in a chosen bucket with a chosen sign is found by brute force.
 
+Lemma 3 treats a pattern feature, such as EMBER's URL count, as an add term with value 0 or 1 per string, so a
+modified string can change it either way. Appending text that joins a string at the end of the file modifies that
+string by extending it, and for most patterns extension can only create a match.
+
+**Lemma 5 (pattern features under extension).** Let a feature count the strings that match a regular expression $P$.
+If $P$ uses no construct that looks past the end of the match (end anchors, word boundaries after the match,
+lookahead), then extending a string on the right can only add matches, never remove them. The same holds on the left
+for constructs that look before the match.
+
+*Proof.* Without such constructs, whether $P$ matches a substring depends only on that substring, which an extension
+does not change. ∎
+
+EMBER's URL pattern (p3) begins with a word boundary and has nothing after the match, so extending a string on the
+right can only create a URL match, but prefixing it with a letter can destroy one (`xhttp://` has no word boundary
+before the `h`). The test reads the parsed pattern; it is sound, and may call a pattern two-sided when it is not.
+
 ### 6.3 Step 2: from the sums to the features
 
-**Lemma 5 (one rule per readout type).** Let $E_s$ be an operation's envelope on sum $s$. For every input, the change
+**Lemma 6 (one rule per readout type).** Let $E_s$ be an operation's envelope on sum $s$. For every input, the change
 of a feature has a sign in the set below.
 - *Identity:* $E_s$.
-- *Presence* (nondecreasing): within $E_s$.
+- *Presence* (nondecreasing): within $E_s \cup \{0\}$, since a count can rise while its bit stays set.
 - *Ratio* $a/b$, with $a \ge 0$ and $b > 0$ before and after: $E_a \boxplus ((-E_b) \cup \{0\})$. In words: the ratio
   can rise only if the numerator can rise or the denominator can fall. If $b$ can reach or leave zero, add every sign,
   unless the readout's default value is declared to lie on one side.
@@ -717,7 +759,7 @@ said.
 **Theorem 2 (the derived direction table is sound; C4).** Let $\mathcal{M}$ be a threat model and $F \subseteq
 \mathrm{Pre}$ a population of inputs on which Requirements 1, 2, and 5 hold (and 3 and 4, for operations stated in
 elements). Build a table $D$:
-- for each operation, apply Lemma 5's rules to envelopes that contain the true ones over $F$ (for example, those of
+- for each operation, apply Lemma 6's rules to envelopes that contain the true ones over $F$ (for example, those of
   Lemma 3);
 - take the union of the resulting sign sets over all operations;
 - read the union as fixed ($\{0\}$), up (within $\{0, +\}$), down (within $\{-, 0\}$), or both;
@@ -730,7 +772,7 @@ Then:
 3. Without closure, part 2 can fail.
 
 *Proof.*
-1. For one operation instance on an input in $F$, each sum's change has a sign in its envelope. By Lemma 5, the
+1. For one operation instance on an input in $F$, each sum's change has a sign in its envelope. By Lemma 6, the
    feature's change has a sign in the rule's output, which lies in the union.
 2. By induction on the length of the sequence. Closure keeps every intermediate input in $F$, so part 1 applies at
    every step, and "does not fall" is transitive.
@@ -740,53 +782,6 @@ Two conditions in the theorem are easy to overlook, and both concern the threat 
 extractor. Envelopes must hold over the population, not just over a sample: those from Lemma 3 hold for any input, but
 those obtained by running an operation on a corpus hold only for the layouts the corpus contains. And part 2 needs
 closure: no edit may take an input outside the precondition. Section 9 discusses both for EMBER.
-
-### 6.5 Sharper answers for a single input
-
-The rules of Lemma 5 hold over every input, which a detector needs (Section 7). For one fixed input they can be
-sharpened, which an attack or a per-input analysis can use: "can this file's entropy be raised by appending?"
-
-**Lemma 6 (sharper tests for one input).** Fix an input $z$ and an operation.
-1. *Ratio.* $a/b$ can rise iff some parameter value makes $\alpha b - a \beta$ positive. When the operation adds items,
-   each with its own numerator part and positive denominator part, this happens iff some item's own ratio exceeds the
-   current ratio $a/b$ (the mediant property). Appending a string raises EMBER's average string length iff the new
-   string is longer than the current average; injecting a packet raises the mean forward length iff the packet is
-   longer than the current mean.
-2. *Entropy rising.* Let $p$ be the normalized vector before the edit and $p'$ after, and $H$ the entropy. Since $H$ is
-   concave,
-   $$H(p') \le H(p) - \sum_i (p'_i - p_i) \log p_i .$$
-   If the sum is nonnegative for every reachable $p'$, the entropy cannot rise. For an append of content with
-   distribution $q$, the condition reads
-   $$-\sum_i q_i \log p_i \le H(p).$$
-   The left side is the *cross-entropy* of $q$ against $p$. In words: appended content can raise the entropy only if it
-   is more surprising to the current distribution than the current distribution is to itself. (Content using a value
-   with $p_i = 0$ has infinite cross-entropy and may raise it.) The condition is linear in $q$, so checking the extreme
-   points of the allowed contents suffices.
-3. *Entropy falling.* The minimum of a concave function over a convex set lies at an extreme point. For appends of a
-   fixed length, the reachable $p'$ form a convex set whose extreme points are "the whole append is one repeated
-   value". If none of these lowers the entropy, no append of that length does, and since these extreme points are
-   real edits, the test is exact.
-
-*Proof.*
-1. By the identity in Lemma 5's proof. For added items, $\alpha b - a \beta = \sum_\iota n_\iota \beta_\iota b
-   (\alpha_\iota / \beta_\iota - a/b)$, where $n_\iota$ counts the added copies of item $\iota$. This is positive for
-   some choice of the $n_\iota$ iff some term is positive.
-2. The first-order bound for a concave function, with $\partial H / \partial p_i = -(\log p_i + 1)$; the $+1$ terms
-   cancel because both vectors sum to 1. An append gives $p' - p = t(q - p)$ for some $t \in (0, 1]$, and
-   $\sum_i (q_i - p_i)\log p_i \ge 0$ rearranges to the cross-entropy condition.
-3. The minimum principle for concave functions. ∎
-
-**Lemma 7 (pattern features under extension).** Let a feature count the strings that match a regular expression $P$.
-If $P$ uses no construct that looks past the end of the match (end anchors, word boundaries after the match,
-lookahead), then extending a string on the right can only add matches, never remove them. The same holds on the left
-for constructs that look before the match.
-
-*Proof.* Without such constructs, whether $P$ matches a substring depends only on that substring, which an extension
-does not change. ∎
-
-EMBER's URL pattern (p3) begins with a word boundary and has nothing after the match, so extending a string on the
-right can only create a URL match, but prefixing it with a letter can destroy one (`xhttp://` has no word boundary
-before the `h`). The test reads the parsed pattern; it is sound, and may call a pattern two-sided when it is not.
 
 ## 7. From directions to detectors that cannot be evaded
 
@@ -809,13 +804,10 @@ model.
 reads no "both" feature and does not fall in the allowed directions. This is Gimenez et al.'s Proposition 1, with the
 preorder "$z'$ is reachable from $z$" and a feature map made monotone by $D$. ∎
 
-**Corollary 2 (routing to a fallback detector).** A practical detector may score inputs in $\mathrm{Pre}$ with a
-constrained model and all other inputs with an unconstrained fallback.
-1. If $\mathrm{Pre}$ is closed under $\mathcal{M}$, every detected input in $\mathrm{Pre}$ stays detected.
-2. If some operation takes an input in $\mathrm{Pre}$ outside it, the attacker reaches the fallback, which has no
-   guarantee.
-
-*Proof.* (1) Theorem 3 with $F = \mathrm{Pre}$. (2) The fallback is unconstrained. ∎
+**Remark (routing to a fallback detector).** A practical detector scores inputs in $\mathrm{Pre}$ with the
+constrained model and all other inputs with an unconstrained fallback. Theorem 3, with $F = \mathrm{Pre}$, protects it
+exactly when $\mathrm{Pre}$ is closed under $\mathcal{M}$: an operation that takes an input in $\mathrm{Pre}$ outside it
+hands the attacker the fallback, which has no guarantee. Closure is therefore part of the threat model, not a detail.
 
 **What is ours and what is not.** The route from monotone features to robustness is Gimenez et al.'s and Incer et
 al.'s. The guarantee rests on four things together: the direction table, the classifier's constraints, the
@@ -844,7 +836,9 @@ pointers and tables, like PE, have many locating positions and many structural e
 instrumentation effort. Streams, like packet traces, have few: most kinds are scanned and margins are small, though
 timeouts make timestamps locating. A threat model stated entirely in items, as most Drebin attacks are, needs neither
 requirement, and the model is then as format-free as its other three: faithful recording, contributions that depend
-only on the item, and tools that do what they declare.
+only on the item, and tools that do what they declare. Format-free describes the conditions, not the work: building the
+faithful record still means instrumenting the extractor's parser, which is written once per format (see "The price"
+below).
 
 **Which extractors fit.** Those built by counting and aggregating over recognized pieces, which covers most static
 malware feature sets and flow statistics: EMBER and its descendants, Drebin and its variants, PDF structural paths,
@@ -894,8 +888,8 @@ Rich header is also scanned, within a search range. `section`, `overlay`, `field
 warning flags and `is_pe`.
 
 **Operations.** Appending, writing section slack, the DOS header, loader-ignored header fields, and the checksum are
-stated in elements; their signatures come from Lemma 2 (and, for the in-place header operations, from running them on
-the corpus: see the population caveat below). Adding a section, adding imports, and the other catalogue operations are
+stated in elements; their signatures come from Lemma 2, per file, and hold for the layouts the corpus contains (see the
+population caveat below). Adding a section, adding imports, and the other catalogue operations are
 stated in items and declare their deltas (`catalogue.py`). All are written by our own byte-level edits, never by LIEF,
 so that tools are honest by construction.
 
@@ -935,14 +929,14 @@ start at 0 over nonnegative attributes, so they are constant ($\{0\}$). Three-le
 | Theorem 2 | G3: derived table vs former hand rules | every disagreement was the hand rules' error, each witnessed by a real file and edit | 88, 97, 98, 101, 102 |
 | Theorem 3 | Table A1: constrained detectors under toolkit, held-out, and adaptive attacks | smallest score change exactly 0.0 on files in the precondition | 99, 100, 105 |
 
-**The population caveat.** The in-place header operations get their envelopes by running them on every corpus file and
-taking the union (`catalogue.file_region_changes`). On the 100 pilot files, header overwrites never reached section
+**The population caveat.** The in-place header operations get their signatures per file from its item table (Lemma 2), and their
+envelopes as the union over the corpus (`catalogue.file_region_changes`). On the 100 pilot files, header overwrites never reached section
 entropy. On the 2,000-file set they did, on 4 files whose `.bss` section has `PointerToRawData` 0, so its "raw data" is
 the header (run 102). The precondition's plain-layout clause ("headers hold only headers") excludes that layout.
 Whether it excludes every such layout is open.
 
 **The closure caveat.** The precondition is checked on the original file only (`catalogue_checks.py`,
-`a1_evaluate.py`). Corollary 2 needs it to hold on every edited file too.
+`a1_evaluate.py`). Theorem 3 and the routing remark of Section 7 need it to hold on every edited file too.
 
 These two caveats are small, and in the paper they belong in an appendix (user, 2026-11-02). Two cheap checks would
 settle them (not run; each takes minutes at pilot scale):
@@ -974,4 +968,40 @@ settle them (not run; each takes minutes at pilot scale):
   traffic literature (FENCE, Simonetto et al., Dyrmishi et al.) as what Theorem 2 replaces.
 - **To verify** before the examples reach the paper: Drebin's suspicious-API list and API-to-permission map
   (`getDeviceId`, `READ_PHONE_STATE`); CICFlowMeter's exact feature definitions (which lengths count, how flows end);
-  the FENCE constraint count.
+  the FENCE constraint count; Pierazzi et al.'s exact wording on computing side effects in advance (Sections 1 and 5
+paraphrase it as "infeasible").
+
+### 10.1 Sharper tests for one input (written; for the reachable region)
+
+The rules of Lemma 6 hold over every input, which a detector needs (Section 7). For one fixed input they can be
+sharpened, which an attack, a per-input analysis, or the reachable region can use: "can this file's entropy be raised by appending?"
+
+**Lemma 7 (sharper tests for one input).** Fix an input $z$ and an operation.
+1. *Ratio.* $a/b$ can rise iff some parameter value makes $\alpha b - a \beta$ positive. When the operation adds items,
+   each with its own numerator part and positive denominator part, this happens iff some item's own ratio exceeds the
+   current ratio $a/b$ (the mediant property). Appending a string raises EMBER's average string length iff the new
+   string is longer than the current average; injecting a packet raises the mean forward length iff the packet is
+   longer than the current mean.
+2. *Entropy rising.* Let $p$ be the normalized vector before the edit and $p'$ after, and $H$ the entropy. Since $H$ is
+   concave,
+   $$H(p') \le H(p) - \sum_i (p'_i - p_i) \log p_i .$$
+   If the sum is nonnegative for every reachable $p'$, the entropy cannot rise. For an append of content with
+   distribution $q$, the condition reads
+   $$-\sum_i q_i \log p_i \le H(p).$$
+   The left side is the *cross-entropy* of $q$ against $p$. In words: appended content can raise the entropy only if it
+   is more surprising to the current distribution than the current distribution is to itself. (Content using a value
+   with $p_i = 0$ has infinite cross-entropy and may raise it.) The condition is linear in $q$, so checking the extreme
+   points of the allowed contents suffices.
+3. *Entropy falling.* The minimum of a concave function over a convex set lies at an extreme point. For appends of a
+   fixed length, the reachable $p'$ form a convex set whose extreme points are "the whole append is one repeated
+   value". If none of these lowers the entropy, no append of that length does, and since these extreme points are
+   real edits, the test is exact.
+
+*Proof.*
+1. By the identity in Lemma 6's proof. For added items, $\alpha b - a \beta = \sum_\iota n_\iota \beta_\iota b
+   (\alpha_\iota / \beta_\iota - a/b)$, where $n_\iota$ counts the added copies of item $\iota$. This is positive for
+   some choice of the $n_\iota$ iff some term is positive.
+2. The first-order bound for a concave function, with $\partial H / \partial p_i = -(\log p_i + 1)$; the $+1$ terms
+   cancel because both vectors sum to 1. An append gives $p' - p = t(q - p)$ for some $t \in (0, 1]$, and
+   $\sum_i (q_i - p_i)\log p_i \ge 0$ rearranges to the cross-entropy condition.
+3. The minimum principle for concave functions. ∎

@@ -218,3 +218,48 @@ Sample lead for the merged section (to test the style):
 **Decision.** The user is open to it and asked for it to be written up; treat as the plan unless revised: merge Sections 5 and 6 as described, requirements named by meaning (no A-numbers in the
 body), and apply the same pattern (question and example first, terms only when needed, result, then proof) to every
 section. The user has not yet read past Section 5; the leads of Sections 7-9 still need the user's read.
+
+# Round 2 (2026-11-02): Sections 5-8 of revision 3
+
+**User.** The document is at a very early stage and not worth a detailed review yet; Claude should address its own
+pre-read of Sections 5-8 as it sees fit. Items 6-12 are Claude's points, decided by Claude under that delegation and
+**applied in revision 4**.
+
+## 6. Appending contradicted Requirement 3
+
+Requirement 3 said an in-place edit writing no locating position keeps every parsed item's members, but appending
+lengthens the PE overlay (the first worked example). **Decision:** *end-anchored* items (members run to the end of the
+input) may gain or lose positions at the end; Lemma 1's proof notes those positions lie in $W$. Making the end of the
+input a locating position was rejected: every append would become structural. Parsers that read from the end (ZIP's
+central directory) make appending structural, as they should.
+
+## 7. The presence rule was wrong
+
+Lemma 5 (now 6) gave presence "within $E_s$"; a count can rise while the bit stays set. **Decision:** $E_s \cup \{0\}$.
+While there: pattern counts (the URL count) are not count terms, since a modified string can stop matching; Lemma 3
+and the term table now treat them as add terms with value 0 or 1.
+
+## 8. "Needs no attack to be run" was overstated
+
+Signatures of operations stated in elements depend on the layout and are computed per input from its item table
+(`catalogue.file_region_changes` applies no edit; Section 9 wrongly said it "runs" them). **Decision:** Section 1
+qualifies the claim; Section 6.2 says per-input signatures hold for the layouts the population contains; Section 9's
+wording fixed.
+
+## 9. Section 6.5 sat apart from its users
+
+**Decision:** the pattern lemma moves into 6.2 as Lemma 5 (a refinement of Lemma 3's modified row); the readout rules
+become Lemma 6; the single-input tests (mediant, cross-entropy, extreme points) become Lemma 7 in Section 10.1, as
+material for the reachable region.
+
+## 10. Corollary 2 added little
+
+**Decision:** a remark: routing protects the detector exactly when the precondition is closed.
+
+## 11. "Format-free" could read as overclaiming
+
+**Decision:** Section 8 adds one sentence: the conditions are format-free; the instrumentation is per format.
+
+## 12. Pierazzi et al.'s wording
+
+**Decision:** added to Section 10's "To verify".
