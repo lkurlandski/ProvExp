@@ -87,6 +87,19 @@ EMBER rows only.
 4. **A breadth instance, if the review says the paper needs one.** Which domain is unimportant and interchangeable
    (user, 2026-11-02); the CTU-13 rows above are one option, not a plan. Late.
 
+**After the review (2026-11-02, `REVIEW-2026-11-02.md`; to be triaged with the user before any of it is adopted).**
+The review judges these to move the verdict most, and none is yet decided:
+- Table 3 (PDF Table 7): an adaptive search over all twelve operations that beats GAMMA API on the unconstrained
+  model; the toolkit columns split into in-catalogue and out-of-catalogue outputs; a "still detected after every
+  attack" column; the expert set compared under additions first; one adaptive-search protocol on the same models as
+  the other columns. The adversarial-training row waits for the stronger search.
+- Table 1 (PDF Table 5): exactness rows for all twelve operations.
+- Table 2 (PDF Table 6): which disagreements lie in the population; possibly an independent hand analysis (Gimenez et
+  al.'s 40 features, instrumented).
+- Appendix checks: closure (P1) and envelope stability (P2).
+- Contribution 2/3's second instance: build one compared against constraints published by others, or reduce the scope
+  in the text.
+
 ## Open decisions (user)
 
 - **Drebin.** A third instance, as a head-to-head with Pierazzi et al. on side effects of code transplantation.

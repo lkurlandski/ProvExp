@@ -34,7 +34,8 @@ and manuscript remain as source material. Deadlines and conference cycles are no
   expert-set row: `docs/direction-A-expert-set.md`.
 - `docs/graveyard.md`: ideas and directions that did not pan out and why.
 - `docs/review-prompt.md`: the harsh simulated review for the current draft (body only; output `REVIEW-<date>.md`).
-  Update it when the draft's stage changes (e.g., once the introduction exists).
+  Update it when the draft's stage changes (e.g., once the introduction exists). Latest output:
+  `REVIEW-2026-11-02.md` (body-only draft; risk register R1-R16), to be triaged into a plan with the user.
 - Old direction, for reference only: `docs/archive/PLAN-explanation-provenance-2026-10-21.md`, `docs/experiments/`
   (cp, pb1, pf1, trigger, cm, audit), `docs/theory.md`, `docs/appendix.md`, `docs/related_work.md`,
   the old manuscript (deleted 2026-11-02; in git history before the commit that removed it), `REVIEW-2026-10-21.md`. Some artifact paths use

@@ -1,5 +1,42 @@
 # Status
 
+**2026-11-02 (end of session): harsh simulated review of the body done; next: a plan to address its findings, with
+the user, in a fresh session (`docs/resume-prompt.md`).** No code, runs, or manuscript changes.
+
+- **Review:** `REVIEW-2026-11-02.md` (repo root, untracked like the other review files), from `docs/review-prompt.md`.
+  Three simulated reviews: formal methods Weak reject, adversarial ML for malware Weak reject, systems security Weak
+  accept; meta-review: reject with encouragement, borderline accept once the top risks are fixed. Contents: claims
+  vs the mock's contributions; what each empty section must do (key-insight sentence drafted); framework correctness
+  (F1-F7); methodology probes; related work and novelty; risk register R1-R16 with mitigations; action plan; drafts
+  (contributions list, introduction plan, replacement for `_f_evaluation.tex:175-183`).
+- **Verified while reviewing (against the docs and code records):**
+  - The adaptive search uses append and add-section only, evades the unconstrained model on 4/49 (8%), and ran on the
+    full-store, unrouted models; the rest of Table 7 uses the 10%-store routed models (`docs/direction-A-A1-design.md`,
+    Step 9).
+  - P1 (closure) and P2 (envelope stability) were never run (`docs/formalization.md` Section 9); Theorem 2 and
+    Corollary 1 need both, and the body does not mention either.
+  - In the population, derived directions equal the hand rules except entry_name_hash, the Rich header under gap
+    insertion, and security_size (status 2026-10-28). Four of Table 6's seven rows (overlay, certificates,
+    relocations/exports, section entropy at offset 0) concern layouts the plain-layout population excludes.
+  - PV's 44.4% hole (`_f:193`) was measured with the hand rules (run 78), not the derived table as the text says.
+  - The expert set's 12 lowerable features under the full catalogue are reasoned from its code, not measured.
+  - Keyed-count "Modified {0}" (Table 2, `_j:40`; also formalization Lemma 3) is wrong when a modification changes the
+    key; no EMBER operation triggers it. Proofs cite R4 parts (i)-(iii) that the body does not number.
+  - Pierazzi et al.'s side effects come from consolidation the transformation needs to satisfy Gamma; the opening of
+    Section 3 (`_d:12-21`) reads as if we compute what they call infeasible.
+  - 231 of the 318 files failing the precondition on the 2,000-file set are truncated at 4 MB, so coverage on
+    untruncated files is likely ~95% (inferred, not computed).
+- **Related work found missing from the body:** Chen et al. USENIX 2020 and CCS 2021 (in `main.bib`, uncited);
+  Šrndić and Laskov 2014; Bostani et al. (TOPS 2024, `papers/bostani2025-levelup.pdf`); Sheatsley et al.; Rosenfeld
+  et al. 2023 (data-driven constraint mining); Dyrmishi et al.'s PE case (immutability from Microsoft's spec);
+  Pierazzi et al.'s TOPS 2025 extended version (DOI 10.1145/3742895); Cousot and Cousot; provenance semirings
+  (`green2007provenance`, in bib); IVM and self-adjusting computation. No prior work found that derives feature
+  constraints or directions from the extractor's code.
+- **Next:** with the user, triage R1-R16 into fix-in-`.tex` / new run / framing decision / reject, and write the
+  agreed plan into `PLAN.md` before any run or rewrite.
+
+---
+
 **2026-11-02 (end of session): the body is drafted in `.tex` (Sections 3-5, Appendix A); the old manuscript is
 deleted; next: a harsh simulated review in a fresh chat (`docs/review-prompt.md`), then the user's read.** Commits
 61b19dc..(this wrap-up). No code or runs.

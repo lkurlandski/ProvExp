@@ -55,6 +55,40 @@ introduction and a simple baseline (writing decision for later).
   combined edits (run 111, 1,105 of 1,105) and the learned-constraints contrast (run 110). Record:
   `docs/direction-A-prime-plan.md`, Section 13.
 
+## Next steps (2026-11-02, review done: plan the response)
+
+The harsh simulated review of the body is done (`REVIEW-2026-11-02.md`, repo root, untracked). Scores, assuming the
+empty sections are written well: formal methods Weak reject, adversarial ML for malware Weak reject, systems security
+Weak accept; likely reject with encouragement, borderline accept once its top risks are fixed. **Next (a fresh
+session, `docs/resume-prompt.md`): turn the review into a plan with the user.** Triage each risk (fix now in `.tex`;
+a new run; a framing decision for the user; reject, with the reason), then fold the agreed items into the order of
+work below. No run, rewrite, or section draft before that plan is agreed.
+
+The review's findings, in its order of weight (its Section 6 has the full register, R1-R16):
+1. **Detector evaluation reads as tautological (R1).** The monotone rows' 0.0 is Corollary 1. The adaptive search uses
+   two of twelve operations and evades the undefended model on 8%, against 53% for the held-out toolkit. Proposed:
+   extend the search to every operation the engine predicts (go/no-go: beats GAMMA API on the unconstrained model);
+   split the toolkit outputs into in-catalogue and out-of-catalogue (LIEF relayout) and make the latter the
+   independent evidence; restore the "still detected after every attack" column (41/50 vs 20/50).
+2. **The guarantee's conditions are unchecked (R2):** closure of the population (P1) and envelope stability off the
+   corpus (P2), both in `docs/formalization.md` Section 9, minutes each.
+3. **The hand table is the authors' own, and four of Table 6's seven errors lie outside the population (R3).** In the
+   population the derived and hand tables give detectors differing in two features. Proposed: say so; consider
+   reframing Table 6 (a decision for the user); add an independent hand analysis by instrumenting Gimenez et al.'s
+   40-feature extractor (measured holes, an adaptive cell).
+4. **One instance (R4):** a second built instance whose comparison is against constraints published by others, or a
+   scope reduction now. Which domain stays unimportant.
+5. **Misreading Pierazzi et al.'s eta (R5)** at `_d_framework.tex:12-21`: their side effects come from consolidation,
+   which we declare per operation (R5); we compute the extractor's response.
+6. Smaller: the novelty paragraph against IVM, provenance semirings, abstract interpretation (R6); routing as an attack
+   surface and coverage on untruncated files (R7); expert set under additions as the headline comparison (R8); Theorem
+   1's practical role and timing (R9); keyed-count sign entry wrong in general (R10); adaptive column on different
+   models (R11); PV's 44.4% measured with the hand rules (R12); instrumentation cost (R13); exactness rows for all
+   twelve operations (R14).
+
+Effect on the order of work below: step 4 is done; step 5's adversarial-training row waits until the adaptive search
+is strengthened (the review judges its synthetic 20% implausible against an attack that gets 8% on no defense).
+
 ## Next steps (2026-11-02, stock-take done: formalize the framework)
 
 **Decided (user, 2026-11-02, after the stock-take):**
@@ -118,8 +152,8 @@ domains emphasized about equally" above. Paper text goes straight into `.tex`.
    words against 2,500; proofs in Appendix A, `_j_proofs.tex`), Section 4 EMBER instance (`_e_instances.tex`, 1,038
    against 1,000), Section 5 evaluation (`_f_evaluation.tex`, ~1,900 against 3,000; the mock's Tables 1-3 are Tables
    5-7 of the PDF). The old manuscript is deleted; one file per section, empty stubs for the rest.
-4. **Harsh simulated review of the body** (next, a fresh chat with `docs/review-prompt.md`; output
-   `REVIEW-<date>.md`), then the user's read of Sections 3-5; triage both together. Decision point (user): what the
+4. **Harsh simulated review of the body** (done 2026-11-02: `REVIEW-2026-11-02.md`; next: plan the response, see
+   "Next steps (2026-11-02, review done)" above), then the user's read of Sections 3-5; triage both together. Decision point (user): what the
    review says the paper needs (a second instance or not, further baselines, framing).
 5. **Replace the synthetic cells** (each marked `% SYNTHETIC` in the source; `docs/status.md`, top block): the
    add-section exactness check and the cost bookkeeping (small; run directly); PV with 8 attacks under the fixed
