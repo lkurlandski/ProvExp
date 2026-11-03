@@ -132,5 +132,6 @@ monotone expert model on **2 of the 8** pilot malware it detects (both via renam
 evasion) is met: the "certifiably robust by design" expert set is evaded under M_full through the derived rename hole.
 Under M_add (add-section/append/imports) the set is sound, as its authors argue, so the Table 7 expert row's adaptive
 cell is 0 there; the 2/8 is M_full and is reported in the §5 prose. A recognizer for the C1 engine was not needed (the
-search scores by re-extraction); productionizing the full derivation into a reusable script is still open (the hole
-count above was computed in an exploratory derivation reusing `catalogue.regions`/`reach.region_changes`).
+search scores by re-extraction). The derivation is `scripts/a_expert_directions.py` (reusing the generic C4 engine
+`reach.directions` plus `catalogue.regions`/`reach.region_changes` for the in-place operations' regions), with the
+go/no-go check built in (the holes equal the reasoned eleven); it is step 1 of `run/120`.
