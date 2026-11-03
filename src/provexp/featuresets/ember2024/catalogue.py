@@ -11,9 +11,12 @@ experiment code; the model (provexp.items, provexp.reach) stays generic.
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from collections.abc import Mapping
 from collections.abc import Sequence
+from dataclasses import dataclass
 from dataclasses import replace
+import struct
 from typing import Optional
 
 import pefile
@@ -25,11 +28,14 @@ from provexp.featuresets.ember2024.features import entropy_H
 from provexp.featuresets.ember2024.features import field_range
 from provexp.featuresets.ember2024.features import rva_ranges
 from provexp.featuresets.ember2024.features import section_data_range
+from provexp.featuresets.ember2024.features import section_locating
 from provexp.featuresets.ember2024.features import structure_range
 from provexp.featuresets.ember2024.sums import SUMS_GROUPS
 from provexp.items import Item
 from provexp.items import ItemTable
 from provexp.items import Range
+from provexp.items import Term
+from provexp.items import feature_hash
 from provexp.reach import BOTH
 from provexp.reach import UP
 from provexp.reach import ByteEdit
@@ -40,7 +46,9 @@ from provexp.reach import KindProfile
 from provexp.reach import Prediction
 from provexp.reach import Signs
 from provexp.reach import meets
+from provexp.reach import moved
 from provexp.reach import predict_declared
+from provexp.reach import predict_structural
 from provexp.reach import region_changes
 
 __all__ = [
@@ -55,6 +63,18 @@ __all__ = [
     "plain_layout",
     "precondition",
     "passes_precondition",
+    "Written",
+    "new_section_slot",
+    "write_section",
+    "write_imports",
+    "write_gap",
+    "write_rename",
+    "write_zero_entry",
+    "predict_add_section",
+    "predict_add_imports",
+    "predict_insert_gap",
+    "predict_rename",
+    "predict_zero_entry",
 ]
 
 
@@ -445,3 +465,488 @@ def passes_precondition(extractor: PEFeatureExtractor, z: bytes) -> bool:
     except (pefile.PEFormatError, AttributeError):
         return False
     return precondition(pe, extractor.item_table(z))
+
+
+################################################################################
+# The item-stated operations, written and declared exactly (Table 5)
+################################################################################
+
+# NOTE: these are the operations of scripts/catalogue_checks.py (G7), written by our own byte-level edits, which do
+# exactly the operation and nothing else (no relayout, unlike LIEF; assumption A4). Each `write_*` returns the byte
+# edits that perform it, in order; each `predict_*` writes the operation and declares its item delta: the items it
+# adds, removes, or modifies, and the items it keeps although it writes or moves the bytes that locate them (the
+# pointers it adjusts). provexp.reach.predict_structural does the rest: the content kinds are re-recognized where the
+# edits write, the items past an insertion move with their bytes, and an item the declaration does not cover flags the
+# edit. Unlike `add_section` above (the end-of-file layout the toolkits' LIEF output is compared with), the declaration
+# follows our own edit's layout, so its prediction is compared with re-extraction exactly. Items whose locating
+# ranges reach past the end of the file are never declared kept: the operations' pointer updates do not cover data the
+# parser had not found.
+
+PAGE = 0x1000
+SCN_CODE = 0x00000020
+DATA_CHARACTERISTICS = 0x00000040 | 0x40000000 | 0x80000000  # initialized data, read, write
+IMPORT_ENTRY = 1
+
+
+@dataclass
+class Written:
+    """
+    An operation written by our own byte-level edit.
+
+    Attributes:
+        new: The edited file.
+        edits: The byte edits that perform it, in order, each in the coordinates of the file the previous ones produced.
+        layout: Where the operation put things (offsets, the new section's RVA, the shift of the bytes past an insertion).
+    """
+
+    new: bytes
+    edits: list[ByteEdit]
+    layout: dict[str, int]
+
+
+def _align(x: int, a: int) -> int:
+    """`x` rounded up to a multiple of `a` (unchanged when `a` is 0)."""
+    return (x + a - 1) // a * a if a else x
+
+
+def _parse(z: bytes, fast: bool = False) -> Optional[pefile.PE]:
+    """Parse as the extractor does, or None."""
+    try:
+        return pefile.PE(data=z, fast_load=fast)
+    except (pefile.PEFormatError, AttributeError):
+        return None
+
+
+def _field(offset: int, fmt: str, value: int) -> ByteEdit:
+    """Write `value` (masked to the field's width) at `offset`."""
+    width = struct.calcsize(fmt)
+    return ByteEdit(offset, offset + width, struct.pack(fmt, value & ((1 << (8 * width)) - 1)))
+
+
+def _apply(z: bytes, edits: Sequence[ByteEdit]) -> bytes:
+    for e in edits:
+        z = e.apply(z)
+    return z
+
+
+def new_section_slot(pe: pefile.PE, z: bytes) -> Optional[tuple[int, int]]:
+    """Where a new section header goes (40 zero bytes after the table, within the headers) and the new section's RVA."""
+    start = pe.DOS_HEADER.e_lfanew + 4 + 20 + pe.FILE_HEADER.SizeOfOptionalHeader
+    slot = start + 40 * pe.FILE_HEADER.NumberOfSections
+    first_data = min((s.PointerToRawData for s in pe.sections if s.SizeOfRawData and s.PointerToRawData), default=len(z))
+    if slot + 40 > min(pe.OPTIONAL_HEADER.SizeOfHeaders, first_data, len(z)) or any(z[slot:slot + 40]):
+        return None
+    sa = pe.OPTIONAL_HEADER.SectionAlignment or 0x1000
+    end = max((s.VirtualAddress + max(s.Misc_VirtualSize, s.SizeOfRawData) for s in pe.sections), default=0)
+    return slot, _align(max(end, pe.OPTIONAL_HEADER.SizeOfHeaders), sa)
+
+
+def write_section(z: bytes, name: bytes, content: bytes, characteristics: int, before_overlay: bool,
+                  content_at_rva: Optional[Callable[[int], bytes]] = None) -> Optional[Written]:
+    """
+    Add a section (`sec`): a header after the section table, the content padded to FileAlignment at the end of the file
+    or (`before_overlay`) where pefile's overlay starts, moving the overlay and the certificate table's offset.
+
+    Args:
+        z: The file.
+        name: The section name (at most 8 bytes; shorter names are NUL-padded).
+        content: The section's content (ignored when `content_at_rva` is given).
+        characteristics: The section's characteristics.
+        before_overlay: Whether the content goes before the overlay (as LIEF puts it) instead of after it.
+        content_at_rva: Builds the content from the section's RVA (for content that holds RVAs, as an import table).
+
+    Returns:
+        The written operation (layout: slot, rva, offset, at, raw, shift), or None if the headers have no room for
+        another section header.
+    """
+    pe = _parse(z, fast=True)
+    if pe is None:
+        return None
+    slot = new_section_slot(pe, z)
+    if slot is None:
+        return None
+    table_slot, rva = slot
+    fa = pe.OPTIONAL_HEADER.FileAlignment or 0x200
+    sa = pe.OPTIONAL_HEADER.SectionAlignment or 0x1000
+    overlay = pe.get_overlay_data_start_offset() if before_overlay else None
+    # Past every section's raw data, also where pefile's overlay rule skips a section that runs past the end.
+    ends = [min(s.PointerToRawData + s.SizeOfRawData, len(z)) for s in pe.sections if s.SizeOfRawData]
+    at = len(z) if overlay is None else max([overlay] + ends)
+    offset = _align(at, fa)
+    if sa < PAGE:
+        # NOTE: a low-alignment image is mapped flat, so a section's raw offset must equal its virtual address (run 104).
+        offset = rva = max(offset, rva)
+    if content_at_rva is not None:
+        content = content_at_rva(rva)
+    raw = content + b"\x00" * (_align(len(content), fa) - len(content))
+    inserted = b"\x00" * (offset - at) + raw
+    edits: list[ByteEdit] = [ByteEdit(at, at, inserted)] if inserted else []
+    shift = len(inserted) if at < len(z) else 0
+    security = pe.OPTIONAL_HEADER.DATA_DIRECTORY[SECURITY_ENTRY] if len(pe.OPTIONAL_HEADER.DATA_DIRECTORY) > SECURITY_ENTRY else None
+    if shift and security is not None and security.VirtualAddress >= at:
+        edits.append(_field(security.get_file_offset(), "<I", security.VirtualAddress + shift))
+    header = name[:8].ljust(8, b"\x00") + struct.pack("<IIII", len(content), rva, len(raw), offset) + b"\x00" * 12
+    edits.append(ByteEdit(table_slot, table_slot + 40, header + struct.pack("<I", characteristics)))
+    edits.append(_field(pe.FILE_HEADER.get_file_offset() + 2, "<H", pe.FILE_HEADER.NumberOfSections + 1))
+    oh = pe.OPTIONAL_HEADER
+    edits.append(_field(field_range(oh, "SizeOfImage")[0], "<I", _align(rva + len(content), sa)))
+    size_field = "SizeOfCode" if characteristics & SCN_CODE else "SizeOfInitializedData"
+    edits.append(_field(field_range(oh, size_field)[0], "<I", getattr(oh, size_field) + len(raw)))
+    layout = {"slot": table_slot, "rva": rva, "offset": offset, "at": at, "raw": len(raw), "shift": shift}
+    return Written(_apply(z, edits), edits, layout)
+
+
+def import_table(descriptors: Sequence[bytes], library: bytes, functions: Sequence[bytes], thunk: str, rva: int) -> bytes:
+    """
+    An import table at `rva`: the given descriptors, one for `library` with its own lookup table, address table, and
+    hint/name entries, and the terminator.
+    """
+    width = struct.calcsize(thunk)
+    lookup = 20 * (len(descriptors) + 2)
+    address = lookup + width * (len(functions) + 1)
+    names = address + width * (len(functions) + 1)
+    blob = bytearray()
+    hint_names = []
+    for f in functions:
+        hint_names.append(names + len(blob))
+        blob += b"\x00\x00" + f + b"\x00"
+        if len(blob) % 2:
+            blob += b"\x00"
+    library_rva = rva + names + len(blob)
+    blob += library + b"\x00"
+    table = b"".join(struct.pack(thunk, rva + h) for h in hint_names) + b"\x00" * width
+    new = struct.pack("<IIIII", rva + lookup, 0, 0, library_rva, rva + address)
+    return b"".join(descriptors) + new + b"\x00" * 20 + table + table + bytes(blob)
+
+
+def write_imports(z: bytes, library: bytes, functions: list[bytes], before_overlay: bool) -> Optional[Written]:
+    """
+    Add imports (`imp`): a new data section holding the existing import descriptors, one for `library` with its own
+    lookup table, address table, and names, and the terminator; the IMPORT directory entry points to it.
+    """
+    pe = _parse(z)
+    if pe is None or len(pe.OPTIONAL_HEADER.DATA_DIRECTORY) <= IMPORT_ENTRY:
+        return None
+    old = [bytes(entry.struct.__pack__()) for entry in getattr(pe, "DIRECTORY_ENTRY_IMPORT", [])]
+    thunk = "<Q" if pe.PE_TYPE == pefile.OPTIONAL_HEADER_MAGIC_PE_PLUS else "<I"
+    written = write_section(z, b".pvimp", b"", DATA_CHARACTERISTICS, before_overlay,
+                            content_at_rva=lambda rva: import_table(old, library, functions, thunk, rva))
+    if written is None:
+        return None
+    entry = pe.OPTIONAL_HEADER.DATA_DIRECTORY[IMPORT_ENTRY]
+    edits = [_field(entry.get_file_offset(), "<I", written.layout["rva"]),
+             _field(entry.get_file_offset() + 4, "<I", 20 * (len(old) + 2))]
+    return Written(_apply(written.new, edits), written.edits + edits, written.layout)
+
+
+def write_gap(z: bytes, at_pe_header: bool, gap: bytes) -> Optional[Written]:
+    """
+    Insert a gap (`ext` before the PE header, `shf` before the first section's data) of a multiple of FileAlignment
+    bytes, raising the pointers past it: e_lfanew and SizeOfHeaders (`ext`), PointerToRawData, and the certificate
+    table's offset. None if the gap is not a multiple of FileAlignment, the headers would outgrow the first section, or
+    the image is low-alignment (mapped flat: raw data cannot move off its virtual address).
+    """
+    pe = _parse(z, fast=True)
+    if pe is None:
+        return None
+    oh = pe.OPTIONAL_HEADER
+    fa = oh.FileAlignment or 0x200
+    if len(gap) % fa or oh.SectionAlignment < PAGE:
+        # NOTE: a low-alignment image is mapped flat: moving raw data off its virtual address is not loader-safe.
+        return None
+    k = len(gap)
+    if at_pe_header:
+        at = pe.DOS_HEADER.e_lfanew
+        first_rva = min((s.VirtualAddress for s in pe.sections), default=1 << 32)
+        if oh.SizeOfHeaders + k > first_rva:
+            return None
+    else:
+        data = [s.PointerToRawData for s in pe.sections if s.SizeOfRawData and s.PointerToRawData >= oh.SizeOfHeaders]
+        if not data:
+            return None
+        at = min(data)
+
+    def moved_offset(offset: int) -> int:
+        return offset + k if offset >= at else offset
+
+    edits = [ByteEdit(at, at, gap)]
+    if at_pe_header:
+        edits.append(_field(0x3C, "<I", at + k))
+        edits.append(_field(moved_offset(field_range(oh, "SizeOfHeaders")[0]), "<I", oh.SizeOfHeaders + k))
+    for s in pe.sections:
+        if s.SizeOfRawData and s.PointerToRawData >= at:
+            edits.append(_field(moved_offset(s.get_file_offset() + 20), "<I", s.PointerToRawData + k))
+    if len(oh.DATA_DIRECTORY) > SECURITY_ENTRY:
+        security = oh.DATA_DIRECTORY[SECURITY_ENTRY]
+        if security.Size and security.VirtualAddress >= at:
+            edits.append(_field(moved_offset(security.get_file_offset()), "<I", security.VirtualAddress + k))
+    return Written(_apply(z, edits), edits, {"at": at, "shift": k})
+
+
+def write_rename(pe: pefile.PE, z: bytes, index: int, name: bytes) -> Written:
+    """Rename a section (`ren`): its 8-byte name field, NUL-padded."""
+    lo = pe.sections[index].get_file_offset()
+    edits = [ByteEdit(lo, lo + 8, name[:8].ljust(8, b"\x00"))]
+    return Written(_apply(z, edits), edits, {"index": index})
+
+
+def write_zero_entry(pe: pefile.PE, z: bytes, index: int) -> Optional[Written]:
+    """Remove a data directory entry (`rdb`: debug, `rsg`: security) by zeroing it; None if the file has none."""
+    directories = pe.OPTIONAL_HEADER.DATA_DIRECTORY
+    d = directories[index] if len(directories) > index else None
+    if d is None or not (d.VirtualAddress or d.Size):
+        return None
+    lo = d.get_file_offset()
+    edits = [ByteEdit(lo, lo + 8, b"\x00" * 8)]
+    return Written(_apply(z, edits), edits, {"index": index})
+
+
+# The attributes of the certificate table of a file without one (signify finds no signed data, and no error).
+UNSIGNED = {"num_certs": 0, "self_signed": 0, "empty_program_name": 0, "no_countersigner": 0, "parse_error": 0,
+            "chain_max_depth": 0, "latest_signing_time": 0, "signing_time_diff": 0}
+
+
+def _kept(table: ItemTable, n: int, declared: Sequence[Item], excluded: Sequence[Item] = ()) -> list[Item]:
+    """Every located item whose locating ranges lie within the file, except the declared and the excluded ones."""
+    gone = {id(i) for i in declared} | {id(i) for i in excluded}
+    return [i for i in table.items if i.locating and id(i) not in gone and all(b <= n for _, b in i.locating)]
+
+
+def _move(extractor: PEFeatureExtractor, items: Sequence[Item], edit: Optional[ByteEdit], old: bytes) -> list[Item]:
+    """The items moved by an insertion (copies when there is none), as their feature types move them."""
+    if edit is None or edit.shift == 0 or edit.is_append(old):
+        return [replace(i) for i in items]
+    new = edit.apply(old)
+    rec = extractor.recognizers
+    return [rec[i.group].move(i, edit, old, new) if hasattr(rec[i.group], "move") else moved(i, edit, old) for i in items]  # type: ignore[attr-defined]
+
+
+def _section_name(raw: bytes) -> str:
+    """A section's name as the extractor reads it."""
+    return raw.strip(b"\x00").decode(errors="ignore").lower()
+
+
+def _entry_choice(pe: pefile.PE, names: Sequence[str]) -> tuple[str, int, bool]:
+    """
+    The entry section the extractor selects, for the file's sections renamed to `names`: its name, its index (-1 if
+    none), and whether it was selected as a fallback (the first executable section; see `SectionInfo.raw_features`).
+    """
+    aoep = pe.OPTIONAL_HEADER.AddressOfEntryPoint
+    name, index, fallback = "", -1, False
+    for i, section in enumerate(pe.sections):
+        if section.contains_rva(aoep):
+            name, index = names[i], i
+    i = 0
+    while name == "" and i < len(pe.sections):
+        if pe.sections[i].Characteristics & 0x20000000 > 0:
+            name, index, fallback = names[i], i, True
+        i += 1
+    return name, index, fallback
+
+
+def _entry_item(pe: pefile.PE, n: int, old: Item, name: str, index: int, fallback: bool) -> Item:
+    """The entry item for the selected section (the extractor's ranges: the entry point, the name, the fallback's flags)."""
+    ranges = [field_range(pe.OPTIONAL_HEADER, "AddressOfEntryPoint")]
+    if index >= 0:
+        ranges.append(field_range(pe.sections[index], "Name"))
+        if fallback:
+            ranges.append(field_range(pe.sections[index], "Characteristics"))
+    (b,), (sign,) = feature_hash(10, [name])
+    term = Term("hashed", "section:entry_name_hash", index=int(b), sign=int(sign), key=name, ranges=clipped(n, ranges))
+    return replace(old, terms=(term,), attrs={"name": name})
+
+
+def _new_section(extractor: PEFeatureExtractor, pe: pefile.PE, new: bytes, written: Written, header: bytes) -> Item:
+    """The item of the section `write_section` added, read from its declared header (as pefile reads a section)."""
+    s = pefile.SectionStructure(getattr(pefile.PE, "__IMAGE_SECTION_HEADER_format__"), pe=pe)
+    s.__unpack__(header)
+    lo, hi = section_data_range(s)
+    slot = written.layout["slot"]
+    raw = {
+        "name": _section_name(s.Name),
+        "size": s.SizeOfRawData,
+        "entropy": entropy_H(new[lo:hi]),
+        "vsize": s.Misc_VirtualSize,
+        "vsize_ratio": s.SizeOfRawData / max(s.Misc_VirtualSize, 1),
+        "props": [sc[10:] for sc, _ in pefile.section_characteristics if s.__dict__.get(sc)],
+    }
+    ranges: dict[str, tuple[Range, ...]] = {
+        "table": ((slot, slot + 40),), "name": ((slot, slot + 8),), "vsize": ((slot + 8, slot + 12),),
+        "size": ((slot + 16, slot + 20),), "props": ((slot + 36, slot + 40),), "data": ((lo, hi),) if hi > lo else (),
+    }
+    section: SectionInfo = _group(extractor, "section")  # type: ignore[assignment]
+    return _tagged([section.section_item(raw, ranges, section_locating(pe) + ((slot, slot + 40),))], "section")[0]
+
+
+def _declare_section(extractor: PEFeatureExtractor, table: ItemTable, z: bytes, pe: pefile.PE, written: Written
+                     ) -> tuple[list[Item], list[Item], list[Item]]:
+    """
+    The delta of `write_section` (and of the section `write_imports` adds): the new section; at the end of the file, the
+    file's length and no overlay (the section's raw data now ends the file; an old overlay's bytes stay but are no
+    longer past every extent); before the overlay, the overlay and the certificate table move with their bytes. The
+    entry section is kept if some old section contains the entry point (the new one lies past every old one); otherwise
+    the fallback may pick the new section, which the declaration does not state (flagged).
+    """
+    new, n = written.new, len(z)
+    insertion = written.edits[0] if written.edits and written.edits[0].lo == written.layout["at"] and written.layout["at"] < n else None
+    slot = written.layout["slot"]
+    header = next(e.content for e in written.edits if e.lo == slot and len(e.content) == 40)
+    removed: list[Item] = []
+    added: list[Item] = [_new_section(extractor, pe, new, written, header)]
+    excluded: list[Item] = []
+    if insertion is None:
+        # The section's data ends the file: the file grows, and there is no overlay.
+        section: SectionInfo = _group(extractor, "section")  # type: ignore[assignment]
+        file_items = [i for i in table.of_group("section") if i.kind == "file"]
+        removed += file_items + [i for i in table.of_group("section") if i.kind == "overlay"]
+        added += _tagged([section._file_item(len(new), i.locating) for i in file_items], "section")
+    certificates = [i for i in table.of_group("authenticode") if i.kind == "certificate_table"]
+    if insertion is not None and written.layout["shift"]:
+        # The certificate table moves with its bytes (its offset is rewritten; it is otherwise the same table).
+        removed += certificates
+        added += _move(extractor, certificates, insertion, z)
+    aoep = pe.OPTIONAL_HEADER.AddressOfEntryPoint
+    if not any(s.contains_rva(aoep) for s in pe.sections):
+        excluded += [i for i in table.of_group("section") if i.kind == "entry"]
+    return removed, added, excluded
+
+
+def predict_add_section(extractor: PEFeatureExtractor, table: ItemTable, z: bytes, name: bytes, content: bytes,
+                        characteristics: int, before_overlay: bool) -> Optional[Prediction]:
+    """
+    `sec`, written by `write_section` and declared item by item (Table 5). None if it does not apply to the file.
+    The prediction's `new` is the written file.
+    """
+    pe = _parse(z)
+    written = write_section(z, name, content, characteristics, before_overlay)
+    if pe is None or written is None:
+        return None
+    removed, added, excluded = _declare_section(extractor, table, z, pe, written)
+    kept = _kept(table, len(z), removed, excluded)
+    return predict_structural(table, z, written.edits, removed, added, kept, extractor.recognizers)
+
+
+def predict_add_imports(extractor: PEFeatureExtractor, table: ItemTable, z: bytes, library: bytes,
+                        functions: list[bytes], before_overlay: bool) -> Optional[Prediction]:
+    """
+    `imp`, written by `write_imports` and declared item by item: the section that holds the new import table (as
+    `predict_add_section`), and one library and one import item per function for the new descriptor (pefile skips a
+    descriptor without functions, so it adds nothing). The old imports are kept: the new table copies their descriptors.
+    """
+    pe = _parse(z)
+    written = write_imports(z, library, functions, before_overlay)
+    if pe is None or written is None:
+        return None
+    removed, added, excluded = _declare_section(extractor, table, z, pe, written)
+    if functions:
+        n = len(written.new)
+        lo, hi = written.layout["offset"], written.layout["offset"] + written.layout["raw"]
+        r = clipped(n, [(lo, hi)])
+        # NOTE: the new items' ranges are the whole import section (their own names lie within it).
+        old = table.of_group("imports")
+        locating = old[0].locating if old else section_locating(pe)
+        dll = library.decode().lower()
+        (b,), _ = feature_hash(256, [dll])
+        new_items = [Item("library", terms=(Term("keyed", "imports:libraries", index=int(b), key=dll, ranges=r),), locating=locating)]
+        keys = [dll + ":" + f.decode()[:10000] for f in functions]
+        buckets, _ = feature_hash(1024, keys)
+        for key, fb in zip(keys, buckets.tolist(), strict=True):
+            new_items.append(Item("import", terms=(
+                Term("count", "imports:num_imports", ranges=r),
+                Term("hashed", "imports:functions", index=fb, key=key, ranges=r),
+            ), attrs={"dll": dll}, locating=locating))
+        added += _tagged(new_items, "imports")
+    kept = _kept(table, len(z), removed, excluded)
+    return predict_structural(table, z, written.edits, removed, added, kept, extractor.recognizers)
+
+
+def predict_insert_gap(extractor: PEFeatureExtractor, table: ItemTable, z: bytes, at_pe_header: bool, gap: bytes) -> Optional[Prediction]:
+    """
+    `ext` (`at_pe_header`) or `shf`, written by `write_gap` and declared: every item past the gap moves with its bytes,
+    and nothing else changes but the pointers the edit rewrites (e_lfanew and SizeOfHeaders, which are features, are
+    re-read). The sections and the certificate table, whose pointers are rewritten, are declared moved. On a file without
+    a Rich header, a gap that holds the "Rich" marker in the range pefile searches makes one, which the declaration does
+    not state (flagged).
+    """
+    pe = _parse(z)
+    written = write_gap(z, at_pe_header, gap)
+    if pe is None or written is None:
+        return None
+    insertion = written.edits[0]
+    moving = [i for i in table.of_group("section") if i.kind == "section"] + [i for i in table.of_group("authenticode") if i.kind == "certificate_table"]
+    removed, added = moving, _move(extractor, moving, insertion, z)
+    excluded: list[Item] = []
+    if pe.RICH_HEADER is None:
+        k = written.layout["shift"]
+        if b"Rich" in written.new[0x80:pe.OPTIONAL_HEADER.get_file_offset() + (k if at_pe_header else 0)]:
+            excluded += table.of_group("richheader")
+    kept = _kept(table, len(z), removed, excluded)
+    return predict_structural(table, z, written.edits, removed, added, kept, extractor.recognizers)
+
+
+def predict_rename(extractor: PEFeatureExtractor, table: ItemTable, z: bytes, index: int, name: bytes) -> Optional[Prediction]:
+    """
+    `ren`, written by `write_rename` and declared: the section's item gets the new name (its hashed contributions move
+    to the new name's buckets; an empty name counts), and the entry item follows if the extractor selects that section.
+    """
+    pe = _parse(z)
+    if pe is None or not 0 <= index < len(pe.sections):
+        return None
+    written = write_rename(pe, z, index, name)
+    section: SectionInfo = _group(extractor, "section")  # type: ignore[assignment]
+    sections = [i for i in table.of_group("section") if i.kind == "section"]
+    if len(sections) != len(pe.sections):
+        return None
+    old = sections[index]
+    n = len(z)
+    s = pe.sections[index]
+    new_name = _section_name(written.edits[0].content)
+    raw = {k: old.attrs[k] for k in ("size", "vsize", "entropy", "vsize_ratio", "props")} | {"name": new_name}
+    ranges = {"table": clipped(n, [structure_range(s)]), "name": clipped(n, [field_range(s, "Name")]),
+              "size": clipped(n, [field_range(s, "SizeOfRawData")]), "vsize": clipped(n, [field_range(s, "Misc_VirtualSize")]),
+              "props": clipped(n, [field_range(s, "Characteristics")]), "data": old.attrs["data"]}
+    removed, added = [old], _tagged([section.section_item(raw, ranges, old.locating)], "section")
+    names = [_section_name(x.Name) for x in pe.sections]
+    before = _entry_choice(pe, names)
+    names[index] = new_name
+    after = _entry_choice(pe, names)
+    if before != after or after[1] == index:
+        entries = [i for i in table.of_group("section") if i.kind == "entry"]
+        removed += entries
+        added += [_entry_item(pe, n, e, *after) for e in entries]
+    kept = _kept(table, n, removed)
+    return predict_structural(table, z, written.edits, removed, added, kept, extractor.recognizers)
+
+
+def predict_zero_entry(extractor: PEFeatureExtractor, table: ItemTable, z: bytes, index: int) -> Optional[Prediction]:
+    """
+    `rdb` (the debug entry) or `rsg` (the security entry), written by `write_zero_entry` and declared. Removing the debug
+    entry removes one extent from pefile's overlay rule, so the overlay may start earlier (or appear); removing the
+    security entry removes the certificate table (its bytes stay, as overlay bytes, which they already were: pefile's
+    overlay rule skips the security entry). The entry's two fields are re-read.
+    """
+    pe = _parse(z)
+    if pe is None:
+        return None
+    written = write_zero_entry(pe, z, index)
+    if written is None:
+        return None
+    n = len(z)
+    removed: list[Item] = []
+    added: list[Item] = []
+    if index == SECURITY_ENTRY:
+        certificates = [i for i in table.of_group("authenticode") if i.kind == "certificate_table"]
+        removed += certificates
+        added += [replace(i, attrs=dict(UNSIGNED)) for i in certificates]
+    elif index == DEBUG_ENTRY:
+        start, after = pe.get_overlay_data_start_offset(), overlay_start_without(pe, DEBUG_ENTRY)
+        if start != after:
+            section: SectionInfo = _group(extractor, "section")  # type: ignore[assignment]
+            overlays = [i for i in table.of_group("section") if i.kind == "overlay"]
+            file_items = [i for i in table.of_group("section") if i.kind == "file"]
+            locating = (overlays or file_items)[0].locating
+            removed += overlays
+            if after is not None:
+                added += _tagged([section._overlay_item(written.new, after, locating)], "section")
+    kept = _kept(table, n, removed)
+    return predict_structural(table, z, written.edits, removed, added, kept, extractor.recognizers)

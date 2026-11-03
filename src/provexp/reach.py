@@ -26,6 +26,7 @@ from collections.abc import Mapping
 from collections.abc import Sequence
 from dataclasses import dataclass
 from dataclasses import field
+from dataclasses import replace
 from functools import cache
 from itertools import product
 import math
@@ -65,6 +66,9 @@ __all__ = [
     "meets",
     "predict",
     "predict_declared",
+    "predict_structural",
+    "moved",
+    "shift_ranges",
     "Signs",
     "FIXED",
     "UP",
@@ -118,6 +122,20 @@ class ByteEdit:
     def touched(self, old: bytes) -> Range:
         """The elements the edit writes, in the old object's coordinates (past its end for an append)."""
         return (self.lo, self.lo + len(self.content)) if self.is_append(old) else (self.lo, self.hi)
+
+    @property
+    def shift(self) -> int:
+        """How far the edit moves the elements after it: len(content) - (hi - lo)."""
+        return len(self.content) - (self.hi - self.lo)
+
+    def hits(self, ranges: Sequence[Range], old: bytes) -> bool:
+        """
+        Whether the edit changes any of the ranges' elements in place: it writes one of them, or (an insertion or a
+        deletion) splits a range, so that the range's elements no longer lie together.
+        """
+        if self.is_append(old) or self.shift == 0 or self.hi > self.lo:
+            return meets(ranges, self.touched(old))
+        return any(a < self.lo < b for a, b in ranges)
 
 
 def meets(ranges: Sequence[Range], span: Range) -> bool:
@@ -235,6 +253,149 @@ def predict_declared(table: ItemTable, new: bytes, removed: Sequence[Item], adde
     delta, and the engine updates the sums (model, Section 3, "declared").
     """
     return Prediction(new, table.replace(removed, added, len(new)), list(removed), list(added))
+
+
+def shift_ranges(ranges: Sequence[Range], edit: ByteEdit, stretch: bool = False) -> tuple[Range, ...]:
+    """
+    The ranges after an edit that moves the elements past it: ranges at or past `edit.hi` move by `edit.shift`, ranges
+    up to `edit.lo` stay. A range the edit splits raises ValueError, unless `stretch` (for locating ranges, which
+    only say where to look): then its end moves.
+    """
+    d = edit.shift
+    out: list[Range] = []
+    for a, b in ranges:
+        if a >= edit.hi:
+            out.append((a + d, b + d))
+        elif b <= edit.lo:
+            out.append((a, b))
+        elif stretch:
+            out.append((a, b + d if b >= edit.hi else max(b, edit.lo)))
+        else:
+            raise ValueError(f"The edit [{edit.lo}, {edit.hi}) -> {len(edit.content)} splits the range {(a, b)}.")
+    return tuple(out)
+
+
+def moved(item: Item, edit: ByteEdit, old: bytes, keys: Optional[dict[int, npt.NDArray[np.integer]]] = None) -> Item:
+    """
+    An item moved by an edit that shifts the elements after it: its terms', attributes', and locating ranges follow
+    their elements, and its bins read the moved elements. Attributes that are themselves positions are the feature
+    type's to move (`Recognizer.move`).
+
+    Args:
+        item: An item none of whose member ranges the edit splits.
+        edit: The edit.
+        old: The object before the edit.
+        keys: A cache of moved bin keys, by the id of the old key (items of one object share them).
+
+    Returns:
+        The moved item (the item itself if the edit moves none of its ranges).
+    """
+    if edit.shift == 0:
+        return item
+    keys = {} if keys is None else keys
+
+    def key(k: npt.NDArray[np.integer]) -> npt.NDArray[np.integer]:
+        # NOTE: the inserted elements' bins are never read by a moved term (no moved range covers them), so they are 0.
+        if id(k) not in keys:
+            keys[id(k)] = np.concatenate([k[:edit.lo], np.zeros(len(edit.content), dtype=k.dtype), k[edit.hi:]])
+        return keys[id(k)]
+
+    terms = tuple(
+        replace(t, ranges=shift_ranges(t.ranges, edit), bin_key=None if t.bin_key is None else key(t.bin_key))
+        for t in item.terms
+    )
+    attr_ranges = {a: tuple(shift_ranges(unit, edit) for unit in units) for a, units in item.attr_ranges.items()}
+    return replace(item, terms=terms, attr_ranges=attr_ranges, locating=shift_ranges(item.locating, edit, stretch=True))
+
+
+def predict_structural(table: ItemTable, old: bytes, edits: Sequence[ByteEdit], removed: Sequence[Item],
+                       added: Sequence[Item], kept: Sequence[Item], recognizers: Mapping[str, Recognizer]) -> Prediction:
+    """
+    C1 for a declared structural edit stated as the byte edits that perform it (model, Section 4.4): the catalogue
+    declares which items leave (`removed`), which join (`added`, in the edited object's coordinates), and which keep
+    their identity although the edit writes their locating elements or moves them (`kept`: the operation adjusts the
+    pointers that locate them). The engine does the rest, edit by edit: the items whose members an edit writes are
+    re-recognized (A3), the items past an insertion or a deletion move with their elements, and an undeclared item
+    whose locating elements an edit writes or moves flags the edit (A1). An append that reaches a locating range past
+    the old end (a section that runs past a truncated file) flags the edit even for a kept item: the declaration
+    covers the pointers the operation writes, not data the parser had not found.
+
+    Args:
+        table: The item table of `old`.
+        old: The old object.
+        edits: The byte edits, in order, each in the coordinates of the object the previous ones produced.
+        removed: Items of `table` the operation removes or modifies (their new versions are in `added`).
+        added: The items the operation adds, and the new versions of the modified ones.
+        kept: Items of `table` the operation keeps (located through elements it writes or moves).
+        recognizers: The recognizer of each group that has items.
+
+    Returns:
+        The prediction; flagged if an edit writes or moves the locating elements of an undeclared item, or a
+        recognizer cannot handle it.
+    """
+    if table.num_elements != len(old):
+        raise ValueError(f"The table has {table.num_elements} elements; the object has {len(old)}.")
+    gone, keep = {id(i) for i in removed}, {id(i) for i in kept}
+    if gone & keep:
+        raise ValueError("An item cannot be both removed and kept.")
+    missing = sorted({item.group for item in table.items} - set(recognizers))
+    if missing:
+        raise KeyError(f"No recognizer for the groups {missing}.")
+    # The current version of every item not declared removed: (the table item it came from, or None if new; the
+    # current version; whether it is kept). Table items re-recognized away collect in `left`.
+    current: list[tuple[Optional[Item], Item, bool]] = [(i, i, id(i) in keep) for i in table.items if id(i) not in gone]
+    left: list[Item] = []
+    final = old
+    for edit in edits:
+        final = edit.apply(final)
+    z = old
+    for edit in edits:
+        new = edit.apply(z)
+        span = edit.touched(z)
+        shifts = edit.shift != 0 and not edit.is_append(z)
+        flagged = [
+            item for _, item, k in current
+            if ((not k or edit.is_append(z)) and meets(item.locating, span))
+            or (not k and shifts and any(b > edit.lo for _, b in item.locating))
+        ]
+        if flagged:
+            kinds = sorted({f"{i.group}:{i.kind}" for i in flagged})
+            return Prediction(final, None, flagged=flagged, reason=f"structural: an edit writes or moves locating elements of undeclared items {kinds}")
+        by_group: dict[str, list[Item]] = {}
+        for _, item, _ in current:
+            by_group.setdefault(item.group, []).append(item)
+        recognized: set[int] = set()
+        joined: list[Item] = []
+        # A kept item's re-recognized version is kept too (the declaration covers its location, not its content).
+        kept_kinds = {(item.group, item.kind) for _, item, k in current if k}
+        for group, items in by_group.items():
+            try:
+                r, a = recognizers[group].recognize(items, z, new, edit)
+            except NotLocal as e:
+                return Prediction(final, None, flagged=e.items, reason=f"{group}: {e.reason}")
+            for item in a:
+                item.group = item.group or group
+            recognized |= {id(item) for item in r}
+            joined += a
+        keys: dict[int, npt.NDArray[np.integer]] = {}
+        nxt: list[tuple[Optional[Item], Item, bool]] = []
+        for orig, item, k in current:
+            if id(item) in recognized:
+                if orig is not None:
+                    left.append(orig)
+                continue
+            if shifts:
+                move = getattr(recognizers[item.group], "move", None)
+                item = move(item, edit, z, new) if move is not None else moved(item, edit, z, keys)
+            nxt.append((orig, item, k))
+        current = nxt + [(None, item, (item.group, item.kind) in kept_kinds) for item in joined]
+        z = new
+
+    # The delta against the table: the declared removals, the table items re-recognized away, and every table item
+    # whose current version differs (moved, or modified by a recognizer in place).
+    final_removed = list(removed) + left + [orig for orig, item, _ in current if orig is not None and item is not orig]
+    final_added = list(added) + [item for orig, item, _ in current if item is not orig]
+    return Prediction(z, table.replace(final_removed, final_added, len(z)), final_removed, final_added)
 
 
 ################################################################################

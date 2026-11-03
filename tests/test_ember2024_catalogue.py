@@ -1,19 +1,34 @@
 """
 Tests for provexp.featuresets.ember2024.catalogue: the layout clauses of the precondition (`plain_layout`), each on a
-test file edited into the layout it excludes.
+test file edited into the layout it excludes; and the item-stated operations' declarations, each against re-extraction
+of the file our own edit writes.
 
 The tests need executables in tests/data/ (see scripts/make_fixtures.py) and are skipped without them.
 """
 
 from pathlib import Path
 import struct
+from typing import Optional
 import warnings
 
+import numpy as np
 import pefile
 import pytest
 
+from provexp.featuresets.ember2024.catalogue import DATA_CHARACTERISTICS
+from provexp.featuresets.ember2024.catalogue import DEBUG_ENTRY
+from provexp.featuresets.ember2024.catalogue import SECURITY_ENTRY
 from provexp.featuresets.ember2024.catalogue import plain_layout
+from provexp.featuresets.ember2024.catalogue import predict_add_imports
+from provexp.featuresets.ember2024.catalogue import predict_add_section
+from provexp.featuresets.ember2024.catalogue import predict_insert_gap
+from provexp.featuresets.ember2024.catalogue import predict_rename
+from provexp.featuresets.ember2024.catalogue import predict_zero_entry
+from provexp.featuresets.ember2024.catalogue import write_section
+from provexp.featuresets.ember2024.features import PEFeatureExtractor
 from provexp.featuresets.ember2024.features import field_range
+from provexp.featuresets.ember2024.features import merge_import_descriptors
+from provexp.reach import Prediction
 
 warnings.filterwarnings("ignore", category=SyntaxWarning)
 
@@ -86,3 +101,59 @@ class TestPlainLayout:
         z = _put(_put(z, entry.get_file_offset(), rva), entry.get_file_offset() + 4, 0x200)
         assert _pe(z).get_overlay_data_start_offset() is not None
         assert not plain_layout(_pe(z))
+
+
+################################################################################
+# The item-stated operations, declared exactly
+################################################################################
+
+
+@pytest.fixture(scope="module")
+def extractor() -> PEFeatureExtractor:
+    return merge_import_descriptors(PEFeatureExtractor())
+
+
+def _check_exact(extractor: PEFeatureExtractor, p: Optional[Prediction]) -> None:
+    """The declared prediction equals re-extraction of the written file on every modeled feature, or it is flagged."""
+    if p is None or p.table is None:
+        return
+    modeled = ~np.array([n.startswith("pefilewarnings:") for n in extractor.feature_names])
+    x = np.asarray(extractor.feature_vector(p.new))  # type: ignore[no-untyped-call]
+    y = np.asarray(p.features(extractor.readouts))
+    same = (x == y) | (np.isnan(x) & np.isnan(y))
+    names = np.array(extractor.feature_names)
+    assert same[modeled].all(), names[modeled & ~same][:10].tolist()
+
+
+class TestDeclaredOperations:
+
+    @pytest.mark.parametrize("before_overlay", [False, True])
+    @pytest.mark.parametrize("name,content,characteristics", [
+        (b".pv0", bytes(range(256)) * 16, DATA_CHARACTERISTICS),
+        (b"", b"printable text " * 40, 0x60000020),
+    ])
+    def test_add_section(self, extractor: PEFeatureExtractor, sample: bytes, name: bytes, content: bytes,
+                         characteristics: int, before_overlay: bool) -> None:
+        table = extractor.item_table(sample)
+        p = predict_add_section(extractor, table, sample, name, content, characteristics, before_overlay)
+        if p is not None:
+            assert p.new == write_section(sample, name, content, characteristics, before_overlay).new  # type: ignore[union-attr]
+        _check_exact(extractor, p)
+
+    @pytest.mark.parametrize("library,functions", [(b"pvext.dll", [b"PvOne", b"PvTwo"]), (b"pvempty.dll", [])])
+    def test_add_imports(self, extractor: PEFeatureExtractor, sample: bytes, library: bytes, functions: list[bytes]) -> None:
+        _check_exact(extractor, predict_add_imports(extractor, extractor.item_table(sample), sample, library, functions, False))
+
+    @pytest.mark.parametrize("at_pe_header", [True, False])
+    @pytest.mark.parametrize("fill", [b"\x00", b"A"])
+    def test_insert_gap(self, extractor: PEFeatureExtractor, sample: bytes, at_pe_header: bool, fill: bytes) -> None:
+        fa = _pe(sample).OPTIONAL_HEADER.FileAlignment or 0x200
+        _check_exact(extractor, predict_insert_gap(extractor, extractor.item_table(sample), sample, at_pe_header, fill * fa))
+
+    @pytest.mark.parametrize("name", [b"", b".data", b"\xff\xfe.x"])
+    def test_rename(self, extractor: PEFeatureExtractor, sample: bytes, name: bytes) -> None:
+        _check_exact(extractor, predict_rename(extractor, extractor.item_table(sample), sample, 0, name))
+
+    @pytest.mark.parametrize("index", [DEBUG_ENTRY, SECURITY_ENTRY])
+    def test_zero_entry(self, extractor: PEFeatureExtractor, sample: bytes, index: int) -> None:
+        _check_exact(extractor, predict_zero_entry(extractor, extractor.item_table(sample), sample, index))

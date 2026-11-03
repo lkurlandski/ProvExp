@@ -57,6 +57,8 @@ from provexp.items import feature_hash
 from provexp.reach import ByteEdit
 from provexp.reach import NotLocal
 from provexp.reach import meets
+from provexp.reach import moved
+from provexp.reach import shift_ranges
 from provexp.provenance import Provenance
 
 
@@ -372,6 +374,9 @@ def dynamic_relocation_ranges(pe: pefile.PE) -> tuple[Range, ...]:
 # its margins (strings: out to the nearest non-printable byte; windows: every window that overlaps; fields: re-read),
 # and raises NotLocal for what it cannot re-recognize locally. Writes to locating ranges never reach them (the engine
 # flags those first). They reuse the emitters' helpers, so a re-recognized item is the item the emitter would record.
+# They also take the insertions of declared structural edits (provexp.reach.predict_structural): an item the
+# insertion splits is re-recognized, position-defined items past it (windows) are re-recognized, and the engine moves
+# every other item past it.
 
 
 def entropy_H(data: bytes) -> float:
@@ -394,15 +399,24 @@ def recognize_runs(items: Sequence[Item], kind: str, make: Callable[[bytes, tupl
     """
     if edit.is_append(old):
         return [], [make(new, ((len(old), len(new)),))]
-    if edit.hi == edit.lo:
+    if edit.hi == edit.lo and not edit.content:
         return [], []
-    removed = [item for item in items if item.kind == kind and meets(item.members, (edit.lo, edit.hi))]
-    added = [make(old, rest) for item in removed if (rest := cut(item.members, edit.lo, edit.hi))]
-    return removed, added + [make(new, ((edit.lo, edit.hi),))]
+    removed = [item for item in items if item.kind == kind and edit.hits(item.members, old)]
+    if edit.shift == 0:
+        added = [make(old, rest) for item in removed if (rest := cut(item.members, edit.lo, edit.hi))]
+    else:
+        # An insertion or a deletion: the rest of a split run follows its bytes.
+        added = [make(new, shift_ranges(rest, edit)) for item in removed if (rest := cut(item.members, edit.lo, edit.hi))]
+    return removed, added + ([make(new, ((edit.lo, edit.lo + len(edit.content)),))] if edit.content else [])
 
 
 def recognize_fields(items: Sequence[Item], old: bytes, new: bytes, edit: ByteEdit) -> tuple[list[Item], list[Item]]:
     """Field items (one slot each, read as a little-endian unsigned integer from its bytes) meeting the write."""
+    if edit.shift != 0 and not edit.is_append(old):
+        split = [item for item in items if item.kind == "field" and edit.hits(item.members, old)]
+        if split:
+            raise NotLocal(split, "an insertion or deletion inside a field")
+        return [], []
     span = edit.touched(old)
     removed = [item for item in items if item.kind == "field" and meets(item.members, span)]
     added = []
@@ -417,8 +431,7 @@ def recognize_fields(items: Sequence[Item], old: bytes, new: bytes, edit: ByteEd
 
 def recognize_nothing(items: Sequence[Item], old: bytes, new: bytes, edit: ByteEdit) -> tuple[list[Item], list[Item]]:
     """For feature types without local recognizers: no item may meet the write or grow with an append."""
-    span = edit.touched(old)
-    blocked = [item for item in items if meets(item.members, span) or (edit.is_append(old) and item.open_end)]
+    blocked = [item for item in items if edit.hits(item.members, old) or (edit.is_append(old) and item.open_end)]
     if blocked:
         raise NotLocal(blocked, f"no local recognizer for {sorted({item.kind for item in blocked})}")
     return [], []
@@ -554,6 +567,8 @@ class GeneralFileInfo(FeatureType):
         return ItemTable(n, {"general:size": 1, "general:bytes": 256, "general:start": 4}, items)
 
     def recognize(self, items: Sequence[Item], old: bytes, new: bytes, edit: ByteEdit) -> tuple[list[Item], list[Item]]:
+        if edit.shift != 0 and not edit.is_append(old) and edit.lo < 4:
+            raise NotLocal([item for item in items if item.kind == "field"], "an insertion or deletion among the first four bytes")
         removed, added = recognize_runs(items, "bytes", self._run, old, new, edit)
         r, a = recognize_fields(items, old, new, edit)
         # Appending to a file of fewer than four bytes adds start bytes.
@@ -716,7 +731,9 @@ class ByteEntropyHistogram(FeatureType):
         # drops (the short-file window, the new windows over appended bytes), are re-recognized.
         spans = set(self._spans(len(new)))
         span = edit.touched(old)
-        removed = [w for w in items if w.kind == "window" and (w.attrs["span"] not in spans or meets([w.attrs["span"]], span))]
+        # An insertion or a deletion re-tiles every window past its start.
+        shifts = edit.shift != 0 and not edit.is_append(old)
+        removed = [w for w in items if w.kind == "window" and (w.attrs["span"] not in spans or meets([w.attrs["span"]], span) or (shifts and w.attrs["span"][1] > edit.lo))]
         kept = {w.attrs["span"] for w in items if w.kind == "window"} - {w.attrs["span"] for w in removed}
         return removed, self._windows(new, sorted(spans - kept))
 
@@ -946,7 +963,9 @@ class StringExtractor(FeatureType):
             lo -= 1
         while hi < len(new) and 0x20 <= new[hi] <= 0x7f:
             hi += 1
-        removed = [item for item in items if item.kind == "string" and meets(item.members, (lo, hi))]
+        # The old strings there: the same span in the old file's coordinates (past an insertion or deletion, its end
+        # moves back by the shift).
+        removed = [item for item in items if item.kind == "string" and meets(item.members, (lo, hi - edit.shift))]
         return removed, self._string_items(new, lo, hi)
 
     def _string_items(self, bytez: bytes, lo: int, hi: int) -> list[Item]:
@@ -1364,10 +1383,10 @@ class SectionInfo(FeatureType):
                     removed.append(item)
                     added.append(self._file_item(m, item.locating))
             elif item.kind == "overlay":
-                if edit.is_append(old) or meets(item.members, span):
+                if edit.is_append(old) or edit.hits(item.members, old):
                     removed.append(item)
                     added.append(self._overlay_item(new, item.attrs["start"], item.locating))
-            elif item.kind == "section" and meets(item.attrs["data"], span) and not meets(cut(item.members, *item.attrs["data"][0]), span):
+            elif item.kind == "section" and edit.shift == 0 and meets(item.attrs["data"], span) and not meets(cut(item.members, *item.attrs["data"][0]), span):
                 # A write into a section's data changes its entropy (its header is in the section table, which is
                 # locating, so the engine flags writes to it).
                 (lo, hi), = item.attrs["data"]
@@ -1375,7 +1394,7 @@ class SectionInfo(FeatureType):
                 terms = tuple(_replace(t, value=entropy) if t.family == "section:entropy_hash" else t for t in item.terms)
                 removed.append(item)
                 added.append(_replace(item, terms=terms, attrs={**item.attrs, "entropy": entropy}))
-            elif meets(item.members, span) or (edit.is_append(old) and item.open_end):
+            elif edit.hits(item.members, old) or (edit.is_append(old) and item.open_end):
                 raise NotLocal([item], f"no local recognizer for a write to a {item.kind} item")
         if edit.is_append(old) and not any(item.kind == "overlay" for item in items) and any(item.kind == "file" for item in items):
             # pefile places the overlay after the furthest extent within the file; the file had none, so the furthest
@@ -1383,6 +1402,15 @@ class SectionInfo(FeatureType):
             file_item = next(item for item in items if item.kind == "file")
             added.append(self._overlay_item(new, n, file_item.locating))
         return removed, added
+
+    def move(self, item: Item, edit: ByteEdit, old: bytes, new: bytes) -> Item:
+        """An item moved by an insertion or deletion before it: a section's data and the overlay's start are positions."""
+        out = moved(item, edit, old)
+        if item.kind == "section":
+            out.attrs = {**out.attrs, "data": shift_ranges(item.attrs["data"], edit)}
+        elif item.kind == "overlay":
+            out.attrs = {**out.attrs, "start": shift_ranges(((item.attrs["start"], item.attrs["start"]),), edit)[0][0]}
+        return out
 
     @property
     def readouts(self) -> list[Readout]:
@@ -2265,6 +2293,16 @@ class DataDirectories(FeatureType):
         relocs_locating = directory_locating(pe, 5, 10) + (field_range(pe.OPTIONAL_HEADER, "SizeOfImage"),) + dynamic_relocation_ranges(pe)
         items.append(Item("relocs", attrs={"has_relocs": int(pe.has_relocs()), "has_dynamic_relocs": int(pe.has_dynamic_relocs())}, attr_ranges=attr_ranges, locating=relocs_locating))
         return ItemTable(n, families, items)
+
+    def recognize(self, items: Sequence[Item], old: bytes, new: bytes, edit: ByteEdit) -> tuple[list[Item], list[Item]]:
+        # The entries are fields, re-read when written (a declared edit writes them; the engine flags other writes,
+        # which meet the relocations' locating ranges).
+        if edit.is_append(old) and any(item.open_end for item in items):
+            raise NotLocal([item for item in items if item.open_end], "a directory entry cut by the end of the file")
+        blocked = [item for item in items if item.kind != "field" and edit.hits(item.members, old)]
+        if blocked:
+            raise NotLocal(blocked, "no local recognizer for the relocations")
+        return recognize_fields(items, old, new, edit)
 
     @property
     def readouts(self) -> list[Readout]:

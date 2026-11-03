@@ -30,11 +30,14 @@ from provexp.reach import envelope
 from provexp.reach import extension_monotone
 from provexp.reach import hash_image
 from provexp.reach import meets
+from provexp.reach import moved
 from provexp.reach import predict
 from provexp.reach import predict_declared
+from provexp.reach import predict_structural
 from provexp.reach import profile_kinds
 from provexp.reach import readout_signs
 from provexp.reach import region_changes
+from provexp.reach import shift_ranges
 
 
 ################################################################################
@@ -70,6 +73,19 @@ class Toy:
         while hi < len(new) and new[hi] == ord("a"):
             hi += 1
         removed = [i for i in items if i.kind == "run" and meets(i.members, (lo, hi))]
+        return removed, _runs(new, lo, hi)
+
+
+class ToyShift(Toy):
+    """The toy recognizer for insertions too: the old runs are those meeting the span in the old coordinates."""
+
+    def recognize(self, items: Sequence[Item], old: bytes, new: bytes, edit: ByteEdit) -> tuple[list[Item], list[Item]]:
+        lo, hi = edit.lo, edit.lo + len(edit.content)
+        while lo > 2 and new[lo - 1] == ord("a"):
+            lo -= 1
+        while hi < len(new) and new[hi] == ord("a"):
+            hi += 1
+        removed = [i for i in items if i.kind == "run" and meets(i.members, (lo, hi - edit.shift))]
         return removed, _runs(new, lo, hi)
 
 
@@ -133,6 +149,71 @@ class TestPredict:
         z = b"H\x00aaa"
         with pytest.raises(KeyError):
             predict(_table(z), z, ByteEdit(3, 4, b"x"), {})
+
+
+class TestShift:
+
+    def test_shift_ranges(self) -> None:
+        edit = ByteEdit(4, 4, b"xyz")
+        assert edit.shift == 3
+        assert shift_ranges([(0, 4), (4, 6), (9, 10)], edit) == ((0, 4), (7, 9), (12, 13))
+        with pytest.raises(ValueError):
+            shift_ranges([(2, 6)], edit)
+        assert shift_ranges([(2, 6)], edit, stretch=True) == ((2, 9),)
+
+    def test_hits(self) -> None:
+        z = b"0123456789"
+        insertion = ByteEdit(4, 4, b"xy")
+        assert insertion.hits([(2, 6)], z) and not insertion.hits([(0, 4), (4, 8)], z)
+        assert ByteEdit(4, 5, b"x").hits([(4, 8)], z) and ByteEdit(10, 10, b"x").hits([(10, 12)], z)
+
+    def test_moved_bins(self) -> None:
+        z = b"\x00\x01\x02\x03"
+        key = np.frombuffer(z, dtype=np.uint8)
+        item = Item("bytes", terms=(Term("bins", "b", ranges=((2, 4),), bin_key=key),), locating=((1, 3),))
+        edit = ByteEdit(2, 2, b"\xff\xff")
+        out = moved(item, edit, z)
+        assert out.terms[0].ranges == ((4, 6),) and out.locating == ((1, 5),)
+        np.testing.assert_array_equal(out.terms[0].bin_counts(4), item.terms[0].bin_counts(4))
+
+
+class TestPredictStructural:
+
+    @pytest.mark.parametrize(
+        "edits",
+        [
+            [ByteEdit(6, 6, b"xax")],                    # an insertion between runs
+            [ByteEdit(3, 3, b"x")],                      # an insertion that splits a run
+            [ByteEdit(6, 6, b"x"), ByteEdit(5, 6, b"a")],  # an insertion, then a write that joins two runs
+            [ByteEdit(10, 10, b"a"), ByteEdit(2, 2, b"a")],  # an append, then an insertion at the first run
+        ],
+    )
+    def test_matches_extraction(self, edits: list[ByteEdit]) -> None:
+        z = b"H\x00aaaxaaxa"
+        table = _table(z)
+        p = predict_structural(table, z, edits, [], [], table.of_kind("header"), {"toy": ToyShift()})
+        assert p.table is not None
+        expected = _table(p.new)
+        np.testing.assert_array_equal(p.features(READOUTS), expected.sums["n"].tolist() + expected.sums["len"].tolist() + expected.sums["h"].tolist())
+
+    def test_flags_undeclared(self) -> None:
+        z = b"H\x00aaa"
+        table = _table(z)
+        # Writing the header's locating byte, or inserting before it, flags the edit unless the header is kept.
+        for edit in (ByteEdit(1, 2, b"\x01"), ByteEdit(1, 1, b"x")):
+            p = predict_structural(table, z, [edit], [], [], [], {"toy": ToyShift()})
+            assert p.table is None and [i.kind for i in p.flagged] == ["header"] and p.new == edit.apply(z)
+            assert predict_structural(table, z, [edit], [], [], table.of_kind("header"), {"toy": ToyShift()}).table is not None
+
+    def test_declared(self) -> None:
+        z = b"H\x00aaa"
+        table = _table(z)
+        (header,) = table.of_kind("header")
+        new_header = Item("header", terms=(Term("slot", "h", value=7, ranges=((0, 1),)),), locating=((0, 2),), group="toy")
+        p = predict_structural(table, z, [ByteEdit(0, 2, b"\x07\x01")], [header], [new_header], [], {"toy": ToyShift()})
+        assert p.table is not None and p.features(READOUTS).tolist() == [1, 3, 7]
+        with pytest.raises(ValueError):
+            predict_structural(table, z, [], [header], [], [header], {"toy": ToyShift()})
 
 
 class TestReplace:
