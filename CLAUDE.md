@@ -100,7 +100,9 @@ and manuscript remain as source material. Deadlines and conference cycles are no
   the user's jobs run) without asking. Run yourself only jobs estimated at **~10 minutes or less**, estimating from
   the slowest case (user, 2026-10-26); otherwise smoke-test on a small slice and give the user a `run/` script.
 - **Resources in `run/` scripts:** default to at most 16 workers or threads and 2 GPUs (the user cut runs 38-40 down
-  to these, 2026-10-12); the user may raise them, so never enforce the cap in Python (2026-10-26).
+  to these, 2026-10-12); the user may raise them, so never enforce the cap in Python (2026-10-26). Every new script
+  reads the worker count from the environment, `NUM_WORKERS="${NUM_WORKERS:-16}"`, and passes `"$NUM_WORKERS"` to the
+  Python flag (`--workers`, `--num_workers`, ...), so the user can run `NUM_WORKERS=32 run/NNN_x.sh` (2026-11-03).
   Never edit a `run/` script while it runs (bash reads it as it goes); sync its comments afterwards.
 - **Explain plainly.** Lead with the plain-language version of an argument (what is computed, what it is compared
   with, why it matters); define terms and avoid dense shorthand. The user could not follow a jargon-heavy explanation
