@@ -8,8 +8,17 @@ the strongest number our search finds. Edited `manuscript/_f_evaluation.tex`: Ta
 (10/49), PV-4 Adaptive 73%->91% (20/22), soundness rows stay 0% (now noted as checked across all twelve operations);
 rewrote the PV "fills the hole" prose (also fixing a stray `%` that had commented out "The adaptive search fills the
 hole. It picks"). `make` and `make check` clean (no undefined refs, no overfull boxes). Diagnosis + resolution recorded
-in `docs/direction-A-A1-design.md`. **Next: items 9-11** (`PLAN.md` Tier 2; state a hypothesis before each run).
-Table 5's population-scoping still not re-audited; routing to Table 7's sums rows still deferred. Not pushed.
+in `docs/direction-A-A1-design.md`. Then started **item 11 (instrument the expert set)**: `ExpertFeatures` now emits
+`items()`+`readouts` (reusing only `Identity`/`Opaque`, no core-framework change), **G1 bit-exact** on 45 files,
+tests/ruff/mypy clean. The C4 derivation (exploratory) gives **11 M_full holes = the reasoned rows 27, 30-39** (go/no-go
+met at 11, not 12 -- the doc's "12" was a prose miscount of its own 11-row list; user chose the tight 11). Two
+corrections the derivation forced, both recorded in `docs/direction-A-expert-set.md`: (1) **slack overwrite does not
+change the `info` features** (entropy is over mapped content, excluding slack; the holes come from rename); (2)
+**`no_sig` is up under M_full, not a hole** (modeled as a marker present iff unsigned; removing the signature adds it).
+**Still to do on item 11:** a recognizer for the C1 engine, the adaptive cell vs the run-106 monotone model
+(rename + DOS-stub), per-hole witnesses by our own edits, productionize the derivation into a script, update the paper
+prose ("12 of 40" -> "11 of 40"; the expert row gains an adaptive cell). **Then items 9-10.** Table 5's
+population-scoping still not re-audited; routing to Table 7's sums rows still deferred. Not pushed.
 
 **2026-11-03 (session 5): audited session 4's work (model-switch caution). C4 soundness check confirmed from the
 reports (mfull-feat 0/41, madd-feat 0/47, min_delta 0.0 -- item 8's main paper value, holds). The 16->12 PV drop

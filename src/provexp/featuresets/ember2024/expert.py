@@ -44,7 +44,20 @@ from signify.authenticode import SignedPEFile
 
 from provexp.featuresets.ember2024.features import FeatureType
 from provexp.featuresets.ember2024.features import PEFeatureExtractor
+from provexp.featuresets.ember2024.features import clipped
+from provexp.featuresets.ember2024.features import directory_locating
 from provexp.featuresets.ember2024.features import entropy_H
+from provexp.featuresets.ember2024.features import field_range
+from provexp.featuresets.ember2024.features import rva_string_range
+from provexp.featuresets.ember2024.features import section_locating
+from provexp.featuresets.ember2024.features import structure_range
+from provexp.items import Identity
+from provexp.items import Item
+from provexp.items import ItemTable
+from provexp.items import Opaque
+from provexp.items import Range
+from provexp.items import Readout
+from provexp.items import Term
 
 __all__ = [
     "DEFAULT_DOS_STUB",
@@ -165,6 +178,125 @@ class ExpertFeatures(FeatureType):
 
     def process_raw_features(self, raw_obj: dict[str, Any]) -> np.ndarray:
         return np.asarray([raw_obj[n] for n in _names()], dtype=np.float32)
+
+    ############################################################################
+    # The item layer (docs/item-layer-design.md): items, readouts, recognizer, so the derivation (C4) and the C1
+    # engine read the expert set the way they read the instrumented EMBER extractor. `evaluate(items, readouts)` must
+    # reproduce `feature_vector` exactly (check G1). The two quirks live in the terms: with `accumulate` the per-library
+    # and per-name contributions are additive `add` terms (sound, up under additions); `accumulate=False` makes them
+    # `slot` terms (assign), which the derivation reads as two-sided -- the engine finding the quirk.
+    ############################################################################
+
+    def _families(self) -> dict[str, int]:
+        return {
+            "expert:lib_count": len(WATCHED_LIBRARIES),
+            "expert:nb_imports": 1,
+            "expert:nb_functions": 1,
+            "expert:keywords": len(KEYWORDS),
+            "expert:no_sig": 1,
+            "expert:unknown_count": 1,
+            "expert:unknown_info": 1,
+            "expert:named": 2 * len(SECTIONS),
+            "expert:nb_sections": 1,
+        }
+
+    def items(self, bytez: bytes, pe: Optional[pefile.PE] = None) -> ItemTable:
+        n = len(bytez)
+        families = self._families()
+        if pe is None:
+            return ItemTable(n, families, [])
+        items: list[Item] = []
+
+        # Imports: one item per descriptor. nb_imports counts descriptors; a watched library's count, the named-import
+        # count, and the keyword counts are the descriptor's contributions (additive, or assigned per library when the
+        # quirk is kept). pefile reads every descriptor through the import directory, which locates them.
+        located = directory_locating(pe, 1)
+        for entry in getattr(pe, "DIRECTORY_ENTRY_IMPORT", []):
+            library = entry.dll.decode("latin-1").lower() if entry.dll else ""
+            dll_range = clipped(n, [rva_string_range(pe, entry.struct.Name, len(entry.dll))])
+            desc_range = clipped(n, [structure_range(entry.struct)])
+            ranges = desc_range + dll_range
+            names = [imp.name.decode("latin-1") for imp in entry.imports if imp.name]
+            watched = library in WATCHED_LIBRARIES
+            terms: list[Term] = [Term("count", "expert:nb_imports", index=0, ranges=desc_range)]
+            if watched:
+                terms.append(Term("add", "expert:lib_count", index=WATCHED_LIBRARIES.index(library),
+                                  value=float(len(entry.imports)), attr="lib_count", ranges=ranges))
+            if names:
+                terms.append(Term("add", "expert:nb_functions", index=0, value=float(len(names)), ranges=ranges))
+            for j, k in enumerate(KEYWORDS):
+                hits = sum(k in name for name in names)
+                if hits:
+                    terms.append(Term("add", "expert:keywords", index=j, value=float(hits), ranges=ranges))
+            # The quirk: assigning per library (`accumulate=False`) makes a watched library's count depend on the other
+            # descriptors (a later one erases an earlier one's count), so the item is not local (A2). The C4 derivation
+            # then reads its entries as two-sided -- the engine finding the quirk. With it patched the item is local.
+            items.append(Item("import_desc", terms=tuple(terms), attrs={"library": library},
+                              local=self.accumulate or not watched, locating=located))
+
+        # The DOS stub and resource directory: one item each when the file parses, so that `modified_dos_stub` and
+        # `has_resources` match `raw_features` (both 0 for an unparsed file, the Opaque default; a parsed file with the
+        # default stub or no resources is also 0, so there is no conflict). Their attribute is the feature's value, read
+        # by `Opaque`. The DOS region overwrite rewrites the stub, so `modified_dos_stub` is two-sided (its hole).
+        stub_region = clipped(n, [(DOS_HEADER_SIZE, max(pe.DOS_HEADER.e_lfanew, DOS_HEADER_SIZE))])
+        stub = bytez[DOS_HEADER_SIZE:max(pe.DOS_HEADER.e_lfanew, DOS_HEADER_SIZE)]
+        items.append(Item("dos_stub", attrs={"modified": float(stub != DEFAULT_DOS_STUB)},
+                          attr_ranges={"modified": (stub_region,)} if stub_region else {},
+                          locating=clipped(n, [field_range(pe.DOS_HEADER, "e_lfanew")])))
+        items.append(Item("resource", attrs={"present": float(hasattr(pe, "DIRECTORY_ENTRY_RESOURCE"))},
+                          locating=directory_locating(pe, 2)))
+        # `no_sig` is 1 exactly when the file parses but carries no Authenticode signature: a marker item present then,
+        # read by Identity, so an unparsed file is 0 (no item). Removing the signature adds the marker (no_sig rises);
+        # no M_full operation adds a signature, so the derived direction is up (sound and tight), not a hole.
+        if not _signed(bytez):
+            items.append(Item("no_sig", terms=(Term("count", "expert:no_sig", index=0),)))
+
+        # Sections: a named section (`.text`/`.data`/`.rsrc`/`.rdata`) contributes its info (entropy x raw size) and raw
+        # size to that name's entries; any other section contributes to the unknown count and info. Every section counts
+        # toward `nb_sections`. The name decides which entries a section writes, and lives in the section table, which is
+        # locating, so renaming is a declared structural edit (the catalogue states it).
+        sect_located = section_locating(pe)
+        for section in pe.sections:
+            name = section.Name.split(b"\x00")[0].decode("latin-1")
+            size = float(section.SizeOfRawData)
+            content = section.get_data(length=min(section.SizeOfRawData, section.Misc_VirtualSize or section.SizeOfRawData))
+            info = entropy_H(content) * size
+            data_range = clipped(n, [(section.PointerToRawData, section.PointerToRawData + len(content))])
+            name_range = clipped(n, [field_range(section, "Name")])
+            size_range = clipped(n, [field_range(section, "SizeOfRawData")])
+            table_range = clipped(n, [structure_range(section)])
+            named = name in SECTIONS
+            terms = [Term("count", "expert:nb_sections", index=0, ranges=table_range)]
+            if named:
+                i = SECTIONS.index(name)
+                terms.append(Term("add", "expert:named", index=2 * i, value=info, attr="info", ranges=name_range + data_range))
+                terms.append(Term("add", "expert:named", index=2 * i + 1, value=size, attr="size", ranges=name_range + size_range))
+            else:
+                terms.append(Term("count", "expert:unknown_count", index=0, ranges=table_range))
+                terms.append(Term("add", "expert:unknown_info", index=0, value=info, attr="info", ranges=name_range + data_range))
+            # The quirk, as for imports: assigning per section name (`accumulate=False`) makes a named section's info and
+            # size depend on the others, so the item is not local; patched, it is.
+            items.append(Item("section", terms=tuple(terms),
+                              attrs={"name": name, "size": size, "info": info, "data": data_range},
+                              attr_ranges={"info": (data_range if data_range else size_range,)},
+                              local=self.accumulate or not named, locating=sect_located))
+        return ItemTable(n, families, items)
+
+    @property
+    def readouts(self) -> list[Readout]:
+        return [
+            Identity("expert:lib_count", 0, len(WATCHED_LIBRARIES)),
+            Identity("expert:nb_imports", 0, 1),
+            Identity("expert:nb_functions", 0, 1),
+            Identity("expert:keywords", 0, len(KEYWORDS)),
+            Opaque("dos_stub", ("modified",), (0.0,), ranges=((0.0, 1.0),)),
+            Opaque("resource", ("present",), (0.0,), ranges=((0.0, 1.0),)),
+            Identity("expert:no_sig", 0, 1),
+            Identity("expert:unknown_count", 0, 1),
+            Identity("expert:unknown_info", 0, 1),
+            Identity("expert:named", 0, 2 * len(SECTIONS)),
+            Identity("expert:nb_sections", 0, 1),
+        ]
 
 
 class ExpertFeatureExtractor(PEFeatureExtractor):

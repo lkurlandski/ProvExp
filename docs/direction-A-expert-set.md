@@ -95,3 +95,29 @@ sections 3) and 25/40 by all eight (one format_exploit run). The M_full holes re
 are not exercised by the toolkit's attacks, and the adaptive search cannot run on this extractor (the C1 engine reads
 only the instrumented one), so for now they rest on the reading of the code and the patched-variant witnesses, not on a
 measured evasion.
+
+## Instrumented (item 11, 2026-11-03): the engine derives the holes
+
+`ExpertFeatures` is now instrumented into the item layer (`src/provexp/featuresets/ember2024/expert.py`: `items()` and
+`readouts`), reusing only `Identity` and `Opaque` -- no change to `items.py`/`reach.py`. **G1 is bit-exact** on the 45
+local test files (`evaluate(items, readouts) == feature_vector`, 0 mismatches). The two quirks are modeled as
+non-locality: `accumulate=False` makes a watched library's count (and a named section's info/size) depend on the other
+descriptors/sections, so the item is `local=False`; the C4 derivation then reads those entries as two-sided. The
+instrumentation surfaces the import quirk quantitatively -- on a file with two `kernel32.dll` descriptors the sound sum
+is 92 where the assign extractor reports 1 (the last descriptor's count).
+
+**The C4 derivation gives 11 M_full holes, not 12** (corrects the "12 of 40" prose above, which listed only 11 rows).
+Deriving M_full directions over the corpus (reusing `catalogue.regions` + `reach.region_changes` for the in-place ops,
+`Change` lists for the structural ones) yields exactly rows 27 and 30-39: `modified_dos_stub` lowered by the DOS-stub
+overwrite (`dos`), and `unknown_sections`, `info_unknown_sections`, and the eight `.text/.data/.rsrc/.rdata` info/size
+features all lowered by **rename** (`ren`). Two corrections the derivation forces:
+- **Slack overwrite does not change the `info` features** (contradicts the "slack overwrite changes entropy" claim in
+  the rows above). The expert entropy is over the mapped content (`get_data(min(SizeOfRawData, VirtualSize))`), which
+  excludes the slack bytes; the info holes come from renaming only, not slack.
+- **`no_sig` is up under M_full, not a hole.** Modeled tightly (a marker item present iff the parsed file is unsigned;
+  removing the signature *adds* it, and no M_full operation adds a signature), `no_sig` derives as up -- sound and
+  tight. Left as a generic structural flag it would read two-sided, the 12th (spurious) hole.
+
+So the go/no-go ("derived holes match the reasoned 12 of 40") passes at **11 of 40** (the reasoned set was 11 rows; the
+"12" was a prose miscount). Still to do: a recognizer for the C1 engine, the adaptive cell against the run-106 monotone
+model (rename + DOS-stub edits), per-hole witnesses by our own byte edits, and productionizing the derivation.
