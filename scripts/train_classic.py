@@ -5,6 +5,10 @@ With `--poison`, the features and labels of the poisoned training files replace 
 scripts/trigger_poison.py); the model is then a backdoored instrument for the ground-truth experiments, and its
 output directory is suffixed with the poison's name.
 
+With `--augment`, the feature rows of a directory's `X.npy` (with `files.parquet` giving their labels, default 1) are
+*appended* to the training split (not replacing any), for adversarial training on a toolkit's adversarial examples
+(scripts/a_advtrain.py); give the output a `--suffix`. Unlike `--poison`, which replaces rows, this only adds them.
+
 With `--neutralize`, the features named in a file (one per line) are set to zero in every split, so the model cannot
 use them (3-B mitigation, docs/graveyard.md); give the output a `--suffix`.
 
@@ -86,6 +90,41 @@ def apply_poison(X: npt.NDArray[np.float32], y: npt.NDArray[np.int64], meta: pl.
     return X, y, summary
 
 
+def apply_augment(X: npt.NDArray[np.float32], y: npt.NDArray[np.int64], augment: Path,
+                  neutral: list[int]) -> tuple[npt.NDArray[np.float32], npt.NDArray[np.int64], dict[str, object]]:
+    """
+    Append the feature rows of `augment/X.npy` to the training split (adversarial training; scripts/a_advtrain.py).
+
+    The labels come from `augment/files.parquet` (column `label`), defaulting to 1 (malware) if the column is absent.
+    The appended rows are neutralized the same way the clean rows are, so a neutralized model never sees the dropped
+    features of the adversarial examples either.
+
+    Returns:
+        The augmented features and labels, and a summary.
+    """
+    Xa = np.load(augment / "X.npy").astype(np.float32)
+    if Xa.ndim != 2 or Xa.shape[1] != X.shape[1]:
+        raise RuntimeError(f"{augment.as_posix()} holds features of shape {Xa.shape}, expected (*, {X.shape[1]}).")
+    files = pl.read_parquet(augment / "files.parquet")
+    if files.height != Xa.shape[0]:
+        raise RuntimeError(f"{augment.as_posix()}: files.parquet has {files.height} rows, X.npy has {Xa.shape[0]}.")
+    labels = (files["label"].to_numpy().astype(np.int64) if "label" in files.columns
+              else np.ones(Xa.shape[0], dtype=np.int64))
+    if neutral:
+        Xa = Xa.copy()
+        Xa[:, neutral] = 0.0
+    X = np.concatenate([X, Xa], axis=0)
+    y = np.concatenate([y, labels], axis=0)
+    summary = {
+        "augment": augment.resolve().as_posix(),
+        "report": json.loads((augment / "report.json").read_text()) if (augment / "report.json").exists() else None,
+        "num_added": int(Xa.shape[0]),
+        "num_malware_added": int((labels == 1).sum()),
+    }
+    print(f"Augmented with {Xa.shape[0]} adversarial training rows from {augment.as_posix()}.", flush=True)
+    return np.ascontiguousarray(X), y, summary
+
+
 def main() -> None:
     parser = ArgumentParser(description="Train and evaluate a GBDT or MLP on EMBER-2024 features.")
     parser.add_argument("--learner", type=str, choices=["gbdt", "mlp"], required=True)
@@ -97,6 +136,7 @@ def main() -> None:
     parser.add_argument("--categorical", action="store_true", help="GBDT only. Treat the categorical features as such (incompatible with interventional TreeSHAP).")
     parser.add_argument("--limit", type=int, default=None, help="Use at most this many samples per split (for testing).")
     parser.add_argument("--poison", type=Path, default=None, help="A poison directory (scripts/trigger_poison.py); its files replace their clean training rows.")
+    parser.add_argument("--augment", type=Path, default=None, help="A directory with X.npy and files.parquet (scripts/a_advtrain.py); its rows are APPENDED to the training split (adversarial training).")
     parser.add_argument("--neutralize", type=Path, default=None, help="A file of feature names, one per line, to set to zero in every split.")
     parser.add_argument("--monotone", type=Path, default=None, help="GBDT only. A file of `name<TAB>sign` lines (sign +1 or -1): monotone constraints.")
     parser.add_argument("--suffix", type=str, default=None, help="The output directory's suffix (default: the poison's name).")
@@ -150,6 +190,11 @@ def main() -> None:
     poison: dict[str, object] = {}
     if args.poison is not None:
         X_tr, y_tr, poison = apply_poison(X_tr, y_tr, meta_tr, args.poison)
+    augment: dict[str, object] = {}
+    if args.augment is not None:
+        if args.suffix is None:
+            raise ValueError("Give a --suffix with --augment, so the model does not overwrite the clean one.")
+        X_tr, y_tr, augment = apply_augment(X_tr, y_tr, args.augment, neutral)
 
     if args.learner == "gbdt":
         extra: dict[str, Any] = {"monotone_constraints": constraints} if constraints else {}
@@ -177,6 +222,7 @@ def main() -> None:
         "num_samples": {split: int(d[0].shape[0]) for split, d in data.items()},
         "config": config,
         "poison": poison or None,
+        "augment": augment or None,
         "neutralized": [int(j) for j in neutral] or None,
         "ts_metrics": metrics,
         "minutes": (time.time() - t_0) / 60,
