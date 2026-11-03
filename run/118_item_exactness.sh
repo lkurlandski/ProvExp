@@ -9,7 +9,9 @@
 # Hypothesis: 0 wrong (mismatch or error) under every operation; flags only where the declaration abstains (a forged
 # Rich marker in a gap on a file without a Rich header; an entry point in no section; locating ranges past the end of a
 # truncated file); G7 passes and the population stays closed, as in run 117.
-# Pilot (Claude, 2026-11-03, artifacts/experiments/catalogue_checks/pilot-exact): see docs/status.md.
+# Pilot (Claude, 2026-11-03, artifacts/experiments/catalogue_checks/pilot-exact, 252 s): hypothesis held. 0 wrong of
+# 2,120 declared edits (1,790 exact, 330 flagged); G7 passes, closed. Flags in the population: ext forged_rich on
+# Rich-less files (28), sec/imp on files whose entry point is in no section (30); all other flags outside it.
 # Estimate: ~60 min (run 117 took 36 min; the re-extraction and prediction per item-stated edit add about as much).
 set -euo pipefail
 cd "$(dirname "$0")/.."

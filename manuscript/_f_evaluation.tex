@@ -43,7 +43,8 @@ is flagged when the engine declines to predict because the edit writes a locatin
 
 \begin{table}[t]
   \caption{Predicted side effects against re-extraction, on all 2,480 modeled features. Flagged: the engine declined
-  to predict (the edit writes a locating position).}
+  to predict (the edit writes a locating position the operation does not declare). Upper block: operations stated in
+  bytes; lower block: operations stated in items, with the delta they declare.}
   \label{tab:eval:side-effects}
   \small
   \begin{tabular}{@{}lrrrr@{}}
@@ -55,16 +56,24 @@ is flagged when the engine declines to predict because the edit writes a locatin
     overwrite the DOS header and stub & 7,428 & 1,689 & 5,739 & 0 \\
     overwrite the checksum & 6,000 & 6,000 & 0 & 0 \\
     random in-place writes & 2,000 & 1,791 & 209 & 0 \\
-    add a section & 100 & \synthetic{100} & \synthetic{0} & \synthetic{0} \\
+    \midrule
+    add a section & 9,400 & \synthetic{7,267} & \synthetic{2,133} & \synthetic{0} \\
+    add imports & 8,418 & \synthetic{7,187} & \synthetic{1,231} & \synthetic{0} \\
+    insert a gap before the PE header & 6,992 & \synthetic{5,594} & \synthetic{1,398} & \synthetic{0} \\
+    insert a gap before the sections & 5,961 & \synthetic{5,299} & \synthetic{662} & \synthetic{0} \\
+    rename a section & 9,990 & \synthetic{8,891} & \synthetic{1,099} & \synthetic{0} \\
+    remove the debug entry & 1,110 & \synthetic{1,026} & \synthetic{84} & \synthetic{0} \\
+    remove the signature & 658 & \synthetic{658} & \synthetic{0} & \synthetic{0} \\
     up to three sections, then append & 1,105 & 1,105 & 0 & 0 \\
     \bottomrule
   \end{tabular}
 \end{table}
-% SYNTHETIC: the add-section row (exact prediction of the declared delta against re-extraction of our own byte-level
-% edit). Measured so far: equal to the hand predictor on all 100 pilot files (run 92), and directions correct on every
-% edit (run 107). Replace with tier 2's item-level exactness run (PLAN.md item 7; run 118+), which also adds rows for
-% add imports, both gap insertions, rename, and both removals. The element-stated rows are G7's edits on the 2,000
-% files (run 107: three adversarial contents per operation and file, plus a forged Rich header in the DOS stub).
+% SYNTHETIC: the item-stated rows' Exact/Flagged/Wrong (run/118_item_exactness.sh, 2,000 files). Edits are run 117's
+% applied counts (same seeds and edits); the split is the pilot's flag rate scaled (pilot, measured 2026-11-03,
+% catalogue_checks/pilot-exact: 0 wrong of 2,120; flags in the population only for a forged Rich marker on files
+% without a Rich header and entry points in no section, all other flags on files outside it). The element-stated
+% rows are G7's edits on the 2,000 files (run 107: three adversarial contents per operation and file, plus a forged
+% Rich header in the DOS stub).
 
 No prediction is wrong. The element-stated rows apply each operation to the 2,000 files with adversarial contents
 (random bytes, printable text next to existing strings, zeros, a forged Rich header), written by our own byte-level
@@ -72,11 +81,19 @@ code. The appends the engine flags are exactly those to files whose section tabl
 where the appended bytes become a section's raw data; the engine finds them by an interval query of the written
 positions against the recorded locating positions, with no rule written for this case. The flagged in-place writes
 are, likewise, the writes that land on a position the parser reads: a header field, a table entry, or the range it
-searches for the Rich header, which covers most of the DOS stub. Overwriting header fields, renaming a section, and
-removing the debug or signature entry write such positions by design, so the engine flags all 17,758 of their edits;
-their directions come from the slots the fields fill and from the item changes the other three declare. Combined edits, up to
-three added sections followed by an append, are predicted exactly by carrying the item table forward one edit at a
-time.
+searches for the Rich header, which covers most of the DOS stub. Overwriting header fields writes such positions
+by design, so the engine flags all of its edits; their directions come from the slots the fields fill.
+
+The operations stated in items write locating positions too, but they declare what follows: the items they add,
+remove, or modify, and the items they keep although they rewrite or move the pointers that locate them. The engine
+re-recognizes the content they write, moves every item past an insertion with its bytes, and flags the edit if it
+touches the location of an item the declaration does not cover. Each edit is written by our own byte-level code and
+extracted again. No declared prediction is wrong. Within the population, the declarations abstain in two cases
+only, by design: a forged Rich header in an inserted gap on a file without one, and an added section on a file whose
+entry point lies in no section, where the extractor's fallback may select the new one. Every other flagged edit is on
+a file outside the population, where a structure reaches past the truncated end and the operation's pointer updates
+do not cover data the parser had not found. Combined edits, up to three added sections followed by an append, are
+predicted exactly by carrying the item table forward one edit at a time.
 
 Exactness matters most where hand analysis is weakest: the side effects that are easy to miss. Appending to a file
 lowers every section's size ratio, since EMBER divides each section's size by the file's size; it can raise the

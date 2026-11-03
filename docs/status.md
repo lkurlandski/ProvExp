@@ -1,5 +1,33 @@
 # Status
 
+**2026-11-03 (session 3): run 117 read (closed); tier 2, item 7 built and passing on the pilot; its 2,000-file run
+(`run/118_item_exactness.sh`, ~50-60 min) is for the user. Next: read run 118, then item 8 (`docs/resume-prompt.md`).**
+
+- **Run 117 (P1 on 2,000 files, 36 min):** closed. 0 of 60,934 edits on passing files (of 73,063 applied) leave the
+  population, all twelve operations; G7 passes. `_f_evaluation.tex`'s blue 73,063 is now the measured 60,934 "edits on
+  files in the population".
+- **Item 7, item-level exactness (code, committed):** `provexp.reach.predict_structural` predicts a declared structural
+  edit given as the byte edits that perform it: the declaration lists removed, added (final coordinates), and *kept*
+  items (located through pointers the operation rewrites or moves); the engine re-recognizes content where edits write,
+  moves items past an insertion (`moved`, `shift_ranges`, a feature type's optional `move` for position attributes),
+  and flags an edit that writes or moves the location of an undeclared item (an append reaching a past-end locating
+  range flags even a kept item). Recognizers in `features.py` take insertions (pure additions; `DataDirectories` gained
+  a field recognizer). The byte-level writers moved from `catalogue_checks.py` into `catalogue.py` (`write_section`,
+  `write_imports`, `write_gap`, `write_rename`, `write_zero_entry`; byte-identical output, checked), with declarations
+  `predict_add_section`, `predict_add_imports`, `predict_insert_gap`, `predict_rename`, `predict_zero_entry`.
+  `catalogue_checks.py` keeps its old wrappers and adds a `declared` column (report keys `declared`,
+  `declared_mismatches`, `declared_flags`, `exact`, median prediction vs extraction ms).
+- **Item 7, pilot (`catalogue_checks/pilot-exact`, 252 s):** hypothesis held. **0 wrong of 2,120 declared edits**
+  (1,790 exact, 330 flagged); G7 passes; closed. Flags inside the population are only the declarations' deliberate
+  abstentions: a forged Rich marker in an `ext` gap on a Rich-less file (28) and `sec`/`imp` on files whose entry point
+  lies in no section (30; the fallback may pick the new section). All other flags are on files outside the population
+  (locating ranges past a truncated end). `rsg` 30/30 exact. Declared prediction is slower than extraction for the
+  gap insertions (median ~110 vs ~22 ms: windows re-tiled past the gap); no speed claim is made anywhere.
+- **Table 5** now has an item-stated block (seven rows) with run 117's edit counts and blue Exact/Flagged/Wrong (the
+  pilot's flag rate scaled); the prose says what the declarations abstain on. Replace from run 118.
+- Unrelated, pre-existing: `tests/test_shortcuts_setfield.py`, `test_shortcuts_transplant.py` (and one more) fail to
+  collect (their scripts moved to `scripts/archive/`).
+
 **2026-11-02 (end of session 2): tier 1 of the response to the review is done; P1 on the 2,000 files
 (`run/117_p1_closure.sh`, ~35 min) is running (started by the user). Next: read run 117, then tier 2, item 7
 (`docs/resume-prompt.md`).**
