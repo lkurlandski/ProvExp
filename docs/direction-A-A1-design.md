@@ -344,3 +344,39 @@ strongest number our search finds. On the unconstrained detector twelve-op domin
 that cell is 20% uniformly. Table 7 and the adaptive prose in `manuscript/_f_evaluation.tex` updated to PV 20/22 (91%),
 unconstrained 10/49 (20%); the earlier "evades PV on 16 ... six files it does not evade" prose (which was also
 accidentally commented out by a stray `%`) is replaced. Measurement comment in the `.tex` documents the breakdown.
+
+## Item 9: a detector on the hand table (2026-11-03; run 121; go/no-go missed, finding stronger than "immaterial")
+
+**Setup.** The hand M_full detector (`seed-0-a-mfull-mono-qf`, run 77) and the derived M_full detector
+(`seed-0-a-mfull-pre-qf-v2`, run 105, the one item 8 attacked) are trained on the *same* full store (merged imports),
+the *same* samples, and the *same* monotone/neutralize counts (1,305 monotone, 1,060 neutralized). Their training
+inputs differ by exactly **two features** inside the plain-layout population (confirmed by diffing the
+`.monotone.tsv`/`.neutralize.txt`):
+- `section:overlay_size` -- hand: monotone **+1** ("up"); derived: **neutralized** (both, because add-section after the
+  overlay removes it, G7 run 103);
+- `datadirectories:security_size` -- hand: **neutralized**; derived: monotone **-1** ("down", removing the signature).
+So no retrain was needed: `-a-mfull-mono-qf` *is* the hand counterpart of the derived model (the counts stay equal
+because one feature swaps monotone<->neutralize each way). Run 121 re-runs the identical twelve-op search
+(`a1_adaptive.py`, M_full, queries 200, pilot) against it.
+
+**Result (go/no-go `>=1` in-population evasion NOT met: 0 evasions; same 0 as the derived model's 0/41).** But the
+in-population difference is **material to soundness, not immaterial**. Of the 40 pilot malware the hand detector
+catches (29 in-population), the search lowers its score on **11** files (**10 in-population**), *every time by adding a
+single section after the overlay* (`ops = sec`, `num_ops = 1`) -- exactly the `overlay_size` hole. Drops reach
+**-1.57 logits in-population** (`511c7d1a...`, 0.9755 -> 0.892) and **-2.75 out-of-population** (`4294f2f0...`), and
+**re-extract exactly** (`|p_adv_c1 - p_adv_real| = 0.0` on all 11, item 7). The derived detector is provably unmoved on
+every one of them (0.0). No file crosses the 1% threshold (nearest miss `345911211f...`, 0.830 vs tau 0.784): the
+detected pilot malware sit far above threshold (the robustness the undefended-model analysis already showed), and
+`overlay_size` is the *only* exploitable in-population lever -- the hand model shares every other constraint with the
+derived table, so its score cannot be pushed further. The security_size difference is unexploitable (neutralized =
+safe); only overlay_size matters, and only to the hand detector's soundness.
+
+**Framing (user, 2026-11-03): report soundness, not outcome.** The hand table's single in-population error is a genuine
+unsoundness -- a real, re-extracting >=1.5-logit in-population score drop the derived detector forbids -- even though it
+does not flip a detection on this high-confidence pilot. This substantiates `_f_evaluation.tex`'s claim (line ~159)
+that "our first monotone detectors constrained the overlay size as up-only, and our own adaptive search could not have
+found the hole, because its hand-written predictor shared the same blind spot": once the search scores candidates by
+the exact derived prediction (item 7), it *does* find the hole and drives the hand detector's score down, where the
+derived detector is provably safe. Prose added after that passage; no Table 7 row (the evasion rate is 0 for both, so
+the informative quantity is the score drop, not a rate). (Reproduce: `run/121_hand_table_detector.sh`; the labeling
+step prints in/out-of-population counts.)

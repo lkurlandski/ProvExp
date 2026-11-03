@@ -160,6 +160,17 @@ where a hand table silently stops being sound and a derived one says so. Our fir
 overlay size as up-only, and our own adaptive search could not have found the hole, because its hand-written
 predictor shared the same blind spot.
 
+We confirmed the cost of that blind spot directly. We trained a detector on the hand table, identical to the derived
+one in every other respect---the same feature store, the same training samples, the same 1{,}305 monotone and 1{,}060
+neutralized features---differing only in the two features the tables disagree on inside the population: the hand table
+leaves the overlay size up-only and the signature-table size free, where the derivation frees the overlay size and
+constrains the signature-table size downward. Attacking it with the same adaptive search, now scoring each candidate by
+the exact side effect of Proposition~\ref{prop:fw:side-effects}, the search lowers the hand detector's score on ten of the twenty-nine
+in-population files it catches, every time by adding a single section after the overlay, by as much as $1.57$ logits;
+each drop re-extracts exactly. The derived detector is provably unmoved on all of them. None of the drops crosses the
+one-percent threshold---the detected malware sit far above it---so the correction changes the guarantee rather than the
+measured evasion rate on this corpus: the hand detector is demonstrably unsound exactly where the derived one is sound.
+
 The derived table is sound in the other sense as well. We applied every operation of the catalogue, with adversarial
 parameters (repeated, colliding, and case-variant names, empty imports, printable content next to existing strings,
 a forged Rich header in the inserted gap), to the 2,000-file set, written by our own byte-level code and extracted
