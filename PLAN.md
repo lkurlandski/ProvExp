@@ -154,6 +154,15 @@ the user.
 11. **The expert set instrumented** (`featuresets/ember2024/expert.py`; R3c, R8): the engine finds its two quirks and
     its M_full holes, each witnessed by our own edits; an adaptive cell. Go/no-go: the derived holes match the reasoned
     12 of 40 under M_full (any difference is investigated).
+    **Done 2026-11-03** (commits after `195b354`; `docs/direction-A-expert-set.md`). Instrumented (`items()`+`readouts`,
+    reusing only `Identity`/`Opaque`, G1 bit-exact); the C4 derivation (`scripts/a_expert_directions.py`, go/no-go built
+    in) gives **11 M_full holes = rows 27, 30-39**, not 12 (the doc's "12" miscounted its own 11-row list; the user chose
+    the tight 11). Two corrections the derivation forced: `no_sig` is up (not a hole; a marker present iff unsigned),
+    and **slack does not change the info features** (entropy is over the mapped content), so the holes come from rename,
+    not slack. Quirks surfaced as non-locality (import quirk: sound sum 92 vs the assign extractor's 1). All **11 of 11
+    holes witnessed** by our own edits and the adaptive search (`scripts/a_expert_adaptive.py`, `run/120`, rename +
+    DOS-stub, re-extraction-scored) **evades the monotone expert model on 2 of 8** detected pilot malware. Manuscript §5
+    updated. Open: none essential (a G1 unit test for the expert instrumentation would be nice-to-have).
 
 **Tier 3:** the second-instance decision (user), after tier 2. Not planned: MAB-Malware (deferred; the full search is
 the stronger evidence), more Table 6 rows from PE corner cases, anything from A'. Rejected: R16 (the prose already
