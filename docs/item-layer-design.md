@@ -503,3 +503,30 @@ questions as first posed:
    instrumentation is right.
 5. **The regex test.** A sound syntactic test (proposed) may call a regex two-sided when it is not. Accept that, or
    require an exact decision for the patterns where the syntactic test says "both"?
+
+## Build status (2026-11-03, session 4: item 7 at scale, item 8 built)
+
+- **Item 7, run 118 (`run/118_item_exactness.sh`, 2,000 files, 57 min).** Item-stated exactness (`predict_structural`
+  + `catalogue.predict_*` vs re-extraction, all 2,480 modeled features) **holds on the population: 0 wrong of 34,965
+  edits** (33,730 exact; 1,235 flagged, and the in-population flags are only the two by-design abstentions --
+  `section:entry` 726, `richheader:rich_pair` 509). G7 passes, population closed. **Out of the population**, on 7
+  truncated files (precondition=False), the declarations are wrong on 45 edits (sec 8 `has_relocs`; imp 7 import
+  counts/hashes; ext 21, of which 16 a `ValueError` "splits the range" where a gap splits a kept item's locating
+  range; shf 9). The pilot read 0 wrong because it held none of these 7 files. **Decision (user): the item-stated
+  guarantee is population-scoped** -- `catalogue_checks.py` now computes `exact`/`declared` on the passing files and
+  reports `declared_all`/`exact_all_files`/`declared_wrong_outside`; Table 5's item-stated rows carry the in-population
+  counts. Known cleanup (moot under scoping): the 22 split-range `ValueError`s should FLAG, not raise, in
+  `reach.shift_ranges`/`predict_structural`.
+- **Item 8, the twelve-operation adaptive search (`scripts/a1_adaptive.py`).** `Engine` caches the state's item table
+  and feature vector; `full_menu` builds threat-model-gated candidates (append + ~8 targeted add-sections, kept from
+  run 108, plus imports/rename/header/checksum/DOS/slack/both gaps/both removals on top); `greedy_search` takes a
+  `make_menu` closure and scores each candidate by the **exact** prediction of our own writer (`catalogue.predict_*`
+  for the structural ops, `reach.predict` chains for the in-place ops, gaps extracted) then materializes the chosen
+  step with that writer (never LIEF), so predicted == re-extracted. `engine_predictors`/`menu` kept for the tests
+  (96 pass). First go/no-go under-explored PV (candidate-budget artifact: the new ops had starved the targeted
+  add-section candidates); fixed by keeping run 108's full add-section budget and adding the new ops on top.
+  **`run/119` (go/no-go):** C4 rows sound (mfull-feat 0/41 under M_full, madd-feat 0/47 under M_add, min_delta 0.0 --
+  each under its own threat model); unconstrained 4->10/49 (short of GAMMA's 24/47; the undefended model is robust);
+  PV 12/22 (below run 108's app+sec 16/22 -- the extra ops mislead the myopic greedy). PV adaptive cell pending the
+  user (Claude recommends Option 1, strongest-per-detector). Routing to Table 7's sums rows deferred (the engine has
+  no sums recognizers).

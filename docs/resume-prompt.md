@@ -1,80 +1,94 @@
-# Resume: ProvExp (after 2026-11-03, session 3): read run 118, then tier 2, item 8 (the adaptive search)
+# Resume: ProvExp (after 2026-11-03, session 4): decide the PV adaptive cell, edit Table 7, then items 9-11
 
-## Where we are
+## ⚠ Read this first (user, 2026-11-03)
 
-- **The body is drafted in `.tex`** (`manuscript/`): Section 3 (framework, `_d_framework.tex`), Section 4 (EMBER,
-  `_e_instances.tex`), Section 5 (evaluation, `_f_evaluation.tex`), Appendix A (`_j_proofs.tex`). Other sections are
-  stubs. `make` and `make check` clean.
-- **Tier 1 of the response to the review is done** (2026-11-02; `PLAN.md`, "Next steps (2026-11-02, the response to
-  the review)"; `docs/status.md`). Decided then (user): PV's hole stays 44.4% "proves lowerable" plus a clause on the
-  parser warnings; no instrumentation-effort claim in the paper.
-- **Session 3 (2026-11-03)** (`docs/status.md`, top block; `docs/item-layer-design.md`, last build-status entry):
-  - Run 117 read: the population is closed under the catalogue on the 2,000 files (0 of 60,934 edits on passing files
-    leave it). The blue count in `_f_evaluation.tex` is replaced.
-  - **Item 7 built:** `provexp.reach.predict_structural` predicts a declared structural edit given as the byte edits
-    that perform it. The declaration lists removed, added, and *kept* items; the engine re-recognizes written content,
-    moves items past an insertion, and flags an edit that touches the location of an undeclared item. The recognizers
-    take insertions. The byte-level writers moved into `featuresets/ember2024/catalogue.py` (`write_*`), next to exact
-    declarations (`predict_add_section`, `predict_add_imports`, `predict_insert_gap`, `predict_rename`,
-    `predict_zero_entry`). `scripts/catalogue_checks.py` compares each declared prediction with re-extraction (report
-    keys `declared`, `declared_mismatches`, `declared_flags`, `exact`).
-  - Pilot: **0 wrong of 2,120 declared edits** (330 flagged). Inside the population the declarations abstain only by
-    design: a forged Rich marker in an inserted gap on a file without a Rich header, and an added section on a file
-    whose entry point lies in no section. Table 5 has seven item-stated rows; their Exact/Flagged/Wrong cells are blue
-    (pilot rate scaled) until run 118 is read.
-  - Run 118's first start crashed on a file truncated before its first section's data (`shf`'s insertion point past
-    the end). Fixed in `write_gap` (the gap goes at the end, byte-identical to the old writer); a writer-only scan of all
-    2,000 files raises nothing else. **The user restarted run 118 with `NUM_WORKERS=24`.**
-  - **New `run/` convention (user):** every new script reads `NUM_WORKERS="${NUM_WORKERS:-16}"` and passes
-    `"$NUM_WORKERS"` to the Python worker flag (`CLAUDE.md`).
+The model may have switched to a simpler one partway through session 4 without the user's knowledge. **Before building
+on session 4's work, re-examine it critically** -- do not take it on trust. In particular audit:
+- **Item 8's design** (`scripts/a1_adaptive.py`: `Engine`, `full_menu`, `greedy_search`). Is scoring every candidate
+  by the exact prediction of our own writer the right choice (vs the old declared-reachable effect)? Is `full_menu`'s
+  candidate budget sound? Is the myopic-greedy diagnosis of the PV drop correct?
+- **The decision to scope Table 5 to the population** (0 wrong of 34,965 in-population; 45 wrong out-of-population).
+  Is population-scoping the honest presentation, or should the 45 out-of-population wrong be shown?
+- **The reading of `run/119`** and the **PV-cell recommendation** below.
+
+Nothing from session 4 is pushed. The manuscript Table 7 is **unedited**. Treat the recommendations here as drafts to
+audit, not settled facts. Commits this session: item 8 code; run 118 read + Table 5 + population scoping; run/119 read.
+
+## What session 4 did
+
+- **Item 7 / run 118 read** (`run/118_item_exactness.sh`, 2,000 files, 57 min). Item-stated exactness
+  (`reach.predict_structural` + `catalogue.predict_*` vs re-extraction) **holds on the population: 0 wrong of 34,965
+  edits** (33,730 exact, 1,235 flagged -- only the two by-design abstentions). Out of the population, on 7 truncated
+  files, 45 edits are wrong (so `report["exact"]=True` on the population, `exact_all_files=False`). **User decided:
+  scope Table 5's item-stated rows to the population** (Wrong=0). `catalogue_checks.py` now computes exactness on the
+  passing files (`declared_all`/`exact_all_files`/`declared_wrong_outside` added); Table 5 (`_f_evaluation.tex`) and
+  its caption/prose carry the measured in-population counts (sec 7,256/6,776/480/0; imp 6,954/6,708/246/0; ext
+  5,856/5,347/509/0; shf 4,995/4,995/0/0; ren 8,370/8,370/0/0; rdb 984/984/0/0; rsg 550/550/0/0). `make`/`make check`
+  clean. Known cleanup (moot under scoping): the 22 out-of-population `ValueError` "splits the range" cases should
+  FLAG, not raise, in `reach.shift_ranges`/`predict_structural`.
+- **Item 8 built and run** (`scripts/a1_adaptive.py`). Extended the adaptive search from append+add-section to all
+  twelve operations. Each candidate is scored by the **exact** prediction of our own writer (`catalogue.predict_*`
+  for the structural ops; `reach.predict` chains for the in-place ops hdr/chk/dos/slk; the two gaps are extracted,
+  ~5x cheaper than predicting), and the chosen step is materialized by that writer (never LIEF), so predicted ==
+  re-extracted. New: `Engine`, `full_menu`, `greedy_search` on a `make_menu` closure, CLI `--operations`;
+  `engine_predictors`/`menu` kept for the tests (96 pass, 12 skip).
+- **`run/119` go/no-go** (pilot, queries 200, each C4 row under its own threat model):
+  - **C4 soundness check passes:** mfull-feat 0/41 under M_full, madd-feat 0/47 under M_add, min_delta exactly 0.0.
+    This is item 8's main paper value -- it is the *complete-threat-model* soundness check the review (R1a/R11) asked
+    for (all twelve operations, not just append+add-section).
+  - **unconstrained 4/49 -> 10/49** (the new ops help) **but short of GAMMA API's 24/47.** Not query-limited: for
+    40/49 files the search barely moves the undefended GBDT (median drop 0.005). The go/no-go "beats GAMMA (>=24)" is
+    **not met** -- the undefended model is robust to the loader-safe edit set.
+  - **PV 12/22, below run 108's append+add-section 16/22.** The extra ops mislead the myopic greedy on PV's
+    section-hash hole (q150 and q200 both 12, so not query-limited).
 
 ## The task
 
-1. **Read run 118** (`run/118_item_exactness.sh`; G7 + P1 + item-level exactness on the 2,000 files):
-   `artifacts/experiments/catalogue_checks/2000-exact/report.json` (keys `exact`, `pass`, `closed`, `<op>.declared`,
-   `<op>.declared_mismatches`, `<op>.declared_flags`, `<op>.declared_median_ms`, `<op>.extract_median_ms`), log
-   `artifacts/logs/catalogue_checks_2000_exact.log`, per-edit rows in `edits.parquet` (`declared`, `declared_detail`).
-   - *Hypothesis:* 0 wrong (mismatch or error) under every operation; flags inside the population only for the two
-     abstentions; G7 passes and the population stays closed, as in run 117.
-   - If it holds: replace Table 5's blue item-stated cells (the `% SYNTHETIC` comment under the table in
-     `_f_evaluation.tex`), check the prose under the table still matches, and record the result and runtime in the
-     script's header. Keep the in-population/out-of-population split of the flags in `docs/status.md`.
-   - If anything is wrong: inspect `declared_detail`, fix the declaration (or the recognizer), re-run the pilot
-     (`catalogue_checks.py --outdir .../pilot-exact`, ~4 min), and bring any changed claim to the user before re-running.
-2. **Tier 2, item 8: the adaptive search over all twelve operations** (`PLAN.md`; review R1a, R11). Agreed with the
-   user on 2026-11-03; start here once run 118 is read (or while it is not yet finished).
-   - Today `scripts/a1_adaptive.py` searches appends and added sections only (`menu`, `engine_predictors`, greedy over
-     C1-declared predictions; each kept step written by our own edit). Run 108: unconstrained 4/49, PV 16/22, C4 rows 0.
-   - Extend the candidates to every operation: imports, rename, header fields, checksum, DOS stub, slack, both gap
-     insertions, both removals. Score them with item 7's `catalogue.predict_*` and `reach.predict` for the in-place
-     ones, and write each kept step with the catalogue's writers (never LIEF). Predicting a gap insertion is ~5x slower
-     than extracting (windows re-tiled past the gap), so the search may simply extract for those two.
-   - Run it on the routed 10%-store models of Table 7 (run 105's `artifacts/models/gbdt/seed-0-s10-*` with `--route
-     <c4>=ref`). This also fixes Table 7's sums rows, whose adaptive 0% came from the full-store models.
-   - *Hypothesis (state again before running):* with imports, rename, header, and DOS operations it beats GAMMA API on
-     the unconstrained model. Go/no-go: at least 24/47 there; if it fails, it is not used as the adaptive column until
-     strengthened. The monotone rows stay at 0.0 (the implementation check).
-   - Smoke-test on a few pilot malware first; the full run goes to `run/119_*.sh` (with `NUM_WORKERS`) if over ~10 min.
-3. Then items 9-11 (`PLAN.md`): a detector on the hand table (*hypothesis:* the search, adding a section after the
-   overlay, evades it on some in-population files); the adversarial-training row, against item 8's search; the expert
-   set instrumented (`featuresets/ember2024/expert.py`).
+1. **Decide the PV adaptive cell in Table 7** (Claude flagged a drop; the user was mid-clarifying when session 4
+   ended). The twelve-op search gives unconstrained 10/49 (up from 4) but PV 12/22 (down from 16/22). Options:
+   - **Option 1 (Claude's recommendation): report the strongest of our search variants per detector** -- unconstrained
+     10 (twelve-op), PV 16 (append+add-section, run 108), with one line that the Adaptive column is "the strongest
+     evasion our search finds". Rationale: it is the standard honest way to report an adaptive attacker (max over what
+     the attacker can do, not a handicapped single config); it keeps item 8's real wins (the complete C4 check + the
+     unconstrained lift) without regressing PV; it avoids a speculative greedy fix.
+   - Option 2: report the twelve-op search uniformly (unconstrained 10, PV 12). Clean/consistent but understates PV
+     vs what our own search achieves.
+   - Option 3: improve the greedy (e.g. tie-break to prefer section ops, or a small restart/beam) so the unified
+     twelve-op search reaches ~16 on PV; re-run; then report one uniform search. More effort, uncertain payoff. (A
+     cheap version Claude offered: run the twelve-op search *and* the app+sec subset, take the best -- that is
+     Option 1 mechanically.)
+   - **Broader-goal context:** the PV number is a presentation question, not a threat to a claim. The C4 soundness
+     check is unaffected (0 either way). PV's *computed* hole (44.4% of its gain lowerable) is confirmed reachable by
+     both 12 and 16 (both large majorities), so the headline point survives; only its force differs. The one thing to
+     avoid is reporting 16->12 as if our "better" search got worse.
+2. **Edit Table 7 and the adaptive prose** in `_f_evaluation.tex` once the PV cell is decided. Undisputed now: the
+   unconstrained adaptive cell `8% -> 20%` (10/49), and the two monotone rows stay `0%` (confirmed under each row's own
+   threat model). The prose already frames the 0.0 as an implementation check and the adaptive column as "our search";
+   add that the check now covers all twelve operations. Reports: `artifacts/experiments/a1/adaptive-twelve/{mfull,madd}/adaptive.json`.
+3. **Then items 9-11** (`PLAN.md`): (9) a detector on the hand table (*hypothesis:* the search, adding a section after
+   the overlay, evades it on some in-population files); (10) the adversarial-training row, against item 8's search;
+   (11) the expert set instrumented (`featuresets/ember2024/expert.py`).
 
 State the hypothesis before each run, in a sentence or two.
 
+## Deferred (user, 2026-11-03)
+
+- **Routing to Table 7's sums rows (`--route <c4>=ref`).** `a1_adaptive.py` has no routing, and the engine predicts
+  only in thrember space (the sums groups have no recognizers), so scoring a routed sums-model file needs a design
+  decision. Bring back a concrete plan before touching Table 7's sums-row adaptive cells. (The resume prompt handed
+  into session 4 asked to run item 8 on the routed 10%-store models; this is that piece, parked.)
+
 ## Notes
 
+- **Runs:** only jobs under ~10 min yourself (estimate from the slowest case); otherwise smoke-test and write a `run/`
+  script (next number 120), reading `NUM_WORKERS` when the script has a worker flag. `a1_adaptive.py` is
+  single-process (no worker pool), so `run/119` sets OMP threads instead and notes NUM_WORKERS does not apply.
+- Do not change the writers' output (`catalogue.write_*`): G7 (runs 107, 117, 118) and Table 5's edit counts depend on
+  the same seeded edits.
 - Untracked, leave alone: `papers/`, `TODO.md`, `docs/checkpoint-prompt.md`, `make-manuscript.sh`, `slides/`.
-- Do not edit `run/118_item_exactness.sh` while it runs; sync its header after.
-- Do not change the writers' output (`catalogue.write_*`): G7 (runs 107, 117, 118) and Table 5's edit counts rely on
-  the same seeded edits. `catalogue_checks.py` keeps thin wrappers (`add_section`, `add_imports`, `insert_gap`) that
-  `a1_adaptive.py`, `ap_encoding.py`, and tests import.
-- Three test modules fail to collect for a pre-existing reason (`tests/test_shortcuts_setfield.py`,
-  `test_shortcuts_transplant.py`, one more): their scripts moved to `scripts/archive/`. Not caused by item 7.
-- Run 78's `artifacts/experiments/a_pv/report*.json` predate the `a_pv_hole.py` fix and are left as they were; the
-  current readings are in `a_pv/derived-pre`, `a_pv/recheck-hand`, `a_pv/derived-strict`.
+- Three test modules fail to collect for a pre-existing reason (`tests/test_shortcuts_*`); their scripts moved to
+  `scripts/archive/`. Not caused by this session.
+- The user still owes the upstream reports in `docs/upstream-issues.md`.
 - Bib page ranges not verified: Incer et al., Chen et al. (CCS 2021), Simonetto et al. The related work the review
   found missing is listed in `docs/status.md` (the review's block); §6 must cover it.
-- The user still owes the upstream reports in `docs/upstream-issues.md`.
-- Runs: only jobs under ~10 minutes yourself (estimate from the slowest case); otherwise smoke-test and write a `run/`
-  script for the user (next number 119), reading `NUM_WORKERS`.
 - At the end of each session: update `docs/status.md`, `PLAN.md`, and this file. Commit in logical pieces; do not push.

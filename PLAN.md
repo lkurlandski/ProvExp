@@ -110,14 +110,33 @@ the user.
 7. **Item-level exactness for every item-stated operation** (add section, add imports, both gap insertions, rename,
    both removals; R14). It also scores the adaptive search's candidates, so build it once. Go/no-go: 0 wrong on the
    2,000 files (flagged allowed, reported).
-   **Built 2026-11-03** (`reach.predict_structural`, `catalogue.predict_*`); pilot 0 wrong of 2,120 (330 flagged, in
-   the population only by design); 2,000 files: `run/118_item_exactness.sh` (user; running; first start crashed on
-   a truncated file, fixed in `write_gap`). Table 5's seven item-stated rows are blue until it is read.
-8. **(Next; agreed 2026-11-03, new session.) The adaptive search over all twelve operations** (R1a, R11), candidates
-   scored with item 7's declarations (`catalogue.predict_*`), steps written by our own byte-level edits, on the
-   routed 10%-store models of Table 7. *Hypothesis:* with imports, rename, header, and DOS operations it beats GAMMA
-   API on the unconstrained model. Go/no-go: at least 24/47 there; if it fails, it is not used as the adaptive column
-   until strengthened. Monotone rows stay at 0.0 (the check).
+   **Built 2026-11-03** (`reach.predict_structural`, `catalogue.predict_*`); pilot 0 wrong of 2,120. **Run 118 read
+   2026-11-03 (`run/118`, 57 min):** item-stated exactness **holds on the population -- 0 wrong of 34,965 edits**
+   (33,730 exact, 1,235 flagged, only the two by-design abstentions). On 7 truncated **out-of-population** files it is
+   wrong on 45 edits; `report["exact"]=True` on the population, `exact_all_files=False`. **Decided (user): scope Table
+   5's item-stated rows to the population** (Wrong=0); `catalogue_checks.py` now computes exactness on the passing
+   files (`declared_all`/`exact_all_files` keep the full tally); Table 5 carries the measured in-population counts.
+   Done. (Known cleanup, moot under scoping: the 22 out-of-population `ValueError` "splits the range" cases should
+   FLAG, not raise, in `reach.shift_ranges`/`predict_structural`.)
+8. **The adaptive search over all twelve operations** (R1a, R11). **Built and run 2026-11-03** (`scripts/a1_adaptive.py`:
+   `Engine`, `full_menu`, `greedy_search` on a `make_menu` closure; candidates scored by item 7's exact predictions
+   -- `catalogue.predict_*` for the structural ops, `reach.predict` for the in-place ones, gaps extracted -- and
+   materialized by the catalogue writers). **`run/119` (go/no-go, pilot, queries 200):** the C4 soundness check passes
+   (mfull-feat 0/41 under M_full, madd-feat 0/47 under M_add, min_delta exactly 0.0 -- each row under its own threat
+   model, the complete-threat-model check R1a/R11 asked for); **unconstrained 4/49 -> 10/49** (the new ops help) **but
+   short of GAMMA API's 24/47** (the undefended model is robust: 40/49 files barely move, not query-limited). **PV
+   12/22, below run 108's append+add-section 16/22** (the extra ops mislead the myopic greedy on PV's section-hash
+   hole; not query-limited). **The go/no-go "beats GAMMA (>=24)" is NOT met.** User's call (2026-11-03): run `run/119`
+   and report honestly below GAMMA (done). **PENDING the user: the PV adaptive cell** -- Claude's recommendation is
+   **Option 1, report the strongest of our search variants per detector** (unconstrained 10 from twelve-op, PV 16 from
+   append+add-section, one-line note that the column is the strongest evasion our search finds; standard for an
+   adaptive attacker, keeps item 8's real win -- the complete C4 check + the unconstrained lift -- and no PV
+   regression). Alternatives: report the twelve-op 12 uniformly, or improve the greedy (tie-break to prefer section
+   ops) to reach 16. **Table 7 and the adaptive prose are NOT yet edited** -- they await this decision (only the
+   unconstrained 8%->20% and the C4 0% cells are undisputed).
+   - **Deferred (user, 2026-11-03): routing to Table 7's sums rows (`--route <c4>=ref`).** `a1_adaptive.py` has no
+     routing and the engine predicts only in thrember space (no sums recognizers), so scoring a routed sums-model file
+     needs a design decision. To be brought back as a concrete plan before touching Table 7's sums-row adaptive cells.
 9. **A detector on the hand table** (new row or ablation). *Hypothesis:* the search, adding a section after the overlay,
    evades it on some in-population files. Go/no-go: at least one in-population evasion; otherwise report the
    in-population difference as immaterial to the detector.

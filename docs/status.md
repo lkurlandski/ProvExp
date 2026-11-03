@@ -1,8 +1,15 @@
 # Status
 
-**2026-11-03 (session 4): run 118 read (item-7 exactness, 2,000 files); item 8 (the twelve-operation adaptive search)
-built and smoke-tested, go/no-go run once and diagnosed (needs a budget fix + re-run). Next: re-run the strengthened
-go/no-go (`run/119`), then items 9-11. Routing to Table 7's sums rows is deferred (user).**
+**2026-11-03 (session 4): run 118 read (Table 5 scoped to the population, 0 wrong of 34,965); item 8 (the
+twelve-operation adaptive search) built and run (`run/119`): C4 soundness check passes, unconstrained 4->10, PV 12
+(below run 108's 16). Next: the user decides the PV adaptive cell (Claude recommends Option 1), then edit Table 7 and
+the adaptive prose, then items 9-11. Routing to Table 7's sums rows is deferred (user).**
+
+> **CAUTION for the next session (user, 2026-11-03):** the model may have switched to a simpler one partway through
+> this session without the user's knowledge. **Re-examine this session's work critically before building on it** --
+> in particular item 8's design (`full_menu`/`greedy_search` in `a1_adaptive.py`), the decision to scope Table 5 to
+> the population, and the reading of `run/119` (the go/no-go interpretation and the PV recommendation). Nothing from
+> this session has been pushed; the manuscript Table 7 is unedited. Treat the recommendations below as drafts to audit.
 
 - **Run 118 (item 7 on the 2,000 files, NUM_WORKERS=24, 57 min):** G7 passes, population closed. Item-stated exactness
   **holds on the population: 0 wrong of 34,965 edits** (33,730 exact, 1,235 flagged, and the flags are only the two
