@@ -43,6 +43,8 @@ import sys
 import time
 from typing import Any
 from typing import Callable
+from typing import Optional
+from typing import Sequence
 
 import lightgbm
 import numpy as np
@@ -56,6 +58,7 @@ from provexp.featuresets.ember2024.features import field_range
 from provexp.featuresets.ember2024.features import merge_import_descriptors
 from provexp.items import ItemTable
 from provexp.reach import ByteEdit
+from provexp.reach import Prediction
 from provexp.reach import predict
 
 sys.path.insert(0, str(Path(__file__).parent))
@@ -63,10 +66,15 @@ from a_c1_table0 import has_overrun_section  # noqa: E402
 from a_pv_attacks import load_pilot  # noqa: E402
 from catalogue_checks import add_section as write_section  # noqa: E402
 
-__all__ = ["Donors", "HDR_FIELDS", "Operation", "add_imports", "add_section", "engine_predictors", "greedy_search",
-           "lief_preserves", "bucket_names", "menu", "rename_section", "section_bucket", "set_header_fields", "zero_directory_entry"]
+__all__ = ["Donors", "Engine", "HDR_FIELDS", "Operation", "add_imports", "add_section", "engine_predictors",
+           "full_menu", "greedy_search", "lief_preserves", "bucket_names", "menu", "rename_section", "section_bucket",
+           "set_header_fields", "zero_directory_entry"]
 
 ROOT = Path(__file__).resolve().parent.parent
+
+# The threat models' operation sets (scripts/a_directions.py): additions, gap insertions, in-place overwrites.
+ADD, INSERT, OVERWRITE = ("app", "sec", "imp"), ("ext", "shf"), ("slk", "dos", "hdr", "chk", "ren", "rdb", "rsg")
+THREAT = {"M_add": ADD, "M_shift": ADD + INSERT, "M_full": ADD + INSERT + OVERWRITE}
 
 # The loader-ignored header fields (the threat model's `hdr`, matching scripts/a_directions.py's `header` group).
 HDR_FIELDS = (("FILE_HEADER", "TimeDateStamp"), ("FILE_HEADER", "NumberOfSymbols"),
@@ -394,61 +402,312 @@ def menu(donors: Donors, rng: np.random.Generator, candidates: int, preds: Predi
     return ops[:candidates]
 
 
+################################################################################
+# The twelve-operation search (item 8): exact predictions, materialized by the catalogue's writers
+#
+# Item 7 made every structural operation's effect predictable exactly (run 118: 0 wrong of the declared edits), so the
+# search can score every operation of the threat model (docs/direction-A-threat-model.md), not just append and
+# add-section. Each candidate is scored by the exact prediction of our own byte-level edit -- catalogue.predict_* for
+# the structural operations (add section, add imports, rename, both removals; the two gap insertions are simply
+# extracted, ~5x cheaper than predicting them) and reach.predict for the in-place overwrites (header fields, checksum,
+# DOS region, slack) -- so the predicted score equals the re-extracted score of the file the step writes, and the
+# chosen step is materialized by exactly that writer (never LIEF). The monotone (C4) rows stay 0 by construction: a
+# sound detector's score cannot fall under any operation of M.
+################################################################################
+
+# A candidate edit: its operation name, an upper bound on the bytes it adds (checked against the byte budget before it
+# is scored), and a thunk that, given the current file, returns (predicted feature vector, written file, bytes added)
+# or raises to skip (the operation does not apply, or its prediction was flagged).
+Candidate = tuple[str, int, Callable[[bytes], tuple[np.ndarray, bytes, int]]]
+
+
+class Engine:
+    """Caches the current file's item table and feature vector so every candidate of a step scores from one state."""
+
+    def __init__(self, extractor: PEFeatureExtractor) -> None:
+        self.ext = extractor
+        self._z: bytes | None = None
+        self._table: ItemTable | None = None
+        self._x: np.ndarray | None = None
+
+    def table(self, z: bytes) -> ItemTable:
+        """The item table of `z` (recomputed only when the file changes)."""
+        if self._z is not z:
+            self._z, self._table, self._x = z, self.ext.item_table(z), None
+        assert self._table is not None
+        return self._table
+
+    def _fill(self, z: bytes, y: np.ndarray) -> np.ndarray:
+        # The features no readout models (pefile's warnings) are NaN in a prediction; keep the state's values, as a
+        # NaN would read as missing and send a GBDT down its default branch (run 108).
+        missing = np.isnan(y)
+        if missing.any():
+            self.table(z)
+            if self._x is None:
+                self._x = np.asarray(self.ext.feature_vector(z))  # type: ignore[no-untyped-call]
+            y = np.where(missing, self._x, y)
+        return y
+
+    def append(self, z: bytes, blob: bytes) -> tuple[np.ndarray, bytes, int]:
+        """Score and write an append (`reach.predict`; the prediction matches re-extraction, run 107)."""
+        p = predict(self.table(z), z, ByteEdit(len(z), len(z), blob), self.ext.recognizers)
+        return self._fill(z, p.features(self.ext.readouts)), z + blob, len(blob)
+
+    def declared(self, z: bytes, p: Optional[Prediction]) -> tuple[np.ndarray, bytes, int]:
+        """Score and write a declared structural operation (`catalogue.predict_*`); raise if it abstains or is flagged."""
+        if p is None or p.table is None:
+            raise RuntimeError("the declaration does not apply or was flagged")
+        return self._fill(z, p.features(self.ext.readouts)), p.new, max(0, len(p.new) - len(z))
+
+    def inplace(self, z: bytes, edits: list[ByteEdit]) -> tuple[np.ndarray, bytes, int]:
+        """Score and write a chain of in-place overwrites (`reach.predict`); raise if any step is flagged."""
+        table, old, p = self.table(z), z, None
+        for e in edits:
+            p = predict(table, old, e, self.ext.recognizers)
+            if p.table is None:
+                raise RuntimeError(f"flagged: {p.reason}")
+            old, table = p.new, p.table
+        if p is None:
+            raise RuntimeError("no edits")
+        return self._fill(z, p.features(self.ext.readouts)), old, 0
+
+
+def _apply(z: bytes, edits: list[ByteEdit]) -> bytes:
+    for e in edits:
+        z = e.apply(z)
+    return z
+
+
+def _sec_candidate(engine: Engine, name: str, content: bytes) -> Candidate:
+    """Add a data section named `name` with donor `content` (catalogue.predict_add_section; our own writer)."""
+    raw = name.encode()[:8]
+
+    def thunk(z: bytes) -> tuple[np.ndarray, bytes, int]:
+        return engine.declared(z, catalogue.predict_add_section(engine.ext, engine.table(z), z, raw, content,
+                                                                 DATA_CHARACTERISTICS, False))
+
+    return ("sec", len(content), thunk)
+
+
+def _imp_candidate(engine: Engine, library: str, functions: list[str]) -> Candidate:
+    """Add an import of donor `functions` from `library` (catalogue.predict_add_imports: a new import section)."""
+    lib, fns = library.encode(), [f.encode() for f in functions][:20]
+
+    def thunk(z: bytes) -> tuple[np.ndarray, bytes, int]:
+        return engine.declared(z, catalogue.predict_add_imports(engine.ext, engine.table(z), z, lib, fns, False))
+
+    return ("imp", 1 << 16, thunk)
+
+
+def _ren_candidate(engine: Engine, name: str) -> Candidate:
+    """Rename the first section to `name` (catalogue.predict_rename; in place, no length change)."""
+    raw = name.encode()[:8]
+
+    def thunk(z: bytes) -> tuple[np.ndarray, bytes, int]:
+        return engine.declared(z, catalogue.predict_rename(engine.ext, engine.table(z), z, 0, raw))
+
+    return ("ren", 0, thunk)
+
+
+def _rm_candidate(engine: Engine, op: str, index: int) -> Candidate:
+    """Remove a data-directory entry: debug (`rdb`) or security (`rsg`) (catalogue.predict_zero_entry; in place)."""
+
+    def thunk(z: bytes) -> tuple[np.ndarray, bytes, int]:
+        return engine.declared(z, catalogue.predict_zero_entry(engine.ext, engine.table(z), z, index))
+
+    return (op, 0, thunk)
+
+
+def _hdr_candidate(engine: Engine, values: dict[str, int]) -> Candidate:
+    """Set the loader-ignored header fields (`HDR_FIELDS`) to a donor's values (reach.predict; in place)."""
+    keys = [f"{h}.{f}" for h, f in HDR_FIELDS]
+
+    def thunk(z: bytes) -> tuple[np.ndarray, bytes, int]:
+        pe = pefile.PE(data=z, fast_load=True)
+        edits = []
+        for (struct_name, field), key in zip(HDR_FIELDS, keys):
+            lo, packed = _pack_field(getattr(pe, struct_name), field, int(values[key]))
+            edits.append(ByteEdit(lo, lo + len(packed), packed))
+        return engine.inplace(z, edits)
+
+    return ("hdr", 0, thunk)
+
+
+def _chk_candidate(engine: Engine, value: int) -> Candidate:
+    """Set OPTIONAL_HEADER.CheckSum to a donor's value (reach.predict; in place)."""
+
+    def thunk(z: bytes) -> tuple[np.ndarray, bytes, int]:
+        pe = pefile.PE(data=z, fast_load=True)
+        lo, packed = _pack_field(pe.OPTIONAL_HEADER, "CheckSum", int(value))
+        return engine.inplace(z, [ByteEdit(lo, lo + len(packed), packed)])
+
+    return ("chk", 0, thunk)
+
+
+def _region_edits(z: bytes, table: ItemTable, group: str, content: bytes, offset: int) -> list[ByteEdit]:
+    """Overwrite the catalogue's in-place region for `group` with donor `content` (`offset` maps the DOS stub)."""
+    pe = pefile.PE(data=z)
+    edits = []
+    for lo, hi in catalogue.regions(pe, z, table)[group]:
+        seg = content[lo - offset: hi - offset] if offset else content[:hi - lo]
+        seg = (seg + b"\x00" * (hi - lo))[: hi - lo]
+        edits.append(ByteEdit(lo, hi, seg))
+    return edits
+
+
+def _dos_candidate(engine: Engine, stub: bytes) -> Candidate:
+    """Overwrite the DOS region (bytes 2-59 and the stub) with a donor's stub (reach.predict; in place)."""
+
+    def thunk(z: bytes) -> tuple[np.ndarray, bytes, int]:
+        edits = _region_edits(z, engine.table(z), "dos", stub, 2)
+        if not edits:
+            raise RuntimeError("no DOS region")
+        return engine.inplace(z, edits)
+
+    return ("dos", 0, thunk)
+
+
+def _slk_candidate(engine: Engine, content: bytes) -> Candidate:
+    """Overwrite the sections' slack with donor `content` (reach.predict; in place)."""
+
+    def thunk(z: bytes) -> tuple[np.ndarray, bytes, int]:
+        edits = _region_edits(z, engine.table(z), "slk", content, 0)
+        if not edits:
+            raise RuntimeError("no slack")
+        return engine.inplace(z, edits)
+
+    return ("slk", 0, thunk)
+
+
+def _gap_candidate(engine: Engine, op: str, at_pe_header: bool, kind: int, donor: bytes) -> Candidate:
+    """Insert a FileAlignment-sized gap before the PE header (`ext`) or the first section's data (`shf`); extracted."""
+
+    def thunk(z: bytes) -> tuple[np.ndarray, bytes, int]:
+        pe = pefile.PE(data=z, fast_load=True)
+        fa = pe.OPTIONAL_HEADER.FileAlignment or 0x200
+        if kind == 0:
+            gap = b"\x00" * fa
+        elif kind == 1:
+            gap = (donor + b"\x00" * fa)[:fa]
+        else:
+            gap = np.random.default_rng(fa).integers(0, 256, fa, dtype=np.uint8).tobytes()
+        written = catalogue.write_gap(z, at_pe_header, gap)
+        if written is None:
+            raise RuntimeError("the gap does not apply")
+        phi = np.asarray(engine.ext.feature_vector(written.new))  # type: ignore[no-untyped-call]
+        return phi, written.new, len(gap)
+
+    return (op, 1 << 16, thunk)
+
+
+def _append_candidates(donors: Donors, rng: np.random.Generator, engine: Engine) -> list[Candidate]:
+    size = int(rng.choice([4096, 65536]))
+    blobs = [b"\x00" + rng.integers(0, 256, size=size, dtype=np.uint8).tobytes(),
+             b"\x00" + bytes([int(rng.integers(0, 256))]) * size]
+    if donors.sections:
+        blobs.append(b"\x00" + donors.sections[int(rng.integers(len(donors.sections)))][1][:size])
+    return [("app", len(blob), (lambda b: lambda z: engine.append(z, b))(blob)) for blob in blobs]
+
+
+def full_menu(engine: Engine, donors: Donors, rng: np.random.Generator, targets: list[tuple[int, int]],
+              names: dict[tuple[int, int], str], ops: Sequence[str], sec_targeted: int = 8) -> list[Candidate]:
+    """
+    A candidate set spanning every operation of the threat model (`ops`), each scored by the exact prediction of our
+    own writer and materialized by that writer. Targeted section names and renames aim at the defense's most-used
+    section-hash buckets (`targets`); donor material (sections, stubs, header fields, checksums, imports) comes from the
+    goodware, as the GAMMA attacks draw on it.
+
+    `sec_targeted` keeps the add-section exploration (and so the reachable set of the histogram, string, and
+    section-hash features) as broad as the append/add-section-only search of run 108 -- the new operations are added
+    on top of it, not in place of it, so adding them cannot weaken the search by starving it of section candidates.
+    """
+    out: list[Candidate] = []
+    if "app" in ops:
+        out += _append_candidates(donors, rng, engine)
+    if "sec" in ops and donors.sections:
+        for i in (int(x) for x in rng.permutation(len(targets))[:sec_targeted]):
+            content = donors.sections[int(rng.integers(len(donors.sections)))][1][: int(rng.choice([4096, 65536]))]
+            out.append(_sec_candidate(engine, names[targets[i]], content))
+        name = "." + "".join(chr(int(c)) for c in rng.integers(0x61, 0x7b, size=3))
+        out.append(_sec_candidate(engine, name, donors.sections[int(rng.integers(len(donors.sections)))][1][:4096]))
+    if "imp" in ops and donors.imports:
+        for _ in range(2):
+            library, functions = donors.imports[int(rng.integers(len(donors.imports)))]
+            out.append(_imp_candidate(engine, library, functions))
+    if "ren" in ops:
+        for i in (int(x) for x in rng.permutation(len(targets))[:3]):
+            out.append(_ren_candidate(engine, names[targets[i]]))
+    if "hdr" in ops and donors.fields:
+        out.append(_hdr_candidate(engine, donors.fields[int(rng.integers(len(donors.fields)))]))
+    if "chk" in ops and donors.checksums:
+        out.append(_chk_candidate(engine, int(donors.checksums[int(rng.integers(len(donors.checksums)))])))
+    if "dos" in ops and donors.stubs:
+        out.append(_dos_candidate(engine, donors.stubs[int(rng.integers(len(donors.stubs)))]))
+    if "slk" in ops and donors.sections:
+        out.append(_slk_candidate(engine, donors.sections[int(rng.integers(len(donors.sections)))][1]))
+    for op, at in (("ext", True), ("shf", False)):
+        if op in ops:
+            donor = donors.sections[int(rng.integers(len(donors.sections)))][1] if donors.sections else b""
+            out.append(_gap_candidate(engine, op, at, int(rng.integers(0, 3)), donor))
+    for op, index in (("rdb", DEBUG_ENTRY), ("rsg", SECURITY_ENTRY)):
+        if op in ops:
+            out.append(_rm_candidate(engine, op, index))
+    return out
+
+
 def _logit(p: float) -> float:
     p = min(max(p, 1e-12), 1 - 1e-12)
     return float(np.log(p / (1 - p)))
 
 
-def greedy_search(booster: lightgbm.Booster, extractor: PEFeatureExtractor, z: bytes, tau: float, donors: Donors,
-                  queries: int, candidates: int, seed: int, preds: PredictorSet, targets: list[tuple[int, int]],
-                  names: dict[tuple[int, int], str], cap: int) -> dict[str, Any]:
+def greedy_search(booster: lightgbm.Booster, engine: Engine, z: bytes, tau: float,
+                  make_menu: Callable[[np.random.Generator], list[Candidate]], queries: int, seed: int, cap: int
+                  ) -> dict[str, Any]:
     """
-    Greedily apply the declared edit whose C1-predicted effect lowers the defense's score the most, until the
-    declared score crosses below tau (evaded), no candidate helps, or the query or byte budget is spent.
+    Greedily apply the edit whose predicted effect lowers the defense's score the most, until the score crosses below
+    tau (evaded), no candidate helps, or the query or byte budget is spent.
 
-    Each step predicts every candidate from the current (materialized) file and then applies exactly the chosen edit,
-    so edits compose. The declared score is the clean logit plus the sum of the chosen steps' declared changes: the
-    tool's layout effects between steps (A4, outside M) are excluded, as in the single-step case; the real score of
-    the final file is reported alongside (`p_adv_real`, the A4 gap).
+    Each step scores every candidate from the current (materialized) file by the exact prediction of our own writer
+    (`make_menu` builds them), then applies exactly the chosen edit, so edits compose. Because every operation is now
+    predicted exactly (item 7), the predicted score of the written file equals its re-extracted score (up to the
+    warning features, which no readout models); `p_adv_c1` (the predicted score) and `p_adv_real` (re-extraction of
+    the final file) therefore agree, and a gap between them is a prediction bug, not A4.
 
-    Returns a summary row: evaded (declared), the declared and real adversarial probabilities, the query count, the
-    operations chosen, the bytes added, and min_delta_logit (the most negative declared change of any candidate from
+    Returns a summary row: evaded (predicted), the predicted and real adversarial probabilities, the query count, the
+    operations chosen, the bytes added, and min_delta_logit (the most negative predicted change of any candidate from
     any state -- the soundness probe for a C4 row).
     """
     tau_logit = _logit(tau)
     state = z
-    p_state = float(booster.predict(extractor.feature_vector(state).reshape(1, -1))[0])  # type: ignore[no-untyped-call]
+    p_state = float(booster.predict(engine.ext.feature_vector(state).reshape(1, -1))[0])  # type: ignore[no-untyped-call]
     logit_decl = _logit(p_state)
     ops_chosen: list[str] = []
     min_delta = 0.0
     used = added = 0
     rng = np.random.default_rng(seed)
     while used < queries and logit_decl > tau_logit:
-        best: tuple[float, Operation] | None = None
-        for op in menu(donors, rng, candidates, preds, targets, names):
+        best: tuple[float, str, bytes, int] | None = None
+        for name, maxbytes, thunk in make_menu(rng):
             if used >= queries:
                 break
-            if added + op[3] > cap:
+            if added + maxbytes > cap:
                 continue
             used += 1
             try:
-                phi = op[1](extractor, state)
+                phi, written, nbytes = thunk(state)
             except Exception:
                 continue
             delta = _logit(float(booster.predict(phi.reshape(1, -1))[0])) - _logit(p_state)
             min_delta = min(min_delta, delta)
             if best is None or delta < best[0]:
-                best = (delta, op)
+                best = (delta, name, written, nbytes)
         if best is None or best[0] >= 0:
-            break  # no candidate lowered the declared score; a sound monotone detector stops here
-        try:
-            state = best[1][2](state)
-        except Exception:
-            break
+            break  # no candidate lowered the score; a sound monotone detector stops here
+        _, name, state, nbytes = best
         logit_decl += best[0]
-        added += best[1][3]
-        ops_chosen.append(best[1][0])
-        p_state = float(booster.predict(extractor.feature_vector(state).reshape(1, -1))[0])  # type: ignore[no-untyped-call]
+        added += nbytes
+        ops_chosen.append(name)
+        p_state = float(booster.predict(engine.ext.feature_vector(state).reshape(1, -1))[0])  # type: ignore[no-untyped-call]
     return {"evaded": bool(logit_decl <= tau_logit), "p_adv_c1": float(1 / (1 + np.exp(-logit_decl))),
             "p_adv_real": p_state, "evaded_real": bool(p_state <= tau), "queries": used, "ops": ",".join(ops_chosen),
             "num_ops": len(ops_chosen), "bytes_added": added, "min_delta_logit": min_delta, "tau_logit": tau_logit}
@@ -519,9 +778,11 @@ def main() -> None:
     parser.add_argument("--pilot_files", type=Path, default=ROOT / "artifacts/experiments/e1/seed-0/zeros/files.parquet")
     parser.add_argument("--db", type=Path, default=Path("/shared/datasets/EMBER-2024/data/ts"))
     parser.add_argument("--threat_model", choices=["M_add", "M_shift", "M_full"], default="M_full")
+    parser.add_argument("--operations", nargs="*", default=None, help="Restrict to these operation names "
+                        "(default: every operation of the threat model).")
     parser.add_argument("--fpr", type=float, default=0.01)
     parser.add_argument("--queries", type=int, default=100)
-    parser.add_argument("--candidates", type=int, default=12)
+    parser.add_argument("--candidates", type=int, default=12, help="Kept for compatibility; the full menu self-sizes.")
     parser.add_argument("--target_buckets", type=int, default=8, help="Section-hash buckets the targeted names aim at.")
     parser.add_argument("--budget_frac", type=float, default=0.05)
     parser.add_argument("--budget_min", type=int, default=512 * 1024)
@@ -539,8 +800,9 @@ def main() -> None:
     if manifest["feature_names"][: extractor.dim] != extractor.feature_names:
         raise RuntimeError(f"The store {args.features.as_posix()} ({manifest['feature_set']}) does not start with the "
                            "thrember features: the C1 engine has no recognizers for other layouts.")
-    preds = engine_predictors(extractor)
-    print(f"Scoring in thrember space ({extractor.dim} features).", flush=True)
+    engine = Engine(extractor)
+    ops = tuple(args.operations) if args.operations else THREAT[args.threat_model]
+    print(f"Scoring in thrember space ({extractor.dim} features); operations {','.join(ops)}.", flush=True)
 
     malware, goodware = load_pilot(args.pilot_files, args.db)
     if args.num_malware is not None:
@@ -556,6 +818,10 @@ def main() -> None:
         tau = _threshold(mdir / "ts_predictions.parquet", args.fpr)
         targets = [(b, sign) for b in target_buckets(booster, extractor.feature_names, args.target_buckets)
                    for sign in (-1, 1)]
+
+        def make_menu(rng: np.random.Generator, targets: list[tuple[int, int]] = targets) -> list[Candidate]:
+            return full_menu(engine, donors, rng, targets, names, ops)
+
         t0 = time.time()
         for name, data in malware:
             phi0 = extractor.feature_vector(data)  # type: ignore[no-untyped-call]
@@ -568,8 +834,7 @@ def main() -> None:
             except Exception:
                 overrun = False
             cap = max(int(args.budget_frac * len(data)), args.budget_min)
-            r = greedy_search(booster, extractor, data, tau, donors, args.queries, args.candidates, args.seed, preds,
-                              targets, names, cap)
+            r = greedy_search(booster, engine, data, tau, make_menu, args.queries, args.seed, cap)
             r.update(defense=d, name=name, tau=tau, p_clean=p_clean, truncated=len(data) >= MAX_LENGTH,
                      overrun_section=overrun)
             rows.append(r)
@@ -577,8 +842,8 @@ def main() -> None:
 
     results = pl.DataFrame(rows)
     results.write_parquet(args.outdir / "adaptive.parquet")
-    report: dict[str, Any] = {"threat_model": args.threat_model, "fpr": args.fpr, "queries": args.queries,
-                              "candidates": args.candidates, "target_buckets": args.target_buckets,
+    report: dict[str, Any] = {"threat_model": args.threat_model, "operations": list(ops), "fpr": args.fpr,
+                              "queries": args.queries, "target_buckets": args.target_buckets,
                               "budget_frac": args.budget_frac, "budget_min": args.budget_min, "seed": args.seed,
                               "defenses": {}}
     for d in defenses:
