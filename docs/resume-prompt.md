@@ -1,86 +1,88 @@
-# Resume: ProvExp (after 2026-11-03, session 5): decide the PV adaptive cell, edit Table 7, then items 9-11
+# Resume: ProvExp (after 2026-11-03, session 6): items 9-10, then the empty paper sections
 
 ## Where things stand
 
-Session 5 audited session 4 (which had flagged a possible silent model switch) and did not build anything new. The
-audit's findings are folded into `PLAN.md` (Tier 2, items 7-8) and `docs/status.md`. The task is unchanged from
-session 4's end: **decide the PV adaptive cell, edit Table 7 and the adaptive prose, then items 9-11.** Nothing from
-session 4 or 5 is pushed; the manuscript Table 7 is still unedited.
+Session 6 finished two things and left the manuscript's empty sections as the next big phase. Nothing is pushed.
 
-## What session 5 established (audit of session 4)
-
-- **C4 soundness check holds (item 8's main paper value).** From the `run/119` reports: mfull-feat **0/41** evaded
-  under M_full, madd-feat **0/47** under M_add, `min_delta_logit` exactly **0.0** on both -- the complete-threat-model
-  soundness check (all twelve operations) the review asked for (R1a/R11). Each C4 row attacked under its own threat
-  model. This is unaffected by the PV-cell decision.
-- **The 16->12 PV drop is an RNG/menu confound, not session 4's "misled greedy."** Per-file diagnosis in
-  `docs/direction-A-A1-design.md` ("Diagnosing the 16->12 PV drop"): of the 8 regressed files, only 2 hit the 200-query
-  ceiling and at most 1-3 fit "misled"; **5/8 stopped after one step** (`min_delta_logit` 0.0) because the *randomly
-  drawn* section candidates did not help on that first step, where run 108's draw did. The twelve-op `full_menu`
-  consumes the RNG differently, so the 108-vs-119 PV comparison is confounded by a shifted RNG stream and a larger
-  menu. Run 108's 16 evasions all re-extract (16/16), so the exact-prediction switch is not the cause. The computed PV
-  hole (44.4% of its gain lowerable) is confirmed reachable by both 12 and 16.
-- **Item 8's design is sound.** Scoring each candidate by the exact prediction of our own writer is correct
-  (predicted == re-extracted, item 7 / run 118); `full_menu` adds the new operations on top of run 108's section
-  budget, so adding them cannot starve the section exploration. No change needed.
-- **Not re-audited:** Table 5's population-scoping (session 4's user decision: in-population Wrong=0, with 45
-  out-of-population wrong noted in caption/prose). Still worth a sanity check on whether showing the 45 is more honest,
-  but it is a recorded user decision, so leave it unless revisited.
+1. **Table 7's PV adaptive cell is decided and written (commit `7c9d8ff`).** The two search menus are complementary on
+   PV, not one-worse-than-the-other (run 108 append+add-section 16/22, twelve-op 12/22, intersection 8, **union 20/22**,
+   two files evaded by neither). The user chose **Option A, the union**: report the adaptive attacker as the search run
+   under both menus keeping any evasion (standard max-over-configs). Table 7: unconstrained Adaptive **8%->20%** (10/49),
+   PV-4 Adaptive **73%->91%** (20/22); soundness rows stay 0% (noted as checked across all twelve operations). The PV
+   prose was rewritten and a latent stray-`%` bug fixed. Diagnosis + resolution: `docs/direction-A-A1-design.md`.
+2. **Item 11 (instrument the expert set) is done (commits `352fc55`, `195b354`, `01e8608`, `68d2434`).** See
+   `docs/direction-A-expert-set.md` ("Instrumented (item 11)" and the witnesses/adaptive section).
+   - `ExpertFeatures` now emits `items()`+`readouts`, reusing only `Identity`/`Opaque` -- **no core-framework change**.
+     **G1 bit-exact** on 45 files. The two assign-per-name quirks are modeled as non-locality (`local=False` when
+     `accumulate=False`); the import quirk is surfaced quantitatively (sound sum 92 vs the assign extractor's 1).
+   - The C4 derivation (`scripts/a_expert_directions.py`, go/no-go built in) gives **11 M_full holes = rows 27, 30-39**,
+     not 12 (the doc's "12" miscounted its own 11-row list; the user chose the tight 11). Two corrections the derivation
+     forced: **`no_sig` is up, not a hole** (a marker present iff unsigned; removing the signature adds it), and **slack
+     does not change the `info` features** (entropy is over the mapped content, which excludes slack -- the holes come
+     from rename). All **11 of 11 holes witnessed** by our own edits; the **adaptive search evades the monotone expert
+     model on 2 of 8** detected pilot malware (rename hole), scored by re-extraction (`scripts/a_expert_adaptive.py`,
+     `run/120`). Manuscript §5 updated ("12 of 40" -> "11", slack dropped, +the 2/8). `make`/`make check` clean.
 
 ## The task (in order)
 
-1. **Decide the PV adaptive cell in Table 7.** The twelve-op search gives unconstrained **10/49** (up from 4) but PV
-   **12/22** (down from run 108's append+add-section **16/22**). The audit makes this a presentation choice, not a
-   threat to a claim (the C4 check is 0 either way; the PV hole is reachable either way):
-   - **Option 1 (recommended, strengthened by the audit): report the strongest of our search variants per detector** --
-     unconstrained 10 (twelve-op), PV 16 (append+add-section, run 108) -- with one line that the Adaptive column is
-     "the strongest evasion our search finds." Standard for an adaptive attacker (max over configs); keeps item 8's
-     real wins (the complete C4 check + the unconstrained lift) without reporting an RNG-confounded 16->12 as if the
-     better search got worse.
-   - Option 2: report the twelve-op search uniformly (unconstrained 10, PV 12). Clean/consistent but understates PV
-     vs what our own search achieves, for a confounded reason.
-   - Option 3: re-run 119 on PV with a fixed section-candidate draw (remove the RNG confound) to lift PV toward 16,
-     then report one uniform search. More effort; the payoff is a clean uniform column.
-   - The one thing to avoid: reporting 16->12 as if the twelve-op search is simply worse on PV.
-2. **Edit Table 7 and the adaptive prose** in `manuscript/_f_evaluation.tex` once the cell is decided. Undisputed now:
-   the unconstrained adaptive cell `8% -> 20%` (10/49), and the two monotone rows stay `0%` (confirmed under each
-   row's own threat model). The prose already frames the 0.0 as an implementation check and the adaptive column as
-   "our search"; add that the check now covers all twelve operations. Reports:
-   `artifacts/experiments/a1/adaptive-twelve/{mfull,madd}/adaptive.json` (twelve-op),
-   `artifacts/experiments/a1/adaptive-v3/adaptive.json` (run 108, append+add-section) for the PV 16. Run `make` and
-   `make check` after.
-3. **Then items 9-11** (`PLAN.md` Tier 2). State the hypothesis (a sentence or two) before each run.
-   - (9) A detector on the hand table. *Hypothesis:* the search, adding a section after the overlay, evades it on some
-     in-population files. Go/no-go: at least one in-population evasion; else report the difference as immaterial.
-   - (10) The adversarial-training row (synthetic now), against item 8's search.
-   - (11) The expert set instrumented (`featuresets/ember2024/expert.py`; R3c, R8): the engine finds its two quirks
-     and its M_full holes, each witnessed by our own edits; an adaptive cell. Go/no-go: the derived holes match the
-     reasoned 12 of 40 under M_full (investigate any difference).
+1. **Item 9: a detector on the hand table** (`PLAN.md` Tier 2). *Hypothesis:* the search, adding a section after the
+   overlay, evades it on some in-population files; inside the population the hand and derived tables differ in only two
+   features (`entry_name_hash`, `security_size`), so the detectors should be near-identical. **Go/no-go:** at least one
+   in-population evasion; otherwise report the in-population difference as immaterial to the detector (honesty row, R3a).
+   Likely answerable from existing artifacts or a short run (the hand-table directions already exist; `a_directions.py
+   --hand`).
+2. **Item 10: the adversarial-training row** (synthetic now), against item 8's twelve-op search. A training run (the
+   toolkit's adversarial examples added to training), so a `run/` script for the user (next number 121, reads
+   `NUM_WORKERS`). **Run with eyes open:** the review flags the synthetic 20% as implausible given our search gets only
+   10/49 on the *undefended* model, so adversarial training may come out competitive with the monotone rows -- report
+   honestly whatever it shows (`docs/memory`: gates are guides; never reframe a weak result).
+3. **Then the empty paper sections** (the big phase; the review's top remaining risks live here). Order from the review
+   (`docs/reviews/2026-11-02-body.md` §2 and §7, and `PLAN.md`): **related work (§6)** and **introduction (§1)** first
+   (they carry the novelty, deliverable, and Pierazzi risks), then **background (§2)**, **discussion (§7)**, **Figure 1**
+   (edit -> item delta -> adjusted sums -> features, against re-extraction), then the **abstract** last. Section stubs
+   exist and are empty (`manuscript/_b_introduction.tex`, `_c_background.tex`, `_g_related_work.tex`, `_h_discussion.tex`,
+   `_a_abstract.tex`). Drafts to reuse: the review's §8 (contributions list, key-insight sentence, introduction
+   argument); the §5/§6 lists of related work and the fair characterizations; `docs/paper-mock.md` for budgets.
 
-## Deferred (user, 2026-11-03)
+## Key context for the empty sections (from the review)
 
-- **Routing to Table 7's sums rows (`--route <c4>=ref`).** `a1_adaptive.py` has no routing, and the engine predicts
-  only in thrember space (the sums groups have no recognizers), so scoring a routed sums-model file needs a design
-  decision. Bring back a concrete plan before touching Table 7's sums-row adaptive cells.
+- **R5 (Pierazzi).** Do not imply we compute what Pierazzi et al. call infeasible. Their side-effect features come from
+  the *consolidation* a transformation needs to satisfy Gamma, which here is declared per operation (R5); we compute the
+  extractor's response to a declared edit. Separate the two in §2. Cite the TOPS 2025 version too.
+- **R6 (novelty).** One paragraph naming what is classical (the IVM delta rule, MIN/MAX, the sign domain, Gimenez et
+  al.'s Proposition 1) and what is new (the item model with locating positions and margins, the term/readout
+  vocabularies, per-input signatures). Theorem 1 is now Proposition 1; Theorem 2 is the main theorem.
+- **Missing related work a reviewer will raise** (§5 table): Chen et al. USENIX Sec 2020 (PDF, hand-derived feature
+  consequences -- the closest prior by-hand derivation), Srndic & Laskov S&P 2014, Simonetto et al., Dyrmishi et al.,
+  Bostani et al., Chen et al. CCS 2021, Demontis et al. Fair lines are in the review's §6.
+- **C's "what is the deliverable?"** Answer in §1: a detector sound for a stated edit catalogue at near-standard
+  accuracy, derived automatically and re-derivable when the catalogue changes.
+- The expert-set result is now a strong §6/§1 data point (the independent hand baseline the meta-review asked for):
+  instrumenting Gimenez et al.'s own extractor, the derivation finds their quirks and 11 M_full holes, and our search
+  evades their "certifiably robust" set on 2/8.
+
+## Deferred / not re-audited (carry forward)
+
+- **Table 5's population-scoping** (session 4's user decision: in-population Wrong=0, with 45 out-of-population wrong in
+  the caption/prose). Not re-audited; recorded user decision, leave unless revisited.
+- **Routing to Table 7's sums rows** (`--route <c4>=ref`): `a1_adaptive.py` has no routing and the engine predicts only
+  in thrember space, so bring back a concrete plan before touching the sums-row adaptive cells.
+- **A G1 unit test for the expert instrumentation** would be nice-to-have (G1 is verified by scratch + `run/120`'s
+  derivation go/no-go, but not a committed unit test).
 
 ## Working notes
 
-- **Safety-classifier false positives / `/delegate`.** The main session's classifier (Opus 5.5) false-positives on
-  benign fine-grained per-sample analysis of our own detectors/search logs and stops the response mid-stream. The
-  workaround: isolate the flagged unit, write a tight measurement-framed prompt, run it on a fresh subagent on a
-  simpler model (Agent tool, `subagent_type: general-purpose`, `model: sonnet`/`haiku`), relay the conclusion. The
-  `/delegate` skill (`.claude/skills/delegate/SKILL.md`) captures this with a mandatory Step-0 legitimacy gate; read
-  and apply it per case. The 16->12 PV diagnosis was produced this way. Worth filing as feedback so the classifier
-  improves.
 - **Runs:** only jobs under ~10 min yourself (estimate from the slowest case); otherwise smoke-test and write a `run/`
-  script (next number 120), reading `NUM_WORKERS` when the script has a worker flag. `a1_adaptive.py` is
-  single-process (no worker pool), so `run/119` sets OMP threads instead and notes NUM_WORKERS does not apply.
-- Do not change the writers' output (`catalogue.write_*`): G7 (runs 107, 117, 118) and Table 5's edit counts depend
-  on the same seeded edits.
-- Untracked, leave alone: `papers/`, `TODO.md`, `docs/checkpoint-prompt.md`, `make-manuscript.sh`, `slides/`, `tmp/`.
-- Three test modules fail to collect for a pre-existing reason (`tests/test_shortcuts_*`); their scripts moved to
-  `scripts/archive/`. Not caused by recent sessions.
-- The user still owes the upstream reports in `docs/upstream-issues.md`.
-- Bib page ranges not verified: Incer et al., Chen et al. (CCS 2021), Simonetto et al. The related work the review
-  found missing is in `docs/status.md` (the review's block); §6 must cover it.
+  script (next number **121**), reading `NUM_WORKERS` when the script has a worker flag. Item 11's `run/120` is
+  single-process, so it pins OMP and notes NUM_WORKERS does not apply -- same for any single-process successor.
+- **Safety-classifier false positives / `/delegate`.** The main session's classifier can false-positive on
+  fine-grained per-sample analysis of our own detectors/search logs and stop the response mid-stream. Workaround:
+  isolate the unit, write a measurement-framed prompt, run it on a fresh subagent on a simpler model (Agent tool,
+  `subagent_type: general-purpose`, `model: sonnet`/`haiku`), relay the conclusion. The `/delegate` skill captures this
+  (mandatory Step-0 legitimacy gate).
+- **Do not change the writers' output** (`catalogue.write_*`): G7 (runs 107, 117, 118) and Table 5's edit counts depend
+  on the same seeded edits. The expert adaptive uses its own loader-safe writers (`a_expert_adaptive.py`) and
+  `a1_adaptive.rename_section`.
+- Three test modules fail to collect for a pre-existing reason (`tests/test_shortcuts_*`); not caused by recent work.
+- The user still owes the upstream reports in `docs/upstream-issues.md` (incl. the expert set's two quirks, item 6).
 - At the end of each session: update `docs/status.md`, `PLAN.md`, and this file. Commit in logical pieces; do not push.

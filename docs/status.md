@@ -19,9 +19,11 @@ change the `info` features** (entropy is over mapped content, excluding slack; t
 (modified_dos_stub 1->0 by the DOS rewrite; the ten section-name features to 0 by rename), and the **adaptive search
 evades the monotone expert model on 2 of the 8** pilot malware it detects (both via rename; scored by re-extraction,
 every evasion re-extracts). Manuscript §5 prose updated ("12 of 40" -> "11", slack dropped, +the 2/8 adaptive result);
-`make`/`make check` clean. A C1 recognizer was not needed (re-extraction scoring); productionizing the full derivation
-into a reusable script is the one open piece of item 11. **Then items 9-10.** Table 5's population-scoping still not
-re-audited; routing to Table 7's sums rows still deferred. Not pushed.
+`make`/`make check` clean. A C1 recognizer was not needed (re-extraction scoring). The derivation is productionized
+(`scripts/a_expert_directions.py`, go/no-go built in) as step 1 of `run/120`. **Item 11 is done** (five commits,
+`68d2434` and before; `PLAN.md` Tier 2). **Next: items 9-10, then the empty paper sections** (`docs/resume-prompt.md`).
+Table 5's population-scoping still not re-audited; routing to Table 7's sums rows still deferred. A G1 unit test for the
+expert instrumentation is a nice-to-have. Not pushed.
 
 **2026-11-03 (session 5): audited session 4's work (model-switch caution). C4 soundness check confirmed from the
 reports (mfull-feat 0/41, madd-feat 0/47, min_delta 0.0 -- item 8's main paper value, holds). The 16->12 PV drop
