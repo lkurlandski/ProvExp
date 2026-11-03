@@ -186,11 +186,25 @@ Discussion sentence. After tiers 1-2: the remaining sections (background with th
 discussion with routing, Figure 1), introduction and abstract last.
 
 **Tiers 1-2 are complete as of 2026-11-03 (session 7).** `run/122` (the adversarial-training row, item 10) is running
-(the user, `NUM_WORKERS=24`); its output replaces Table 7's synthetic adv-training row. **The next session is a
-holistic stock-take (user, 2026-11-03), not drafting yet:** after reading `run/122`, re-assess what tiers 1-2
-accomplished against the review's risks R1-R16 (the status of each now), and from that decide the next items -- the
-empty paper sections (above) are the leading candidate but are to be confirmed against the review, not assumed. Open
-user decision: the introduction's lead and deliverable framing.
+(the user, `NUM_WORKERS=24`); its output replaces Table 7's synthetic adv-training row.
+
+**Stock-take done (session 8, 2026-11-03).** Tiers 1-2 addressed essentially every writing and small-experiment risk
+(R1b-d, R2, R3, R5-R16); the full R1-R16 status table is in `docs/status.md`. Two materially open levers remain:
+**R4 (a second built instance)** and **the empty paper sections**. One honest caveat on R1: the twelve-op adaptive
+search did NOT beat the toolkit on the undefended model (that model is genuinely robust to in-catalogue edits), so the
+independent evidence rests on out-of-model toolkit outputs + "still detected", and the 0.0 is framed as an
+implementation check. **Decided with the user:** the empty sections come next (the second instance, R4, stays a tier-3
+decision, revisited after the sections exist and a fresh review); the introduction is **framework-first with a
+detector-centered results paragraph** (the deferred framing decision of 2026-11-02, now settled).
+
+**New primary track before drafting (session 8, 2026-11-03): a manuscript writing-and-presentation spec.** The user is
+dissatisfied with Claude's writing/presentation (sentence, structure, visual; the LLM register above all). Before the
+empty sections are drafted, we build a writing approach: model **craft** on the admired exemplars (not the user's own
+papers -- a light **voice** reference only), with an **anti-pattern kill-list** and a **tight feedback loop on real
+draft text** (the user's reactions are the arbiter) as the real levers, not a catalog of likes. Pathway, exemplars, the
+Pierazzi analysis, and the concrete next steps (read `carlini2017towards` + `arp2022dos`, write a short
+`docs/writing-spec.md` replacing the stale `docs/style_guide.md`, then draft related work (§6) as the calibration
+section) are in `docs/resume-prompt.md` and the memory `manuscript-writing-style-overhaul.md`.
 
 ### Earlier: next steps (2026-11-02, review done: plan the response)
 

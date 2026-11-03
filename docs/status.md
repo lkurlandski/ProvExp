@@ -1,5 +1,46 @@
 # Status
 
+**2026-11-03 (session 8): planning session. Holistic stock-take vs the review done; a new primary track opened --
+building a manuscript writing-and-presentation spec before drafting the empty sections.** Nothing pushed. `run/122`
+still running (see session 7). Next session: `docs/resume-prompt.md`.
+
+- **The user is dissatisfied with Claude's manuscript writing/presentation** at three levels (sentence, structure,
+  visual). Before drafting the empty sections we are building a writing approach. Settled with the user (see
+  `docs/resume-prompt.md` and memory `manuscript-writing-style-overhaul.md`): model **craft** on the admired exemplars
+  (NOT the user's own papers -- they are a newer researcher; their papers are a light **voice** reference only); the
+  **arbiter** is the user reacting to real draft sentences; the spec is mostly an **anti-pattern kill-list** (the LLM
+  register) plus a few target passages, not a catalog; "organization" = a smooth global narrative (arc + flow passes);
+  CCS/`acmart` format is fixed but conventions within it are ours. Exemplars are in `papers/`, named by citation key.
+  Pierazzi (S&P 2020) is analyzed (signature move: definition -> informal gloss -> concrete example; plain-first,
+  economical prose). Next: read `carlini2017towards` + `arp2022dos`, skim the user's two papers for voice, write a short
+  spec (propose `docs/writing-spec.md`, replacing the stale `docs/style_guide.md`), then draft related work (§6) as the
+  calibration section in a tight loop.
+- **Decided with the user (2026-11-03):** the empty sections come next (a second instance, R4, stays a tier-3
+  decision); the introduction is **framework-first with a detector-centered results paragraph** (the deferred framing
+  decision, now settled).
+- **Stock-take vs `docs/reviews/2026-11-02-body.md` (R1-R16), current status.** Verified against the `.tex`:
+
+  | Risk | Status | Note |
+  |---|---|---|
+  | R1 tautological eval | **addressed, 1 caveat** | in/out-of-model split, 0.0-as-check, "still detected" all in `_f`. Caveat: the twelve-op adaptive search (item 8) did NOT beat the toolkit on the undefended model -- that model is genuinely robust to in-catalogue edits -- so the independent evidence rests on out-of-model toolkit outputs + "still detected", not a strong adaptive attack. |
+  | R2 P1/P2 unchecked | **addressed** | P1 (run 117): 0/60,934 take a passing file out of population. P2: direction files from 100 vs 2,000 byte-identical. In `_f:245-257`. |
+  | R3 hand table strawman | **addressed, strengthened** | Table 6 in-pop column + framing; item 11 (expert set) is the independent hand baseline (11 holes, adaptive 2/8); item 9 (hand detector lowered up to -1.57 logits where derived is 0.0). |
+  | R4 one instance | **partial (scope reduced only)** | Table 1 shrunk; second built instance not done -- the open tier-3 lever. |
+  | R5 Pierazzi eta | **addressed** | `_d:19-22` separates consolidation from the computed response; TOPS 2025 cited. §2 (empty) reinforces. |
+  | R6 known techniques | **addressed** | Thm 1 -> Prop 1; classical-vs-new paragraph `_d:299-303`; IVM/self-adjusting/Cousot cited. |
+  | R7 routing/coverage | **addressed in .tex; 1 §7 sentence pending** | untruncated coverage `_f:252` (1.5% benign outside); routing named; the plain Discussion statement waits on empty §7. |
+  | R8 expert wrong threat model | **addressed** | additions block leads 92.2% vs 29.1% both sound; holes measured (item 11) + adaptive cell. |
+  | R9 Thm 1 vs re-extraction | **addressed honestly** | no speed claim (50 vs 53 ms); role restated; deliverable lands in empty §1. |
+  | R10 keyed-count entry | **addressed** | `_d:104/112`, `_j:40`. |
+  | R11 adaptive on diff models | **partial** | C4 rows attacked under own threat model; sums-row routing deferred by design. |
+  | R12 PV 44.4% | **addressed** | re-measured; kept as "proved lowerable" + warning clause. |
+  | R13 instrumentation cost | **addressed by reframing (ask rejected)** | no person-days/LOC; "once per extractor, not once per attack". |
+  | R14 exactness 7/12 ops | **addressed** | item 7/run 118: 0 wrong of 34,965 in-pop; Table 5 carries counts. |
+  | R15 packing/rewriting | **addressed in .tex; 1 §7 sentence pending** | `_e:74-75`; confident Discussion sentence waits on §7. |
+  | R16 PE minutiae | **rejected with reason** | prose already leads with the three general causes; witness column keeps PE detail. |
+
+  Loose ends: RQ1-RQ3 labels never added (cosmetic); routing to the sums-row adaptive cells; `run/122` row.
+
 **2026-11-03 (session 7): items 9 and 10 done. Next: the empty paper sections.** Nothing pushed.
 
 - **Item 9 (a detector on the hand table; `run/121`, committed `29fc3a7`).** The hand M_full detector
