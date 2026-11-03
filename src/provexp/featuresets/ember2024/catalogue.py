@@ -669,7 +669,9 @@ def write_gap(z: bytes, at_pe_header: bool, gap: bytes) -> Optional[Written]:
     def moved_offset(offset: int) -> int:
         return offset + k if offset >= at else offset
 
-    edits = [ByteEdit(at, at, gap)]
+    # NOTE: on a truncated file the first section's data can start past the end; the gap then goes at the end (as the
+    # original writer's slicing put it, runs 107 and 117), and the pointers past `at` are still raised.
+    edits = [ByteEdit(min(at, len(z)), min(at, len(z)), gap)]
     if at_pe_header:
         edits.append(_field(0x3C, "<I", at + k))
         edits.append(_field(moved_offset(field_range(oh, "SizeOfHeaders")[0]), "<I", oh.SizeOfHeaders + k))
