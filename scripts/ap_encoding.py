@@ -51,7 +51,7 @@ from provexp.items import feature_hash
 
 sys.path.insert(0, str(Path(__file__).parent))
 from ap_check0_solver import Ensemble  # noqa: E402
-from catalogue_checks import PAGE  # noqa: E402
+from provexp.featuresets.ember2024.catalogue import PAGE  # noqa: E402
 from catalogue_checks import add_section  # noqa: E402
 
 __all__ = [

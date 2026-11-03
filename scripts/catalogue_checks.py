@@ -60,14 +60,24 @@ from provexp.data.simpledb import SimpleDBReader
 from provexp.featuresets.ember2024.catalogue import DEBUG_ENTRY
 from provexp.featuresets.ember2024.catalogue import HDR_FIELDS
 from provexp.featuresets.ember2024.catalogue import SECURITY_ENTRY
+from provexp.featuresets.ember2024.catalogue import PAGE
 from provexp.featuresets.ember2024.catalogue import passes_precondition
+from provexp.featuresets.ember2024.catalogue import predict_add_imports
+from provexp.featuresets.ember2024.catalogue import predict_add_section
+from provexp.featuresets.ember2024.catalogue import predict_insert_gap
+from provexp.featuresets.ember2024.catalogue import predict_rename
+from provexp.featuresets.ember2024.catalogue import predict_zero_entry
 from provexp.featuresets.ember2024.catalogue import regions
+from provexp.featuresets.ember2024.catalogue import write_gap
+from provexp.featuresets.ember2024.catalogue import write_imports
+from provexp.featuresets.ember2024.catalogue import write_section
 from provexp.featuresets.ember2024.features import PEFeatureExtractor
 from provexp.featuresets.ember2024.features import field_range
 from provexp.featuresets.ember2024.features import merge_import_descriptors
 from provexp.featuresets.ember2024.sums import SumsFeatureExtractor
 from provexp.items import ItemTable
 from provexp.reach import ByteEdit
+from provexp.reach import Prediction
 from provexp.reach import predict
 
 __all__ = [
@@ -80,8 +90,6 @@ __all__ = [
     "observed_signs",
 ]
 
-# Below this SectionAlignment, Windows maps the image flat (raw offset = virtual address).
-PAGE = 0x1000
 OPS = ("app", "sec", "imp", "ext", "shf", "slk", "dos", "hdr", "chk", "ren", "rdb", "rsg")
 
 SCN_CODE, SCN_DATA = 0x00000020, 0x00000040
@@ -95,11 +103,6 @@ IMPORT_ENTRY = 1
 ################################################################################
 
 
-def _align(x: int, a: int) -> int:
-    """`x` rounded up to a multiple of `a` (unchanged when `a` is 0)."""
-    return (x + a - 1) // a * a if a else x
-
-
 def _parse(z: bytes, fast: bool = False) -> Optional[pefile.PE]:
     """Parse as the extractor does, or None."""
     try:
@@ -108,158 +111,29 @@ def _parse(z: bytes, fast: bool = False) -> Optional[pefile.PE]:
         return None
 
 
-def _put(buf: bytearray, offset: int, fmt: str, value: int) -> None:
-    struct.pack_into(fmt, buf, offset, value & ((1 << (8 * struct.calcsize(fmt))) - 1))
-
-
-def _new_section_slot(pe: pefile.PE, z: bytes) -> Optional[tuple[int, int]]:
-    """Where a new section header goes (40 zero bytes after the table, within the headers) and the new section's RVA."""
-    start = pe.DOS_HEADER.e_lfanew + 4 + 20 + pe.FILE_HEADER.SizeOfOptionalHeader
-    slot = start + 40 * pe.FILE_HEADER.NumberOfSections
-    first_data = min((s.PointerToRawData for s in pe.sections if s.SizeOfRawData and s.PointerToRawData), default=len(z))
-    if slot + 40 > min(pe.OPTIONAL_HEADER.SizeOfHeaders, first_data, len(z)) or any(z[slot:slot + 40]):
-        return None
-    sa = pe.OPTIONAL_HEADER.SectionAlignment or 0x1000
-    end = max((s.VirtualAddress + max(s.Misc_VirtualSize, s.SizeOfRawData) for s in pe.sections), default=0)
-    return slot, _align(max(end, pe.OPTIONAL_HEADER.SizeOfHeaders), sa)
-
-
 def add_section(z: bytes, name: bytes, content: bytes, characteristics: int, before_overlay: bool,
                 content_at_rva: Optional[Callable[[int], bytes]] = None) -> Optional[tuple[bytes, int]]:
     """
-    Add a section (`sec`): a header after the section table, the content padded to FileAlignment at the end of the file
-    or (`before_overlay`) where pefile's overlay starts, moving the overlay and the certificate table's offset.
-
-    Args:
-        z: The file.
-        name: The section name (at most 8 bytes; shorter names are NUL-padded).
-        content: The section's content (ignored when `content_at_rva` is given).
-        characteristics: The section's characteristics.
-        before_overlay: Whether the content goes before the overlay (as LIEF puts it) instead of after it.
-        content_at_rva: Builds the content from the section's RVA (for content that holds RVAs, as an import table).
+    Add a section (`sec`; `catalogue.write_section`): a header after the section table, the content padded to
+    FileAlignment at the end of the file or (`before_overlay`) where pefile's overlay starts.
 
     Returns:
         The edited file and the new section's RVA, or None if the headers have no room for another section header.
     """
-    pe = _parse(z, fast=True)
-    if pe is None:
-        return None
-    slot = _new_section_slot(pe, z)
-    if slot is None:
-        return None
-    table_slot, rva = slot
-    fa = pe.OPTIONAL_HEADER.FileAlignment or 0x200
-    sa = pe.OPTIONAL_HEADER.SectionAlignment or 0x1000
-    overlay = pe.get_overlay_data_start_offset() if before_overlay else None
-    # Past every section's raw data, also where pefile's overlay rule skips a section that runs past the end.
-    ends = [min(s.PointerToRawData + s.SizeOfRawData, len(z)) for s in pe.sections if s.SizeOfRawData]
-    at = len(z) if overlay is None else max([overlay] + ends)
-    offset = _align(at, fa)
-    if sa < PAGE:
-        # NOTE: a low-alignment image is mapped flat, so a section's raw offset must equal its virtual address (run 104).
-        offset = rva = max(offset, rva)
-    if content_at_rva is not None:
-        content = content_at_rva(rva)
-    raw = content + b"\x00" * (_align(len(content), fa) - len(content))
-    inserted = b"\x00" * (offset - at) + raw
-    buf = bytearray(z[:at] + inserted + z[at:])
-    shift = len(inserted) if at < len(z) else 0
-    security = pe.OPTIONAL_HEADER.DATA_DIRECTORY[SECURITY_ENTRY] if len(pe.OPTIONAL_HEADER.DATA_DIRECTORY) > SECURITY_ENTRY else None
-    if shift and security is not None and security.VirtualAddress >= at:
-        _put(buf, security.get_file_offset(), "<I", security.VirtualAddress + shift)
-    header = name[:8].ljust(8, b"\x00") + struct.pack("<IIII", len(content), rva, len(raw), offset) + b"\x00" * 12
-    buf[table_slot:table_slot + 40] = header + struct.pack("<I", characteristics)
-    _put(buf, pe.FILE_HEADER.get_file_offset() + 2, "<H", pe.FILE_HEADER.NumberOfSections + 1)
-    oh = pe.OPTIONAL_HEADER
-    _put(buf, field_range(oh, "SizeOfImage")[0], "<I", _align(rva + len(content), sa))
-    size_field = "SizeOfCode" if characteristics & SCN_CODE else "SizeOfInitializedData"
-    _put(buf, field_range(oh, size_field)[0], "<I", getattr(oh, size_field) + len(raw))
-    return bytes(buf), rva
+    written = write_section(z, name, content, characteristics, before_overlay, content_at_rva)
+    return None if written is None else (written.new, written.layout["rva"])
 
 
 def add_imports(z: bytes, library: bytes, functions: list[bytes], before_overlay: bool) -> Optional[bytes]:
-    """
-    Add imports (`imp`): a new data section holding the existing import descriptors, one for `library` with its own
-    lookup table, address table, and names, and the terminator; the IMPORT directory entry points to it.
-    """
-    pe = _parse(z)
-    if pe is None or len(pe.OPTIONAL_HEADER.DATA_DIRECTORY) <= IMPORT_ENTRY:
-        return None
-    old = [bytes(entry.struct.__pack__()) for entry in getattr(pe, "DIRECTORY_ENTRY_IMPORT", [])]
-    thunk = "<Q" if pe.PE_TYPE == pefile.OPTIONAL_HEADER_MAGIC_PE_PLUS else "<I"
-    width = struct.calcsize(thunk)
-
-    def build(rva: int) -> bytes:
-        descriptors = 20 * (len(old) + 2)
-        lookup = descriptors
-        address = lookup + width * (len(functions) + 1)
-        names = address + width * (len(functions) + 1)
-        blob = bytearray()
-        hint_names = []
-        for f in functions:
-            hint_names.append(names + len(blob))
-            blob += b"\x00\x00" + f + b"\x00"
-            if len(blob) % 2:
-                blob += b"\x00"
-        library_rva = rva + names + len(blob)
-        blob += library + b"\x00"
-        table = b"".join(struct.pack(thunk, rva + h) for h in hint_names) + b"\x00" * width
-        new = struct.pack("<IIIII", rva + lookup, 0, 0, library_rva, rva + address)
-        return b"".join(old) + new + b"\x00" * 20 + table + table + bytes(blob)
-
-    added = add_section(z, b".pvimp", b"", DATA_CHARACTERISTICS, before_overlay, content_at_rva=build)
-    if added is None:
-        return None
-    edited, rva = added
-    buf = bytearray(edited)
-    entry = pe.OPTIONAL_HEADER.DATA_DIRECTORY[IMPORT_ENTRY]
-    _put(buf, entry.get_file_offset(), "<I", rva)
-    _put(buf, entry.get_file_offset() + 4, "<I", 20 * (len(old) + 2))
-    return bytes(buf)
+    """Add imports (`imp`; `catalogue.write_imports`): a new section holding the import table, pointed to by IMPORT."""
+    written = write_imports(z, library, functions, before_overlay)
+    return None if written is None else written.new
 
 
 def insert_gap(z: bytes, at_pe_header: bool, gap: bytes) -> Optional[bytes]:
-    """
-    Insert a gap (`ext` before the PE header, `shf` before the first section's data) of a multiple of FileAlignment
-    bytes, raising the pointers past it: e_lfanew and SizeOfHeaders (`ext`), PointerToRawData, and the certificate
-    table's offset. None if the gap is not a multiple of FileAlignment, the headers would outgrow the first section, or
-    the image is low-alignment (mapped flat: raw data cannot move off its virtual address).
-    """
-    pe = _parse(z, fast=True)
-    if pe is None:
-        return None
-    oh = pe.OPTIONAL_HEADER
-    fa = oh.FileAlignment or 0x200
-    if len(gap) % fa or oh.SectionAlignment < PAGE:
-        # NOTE: a low-alignment image is mapped flat: moving raw data off its virtual address is not loader-safe.
-        return None
-    k = len(gap)
-    if at_pe_header:
-        at = pe.DOS_HEADER.e_lfanew
-        first_rva = min((s.VirtualAddress for s in pe.sections), default=1 << 32)
-        if oh.SizeOfHeaders + k > first_rva:
-            return None
-    else:
-        data = [s.PointerToRawData for s in pe.sections if s.SizeOfRawData and s.PointerToRawData >= oh.SizeOfHeaders]
-        if not data:
-            return None
-        at = min(data)
-
-    def moved(offset: int) -> int:
-        return offset + k if offset >= at else offset
-
-    buf = bytearray(z[:at] + gap + z[at:])
-    if at_pe_header:
-        _put(buf, 0x3C, "<I", at + k)
-        _put(buf, moved(field_range(oh, "SizeOfHeaders")[0]), "<I", oh.SizeOfHeaders + k)
-    for s in pe.sections:
-        if s.SizeOfRawData and s.PointerToRawData >= at:
-            _put(buf, moved(s.get_file_offset() + 20), "<I", s.PointerToRawData + k)
-    if len(oh.DATA_DIRECTORY) > SECURITY_ENTRY:
-        security = oh.DATA_DIRECTORY[SECURITY_ENTRY]
-        if security.Size and security.VirtualAddress >= at:
-            _put(buf, moved(security.get_file_offset()), "<I", security.VirtualAddress + k)
-    return bytes(buf)
+    """Insert a gap (`ext` before the PE header, `shf` before the first section's data; `catalogue.write_gap`)."""
+    written = write_gap(z, at_pe_header, gap)
+    return None if written is None else written.new
 
 
 def forged_rich(pairs: list[tuple[int, int]], key: int = 0x5EED5EED) -> bytes:
@@ -275,7 +149,10 @@ def forged_rich(pairs: list[tuple[int, int]], key: int = 0x5EED5EED) -> bytes:
 ################################################################################
 
 # An instance: (operation, label, the edited file or None if it does not apply, the in-place byte edits or None).
-Instance = tuple[str, str, Optional[bytes], Optional[list[ByteEdit]]]
+# The declared prediction of an item-stated instance (Table 5): writes the instance and predicts its features from the
+# item table (`catalogue.predict_*`), given the extractor; None for the element-stated operations.
+Declared = Optional[Callable[[PEFeatureExtractor], Optional[Prediction]]]
+Instance = tuple[str, str, Optional[bytes], Optional[list[ByteEdit]], Declared]
 
 
 def _printable(n: int, rng: np.random.Generator) -> bytes:
@@ -286,15 +163,18 @@ def _random(n: int, rng: np.random.Generator) -> bytes:
     return rng.integers(0, 256, n, dtype=np.uint8).tobytes()
 
 
-def _in_place(op: str, label: str, z: bytes, edits: list[ByteEdit]) -> Instance:
+def _in_place(op: str, label: str, z: bytes, edits: list[ByteEdit], declared: Declared = None) -> Instance:
     out = z
     for e in edits:
         out = e.apply(out)
-    return op, label, out, edits
+    return op, label, out, edits, declared
 
 
 def instances(z: bytes, pe: pefile.PE, table: ItemTable, rng: np.random.Generator) -> list[Instance]:
-    """Every operation's instances on one file (parameters seeded by `rng`)."""
+    """
+    Every operation's instances on one file (parameters seeded by `rng`). The item-stated ones carry their declared
+    prediction (`Declared`), which writes the same file.
+    """
     out: list[Instance] = []
     has_overlay = pe.get_overlay_data_start_offset() is not None
     layouts = [False, True] if has_overlay else [False]
@@ -304,7 +184,7 @@ def instances(z: bytes, pe: pefile.PE, table: ItemTable, rng: np.random.Generato
     # app: random (crossing window boundaries), printable (extending a trailing string), a single zero byte.
     n = len(z)
     for label, content in (("random_3000", _random(3000, rng)), ("printable_64", _printable(64, rng)), ("zero_1", b"\x00")):
-        out.append(("app", label, z + content, [ByteEdit(n, n, content)]))
+        out.append(("app", label, z + content, [ByteEdit(n, n, content)], None))
 
     # sec: ordinary, an empty name with printable code, a name colliding with an existing section, a case variant.
     specs = [("data_random", b".pv0", _random(4096, rng), DATA_CHARACTERISTICS),
@@ -314,7 +194,11 @@ def instances(z: bytes, pe: pefile.PE, table: ItemTable, rng: np.random.Generato
     for label, name, content, ch in specs:
         for before in layouts:
             r = add_section(z, name, content, ch, before)
-            out.append(("sec", label + ("_before_overlay" if before else ""), r[0] if r else None, None))
+
+            def declared_sec(e: PEFeatureExtractor, name: bytes = name, content: bytes = content, ch: int = ch, before: bool = before) -> Optional[Prediction]:
+                return predict_add_section(e, table, z, name, content, ch, before)
+
+            out.append(("sec", label + ("_before_overlay" if before else ""), r[0] if r else None, None, declared_sec))
 
     # imp: a new library, a repeated library with a new function, a case variant with a function it already imports,
     # a library with no functions.
@@ -327,15 +211,27 @@ def instances(z: bytes, pe: pefile.PE, table: ItemTable, rng: np.random.Generato
     specs_imp.append(("no_functions", b"pvempty.dll", []))
     for label, dll, funcs in specs_imp:
         for before in layouts:
-            out.append(("imp", label + ("_before_overlay" if before else ""), add_imports(z, dll, funcs, before), None))
+            def declared_imp(e: PEFeatureExtractor, dll: bytes = dll, funcs: list[bytes] = funcs, before: bool = before) -> Optional[Prediction]:
+                return predict_add_imports(e, table, z, dll, funcs, before)
+
+            out.append(("imp", label + ("_before_overlay" if before else ""), add_imports(z, dll, funcs, before), None, declared_imp))
 
     # ext and shf: zeros, random, printable, and (ext) a forged Rich header in the gap.
     rich = forged_rich([(0x00FF0000 | 30319, 7), (0x00010000 | 40219, 3)])
     gaps = [("zeros", b"\x00" * fa), ("random", _random(fa, rng)), ("printable", _printable(fa, rng))]
+    def declared_gap(at_pe_header: bool, gap: bytes) -> Declared:
+        return lambda e: predict_insert_gap(e, table, z, at_pe_header, gap)
+
+    def declared_rename(name: bytes) -> Declared:
+        return lambda e: predict_rename(e, table, z, 0, name)
+
+    def declared_entry(index: int) -> Declared:
+        return lambda e: predict_zero_entry(e, table, z, index)
+
     for label, gap in gaps + [("forged_rich", rich + b"\x00" * (fa - len(rich)))]:
-        out.append(("ext", label, insert_gap(z, True, gap), None))
+        out.append(("ext", label, insert_gap(z, True, gap), None, declared_gap(True, gap)))
     for label, gap in gaps:
-        out.append(("shf", label, insert_gap(z, False, gap), None))
+        out.append(("shf", label, insert_gap(z, False, gap), None, declared_gap(False, gap)))
 
     # The in-place operations, over the regions the catalogue derives them from.
     reg = regions(pe, z, table)
@@ -345,7 +241,7 @@ def instances(z: bytes, pe: pefile.PE, table: ItemTable, rng: np.random.Generato
         for label, content in (("printable", _printable(hi - lo, rng)), ("zeros", b"\x00" * (hi - lo)), ("random", _random(hi - lo, rng))):
             out.append(_in_place("slk", label, z, [ByteEdit(lo, hi, content)]))
     if not slack:
-        out.append(("slk", "no_slack", None, None))
+        out.append(("slk", "no_slack", None, None, None))
     dos = sorted(reg["dos"], key=lambda r: r[0] - r[1])
     if dos:
         lo, hi = dos[0]
@@ -365,15 +261,17 @@ def instances(z: bytes, pe: pefile.PE, table: ItemTable, rng: np.random.Generato
         other = sections[1] if len(sections) > 1 else b".data"
         for label, name in (("empty", b""), ("colliding", other), ("printable_8", _printable(8, rng)),
                             ("case_variant", sections[0].swapcase()), ("random", _random(8, rng))):
-            out.append(_in_place("ren", label, z, [ByteEdit(lo, lo + 8, name[:8].ljust(8, b"\x00"))]))
+            out.append(_in_place("ren", label, z, [ByteEdit(lo, lo + 8, name[:8].ljust(8, b"\x00"))],
+                                 declared_rename(name)))
     directories = pe.OPTIONAL_HEADER.DATA_DIRECTORY
     for op, index in (("rdb", DEBUG_ENTRY), ("rsg", SECURITY_ENTRY)):
         d = directories[index] if len(directories) > index else None
         if d is None or not (d.VirtualAddress or d.Size):
-            out.append((op, "no_entry", None, None))
+            out.append((op, "no_entry", None, None, None))
             continue
         lo = d.get_file_offset()
-        out.append(_in_place(op, "zero_entry", z, [ByteEdit(lo, lo + 8, b"\x00" * 8)]))
+        out.append(_in_place(op, "zero_entry", z, [ByteEdit(lo, lo + 8, b"\x00" * 8)],
+                             declared_entry(index)))
     return out
 
 
@@ -426,6 +324,28 @@ def _c1(merged: PEFeatureExtractor, table: ItemTable, z: bytes, edits: list[Byte
     return ("exact", 0) if not bad.any() else ("mismatch", int(bad.sum()))
 
 
+def _declared(merged: PEFeatureExtractor, declared: Callable[[PEFeatureExtractor], Optional[Prediction]], edited: bytes,
+              modeled: np.ndarray, x: np.ndarray) -> tuple[str, list[str], float]:
+    """
+    The declared prediction of an item-stated instance against re-extraction (`x`, the merged extractor's features of
+    the edited file): "exact", "mismatch" (with the features), "flagged", or "error"; and the prediction's seconds.
+    """
+    t0 = time.perf_counter()
+    try:
+        p = declared(merged)
+    except Exception as e:  # noqa: BLE001
+        return "error", [f"{type(e).__name__}: {e}"[:300]], time.perf_counter() - t0
+    if p is None or p.new != edited:
+        return "error", ["the declaration wrote another file"], time.perf_counter() - t0
+    if p.table is None:
+        return "flagged", [p.reason], time.perf_counter() - t0
+    y = np.asarray(p.features(merged.readouts))
+    seconds = time.perf_counter() - t0
+    bad = modeled & ~((x == y) | (np.isnan(x) & np.isnan(y)))
+    names = merged.feature_names
+    return ("exact", [], seconds) if not bad.any() else ("mismatch", [f"{names[i]} {x[i]} != {y[i]}" for i in np.where(bad)[0]], seconds)
+
+
 def _check_file(task: tuple[str, int]) -> list[dict[str, Any]]:
     """Every instance on one file."""
     name, seed = task
@@ -440,10 +360,12 @@ def _check_file(task: tuple[str, int]) -> list[dict[str, Any]]:
     pre = passes_precondition(merged, z)
     before = np.asarray(sums.feature_vector(z))  # type: ignore[no-untyped-call]
     rows: list[dict[str, Any]] = []
-    for op, label, edited, edits in instances(z, pe, table, np.random.default_rng([seed, int(name[:8], 16)])):
+    modeled = ~np.array([n.startswith("pefilewarnings:") for n in merged.feature_names])
+    for op, label, edited, edits, declared in instances(z, pe, table, np.random.default_rng([seed, int(name[:8], 16)])):
         row: dict[str, Any] = {"name": name, "op": op, "instance": label, "applies": edited is not None,
                                "precondition": pre, "parses": False, "changed": 0, "violations_strict": [],
                                "violations_pre": [], "c1": "", "c1_mismatches": 0, "precondition_after": None,
+                               "declared": "", "declared_detail": [], "declared_seconds": 0.0, "extract_seconds": 0.0,
                                "seconds": 0.0}
         if edited is not None:
             t0 = time.perf_counter()
@@ -458,6 +380,12 @@ def _check_file(task: tuple[str, int]) -> list[dict[str, Any]]:
                 row["violations_pre"] = [f"{names[i]} {s} (allowed '{a}')" for i, s, a in _violations(moves, _STATE["pre"][op])]
             if edits is not None:
                 row["c1"], row["c1_mismatches"] = _c1(merged, table, z, edits, edited)
+            if declared is not None:
+                # Table 5: the item-stated operations, declared, against re-extraction of the file our own edit wrote.
+                t1 = time.perf_counter()
+                x = np.asarray(merged.feature_vector(edited))  # type: ignore[no-untyped-call]
+                row["extract_seconds"] = time.perf_counter() - t1
+                row["declared"], row["declared_detail"], row["declared_seconds"] = _declared(merged, declared, edited, modeled, x)
             row["seconds"] = time.perf_counter() - t0
         rows.append(row)
     return rows
@@ -514,6 +442,11 @@ def main() -> None:
             "violations_pre": Counter(v.split(" (")[0] for r in done for v in r["violations_pre"]).most_common(),
             "instances": Counter(r["instance"] for r in done).most_common(),
             "c1": Counter(r["c1"] for r in done if r["c1"]).most_common(),
+            "declared": Counter(r["declared"] for r in done if r["declared"]).most_common(),
+            "declared_mismatches": Counter(d.split(" ")[0] for r in done if r["declared"] == "mismatch" for d in r["declared_detail"]).most_common(),
+            "declared_flags": Counter(r["declared_detail"][0] for r in done if r["declared"] in ("flagged", "error")).most_common(),
+            "declared_median_ms": float(np.median([1e3 * r["declared_seconds"] for r in done if r["declared"] == "exact"] or [0.0])),
+            "extract_median_ms": float(np.median([1e3 * r["extract_seconds"] for r in done if r["declared"]] or [0.0])),
             "applied_on_passing": sum(bool(r["precondition"]) for r in done),
             "leaving_population": sum(r["precondition_after"] is False for r in done),
             "leaving_population_instances": Counter(r["instance"] for r in done if r["precondition_after"] is False).most_common(),
@@ -521,13 +454,16 @@ def main() -> None:
         }
     report["pass"] = all(report[op]["edits_violating_strict"] == 0 and report[op]["edits_violating_pre"] == 0 for op in OPS)
     report["closed"] = all(report[op]["leaving_population"] == 0 for op in OPS)
+    # Table 5: no declared prediction of an item-stated operation is wrong (flagged allowed, reported).
+    report["exact"] = all(dict(report[op]["declared"]).get("mismatch", 0) == 0 and dict(report[op]["declared"]).get("error", 0) == 0 for op in OPS)
 
     args.outdir.mkdir(parents=True, exist_ok=True)
     pl.DataFrame(rows, infer_schema_length=None).write_parquet(args.outdir / "edits.parquet")
     (args.outdir / "report.json").write_text(json.dumps(report, indent=2))
     print(json.dumps({op: {k: report[op][k] for k in ("applied", "not_parsing", "edits_violating_strict", "edits_violating_pre", "c1",
-                                               "applied_on_passing", "leaving_population")} for op in OPS}, indent=1))
-    print(f"pass: {report['pass']}, closed: {report['closed']}")
+                                               "applied_on_passing", "leaving_population", "declared", "declared_mismatches",
+                                               "declared_flags")} for op in OPS}, indent=1))
+    print(f"pass: {report['pass']}, closed: {report['closed']}, exact: {report['exact']}")
 
 
 if __name__ == "__main__":
