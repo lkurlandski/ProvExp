@@ -30,6 +30,15 @@ go/no-go (`run/119`), then items 9-11. Routing to Table 7's sums rows is deferre
   and re-extracted scores agree. New: `Engine` (cached table/vector), `full_menu` (threat-model-gated candidates,
   keeping run 108's ~8 targeted add-section candidates and adding the new ops on top), `greedy_search` refactored to
   take a `make_menu` closure; CLI `--operations`. `menu`/`engine_predictors` kept for the tests.
+  - **run/119 (the full go/no-go, queries 200, ~17 min, read 2026-11-03):** unconstrained **10/49 (20%)** (up from run
+    108's 4/49, 8%; still short of GAMMA API's 24/47 -- the undefended model is robust, 40/49 files barely move);
+    pv (4 attacks) **12/22 (55%)**, BELOW run 108's append+add-section 16/22 (73%) -- the extra ops mislead the myopic
+    greedy on PV's section-hash hole (not query-limited: q150 and q200 both 12); mfull-feat **0/41 under M_full** and
+    madd-feat **0/47 under M_add**, both min_delta_logit exactly 0.0 -- **the C4 soundness/implementation check passes**,
+    each row attacked under its own threat model. The user chose (2026-11-03) to run run/119 and report honestly below
+    GAMMA; the **PV-cell framing is pending the user** (reject+clarify on the AskUserQuestion): keep run 108's 16 as the
+    strongest of our search variants, or report the twelve-op 12 uniformly. **Table 7 and the adaptive prose are NOT yet
+    edited** -- they await that decision (only the unconstrained cell 8%->20% and the C4 rows 0% are undisputed).
   - **Go/no-go (pilot, M_full, queries 100, first try):** unconstrained 9/49 (run 108: 4), pv 2/22 (run 108: 16),
     madd-feat 3/47, mfull-feat 0/41 (min_delta +0.0 -- sound under M_full, correct). Diagnosis: (1) the new ops DO help
     (7 of 9 unconstrained evasions used ext/imp/ren/chk/rdb), (2) the PV regression and the modest unconstrained are a
