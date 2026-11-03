@@ -111,8 +111,10 @@ the user.
    both removals; R14). It also scores the adaptive search's candidates, so build it once. Go/no-go: 0 wrong on the
    2,000 files (flagged allowed, reported).
    **Built 2026-11-03** (`reach.predict_structural`, `catalogue.predict_*`); pilot 0 wrong of 2,120 (330 flagged, in
-   the population only by design); 2,000 files: `run/118_item_exactness.sh` (user).
-8. **The adaptive search over all twelve operations** (R1a, R11), steps written by our own byte-level edits, on the
+   the population only by design); 2,000 files: `run/118_item_exactness.sh` (user; running; first start crashed on
+   a truncated file, fixed in `write_gap`). Table 5's seven item-stated rows are blue until it is read.
+8. **(Next; agreed 2026-11-03, new session.) The adaptive search over all twelve operations** (R1a, R11), candidates
+   scored with item 7's declarations (`catalogue.predict_*`), steps written by our own byte-level edits, on the
    routed 10%-store models of Table 7. *Hypothesis:* with imports, rename, header, and DOS operations it beats GAMMA
    API on the unconstrained model. Go/no-go: at least 24/47 there; if it fails, it is not used as the adaptive column
    until strengthened. Monotone rows stay at 0.0 (the check).

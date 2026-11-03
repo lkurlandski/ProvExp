@@ -458,6 +458,27 @@ at most what the sections need, headers that hold only headers, pefile's overlay
 rather than making the affected features two-sided for every file. 8 of the 1,682 files that passed leave; no
 direction changes on the pilot. Run 107 (user) re-checks the 2,000 files.
 
+**2026-11-03: declared structural edits as byte edits (tier 2, item 7 of the response to the review).** The C1 engine
+gains `reach.predict_structural`: an item-stated operation is given as the byte edits that perform it (in-place writes,
+appends, and insertions, each in the coordinates the previous ones produced) plus its declaration: the items it removes,
+the items it adds or modifies (in the edited file's coordinates), and the items it *keeps* although it writes or moves
+the bytes that locate them (the pointers it adjusts). The engine re-recognizes content wherever an edit writes, moves
+every other item past an insertion with its bytes (`reach.moved`, `reach.shift_ranges`; a feature type's optional
+`move` shifts attributes that are positions: a section's data range, the overlay's start; windows are re-tiled past an
+insertion, as Section 4 anticipated), and flags the edit if it writes or moves the location of an undeclared item. A
+kept item's re-recognized version stays kept; an append that reaches a locating range past the old end flags even a
+kept item (the declaration covers the pointers the operation writes, not data the parser had not found). The
+recognizers in `features.py` take insertions (pure additions; `DataDirectories` gained a field recognizer for the
+entries). The byte-level writers moved from `scripts/catalogue_checks.py` into the catalogue (`write_section`,
+`write_imports`, `write_gap`, `write_rename`, `write_zero_entry`, returning the edits), so the declaration and the
+written file share one layout; `predict_add_section`, `predict_add_imports`, `predict_insert_gap`, `predict_rename`,
+`predict_zero_entry` declare each operation. The declarations abstain (flag) by design in two cases inside the
+population: a gap whose content puts a "Rich" marker in pefile's search range on a file without a Rich header, and an
+added section on a file whose entry point lies in no section (the extractor's fallback may select it). Pilot
+(`catalogue_checks/pilot-exact`): 0 wrong of 2,120 declared edits, 330 flagged (58 inside the population, all the two
+abstentions). Unlike `catalogue.add_section` (the end-of-file layout the LIEF residual is measured against), these
+predictions follow our own edit's layout exactly. Run 118: the 2,000 files.
+
 ## Open decisions for the user
 
 **Settled (user, 2026-10-27), all as recommended:** (1) add `items` now and keep `provenance` until G2 passes, then

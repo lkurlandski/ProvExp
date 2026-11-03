@@ -1,7 +1,17 @@
 # Status
 
-**2026-11-03 (session 3): run 117 read (closed); tier 2, item 7 built and passing on the pilot; its 2,000-file run
-(`run/118_item_exactness.sh`, ~50-60 min) is for the user. Next: read run 118, then item 8 (`docs/resume-prompt.md`).**
+**2026-11-03 (end of session 3): run 117 read (closed); tier 2, item 7 built and passing on the pilot; run 118
+(item 7 on the 2,000 files, ~50 min at 24 workers) is running, restarted by the user after a crash fixed this session.
+Next session: read run 118, then item 8, the adaptive search (`docs/resume-prompt.md`).**
+
+- **Run 118's first start crashed** (`ValueError: Edit [8864768, 8864768) out of range for an object of 4000000
+  elements`): on a file truncated before its first section's data, `shf`'s insertion point lies past the end. The old
+  writer's slicing silently put the gap at the end; the refactored `write_gap` made it an explicit insertion. Fixed
+  (`67dda40`): the gap goes at the end, as before (bytes identical to the old writer, checked; the prediction is
+  flagged, the file being outside the population). A writer-only scan of all 2,000 files (every instance, same seeds)
+  raises no further exception.
+- **`run/` convention (user):** every new script reads `NUM_WORKERS="${NUM_WORKERS:-16}"` and passes it to the Python
+  worker flag (`CLAUDE.md`, working rules). Run 118 uses it; older scripts are records and are unchanged.
 
 - **Run 117 (P1 on 2,000 files, 36 min):** closed. 0 of 60,934 edits on passing files (of 73,063 applied) leave the
   population, all twelve operations; G7 passes. `_f_evaluation.tex`'s blue 73,063 is now the measured 60,934 "edits on
