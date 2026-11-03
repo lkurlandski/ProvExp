@@ -119,5 +119,18 @@ features all lowered by **rename** (`ren`). Two corrections the derivation force
   tight. Left as a generic structural flag it would read two-sided, the 12th (spurious) hole.
 
 So the go/no-go ("derived holes match the reasoned 12 of 40") passes at **11 of 40** (the reasoned set was 11 rows; the
-"12" was a prose miscount). Still to do: a recognizer for the C1 engine, the adaptive cell against the run-106 monotone
-model (rename + DOS-stub edits), per-hole witnesses by our own byte edits, and productionizing the derivation.
+"12" was a prose miscount).
+
+**Witnesses and the adaptive cell (run 120, `scripts/a_expert_adaptive.py`).** All **11 of 11** holes are witnessed by
+one of our own byte edits on the pilot malware (`modified_dos_stub` 1->0 by rewriting the DOS stub to the default; each
+of the ten section-name features lowered to 0 by renaming -- a known section renamed away for `.text/.data/.rsrc/.rdata`
+info and size, an unknown section renamed to a known name for `unknown_sections` and `info_unknown_sections`). The
+**adaptive cell**: a greedy search with the two hole operations (rename, DOS-stub rewrite), scored by re-extracting the
+expert features (the extractor is cheap, and C1 is exact, so this matches the prediction-scored search of the other
+Table 7 rows; every evasion re-extracts, as the edits are materialized by our own loader-safe writers), evades the
+monotone expert model on **2 of the 8** pilot malware it detects (both via rename). The go/no-go (>=1 in-population
+evasion) is met: the "certifiably robust by design" expert set is evaded under M_full through the derived rename hole.
+Under M_add (add-section/append/imports) the set is sound, as its authors argue, so the Table 7 expert row's adaptive
+cell is 0 there; the 2/8 is M_full and is reported in the §5 prose. A recognizer for the C1 engine was not needed (the
+search scores by re-extraction); productionizing the full derivation into a reusable script is still open (the hole
+count above was computed in an exploratory derivation reusing `catalogue.regions`/`reach.region_changes`).

@@ -277,10 +277,16 @@ but, like PV, is robust only to what it was shown: \synthetic{the adaptive searc
 
 The expert set is Gimenez et al.'s 40 hand-picked features, each argued to grow under additions. With the extractor's
 two quirks patched it holds under additions, and no toolkit attack evades it, but 40 features keep little signal: it
-detects 8 of the 50 pilot malware, at 29.1\% detection. Under the full threat model, 12 of its 40 features can be
-lowered by renaming a section, overwriting slack, or rewriting the DOS stub, edits the expert analysis, made for
-additions only, does not consider. A hand-picked set inherits the threat model its authors had in mind; a derived one
-is recomputed for each catalogue.
+detects 8 of the 50 pilot malware, at 29.1\% detection. Instrumenting it and deriving its table shows that under the
+full threat model 11 of its 40 features can be lowered, by renaming a section or rewriting the DOS stub, edits the
+expert analysis, made for additions only, does not consider; our adaptive search, using those two operations, evades
+the detector on 2 of the 8 files it detects. A hand-picked set inherits the threat model its authors had in mind; a
+derived one is recomputed for each catalogue.
+% MEASURED (item 11, run 120, scripts/a_expert_adaptive.py): the expert extractor is instrumented
+% (provexp.featuresets.ember2024.expert, G1 bit-exact); the C4 derivation gives 11 M_full holes (rows 27, 30-39 of
+% docs/direction-A-expert-set.md), each witnessed by one of our own edits. The reasoned "12" was a prose miscount of
+% its own 11-row list; no_sig derives as up (not a hole), and slack does not change the info features (entropy is over
+% the mapped content). Adaptive: 2/8 evaded via rename on the run-106 monotone model.
 
 Deriving the table costs one pass of the instrumented extractor over the corpus and a sign computation per feature
 and operation: about 5 minutes on 2,000 files with 16 workers. PV needs every attack run against every training

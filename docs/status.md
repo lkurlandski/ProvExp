@@ -15,10 +15,13 @@ met at 11, not 12 -- the doc's "12" was a prose miscount of its own 11-row list;
 corrections the derivation forced, both recorded in `docs/direction-A-expert-set.md`: (1) **slack overwrite does not
 change the `info` features** (entropy is over mapped content, excluding slack; the holes come from rename); (2)
 **`no_sig` is up under M_full, not a hole** (modeled as a marker present iff unsigned; removing the signature adds it).
-**Still to do on item 11:** a recognizer for the C1 engine, the adaptive cell vs the run-106 monotone model
-(rename + DOS-stub), per-hole witnesses by our own edits, productionize the derivation into a script, update the paper
-prose ("12 of 40" -> "11 of 40"; the expert row gains an adaptive cell). **Then items 9-10.** Table 5's
-population-scoping still not re-audited; routing to Table 7's sums rows still deferred. Not pushed.
+**Item 11 go/no-go met (run 120, `scripts/a_expert_adaptive.py`):** all **11 of 11 holes witnessed** by our own edits
+(modified_dos_stub 1->0 by the DOS rewrite; the ten section-name features to 0 by rename), and the **adaptive search
+evades the monotone expert model on 2 of the 8** pilot malware it detects (both via rename; scored by re-extraction,
+every evasion re-extracts). Manuscript §5 prose updated ("12 of 40" -> "11", slack dropped, +the 2/8 adaptive result);
+`make`/`make check` clean. A C1 recognizer was not needed (re-extraction scoring); productionizing the full derivation
+into a reusable script is the one open piece of item 11. **Then items 9-10.** Table 5's population-scoping still not
+re-audited; routing to Table 7's sums rows still deferred. Not pushed.
 
 **2026-11-03 (session 5): audited session 4's work (model-switch caution). C4 soundness check confirmed from the
 reports (mfull-feat 0/41, madd-feat 0/47, min_delta 0.0 -- item 8's main paper value, holds). The 16->12 PV drop
