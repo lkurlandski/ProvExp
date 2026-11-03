@@ -150,7 +150,22 @@ the user.
 9. **A detector on the hand table** (new row or ablation). *Hypothesis:* the search, adding a section after the overlay,
    evades it on some in-population files. Go/no-go: at least one in-population evasion; otherwise report the
    in-population difference as immaterial to the detector.
+   **Done 2026-11-03** (`run/121`, commit `29fc3a7`; `docs/direction-A-A1-design.md`, "Item 9"). The hand M_full
+   detector is the derived model's counterpart (same store/samples/counts; differs by exactly two in-population
+   features: overlay_size, security_size), so no retrain. **Go/no-go NOT met: 0 in-population evasions** (same as the
+   derived model's 0). But the difference is **material to soundness** (user's framing): the twelve-op search lowers the
+   hand detector's score on 10 of 29 in-population files, always by a single add-section after the overlay (the
+   overlay_size hole), by up to **-1.57 logits in-population**, re-extracting exactly, where the derived detector is
+   provably 0.0; no drop crosses the 1% threshold (the detected malware sit far above it), so the correction changes
+   the guarantee, not the measured rate. Prose added to `_f_evaluation.tex` after the overlay-size passage; no Table 7
+   row (rate is 0 for both). `make`/`make check` clean.
 10. **The adversarial-training row** (synthetic now), against step 8's search.
+   **Scripted for the user 2026-11-03** (`run/122`, commit `7e76952`; a hand-off overnight job, ~8-9 h). Built and
+   smoke-tested, not run: `train_classic.py --augment` (pure addition, appends rows), `scripts/a_advtrain.py`
+   (generate toolkit adversarial examples on **training** malware, 4 "seen" attacks x ADV_MALWARE=400 by default),
+   `run/122_adv_training.sh` (generate -> retrain unconstrained GBDT with `--augment` -> evaluate AUC/TPR + toolkit
+   seen/held-out + adaptive as the union of both menus). Row stays `\synthetic` until the user runs it. Report honestly
+   (expected ~20% adaptive, competitive with the unconstrained row, not the sound 0%).
 11. **The expert set instrumented** (`featuresets/ember2024/expert.py`; R3c, R8): the engine finds its two quirks and
     its M_full holes, each witnessed by our own edits; an adaptive cell. Go/no-go: the derived holes match the reasoned
     12 of 40 under M_full (any difference is investigated).

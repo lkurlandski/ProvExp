@@ -1,42 +1,35 @@
-# Resume: ProvExp (after 2026-11-03, session 6): items 9-10, then the empty paper sections
+# Resume: ProvExp (after 2026-11-03, session 7): the empty paper sections
 
 ## Where things stand
 
-Session 6 finished two things and left the manuscript's empty sections as the next big phase. Nothing is pushed.
+Session 7 finished items 9 and 10 (the last tier-2 experiment items). All of tier 2 is now done; the manuscript's
+empty sections are the one big remaining phase. Nothing is pushed.
 
-1. **Table 7's PV adaptive cell is decided and written (commit `7c9d8ff`).** The two search menus are complementary on
-   PV, not one-worse-than-the-other (run 108 append+add-section 16/22, twelve-op 12/22, intersection 8, **union 20/22**,
-   two files evaded by neither). The user chose **Option A, the union**: report the adaptive attacker as the search run
-   under both menus keeping any evasion (standard max-over-configs). Table 7: unconstrained Adaptive **8%->20%** (10/49),
-   PV-4 Adaptive **73%->91%** (20/22); soundness rows stay 0% (noted as checked across all twelve operations). The PV
-   prose was rewritten and a latent stray-`%` bug fixed. Diagnosis + resolution: `docs/direction-A-A1-design.md`.
-2. **Item 11 (instrument the expert set) is done (commits `352fc55`, `195b354`, `01e8608`, `68d2434`).** See
-   `docs/direction-A-expert-set.md` ("Instrumented (item 11)" and the witnesses/adaptive section).
-   - `ExpertFeatures` now emits `items()`+`readouts`, reusing only `Identity`/`Opaque` -- **no core-framework change**.
-     **G1 bit-exact** on 45 files. The two assign-per-name quirks are modeled as non-locality (`local=False` when
-     `accumulate=False`); the import quirk is surfaced quantitatively (sound sum 92 vs the assign extractor's 1).
-   - The C4 derivation (`scripts/a_expert_directions.py`, go/no-go built in) gives **11 M_full holes = rows 27, 30-39**,
-     not 12 (the doc's "12" miscounted its own 11-row list; the user chose the tight 11). Two corrections the derivation
-     forced: **`no_sig` is up, not a hole** (a marker present iff unsigned; removing the signature adds it), and **slack
-     does not change the `info` features** (entropy is over the mapped content, which excludes slack -- the holes come
-     from rename). All **11 of 11 holes witnessed** by our own edits; the **adaptive search evades the monotone expert
-     model on 2 of 8** detected pilot malware (rename hole), scored by re-extraction (`scripts/a_expert_adaptive.py`,
-     `run/120`). Manuscript §5 updated ("12 of 40" -> "11", slack dropped, +the 2/8). `make`/`make check` clean.
+1. **Item 9 (a detector on the hand table) is done (`run/121`, commit `29fc3a7`; `docs/direction-A-A1-design.md`,
+   "Item 9").** The hand M_full detector (`seed-0-a-mfull-mono-qf`) is the derived model's counterpart -- same store,
+   samples, and monotone/neutralize counts; they differ by exactly **two in-population features** (overlay_size,
+   security_size), so no retrain. Re-ran the twelve-op search against it: **go/no-go (>=1 in-population evasion) NOT
+   met, 0 evasions** (same as the derived model's 0). **But the difference is material to SOUNDNESS** (user's framing,
+   "soundness, not outcome"): the search lowers the hand detector's score on 10 of 29 in-population files, always by a
+   single add-section after the overlay (overlay_size hole), by up to **-1.57 logits in-population**, re-extracting
+   exactly, where the derived detector is provably 0.0; no drop crosses the threshold (the detected malware sit far
+   above it). Prose in `_f_evaluation.tex`; no Table 7 row (rate 0 for both). This is now a **§1/§6 data point**: the
+   derivation catches a real unsoundness in the hand table that the hand table's own detector cannot see.
+2. **Item 10 (the adversarial-training row) is scripted and handed to the user (`run/122`, commit `7e76952`).** A
+   hand-off overnight job (~8-9 h), **built and smoke-tested, not run**: `train_classic.py --augment` (pure addition),
+   `scripts/a_advtrain.py` (toolkit adversarial examples on **training** malware, 4 "seen" attacks x ADV_MALWARE=400),
+   `run/122_adv_training.sh` (generate -> retrain unconstrained GBDT -> AUC/TPR + toolkit seen/held-out + adaptive as
+   the union of both menus; reads `NUM_WORKERS`). The Table 7 row stays `\synthetic` until the user runs it and a
+   session reads the output. Report honestly (expected ~20% adaptive, competitive with the unconstrained row, not the
+   sound 0%).
+3. **Item 11 (instrument the expert set) was done in session 6** (`docs/direction-A-expert-set.md`): the derivation
+   finds Gimenez et al.'s quirks and **11 M_full holes**, all witnessed, and the search evades their "certifiably
+   robust" set on **2/8** detected pilot malware. A strong independent-hand-baseline **§1/§6 data point**.
 
-## The task (in order)
+## The task: the empty paper sections
 
-1. **Item 9: a detector on the hand table** (`PLAN.md` Tier 2). *Hypothesis:* the search, adding a section after the
-   overlay, evades it on some in-population files; inside the population the hand and derived tables differ in only two
-   features (`entry_name_hash`, `security_size`), so the detectors should be near-identical. **Go/no-go:** at least one
-   in-population evasion; otherwise report the in-population difference as immaterial to the detector (honesty row, R3a).
-   Likely answerable from existing artifacts or a short run (the hand-table directions already exist; `a_directions.py
-   --hand`).
-2. **Item 10: the adversarial-training row** (synthetic now), against item 8's twelve-op search. A training run (the
-   toolkit's adversarial examples added to training), so a `run/` script for the user (next number 121, reads
-   `NUM_WORKERS`). **Run with eyes open:** the review flags the synthetic 20% as implausible given our search gets only
-   10/49 on the *undefended* model, so adversarial training may come out competitive with the monotone rows -- report
-   honestly whatever it shows (`docs/memory`: gates are guides; never reframe a weak result).
-3. **Then the empty paper sections** (the big phase; the review's top remaining risks live here). Order from the review
+This is the big phase; the review's top remaining risks live here. **One open user decision first:** the
+introduction's lead and the deliverable framing (deferred since 2026-11-02). Order from the review
    (`docs/reviews/2026-11-02-body.md` §2 and §7, and `PLAN.md`): **related work (§6)** and **introduction (§1)** first
    (they carry the novelty, deliverable, and Pierazzi risks), then **background (§2)**, **discussion (§7)**, **Figure 1**
    (edit -> item delta -> adjusted sums -> features, against re-extraction), then the **abstract** last. Section stubs
@@ -73,7 +66,8 @@ Session 6 finished two things and left the manuscript's empty sections as the ne
 ## Working notes
 
 - **Runs:** only jobs under ~10 min yourself (estimate from the slowest case); otherwise smoke-test and write a `run/`
-  script (next number **121**), reading `NUM_WORKERS` when the script has a worker flag. Item 11's `run/120` is
+  script (next number **123**; `run/121` is item 9, `run/122` is item 10's hand-off job, pending the user),
+  reading `NUM_WORKERS` when the script has a worker flag. Item 11's `run/120` is
   single-process, so it pins OMP and notes NUM_WORKERS does not apply -- same for any single-process successor.
 - **Safety-classifier false positives / `/delegate`.** The main session's classifier can false-positive on
   fine-grained per-sample analysis of our own detectors/search logs and stop the response mid-stream. Workaround:

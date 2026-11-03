@@ -1,5 +1,45 @@
 # Status
 
+**2026-11-03 (session 7): items 9 and 10 done. Next: the empty paper sections.** Nothing pushed.
+
+- **Item 9 (a detector on the hand table; `run/121`, committed `29fc3a7`).** The hand M_full detector
+  (`seed-0-a-mfull-mono-qf`) and the derived one (`seed-0-a-mfull-pre-qf-v2`, the one item 8 attacked) share store,
+  samples, and monotone/neutralize counts (1,305/1,060); their training inputs differ by exactly **two in-population
+  features** (`section:overlay_size` hand +1/"up" vs derived neutralized; `datadirectories:security_size` hand
+  neutralized vs derived -1/"down"). So **no retrain**: the hand model is the derived model's counterpart. Re-ran the
+  identical twelve-op search against it (M_full, q200). **Go/no-go (>=1 in-population evasion) NOT met: 0 evasions**
+  (same as the derived model's 0). **But the difference is material to SOUNDNESS, not immaterial** (user's framing:
+  "soundness, not outcome"): the search lowers the hand detector's score on **10 of 29 in-population files, always by a
+  single add-section after the overlay** (the overlay_size hole), by up to **-1.57 logits in-population** (-2.75
+  out-of-population), **re-extracting exactly** (`|p_adv_c1 - p_adv_real| = 0.0`); the derived detector is provably
+  unmoved (0.0). No drop crosses the 1% threshold (nearest miss 0.830 vs tau 0.784; the detected malware sit far above
+  it), so the derivation's correction changes the **guarantee**, not the measured rate on this corpus. Manuscript prose
+  added after the overlay-size blind-spot passage in `_f_evaluation.tex`; `make`/`make check` clean. Recorded in
+  `docs/direction-A-A1-design.md` ("Item 9").
+- **Item 10 (adversarial-training row scripted for the user; `run/122`, committed `7e76952`).** A hand-off overnight
+  job (secml-malware generation ~6-7 h at 16 workers; ~8-9 h in all), so the pipeline is **built and smoke-tested but
+  not run**. (1) `train_classic.py` gained a pure-addition **`--augment`** path (APPENDS a dir's `X.npy`/`files.parquet`
+  rows to the training split; unlike `--poison`, which replaces); smoke-tested with `--limit`. (2) New
+  `scripts/a_advtrain.py` generates adversarial training examples by running the toolkit (the 4 PV "seen" attacks by
+  default) on a seeded sample of **training** malware (never the pilot/test set), featurizing each valid file into the
+  store's layout; reuses `a_pv_attacks`' builders/donor pools, parallel pool, reads `--num_workers`; smoke-tested (2
+  malware, padding -> 2 valid rows, correct shape, no NaN). (3) `run/122_adv_training.sh` (reads `NUM_WORKERS`,
+  `ADV_MALWARE=400`): generate -> retrain the unconstrained GBDT with `--augment` -> evaluate AUC/TPR + toolkit
+  seen/held-out (`a1_evaluate`) + adaptive as the **union of both search menus** (as the other Table 7 rows). The
+  Table 7 row stays `\synthetic` until the user runs it; its `% SYNTHETIC` comment now names `run/122`. `ruff`/`mypy`
+  clean. **Report honestly whatever it shows** (expected: adversarial training drives the "seen" column near 0, helps
+  little on held-out, and the adaptive search still evades it ~20% -- competitive with the unconstrained row, not the
+  sound 0%).
+- **Next (the big phase): the empty paper sections** -- related work (§6) and introduction (§1) first (novelty,
+  deliverable, Pierazzi risks), then background (§2), discussion (§7), Figure 1, abstract last
+  (`docs/resume-prompt.md`). **Open user decision carried forward:** the introduction's lead/deliverable framing
+  (deferred since 2026-11-02). The item-9 and expert-set (item 11) results are now strong §1/§6 data points.
+- Carry-forward (unchanged): Table 5's population-scoping not re-audited (recorded user decision); routing to Table 7's
+  sums rows still deferred; a G1 unit test for the expert instrumentation is a nice-to-have; `tests/test_shortcuts_*`
+  fail to collect (pre-existing); the user still owes the upstream reports in `docs/upstream-issues.md`.
+
+---
+
 **2026-11-03 (session 6): PV adaptive cell decided and Table 7 updated.** The file-by-file join showed the two search
 menus are complementary on PV, not one-worse-than-the-other: run 108 (append+add-section) 16, twelve-op 12,
 intersection 8, union **20/22** (only two files evaded by neither). The user chose **Option A (the union)**: report the
