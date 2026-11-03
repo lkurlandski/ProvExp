@@ -30,10 +30,15 @@
   clean. **Report honestly whatever it shows** (expected: adversarial training drives the "seen" column near 0, helps
   little on held-out, and the adaptive search still evades it ~20% -- competitive with the unconstrained row, not the
   sound 0%).
-- **Next (the big phase): the empty paper sections** -- related work (§6) and introduction (§1) first (novelty,
-  deliverable, Pierazzi risks), then background (§2), discussion (§7), Figure 1, abstract last
-  (`docs/resume-prompt.md`). **Open user decision carried forward:** the introduction's lead/deliverable framing
-  (deferred since 2026-11-02). The item-9 and expert-set (item 11) results are now strong §1/§6 data points.
+- **`run/122` is RUNNING** (started by the user 2026-11-03, `NUM_WORKERS=24`, the adversarial-training row; ~8-9 h).
+  Read its output first next session and replace Table 7's `\synthetic` adv-training row from it.
+- **Next session's agenda (user, 2026-11-03): a holistic stock-take, not the empty sections yet.** After reading
+  `run/122`: (1) a **holistic analysis of what tier 1-2 accomplished against the most recent critical review**
+  (`docs/reviews/2026-11-02-body.md`, risks R1-R16 and the three-tier plan in `PLAN.md`) -- what each risk's status now
+  is, what is addressed, what remains; (2) **determine the next items** from that analysis (the empty paper sections are
+  the leading candidate, but confirm against the review rather than assume). **Open user decision still pending:** the
+  introduction's lead/deliverable framing (deferred since 2026-11-02). The item-9 and expert-set (item 11) results are
+  now strong §1/§6 data points for whenever the sections are written.
 - Carry-forward (unchanged): Table 5's population-scoping not re-audited (recorded user decision); routing to Table 7's
   sums rows still deferred; a G1 unit test for the expert instrumentation is a nice-to-have; `tests/test_shortcuts_*`
   fail to collect (pre-existing); the user still owes the upstream reports in `docs/upstream-issues.md`.

@@ -185,6 +185,13 @@ leads with the three general causes; the witness column needs the PE detail). R1
 Discussion sentence. After tiers 1-2: the remaining sections (background with the Pierazzi distinction, related work,
 discussion with routing, Figure 1), introduction and abstract last.
 
+**Tiers 1-2 are complete as of 2026-11-03 (session 7).** `run/122` (the adversarial-training row, item 10) is running
+(the user, `NUM_WORKERS=24`); its output replaces Table 7's synthetic adv-training row. **The next session is a
+holistic stock-take (user, 2026-11-03), not drafting yet:** after reading `run/122`, re-assess what tiers 1-2
+accomplished against the review's risks R1-R16 (the status of each now), and from that decide the next items -- the
+empty paper sections (above) are the leading candidate but are to be confirmed against the review, not assumed. Open
+user decision: the introduction's lead and deliverable framing.
+
 ### Earlier: next steps (2026-11-02, review done: plan the response)
 
 The harsh simulated review of the body is done (`docs/reviews/2026-11-02-body.md`). Scores, assuming the

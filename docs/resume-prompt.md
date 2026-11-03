@@ -1,4 +1,4 @@
-# Resume: ProvExp (after 2026-11-03, session 7): the empty paper sections
+# Resume: ProvExp (after 2026-11-03, session 7): read run/122, then a holistic stock-take vs the review
 
 ## Where things stand
 
@@ -26,16 +26,40 @@ empty sections are the one big remaining phase. Nothing is pushed.
    finds Gimenez et al.'s quirks and **11 M_full holes**, all witnessed, and the search evades their "certifiably
    robust" set on **2/8** detected pilot malware. A strong independent-hand-baseline **§1/§6 data point**.
 
-## The task: the empty paper sections
+## The task: a holistic stock-take against the review, then decide next items (user, 2026-11-03)
 
-This is the big phase; the review's top remaining risks live here. **One open user decision first:** the
-introduction's lead and the deliverable framing (deferred since 2026-11-02). Order from the review
-   (`docs/reviews/2026-11-02-body.md` §2 and §7, and `PLAN.md`): **related work (§6)** and **introduction (§1)** first
-   (they carry the novelty, deliverable, and Pierazzi risks), then **background (§2)**, **discussion (§7)**, **Figure 1**
-   (edit -> item delta -> adjusted sums -> features, against re-extraction), then the **abstract** last. Section stubs
-   exist and are empty (`manuscript/_b_introduction.tex`, `_c_background.tex`, `_g_related_work.tex`, `_h_discussion.tex`,
-   `_a_abstract.tex`). Drafts to reuse: the review's §8 (contributions list, key-insight sentence, introduction
-   argument); the §5/§6 lists of related work and the fair characterizations; `docs/paper-mock.md` for budgets.
+Tiers 1-2 of the response to the 2026-11-02 review are complete. **This session is a planning/stock-take, not
+drafting.** The user's agenda, in order:
+
+0. **Read `run/122` first** (the adversarial-training row; running at `NUM_WORKERS=24` since 2026-11-03, ~8-9 h -- check
+   it has finished, in `artifacts/experiments/a1/advtrain/` and `artifacts/logs/a_advtrain_*`/`a1_eval_advtrain.log`/
+   `a1_adaptive_advtrain.log`). State a hypothesis before reading (expected: "seen" toolkit column near 0, held-out
+   little changed, adaptive ~20% -- competitive with the unconstrained row, worse than the sound 0%). **Replace Table
+   7's `\synthetic` adv-training row** (`manuscript/_f_evaluation.tex`, the `% SYNTHETIC` comment names it) with the
+   measured AUC / TPR@1% / detected / seen / held-out / adaptive-union; report honestly whatever it shows (gates are
+   guides; never reframe a weak result). `make`/`make check` after.
+
+1. **A holistic analysis of what tiers 1-2 accomplished against the most recent critical review**
+   (`docs/reviews/2026-11-02-body.md`). Go risk by risk (R1-R16; triaged into `PLAN.md`'s three-tier plan) and give each
+   its *current* status: addressed (with what evidence/commit), partly addressed, still open, or rejected-with-reason.
+   Lead with the top-weight risks (R1 tautology/adaptive search, R2 P1/P2, R3 hand table, R4 one instance, R5 Pierazzi).
+   The new evidence to fold in: items 7-11 (exactness on 2,000 files; twelve-op adaptive search; hand-table soundness,
+   item 9; adv-training, `run/122`; the expert set, item 11) and the tier-1 fixes already in `.tex`.
+
+2. **From that analysis, determine the next items with the user.** The empty paper sections are the leading candidate
+   (they carry the novelty/deliverable/Pierazzi risks and are the last big gap), but confirm against the review rather
+   than assume -- e.g. whether a second instance (R4) or any remaining experiment should come first. Then settle the
+   **open user decision**: the introduction's lead and the deliverable framing (deferred since 2026-11-02).
+
+## If/when the empty sections are the chosen next step (reference)
+
+Order from the review (`docs/reviews/2026-11-02-body.md` §2 and §7, and `PLAN.md`): **related work (§6)** and
+**introduction (§1)** first (novelty, deliverable, Pierazzi risks), then **background (§2)**, **discussion (§7)**,
+**Figure 1** (edit -> item delta -> adjusted sums -> features, against re-extraction), then the **abstract** last.
+Section stubs exist and are empty (`manuscript/_b_introduction.tex`, `_c_background.tex`, `_g_related_work.tex`,
+`_h_discussion.tex`, `_a_abstract.tex`). Drafts to reuse: the review's §8 (contributions list, key-insight sentence,
+introduction argument); the §5/§6 lists of related work and the fair characterizations; `docs/paper-mock.md` for
+budgets. Related work (§6) needs no framing call and has two strong independent-hand-baseline points now (items 9, 11).
 
 ## Key context for the empty sections (from the review)
 
