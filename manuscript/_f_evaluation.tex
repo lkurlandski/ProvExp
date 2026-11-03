@@ -201,8 +201,8 @@ toolkit outputs on files in the population, 252 move every feature within the de
 from the two rebuilding attacks, and most of them change the size of the resource directory, which the table holds
 fixed. The corollary says nothing about these files, yet none of the rebuilding attacks' outputs evades a monotone row
 (0/56 and 0/60, against 27/70 for the unconstrained detector). Second, the guarantee holds only if the population is
-closed under the catalogue and if the directions derived from our corpus hold beyond it. No edit among the
-\synthetic{73,063} we wrote takes a file out of the population, and the directions derived from the 100 pilot files
+closed under the catalogue and if the directions derived from our corpus hold beyond it. None of the
+60,934 edits we wrote on files in the population takes a file out of it, and the directions derived from the 100 pilot files
 equal those from the 2,000 files in every threat model, with and without the precondition. Third, the guarantee is
 what keeps the detector useful under attack. After every toolkit attack, the monotone detector on the sums still
 detects 41 of the 42 pilot malware it detects, and all 30 in the population, against 21 of 47 for the unconstrained
@@ -213,8 +213,8 @@ builds a file with an unusual layout to reach the unconstrained detector makes i
 points of detection: 89.6\% at 1\% false positives on the sums, against 93.5\% unconstrained. Reading the sums instead
 of the features recovers about two of those points, because the re-encodings keep features one-sided that their
 normalized readouts made two-sided.
-% SYNTHETIC: the 73,063 edits closed under the precondition (P1) on the 2,000 files: run/117_p1_closure.sh. Pilot,
-% measured (Claude, 2026-11-02): 0 of 3,188 edits on passing files leave the population. The split, outputs inside
+% P1 (closure) measured on the 2,000 files: run 117 (run/117_p1_closure.sh), 0 of 60,934 edits on passing files
+% (of 73,063 applied) leave the population, all twelve operations; pilot: 0 of 3,188. The split, outputs inside
 % the table, and still detected: scripts/a1_toolkit_split.py (runs 78, 105). P2: directions_sums.csv of
 % a_directions_derived_sums_v2 vs _2000_v3, every threat-model column and every per-operation precondition column
 % equal. Coverage: catalogue_checks/2000-v3 with explanation_set/ts.parquet (untruncated: 1,576/1,670; benign 924/938).

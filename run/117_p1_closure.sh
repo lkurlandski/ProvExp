@@ -5,6 +5,8 @@
 # precondition, so an edit that takes a passing file to a failing one would break it.
 # Pilot (Claude, 2026-11-02, artifacts/experiments/catalogue_checks/pilot-p1, 189 s): 0 of 3,188 edits on passing files
 # leave the population, under all twelve operations; G7 still passes.
+# Result (user's run, read by Claude 2026-11-03, 2,165 s = 36 min): closed. 0 of 60,934 edits on passing files (of
+# 73,063 applied) leave the population, under all twelve operations; G7 passes (0 violations).
 # Hypothesis: closed on the 2,000 files too (0 edits leaving the population); G7 passes as in run 107.
 # Estimate: ~35 min (run 107's G7 took 25 min; the extra precondition per edit costs ~1.4x on the pilot).
 set -euo pipefail
