@@ -1,5 +1,48 @@
 # Status
 
+**2026-11-03 (session 4): run 118 read (item-7 exactness, 2,000 files); item 8 (the twelve-operation adaptive search)
+built and smoke-tested, go/no-go run once and diagnosed (needs a budget fix + re-run). Next: re-run the strengthened
+go/no-go (`run/119`), then items 9-11. Routing to Table 7's sums rows is deferred (user).**
+
+- **Run 118 (item 7 on the 2,000 files, NUM_WORKERS=24, 57 min):** G7 passes, population closed. Item-stated exactness
+  **holds on the population: 0 wrong of 34,965 edits** (33,730 exact, 1,235 flagged, and the flags are only the two
+  by-design abstentions -- `section:entry` 726 for add section/imports where the entry point is in no section,
+  `richheader:rich_pair` 509 for a forged Rich marker in an `ext` gap on a Rich-less file). `report["exact"]=True` on
+  the population. **But `exact_all_files=False`:** on **7 truncated out-of-population files** (precondition=False) the
+  declarations are **wrong on 45 edits** (sec 8 `has_relocs`; imp 7 import counts/hashes; ext 21, of which 16 a
+  split-range `ValueError` where a gap splits a kept item's locating range; shf 9). The pilot (100 files) read "0 wrong
+  of 2,120" because it held none of these 7 files. The precondition exists to exclude them.
+  - **Decision (user, 2026-11-03): scope Table 5's item-stated rows to the population** (Wrong=0). Done:
+    `catalogue_checks.py` now computes `exact`/`declared`/`declared_mismatches`/`declared_flags` on the passing files
+    and adds `declared_all`, `declared_flags_outside`, `declared_wrong_outside`, `exact_all_files`; `report.json`
+    regenerated from `edits.parquet` (no re-run). `_f_evaluation.tex` Table 5 item-stated rows now carry the measured
+    in-population Edits/Exact/Flagged/Wrong (sec 7,256/6,776/480/0; imp 6,954/6,708/246/0; ext 5,856/5,347/509/0; shf
+    4,995/4,995/0/0; ren 8,370/8,370/0/0; rdb 984/984/0/0; rsg 550/550/0/0); caption and prose note the scope and the
+    45 out-of-population wrong. `make`/`make check` clean. The `run/118` header records all this.
+  - **Known cleanup (not for the paper, population scoping makes it moot):** the 16+6 `ValueError` "splits the range"
+    cases should FLAG (abstain), not raise, in `reach.shift_ranges`/`predict_structural` -- a robustness fix that would
+    turn those out-of-population errors into flags. Deferred; the user chose population scoping over fixing it.
+- **Item 8: the twelve-operation adaptive search (`scripts/a1_adaptive.py`, built, lint/type clean, 108 tests still
+  collect):** extended from append+add-section to every operation of the threat model. Each candidate is scored by the
+  **exact** prediction of our own writer -- `catalogue.predict_add_section/_add_imports/_rename/_zero_entry` for the
+  structural ops (gaps are simply extracted, ~5x cheaper than predicting), `reach.predict` chains for the in-place
+  overwrites (hdr, chk, dos, slk) -- and the chosen step is materialized by that writer (never LIEF), so the predicted
+  and re-extracted scores agree. New: `Engine` (cached table/vector), `full_menu` (threat-model-gated candidates,
+  keeping run 108's ~8 targeted add-section candidates and adding the new ops on top), `greedy_search` refactored to
+  take a `make_menu` closure; CLI `--operations`. `menu`/`engine_predictors` kept for the tests.
+  - **Go/no-go (pilot, M_full, queries 100, first try):** unconstrained 9/49 (run 108: 4), pv 2/22 (run 108: 16),
+    madd-feat 3/47, mfull-feat 0/41 (min_delta +0.0 -- sound under M_full, correct). Diagnosis: (1) the new ops DO help
+    (7 of 9 unconstrained evasions used ext/imp/ren/chk/rdb), (2) the PV regression and the modest unconstrained are a
+    **candidate-budget artifact** -- `full_menu` had cut the targeted add-section candidates from ~8/step to 4/step
+    while splitting the fixed query budget across 12 ops, starving the exploration PV depends on. Fixed: `full_menu`
+    now keeps the full 8-targeted-section budget and adds the new ops on top (so adding ops cannot weaken the search).
+    (3) The madd-feat "C4 soundness violation" (-3.1) is **not a bug**: madd-feat is sound only under M_add, and the run
+    attacked under M_full with out-of-M_add ops (chk, rdb, ext, dos), predicted==real exactly. The go/no-go must attack
+    each C4 row **under its own threat model** (madd-feat under M_add, mfull-feat under M_full). Not yet re-run.
+  - **Deferred (user, 2026-11-03): routing to Table 7's sums rows (`--route <c4>=ref`).** a1_adaptive has no routing
+    and the engine predicts only in thrember space (no sums recognizers), so scoring a routed sums-model file needs a
+    design decision. To be brought back as a concrete plan before touching Table 7.
+
 **2026-11-03 (end of session 3): run 117 read (closed); tier 2, item 7 built and passing on the pilot; run 118
 (item 7 on the 2,000 files, ~50 min at 24 workers) is running, restarted by the user after a crash fixed this session.
 Next session: read run 118, then item 8, the adaptive search (`docs/resume-prompt.md`).**

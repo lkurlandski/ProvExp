@@ -13,6 +13,13 @@
 # 2,120 declared edits (1,790 exact, 330 flagged); G7 passes, closed. Flags in the population: ext forged_rich on
 # Rich-less files (28), sec/imp on files whose entry point is in no section (30); all other flags outside it.
 # Estimate: ~60 min (run 117 took 36 min; the re-extraction and prediction per item-stated edit add about as much).
+# Ran 2026-11-03 (Claude, NUM_WORKERS=24, 3436 s / 57 min). Result (read 2026-11-03): G7 passes, population closed.
+# Item-stated exactness holds ON THE POPULATION: 0 wrong of 34,965 edits (33,730 exact, 1,235 flagged -- only the two
+# by-design abstentions: section:entry 726, richheader:rich_pair 509). report exact=True (population), but
+# exact_all_files=False: on 7 truncated out-of-population files (precondition=False) the declarations are wrong on 45
+# edits (sec 8, imp 7, ext 21 [16 a split-range ValueError], shf 9); the precondition exists to exclude these.
+# Table 5's item-stated rows use the in-population counts (user decision 2026-11-03: scope the rows to the population).
+# catalogue_checks now computes `exact`/`declared` on the population and reports `declared_all`/`exact_all_files`.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 source env/bin/activate
@@ -30,4 +37,4 @@ python scripts/catalogue_checks.py \
   &> artifacts/logs/catalogue_checks_2000_exact.log
 
 tail -2 artifacts/logs/catalogue_checks_2000_exact.log
-echo "Done. Report: artifacts/experiments/catalogue_checks/2000-exact/report.json (keys: exact, <op>.declared, <op>.declared_mismatches)"
+echo "Done. Report: artifacts/experiments/catalogue_checks/2000-exact/report.json (keys: exact [population], exact_all_files, <op>.declared, <op>.declared_all, <op>.declared_wrong_outside)"

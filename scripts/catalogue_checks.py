@@ -431,6 +431,10 @@ def main() -> None:
     for op in OPS:
         mine = [r for r in rows if r["op"] == op]
         done = [r for r in mine if r["applies"]]
+        # The item-stated guarantee (Table 5) is scoped to the population: a declaration may be wrong on a file that
+        # fails the precondition (a structure past a truncated end), which the precondition exists to exclude. The
+        # `declared` tally and `exact` are therefore counted on the passing files; `declared_all` keeps the full tally.
+        passing = [r for r in done if r["precondition"]]
         cells = Counter(m for r in done for m in r.get("moves", []))
         report[op] = {
             "edits": len(mine),
@@ -442,20 +446,24 @@ def main() -> None:
             "violations_pre": Counter(v.split(" (")[0] for r in done for v in r["violations_pre"]).most_common(),
             "instances": Counter(r["instance"] for r in done).most_common(),
             "c1": Counter(r["c1"] for r in done if r["c1"]).most_common(),
-            "declared": Counter(r["declared"] for r in done if r["declared"]).most_common(),
-            "declared_mismatches": Counter(d.split(" ")[0] for r in done if r["declared"] == "mismatch" for d in r["declared_detail"]).most_common(),
-            "declared_flags": Counter(r["declared_detail"][0] for r in done if r["declared"] in ("flagged", "error")).most_common(),
-            "declared_median_ms": float(np.median([1e3 * r["declared_seconds"] for r in done if r["declared"] == "exact"] or [0.0])),
+            "declared": Counter(r["declared"] for r in passing if r["declared"]).most_common(),
+            "declared_all": Counter(r["declared"] for r in done if r["declared"]).most_common(),
+            "declared_mismatches": Counter(d.split(" ")[0] for r in passing if r["declared"] == "mismatch" for d in r["declared_detail"]).most_common(),
+            "declared_flags": Counter(r["declared_detail"][0] for r in passing if r["declared"] in ("flagged", "error")).most_common(),
+            "declared_flags_outside": Counter(r["declared_detail"][0] for r in done if not r["precondition"] and r["declared"] in ("flagged", "error")).most_common(),
+            "declared_wrong_outside": sum(not r["precondition"] and r["declared"] in ("mismatch", "error") for r in done),
+            "declared_median_ms": float(np.median([1e3 * r["declared_seconds"] for r in passing if r["declared"] == "exact"] or [0.0])),
             "extract_median_ms": float(np.median([1e3 * r["extract_seconds"] for r in done if r["declared"]] or [0.0])),
-            "applied_on_passing": sum(bool(r["precondition"]) for r in done),
+            "applied_on_passing": len(passing),
             "leaving_population": sum(r["precondition_after"] is False for r in done),
             "leaving_population_instances": Counter(r["instance"] for r in done if r["precondition_after"] is False).most_common(),
             "observed_cells": len(cells),
         }
     report["pass"] = all(report[op]["edits_violating_strict"] == 0 and report[op]["edits_violating_pre"] == 0 for op in OPS)
     report["closed"] = all(report[op]["leaving_population"] == 0 for op in OPS)
-    # Table 5: no declared prediction of an item-stated operation is wrong (flagged allowed, reported).
+    # Table 5: no declared prediction of an item-stated operation is wrong on the population (flagged allowed, reported).
     report["exact"] = all(dict(report[op]["declared"]).get("mismatch", 0) == 0 and dict(report[op]["declared"]).get("error", 0) == 0 for op in OPS)
+    report["exact_all_files"] = all(dict(report[op]["declared_all"]).get("mismatch", 0) == 0 and dict(report[op]["declared_all"]).get("error", 0) == 0 for op in OPS)
 
     args.outdir.mkdir(parents=True, exist_ok=True)
     pl.DataFrame(rows, infer_schema_length=None).write_parquet(args.outdir / "edits.parquet")
