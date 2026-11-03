@@ -292,3 +292,41 @@ so the adaptive column no longer has an A4 gap of its own. The evasion is lower 
 detected pilot malware have no room for another section header (the search can only append to them; 5 of PV's 6
 losses, the sixth ends at 0.817 against a threshold of 0.811), and because run 100's steps started from LIEF's
 relayout, which mixed the tool's layout changes into the score.
+
+## Diagnosing the 16->12 PV drop (run 108 vs run 119, read 2026-11-03)
+
+Run 119 (all twelve operations, queries 200) evades **12/22** PV-detected files; run 108 (append + add-section only,
+queries 100) evaded **16/22**. Joining the two `adaptive.parquet` tables on `name` (108:
+`artifacts/experiments/a1/adaptive-v3/`, 119: `artifacts/experiments/a1/adaptive-twelve/mfull/`, both filtered to
+`defense == "pv"`), **8** files regressed (108 evaded, 119 did not); 119 also newly evaded 4 that 108 missed, netting
+16->12. tau = 0.810897; a file evades when `p_adv_real < tau`. The full twelve-op menu is ~25 candidates per greedy
+step (always including 9 section candidates, since `sec` stays in the menu), so `queries = 25` means exactly one step
+and `queries = 200` means the ceiling.
+
+| file (first 8) | 108 ops | 108 q | 108 p_adv | 119 ops | 119 q | 119 p_adv | 119 bytes | 119 min_delta | class |
+|---|---|--:|--:|---|--:|--:|--:|--:|:--:|
+| `1056eb84` | sec,sec | 24 | 0.412 | (none) | 25 | 0.967 | 0 | 0.000 | a |
+| `1a5a5a33` | sec | 12 | 0.703 | (none) | 25 | 0.811 | 0 | 0.000 | a |
+| `3caffa06` | sec,sec,sec | 36 | 0.629 | (none) | 25 | 0.979 | 0 | 0.000 | a |
+| `480087e2` | sec | 12 | 0.727 | (none) | 25 | 0.905 | 0 | 0.000 | a |
+| `7cdbf80b` | sec x7 | 84 | 0.771 | (none) | 25 | 0.996 | 0 | 0.000 | a |
+| `5615d33f` | sec x4 | 48 | 0.790 | dos,slk | 75 | 0.962 | 0 | -1.137 | b |
+| `3eb8b6d9` | sec x8 | 96 | 0.602 | sec,sec,ren,sec x5 | 200 | 0.916 | 124672 | -1.818 | c |
+| `6af84b58` | sec x8 | 96 | 0.767 | sec,sec,ren,sec x5 | 200 | 0.916 | 49300 | -1.626 | c |
+
+Classes: **(a)** no edit applied, stopped after one step (q=25, 5/8 files); **(b)** non-section edits applied, did not
+cross tau (1/8); **(c)** spent the whole 200-query budget without crossing tau (2/8).
+
+**Conclusion.** The drop is **mostly the luck of the random candidate draw interacting with greedy's
+strict-improvement stop -- not query-budget exhaustion, and only marginally "being misled."** Budget exhaustion
+explains only 2 of 8 (the q=200 files). The dominant pattern is the 5 class-(a) files: run 119 stopped after **one
+step (q=25)** with **min_delta_logit = 0.000** -- not one of its 25 candidates, including its 9 section candidates,
+lowered the score, whereas on the identical start file run 108's section draw did. Section edits *were* tried but the
+randomly drawn names/donor content didn't help, so the strict-improvement rule quit immediately (`1a5a5a33` lands at
+0.8115 vs tau 0.8109 -- one unlucky draw from evading). The twelve-op `full_menu` consumes the RNG differently and
+reseeds the per-step section draws, so 119 simply drew unhelpful sections at the decisive first step. Only `5615d33f`
+fits "misled" (greedy took locally-best dos+slk, then stalled); the two ceiling files added sections plus one `ren`
+but drew ineffective ones. The 108-vs-119 comparison is therefore **confounded by a shifted RNG stream and a larger
+menu**: the 16->12 is not a clean "more ops hurt" signal, and session 4's "myopic greedy misled on the section-hash
+hole" holds for at most 1-3 files. (Reproduce: join the two parquets on `name`, filter `defense == "pv"`,
+`evaded_108 & ~evaded_119`.)

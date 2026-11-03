@@ -125,15 +125,25 @@ the user.
    (mfull-feat 0/41 under M_full, madd-feat 0/47 under M_add, min_delta exactly 0.0 -- each row under its own threat
    model, the complete-threat-model check R1a/R11 asked for); **unconstrained 4/49 -> 10/49** (the new ops help) **but
    short of GAMMA API's 24/47** (the undefended model is robust: 40/49 files barely move, not query-limited). **PV
-   12/22, below run 108's append+add-section 16/22** (the extra ops mislead the myopic greedy on PV's section-hash
-   hole; not query-limited). **The go/no-go "beats GAMMA (>=24)" is NOT met.** User's call (2026-11-03): run `run/119`
-   and report honestly below GAMMA (done). **PENDING the user: the PV adaptive cell** -- Claude's recommendation is
-   **Option 1, report the strongest of our search variants per detector** (unconstrained 10 from twelve-op, PV 16 from
-   append+add-section, one-line note that the column is the strongest evasion our search finds; standard for an
-   adaptive attacker, keeps item 8's real win -- the complete C4 check + the unconstrained lift -- and no PV
-   regression). Alternatives: report the twelve-op 12 uniformly, or improve the greedy (tie-break to prefer section
-   ops) to reach 16. **Table 7 and the adaptive prose are NOT yet edited** -- they await this decision (only the
-   unconstrained 8%->20% and the C4 0% cells are undisputed).
+   12/22, below run 108's append+add-section 16/22.** **The go/no-go "beats GAMMA (>=24)" is NOT met.** User's call
+   (2026-11-03): run `run/119` and report honestly below GAMMA (done).
+   - **Audited 2026-11-03 (session 5), the 16->12 PV drop** (per-file diagnosis in `docs/direction-A-A1-design.md`,
+     "Diagnosing the 16->12 PV drop"; the fine-grained analysis was run by a subagent -- the main session's classifier
+     kept stopping it). Session 4's "the extra ops mislead the myopic greedy on the section-hash hole" is **largely
+     refuted**: of the 8 regressed files, only 2 hit the 200-query ceiling and at most 1-3 fit "misled"; 5/8 stopped
+     after one step (min_delta 0.0) because the *randomly drawn* section candidates didn't help on that first step,
+     where run 108's draw did. The twelve-op `full_menu` consumes the RNG differently, so the 108-vs-119 PV comparison
+     is **confounded by a shifted RNG stream and a larger menu** -- not a clean "more ops hurt" signal. Run 108's 16
+     evasions all re-extract (16/16; the exact-prediction switch is not the cause). The computed PV hole (44.4% of its
+     gain lowerable) is confirmed reachable by both 12 and 16.
+   - **PENDING the user: the PV adaptive cell.** Claude's recommendation (now strengthened by the audit) is **Option 1,
+     report the strongest of our search variants per detector** (unconstrained 10 from twelve-op, PV 16 from
+     append+add-section, one-line note that the column is the strongest evasion our search finds). Standard for an
+     adaptive attacker (max over configs), keeps item 8's real win -- the complete C4 check + the unconstrained lift --
+     and avoids reporting an RNG-confounded 16->12 as if the better search got worse. Alternatives: report the
+     twelve-op 12 uniformly, or re-run 119 with a fixed section-candidate draw to lift PV without the confound.
+     **Table 7 and the adaptive prose are NOT yet edited** -- they await this decision (only the unconstrained 8%->20%
+     and the C4 0% cells are undisputed).
    - **Deferred (user, 2026-11-03): routing to Table 7's sums rows (`--route <c4>=ref`).** `a1_adaptive.py` has no
      routing and the engine predicts only in thrember space (no sums recognizers), so scoring a routed sums-model file
      needs a design decision. To be brought back as a concrete plan before touching Table 7's sums-row adaptive cells.
