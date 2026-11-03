@@ -330,3 +330,17 @@ but drew ineffective ones. The 108-vs-119 comparison is therefore **confounded b
 menu**: the 16->12 is not a clean "more ops hurt" signal, and session 4's "myopic greedy misled on the section-hash
 hole" holds for at most 1-3 files. (Reproduce: join the two parquets on `name`, filter `defense == "pv"`,
 `evaded_108 & ~evaded_119`.)
+
+**Resolution (user, 2026-11-03): report the union (Table 7 Option A).** The two menus are complementary, not
+one-dominates-the-other: run 108 (append+add-section) evades 16, run 119's twelve-op menu evades 12, their
+**intersection is 8**, so run-108-only is 8 and twelve-op-only is 4, and the **union is 20/22** (only two files --
+`303ef5c9`, `b1d6d149` -- are evaded by neither, both making no helpful first move, `num_ops = 0`,
+`min_delta_logit = 0.0`, `p_clean` 0.97-0.99, far above tau). The twelve-op-only 4 are evaded by operations run 108
+lacks (`ren`, `slk`, one with `sec`), three of them rename-based with **0 bytes added** -- renaming an existing section
+reaches the same section-name-hash buckets the add-section route uses, without needing room for a new header. Every
+evasion in both runs re-extracts (0 predicted-vs-real mismatches). The adaptive attacker is therefore reported as the
+search run under both menus, keeping any evasion: the standard max-over-configs adaptive-attacker convention, and the
+strongest number our search finds. On the unconstrained detector twelve-op dominates (10 >= 108's 4; union = 10), so
+that cell is 20% uniformly. Table 7 and the adaptive prose in `manuscript/_f_evaluation.tex` updated to PV 20/22 (91%),
+unconstrained 10/49 (20%); the earlier "evades PV on 16 ... six files it does not evade" prose (which was also
+accidentally commented out by a stray `%`) is replaced. Measurement comment in the `.tex` documents the breakdown.

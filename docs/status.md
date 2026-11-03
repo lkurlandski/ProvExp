@@ -1,5 +1,16 @@
 # Status
 
+**2026-11-03 (session 6): PV adaptive cell decided and Table 7 updated.** The file-by-file join showed the two search
+menus are complementary on PV, not one-worse-than-the-other: run 108 (append+add-section) 16, twelve-op 12,
+intersection 8, union **20/22** (only two files evaded by neither). The user chose **Option A (the union)**: report the
+adaptive attacker as the search run under both menus keeping any evasion -- the standard max-over-configs convention and
+the strongest number our search finds. Edited `manuscript/_f_evaluation.tex`: Table 7 unconstrained Adaptive 8%->20%
+(10/49), PV-4 Adaptive 73%->91% (20/22), soundness rows stay 0% (now noted as checked across all twelve operations);
+rewrote the PV "fills the hole" prose (also fixing a stray `%` that had commented out "The adaptive search fills the
+hole. It picks"). `make` and `make check` clean (no undefined refs, no overfull boxes). Diagnosis + resolution recorded
+in `docs/direction-A-A1-design.md`. **Next: items 9-11** (`PLAN.md` Tier 2; state a hypothesis before each run).
+Table 5's population-scoping still not re-audited; routing to Table 7's sums rows still deferred. Not pushed.
+
 **2026-11-03 (session 5): audited session 4's work (model-switch caution). C4 soundness check confirmed from the
 reports (mfull-feat 0/41, madd-feat 0/47, min_delta 0.0 -- item 8's main paper value, holds). The 16->12 PV drop
 diagnosed per file: it is an RNG/menu confound, NOT session 4's "misled greedy" -- run 108's 16 all re-extract, and

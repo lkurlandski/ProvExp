@@ -192,9 +192,9 @@ sequence of edits in the threat model. We train such a detector on the features 
     \toprule
     Detector & AUC & TPR at 1\% FPR & Detected & Seen & Held-out & Adaptive \\
     \midrule
-    unconstrained & 0.996 & 93.5\% & 47/50 & 17\% & 53\% & 8\% \\
+    unconstrained & 0.996 & 93.5\% & 47/50 & 17\% & 53\% & 20\% \\
     adversarial training on the toolkit & \synthetic{0.995} & \synthetic{92.0\%} & \synthetic{46/50} & \synthetic{2\%} & \synthetic{30\%} & \synthetic{20\%} \\
-    feature selection from attacks (PV), 4 attacks & 0.954 & 56.2\% & 22/50 & 0\% & 18\% & 73\% \\
+    feature selection from attacks (PV), 4 attacks & 0.954 & 56.2\% & 22/50 & 0\% & 18\% & 91\% \\
     feature selection from attacks (PV), 8 attacks & 0.944 & 53.8\% & 22/50 & 0\% & --- & \synthetic{77\%} \\
     monotone on derived directions, features & 0.992 & 87.2\% & 40/50 & 0\% & 3\%$^\dagger$ & 0\% \\
     monotone on derived directions, sums & 0.994 & 89.6\% & 42/50 & 0\% & 2\%$^\dagger$ & 0\% \\
@@ -210,13 +210,20 @@ sequence of edits in the threat model. We train such a detector on the features 
   model.}
 \end{table*}
 % SYNTHETIC: the adversarial-training row (toolkit adversarial examples added to training; run to be scripted), and
-% PV with 8 attacks under the adaptive search after the search fix (run 108 re-ran PV with 4 attacks only; before the
-% fix it read 22/22). The expert set has no adaptive cell: the search predicts with the instrumented extractor only.
+% PV with 8 attacks (run under the same two-menu union protocol as the 4-attack row below; not yet run). The expert
+% set has no adaptive cell: the search predicts with the instrumented extractor only.
+% MEASURED (adaptive cells): the adaptive attacker runs the search under both the append+add-section menu (run 108,
+% artifacts/experiments/a1/adaptive-v3) and the full twelve-operation menu (item 8, run 119,
+% artifacts/experiments/a1/adaptive-twelve/{mfull,madd}), and a file counts as evaded if either run evades it.
+% unconstrained: union 10/49 = 20% (twelve-op alone 10, run 108 alone 4; twelve-op dominates, union = twelve-op).
+% PV, 4 attacks: union 20/22 = 91% (run 108 16, twelve-op 12, intersection 8, run-108-only 8, twelve-op-only 4;
+% every evasion re-extracts, 0 predicted-vs-real mismatches in either run). Monotone rows: 0/41 (feat) and 0/43 (sums)
+% under M_full, 0/47 under M_add, min_delta_logit exactly 0.0 on every file and candidate, all twelve operations.
 
 \Cref{tab:eval:detectors} gives the results. That the monotone rows' score never falls under an edit in the
 catalogue is not an empirical finding: it is what Corollary~\ref{cor:fw:robustness} guarantees, and the adaptive
-search, whose largest score drop on these rows is exactly 0.0 on every file and candidate, checks that the
-implementation keeps the guarantee. The evidence lies elsewhere. First, real tools do not do exactly what a catalogue
+search, whose largest score drop on these rows is exactly 0.0 on every file and candidate across all twelve catalogue
+operations, checks that the implementation keeps the guarantee. The evidence lies elsewhere. First, real tools do not do exactly what a catalogue
 declares. Six of the eight toolkit attacks write byte-level edits of catalogue operations, but GAMMA's section and
 import injections go through a library that rebuilds the file's layout, which no declared operation does. Of the 288
 toolkit outputs on files in the population, 252 move every feature within the derived table; the 36 others all come
@@ -258,11 +265,14 @@ parser's warning flags, which the derivation cannot vouch for in either directio
 % a_directions_derived_v2, model seed-0-s10-pv-seen; artifacts/experiments/a_pv/derived-pre): the same hole as the
 % hand rules', group by group. The 44.4% excludes pefile's warning flags, which the table leaves free as residual
 % features rather than proving them lowerable; with them, 77.5% of the gain (one flag alone ~30%; 33.2% from the
-% warnings). Decided (user left it to Claude, 2026-11-02): keep 44.4% as proved, add the warnings as a separate clause. The adaptive search fills the hole. It picks
-section names whose hash lands in buckets the model trusts, with the sign that lowers them, and evades PV on 16 of the
-22 files it detects, using \synthetic{a handful of} extractions per file. Building PV from all eight attacks does not
-close the hole: \synthetic{17 of 22}. Of the six files the search does not evade, five have no room for another
-section header, and the sixth ends just above the threshold. Adversarial training on the toolkit's outputs keeps the unconstrained detector's accuracy
+% warnings). Decided (user left it to Claude, 2026-11-02): keep 44.4% as proved, add the warnings as a separate clause.
+The adaptive search fills the hole. Adding a section, it picks section names whose hash lands in buckets the model
+trusts, with the sign that lowers the score; renaming an existing section reaches the same buckets without needing room
+for a new header. Run under both the section-adding menu and the full twelve-operation menu, and counting a file evaded
+if either run evades it, the search evades PV on 20 of the 22 files it detects, using \synthetic{a handful of}
+extractions per file; the two menus are complementary, the twelve-operation one evading four files the section-adding
+menu cannot. Building PV from all eight attacks does not close the hole: \synthetic{17 of 22}. The two files the search
+does not evade sit far enough above the threshold that no first edit lowers their score. Adversarial training on the toolkit's outputs keeps the unconstrained detector's accuracy
 but, like PV, is robust only to what it was shown: \synthetic{the adaptive search evades it on a fifth of the files}.
 
 The expert set is Gimenez et al.'s 40 hand-picked features, each argued to grow under additions. With the extractor's
