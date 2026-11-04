@@ -44,6 +44,7 @@ from provexp.featuresets.ember2024.features import merge_import_descriptors
 from provexp.featuresets.ember2024.features import PEFeatureExtractor
 
 from a_pv_attacks import ATTACKS
+from a_pv_attacks import BUDGETS
 from a_pv_attacks import build_attack
 from a_pv_attacks import build_donor_pools
 from a_pv_attacks import map_watchdog
@@ -98,12 +99,12 @@ def load_training(features: Path, db_dir: Path, num_malware: int, num_goodware: 
 _W: dict[str, Any] = {}
 
 
-def _init_worker(model: Path, section_pop: list[Any], api_calls: list[Any], seed: int) -> None:
+def _init_worker(model: Path, section_pop: list[Any], api_calls: list[Any], seed: int, iterations: int = 10) -> None:
     """Build the per-worker extractor, detector wrapper, and attack donor pools once."""
     lief.logging.disable()
     extractor = merge_import_descriptors(PEFeatureExtractor())  # quirk-fixed, matches artifacts/features/ember2024
     _W.update(extractor=extractor, wrapper=make_wrapper(model, extractor), section_pop=section_pop,
-              api_calls=api_calls, seed=seed, tmp=tempfile.mkdtemp(prefix="a_advtrain_w_"))
+              api_calls=api_calls, seed=seed, iterations=iterations, tmp=tempfile.mkdtemp(prefix="a_advtrain_w_"))
 
 
 def _work(task: tuple[str, str, bytes]) -> dict[str, Any]:
@@ -114,7 +115,7 @@ def _work(task: tuple[str, str, bytes]) -> dict[str, Any]:
     row: dict[str, Any] = {"name": name, "attack": atk, "ok": False, "evaded": False,
                            "p_clean": float("nan"), "p_adv": float("nan"), "bytes_added": 0, "phi": None}
     try:
-        problem = build_attack(atk, wrapper, _W["section_pop"], _W["api_calls"])
+        problem = build_attack(atk, wrapper, _W["section_pop"], _W["api_calls"], iterations=_W["iterations"])
         adv_bytes, p_clean, p_adv = run_attack(problem, wrapper, data, out_path, seed=_W["seed"])
         phi1 = extractor.feature_vector(adv_bytes)
         row.update(ok=True, evaded=bool(p_adv < 0.5), p_clean=p_clean, p_adv=p_adv,
@@ -146,6 +147,8 @@ def main() -> None:
                         help="The undefended detector the attacks target.")
     parser.add_argument("--attacks", nargs="+", default=list(SEEN), choices=list(ATTACKS),
                         help="Which toolkit attacks to generate with (default: the four PV 'seen' attacks).")
+    parser.add_argument("--budget", default="low", choices=list(BUDGETS),
+                        help="Attack budget: Gimenez's low one, or the GAMMA paper's (see a_pv_attacks.BUDGETS).")
     parser.add_argument("--num_malware", type=int, default=400, help="Training malware to attack.")
     parser.add_argument("--num_goodware", type=int, default=50, help="Training goodware donors for the attacks.")
     parser.add_argument("--num_workers", type=int, default=16, help="Processes over (attack, file) tasks.")
@@ -164,13 +167,15 @@ def main() -> None:
     print(f"Training sample: {len(malware)} malware to attack, {len(goodware)} goodware donors.", flush=True)
 
     with tempfile.TemporaryDirectory(prefix="a_advtrain_") as tmp:
-        section_pop, api_calls = build_donor_pools(goodware, Path(tmp))
-        print(f"Donor pools: {len(section_pop)} sections, {len(api_calls)} API groups.", flush=True)
+        iterations, how_many = BUDGETS[args.budget]
+        section_pop, api_calls = build_donor_pools(goodware, Path(tmp), how_many=how_many)
+        print(f"Budget {args.budget}: {iterations} iterations; donor pools: {len(section_pop)} sections, "
+              f"{len(api_calls)} API groups.", flush=True)
         tasks = [(atk, name, data) for atk in args.attacks for name, data in malware]
         t0 = time.time()
         ctx = get_context("spawn")
         with ctx.Pool(args.num_workers, initializer=_init_worker,
-                      initargs=(args.model, section_pop, api_calls, args.seed)) as pool:
+                      initargs=(args.model, section_pop, api_calls, args.seed, iterations)) as pool:
             results = map_watchdog(pool, _work, tasks, lost=_lost, stall_timeout=args.stall_timeout)
         print(f"{len(tasks)} attack runs in {time.time() - t0:.0f}s on {args.num_workers} workers.", flush=True)
 
@@ -191,6 +196,7 @@ def main() -> None:
                         "evaded": sum(r["attack"] == atk and r["evaded"] for r in results)}
                   for atk in args.attacks}
     report = {"num_malware": len(malware), "num_goodware": len(goodware), "attacks": list(args.attacks),
+              "budget": args.budget,
               "seed": args.seed, "model": args.model.resolve().as_posix(), "features": args.features.resolve().as_posix(),
               "total_valid": int(phis.shape[0]), "total_attempted": len(results), "per_attack": per_attack}
     (args.outdir / "report.json").write_text(json.dumps(report, indent=2))

@@ -10,8 +10,10 @@ One protocol for every cell:
     operating point   each defense's threshold is calibrated to `--fpr` (1%) on the goodware of its own test
                       predictions (ts_predictions.parquet): detected means p > tau, and at most 1% of goodware is
     malware           the detected pilot malware, attacked only where the defense detects it at tau
-    budget            Gimenez's low budget (population 10, 10 iterations); an attacked file whose added bytes exceed
-                      max(--budget_frac x size, --budget_min) counts as not evaded (over_budget)
+    budget            `--budget low` is Gimenez's (population 10, 10 iterations, 30 donors); `--budget literature` is
+                      the GAMMA paper's (51 iterations, ~510 queries, 75 donors; a_pv_attacks.BUDGETS). An attacked
+                      file whose added bytes exceed max(--budget_frac x size, --budget_min) counts as not evaded
+                      (over_budget); table.json also reports each group without that cap ("uncapped")
     ground truth      the attacked file is written, read back, re-extracted, and re-scored; evaded means p_adv <= tau
     validity          an attacked file that no longer parses as a PE counts as not evaded (invalid): secml-malware's
                       shift attacks insert at the first section's raw offset, which is 0 on some files (e.g. the
@@ -60,6 +62,7 @@ from provexp.featuresets.ember2024.sums import SumsFeatureExtractor
 
 sys.path.insert(0, str(Path(__file__).parent))
 from a_pv_attacks import ATTACKS  # noqa: E402
+from a_pv_attacks import BUDGETS  # noqa: E402
 from a_pv_attacks import build_attack  # noqa: E402
 from a_pv_attacks import calibrated  # noqa: E402
 from a_pv_attacks import build_donor_pools  # noqa: E402
@@ -136,7 +139,7 @@ def precondition_holds(bytez: bytes) -> bool:
 
 
 def _init_worker(features: Path, models: dict[str, str], routes: dict[str, tuple[str, float, float]],
-                 section_pop: list[Any], api_calls: list[Any], seed: int) -> None:
+                 section_pop: list[Any], api_calls: list[Any], seed: int, iterations: int = 10) -> None:
     """Build the extractor and one detector wrapper per defense, once per worker."""
     lief.logging.disable()
     extractor = make_extractor(features)
@@ -147,7 +150,7 @@ def _init_worker(features: Path, models: dict[str, str], routes: dict[str, tuple
             wrappers[d] = make_wrapper(Path(m), extractor, fallback=Path(models[fb]), route=precondition_holds, taus=(tau, tau_fb))
         else:
             wrappers[d] = make_wrapper(Path(m), extractor)
-    _W.update(wrappers=wrappers, section_pop=section_pop, api_calls=api_calls, seed=seed,
+    _W.update(wrappers=wrappers, section_pop=section_pop, api_calls=api_calls, seed=seed, iterations=iterations,
               tmp=tempfile.mkdtemp(prefix="a1_w_"))
 
 
@@ -160,7 +163,7 @@ def _work(task: tuple[str, str, str, bytes, float, int, bool]) -> dict[str, Any]
     p_clean = p_adv = float("nan")
     added, ok, valid, error = 0, False, False, ""
     try:
-        problem = build_attack(atk, wrapper, _W["section_pop"], _W["api_calls"])
+        problem = build_attack(atk, wrapper, _W["section_pop"], _W["api_calls"], iterations=_W["iterations"])
         adv_bytes, p_clean, p_adv = run_attack(problem, wrapper, data, out_path, seed=_W["seed"])
         added, ok = len(adv_bytes) - len(data), True
         valid = lief.PE.parse(list(adv_bytes)) is not None
@@ -212,6 +215,8 @@ def main() -> None:
     parser.add_argument("--attacks", nargs="+", default=list(ATTACKS), choices=list(ATTACKS))
     parser.add_argument("--seen", nargs="+", default=list(SEEN), choices=list(ATTACKS))
     parser.add_argument("--fpr", type=float, default=0.01)
+    parser.add_argument("--budget", default="low", choices=list(BUDGETS),
+                        help="Attack budget: Gimenez's low one, or the GAMMA paper's (see a_pv_attacks.BUDGETS).")
     parser.add_argument("--budget_frac", type=float, default=0.05)
     parser.add_argument("--budget_min", type=int, default=512 * 1024)
     parser.add_argument("--num_malware", type=int, default=None, help="Cap on malware files (for smoke tests).")
@@ -266,11 +271,14 @@ def main() -> None:
     tasks = [(d, atk, malware[i][0], malware[i][1], taus[d], caps[i], pre[i])
              for d in defenses for atk in args.attacks for i in detected[d]]
     with tempfile.TemporaryDirectory(prefix="a1_") as tmp:
-        section_pop, api_calls = build_donor_pools(goodware, Path(tmp))
+        iterations, how_many = BUDGETS[args.budget]
+        section_pop, api_calls = build_donor_pools(goodware, Path(tmp), how_many=how_many)
+        print(f"Budget {args.budget}: {iterations} iterations, {len(section_pop)} donor sections.", flush=True)
         t0 = time.time()
         models = {d: str(m / "model.txt") for d, m in defenses.items()}
         with get_context("spawn").Pool(args.num_workers, initializer=_init_worker,
-                                       initargs=(args.features, models, routes, section_pop, api_calls, args.seed)) as pool:
+                                       initargs=(args.features, models, routes, section_pop, api_calls, args.seed,
+                                                 iterations)) as pool:
             rows = map_watchdog(pool, _work, tasks, lost=_lost, stall_timeout=args.stall_timeout)
         print(f"{len(tasks)} attack runs in {time.time() - t0:.0f}s on {args.num_workers} workers.", flush=True)
 
@@ -280,7 +288,7 @@ def main() -> None:
     results.write_parquet(args.outdir / "results.parquet")
     held_out = [a for a in args.attacks if a not in args.seen]
     seen = [a for a in args.attacks if a in args.seen]
-    table: dict[str, Any] = {"protocol": {"fpr": args.fpr, "budget_frac": args.budget_frac,
+    table: dict[str, Any] = {"protocol": {"fpr": args.fpr, "budget": args.budget, "budget_frac": args.budget_frac,
                                           "budget_min": args.budget_min, "seed": args.seed,
                                           "features": args.features.resolve().as_posix(), "seen": seen,
                                           "routes": routes_spec,
@@ -305,6 +313,8 @@ def main() -> None:
                 "untruncated": group_evasion(r.filter(~pl.col("truncated")), atks),
                 "precondition": group_evasion(r.filter(pl.col("precondition")), atks),
                 "no_precondition": group_evasion(r.filter(~pl.col("precondition")), atks),
+                "uncapped": group_evasion(r.with_columns(evaded=pl.col("ok") & pl.col("valid")
+                                                         & (pl.col("p_adv") <= pl.col("tau"))), atks),
             }
         table["defenses"][d] = entry
         g = entry["groups"]

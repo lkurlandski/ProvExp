@@ -45,7 +45,7 @@ from provexp.data.simpledb import SimpleDBReader
 from provexp.featuresets.ember2024.features import merge_import_descriptors
 from provexp.featuresets.ember2024.features import PEFeatureExtractor
 
-__all__ = ["ATTACKS", "build_attack", "map_watchdog", "run_attack"]
+__all__ = ["ATTACKS", "BUDGETS", "build_attack", "map_watchdog", "run_attack"]
 
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -53,6 +53,11 @@ ROOT = Path(__file__).resolve().parent.parent
 # (population 10, 10 iterations). secml-malware's genetic engine is reseeded before each run (their random.seed(0)).
 ATTACKS = ("gamma_sections", "gamma_api", "gamma_shift", "content_shift", "dos_extend", "header_fields", "padding",
            "format_exploit")
+
+# Attack budgets: (genetic iterations at population 10, donor sections/API groups). "low" is Gimenez et al.'s setting
+# (~100 queries, 30 donors). "literature" is the GAMMA paper's largest (Demetrio et al., TIFS 2021: population 10, up to
+# 510 queries, 75 donor sections), the budget at which GAMMA is reported to evade a GBDT on EMBER features.
+BUDGETS: dict[str, tuple[int, int]] = {"low": (10, 30), "literature": (51, 75)}
 
 
 ################################################################################
@@ -144,14 +149,15 @@ def make_wrapper(model_path: Path, extractor: PEFeatureExtractor, fallback: Opti
 # Attacks
 ################################################################################
 
-def build_attack(name: str, wrapper: Any, section_pop: list[Any], api_calls: list[Any]) -> Any:
-    """Construct one secml-malware black-box problem by name, at Gimenez et al.'s low budget.
+def build_attack(name: str, wrapper: Any, section_pop: list[Any], api_calls: list[Any], iterations: int = 10) -> Any:
+    """Construct one secml-malware black-box problem by name (population 10; Gimenez et al.'s low budget by default).
 
     Args:
         name: One of ATTACKS.
         wrapper: The CWrapperPhi over our detector.
         section_pop: Goodware section contents, for the GAMMA section/shift attacks.
         api_calls: Goodware (dll, functions) pairs, for the GAMMA API attack.
+        iterations: Genetic iterations (queries are about 10 per iteration); see BUDGETS.
 
     Returns:
         A secml-malware problem instance.
@@ -169,18 +175,23 @@ def build_attack(name: str, wrapper: Any, section_pop: list[Any], api_calls: lis
 
     builders: dict[str, Callable[[], Any]] = {
         "gamma_sections": lambda: CGammaSectionsEvasionProblem(section_pop, wrapper, population_size=10,
-                                                               penalty_regularizer=1e-6, iterations=10, threshold=0),
+                                                               penalty_regularizer=1e-6, iterations=iterations, threshold=0),
         "gamma_api": lambda: CGammaAPIEvasionProblem(api_calls, wrapper, population_size=10, penalty_regularizer=1e-6,
-                                                     iterations=10),
+                                                     iterations=iterations),
         "gamma_shift": lambda: CGammaShiftEvasionProblem(section_pop, wrapper, population_size=10,
-                                                         penalty_regularizer=1e-6, iterations=10, threshold=0),
-        "content_shift": lambda: CBlackBoxContentShiftingEvasionProblem(wrapper, population_size=10, iterations=10),
-        "dos_extend": lambda: CBlackBoxContentDOSExtensionProblem(wrapper, population_size=10, iterations=10),
-        "header_fields": lambda: CBlackBoxHeaderFieldsEvasionProblem(wrapper, population_size=10, iterations=10),
+                                                         penalty_regularizer=1e-6, iterations=iterations, threshold=0),
+        "content_shift": lambda: CBlackBoxContentShiftingEvasionProblem(wrapper, population_size=10,
+                                                                        iterations=iterations),
+        "dos_extend": lambda: CBlackBoxContentDOSExtensionProblem(wrapper, population_size=10, iterations=iterations),
+        "header_fields": lambda: CBlackBoxHeaderFieldsEvasionProblem(wrapper, population_size=10,
+                                                                     iterations=iterations),
         "padding": lambda: CBlackBoxPaddingEvasionProblem(wrapper, population_size=10, how_many_padding_bytes=1000,
-                                                          iterations=10),
-        "format_exploit": lambda: CBlackBoxFormatExploitEvasionProblem(wrapper, population_size=10, iterations=10),
+                                                          iterations=iterations),
+        "format_exploit": lambda: CBlackBoxFormatExploitEvasionProblem(wrapper, population_size=10,
+                                                                       iterations=iterations),
     }
+    if iterations < 1:
+        raise ValueError(f"iterations must be >= 1, got {iterations}.")
     if name not in builders:
         raise ValueError(f"Unknown attack {name!r}; expected one of {ATTACKS}.")
     return builders[name]()
@@ -237,15 +248,17 @@ def load_pilot(pilot_files: Path, db_dir: Path) -> tuple[list[tuple[str, bytes]]
     return malware, goodware
 
 
-def build_donor_pools(goodware: list[tuple[str, bytes]], workdir: Path) -> tuple[list[Any], list[Any]]:
+def build_donor_pools(goodware: list[tuple[str, bytes]], workdir: Path,
+                      how_many: int = 30) -> tuple[list[Any], list[Any]]:
     """Goodware section and API-call pools for the GAMMA attacks, extracted from the pilot goodware.
 
     Args:
         goodware: (name, bytes) of the pilot goodware.
         workdir: A scratch directory to materialize the goodware files in (secml-malware reads from disk).
+        how_many: Donor sections (and API groups) to extract; 30 is Gimenez et al.'s, see BUDGETS.
 
     Returns:
-        (section_population, api_calls), matching Gimenez et al.'s how_many=30.
+        (section_population, api_calls).
     """
     from secml_malware.attack.blackbox.c_gamma_sections_evasion import CGammaSectionsEvasionProblem
     from secml_malware.attack.blackbox.c_gammapi_evasion import CGammaAPIEvasionProblem
@@ -255,8 +268,8 @@ def build_donor_pools(goodware: list[tuple[str, bytes]], workdir: Path) -> tuple
     for name, data in goodware:
         (gw_dir / name).write_bytes(data)
     section_pop, _ = CGammaSectionsEvasionProblem.create_section_population_from_folder(
-        str(gw_dir), how_many=30, sections_to_extract=[".rdata", ".data"], to_ignore=[])
-    api_calls = CGammaAPIEvasionProblem.extract_api_calls_from_folder(str(gw_dir), 30)
+        str(gw_dir), how_many=how_many, sections_to_extract=[".rdata", ".data"], to_ignore=[])
+    api_calls = CGammaAPIEvasionProblem.extract_api_calls_from_folder(str(gw_dir), how_many)
     return section_pop, api_calls
 
 
