@@ -15,7 +15,7 @@ pushed.
    four review rounds. **¶2-4 (constraints over features; robust and monotone detectors; incremental computation and
    provenance) were never read by the user**: a `% REVIEW` comment marks them. Start the writing part of the session
    by showing them to the user for a careful review, then log the reactions and update the skill.
-3. **`run/122` (adversarial-training row) hung and was fixed, not relaunched.** A dead `multiprocessing.Pool` worker
+3. **`run/122` (adversarial-training row) hung, was fixed, and was relaunched.** A dead `multiprocessing.Pool` worker
    made `pool.map` wait forever. `map_watchdog` (`scripts/a_pv_attacks.py`) now guards `a_advtrain.py` and
    `a1_evaluate.py`. The hung job was killed (all 27 processes); the user **relaunched**
    `NUM_WORKERS=24 run/122_adv_training.sh` at 2026-11-03 19:45 (generation ~20 min, not 6-7 h; then retrain, toolkit eval, adaptive).

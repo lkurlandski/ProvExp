@@ -17,7 +17,7 @@ and fixed; relaunched by the user at 19:45.** Nothing pushed. Next session: `doc
   left to the body (user). Demontis et al. and Gray et al. deliberately not cited in §6. One `% VERIFY` remains
   (Chen et al. 2020's subtree-edit bounds). New bib entries: `srndic2014practical`, `cortellazzi2025intriguing`
   (Pierazzi TOPS 2025), `dyrmishi2023empirical`, `sheatsley2021robustness` (the last two without pages).
-- **`run/122` HUNG and was diagnosed (not relaunched).** Launched 15:08 with `NUM_WORKERS=24`; at 19:35 all 24 workers
+- **`run/122` HUNG; diagnosed, fixed, relaunched.** Launched 15:08 with `NUM_WORKERS=24`; at 19:35 all 24 workers
   sat idle in futex waits, 0% CPU, log silent since 15:37, no output. Cause: one `multiprocessing.Pool` worker died
   ~15:37 (a replacement worker appeared then; likely a native crash inside LIEF/secml-malware on a malformed file);
   `Pool` replaces dead workers but their task never returns, so `pool.map` waits forever and the finished results are
