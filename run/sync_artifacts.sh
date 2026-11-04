@@ -12,7 +12,7 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-SRC_HOST="${SRC_HOST:-lk3591@gcis-mkwics-rl.rit.edu}"
+SRC_HOST="${SRC_HOST:-lk3591@gcis-mkwics-rl.gccis.rit.edu}"
 SRC="${SRC:-/scratch/lk3591/provexp}"
 DST="${DST:-/scratch/lk3591/provexp}"
 
