@@ -244,7 +244,17 @@ import injections go through a library that rebuilds the file's layout, which no
 toolkit outputs on files in the population, 252 move every feature within the derived table; the 36 others all come
 from the two rebuilding attacks, and most of them change the size of the resource directory, which the table holds
 fixed. The corollary says nothing about these files, yet none of the rebuilding attacks' outputs evades a monotone row
-(0/56 and 0/60, against 27/70 for the unconstrained detector). Second, the guarantee holds only if the population is
+(0/56 and 0/60, against 27/70 for the unconstrained detector). A larger budget does not change this. Run with
+the budget of the GAMMA paper~\cite{demetrio2021functionality}, about 500 queries instead of 100 and a larger donor
+pool, import injection evades the unconstrained detector on 27 of 47 files, one more than before, and no monotone row
+on a file in the population. Section injection evades no detector: every file it produces grows by at least 870~KB,
+over the byte budget, and even without the budget only 4 of the 47 would fall below the unconstrained detector's
+threshold.
+% MEASURED (2026-11-04): run/124_a1_toolkit_literature_budget.sh, budget "literature" (population 10, 51 iterations),
+% artifacts/experiments/a1/toolkit-literature/s10 (10% subsample: ref 27/47 capped, 30 uncapped, low budget 26/47;
+% monotone rows 0/28, 0/30, 0/31 in population; PV-seen 0/22, low budget 4/22) and .../fullstore (unconstrained
+% full set 20/49, advtrain 21/48; sections 0). Sections on ref: >= 870 KB added (median ~1 MB), 4/47 below tau uncapped.
+Second, the guarantee holds only if the population is
 closed under the catalogue and if the directions derived from our corpus hold beyond it. None of the
 60,934 edits we wrote on files in the population takes a file out of it, and the directions derived from the 100 pilot files
 equal those from the 2,000 files in every threat model, with and without the precondition. Third, the guarantee is
