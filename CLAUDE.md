@@ -40,7 +40,7 @@ and manuscript remain as source material. Deadlines and conference cycles are no
   (cp, pb1, pf1, trigger, cm, audit), `docs/theory.md`, `docs/appendix.md`, `docs/related_work.md`,
   the old manuscript (deleted 2026-11-02; in git history before the commit that removed it), `docs/reviews/explanation-provenance/2026-10-21-ccs.md`. Some artifact paths use
   retired IDs (e.g. `artifacts/experiments/e1/` is PB1). `docs/design.md` (package design, provenance conventions,
-  thrember quirks) and `docs/style_guide.md` still apply.
+  thrember quirks) still applies. Writing: `docs/writing-spec.md` (replaces `docs/style_guide.md`; tendencies, not rules).
 - **State a hypothesis before running an experiment** (what you expect and why), and report a failed check as such.
   Keep it short and proportionate: a sentence or two, not an elaborate pre-registered reading for every outcome
   (user, 2026-10-09).
@@ -116,7 +116,7 @@ and manuscript remain as source material. Deadlines and conference cycles are no
   `main.tex` is the complete document (ACM `acmart` `sigconf`, the CCS format; do not change fonts, margins, or spacing) and
   `\input`s the section fragments. After editing, run `make` and `make check` (undefined refs/citations, overfull boxes).
 - **Early drafting stage (user, 2026-10-14):** (1) exceeding the page limit does not matter yet; do not cut or compress
-  text to fit. (2) Exact numbers in the prose are of little concern, since experiments will be re-run and more data
+  text to fit. A section may run 50-75% over its mock word budget while drafting (user, 2026-11-03). (2) Exact numbers in the prose are of little concern, since experiments will be re-run and more data
   added; focus on structure, argument, and prose, not on syncing every number. Write the body first; the introduction
   and conclusion come last, once we can assess what the body shows.
 - **Deferred runs (user, 2026-10-21):** when a run is designed and scripted but deferred, put its predicted values in
