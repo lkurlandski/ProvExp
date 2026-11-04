@@ -1,8 +1,8 @@
 # Status
 
 **2026-11-04 (session 14): runs 125, 127, 128 read; run 129 run (PV greedy menus); run 130 scripted (beam x run 125's
-model, for the user).** Nothing pushed; manuscript untouched (the uncommitted §3-4 rewrite in the tree is not this
-session's). Table 7 waits on the user's choices below. Next session: `docs/resume-prompt.md`.
+model, for the user).** Nothing pushed; manuscript untouched by this session (the Sections 2-3 rewrite, `084055c`, is separate
+work). Table 7 waits on the user's choices below. Next session: `docs/resume-prompt.md`.
 
 - **Run 125 (strong adversarial training) read; hypothesis held.** Accuracy unchanged (AUC 0.9976, TPR 95.6% at 1%
   FPR). Where it was trained it pays: gamma_api 22 -> 11 of 49, header_fields 11 -> 3 (low budget); GAMMA API at the

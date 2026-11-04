@@ -3,7 +3,7 @@
 ## Where things stand
 
 Session 14 read runs 125, 127, and 128, ran run 129, and scripted run 130. Details: `docs/status.md` (session-14
-block). The manuscript was not touched; the uncommitted §3-4 rewrite in the tree is separate work. Nothing pushed.
+block). This session did not touch the manuscript (the Sections 2-3 rewrite, `084055c`, is separate work). Nothing pushed.
 
 - Run 125 (strong adversarial training): accuracy unchanged; the attacks it trained on drop by half or more
   (toolkit 55% -> 31%); greedy adaptive 12/49 (24%).
