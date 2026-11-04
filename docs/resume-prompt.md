@@ -1,11 +1,47 @@
-# Resume: ProvExp (after 2026-11-04, session 14): read run 130, then choose the next work with the user
+# Resume: ProvExp (after 2026-11-04, sessions 14 and 14b): the user's read of the rewritten §2-3; run 130; then choose the next work
 
-## Where things stand
+Two tracks ran in parallel on 2026-11-04. Start with whichever the user brings: their notes on §2-3 (writing track),
+or run 130 (research track). Ask if unclear.
+
+## Writing track (session 14b): the user reads the rewritten Sections 2-3
+
+**Where things stand.** §2 "Background and Motivation" (`manuscript/_c_background.tex`) and §3 "Measuring Edits Across
+Feature Mappings" (`manuscript/_d_framework.tex`) were rewritten from scratch (`084055c`), from the spine in
+`docs/framework-spine.md` and the user's decisions D1-D5 and comments (`docs/writing-spec.md`, reaction log, the two
+2026-11-04 §3 entries). Details: `docs/status.md`, session-14b block. In short:
+- no domain examples (kept as `% EXAMPLE (removed, D2)` comments), no tables (source in
+  `manuscript/backup/framework-tables-2026-11-04.tex`), no figures; Pierazzi's notation; reachable set
+  $\mathcal{R}(z)$; symbol table in Appendix A;
+- one endpoint per subsection: Lemma 1 (finding the item delta), Proposition 1 (exact side effects), Lemma 2
+  (signatures from the item table), Theorem 1 (sound directions; formerly Theorem 2), Corollary 1 (robustness);
+- requirements renumbered by step: (R1) structure, (R2) margins, (R3) honest tools, (R4) self-contained
+  contributions, (R5) faithful recording.
+
+The user was unsure about the edits subsection from the spine (P12 and P13 felt disconnected) and reads the prose to
+judge whether the new arc (which items a write changes, answered by locating positions and margins, ending in Lemma 1)
+works.
+
+**Next, in order.**
+1. **Take the user's review of §2-3.** Invoke `/paper-prose` first. Log the reaction raw in `docs/writing-spec.md`
+   (reaction log), then update the skill's lessons (add, sharpen, or delete; lessons 16-20 are new and untested).
+2. **Revise** per the review; if the second half's arc still does not land, fix the structure (spine) before prose.
+   `make` and `make check` in `manuscript/`; keep `_i_symbols.tex` in sync with any notation change; commit.
+3. **Notation round** against the symbol table (the user promised specific comments). Known candidates: $\kappa$ (item
+   kind) vs Pierazzi's confidence $\kappa$ (unused in §2, so no clash yet); $T$, $T_{o,\theta}$, $\mathcal{T}$, $O$,
+   $\mathcal{M}$; $E^F_o(s)$ vs $E_s$.
+4. **Small open items:** a `% VERIFY` in §3.1 on Hidost's feature values (path counts or presence bits; check
+   `srndic2016hidost`); §3 is ~3,900 words against 2,500 (within the drafting allowance; do not cut unless asked).
+5. **Later (user: only once the core reads well):** redesigned term and readout tables, figures, and domain examples.
+   `docs/reviews/review-prompt.md` should be updated when the draft's stage changes.
+
+## Research track (session 14): read run 130, then choose the next work with the user
+
+### Where things stand
 
 Session 14 read runs 125, 127, and 128, ran run 129, and scripted run 130. The user runs run 130 overnight. Details
 and the good/bad/neutral assessment are in `docs/status.md` (session-14 block); the plan is in `PLAN.md` ("Next steps
-(2026-11-04, session 14)"). This session did not touch the manuscript (the Sections 2-3 rewrite, `084055c`, is
-separate work). Nothing pushed.
+(2026-11-04, session 14)"). Session 14 did not touch the manuscript (the Sections 2-3 rewrite, `084055c`, is the
+writing track above). Nothing pushed.
 
 - **Run 125 (adversarial training on the attacks that work).** Accuracy unchanged (AUC 0.9976, TPR 95.6%). The
   toolkit falls from 55% to 31% (gamma_api 22 -> 11, header_fields 11 -> 3 of 49). Greedy adaptive search: 12/49 (24%).
@@ -22,7 +58,7 @@ separate work). Nothing pushed.
   of the table the beam evades every file they evade. The PV rows' adaptive cells come from the 10% models, like their
   other columns.
 
-## Next session, in order
+### Next session, in order
 
 1. **Read run 130**: `artifacts/experiments/a1/adaptive-beam/advtrain-strong/adaptive.json`, log
    `artifacts/logs/a1_adaptive_beam_advtrain_strong.log`.

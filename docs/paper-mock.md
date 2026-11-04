@@ -28,8 +28,8 @@ hand analysis, more complete than learned constraints, and useful: it yields det
 | Section | Content | Words |
 |---|---|---|
 | 1 Introduction | the gap, the three ways people cross it today, our claim, results | 1,000 |
-| 2 Background | Pierazzi et al.'s problem space and side effects; who needs which view of the reachable set (attacks, monotone detectors, verified training) | 800 |
-| 3 Framework | below | 2,500 |
+| 2 Background and Motivation | Pierazzi et al.'s problem space, constraints, reachable set, side effects (with nuance); who needs which description of the reachable set and the gap they share (written 2026-11-04) | 800 |
+| 3 Measuring Edits Across Feature Mappings | below (rewritten 2026-11-04: no domain examples, tables, or figures for now; spine in `docs/framework-spine.md`) | 2,500 |
 | 4 Instances | EMBER (what is recorded, the three repairs, the import-overwrite patch); CTU-13 features; the edit catalogues | 1,000 |
 | 5 Evaluation | Tables 1-4 | 3,000 |
 | 6 Related work | incremental view maintenance and parsing, abstract interpretation, provenance, constrained attacks, robust detectors | 700 |

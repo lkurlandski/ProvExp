@@ -1,5 +1,34 @@
 # Status
 
+**2026-11-04 (session 14b, writing only; ran alongside session 14): Sections 2-3 rewritten from scratch; the user
+reads them next.** Nothing pushed. Commits `6197efb`, `084055c`. Next session: `docs/resume-prompt.md` (writing track).
+
+- **Why.** The user's review of §3.1 (drafted 2026-11-02, before the paper-prose procedure) found it "so awful that it's
+  hard to provide good feedback": the math mostly right, the presentation not. Agreed: rewrite, keeping the content
+  (theorems, proofs, examples, requirements) and none of the prose or structure.
+- **Process.** Symbol table first (Appendix A, `_i_symbols.tex`, Pierazzi's style), a per-paragraph spine
+  (`docs/framework-spine.md`), the user's decisions D1-D5 and comments on P1-P10, then the whole section in one pass
+  (the user could not critique the second half from the spine: P12-P13 felt disconnected).
+- **Decisions (user).** D1 Pierazzi's setup -> new §2 "Background and Motivation" (`_c_background.tex`). D2 no domain
+  examples in the framework for now; removed examples kept as `% EXAMPLE (removed, D2)` comments. D3 the term/readout/
+  domain tables out of the PDF, source in `manuscript/backup/framework-tables-2026-11-04.tex`. D4 no figures until the
+  core reads well. D5 working title "Bridging the Gap: A Closer Look at Adversarial Examples in the Problem Space";
+  §3 "Measuring Edits Across Feature Mappings"; every title on one line. Notation follows Pierazzi
+  ($\mathcal{Z}$, $\mathcal{X}$, bold vectors); reachable set $\mathcal{R}(z)$, one symbol.
+- **What changed in substance (presentation of the same math).** §2: side effects with nuance (they can be zero;
+  consolidation often but not always needed; side effects also arise without it), and P4 the motivation: attacks,
+  constrained feature-space attacks, and robust detectors each need a description of $\mathcal{R}(z)$ and all get it
+  from outside $\varphi$. §3: items defined as collections of elements analyzed jointly; sums as commutative monoids
+  (fold, no inverse for max), readouts as algebraic aggregates (Gray), kinds as types; readout and extractor definitions
+  separated; one endpoint per subsection (new Lemma 1, finding the item delta; Proposition 1; new Lemma 2, signatures
+  from the item table; Theorem 1, directions, formerly Theorem 2; the corollary). Operations and threat models moved to
+  the directions subsection. **Requirements renumbered by step:** (R1) complete record of structure, (R2) margins, (R3)
+  honest tools, (R4) self-contained contributions, (R5) faithful recording; §4 and the proofs updated. Term signs and
+  readout rules in prose (the full rule list in the proofs appendix). §2 ~850 words, §3 ~3,900 (budget 2,500).
+- **Logged.** `docs/writing-spec.md` reaction log (two entries); paper-prose lessons 16-20.
+- **Open.** The user's read of §2-3; a `% VERIFY` on Hidost's feature values; the tables need a redesign before they
+  come back; `docs/paper-mock.md` outline updated for §2-3.
+
 **2026-11-04 (session 14): runs 125, 127, 128 read; run 129 run (PV greedy menus); run 130 scripted (beam x run 125's
 model, for the user).** Nothing pushed; manuscript untouched by this session (the Sections 2-3 rewrite, `084055c`, is separate
 work). Table 7 decided (beam alone); edits pending, after run 130 (user: overnight). Next session: `docs/resume-prompt.md`.

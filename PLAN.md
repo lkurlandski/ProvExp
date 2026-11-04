@@ -55,6 +55,14 @@ introduction and a simple baseline (writing decision for later).
   combined edits (run 111, 1,105 of 1,105) and the learned-constraints contrast (run 110). Record:
   `docs/direction-A-prime-plan.md`, Section 13.
 
+## Next steps (2026-11-04, session 14b, writing: Sections 2-3 rewritten)
+
+Done: §2 Background and Motivation and §3 rewritten from a per-paragraph spine (`docs/framework-spine.md`) and the
+user's decisions D1-D5 (`docs/status.md`, session-14b block). Next on the writing track: (1) the user's read of §2-3,
+logged and folded into `/paper-prose`; (2) revise; (3) the notation round against the symbol table (Appendix A); (4)
+later, redesigned tables and figures, and domain examples once the domains are settled (kept in `% EXAMPLE` comments).
+The research track (session 14 below) is unaffected.
+
 ## Next steps (2026-11-04, session 14: runs 125, 127, 128 read; run 129 run; run 130 for the user)
 
 Done: run 125 read (adversarial training on the attacks that work halves them, toolkit 55% -> 31%, accuracy unchanged,
