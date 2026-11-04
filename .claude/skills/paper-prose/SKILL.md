@@ -77,6 +77,16 @@ contradicts.
     "go" somewhere, costs that "lie in" things, items that "account for most of it", "beyond noise", and closers that
     tell the reader what a defender can now do. (§5 price list, 2026-11-04)
 
+16. **Framework prose: one topic per paragraph, every symbol earns its place.** A formal section may be textbook-like
+    (Pierazzi et al.'s §II is the model: a definition, then a sentence or two of intuition and an example), but each
+    paragraph introduces one concept and nothing from the experiments. Introduce a symbol only if a later definition,
+    result, or table uses it; gloss a borrowed concept briefly and correctly in its source's terms (the problem space is
+    not "what an attacker edits": feature-space attacks edit vectors). An idea raised only to say we do not handle it
+    either gets its own paragraph or is cut. (§3.1, 2026-11-04)
+17. **No instance in a general opening, no figurative announcement.** "This section opens the box" and an EMBER
+    example in the framework's opening read as LLM slop. A section lead states, literally, what the section defines and
+    proves and for which class of extractors; the running example arrives where it is first needed. (§3.1, 2026-11-04)
+
 ## Procedure
 
 1. **Spine first, always.** One line per paragraph (its claim, its citations or numbers), agreed with the user before

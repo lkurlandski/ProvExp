@@ -1,0 +1,61 @@
+% Appendix: symbol table for the framework section (_d_framework.tex) and its proofs (_j_proofs.tex), in the style
+% of Pierazzi et al.'s Appendix A. Lists the notation as it stands (2026-11-04), before the rewrite of Section 3, so
+% the user can review its typography; update it with the rewrite.
+
+\Cref{tab:symbols} lists the notation of \Cref{sec:framework} and \Cref{sec:fw:proofs}.
+
+\begin{table}[t]
+  \caption{Symbols.}
+  \label{tab:symbols}
+  \footnotesize
+  \begin{tabular}{@{}lp{0.74\columnwidth}@{}}
+    \toprule
+    Symbol & Description \\
+    \midrule
+    \multicolumn{2}{@{}l}{\emph{Problem and feature space (after Pierazzi et al.)}} \\
+    $Z$ & Problem space: the objects an attacker edits. \\
+    $X \subseteq \mathbb{R}^n$ & Feature space, with $n$ features. \\
+    $\varphi : Z \to X$ & Feature mapping (the extractor); $\varphi_j$ is feature $j$. \\
+    $h$ & Malware score of the classifier. \\
+    $z, z'$ & An input and the input after an edit. \\
+    $T$, $\mathcal{T}$ & A transformation $T : Z \to Z$; the available transformations. \\
+    $\Gamma$, $\Omega$ & Problem-space constraints; feature-space constraints. \\
+    $\Gamma \vdash \Omega$ & $\Gamma$ determines $\Omega$. \\
+    $\boldsymbol{\delta}^*$ & The feature change an attack aims for. \\
+    $\boldsymbol{\eta}$ & Side-effect vector: what else the edit changed. \\
+    $\mathrm{Reach}(z)$ & Feature vectors reachable from $z$ with transformations in $\mathcal{T}$. \\
+    \midrule
+    \multicolumn{2}{@{}l}{\emph{Items, sums, and readouts}} \\
+    $p$, $z[p]$ & A position; the element of $z$ at position $p$. \\
+    $\iota$, $\iota'$ & An item; a modified item after the edit. \\
+    $\kappa(\iota)$ & The kind of item $\iota$ (section, string, byte, packet). \\
+    $M(\iota)$ & Members of $\iota$: the positions its content is read from. \\
+    $L(\iota)$, $L(z)$ & Locating positions of $\iota$; all locating positions of $z$. \\
+    $S$ & The set of sums (additive sums and pools). \\
+    $\mathbf{v}(\iota)$ & Contribution of $\iota$ to each sum. \\
+    $\mathbf{s}(z)$ & Sum vector of $z$: the total of all contributions. \\
+    $\rho_j$ & Readout of feature $j$: a formula over a few sums. \\
+    $J$ & Modeled features ($\varphi_j = \rho_j \circ \mathbf{s}$); the rest are residual. \\
+    $\mathrm{hash}(\cdot)$, $K$ & Bucket of a hashed key; a set of keys an operation may choose from. \\
+    \midrule
+    \multicolumn{2}{@{}l}{\emph{Edits and threat models}} \\
+    $W$ & Written set: the positions where $z'$ differs from $z$. \\
+    $\Delta$ & Item delta $(I^-, I^+, I^\sim, I^\to)$: removed, added, modified, and moved items. \\
+    $o$, $T_{o,\theta}$ & An operation; its edit with parameter $\theta$. \\
+    $\Theta_o(z)$, $B$ & Parameters of $o$ on $z$; a byte budget. \\
+    $\mathcal{M}$ & Threat model $(O, \mathrm{Pre})$: catalogue $O$ of operations and precondition $\mathrm{Pre} \subseteq Z$. \\
+    $\mathrm{Reach}_\mathcal{M}$ & Inputs produced from an input by finite sequences of operations of $\mathcal{M}$. \\
+    $\Sigma_o$ & Signature of $o$: the item kinds and contributions it can add, remove, or modify. \\
+    $\mu_\kappa(z, W)$ & Margin of kind $\kappa$: the region outside which its items cannot change. \\
+    (R1)--(R5) & The requirements of exact side effects. \\
+    \midrule
+    \multicolumn{2}{@{}l}{\emph{Directions}} \\
+    $\{-, 0, +\}$ & Signs; a sign set is a subset. \\
+    $A \boxplus B$ & Sign sum: the signs $x + y$ can have for $x$ with a sign in $A$ and $y$ in $B$. \\
+    $F$ & A population of inputs. \\
+    $E^F_o(s)$, $E_s$ & Envelope: the signs the change of sum $s$ takes under $o$ over $F$ (short form). \\
+    $D$, $D_j$ & Direction table; the direction of feature $j$ (fixed, up, down, or both). \\
+    $a, b$; $\alpha, \beta$ & Numerator and denominator of a ratio; their changes (proofs). \\
+    \bottomrule
+  \end{tabular}
+\end{table}

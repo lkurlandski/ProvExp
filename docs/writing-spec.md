@@ -97,6 +97,22 @@ side of detail and cut later.
 What the user accepted or rejected on real drafts, newest first. Each entry: the sentence or choice, the verdict, the
 rule it implies (folded into Sections 1-5 if general).
 
+- **2026-11-04, §3 (framework, drafted 2026-11-02 before the paper-prose procedure), written review of §3.1.**
+  Verdict: "so awful that it's hard to provide good feedback"; the math is mostly correct, the presentation is not;
+  rewrite the whole section from a new spine, keeping the content. Genre: a textbook style like Pierazzi et al. (S&P
+  2020, TOPS 2025) is welcome; budgets are loose. Section and subsection titles ("Computing What Edits Do to
+  Features", "The Problem") are boring and clumsy. §3 needs a short lead (the most important section of the paper).
+  Typography looks wrong; add a symbol table to the appendix (done; the user will comment on notation against it).
+  ¶1: "the objects an attacker edits" is a wrong definition of the problem space (attackers edit feature vectors too,
+  in feature-space attacks); h introduced but not needed unless used later; Pierazzi's four constraints named without
+  a gloss (gloss them briefly or drop them); the reachable set and "realizable evasion" undefined and unaesthetic.
+  ¶2: "as is *usually* the case in malware detection" (hedge accurately); consolidation reads as a new idea worth its
+  own paragraph yet is brushed off; the paragraph drifts into our experimental method ("no clue what the topic of this
+  paragraph is"). ¶3: "opens the box" and the whole paragraph are LLM slop; EMBER features have no place in the
+  framework's opening. Implied: (a) a framework paragraph has one topic, and methodology belongs elsewhere; (b) define
+  borrowed concepts correctly and in the source's terms (Pierazzi's side-effect features are the features altered to
+  satisfy the problem-space constraints, i.e., by consolidation); (c) every symbol must be used later; (d) no
+  domain-specific instance in the general opening; (e) no figurative announcements of what the section does.
 - **2026-11-04, §6 paragraphs 1-4, revised draft.** Accepted: "quite good", still sounds a little like AI in places,
   and the user will clean up and tweak parts by hand. It reached the bar: worth the user's handcrafted attention.
   The goal of drafting with Claude (user): rapidly prototype correct, coherent, fluid prose that the user then
