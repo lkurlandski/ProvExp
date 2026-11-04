@@ -81,6 +81,15 @@ that is new. The attack, the hash-bucket trick, and the concept of side effects 
   MAB-Malware 83.4%, MiniMal 30.6%, GAMMA shift 12.7%. MAB-Malware + GAMMA shift cover ~99% of the other attacks'
   adversarial examples. Hardening is "highly attack- and model-dependent". Code: github.com/mashalzainab/
   windows-malware-adversarial-robustness. Setup (budgets, data) not read: verify before citing numbers.
+- **Setup, read 2026-11-04 (HTML tables checked directly):** the 83.4% is on their Unified Evaluation Set: 1,000
+  malware from an outside pool (VirusShare 499, the Dike dataset, a commercial set; ~65k files), restricted to samples
+  every detector flags. EMBER-24 is thrember's pretrained "All PE files" GBDT at 0.1% FPR (threshold 0.9557, TPR
+  88.5%). Common budget: hard-label, 50 queries, at most 10 transformations, 5 optimization rounds; every output run in
+  Cuckoo (executes without crashing). ASR denominator: the originally detected samples. On each model's own test
+  malware (Native Test Set, Appendix A-F, Table XI), EMBER-24's ASR falls to MAB-Malware 9.6%, GAMMA shift 8.1%, GAMMA
+  padding 5.6%, GAMMA section 0%, MiniMal 4.5%; the comparable setting for our pilot (EMBER-2024 test files). No
+  hardening on EMBER-24. MAB-Malware's seven transformations (overlay append, section rename, section add, section
+  append, remove certificate, remove debug, break checksum) are all operations of our catalogue.
 
 **Gimenez et al.** (arXiv 2508.10038): see `docs/direction-A-expert-set.md`.
 
