@@ -40,7 +40,7 @@ and manuscript remain as source material. Deadlines and conference cycles are no
   (cp, pb1, pf1, trigger, cm, audit), `docs/theory.md`, `docs/appendix.md`, `docs/related_work.md`,
   the old manuscript (deleted 2026-11-02; in git history before the commit that removed it), `docs/reviews/explanation-provenance/2026-10-21-ccs.md`. Some artifact paths use
   retired IDs (e.g. `artifacts/experiments/e1/` is PB1). `docs/design.md` (package design, provenance conventions,
-  thrember quirks) still applies. Writing: `docs/writing-spec.md` (replaces `docs/style_guide.md`; tendencies, not rules).
+  thrember quirks) still applies. Writing: `docs/writing-spec.md` (replaces `docs/style_guide.md`; tendencies, not rules) and the project skill `.claude/skills/paper-prose/` (lessons from feedback + procedure; use it for all paper prose and update it after each round).
 - **State a hypothesis before running an experiment** (what you expect and why), and report a failed check as such.
   Keep it short and proportionate: a sentence or two, not an elaborate pre-registered reading for every outcome
   (user, 2026-10-09).

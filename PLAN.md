@@ -55,6 +55,14 @@ introduction and a simple baseline (writing decision for later).
   combined edits (run 111, 1,105 of 1,105) and the learned-constraints contrast (run 110). Record:
   `docs/direction-A-prime-plan.md`, Section 13.
 
+## Next steps (2026-11-03, session 9: writing the empty sections)
+
+The writing method is settled (`docs/writing-spec.md` + the `paper-prose` skill). §6 is drafted (¶1 final; ¶2-4 await
+the user's careful review). Next, in order: the user's review of §6 ¶2-4 (log reactions, update the skill); then the
+introduction (§1, framework-first with a detector-centered results paragraph), background (§2), discussion (§7),
+Figure 1, abstract last, each spine-first with the skill. In parallel: `run/122` relaunch and reading its row into
+Table 7.
+
 ## Next steps (2026-11-02, the response to the review, agreed with the user)
 
 The triage of `docs/reviews/2026-11-02-body.md` (R1-R16), after checking its premises against the artifacts. What the

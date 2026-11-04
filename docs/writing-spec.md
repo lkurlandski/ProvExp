@@ -97,6 +97,10 @@ side of detail and cut later.
 What the user accepted or rejected on real drafts, newest first. Each entry: the sentence or choice, the verdict, the
 rule it implies (folded into Sections 1-5 if general).
 
+- **2026-11-03, §6 paragraphs 2-4 (constraints; detectors; incremental computation).** Drafted with the
+  `paper-prose` skill in one pass, written into the `.tex`, **not yet read by the user** (flagged `% REVIEW`). The
+  user is satisfied with the method (spine, one unit, self-review, log, skill update) and wants the skill to need
+  less feedback over time.
 - **2026-11-03, §6 paragraph 1, fourth draft.** Right content, but less clear than before: "falling back to
   LLM-rhetoric style". The tics: an announced count ("Learning by trial has two costs."), colon reveals, an emphatic
   "exactly this way", a cadenced triad ("applies ..., extracts ..., and sees what moved"), a metaphor ("inherits the

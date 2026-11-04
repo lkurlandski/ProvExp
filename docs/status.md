@@ -1,5 +1,34 @@
 # Status
 
+**2026-11-03 (session 9): writing spec + `paper-prose` skill built; related work (§6) drafted; `run/122` found hung
+and fixed (needs relaunch).** Nothing pushed. Next session: `docs/resume-prompt.md`.
+
+- **Writing method settled with the user.** `docs/writing-spec.md` (replaces `docs/style_guide.md`, still on disk):
+  habits to *ration* by frequency (no bans), techniques to reach for when they help, organization/layout as
+  suggestions, length 50-75% over budget while drafting, and a raw **reaction log**. The project skill
+  `.claude/skills/paper-prose/SKILL.md` holds the distilled **lessons** (8 so far: a paragraph is an argument; critique
+  at the work's own level; citations earn space by role; words on the limitation and our contribution; sharpening is
+  not staging; transitions from logic; err toward detail; commas not semicolons in lists) and the **procedure** (spine
+  -> one unit -> self-review -> show -> log + update skill -> widen the unit as trust grows). The user is satisfied with
+  the method and wants the skill to need less feedback over time. `.claude/` is untracked (not committed; user to decide).
+- **§6 related work drafted (963 words; budget 700).** ¶1 problem-space attacks: reviewed by the user in four rounds,
+  final. ¶2 constraints over features, ¶3 robust and monotone detectors, ¶4 incremental computation and provenance:
+  drafted in one pass, **NOT read by the user** (`% REVIEW` comment in `_g_related_work.tex`). Abstract interpretation
+  left to the body (user). Demontis et al. and Gray et al. deliberately not cited in §6. One `% VERIFY` remains
+  (Chen et al. 2020's subtree-edit bounds). New bib entries: `srndic2014practical`, `cortellazzi2025intriguing`
+  (Pierazzi TOPS 2025), `dyrmishi2023empirical`, `sheatsley2021robustness` (the last two without pages).
+- **`run/122` HUNG and was diagnosed (not relaunched).** Launched 15:08 with `NUM_WORKERS=24`; at 19:35 all 24 workers
+  sat idle in futex waits, 0% CPU, log silent since 15:37, no output. Cause: one `multiprocessing.Pool` worker died
+  ~15:37 (a replacement worker appeared then; likely a native crash inside LIEF/secml-malware on a malformed file);
+  `Pool` replaces dead workers but their task never returns, so `pool.map` waits forever and the finished results are
+  stuck in the parent. **Fix (committed):** `map_watchdog` in `scripts/a_pv_attacks.py`
+  submits tasks one by one and, after `--stall_timeout` s (default 2700) with no completion, marks the unfinished tasks
+  lost (counted as attempted-not-valid / not-evaded, printed as `LOST`) and terminates the pool; used by
+  `a_advtrain.py` and `a1_evaluate.py` (same hazard). Tested with a deliberately dying worker (39/40 recovered, the
+  lost one reported) and a 2-file real smoke (8 runs in 36 s on 4 workers -> the full 1,600-task generation is
+  ~20 min at 24 workers, NOT the 6-7 h the script header claims). **The user must Ctrl-C the hung job and relaunch
+  `NUM_WORKERS=24 run/122_adv_training.sh`.** Sync `run/122`'s header (runtime; the watchdog) once it is not running.
+
 **2026-11-03 (session 8): planning session. Holistic stock-take vs the review done; a new primary track opened --
 building a manuscript writing-and-presentation spec before drafting the empty sections.** Nothing pushed. `run/122`
 still running (see session 7). Next session: `docs/resume-prompt.md`.
