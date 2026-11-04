@@ -1,6 +1,6 @@
 # Status
 
-**2026-11-04 (session 13, in progress): run 124's 10% half read.** Runs 125 (this server; generation at 150/1,200 at
+**2026-11-04 (session 13, in progress): run 124's 10% half read; ERDALT row built (`run/128`).** Runs 125 (this server; generation at 150/1,200 at
 13:05) and 127 (second server; not yet copied back) still pending.
 
 - **Run 124, 10% half** (`toolkit-literature/s10/table.json`, no LOST lines; 2 h 55 min at 16 workers). Hypothesis
@@ -9,8 +9,20 @@
   uncapped (low budget 26/47), all through gamma_api; PV-seen 0/22 (low budget 4/22). gamma_sections 0 everywhere: on
   the reference it adds >= 870 KB (median ~1 MB), so every output is over the cap; uncapped it lowers the score on
   33/47 but by a median of 0.0006, and crosses tau on only 4/47 (at the low budget, 6/47 within the cap). Header
-  synced. Reading: the strong toolkit changes no Table 7 conclusion; proposed as a sentence, not a column (user to
-  decide).
+  synced. The strong toolkit changes no Table 7 conclusion: two sentences in §5's detector results (user: prose, not a
+  column; `8b06aaf`).
+- **§6 `% VERIFY` resolved** (`5fbc534`): Chen et al. 2021 choose monotone directions from suspiciousness and attacker
+  cost (Property 1, §6.1), not "features an attacker can only increase"; sentence fixed. Open for the user: §6's "all
+  four works rest on the same input, the directions an attacker's edits can move each feature" stretches Chen 2021.
+- **ERDALT row built (user: build it, follow the paper, note the patch; `78d5aff`).** Port of their public
+  `train_model.py` (`src/provexp/models/erdalt.py`): their code leaves the output layer unconstrained, so the network is
+  not monotone; ours projects it too (upstream item 8). Learns from the 4 seen attacks' 1,797 vectors (pilot 200 + run
+  122's 1,597). Deviations: batch 256, epoch selected on validation; a temperature on the logit (logits reach the
+  thousands, sigmoid saturated at 1.0 for 2.5% of benign files, threshold = 1.0; the rescaling keeps every decision).
+  Hole check `scripts/a_erdalt_hole.py` (L's columns against the derived M_full table). Smoke (12 epochs): vl AUC ~0.81,
+  violations falling 116k -> 355; evaluation and beam search run end to end. `run/128_erdalt.sh` for the user (~1-1.2 h,
+  one GPU + 16 workers). Mock + checks: `docs/direction-A-mock.md`. Smoke aside: the beam search showed 4 mismatches on
+  the s10 reference (GBDT path untouched); check run 127's `mismatches` counts.
 
 **2026-11-04 (session 12): run 126 read and into §5; run 124's full-store half read; Zainab et al.'s setup read; the
 beam search built and `run/127` running on a second server; the project made portable.** Nothing pushed. Next
