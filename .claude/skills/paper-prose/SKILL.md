@@ -13,6 +13,12 @@ Taste reference: `docs/writing-spec.md` (habits to ration, techniques, exemplars
 raw feedback). This skill is the operational part: the lessons that feedback has taught, and how to work. Nothing
 here is a rule to apply literally; real writing has variance, and a risk with a sentence is fine.
 
+**The bar (user, 2026-11-04).** A draft must be correct, coherent, and fluid enough to be worth the user's hand
+fine-tuning. Above that bar, drafting with Claude saves time; below it, fixing the draft takes longer than writing it
+from scratch. So spend effort on what the user cannot cheaply fix (facts checked against the sources, each paragraph's
+argument, the role of each citation, a confident statement of our contribution) over sentence polish, which the user
+will do by hand. First accepted at this bar: §6 after one written review.
+
 ## Lessons from feedback
 
 Each lesson names the round it came from (dates in the reaction log). Newest evidence wins; delete a lesson the user

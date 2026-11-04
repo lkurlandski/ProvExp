@@ -97,6 +97,11 @@ side of detail and cut later.
 What the user accepted or rejected on real drafts, newest first. Each entry: the sentence or choice, the verdict, the
 rule it implies (folded into Sections 1-5 if general).
 
+- **2026-11-04, §6 paragraphs 1-4, revised draft.** Accepted: "quite good", still sounds a little like AI in places,
+  and the user will clean up and tweak parts by hand. It reached the bar: worth the user's handcrafted attention.
+  The goal of drafting with Claude (user): rapidly prototype correct, coherent, fluid prose that the user then
+  fine-tunes. Below that bar, fine-tuning takes longer than writing from scratch. Implied: correctness and coherence
+  come first, and the remaining AI flavor is acceptable at this stage; the next unit can be larger.
 - **2026-11-04, §6 paragraphs 1-4, first written review (all four).** ¶1: drop the extended version of Pierazzi et
   al. (a duplicate citation adds nothing); "the constraints have no closed form" was paraphrased without the reasoning
   that makes it support the claim (the user could not see how a closed form would help); restate our term
