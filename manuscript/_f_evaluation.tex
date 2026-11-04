@@ -204,7 +204,7 @@ sequence of edits in the threat model. We train such a detector on the features 
     Detector & AUC & TPR at 1\% FPR & Detected & Seen & Held-out & Adaptive \\
     \midrule
     unconstrained & 0.996 & 93.5\% & 47/50 & 17\% & 53\% & 20\% \\
-    adversarial training on the toolkit & \synthetic{0.995} & \synthetic{92.0\%} & \synthetic{46/50} & \synthetic{2\%} & \synthetic{30\%} & \synthetic{20\%} \\
+    adversarial training on the toolkit$^\S$ & 0.998 & 95.6\% & 48/50 & 8\% & 50\% & 19\% \\
     feature selection from attacks (PV), 4 attacks & 0.954 & 56.2\% & 22/50 & 0\% & 18\% & 91\% \\
     feature selection from attacks (PV), 8 attacks & 0.944 & 53.8\% & 22/50 & 0\% & --- & \synthetic{77\%} \\
     monotone on derived directions, features & 0.992 & 87.2\% & 40/50 & 0\% & 3\%$^\dagger$ & 0\% \\
@@ -218,11 +218,12 @@ sequence of edits in the threat model. We train such a detector on the features 
   \\[2pt]
   {\footnotesize $^\dagger$ One header-field evasion, on a file outside the population, scored by the unconstrained
   detector. On files in the population: 0/28 and 0/30. $^\ddagger$ Header-field attacks, outside the additions threat
-  model.}
+  model. $^\S$ Trained on the full training set, where the unconstrained detector reaches the same 0.998 and 95.6\%;
+  the other rows' first five columns use a 10\% subsample.}
 \end{table*}
-% SYNTHETIC: the adversarial-training row (toolkit adversarial examples added to training; run/122_adv_training.sh,
-% ~400 training malware x the 4 "seen" attacks, replace from its output), and
-% PV with 8 attacks (run under the same two-menu union protocol as the 4-attack row below; not yet run). The expert
+% MEASURED (2026-11-04): the adversarial-training row, run/122_adv_training.sh (400 training malware x the 4 "seen"
+% attacks, 1,597 valid rows appended; full store; adaptive = union of both menus, 9/48).
+% SYNTHETIC: PV with 8 attacks (run under the same two-menu union protocol as the 4-attack row below; not yet run). The expert
 % set has no adaptive cell: the search predicts with the instrumented extractor only.
 % MEASURED (adaptive cells): the adaptive attacker runs the search under both the append+add-section menu (run 108,
 % artifacts/experiments/a1/adaptive-v3) and the full twelve-operation menu (item 8, run 119,
@@ -285,7 +286,7 @@ if either run evades it, the search evades PV on 20 of the 22 files it detects, 
 extractions per file; the two menus are complementary, the twelve-operation one evading four files the section-adding
 menu cannot. Building PV from all eight attacks does not close the hole: \synthetic{17 of 22}. The two files the search
 does not evade sit far enough above the threshold that no first edit lowers their score. Adversarial training on the toolkit's outputs keeps the unconstrained detector's accuracy
-but, like PV, is robust only to what it was shown: \synthetic{the adaptive search evades it on a fifth of the files}.
+but, like PV, is robust only to what it was shown: the adaptive search evades it on 9 of the 48 files it detects, as often as it evades the unconstrained detector.
 
 The expert set is Gimenez et al.'s 40 hand-picked features, each argued to grow under additions. With the extractor's
 two quirks patched it holds under additions, and no toolkit attack evades it, but 40 features keep little signal: it

@@ -20,10 +20,14 @@
 # at roughly the unconstrained rate (~20%), because the undefended model is already robust to the loader-safe edits and
 # adversarial training adds no guarantee. If instead it comes out competitive with the monotone 0% rows, report that.
 #
-# Resources: generation is the cost driver (secml-malware ~0.06 CPU-h per file-attack; ADV_MALWARE x 4 attacks). At
-# ADV_MALWARE=400 and 16 workers: generation ~6-7 h, the toolkit eval ~1.5 h (~47 detected pilot malware x 8 attacks),
-# retrain ~7 min (full store, ~30 GB peak), the adaptive search ~12 min (single-process). ~8-9 h in all, an overnight
-# job. a1_adaptive is single-process (NUM_WORKERS does not apply there); OMP threads instead.
+# Resources (measured, 2026-11-03, NUM_WORKERS=24, ADV_MALWARE=400): generation 76 min (1,600 attack runs in 3,879 s,
+# then featurization), retrain ~10 min (full store, ~30 GB peak), the toolkit eval ~10 min (384 runs in 563 s), the
+# adaptive search ~20 min for both menus (single-process; NUM_WORKERS does not apply, OMP threads instead). ~2 h in all.
+# The first launch hung on a dead pool worker; scripts/a_pv_attacks.map_watchdog now guards a_advtrain.py and
+# a1_evaluate.py and logs a task that makes no progress for 2,700 s as LOST (one such task in the run that was read).
+#
+# Result (read 2026-11-04; Table 7): AUC 0.998, TPR 95.6% (unchanged from seed-0), 48/50 detected, seen 8%, held-out
+# 50%, adaptive 9/48 = 19% (union; the twelve-op menu alone finds all 9). The hypothesis held.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 source env/bin/activate
