@@ -65,6 +65,7 @@ from a_pv_attacks import calibrated  # noqa: E402
 from a_pv_attacks import build_donor_pools  # noqa: E402
 from a_pv_attacks import load_pilot  # noqa: E402
 from a_pv_attacks import make_wrapper  # noqa: E402
+from a_pv_attacks import map_watchdog  # noqa: E402
 from a_pv_attacks import run_attack  # noqa: E402
 
 __all__ = ["calibrate_threshold", "group_evasion", "make_extractor"]
@@ -175,6 +176,15 @@ def _work(task: tuple[str, str, str, bytes, float, int, bool]) -> dict[str, Any]
             "seconds": time.time() - start}
 
 
+def _lost(task: tuple[str, str, str, bytes, float, int, bool]) -> dict[str, Any]:
+    """The row for a task whose worker died: an attack that failed (not evaded), with the error recorded."""
+    defense, atk, name, data, tau, cap, pre = task
+    return {"defense": defense, "attack": atk, "name": name, "tau": tau, "p_clean": float("nan"),
+            "p_adv": float("nan"), "evaded": False, "bytes_added": 0, "over_budget": False, "ok": False,
+            "valid": False, "truncated": len(data) >= MAX_LENGTH, "precondition": pre,
+            "error": "LostTask: worker died", "seconds": float("nan")}
+
+
 ################################################################################
 # Main
 ################################################################################
@@ -207,6 +217,8 @@ def main() -> None:
     parser.add_argument("--num_malware", type=int, default=None, help="Cap on malware files (for smoke tests).")
     parser.add_argument("--num_workers", type=int, default=8, help="Processes over tasks.")
     parser.add_argument("--seed", type=int, default=0)
+    parser.add_argument("--stall_timeout", type=float, default=2700.0,
+                        help="Seconds with no finished task before the unfinished ones count as lost (a dead worker).")
     args = parser.parse_args()
     if args.num_workers < 1:
         raise ValueError(f"--num_workers must be >= 1, got {args.num_workers}.")
@@ -259,7 +271,7 @@ def main() -> None:
         models = {d: str(m / "model.txt") for d, m in defenses.items()}
         with get_context("spawn").Pool(args.num_workers, initializer=_init_worker,
                                        initargs=(args.features, models, routes, section_pop, api_calls, args.seed)) as pool:
-            rows = pool.map(_work, tasks, chunksize=1)
+            rows = map_watchdog(pool, _work, tasks, lost=_lost, stall_timeout=args.stall_timeout)
         print(f"{len(tasks)} attack runs in {time.time() - t0:.0f}s on {args.num_workers} workers.", flush=True)
 
     if not rows:

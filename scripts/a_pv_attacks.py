@@ -45,7 +45,7 @@ from provexp.data.simpledb import SimpleDBReader
 from provexp.featuresets.ember2024.features import merge_import_descriptors
 from provexp.featuresets.ember2024.features import PEFeatureExtractor
 
-__all__ = ["ATTACKS", "build_attack", "run_attack"]
+__all__ = ["ATTACKS", "build_attack", "map_watchdog", "run_attack"]
 
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -258,6 +258,53 @@ def build_donor_pools(goodware: list[tuple[str, bytes]], workdir: Path) -> tuple
         str(gw_dir), how_many=30, sections_to_extract=[".rdata", ".data"], to_ignore=[])
     api_calls = CGammaAPIEvasionProblem.extract_api_calls_from_folder(str(gw_dir), 30)
     return section_pop, api_calls
+
+
+def map_watchdog(pool: Any, fn: Callable[[Any], Any], tasks: list[Any], lost: Callable[[Any], Any],
+                 stall_timeout: float = 2700.0, log_every: int = 50) -> list[Any]:
+    """`pool.map(fn, tasks)` that survives a worker dying mid-task.
+
+    A `multiprocessing.Pool` replaces a worker that dies (e.g. a segfault inside LIEF on a malformed file), but the task
+    it held never returns, so `pool.map` waits forever (run 122's first launch hung this way). Here each task is
+    submitted on its own; when no task has finished for `stall_timeout` seconds, the unfinished ones are reported, given
+    `lost(task)` as their result, and the pool is terminated.
+
+    Args:
+        pool: An open `multiprocessing.Pool`.
+        fn: The worker function.
+        tasks: Its inputs, one per call.
+        lost: Builds the result row for a task that never returned.
+        stall_timeout: Seconds without any completion before the unfinished tasks are declared lost (longer than the
+            slowest single attack).
+        log_every: Print progress every this many completions.
+
+    Returns:
+        The results, in the order of `tasks`.
+    """
+    if stall_timeout <= 0:
+        raise ValueError(f"stall_timeout must be positive, got {stall_timeout}.")
+    pending = {i: pool.apply_async(fn, (t,)) for i, t in enumerate(tasks)}
+    results: list[Any] = [None] * len(tasks)
+    t0 = last = time.time()
+    while pending:
+        finished = [i for i, a in pending.items() if a.ready()]
+        for i in finished:
+            results[i] = pending.pop(i).get()
+        done = len(tasks) - len(pending)
+        if finished:
+            last = time.time()
+            if done // log_every != (done - len(finished)) // log_every or not pending:
+                print(f"  progress: {done}/{len(tasks)} tasks in {time.time() - t0:.0f}s", flush=True)
+        elif time.time() - last > stall_timeout:
+            for i in pending:
+                print(f"  LOST task {i} (no result after {stall_timeout:.0f}s of no progress; a worker likely died): "
+                      f"{str(tasks[i][:3])[:120]}", flush=True)
+                results[i] = lost(tasks[i])
+            pool.terminate()
+            break
+        else:
+            time.sleep(5)
+    return results
 
 
 ################################################################################

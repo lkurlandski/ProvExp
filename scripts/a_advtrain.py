@@ -46,6 +46,7 @@ from provexp.featuresets.ember2024.features import PEFeatureExtractor
 from a_pv_attacks import ATTACKS
 from a_pv_attacks import build_attack
 from a_pv_attacks import build_donor_pools
+from a_pv_attacks import map_watchdog
 from a_pv_attacks import make_wrapper
 from a_pv_attacks import run_attack
 
@@ -123,6 +124,13 @@ def _work(task: tuple[str, str, bytes]) -> dict[str, Any]:
     return row
 
 
+def _lost(task: tuple[str, str, bytes]) -> dict[str, Any]:
+    """The row for a task whose worker died: counted as attempted, not valid."""
+    atk, name, _ = task
+    return {"name": name, "attack": atk, "ok": False, "evaded": False, "p_clean": float("nan"),
+            "p_adv": float("nan"), "bytes_added": 0, "phi": None}
+
+
 ################################################################################
 # Main
 ################################################################################
@@ -142,6 +150,8 @@ def main() -> None:
     parser.add_argument("--num_goodware", type=int, default=50, help="Training goodware donors for the attacks.")
     parser.add_argument("--num_workers", type=int, default=16, help="Processes over (attack, file) tasks.")
     parser.add_argument("--seed", type=int, default=0)
+    parser.add_argument("--stall_timeout", type=float, default=2700.0,
+                        help="Seconds with no finished task before the unfinished ones count as lost (a dead worker).")
     args = parser.parse_args()
     if args.num_workers < 1:
         raise ValueError(f"--num_workers must be >= 1, got {args.num_workers}.")
@@ -161,7 +171,7 @@ def main() -> None:
         ctx = get_context("spawn")
         with ctx.Pool(args.num_workers, initializer=_init_worker,
                       initargs=(args.model, section_pop, api_calls, args.seed)) as pool:
-            results = pool.map(_work, tasks)
+            results = map_watchdog(pool, _work, tasks, lost=_lost, stall_timeout=args.stall_timeout)
         print(f"{len(tasks)} attack runs in {time.time() - t0:.0f}s on {args.num_workers} workers.", flush=True)
 
     valid = [r for r in results if r["ok"]]
