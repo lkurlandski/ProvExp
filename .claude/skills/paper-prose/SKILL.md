@@ -72,6 +72,10 @@ contradicts.
     paraphrased (Pierazzi's "no closed form"), use the part of their argument that does (the feature mapping is neither
     differentiable nor invertible) or drop it. Self-review: for each "because X" about a cited work, can I say why X
     implies the claim? (§6 ¶1, 2026-11-04)
+15. **Results paragraphs: report, don't narrate.** Say what we ran and what it measured, in the first person and with
+    literal verbs ("We retrained ... removing it recovers 2.1 points"). Avoid the mildly LLM register: numbers that
+    "go" somewhere, costs that "lie in" things, items that "account for most of it", "beyond noise", and closers that
+    tell the reader what a defender can now do. (§5 price list, 2026-11-04)
 
 ## Procedure
 

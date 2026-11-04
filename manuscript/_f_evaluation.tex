@@ -270,6 +270,19 @@ from, and a narrower catalogue buys accuracy at the price of the edits it leaves
 for the same threat model, and the expert set's 40 hand-picked features keep 29.1\% detection where the derived table
 keeps 92.2\%.
 
+The table is derived one operation at a time, so we can also ask what each operation costs. We retrained the monotone
+detector on the sums with each operation removed from the catalogue in turn. Dropping the two-sided features is cheap:
+a detector that drops them but leaves the other features unconstrained loses 0.2 points, and dropping only the parser
+warnings loses none. The loss comes from the constraints, mostly from two operations. With import addition in the
+catalogue, all 1,282 import hash buckets must be nondecreasing, and removing it recovers 2.1 points; removing the three
+header overwrites recovers 1.4. Removing rename, append, or section extension moves detection by at most 0.3 points
+in either direction, even though without rename 301 more features stay in the model. None of these variants needs
+another pass over the corpus, since each combines per-operation directions we had already derived.
+% MEASURED (2026-11-04): run/126_price_list.sh, artifacts/experiments/a_price_list/table.json. TPR at 1% FPR: full
+% catalogue 89.6%; drop-only (no constraints) 93.3%; warnings only dropped 93.6%; reference 93.5%. Leaving out: imp
+% 91.7%, the three overwrites 91.0% (hdr 90.8%, chk 90.3%, dos 89.4%), rdb 90.0%, rsg 90.0%, ren 89.7%, app 89.3%,
+% ext 89.6%.
+
 The closest baseline is the feature selection from perturbation vectors (PV) that Gimenez et al.\ compare against,
 which in their evaluation gave detectors no attack evaded: run attacks on malware, keep the features no attack
 lowered, and train a classifier on them. We run the attacks on the training malware and train a monotone model. It resists the attacks it was built

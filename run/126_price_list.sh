@@ -20,8 +20,14 @@
 # Hypothesis: no single operation costs more than about 1 point of TPR at 1% FPR (rename and the header overwrites the
 # most); dropping and constraining each account for roughly half of the full catalogue's 3.9 points.
 #
-# Resources: 12 trainings; the existing models took 0.3-1.1 min of training each with 16 threads, plus loading the
-# store: ~20-30 min in all. NUM_WORKERS sets LightGBM's threads.
+# Resources (measured, 2026-11-04, NUM_WORKERS=8): 12 trainings in ~12 min. NUM_WORKERS sets LightGBM's threads.
+#
+# Result (read 2026-11-04): the hypothesis failed on both counts. TPR at 1% FPR (reference 93.5%; full catalogue
+# 89.6%, -3.9): dropping the two-sided features alone costs 0.2 points, so the monotone constraints cost ~3.6. Leaving
+# out one operation regains 2.1 points for the import addition (it frees the 1,282 import hash buckets from their
+# constraints), 1.4 for the three header overwrites together (header fields 1.2, checksum 0.6, DOS stub none), 0.4 each
+# for the debug and signature rewrites, and nothing for rename (despite 301 regained features), append, or extension
+# (-0.3 to +0.0: the noise floor). Dropping the parser warnings costs nothing (+0.1), so they need not be modeled.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 source env/bin/activate

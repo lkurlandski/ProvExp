@@ -151,3 +151,9 @@ rule it implies (folded into Sections 1-5 if general).
   belongs in the body where we use it). Run-in bold heads, no line break after the head.
 - **2026-11-03, §6 sample paragraph (problem-space attacks).** Liked; wants more detail (up to +50%).
 - **2026-11-03, length.** Sections may run 50-75% over budget while drafting (Section 5).
+- **2026-11-04, §5 price-list paragraph.** "A fine start" but "a consistent mildly LLM-sounding style"; asked for a
+  quick humanizing pass, then into the manuscript. Removed in the pass: the fronted causal opener ("Because the table is
+  derived per operation, it also prices each one"), personified bookkeeping ("where the 3.9 points go", "Nearly all
+  the price is in the constraints", "two operations account for most of it"), the summary hedge "beyond noise", and an
+  advisory closer ("so a defender can weigh each operation's cost before deciding ..."). Put in instead: "we retrained
+  ...", literal verbs ("removing it recovers 2.1 points"), and a factual last sentence.
