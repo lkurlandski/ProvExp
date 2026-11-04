@@ -27,6 +27,21 @@
 # Resources: one search per (defense, file), NUM_WORKERS processes (spawn; each loads the pilot, ~1 GB). A file that is
 # not evaded spends all 5,000 queries (~4 min); the monotone rows never evade. ~400 (defense, file) pairs, ~20 CPU-h:
 # ~1-1.5 h with 16 workers. OMP_NUM_THREADS=1 per worker.
+# Ran 2026-11-04 (steps 1-3, second server): 2.1 h, 1.4 h, 0.7 h -- a (defense, file) pair took ~10-20 CPU-min on
+# average, not ~4. Step 4 was skipped (run 125's model did not exist yet): run/130.
+# Result, evaded at 200 / 1,000 / 5,000 candidates:
+#   unconstrained 7 / 14 / 25 of 49 (51%; hypothesis 35-45%: above, near the full toolkit's 55%); 12 mismatches.
+#   advtrain (run 122) 8 / 15 / 20 of 48 (42%; "about the same": held); 25 mismatches.
+#   PV, full store, 4 attacks 9 / 13 / 14 of 22 (64%; hypothesis ~100%: FAILED -- below run 108's append+add-section
+#     greedy, 16/22; the twelve-op menu dilutes the section-name candidates); 0 mismatches.
+#   PV, 10%, 8 attacks 9 / 12 / 14 of 22 (64%); 4 attacks 10 / 14 / 15 of 22 (68%; hypothesis ~95%: FAILED); 0.
+#   monotone: mfull-feat 0/41 under M_full, madd-feat 0/47 under M_add, min_delta_logit exactly 0.0 (check passes).
+#   The beam evades every file the two greedy menus evade on the unconstrained and advtrain rows (union = beam), but
+#   misses 6 of the full-store PV's greedy evasions (union 20/22).
+#   Mismatches (C1 prediction != re-extraction of a kept child) are all pefile's two warning features ("Byte 0x..."
+#   and num_warnings), which no readout models: the engine keeps the parent's values, and an edit that drops the
+#   zero-byte share under pefile's 50% trigger removes the warning. Every kept child is re-extracted, so no verdict
+#   depends on it; the PV and monotone rows do not split on these features.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 source env/bin/activate

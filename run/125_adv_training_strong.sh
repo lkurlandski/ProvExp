@@ -24,6 +24,14 @@
 # Resources (smoke test 2026-11-04): generation ~60-200 s per (file, attack); 1,200 tasks: ~2.5 h at 16 workers
 # (~1.7 h at 24). Retrain ~10 min (full store, ~30 GB peak). Toolkit eval ~20 min, strong eval ~30 min, adaptive
 # ~20 min (single-process; OMP threads). ~3.5-4 h in all at 16 workers.
+# Ran 2026-11-04 (user, 16 workers): generation 2.3 h (1,198 of 1,200 valid; 2 tasks LOST on one file), retrain ~10
+# min, toolkit 13 min, strong 20 min, adaptive 18 min; ~3.4 h in all. Result (hypothesis held):
+#   accuracy unchanged: test AUC 0.9976, TPR 95.6% at 1% FPR, 87.1% at 0.1% (undefended seed-0: 0.9976, 95.6%, 87.0%).
+#   where it was trained, it pays: gamma_api 22 -> 11 of 49, header_fields 11 -> 3 (low budget); GAMMA API at the
+#     literature budget 20 -> 7; all eight attacks together 27 -> 15 of 49 (55% -> 31%). Toolkit split (PV's): seen
+#     6/49, held-out 13/49 (the held-out four include the two it was trained on).
+#   the adaptive search does not care: union of the two greedy menus 12/49 (24%; undefended 10/49), twelve-op 12,
+#     append+add-section 6. Run 127's beam against this model: run/130.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 source env/bin/activate
@@ -31,6 +39,7 @@ export PYTHONHASHSEED=0
 NUM_WORKERS="${NUM_WORKERS:-16}"
 export OMP_NUM_THREADS="${OMP_NUM_THREADS:-4}"
 ADV_MALWARE="${ADV_MALWARE:-400}"
+EMBER2024_DATA="${EMBER2024_DATA:-/shared/datasets/EMBER-2024/data}"
 
 M=artifacts/models/gbdt
 F=artifacts/features/ember2024
@@ -42,7 +51,7 @@ echo "(1/5) GENERATE adversarial training examples ($ADV_MALWARE malware x 3 att
 python scripts/a_advtrain.py \
   --outdir "$GEN" \
   --features "$F" \
-  --db /shared/datasets/EMBER-2024/data/tr \
+  --db "$EMBER2024_DATA/tr" \
   --model "$M/seed-0/model.txt" \
   --attacks gamma_api header_fields gamma_sections \
   --budget literature \

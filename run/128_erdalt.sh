@@ -23,6 +23,14 @@
 #
 # Resources: (1) one GPU, ~5 s per epoch, 310 epochs: ~26 min (smoke, Claude, 2026-11-04, L40S); (2) ~2 min; (3) 8
 # attacks x ~40 files, ~20-30 min at 16 workers; (4) ~40 files x up to ~4 min, ~10-15 min at 16 workers. ~1-1.2 h in all.
+# Ran 2026-11-04 (user, one GPU + 16 workers): training 26 min, hole 2 min, toolkit 12 min, beam 25 min; ~1.1 h.
+# Result: the < 5-violation criterion was met only at the last epoch (309: 3 violations, validation AUC 0.911); test AUC
+#   0.881, TPR 61.1% at 1% FPR (34.7% at 0.1%); detects 25 of the 50 pilot malware (tau 0.501).
+#   faithful: the 4 attacks it learned from evade 0/25 (check passes).
+#   held-out 23/25 (92%; hypothesis 20-40%: FAILED, far weaker): gamma_api 22/25, header_fields 17/25.
+#   adaptive (beam) 20/25 (80%): 17 at 200 candidates, 19 at 1,000, 20 at 5,000; 2 mismatches (pefile's warnings).
+#   the hole: 89.7% of L's weight violates the derived M_full table, 88.7% in features moved both ways (1,060 of 1,060
+#     such columns), 0.8% in up features; 48 of the 50 pilot files have an allowed move that lowers the score.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 source env/bin/activate
