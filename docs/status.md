@@ -3,14 +3,14 @@
 **2026-11-03 (session 9): writing spec + `paper-prose` skill built; related work (§6) drafted; `run/122` found hung
 and fixed (needs relaunch).** Nothing pushed. Next session: `docs/resume-prompt.md`.
 
-- **Writing method settled with the user.** `docs/writing-spec.md` (replaces `docs/style_guide.md`, still on disk):
+- **Writing method settled with the user.** `docs/writing-spec.md` (replaces `docs/style_guide.md`, deleted; in git history):
   habits to *ration* by frequency (no bans), techniques to reach for when they help, organization/layout as
   suggestions, length 50-75% over budget while drafting, and a raw **reaction log**. The project skill
   `.claude/skills/paper-prose/SKILL.md` holds the distilled **lessons** (8 so far: a paragraph is an argument; critique
   at the work's own level; citations earn space by role; words on the limitation and our contribution; sharpening is
   not staging; transitions from logic; err toward detail; commas not semicolons in lists) and the **procedure** (spine
   -> one unit -> self-review -> show -> log + update skill -> widen the unit as trust grows). The user is satisfied with
-  the method and wants the skill to need less feedback over time. `.claude/` is untracked (not committed; user to decide).
+  the method and wants the skill to need less feedback over time. The skills (`.claude/skills/`) are committed; `.claude/settings.local.json` stays local.
 - **§6 related work drafted (963 words; budget 700).** ¶1 problem-space attacks: reviewed by the user in four rounds,
   final. ¶2 constraints over features, ¶3 robust and monotone detectors, ¶4 incremental computation and provenance:
   drafted in one pass, **NOT read by the user** (`% REVIEW` comment in `_g_related_work.tex`). Abstract interpretation

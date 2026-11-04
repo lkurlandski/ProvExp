@@ -1,0 +1,64 @@
+---
+name: paper-prose
+description: >
+  Draft or revise prose for the ProvExp manuscript (manuscript/*.tex) the way the user wants it to read. Use whenever
+  writing or rewriting paper text: a section, a paragraph, a caption, the abstract. Holds the lessons distilled from
+  the user's feedback on real drafts, the drafting procedure, and the self-review that runs before the user sees
+  anything. Updated after every round of feedback.
+---
+
+# Writing paper prose for ProvExp
+
+Taste reference: `docs/writing-spec.md` (habits to ration, techniques, exemplars, layout) and its reaction log (the
+raw feedback). This skill is the operational part: the lessons that feedback has taught, and how to work. Nothing
+here is a rule to apply literally; real writing has variance, and a risk with a sentence is fine.
+
+## Lessons from feedback
+
+Each lesson names the round it came from (dates in the reaction log). Newest evidence wins; delete a lesson the user
+contradicts.
+
+1. **A paragraph is an argument, not an inventory.** Each sentence answers a question the previous one raised. If a
+   sentence could be deleted or moved without the paragraph noticing, the paragraph is a list of statements ("choppy").
+   For related work, the shape that worked: what the work contributes, what it leaves open, how practice fills that
+   gap, what doing so costs, and what we do instead. (§6 ¶1, rounds 1-4)
+2. **Critique at the level the work operates.** Know what a cited work set out to do before naming a gap; its design
+   choices are not gaps. A framework is abstract on purpose. Name the limitation its authors would agree with, ideally
+   one they state themselves (Pierazzi et al.: the constraints have no closed form, so side effects are found by
+   trial). (§6 ¶1, round 2)
+3. **Citations earn space by their role in our story.** The closest or foundational work gets a description. Instances
+   of a class get a citation inside a sentence about the class. Ask "why this one and not the dozens of others?"; if
+   there is no answer, it is an example and gets a clause. (§6 ¶1, round 3)
+4. **Spend words where the argument is**: on the limitation and on what we contribute, stated concretely (what we
+   compute, for which class of extractors, with what guarantee), not on summarizing others. (§6 ¶1, round 3)
+5. **Sharpening is not staging.** When asked to tighten an argument, Claude slides into rhetoric: announced counts
+   ("has two costs."), colon reveals, "exactly this way", cadenced triads, metaphors ("inherits the same blind
+   spots"), mirrored pairs ("follow exactly ... follow soundly"). What worked instead: plain sentences joined by logical
+   words (so, and, if, as do), compound sentences with causal joints. (§6 ¶1, round 4)
+6. **Transitions come from logic, not adjacency.** The next sentence starts as an instance, consequence, or cost of the
+   previous claim ("In practice, attacks find side effects by ..."), so no connector word is needed. (§6 ¶1, round 2)
+7. **Err toward more explanation.** The first sample was too thin; detail is cheap to cut later. Sections may run
+   50-75% over budget while drafting. (§6 ¶1, round 1)
+8. **Small mechanics.** Commas, not semicolons, to chain list items. (§6 ¶1, round 2)
+
+## Procedure
+
+1. **Spine first.** One line per paragraph (its claim, its citations or numbers), agreed with the user before prose.
+2. **Draft one unit** (one paragraph while the lessons are young; larger units as they stop drawing corrections, see
+   step 6).
+3. **Self-review before showing**, and fix what it finds:
+   - Read the paragraph's sentences in order and ask, of each, what question it answers and whether the previous
+     sentence raised it (lesson 1). Read first sentences only across the section (flow).
+   - For each citation: why this work, and does its space match its role (lessons 2-3)?
+   - Scan for the staging tics of lesson 5 and the rationed habits in `docs/writing-spec.md` §1; count them per
+     paragraph, and cut any that cluster.
+   - Check that every factual claim about a cited work is one we have verified; mark the rest `% VERIFY` and say so.
+4. **Show the draft** with a short note of what changed and why. Do not hand over long prose unseen.
+5. **Learn from the reaction.** Log it raw in the reaction log of `docs/writing-spec.md` (verdict, specifics, what it
+   implies). Then update this file: add a lesson when the reaction generalizes beyond the sentence at hand, sharpen
+   one when it recurs, delete one the user contradicts. Keep each lesson short with one concrete example.
+6. **Widen the unit as trust grows.** When a unit is accepted with no or only minor changes, draft the next one larger
+   (two paragraphs, then a subsection) before review.
+7. **Into the manuscript.** Write the approved text into its `.tex` file, `\cite` every work named (add missing entries
+   to `main.bib`, checked against a real record), wrap at 120 columns, run `make` and `make check` in `manuscript/`,
+   and commit in a logical piece.
