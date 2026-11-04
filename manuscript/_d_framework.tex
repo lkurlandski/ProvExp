@@ -17,8 +17,8 @@ evasion is a question about the set
   \mathrm{Reach}(z) = \{\, \varphi(T(z)) : T \in \mathcal{T} \,\}.
 \]
 Pierazzi et al.\ treat $\varphi$ as a black box, so $\boldsymbol{\eta}$ and $\Omega$ can only be observed, by applying
-$T$ and extracting the features again; they note that $\Gamma$ has no closed form that would allow computing them in
-advance. Part of $\boldsymbol{\eta}$ comes from \emph{consolidation}: the bookkeeping an edit needs to keep the object
+$T$ and extracting the features again; they note that when $\varphi$ is neither differentiable nor invertible, as in
+malware detection, the side effects of a transformation generally cannot be computed in advance. Part of $\boldsymbol{\eta}$ comes from \emph{consolidation}: the bookkeeping an edit needs to keep the object
 valid, such as raising the section count when a section is added. We do not compute consolidation. Each operation of a
 threat model declares its own (\cref{sec:fw:side-effects}); what we compute is the extractor's response to the declared
 edit, and from it a sound bound on the direction of every coordinate of $\Omega$.
