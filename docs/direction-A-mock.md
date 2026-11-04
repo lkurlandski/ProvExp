@@ -125,6 +125,18 @@ size, epochs) and model selection on our validation split instead of their test 
   through them. No-go: no violations, or adaptive evasion no higher than the unconstrained detector's; then ERDALT is a
   strong competitor and the comparison rests on accuracy and the guarantee.
 
+**Measured (run 128, 2026-11-04, session 14).**
+
+| Detector | AUC | TPR at 1% FPR | Detected | Seen | Held-out | Adaptive (beam, 5,000) |
+|---|---|---|---|---|---|---|
+| ERDALT, 4 attacks | 0.881 | 61.1% | 25/50 | 0/25 | 23/25 (92%) | 20/25 (80%) |
+
+Faithfulness passes (seen 0%). The claim's check is a go: 89.7% of L's weight violates the derived M_full table, 88.7%
+in the both-ways features; 48 of 50 pilot files have an allowed lowering move; the beam evades 80%, above the
+unconstrained detector's 51%. Misses against the mock: detection (AUC 0.881, not 0.95-0.97; the selection criterion
+was met only at the last epoch, 309 of 310) and held-out evasion (92%, not 20-40%). Risk: a reviewer may call the port
+weak; answer with the faithfulness check and the computed hole, and state every deviation.
+
 ## Go/no-go checks (falsifiable, before building the defense)
 
 1. **C1 holds (Table A0).** On the pilot files, C1 matches re-extraction exactly on >= 95% of (file, transformation)

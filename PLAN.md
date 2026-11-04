@@ -63,13 +63,18 @@ weight in the derived hole); run 127 read (beam at 5,000 candidates: unconstrain
 monotone 0% with min_delta_logit exactly 0; mismatches are pefile's unmodeled warnings, no verdict affected); run 129
 (greedy menus x 10% PV: nothing beyond the beam). Run 130 (beam x run 125's model) scripted for the user.
 
+Decided (user): Table 7's adaptive column reports the beam alone; no union across searches. Claude's call on the
+greedy searches: no column, one §5 sentence (on every row in the table the beam evades every file they evade). The PV
+rows take their adaptive cells from the 10% models, like their other columns (68%, 64%).
+
 Next, in order:
-1. Read run 130 when it has run.
-2. **Table 7 with the user:** the adaptive column's protocol (proposed: union of the three searches, at most 5,400
-   candidates per file; alternative: the beam alone), run 125's row, the ERDALT row, the 77% synthetic cell -> 64%;
-   then the §5 prose that cites them.
-3. Decide with the user: MAB-Malware (likely unnecessary); the headline (not adopted); §6's Chen 2021 sentence.
-4. Then the introduction and the other empty sections, spine first (`/paper-prose`).
+1. **Read run 130** (user: overnight); sync its header.
+2. **Decide with the user what to work on.** Ready: Table 7's edits (beam column, run 125's row replacing run 122's
+   if the user agrees, the ERDALT row and footnote, the synthetic 77% -> 64%, the §5 sentences that cite them). Open
+   and new from session 14: the sums row's beam cell (routing plan first); the scale-up's adaptive budget (~3,000
+   CPU-h at 2,000 files with 5,000 candidates); ERDALT's selection criterion at seeds 0-2; MAB-Malware (likely
+   unnecessary); the headline (not adopted); §6's Chen 2021 sentence.
+3. Then the introduction and the other empty sections, spine first (`/paper-prose`).
 
 ## Next steps (2026-11-04, session 13: run 124 read; ERDALT row built; runs 125, 127, 128 pending)
 

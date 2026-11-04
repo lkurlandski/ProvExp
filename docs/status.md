@@ -2,7 +2,7 @@
 
 **2026-11-04 (session 14): runs 125, 127, 128 read; run 129 run (PV greedy menus); run 130 scripted (beam x run 125's
 model, for the user).** Nothing pushed; manuscript untouched by this session (the Sections 2-3 rewrite, `084055c`, is separate
-work). Table 7 waits on the user's choices below. Next session: `docs/resume-prompt.md`.
+work). Table 7 decided (beam alone); edits pending, after run 130 (user: overnight). Next session: `docs/resume-prompt.md`.
 
 - **Run 125 (strong adversarial training) read; hypothesis held.** Accuracy unchanged (AUC 0.9976, TPR 95.6% at 1%
   FPR). Where it was trained it pays: gamma_api 22 -> 11 of 49, header_fields 11 -> 3 (low budget); GAMMA API at the
@@ -27,11 +27,25 @@ work). Table 7 waits on the user's choices below. Next session: `docs/resume-pro
 - **Run 129 (Claude, 10 min): greedy menus x 10%-store PV.** Hypothesis (union ~18-20/22) failed: twelve-op 12/12,
   append+add-section 10/11, union with the beam 14/22 (8 attacks) and 15/22 (4 attacks) = the beam alone. The
   full-store PV's 16/22 under append+add-section does not carry over to the 10% models.
-- **Proposed Table 7 adaptive column (user to choose):** union of all three searches (two greedy menus + beam, at
-  most 5,400 candidates per file): unconstrained 25/49 (51%), advtrain 20/48 (42%), PV 4 attacks (full store, as now)
-  20/22 (91%, unchanged), PV 8 attacks (10%; no full-store model) 14/22 (64%; replaces the synthetic 77%), monotone 0%;
-  ERDALT 20/25 (80%); run 125's row waits on run 130. Alternative: the beam alone (one protocol), which lowers PV to
-  64% / 68%.
+- **Table 7's adaptive column: the beam alone (user, 2026-11-04).** No union across searches ("report one attack, or
+  several separately, never an ANY condition"). The simpler greedy searches are left to Claude's call. Decided: no
+  column for them, one sentence in §5. On every row of the table the beam evades every file the greedy searches evade
+  (unconstrained 25 vs 10, run 122's advtrain 20 vs 9, PV 10% 15 vs 12 and 14 vs 12). The one exception is the
+  full-store PV (greedy section-adding 16/22 vs beam 14/22), which leaves the table. Its PV rows switch to the 10%
+  models throughout: 4 attacks 15/22 (68%; was 91% from the full-store model), 8 attacks 14/22 (64%; replaces the
+  synthetic 77%). Cells: unconstrained 51%, ERDALT 80%, monotone 0%, run 125's row synthetic until run 130.
+  Pending the user: run 125's row replacing run 122's (Claude's suggestion: it is the fairer baseline).
+- **Assessment given to the user (good / bad / neutral).**
+  - Good: 0% under a 25x stronger search while the baselines rise to 42-51%. Run 125 makes adversarial training a
+    fair baseline, and it shows the usual pattern (it holds where trained, not against the adaptive search). ERDALT
+    is the thesis in one row: learned directions fail where the computed table says.
+  - Risk: our ERDALT is weaker than published (AUC 0.881 vs 93.0%; criterion met at the last epoch; deviations), so
+    a reviewer may call it a straw man. The answers are the faithfulness check and the computed hole.
+  - Neutral: the mismatches.
+  - Future: (1) the beam becomes the standard adaptive attack, including the sums row, which needs the routing plan;
+    (2) at scale the beam costs ~10-20 CPU-min per pair (monotone rows always spend the full budget): ~3,000 CPU-h
+    at 2,000 files, so decide the checkpoint (1,000?) or a subset before scaling; (3) ERDALT's criterion at seeds 0-2
+    (more epochs, or report the last epoch); (4) don't tune the beam for PV.
 
 **2026-11-04 (session 13): run 124's 10% half read and into §5; §6's VERIFY resolved; ERDALT row built (`run/128`,
 running).** Nothing pushed. Next session: `docs/resume-prompt.md`. Pending at session end: run 125 (this server;

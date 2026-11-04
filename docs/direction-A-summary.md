@@ -14,6 +14,13 @@ toolkit attacks, holds against those attacks but falls to the C1-guided adaptive
 detects, and costs ~35 TPR points. Direction A's core claim stands at pilot scale. What is missing is mostly rows the
 mock planned (baselines) and breadth (a second toolkit, leave-one-out, scale), not evidence for the claim.
 
+**Update (2026-11-04, session 14): stronger attacks and two more baselines.** The beam search (5,000 candidates per
+file, run 127) evades the unconstrained detector on 51% and adversarial training (run 122) on 42%; the monotone rows
+stay at 0% (largest score change exactly 0.0). Adversarial training on the attacks that work (run 125) halves them
+(toolkit 55% -> 31%) at no accuracy cost, but a greedy adaptive search still evades 24% (beam: run 130). ERDALT
+(run 128) resists the attacks it learned from (0/25) and falls to the held-out ones (92%) and the beam (80%); 89.7% of
+its first layer's weight sits in the hole the derived table computes. Table 7 reports the beam alone (user decision).
+
 **Update (2026-10-29): the C4 rows now use derived directions and are routed.** Retrained from the directions the
 engine derives (runs 99-100), the C4 models keep their accuracy (M_full slightly better: 88.1% / 89.9% TPR at 1% FPR).
 As precondition-row detectors (files that pass the check get the C4 model, the rest the unconstrained one), the M_full
