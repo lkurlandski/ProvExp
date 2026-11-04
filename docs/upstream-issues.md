@@ -96,3 +96,15 @@ memoryview, so the comparison is always unequal and `modified_dos_stub` is const
 bytes(default_dos_stub)` fixes it; which LIEF version they used is not stated). **Patched here** by accumulating
 (`provexp.featuresets.ember2024.expert`, `accumulate=True`; the quirks are witnessed in
 `tests/test_ember2024_expert.py::TestQuirks`).
+
+## 7. secml-malware (design note, optional): GAMMA section injection adds every donor section in every candidate (found 2026-11-04)
+
+`CGammaSectionsEvasionProblem.apply_feasible_manipulations` (`secml_malware/attack/blackbox/c_gamma_sections_evasion.py`)
+loops over all k donor sections and calls `add_section` for each, with `content[:int(t[i] * len(content))]`, even when
+that slice is empty. A weight of 0 therefore does not mean "do not inject": every candidate gains exactly k sections
+(30 or 75), the near-zero ones empty and randomly named, and the optimizer can never try "inject one section" or
+"inject nothing". Against our EMBER 2024 GBDT the empty sections alone raise the score (0.98 -> 0.998 on a pilot file;
+`section:num_zero_size` and the section count jump), which is why the attack evades nothing at any budget. maltorch's
+`GAMMASectionInjectionManipulation` does the same, and the GAMMA paper describes the attack space as parametric in k,
+so this is a design choice rather than a bug; a suggestion upstream: skip donors whose slice is empty (or below a
+minimum), so the attack can choose how many sections to add. Not patched here: the toolkit is used as published.

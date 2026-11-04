@@ -55,6 +55,18 @@ introduction and a simple baseline (writing decision for later).
   combined edits (run 111, 1,105 of 1,105) and the learned-constraints contrast (run 110). Record:
   `docs/direction-A-prime-plan.md`, Section 13.
 
+## Next steps (2026-11-04, session 10: Table 7 baselines strengthened; then back to writing)
+
+Table 7 now measures adversarial training (run 122) against its own full-store reference (run 123); both are weak
+baselines because the four "seen" attacks barely evade the undefended model. The user raised attack strength: two runs
+answer it (`run/124`: GAMMA at the GAMMA paper's budget, a strong-toolkit column for every Table 7 row; `run/125`:
+adversarial training on the attacks that do evade, gamma_api + header_fields + gamma_sections at that budget). The
+attack code was audited and has no bugs; the toolkit's section injection fails against this model by design (it always
+adds one section per donor). Next, in order: read runs 124/125 into Table 7 (new column; replace or add the
+adversarial-training row -- decide with the user; footnote what it was trained on); write the sentence on why the
+toolkit's section injection fails here; finish the user's §6 ¶2-4 review (log reactions, update the skill); then the
+introduction, background, discussion, Figure 1, abstract (spine-first, with the skill).
+
 ## Next steps (2026-11-03, session 9: writing the empty sections)
 
 The writing method is settled (`docs/writing-spec.md` + the `paper-prose` skill). §6 is drafted (¶1 final; ¶2-4 await

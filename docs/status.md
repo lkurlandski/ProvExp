@@ -1,5 +1,66 @@
 # Status
 
+**2026-11-04 (session 10): run 122 read into Table 7; full-store reference row (run 123); related work fact-checked;
+the toolkit's weakness audited (no bugs); `run/124` + `run/125` handed to the user.** Nothing pushed. The user is
+running `NUM_WORKERS=16 bash run/124_a1_toolkit_literature_budget.sh ; NUM_WORKERS=16 bash
+run/125_adv_training_strong.sh` in tmux (~2-2.5 h, then ~3.5-4 h). Next session: `docs/resume-prompt.md`.
+
+- **Run 122 read (adversarial training on the four low-budget "seen" attacks; full store).** Generation: 1,597/1,600
+  valid (one `LOST` task: gamma_sections on one file, watchdog after 2,700 s idle; 2 invalid shift outputs, the known
+  bug). Model `seed-0-advtrain`: AUC 0.998, TPR@1% 95.6% (identical to `seed-0`), 48/50 detected, seen 8% (4/48),
+  held-out 50% (24/48; gamma_api 22), adaptive union 9/48 = 19% (twelve-op 9, append+section 6). Runtime ~2 h at 24
+  workers (not 8-9 h). Table 7 row measured; `run/122` header synced.
+- **Run 123 (Claude ran it, 18 min): the toolkit on the undefended full-store `seed-0`.** 49/50 detected, seen 10%
+  (5/49), held-out 53% (26/49; gamma_api 22, header_fields 11), all eight 55% (27/49). Hypothesis half held: seen is
+  NOT clearly above adversarial training's 8%, so training on the four seen attacks buys almost nothing (they barely
+  evade to begin with). **Table 7 now has a row "unconstrained, full training set"** (0.998 / 95.6% / 49/50 / 10% / 53%
+  / 20%) and the subsample row's adaptive cell is "---" (the 20% = 10/49 was always the full-store model's; a sourcing
+  error fixed). Footnote §: which rows are full-store. The §5 sentence now says adversarial training "keeps the
+  accuracy and changes little else" (8% vs 10% seen; 9/48 vs 10/49 adaptive); the old "robust only to what it was
+  shown" was unsupported.
+- **§6 ¶2-4 fact-checked against the papers (user asked, before reviewing).** Fixed: Chen et al. 2020 (the `% VERIFY`):
+  they chose Hidost because each feature names a PDF-tree path, so a subtree's features are one contiguous index range
+  ("each obtains that knowledge by hand or from attacks" was wrong for them; closest prior instance of our idea --
+  provenance readable from feature names; possibly an introduction point). Gimenez et al.'s Prop. 1 covers every robust
+  detector, not "robust by design". Gimenez's expert set is described in their words: "difficult to change for an
+  attacker with no access to the malware source code" (not "argued to grow under additions") -- in ¶3 AND §5 (user:
+  portray Gimenez accurately); §5 now says the 11 lowerable features fall to edits that need no source code. Wagner &
+  Graham: "reparsing only as far as the parser's lookahead reaches", not a "damage region". "sums" -> "sums and pools".
+  Pages added (Crossref): Dyrmishi 1384-1400, Sheatsley 495-515. Confirmed: Simonetto, FENCE, Dyrmishi (analytical
+  constraints + Microsoft PE spec + samples), Sheatsley (learned; their own "memorization" caveat), Incer, Chen 2021
+  (monotonicity = Property 1), PV selection. One ¶3 sentence still reads "A hand analysis inherits the threat model
+  its authors had in mind" -- left for the user's review (Claude suggests "is as sound as the analysis behind it", as §5).
+  **The user is reviewing ¶2-4 now; reactions pending.**
+- **User concern: are our attacks too weak?** (literature reports far higher evasion). Answer: the 8-10% is only the
+  four "seen" attacks; all eight evade the undefended model on 55%. Gimenez et al.'s own Table 1 (same attacks, GBDT on
+  EMBER): 25% evaded. Demetrio et al. (TOPS) find GBDTs stable against padding/shift/header attacks; only GAMMA works,
+  and its "detection under 20%" needs a much larger budget (GAMMA paper: population 10, up to 510 queries, 75 donor
+  sections, ~2.5 MB) than Gimenez's (100 queries, 30 donors) plus our byte cap max(5%, 512 KB).
+- **New `--budget low|literature` option** (`a_pv_attacks.BUDGETS`; `a1_evaluate.py`, `a_advtrain.py`); `table.json`
+  also reports each group without the byte cap ("uncapped"). Committed `9bc509b`.
+  - `run/124` (strong-toolkit column): gamma_sections + gamma_api at the literature budget vs the full-store
+    detectors (unconstrained, advtrain) and the s10 ones (ref, PV, mfull feat/sums, madd-sums, routed). Smoke: gamma_api
+    evades 2/3 (same 2 as low), gamma_sections 0/3 even at ~1 MB; a routed monotone detector 0/2 while its fallback
+    2/2; 2-3x the low budget's runtime (searches stop after 5 stagnant rounds).
+  - `run/125` (adversarial training on the attacks that work): 400 training malware x {gamma_api, header_fields,
+    gamma_sections} at the literature budget -> `seed-0-advtrain-strong`; eval: low toolkit (8 attacks; NOTE gamma_api
+    and header_fields are PV-"held-out" but trained on here: footnote needed), strong column, adaptive union.
+- **Audit of the attack code for bugs (user: maltorch, same authors, had two -- `.rdata` misspelled `rodata`; a
+  wrapper that never propagated indexes, so every query was a silent no-op; SSViT commits `515dc6c`, `3a2d576`).**
+  Neither applies to us: donors use `[".rdata", ".data"]` and carry real content; manipulations land (API: imports
+  20 -> ~5,700, score 0.98 -> 0.47; sections: +2 MB). Our LIEF-1.0/NumPy-2 port: the written file scores exactly what
+  the engine returned (all 8 attacks, 2 files), and every evasion the search found was returned (12 files x 4 attacks).
+  **Design properties, not bugs (upstream and maltorch alike):** (1) GAMMA sections injects one section per donor in
+  EVERY candidate, even at weight 0 (empty, random-named) -> +30/75 sections, `num_zero_size` up, score UP (0.98 ->
+  0.998); the search can never try "one section" -- why it fails here at any budget (our adaptive search covers that
+  edit). (2) The l1 objective trades evasion for size (score + 1e-6 x bytes); a threshold-targeted "cw" objective
+  (lambda 1e-9) was tried and changed nothing (gamma_api 4/12 vs 5/12, shift 3/12 vs 2/12) -> reverted, not kept.
+  (3) GAMMA API at weight 0 is not an identity: LIEF's import rebuild adds a section and moves the import table
+  (~400-600 features). Paper sentence worth writing: the toolkit's section injection fails against this model because
+  it always adds k sections; the strongest attacker is our adaptive search (20% on the undefended model).
+- Commits this session: `b551c07` (run 122 row), `ec576a9` (§6 fact-check), `0fcd0da` (run 123 row + sentence),
+  `2a8b50e` (§5 expert-set wording), `9bc509b` (budgets; runs 124/125).
+
 **2026-11-03 (session 9): writing spec + `paper-prose` skill built; related work (§6) drafted; `run/122` found hung
 and fixed; relaunched by the user at 19:45.** Nothing pushed. Next session: `docs/resume-prompt.md`.
 
