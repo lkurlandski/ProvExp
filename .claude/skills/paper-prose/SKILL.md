@@ -75,7 +75,9 @@ contradicts.
 
 ## Procedure
 
-1. **Spine first.** One line per paragraph (its claim, its citations or numbers), agreed with the user before prose.
+1. **Spine first, always.** One line per paragraph (its claim, its citations or numbers), agreed with the user before
+   prose. Keep this paragraph-by-paragraph plan even when the drafting unit grows to a whole section: it is where the
+   user corrects the structure before it becomes "a spaghetti of a section" (user, 2026-11-04).
 2. **Draft one unit** (one paragraph while the lessons are young; larger units as they stop drawing corrections, see
    step 6).
 3. **Self-review before showing**, and fix what it finds:
@@ -92,7 +94,8 @@ contradicts.
    implies). Then update this file: add a lesson when the reaction generalizes beyond the sentence at hand, sharpen
    one when it recurs, delete one the user contradicts. Keep each lesson short with one concrete example.
 6. **Widen the unit as trust grows.** When a unit is accepted with no or only minor changes, draft the next one larger
-   (two paragraphs, then a subsection) before review.
+   (two paragraphs, then a subsection) before review. Status (2026-11-04): §6 reached the bar after one written review,
+   so the next section (the introduction) is drafted whole, from an agreed per-paragraph spine.
 7. **Into the manuscript.** Write the approved text into its `.tex` file, `\cite` every work named (add missing entries
    to `main.bib`, checked against a real record), wrap at 120 columns, run `make` and `make check` in `manuscript/`,
    and commit in a logical piece.

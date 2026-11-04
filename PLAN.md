@@ -55,6 +55,13 @@ introduction and a simple baseline (writing decision for later).
   combined edits (run 111, 1,105 of 1,105) and the learned-constraints contrast (run 110). Record:
   `docs/direction-A-prime-plan.md`, Section 13.
 
+## Next steps (2026-11-04, session 10b: §6 review done)
+
+§6 related work is revised after the user's written review and accepted as a draft for hand fine-tuning (the user
+does that pass). The `paper-prose` skill now has 14 lessons and the bar ("worth the user's fine-tuning"). Writing
+proceeds a section at a time, always from a per-paragraph spine agreed first. Next writing unit: the introduction
+(§1). Session 10's experimental next steps below (runs 124/125 into Table 7) are unchanged.
+
 ## Next steps (2026-11-04, session 10: Table 7 baselines strengthened; then back to writing)
 
 Table 7 now measures adversarial training (run 122) against its own full-store reference (run 123); both are weak

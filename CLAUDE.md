@@ -46,7 +46,7 @@ and manuscript remain as source material. Deadlines and conference cycles are no
   (user, 2026-10-09).
 - The manuscript is being rewritten (user, 2026-11-02): each section goes straight into `.tex` (`manuscript/`),
   drafted from the paper mock (`docs/paper-mock.md`) to its word budget; no markdown drafts of paper text.
-  `docs/formalization.md` is frozen as the reference and appendix source. Written so far: Sections 3-5 and Appendix A. Write continuous prose rather than stacks of labeled paragraphs (user, 2026-10-14); no internal IDs in
+  `docs/formalization.md` is frozen as the reference and appendix source. Written so far: Sections 3-6 and Appendix A (Section 6 accepted as a draft, 2026-11-04). Write continuous prose rather than stacks of labeled paragraphs (user, 2026-10-14); no internal IDs in
   the paper.
 - `src/provexp/`: `boxmatrix.py` (sparse boxes), `provenance.py` (P, transfers, statistics, round trips), `items.py`
   (the item layer: items, terms, readouts as data, projection), `reach.py` (the C1 and C4 engines),

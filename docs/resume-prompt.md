@@ -1,9 +1,10 @@
-# Resume: ProvExp (after 2026-11-04, session 10): read runs 124/125 into Table 7, finish the §6 review, keep writing
+# Resume: ProvExp (after 2026-11-04, sessions 10 and 10b): read runs 124/125 into Table 7, then the introduction
 
 ## Where things stand
 
 Session 10 measured Table 7's adversarial-training baseline and its reference, fact-checked related work, and answered
-the user's worry that our attacks are too weak. Details: `docs/status.md` (session-10 block). Nothing pushed.
+the user's worry that our attacks are too weak. Session 10b (writing only, in parallel) took §6 through the user's
+written review. Details: `docs/status.md` (session-10b and session-10 blocks). Nothing pushed.
 
 1. **Table 7 (`manuscript/_f_evaluation.tex`, `tab:eval:detectors`).** Measured now: "adversarial training on the
    toolkit" (run 122: 0.998 / 95.6% / 48/50 / seen 8% / held-out 50% / adaptive 19%) and its reference "unconstrained,
@@ -22,9 +23,11 @@ the user's worry that our attacks are too weak. Details: `docs/status.md` (sessi
    - `run/125`: adversarial training on the attacks that work (gamma_api, header_fields, gamma_sections; literature
      budget; 400 training malware) -> `seed-0-advtrain-strong`; its low-budget toolkit columns, strong column, and
      adaptive union.
-4. **§6 related work.** ¶2-4 were fact-checked and corrected (Chen et al. 2020 on Hidost; Gimenez's Prop. 1 and expert
-   set in their own words; Wagner & Graham; pages). **The user is reviewing ¶2-4**; one ¶3 sentence ("A hand analysis
-   inherits the threat model its authors had in mind") was left for that review.
+4. **§6 related work: done as a draft.** All four paragraphs were revised after the user's written review and
+   accepted ("quite good"; worth hand fine-tuning, which the user will do). One `% VERIFY` remains in ¶3 (Chen et al.
+   2021's monotonicity scope). The `paper-prose` skill now has 14 lessons and records **the bar**: a draft must be
+   correct, coherent, and fluid enough that the user's fine-tuning is faster than writing from scratch. Invoke the
+   skill for all paper prose.
 
 ## Next session, in order
 
@@ -42,9 +45,10 @@ the user's worry that our attacks are too weak. Details: `docs/status.md` (sessi
    trained on here). Then a sentence on why the toolkit's section injection fails here and why the adaptive search is
    the strongest attacker. Sync `run/124` and `run/125` headers (runtimes, results) once they are not running.
    `make` / `make check`.
-4. **§6 ¶2-4 review** when the user brings it: log the raw reactions in `docs/writing-spec.md`, update the
-   `paper-prose` skill's lessons.
-5. **Next sections with the skill** (`/paper-prose`), spine first: introduction (§1, framework-first with a
+4. **Next sections with the skill** (`/paper-prose`). Draft a whole section at a time, but **always** agree a
+   one-line-per-paragraph spine with the user first (the user wants to correct the plan before prose, to avoid a
+   "spaghetti" section). After each review: log the raw reactions in `docs/writing-spec.md`, update the skill. Order:
+   introduction (§1, framework-first with a
    detector-centered results paragraph; the Hidost/Chen et al. observation may help: provenance readable from feature
    names is the special case we generalize), background (§2), discussion (§7, incl. the R7/R15 sentences), Figure 1,
    abstract last. Budgets: `docs/paper-mock.md`.

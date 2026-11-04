@@ -1,5 +1,32 @@
 # Status
 
+**2026-11-04 (session 10b, writing only; ran alongside session 10): §6 related work reviewed by the user and
+revised; accepted as a draft for hand fine-tuning.** Nothing pushed. Next session: `docs/resume-prompt.md`.
+
+- **The user's written review of all four §6 paragraphs** (comments per paragraph). Revised in
+  `manuscript/_g_related_work.tex` (1,252 words; budget 700, ~79% over): ¶1 cites only Pierazzi et al. S&P 2020
+  (the TOPS extended version stays in `main.bib`, uncited); "no closed form" replaced by their actual argument (the
+  feature mapping is neither differentiable nor invertible, so side effects cannot be computed in advance; p. 5); names
+  "sum-then-readout". ¶2 opens with the mechanism of constrained feature-space attacks, gives Simonetto et al. and FENCE
+  a role (domain-independent machinery that takes constraints as input), a linking transition to where constraints come
+  from (Dyrmishi: hand-written with an expert; Sheatsley: learned), and a stronger closer (we derive what these attacks
+  take as input). ¶3: transition from constraints to defenses; Incer and Gimenez in separate sentences; Chen 2021 tied
+  to the theme; Hidost introduced and cited (new `srndic2016hidost`, checked against the publisher); the unifying
+  claim ("all four works rest on the same input, the directions") now has a lead-up and cites the four works; our own
+  numbers cut to one pointer to §5; a confident closer. ¶4: dropped "as Section 3 acknowledges"; stronger
+  database-versus-adversary contrast; literal statement of what we compute. The session-10 sentence "A hand analysis
+  inherits the threat model ..." is gone in the rewrite.
+- **Verdict (user):** "quite good"; still a little AI-sounding in places, and the user will fine-tune parts by hand,
+  but it reached **the bar**: worth the user's handcrafted attention. Below that bar, fixing takes longer than writing.
+- **Skill and spec.** Reactions logged in `docs/writing-spec.md`; `paper-prose` lessons 9-14 added (describe the line
+  of work before its members; introduce every name; big claims need a runway and citations; related work positions
+  ideas, not our results; state our contribution with conviction; never paraphrase a cited reason you cannot explain),
+  lessons 3, 5, 6, 8 sharpened, the bar recorded at the top, and the procedure now keeps the **per-paragraph spine
+  always**, even as the drafting unit grows to a whole section (user).
+- Open: one `% VERIFY` in ¶3 (Chen et al. 2021: monotonicity stated over features an attacker can only increase;
+  session 10 confirmed monotonicity is their Property 1, not the exact scope).
+- Commits: `9728b3a` (§6 revision, lessons 9-14), `cef7307` (the bar), plus this checkpoint.
+
 **2026-11-04 (session 10): run 122 read into Table 7; full-store reference row (run 123); related work fact-checked;
 the toolkit's weakness audited (no bugs); `run/124` + `run/125` handed to the user.** Nothing pushed. The user is
 running `NUM_WORKERS=16 bash run/124_a1_toolkit_literature_budget.sh ; NUM_WORKERS=16 bash
