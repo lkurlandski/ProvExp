@@ -1,4 +1,4 @@
-# Resume: ProvExp (after 2026-11-03, session 9): read run 122, review §6, then keep writing with the skill
+# Resume: ProvExp (after 2026-11-03, session 9): read run 122, review §6 ¶2-4, then keep writing with the skill
 
 ## Where things stand
 
@@ -17,8 +17,8 @@ pushed.
    by showing them to the user for a careful review, then log the reactions and update the skill.
 3. **`run/122` (adversarial-training row) hung and was fixed, not relaunched.** A dead `multiprocessing.Pool` worker
    made `pool.map` wait forever. `map_watchdog` (`scripts/a_pv_attacks.py`) now guards `a_advtrain.py` and
-   `a1_evaluate.py`. The hung job was killed (all 27 processes, 2026-11-03 ~19:50); the user relaunches
-   `NUM_WORKERS=24 run/122_adv_training.sh` (generation ~20 min, not 6-7 h; then retrain, toolkit eval, adaptive).
+   `a1_evaluate.py`. The hung job was killed (all 27 processes); the user **relaunched**
+   `NUM_WORKERS=24 run/122_adv_training.sh` at 2026-11-03 19:45 (generation ~20 min, not 6-7 h; then retrain, toolkit eval, adaptive).
 
 ## Next session, in order
 

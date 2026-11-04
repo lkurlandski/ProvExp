@@ -1,7 +1,7 @@
 # Status
 
 **2026-11-03 (session 9): writing spec + `paper-prose` skill built; related work (§6) drafted; `run/122` found hung
-and fixed (needs relaunch).** Nothing pushed. Next session: `docs/resume-prompt.md`.
+and fixed; relaunched by the user at 19:45.** Nothing pushed. Next session: `docs/resume-prompt.md`.
 
 - **Writing method settled with the user.** `docs/writing-spec.md` (replaces `docs/style_guide.md`, deleted; in git history):
   habits to *ration* by frequency (no bans), techniques to reach for when they help, organization/layout as
@@ -26,8 +26,12 @@ and fixed (needs relaunch).** Nothing pushed. Next session: `docs/resume-prompt.
   lost (counted as attempted-not-valid / not-evaded, printed as `LOST`) and terminates the pool; used by
   `a_advtrain.py` and `a1_evaluate.py` (same hazard). Tested with a deliberately dying worker (39/40 recovered, the
   lost one reported) and a 2-file real smoke (8 runs in 36 s on 4 workers -> the full 1,600-task generation is
-  ~20 min at 24 workers, NOT the 6-7 h the script header claims). **The user must Ctrl-C the hung job and relaunch
-  `NUM_WORKERS=24 run/122_adv_training.sh`.** Sync `run/122`'s header (runtime; the watchdog) once it is not running.
+  ~20 min at 24 workers, NOT the 6-7 h the script header claims). Ctrl-C did not stop the hung job (workers blocked in
+  futex waits); Claude killed all 27 processes (SIGTERM sufficed). **The user relaunched
+  `NUM_WORKERS=24 run/122_adv_training.sh` at 19:45** (expected: generation ~20-30 min, at most +45 min if a worker
+  dies; then retrain ~7 min, toolkit eval, two adaptive runs; done well before morning). Sync `run/122`'s header
+  (runtimes; the watchdog) once it is not running.
+- **Housekeeping.** Skills committed (`.claude/skills/paper-prose`, `delegate`); `docs/style_guide.md` deleted.
 
 **2026-11-03 (session 8): planning session. Holistic stock-take vs the review done; a new primary track opened --
 building a manuscript writing-and-presentation spec before drafting the empty sections.** Nothing pushed. `run/122`
