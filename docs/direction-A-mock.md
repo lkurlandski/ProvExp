@@ -102,6 +102,29 @@ have, not required): the same model breaks the empirical defense and certifies i
 - **Expert sets** (Gimenez's 40; Incer et al.'s four-case analysis): sound but manual and conservative.
 - Not a baseline: Severi et al.'s 17 features (an attack-side restriction, not a defense; cited as motivation).
 
+### ERDALT row (added 2026-11-04, session 13; user: build it, follow the paper)
+
+ERDALT (Gimenez et al.'s main method): a linear first layer L (no bias), trained with a soft penalty so that every
+observed perturbation vector maps to a nonnegative vector, under a monotone network. Port of their public
+`train_model.py`, following the **paper** (monotone upper layers, Prop. 3): the released code projects layers 2-3 to
+nonnegative weights but leaves the output layer free, so it is not monotone; we also project the output layer (a slight
+patch; noted in `docs/upstream-issues.md`, item 8). Same perturbation vectors as PV-seen (the four seen attacks), plus
+run 122's attacked training malware (same four attacks), so ERDALT sees ~1,800 vectors (their paper: 1,033). Same
+features as PV-seen (thrember's 2,568 on the 10% store; the sums columns dropped). Deviations forced by scale (batch
+size, epochs) and model selection on our validation split instead of their test split are stated with the row.
+
+| Detector | AUC | TPR at 1% FPR | Detected | Seen | Held-out | Adaptive |
+|---|---|---|---|---|---|---|
+| ERDALT, 4 attacks (mock) | ~0.95-0.97 | ~75-85% | ~40/50 | ~0-5% | ~20-40% | >= 50% |
+
+- *Faithfulness check:* seen evasion <= ~10% (they report 96% robust). Otherwise the port is broken: fix before
+  reporting.
+- *The claim's check (the derived table finds ERDALT's hole before any attack):* against the derived M_full table,
+  L must have no negative entry in a column the catalogue can raise, no positive entry in one it can lower, and only
+  zeros in one it can move both ways. Go if violations carry material weight and the adaptive search evades ERDALT
+  through them. No-go: no violations, or adaptive evasion no higher than the unconstrained detector's; then ERDALT is a
+  strong competitor and the comparison rests on accuracy and the guarantee.
+
 ## Go/no-go checks (falsifiable, before building the defense)
 
 1. **C1 holds (Table A0).** On the pilot files, C1 matches re-extraction exactly on >= 95% of (file, transformation)

@@ -69,6 +69,7 @@ from a_pv_attacks import calibrated  # noqa: E402
 from a_pv_attacks import build_donor_pools  # noqa: E402
 from a_pv_attacks import load_pilot  # noqa: E402
 from a_pv_attacks import make_wrapper  # noqa: E402
+from provexp.models.erdalt import load_detector  # noqa: E402
 from a_pv_attacks import map_watchdog  # noqa: E402
 from a_pv_attacks import run_attack  # noqa: E402
 
@@ -244,7 +245,6 @@ def main() -> None:
     print(f"Pilot: {len(malware)} malware, {len(goodware)} goodware donors; {len(defenses)} defenses.", flush=True)
 
     # Thresholds, and which pilot malware each defense detects (scored from the files themselves).
-    import lightgbm
     X = np.stack([extractor.feature_vector(data) for _, data in malware])  # type: ignore[no-untyped-call]
     pre = [precondition_holds(data) for _, data in malware]
     print(f"  {sum(pre)}/{len(malware)} pilot malware pass the precondition check", flush=True)
@@ -253,7 +253,7 @@ def main() -> None:
     for d, mdir in defenses.items():
         pred = pl.read_parquet(mdir / "ts_predictions.parquet")
         model_taus[d] = calibrate_threshold(pred["prob"].to_numpy(), pred["label"].to_numpy(), args.fpr)
-        probs[d] = np.asarray(lightgbm.Booster(model_file=str(mdir / "model.txt")).predict(X))
+        probs[d] = np.asarray(load_detector(mdir, extractor.feature_names).predict(X))
     taus: dict[str, float] = {}
     detected: dict[str, list[int]] = {}
     routes = {d: (fb, model_taus[d], model_taus[fb]) for d, fb in routes_spec.items()}

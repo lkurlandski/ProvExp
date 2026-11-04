@@ -61,6 +61,8 @@ from provexp.featuresets.ember2024.features import PEFeatureExtractor
 from provexp.featuresets.ember2024.features import field_range
 from provexp.featuresets.ember2024.features import merge_import_descriptors
 from provexp.items import ItemTable
+from provexp.models.erdalt import ERDALTDetector
+from provexp.models.erdalt import is_erdalt
 from provexp.reach import ByteEdit
 from provexp.reach import Prediction
 from provexp.reach import predict
@@ -347,13 +349,20 @@ def bucket_names() -> dict[tuple[int, int], str]:
     return table
 
 
-def target_buckets(booster: lightgbm.Booster, feature_names: list[str], k: int) -> list[int]:
+def target_buckets(booster: lightgbm.Booster, feature_names: list[str], k: int,
+                   X: Optional[np.ndarray] = None) -> list[int]:
     """The k section-hash buckets the defense relies on most (split gain summed over the size/vsize/entropy hashes).
 
     The adaptive attacker knows the defense (white-box, the strongest adaptive setting); a name in a bucket moves that
-    bucket's three features together, by the section's size, virtual size, and entropy, with the name's sign.
+    bucket's three features together, by the section's size, virtual size, and entropy, with the name's sign. A neural
+    defense (ERDALT) has no split gain; its importance is the mean gradient magnitude over `X` (the pilot malware).
     """
-    gain = dict(zip(feature_names, booster.feature_importance("gain")))
+    if isinstance(booster, ERDALTDetector):
+        if X is None:
+            raise ValueError("A neural defense needs X to rank the buckets.")
+        gain = dict(zip(booster.feature_names, booster.sensitivity(X)))
+    else:
+        gain = dict(zip(feature_names, booster.feature_importance("gain")))
     score = [sum(float(gain.get(f"{g}{b}", 0.0)) for g in BUCKET_GROUPS) for b in range(SECTION_BUCKETS)]
     return [int(b) for b in np.argsort(score, kind="stable")[::-1][:k]]
 
@@ -922,13 +931,15 @@ class _Padded(lightgbm.Booster):
         return super().predict(np.hstack([x, np.zeros((x.shape[0], self.pad))]), *args, **kwargs)
 
 
-def padded_booster(mdir: Path, dim: int) -> lightgbm.Booster:
+def padded_booster(mdir: Path, dim: int) -> Any:
     """Load a defense; a model on more than the `dim` thrember features must have every extra column neutralized.
 
     `train_classic.py --neutralize` sets those columns to zero in every split, so padding the engine's vectors with
     zeros reproduces exactly what the model saw (e.g. the `seed-0-s10-*` models on the sums store, whose 1,087 sums
     columns are neutralized), and the search can score them.
     """
+    if is_erdalt(mdir):
+        return ERDALTDetector(mdir)  # its own layout is the thrember features (train_erdalt.py drops the rest)
     booster = lightgbm.Booster(model_file=str(mdir / "model.txt"))
     n = booster.num_feature()
     if n == dim:
@@ -1019,7 +1030,9 @@ def main() -> None:
     for d, mdir in defenses.items():
         booster = padded_booster(mdir, extractor.dim)
         tau = _threshold(mdir / "ts_predictions.parquet", args.fpr)
-        targets = [(b, sign) for b in target_buckets(booster, extractor.feature_names, args.target_buckets)
+        Xp = (np.stack([extractor.feature_vector(data) for _, data in malware])  # type: ignore[no-untyped-call]
+              if isinstance(booster, ERDALTDetector) else None)
+        targets = [(b, sign) for b in target_buckets(booster, extractor.feature_names, args.target_buckets, Xp)
                    for sign in (-1, 1)]
         detected = 0
         for name, data in malware:

@@ -97,14 +97,25 @@ def make_wrapper(model_path: Path, extractor: PEFeatureExtractor, fallback: Opti
     from secml_malware.attack.blackbox.c_wrapper_phi import CWrapperPhi
 
     routed = fallback is not None
+
+    def _load(path: Path) -> Any:
+        # NOTE: an ERDALT model directory (erdalt.json next to the given model.txt path) is scored through the same
+        # predict interface; it selects its columns from the extractor's layout by name.
+        from provexp.models.erdalt import is_erdalt
+        from provexp.models.erdalt import load_detector
+
+        if is_erdalt(Path(path).parent):
+            return load_detector(Path(path).parent, extractor.feature_names)
+        return lightgbm.Booster(model_file=str(path))
+
     if routed and (route is None or taus is None):
         raise ValueError("A routed detector needs `route` and `taus`.")
 
     class _OurClassifier(CClassifier):  # type: ignore[misc]
         def __init__(self) -> None:
             super().__init__()
-            self._booster = lightgbm.Booster(model_file=str(model_path))
-            self._fallback = lightgbm.Booster(model_file=str(fallback)) if routed else None
+            self._booster = _load(model_path)
+            self._fallback = _load(fallback) if fallback is not None else None
             self._classes = 2
             self._n_features = self._booster.num_feature() + int(routed)
 

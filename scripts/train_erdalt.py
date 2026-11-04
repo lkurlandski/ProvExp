@@ -1,0 +1,179 @@
+"""
+Train an ERDALT detector (Gimenez et al.'s empirically robust architecture; `provexp.models.erdalt`) for Table 7.
+
+The model reads the store's features minus the neutralized ones (for the 10% sums store: thrember's 2,568, as the
+reference and PV-seen rows read them). Its perturbation vectors come from two sources, both restricted to `--attacks`:
+
+    --deltas        a parquet of perturbation vectors with named feature columns (scripts/a_pv_attacks.py: the pilot
+                    malware, the same vectors PV-seen is selected from)
+    --adv_dir       a directory of attacked training malware (scripts/a_advtrain.py: X.npy + files.parquet), in the
+                    layout of `--adv_features`, whose training rows of the same names are the clean vectors
+
+Outputs, in `{outdir}/erdalt/seed-{seed}{suffix}/`: model.pt and erdalt.json (provexp.models.erdalt.save_erdalt),
+metrics.json (as train_classic.py, plus the ERDALT training summary and history), ts_predictions.parquet.
+
+Usage (smoke): PYTHONHASHSEED=0 python scripts/train_erdalt.py --features artifacts/features/ember2024-sums-10-v2 \
+    --neutralize artifacts/experiments/a_directions_sums/reencoded.neutralize.txt \
+    --deltas artifacts/experiments/a_pv/deltas.parquet --attacks padding gamma_sections gamma_shift content_shift \
+    --suffix=-smoke --limit 20000 --epochs 3
+"""
+
+from __future__ import annotations
+from argparse import ArgumentParser
+import json
+from pathlib import Path
+import time
+from typing import Optional
+
+import numpy as np
+from numpy import typing as npt
+import polars as pl
+import torch
+
+from provexp.data.tabular import load_features
+from provexp.data.tabular import load_manifest
+from provexp.metrics import compute_metrics
+from provexp.models.erdalt import fit_temperature
+from provexp.models.erdalt import save_erdalt
+from provexp.models.erdalt import train_erdalt
+
+
+__all__ = [
+    "pv_deltas",
+    "adv_deltas",
+]
+
+ROOT = Path(__file__).resolve().parents[1]
+
+
+################################################################################
+# Perturbation vectors
+################################################################################
+
+def pv_deltas(path: Path, attacks: list[str], names: list[str]) -> npt.NDArray[np.float32]:
+    """The perturbation vectors of `attacks` in a named-column parquet, in the order of `names`."""
+    df = pl.read_parquet(path).filter(pl.col("attack").is_in(attacks))
+    missing = [n for n in names if n not in df.columns]
+    if missing:
+        raise ValueError(f"{path.as_posix()} lacks {len(missing)} of the model's features: {missing[:5]}")
+    return df.select(names).to_numpy().astype(np.float32)
+
+
+def adv_deltas(adv_dir: Path, adv_features: Path, attacks: list[str], names: list[str]) -> npt.NDArray[np.float32]:
+    """phi(z') - phi(z) for the attacked training malware in `adv_dir`, clean rows from `adv_features`' training split."""
+    layout = load_manifest(adv_features)["feature_names"]
+    index = {n: j for j, n in enumerate(layout)}
+    missing = [n for n in names if n not in index]
+    if missing:
+        raise ValueError(f"{adv_features.as_posix()} lacks {len(missing)} of the model's features: {missing[:5]}")
+    cols = np.array([index[n] for n in names], dtype=np.int64)
+    Xa = np.load(adv_dir / "X.npy")
+    files = pl.read_parquet(adv_dir / "files.parquet").with_row_index("i")
+    if files.height != Xa.shape[0] or Xa.shape[1] != len(layout):
+        raise RuntimeError(f"{adv_dir.as_posix()}: X.npy {Xa.shape} vs {files.height} rows, {len(layout)} features.")
+    files = files.filter(pl.col("attack").is_in(attacks))
+    X, meta = load_features(adv_features, "tr")
+    rows = dict(zip(meta["name"].to_list(), meta["row"].to_list()))
+    absent = [n for n in files["name"].to_list() if n not in rows]
+    if absent:
+        raise RuntimeError(f"{len(absent)} attacked files are not in {adv_features.as_posix()}/tr: {absent[:3]}")
+    clean = np.asarray(X[[rows[n] for n in files["name"].to_list()]])
+    adv = Xa[files["i"].to_numpy()]
+    out: npt.NDArray[np.float32] = (adv[:, cols] - clean[:, cols]).astype(np.float32)
+    return out
+
+
+################################################################################
+# Main
+################################################################################
+
+def main() -> None:
+    parser = ArgumentParser(description="Train an ERDALT detector (Gimenez et al.) on a feature store.")
+    parser.add_argument("--features", type=Path, required=True)
+    parser.add_argument("--neutralize", type=Path, default=None, help="Feature names the model does not read.")
+    parser.add_argument("--deltas", type=Path, default=None, help="Named-column perturbation vectors (a_pv_attacks).")
+    parser.add_argument("--adv_dir", type=Path, default=None, help="Attacked training malware (a_advtrain).")
+    parser.add_argument("--adv_features", type=Path, default=ROOT / "artifacts" / "features" / "ember2024")
+    parser.add_argument("--attacks", nargs="+", required=True, help="The seen attacks whose vectors ERDALT learns.")
+    parser.add_argument("--outdir", type=Path, default=ROOT / "artifacts" / "models")
+    parser.add_argument("--suffix", type=str, required=True)
+    parser.add_argument("--seed", type=int, default=0)
+    parser.add_argument("--device", type=str, default="cuda")
+    parser.add_argument("--batch_size", type=int, default=256)
+    parser.add_argument("--epochs", type=int, default=310)
+    parser.add_argument("--limit", type=int, default=None, help="At most this many samples per split (smoke tests).")
+    args = parser.parse_args()
+    if args.deltas is None and args.adv_dir is None:
+        raise ValueError("Give --deltas, --adv_dir, or both.")
+
+    outdir = args.outdir / "erdalt" / f"seed-{args.seed}{args.suffix}"
+    store_names: list[str] = load_manifest(args.features)["feature_names"]
+    dropped: set[str] = set()
+    if args.neutralize is not None:
+        dropped = {line.strip() for line in args.neutralize.read_text().splitlines() if line.strip()}
+        unknown = sorted(dropped - set(store_names))
+        if unknown:
+            raise ValueError(f"Unknown features in {args.neutralize.as_posix()}: {unknown[:5]}")
+    keep = np.array([j for j, n in enumerate(store_names) if n not in dropped], dtype=np.int64)
+    names = [store_names[j] for j in keep]
+    print(f"The model reads {len(names)} of the store's {len(store_names)} features.", flush=True)
+
+    t_0 = time.time()
+    parts: list[npt.NDArray[np.float32]] = []
+    sources: dict[str, int] = {}
+    if args.deltas is not None:
+        parts.append(pv_deltas(args.deltas, args.attacks, names))
+        sources["deltas"] = int(parts[-1].shape[0])
+    if args.adv_dir is not None:
+        parts.append(adv_deltas(args.adv_dir, args.adv_features, args.attacks, names))
+        sources["adv_dir"] = int(parts[-1].shape[0])
+    D = np.concatenate(parts)
+    print(f"Perturbation vectors: {sources} ({D.shape[0]} in all).", flush=True)
+
+    data = {}
+    for split in ("tr", "vl", "ts"):
+        X, meta = load_features(args.features, split, only_ok=True)
+        if args.limit is not None:
+            X, meta = X[:args.limit], meta.head(args.limit)
+        data[split] = (np.ascontiguousarray(np.asarray(X)[:, keep]), meta["label"].to_numpy().astype(np.int64), meta)
+        print(f"Loaded {split}: {data[split][0].shape}", flush=True)
+    (X_tr, y_tr, _), (X_vl, y_vl, _), (X_ts, y_ts, meta_ts) = data["tr"], data["vl"], data["ts"]
+
+    device = torch.device(args.device)
+    model, summary = train_erdalt(X_tr, y_tr, X_vl, y_vl, D, seed=args.seed, device=device,
+                                  batch_size=args.batch_size, epochs=args.epochs)
+    def _logits(X: npt.NDArray[np.float32]) -> npt.NDArray[np.float64]:
+        with torch.no_grad():
+            Xd = torch.from_numpy(X).to(device)
+            z = torch.cat([model(Xd[i:i + 8192]) for i in range(0, Xd.shape[0], 8192)])
+        return np.asarray(z.double().cpu().numpy(), dtype=np.float64)
+
+    summary["temperature"] = fit_temperature(_logits(X_vl))
+    print(f"Temperature {summary['temperature']:.4g} (validation logits up to +-{30 * summary['temperature']:.4g}).",
+          flush=True)
+    save_erdalt(model, outdir, names, summary)
+    z_ts = _logits(X_ts)
+    probs = 1.0 / (1.0 + np.exp(-z_ts / summary["temperature"]))
+
+    metrics = compute_metrics(y_ts, probs)
+    print(f"Test metrics: {json.dumps(metrics)}", flush=True)
+    report: dict[str, Optional[object]] = {
+        "learner": "erdalt",
+        "seed": args.seed,
+        "features": args.features.resolve().as_posix(),
+        "neutralize": args.neutralize.resolve().as_posix() if args.neutralize else None,
+        "num_features": len(names),
+        "num_samples": {split: int(d[0].shape[0]) for split, d in data.items()},
+        "attacks": args.attacks,
+        "deltas": sources,
+        "training": summary,
+        "ts_metrics": metrics,
+        "minutes": (time.time() - t_0) / 60,
+    }
+    (outdir / "metrics.json").write_text(json.dumps(report, indent=2))
+    meta_ts.select("name", "label").with_columns(pl.Series("prob", probs)).write_parquet(outdir / "ts_predictions.parquet")
+    print(f"Wrote {outdir.as_posix()}.", flush=True)
+
+
+if __name__ == "__main__":
+    main()

@@ -108,3 +108,13 @@ that slice is empty. A weight of 0 therefore does not mean "do not inject": ever
 `GAMMASectionInjectionManipulation` does the same, and the GAMMA paper describes the attack space as parametric in k,
 so this is a design choice rather than a bug; a suggestion upstream: skip donors whose slice is empty (or below a
 minimum), so the attack can choose how many sections to add. Not patched here: the toolkit is used as published.
+
+## 8. Gimenez et al.'s ERDALT code: the output layer is not constrained, so the network is not monotone (found 2026-11-04)
+
+Repository: https://github.com/PFGimenez/certifiably-robust-malware-detectors-by-design, `train_model.py`. The paper's
+Proposition 3 needs the layers above the linear post-processing to be monotone. `monotonic()` projects the negative
+weights of `layer2` and `layer3` to small positive values (`exp(w - 5)`), with ELU activations, but leaves `fc4` (the
+output layer) unconstrained, so a negative output weight makes the score decrease in some post-processed feature. Our
+port (`src/provexp/models/erdalt.py`) follows the paper and applies the same projection to the output layer. A note
+to the authors, not a bug report against their results: their robustness numbers are empirical either way.
+
