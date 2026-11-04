@@ -55,6 +55,27 @@ introduction and a simple baseline (writing decision for later).
   combined edits (run 111, 1,105 of 1,105) and the learned-constraints contrast (run 110). Record:
   `docs/direction-A-prime-plan.md`, Section 13.
 
+## Next steps (2026-11-04, session 12: price list read; strong adaptive search built; second server)
+
+Done: run 126 read (its hypothesis failed: the monotone constraints, not the dropping, cost the 3.9 points; import
+addition 2.1 and the header overwrites 1.4 are most of it; the parser warnings cost nothing, so they stay unmodeled)
+and written into §5 as one paragraph. Run 124's full-store half read (no gain from the literature budget: gamma_api
+20/49 vs 22/49; gamma_sections 0, every output over the byte cap and none below tau even uncapped). Zainab et al.'s
+setup read: their 83.4% is on outside malware at 0.1% FPR; on EMBER-2024's own test malware MAB-Malware reaches 9.6%,
+so W2 is smaller than the review thought. The beam search (`a1_adaptive.py --search beam`) is built; `run/127` runs on
+the second server. The go/no-go is read after the run (user: both candidate gates read the same run); the reference
+points are fixed in run 127's header.
+
+Next, in order:
+1. **Read run 124's s10 half and run 125** (this server, user's tmux) and **run 127** (second server; sync its
+   `artifacts/experiments/a1/adaptive-beam/` and `artifacts/logs/a1_adaptive_beam.log` back). Decide with the user how
+   to read run 127 against the full toolkit (55%), the in-catalogue toolkit (27%), and the literature (<=9.6%).
+2. **Table 7 with the user:** the strong-toolkit column, run 125's row, the adaptive column from run 127 (replacing
+   the 77% synthetic cell), and the sentence on why the toolkit's section injection fails.
+3. MAB-Malware as a held-out attack: lower priority now (its seven operations are all in our catalogue); decide after
+   run 127.
+4. The open decisions (ERDALT row; headline), then the introduction and the other empty sections.
+
 ## Next steps (2026-11-04, session 11: strategic review; strengthen what we have before writing on)
 
 **Decided with the user:** the introduction waits. Once written, it tends to lock the work into its framing, and the

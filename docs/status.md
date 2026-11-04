@@ -1,5 +1,49 @@
 # Status
 
+**2026-11-04 (session 12): run 126 read and into §5; run 124's full-store half read; Zainab et al.'s setup read; the
+beam search built and `run/127` running on a second server; the project made portable.** Nothing pushed. Next
+session: `docs/resume-prompt.md`.
+
+- **Run 126 (price list) read; hypothesis failed on both counts.** TPR at 1% FPR: reference 93.5%, full catalogue
+  89.6%. Dropping the two-sided features with no constraints costs 0.2 points, so the constraints cost ~3.6. Leaving
+  out import addition regains 2.1 (it frees 1,282 import hash buckets from monotonicity), the three header overwrites
+  1.4 (hdr 1.2, chk 0.6, dos none), debug and signature rewrites 0.4 each, rename/append/extension nothing (-0.3 to
+  +0.0, the noise floor; rename despite 301 regained features). Dropping only the parser warnings costs nothing
+  (+0.1): no case for modeling them. Run header synced; one §5 paragraph after the additions-threat-model paragraph
+  (user chose a paragraph over a table), humanized after the user's note ("mildly LLM-sounding"); `paper-prose` lesson
+  15 (results paragraphs: report, don't narrate).
+- **Run 124, full-store half** (`toolkit-literature/fullstore/table.json`, no LOST lines): at the literature budget
+  gamma_api evades the unconstrained detector on 20/49 (21 uncapped), vs 22/49 at the small budget, so the hypothesis
+  (more loss at the larger budget) failed: the attack is saturated. gamma_sections 0/49: every output adds >= 890 KB
+  (over the 512 KB cap) and none falls below tau even uncapped. Run 122's advtrain: gamma_api 21/48, sections 0. The s10
+  half (PV, monotone rows) was at 350/388 at session end; run 125 not yet started.
+- **Zainab et al. 2026 setup read and checked against their HTML tables** (literature notes updated): the 83.4% is on
+  1,000 outside malware (VirusShare, Dike, commercial) flagged by all detectors, EMBER-24 = thrember's pretrained GBDT
+  at 0.1% FPR (threshold 0.9557), hard-label, 50 queries, <= 10 transformations, Cuckoo-checked. On each model's own
+  test malware (Table XI), EMBER-24: MAB-Malware 9.6%, GAMMA shift 8.1%, padding 5.6%, section 0%, MiniMal 4.5%. Our
+  pilot (EMBER-2024 test files, 1% FPR) is the comparable setting; our search (20%) and toolkit union (55%) already
+  exceed it. MAB-Malware's seven transformations are all catalogue operations.
+- **Diagnosis of the greedy search (run 119, undefended model):** of the 39 files not evaded, 24 stalled (no
+  improving candidate among ~25) about a fifth of the way to tau, and 15 hit the 200-query cap about halfway.
+- **Beam search** (`scripts/a1_adaptive.py --search beam`, `10cec3d`): beam 3, 2 menus per kept file per step (~150
+  candidates), restart after 3 steps without a new best, 5,000 candidates per file, evasion also at 200/1,000; every
+  kept file written by our own edits and re-extracted (only real scores kept); `--num_workers` pool over (defense,
+  file); seeded tie-breaking (`_tie_order`, tested). The greedy path reproduces run 119 file for file. Smoke: 3/3 evaded
+  (one the greedy missed, at 1,100 queries); monotone row min_delta exactly 0 over 300 queries; 36-50 ms per candidate.
+- **Gates (user):** the two candidate gates (beat the full toolkit 55%, or beat the in-catalogue toolkit 27% = 13/49
+  by a margin) read the same run, so the reading is chosen after the run; the reference points and the hypothesis
+  (unconstrained 35-45%, PV ~100%/~95%, monotone 0%) are fixed in `run/127`'s header.
+- **`run/127_adaptive_beam.sh` running on the second server** (user, `NUM_WORKERS=24`, 20 physical cores): M_full
+  full store (unconstrained, advtrain, PV-4, mfull-feat), M_add (madd-feat), the s10 PV rows (pv-all = the 77% synthetic
+  cell, pv-seen), and run 125's model if present (it was not: step 4 skipped there). Output
+  `artifacts/experiments/a1/adaptive-beam/`; log `artifacts/logs/a1_adaptive_beam.log`.
+- **Second server set up:** `requirements-lock.txt` (exact versions; PyTorch index line; no machine paths; install with
+  `--index-strategy unsafe-best-match`, Python 3.14.0 via `--managed-python`); dataset location from `EMBER2024_DATA`
+  (`src/provexp/data/paths.py`; 61 script defaults, runs 121/122; run 125 still has the literal path because it was
+  running); `run/sync_artifacts.sh` pulls run 127's inputs from `lk3591@gcis-mkwics-rl.gccis.rit.edu` (the `.rit.edu`
+  name exists only in this host's /etc/hosts). The 3-file smoke test reproduced identically there.
+- Not done: runs 124 (s10 half), 125, 127 not read; `run/125`'s literal dataset path not yet synced.
+
 **2026-11-04 (session 11): strategic review instead of the introduction; Gimenez et al. portrayed accurately; the
 two-sided-feature diagnostic (its hypothesis failed); `run/126` (price list) handed over.** Nothing pushed. Running
 in the user's tmux: `run/124` (strong toolkit column), then `run/125` (adversarial training on the attacks that
