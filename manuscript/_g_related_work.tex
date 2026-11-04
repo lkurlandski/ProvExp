@@ -3,70 +3,83 @@
 % in the body where it is used, not here. Spine: docs/writing-spec.md reaction log (2026-11-03).
 
 \paragraph{Problem-space attacks}
-Our work builds on the formalization of problem-space attacks by Pierazzi et
-al.~\cite{pierazzi2020intriguing,cortellazzi2025intriguing}. They describe an attack as a sequence of transformations
-applied to an object under problem-space constraints, such as preserving its semantics, and relate the result to the
-feature space through the feature mapping. Because an edited object rarely lands exactly where the attacker aimed, the
-formalization also accounts for side-effect features, the changes an edit makes beyond the intended ones. The framework
-does not say how to determine these side effects in advance, and Pierazzi et al.\ note that the constraints generally
-have no closed form that would allow it. In practice, attacks find side effects by applying a transformation and
-extracting the features of the result. Šrndić and Laskov's evasion of PDFrate~\cite{srndic2014practical} worked this
-way, as do the toolkits now used against Windows malware
-detectors~\cite{demetrio2021adversarial,demetrio2021functionality,song2022mab}. An attack of this kind has to build and
-then re-extract or score every candidate edit, so it covers only the edits its search reaches, and its outcome is
-evidence about those edits and no others. If it fails to evade a detector, other edits may still succeed, and a defense
-trained or tuned on the edits it produced is protected only against those. Our work removes the need for this trial and
-error for one large class of extractors, those that add up what each piece of the input contributes and then apply a
-formula per feature. For these extractors, we compute the side effects of an edit exactly from a record the extractor
-keeps while it runs. For a whole set of allowed edits, we also compute the direction in which each feature can move,
-with a guarantee that holds for edits no attack has tried.
+Our work builds on the formalization of problem-space attacks by Pierazzi et al.~\cite{pierazzi2020intriguing}. They
+describe an attack as a sequence of transformations applied to an object under problem-space constraints, such as
+preserving its semantics, and relate the result to the feature space through the feature mapping. Because an edited
+object rarely lands exactly where the attacker aimed, the formalization also accounts for side-effect features, the
+changes an edit makes beyond the intended ones. Pierazzi et al.\ observe that when the feature mapping is neither
+differentiable nor invertible, as in malware detection, the side effects of a transformation generally cannot be
+computed in advance. In practice, attacks find side effects by applying a transformation and extracting the features of
+the result. Šrndić and Laskov's evasion of PDFrate~\cite{srndic2014practical} worked this way, as do the toolkits now
+used against Windows malware detectors~\cite{demetrio2021adversarial,demetrio2021functionality,song2022mab}. Such an
+attack learns only about the edits its search reaches. If it fails, other edits may still evade the detector, and a
+defense trained on the edits it produced is protected only against those. For sum-then-readout extractors
+(\cref{def:fw:extractor}), our work replaces this trial and error with computation. From a record the extractor keeps
+while it runs, we compute the side effects of an edit exactly, and for a whole set of allowed edits we compute the
+direction in which each feature can move, with a guarantee that covers edits no attack has tried.
 
-% REVIEW (user, 2026-11-03): the three paragraphs below were drafted with the paper-prose skill but NOT yet read by
-% the user. Review them carefully before treating Section 6 as done. The first paragraph was reviewed in four rounds.
+% REVIEW (user, 2026-11-04): paragraphs 2-4 revised after the first review (tmp feedback, 2026-11-04).
 \paragraph{Constraints over features}
-A second line of work keeps the attack in feature space and restricts it to vectors that a real object could have.
-Simonetto et al.~\cite{simonetto2022unified} give a language for linear and non-linear relations among features, with
-two attacks that respect them, and apply it to botnet detection, malware detection, credit scoring, and phishing.
-Chernikova and Oprea~\cite{chernikova2022fence} constrain attacks on network traffic and malicious-domain detectors in
-the same spirit, repairing each step so that dependent features stay consistent. The constraints themselves have to come
-from somewhere. Dyrmishi et al.~\cite{dyrmishi2023empirical} observe that such attacks require their users to write
-constraints in analytical form, usually with a domain expert, and for Windows malware they took the immutable features
-from Microsoft's description of the executable format and the dependencies among features from sample files. Sheatsley
-et al.~\cite{sheatsley2021robustness} learn constraints from data instead, which removes the expert but ties the
-constraints to the examples they were learned from. In our evaluation, feature ranges learned from attack outputs were
-too loose to certify a single detection (\cref{sec:eval:directions}). Our directions answer a different question from
-these constraints. A constraint says which feature vectors are valid, and a direction says which way a set of edits can
-move a feature, starting from inputs of a given population. For extractors of the class we study, directions follow from
-the extractor and the declared edits, so they need neither an expert nor a sample, and they hold for every edit in the
-set, including edits no sample contains.
+A second line of work keeps the attack in feature space, where gradients and search are cheap, and restricts it to
+feature vectors that a real object could have. The restriction is written as constraints over features: some features
+are immutable, and others are tied together, as a total must equal the sum of its parts. The attack perturbs a vector as
+usual and keeps or repairs only steps that satisfy the constraints. Simonetto et al.~\cite{simonetto2022unified} made
+this approach domain-independent. They define a grammar in which linear and non-linear relations among features can be
+written, and give two attacks that respect any constraint set written in it, which they apply to botnet detection,
+malware detection, credit scoring, and phishing. Chernikova and Oprea's FENCE~\cite{chernikova2022fence} does the same
+for network-traffic and malicious-domain classifiers, updating dependent features after each step so that they stay
+consistent. Both frameworks take the constraints as input, which leaves open where the constraints come from. Dyrmishi et
+al.~\cite{dyrmishi2023empirical}, who compare hardening against such attacks with hardening against realistic ones,
+note that the attacker must write the constraints in analytical form, typically with a domain expert. For Windows
+malware, they took the immutable features from Microsoft's description of the executable format and the dependencies
+among features from sample files. Sheatsley et al.~\cite{sheatsley2021robustness} learn constraints from data around a
+few features chosen by hand, which reduces the expert's part but ties the constraints to the examples they were learned
+from. Either way, nothing checks the constraints against the extractor that produces the features. A hand-written
+constraint is only as complete as its author's reading of the extractor, and a learned one can admit vectors that no
+edit reaches and exclude vectors that some edit does. We derive what these attacks take as input. For a
+sum-then-readout extractor and a declared set of edits, we compute from the extractor itself which way each feature can
+move, without an expert or a sample, and the result holds for every edit in the set, including edits no sample
+contains.
 
 \paragraph{Robust and monotone detectors}
-A detector whose score cannot fall under an attacker's edits cannot be evaded by them. Incer et
-al.~\cite{incer2018adversarially} built monotone malware detectors over features they judged by hand to grow under cheap
-attacker changes, and Gimenez et al.~\cite{gimenez2025certifiably} proved that every robust detector has this form, a
-monotone classifier over a suitable feature mapping. Chen et al.\ trained PDF classifiers with verified robustness to
-inserting and deleting subtrees of a document~\cite{chen2020training}, and later classifiers with verified global
-properties such as monotonicity in chosen features~\cite{chen2021learning}. Each of these needs to know which features
-the attacker's edits can move and in which direction. Chen et al.\ chose Hidost's features because each names a path in
-the document tree, so the features a subtree edit can change are those whose paths lie under it; the others obtain this
-knowledge by hand or from attacks. A hand analysis inherits the threat model its authors had in mind. Gimenez et
-al.\ picked their expert set of 40 features to be hard to lower without the malware's source code, and when we
-instrument it, the derivation finds 11 features that renaming a section or rewriting the DOS stub can lower
-(\cref{sec:eval:detectors}). Their automatic selection keeps the features that no observed attack lowered, so it is as
-complete as the attacks it was given, and on our pilot 44.4\% of its gain lies in features the derived table proves
-lowerable. The route from directions to robustness is theirs. We supply the directions, computed from the extractor for
-every feature and for whichever set of edits the threat model declares.
+Constraints tell an attacker which feature vectors to search. A defender can use the same knowledge to build a detector
+that the attacker's edits cannot evade at all. If the edits can only raise each feature they touch, and the detector's
+score never falls when a feature rises, no sequence of edits lowers the score. Incer et al.~\cite{incer2018adversarially}
+built malware detectors on this principle. They decided by hand, for each feature, whether an attacker can cheaply raise
+it, lower it, both, or neither, dropped the features that move both ways, and trained a classifier constrained to be
+monotone in the rest. Gimenez et al.~\cite{gimenez2025certifiably} proved that the construction is also necessary:
+every robust detector is a monotone classifier over a suitable feature mapping. They select the features automatically,
+by running attacks on the training set and keeping the features that no attack lowered. Chen et al.\ reach verified
+robustness through training. Their first classifiers for PDF malware~\cite{chen2020training} are verifiably robust to
+inserting or deleting subtrees of a document, and use the features of Šrndić and Laskov's
+Hidost~\cite{srndic2016hidost}, a PDF detector whose features each name a path in the document's object tree. With these
+features, a subtree edit can change only the features whose paths lie under the subtree. Their later
+classifiers~\cite{chen2021learning} are trained to satisfy global properties, among them monotonicity in features that
+an attacker can only increase. % VERIFY: Chen 2021's monotonicity property is stated over attacker-increasable features.
+All four works rest on the same input, the directions in which an attacker's edits can move each
+feature~\cite{incer2018adversarially,gimenez2025certifiably,chen2020training,chen2021learning}. Incer et al.\ derive
+the directions by hand, Gimenez et al.\ from the attacks they ran, and Chen et al.\ choose a feature set simple enough
+that the directions can be read off the feature definitions. A hand analysis is as complete as its authors' reading of
+the extractor, a selection from attacks is as complete as the attacks it observed, and a feature set chosen to be easy to
+analyze excludes the feature sets that deployed detectors use, such as EMBER's. Our framework computes the directions
+for every feature of a sum-then-readout extractor and for any declared set of edits, with a guarantee for every edit in
+the set. Each of the constructions above can then be applied to the feature sets detectors actually use, with the
+features to keep, re-encode, or drop following from the extractor and the threat model rather than from an analyst or
+an attack library. On EMBER, the computed directions find lowerable features in both Gimenez et al.'s hand-picked and
+automatically selected sets (\cref{sec:eval:detectors}).
 
 \paragraph{Incremental computation and provenance}
-The machinery behind our side-effect computation comes from databases and programming languages, as \cref{sec:framework}
-acknowledges. Incremental view maintenance updates an aggregate over a table after rows are inserted or deleted, without
-recomputing it~\cite{gupta1995maintenance,koch2014dbtoaster}, and the delta rules it uses for sums and maxima are the
-ones our sums and pools obey. Provenance semirings~\cite{green2007provenance} annotate each output of a query with the
-inputs that produced it, which is what our record of items does for features. Self-adjusting
-computation~\cite{acar2002adaptive} and incremental parsing~\cite{wagner1998efficient} re-run only the part of a program
-or a parse that a change can reach, the latter reparsing only as far around an edit as the parser's lookahead reaches,
-much as our margins bound where items can change. These techniques assume the change arrives already expressed in the
-program's own terms, as inserted rows or edited tokens. An attacker's edit arrives as bytes changed in an unparsed file,
-and the questions asked of it are adversarial: what one edit does, and which way any edit in a set can move each
-feature, for every input of a population. Our framework supplies the translation from an edit of raw elements to the
-items it changes, and lifts single edits to a whole threat model.
+Our side-effect computation uses machinery from databases and programming languages, fields that have long asked how a
+change to an input affects an output without recomputing the output. Incremental view maintenance updates an aggregate
+over a table after rows are inserted or deleted~\cite{gupta1995maintenance,koch2014dbtoaster}. Its update rules for sums
+and maxima are the rules by which an edit changes our sums and pools. Provenance semirings~\cite{green2007provenance}
+annotate each output of a query with the inputs that produced it, which is what our item table records for each
+feature. Self-adjusting computation~\cite{acar2002adaptive} and incremental parsing~\cite{wagner1998efficient} re-run
+only the part of a program or a parse that a change can reach, and incremental parsing reparses only as far around an
+edit as the parser's lookahead reaches, much as our margins bound where items can change. In all of these settings the
+change is given in the program's own terms, as rows inserted into a table or tokens edited in a parse tree, and the task
+is to update the output for that one known change. An attacker gives the defender neither. The edit changes bytes of a
+file that has not been parsed, so which items it creates, removes, or alters must be computed first. And the defender
+does not ask about one known change but about every edit the threat model allows, on every input of a population. Our
+framework therefore computes two things these techniques do not. It finds the items that an edit of raw elements
+changes, and it bounds which way each feature can move under every edit of a declared set.

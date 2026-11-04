@@ -97,6 +97,26 @@ side of detail and cut later.
 What the user accepted or rejected on real drafts, newest first. Each entry: the sentence or choice, the verdict, the
 rule it implies (folded into Sections 1-5 if general).
 
+- **2026-11-04, §6 paragraphs 1-4, first written review (all four).** ¶1: drop the extended version of Pierazzi et
+  al. (a duplicate citation adds nothing); "the constraints have no closed form" was paraphrased without the reasoning
+  that makes it support the claim (the user could not see how a closed form would help); restate our term
+  "sum-then-readout"; the last two sentences can be shorter. ¶2: Simonetto et al. and Chernikova and Oprea were
+  described accurately but with no visible reason for being there; the line of work was never described as a whole,
+  so Dyrmishi et al. could not be placed in it; "The constraints themselves have to come from somewhere" switched
+  subtopic without a signal; "require their users" (who is the user?); the closing contrast was long-winded and weak,
+  and the good Sheatsley sentence was held back by the vague first half. ¶3: no transition into the paragraph; Incer
+  and Gimenez squeezed into one sentence; Chen 2021 read as "a random paper that did this thing"; the key claim
+  ("Each of these needs to know which features ... can move") is powerful but arrived without lead-up and without
+  saying which works it covers (cite them); "Hidost" never introduced; too many of our own experimental results (an
+  RW section is about ideas and claims); the closing statement of our contribution was "extremely weak", as if we
+  did not respect our own paper ("The route from directions to robustness is theirs. We supply the directions").
+  ¶4: drop "as Section 3 acknowledges"; the incremental-view-maintenance sentence had no role in the narrative; "are
+  the ones our sums and pools obey" and "supplies the translation ... lifts single edits to a whole threat model"
+  read as LLM-written; the database-versus-adversary contrast needed to be stronger. Implied: (a) say why each work
+  matters to the paragraph's thread in the sentence that describes it; (b) describe a line of work's mechanism before
+  its members; (c) introduce every named artifact; (d) related work positions ideas, not our numbers; (e) state our
+  contribution with conviction and specifics; (f) don't paraphrase a cited reason you cannot explain; (g) abstract
+  verb metaphors (supply, lift, translate, obey) are an LLM tell.
 - **2026-11-03, §6 paragraphs 2-4 (constraints; detectors; incremental computation).** Drafted with the
   `paper-prose` skill in one pass, written into the `.tex`, **not yet read by the user** (flagged `% REVIEW`). The
   user is satisfied with the method (spine, one unit, self-review, log, skill update) and wants the skill to need
