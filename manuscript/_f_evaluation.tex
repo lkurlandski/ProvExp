@@ -292,13 +292,12 @@ toolkit's outputs keeps the unconstrained detector's accuracy and changes little
 evade it on 8\% of the files it detects, against 10\% for the same detector trained without them, and the adaptive
 search evades it on 9 of 48, as often as it evades the unconstrained detector.
 
-The expert set is Gimenez et al.'s 40 hand-picked features, each argued to grow under additions. With the extractor's
-two quirks patched it holds under additions, and no toolkit attack evades it, but 40 features keep little signal: it
-detects 8 of the 50 pilot malware, at 29.1\% detection. Instrumenting it and deriving its table shows that under the
-full threat model 11 of its 40 features can be lowered, by renaming a section or rewriting the DOS stub, edits the
-expert analysis, made for additions only, does not consider; our adaptive search, using those two operations, evades
-the detector on 2 of the 8 files it detects. A hand-picked set inherits the threat model its authors had in mind; a
-derived one is recomputed for each catalogue.
+The expert set is Gimenez et al.'s 40 features, picked by hand to be hard to lower without the malware's source code.
+With the extractor's two quirks patched it holds under additions, and no toolkit attack evades it, but 40 features keep
+little signal: it detects 8 of the 50 pilot malware, at 29.1\% detection. Instrumenting it and deriving its table shows
+that under the full threat model 11 of its 40 features can be lowered, by renaming a section or rewriting the DOS stub,
+edits that need no source code; our adaptive search, using those two operations, evades the detector on 2 of the 8 files
+it detects. A hand-picked set is as sound as the analysis behind it; a derived one is recomputed for each catalogue.
 % MEASURED (item 11, run 120, scripts/a_expert_adaptive.py): the expert extractor is instrumented
 % (provexp.featuresets.ember2024.expert, G1 bit-exact); the C4 derivation gives 11 M_full holes (rows 27, 30-39 of
 % docs/direction-A-expert-set.md), each witnessed by one of our own edits. The reasoned "12" was a prose miscount of
