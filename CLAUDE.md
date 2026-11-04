@@ -55,7 +55,7 @@ and manuscript remain as source material. Deadlines and conference cycles are no
   precondition check with its plain-layout clauses), `featuresets/ember2024/expert.py` (Gimenez et al.'s 40 features,
   quirks patched: the expert-set row),
   `featuresets/ember2024/features.py` (thrember + provenance), `data/` (SimpleDB, feature store, TLSH),
-  `models/` (GBDT, MLP, MalConv), `explain/` (feature- and problem-space explainers), `ablation.py` (generic
+  `models/` (GBDT, MLP, MalConv, `erdalt.py`: Gimenez et al.'s ERDALT, ported with a monotone output layer), `explain/` (feature- and problem-space explainers), `ablation.py` (generic
   ablation, budgets, black-box provenance, coarsening), `featuresets/ember2024/ablation.py` (PE-aware protection and
   verification, experiment code), `metrics.py`.
 - `scripts/`: data (featurize, check_features, build_metadata, select_explanation_set, train_classic, make_fixtures);
@@ -65,7 +65,7 @@ and manuscript remain as source material. Deadlines and conference cycles are no
   pf1_resolution, pf_malconv); 3-A (cm_check, cm_shared, cm_triage, cm_tables); 3-C audit (audit_*, incl. audit_mitigate;
   cm_global); the old manuscript's figure data (paper_figures; its output directory was deleted with the old manuscript); shared
   discovery/transplant machinery (shortcuts, shortcuts_transplant). Direction A: a_directions (C4 directions per
-  threat model; derived from the item tables by default, `--hand` for the hand rules), a_c1_table0 (hand C1 predictors, the engine's oracle, and Table A0), a_pv_attacks / a_pv_hole (secml-malware attacks, PV
+  threat model; derived from the item tables by default, `--hand` for the hand rules), train_erdalt and a_erdalt_hole (the ERDALT row: training, and its first layer against the derived table), a_c1_table0 (hand C1 predictors, the engine's oracle, and Table A0), a_pv_attacks / a_pv_hole (secml-malware attacks, PV
   selection and its hole), a1_evaluate (toolkit columns), a1_adaptive (C1-guided adaptive search), a_overlay_witness
   (the overlay gap), a_signature_witness (the signature table past the end), a_structure_witness (the other class-1 witnesses: entry section, Rich header, exports and relocations past the end), item_checks (derivation checks G1/G2, G5, G6), catalogue_checks (G7: every operation applied by our own byte-level edits, checked
   against the derived directions). Direction A' (dropped; kept as source material): ap_check0_solver (Kantchelian's exact GBDT encoding, HiGHS via scipy), ap_check1_learned (learned

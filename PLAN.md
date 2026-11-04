@@ -55,6 +55,25 @@ introduction and a simple baseline (writing decision for later).
   combined edits (run 111, 1,105 of 1,105) and the learned-constraints contrast (run 110). Record:
   `docs/direction-A-prime-plan.md`, Section 13.
 
+## Next steps (2026-11-04, session 13: run 124 read; ERDALT row built; runs 125, 127, 128 pending)
+
+Done: run 124's 10% half read (the monotone rows 0 in their population at the literature budget; section injection over
+the byte cap on every file) and written into §5 as two sentences (user: prose, not a column). §6's `% VERIFY` on Chen et
+al. 2021 resolved against the paper (directions from suspiciousness and attacker cost). The ERDALT row decided (user:
+build it, follow the paper, note the patch) and built: port of Gimenez et al.'s code with the output layer made monotone
+(their release leaves it free; upstream item 8), the hole check against the derived table, `run/128` (running, user's
+tmux; at epoch ~196 of 310 at session end, validation AUC ~0.905, 25-40 violations, criterion < 5 not yet met).
+
+Next, in order:
+1. **Read run 125** (adversarial training on the literature-budget attacks; this server) and **run 128** (ERDALT: its
+   checks are in `docs/direction-A-mock.md`, "ERDALT row"). **Run 127** once the user copies its outputs back from the
+   second server; then run 127's step 4 (run 125's model) wherever the model is.
+2. **Table 7 with the user:** run 125's row, the ERDALT row (with its deviations and the patch in a footnote), the
+   adaptive column from run 127 (replacing the 77% synthetic cell, with its budget).
+3. Decide with the user: MAB-Malware as a held-out attack (likely unnecessary after run 127); whether the headline
+   changes (not adopted); whether §6's "all four works rest on the same input" sentence should be softened for Chen 2021.
+4. Then the introduction and the other empty sections, spine first (`/paper-prose`).
+
 ## Next steps (2026-11-04, session 12: price list read; strong adaptive search built; second server)
 
 Done: run 126 read (its hypothesis failed: the monotone constraints, not the dropping, cost the 3.9 points; import

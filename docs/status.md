@@ -1,7 +1,9 @@
 # Status
 
-**2026-11-04 (session 13, in progress): run 124's 10% half read; ERDALT row built (`run/128`).** Runs 125 (this server; generation at 150/1,200 at
-13:05) and 127 (second server; not yet copied back) still pending.
+**2026-11-04 (session 13): run 124's 10% half read and into §5; §6's VERIFY resolved; ERDALT row built (`run/128`,
+running).** Nothing pushed. Next session: `docs/resume-prompt.md`. Pending at session end: run 125 (this server;
+generation 1,150/1,200, then retraining and evaluations), run 127 (second server; not yet copied back), run 128 (user's
+tmux; ERDALT training at epoch ~196/310, vl AUC ~0.905, 25-40 violations, criterion < 5 not yet met).
 
 - **Run 124, 10% half** (`toolkit-literature/s10/table.json`, no LOST lines; 2 h 55 min at 16 workers). Hypothesis
   held: the monotone rows are 0 in their population at the literature budget (mfull-feat 0/28, mfull-sums 0/30,
