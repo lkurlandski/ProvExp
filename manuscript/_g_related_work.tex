@@ -43,14 +43,14 @@ set, including edits no sample contains.
 \paragraph{Robust and monotone detectors}
 A detector whose score cannot fall under an attacker's edits cannot be evaded by them. Incer et
 al.~\cite{incer2018adversarially} built monotone malware detectors over features they judged by hand to grow under cheap
-attacker changes, and Gimenez et al.~\cite{gimenez2025certifiably} proved that every detector that is robust by design
-has this form, a monotone classifier over a suitable feature mapping.
-% VERIFY in chen2020training: how the features a subtree edit can change were bounded for Hidost.
-Chen et al.\ trained PDF classifiers with verified robustness to inserting and deleting subtrees of a
-document~\cite{chen2020training}, and later classifiers with verified global properties such as monotonicity in chosen
-features~\cite{chen2021learning}. Each of these needs to know which features the attacker's edits can move and in which
-direction, and each obtains that knowledge by hand or from attacks. A hand analysis inherits the threat model its
-authors had in mind. Gimenez et al.'s expert set of 40 features was argued to grow under additions, and when we
+attacker changes, and Gimenez et al.~\cite{gimenez2025certifiably} proved that every robust detector has this form, a
+monotone classifier over a suitable feature mapping. Chen et al.\ trained PDF classifiers with verified robustness to
+inserting and deleting subtrees of a document~\cite{chen2020training}, and later classifiers with verified global
+properties such as monotonicity in chosen features~\cite{chen2021learning}. Each of these needs to know which features
+the attacker's edits can move and in which direction. Chen et al.\ chose Hidost's features because each names a path in
+the document tree, so the features a subtree edit can change are those whose paths lie under it; the others obtain this
+knowledge by hand or from attacks. A hand analysis inherits the threat model its authors had in mind. Gimenez et
+al.\ picked their expert set of 40 features to be hard to lower without the malware's source code, and when we
 instrument it, the derivation finds 11 features that renaming a section or rewriting the DOS stub can lower
 (\cref{sec:eval:detectors}). Their automatic selection keeps the features that no observed attack lowered, so it is as
 complete as the attacks it was given, and on our pilot 44.4\% of its gain lies in features the derived table proves
@@ -61,11 +61,12 @@ every feature and for whichever set of edits the threat model declares.
 The machinery behind our side-effect computation comes from databases and programming languages, as \cref{sec:framework}
 acknowledges. Incremental view maintenance updates an aggregate over a table after rows are inserted or deleted, without
 recomputing it~\cite{gupta1995maintenance,koch2014dbtoaster}, and the delta rules it uses for sums and maxima are the
-ones our sums obey. Provenance semirings~\cite{green2007provenance} annotate each output of a query with the inputs that
-produced it, which is what our record of items does for features. Self-adjusting computation~\cite{acar2002adaptive} and
-incremental parsing~\cite{wagner1998efficient} re-run only the part of a program or a parse that a change can reach, the
-latter by bounding a damage region around the edit, as our margins do. These techniques assume the change arrives
-already expressed in the program's own terms, as inserted rows or edited tokens. An attacker's edit arrives as bytes
-changed in an unparsed file, and the questions asked of it are adversarial: what one edit does, and which way any edit
-in a set can move each feature, for every input of a population. Our framework supplies the translation from an edit of
-raw elements to the items it changes, and lifts single edits to a whole threat model.
+ones our sums and pools obey. Provenance semirings~\cite{green2007provenance} annotate each output of a query with the
+inputs that produced it, which is what our record of items does for features. Self-adjusting
+computation~\cite{acar2002adaptive} and incremental parsing~\cite{wagner1998efficient} re-run only the part of a program
+or a parse that a change can reach, the latter reparsing only as far around an edit as the parser's lookahead reaches,
+much as our margins bound where items can change. These techniques assume the change arrives already expressed in the
+program's own terms, as inserted rows or edited tokens. An attacker's edit arrives as bytes changed in an unparsed file,
+and the questions asked of it are adversarial: what one edit does, and which way any edit in a set can move each
+feature, for every input of a population. Our framework supplies the translation from an edit of raw elements to the
+items it changes, and lifts single edits to a whole threat model.
