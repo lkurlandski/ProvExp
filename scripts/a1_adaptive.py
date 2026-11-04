@@ -17,6 +17,9 @@ chosen step is materialized by our own byte-level edit (scripts/catalogue_checks
 so the next step starts from the file the declaration describes. This part provides the material (goodware donors),
 the loader-safe edits, and the greedy search over C1.
 
+`--search beam` (run 127) replaces the greedy search with a beam search with restarts and a realistic scoring budget
+(`beam_search`); it re-extracts every file it keeps. `--num_workers` runs one search per (defense, file) in a pool.
+
 Every edit keeps the original content in place -- each section's raw data, the overlay, the DOS header and stub, and
 the header fields it does not itself set -- so it stays inside M and does not exploit the writing tool's layout
 choices; `lief_preserves` checks this for the LIEF edits.
@@ -36,6 +39,7 @@ Usage (smoke):
 from __future__ import annotations
 
 from argparse import ArgumentParser
+from multiprocessing import get_context
 import json
 from pathlib import Path
 import struct
@@ -64,10 +68,11 @@ from provexp.reach import predict
 sys.path.insert(0, str(Path(__file__).parent))
 from a_c1_table0 import has_overrun_section  # noqa: E402
 from a_pv_attacks import load_pilot  # noqa: E402
+from a_pv_attacks import map_watchdog  # noqa: E402
 from catalogue_checks import add_section as write_section  # noqa: E402
 
 __all__ = ["Donors", "Engine", "HDR_FIELDS", "Operation", "add_imports", "add_section", "engine_predictors",
-           "full_menu", "greedy_search", "lief_preserves", "bucket_names", "menu", "rename_section", "section_bucket",
+           "beam_search", "full_menu", "greedy_search", "lief_preserves", "bucket_names", "menu", "rename_section", "section_bucket",
            "set_header_fields", "zero_directory_entry"]
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -714,6 +719,193 @@ def greedy_search(booster: lightgbm.Booster, engine: Engine, z: bytes, tau: floa
 
 
 ################################################################################
+# The beam search (strong attacks, 2026-11-04): a realistic scoring budget
+#
+# The greedy search above stops at the first step whose ~25 random candidates contain no improvement and is capped at
+# 100-200 scored candidates to match the toolkit; on the undefended model 24 of the 39 files it does not evade stall
+# that way about a fifth of the way to the threshold, and 15 run out of queries about halfway (run 119). Scoring a
+# candidate costs one prediction (~0.1 s), so a realistic attacker scores thousands. The beam search keeps the `beam`
+# best files found so far (parents and children compete, so the beam never gets worse), draws `draws` menus per kept
+# file per step, and restarts from the original file when the best score has not improved for `patience` steps. Every
+# kept file is written by our own byte-level edits and re-extracted, so its score is real, not predicted.
+################################################################################
+
+# A file the beam keeps: its real logit, its bytes, the bytes added so far, and the operations that produced it.
+BeamState = tuple[float, bytes, int, tuple[str, ...]]
+
+
+def _tie_order(logits: Sequence[float], rng: np.random.Generator, rtol: float = 1e-9) -> list[int]:
+    """Indices sorted by logit (ascending), ties within `rtol` (relative) broken by a seeded permutation."""
+    perm = rng.permutation(len(logits))
+    order = sorted(perm.tolist(), key=lambda i: logits[i])
+    out: list[int] = []
+    group: list[int] = []
+    for i in order:
+        if group and abs(logits[i] - logits[group[0]]) > rtol * max(1.0, abs(logits[group[0]])):
+            out += [group[j] for j in rng.permutation(len(group))]
+            group = []
+        group.append(i)
+    out += [group[j] for j in rng.permutation(len(group))]
+    return out
+
+
+def beam_search(booster: lightgbm.Booster, engine: Engine, z: bytes, tau: float,
+                make_menu: Callable[[np.random.Generator], list[Candidate]], queries: int, seed: int, cap: int,
+                beam: int = 3, draws: int = 2, patience: int = 3, checkpoints: Sequence[int] = (200, 1000, 5000)
+                ) -> dict[str, Any]:
+    """
+    Beam search over the threat model's operations with restarts, until a file's score crosses below tau (evaded) or
+    the query budget is spent.
+
+    Each step scores `draws` fresh menus from every kept file (each candidate by the exact prediction of our own
+    writer, as in `greedy_search`), merges the children with the kept files, and keeps the `beam` lowest-scoring
+    distinct files (ties broken by a seeded permutation). Each kept child is re-extracted, so the beam always holds real
+    scores, and a child whose predicted score crosses tau counts only if its re-extracted score does too. After
+    `patience` steps without a new best score, the beam restarts from the original file; the best file found so far is
+    kept for the result.
+
+    Args:
+        booster: The defense.
+        engine: The C1 engine over the instrumented extractor.
+        z: The malware's bytes.
+        tau: The defense's threshold (detected means p > tau).
+        make_menu: Builds one random menu of candidates.
+        queries: The scoring budget (candidates scored, in all).
+        seed: Seeds the menus and the tie-breaking.
+        cap: The byte budget (bytes added, in all).
+        beam: Files kept per step.
+        draws: Menus drawn per kept file per step.
+        patience: Steps without a new best score before a restart.
+        checkpoints: Query counts at which to report whether the file was evaded by then.
+
+    Returns:
+        A summary row, with the columns of `greedy_search` plus `queries_to_evade`, `restarts`, `steps`,
+        `mismatches` (kept children whose re-extracted score differs from the prediction by more than 1e-6 in logit),
+        and `evaded_at_{q}` for each checkpoint.
+    """
+    if beam < 1 or draws < 1 or patience < 1:
+        raise ValueError(f"beam, draws, and patience must be positive, got {beam}, {draws}, {patience}.")
+    tau_logit = _logit(tau)
+    rng = np.random.default_rng(seed)
+
+    def real(x: bytes) -> float:
+        return _logit(float(booster.predict(engine.ext.feature_vector(x).reshape(1, -1))[0]))  # type: ignore[no-untyped-call]
+
+    start: BeamState = (real(z), z, 0, ())
+    kept: list[BeamState] = [start]
+    best = start
+    used = steps = restarts = stalled = mismatches = 0
+    min_delta = 0.0
+    evade_at: Optional[int] = None
+    while used < queries and best[0] > tau_logit:
+        steps += 1
+        children: list[tuple[float, bytes, int, tuple[str, ...]]] = []
+        for parent in kept:
+            for _ in range(draws):
+                for name, maxbytes, thunk in make_menu(rng):
+                    if used >= queries:
+                        break
+                    if parent[2] + maxbytes > cap:
+                        continue
+                    used += 1
+                    try:
+                        phi, written, nbytes = thunk(parent[1])
+                    except Exception:
+                        continue
+                    pred = _logit(float(booster.predict(phi.reshape(1, -1))[0]))
+                    min_delta = min(min_delta, pred - parent[0])
+                    children.append((pred, written, parent[2] + nbytes, parent[3] + (name,)))
+        pool = kept + children
+        order = _tie_order([s[0] for s in pool], rng)
+        seen: set[bytes] = set()
+        nxt: list[BeamState] = []
+        for i in order:
+            s = pool[i]
+            if s[1] in seen:
+                continue
+            seen.add(s[1])
+            if i >= len(kept):  # a child: replace its predicted score with the re-extracted one
+                r = real(s[1])
+                mismatches += int(abs(r - s[0]) > 1e-6)
+                s = (r, s[1], s[2], s[3])
+            nxt.append(s)
+            if len(nxt) == beam:
+                break
+        kept = sorted(nxt, key=lambda s: s[0])
+        if kept[0][0] < best[0] - 1e-9 * max(1.0, abs(best[0])):
+            best, stalled = kept[0], 0
+        else:
+            stalled += 1
+        if best[0] <= tau_logit:
+            evade_at = used
+            break
+        if stalled >= patience:
+            kept, stalled, restarts = [start], 0, restarts + 1
+    row: dict[str, Any] = {
+        "evaded": bool(best[0] <= tau_logit), "p_adv_c1": float(1 / (1 + np.exp(-best[0]))),
+        "p_adv_real": float(1 / (1 + np.exp(-best[0]))), "evaded_real": bool(best[0] <= tau_logit), "queries": used,
+        "ops": ",".join(best[3]), "num_ops": len(best[3]), "bytes_added": best[2], "min_delta_logit": min_delta,
+        "tau_logit": tau_logit, "queries_to_evade": evade_at, "restarts": restarts, "steps": steps,
+        "mismatches": mismatches}
+    for q in checkpoints:
+        row[f"evaded_at_{q}"] = evade_at is not None and evade_at <= q
+    return row
+
+
+################################################################################
+# Workers (one search per (defense, file); a pool over files with --num_workers > 1)
+################################################################################
+
+_W: dict[str, Any] = {}
+
+
+def _init_worker(config: dict[str, Any], malware: Optional[list[tuple[str, bytes]]] = None,
+                 goodware: Optional[list[tuple[str, bytes]]] = None) -> None:
+    """Build the extractor, engine, donors, and bucket names once per process; boosters load lazily per defense."""
+    import lief
+    lief.logging.disable()
+    if goodware is None:
+        _, goodware = load_pilot(config["pilot_files"], config["db"])
+    extractor = merge_import_descriptors(PEFeatureExtractor())
+    _W.clear()
+    _W.update(config=config, extractor=extractor, engine=Engine(extractor), donors=Donors(goodware),
+              names=bucket_names(), boosters={})
+
+
+def _lost(task: tuple[str, str, float, list[tuple[int, int]], str, bytes]) -> None:
+    """A task whose worker died: dropped from the results (map_watchdog logs it as LOST)."""
+    return None
+
+
+def _attack_file(task: tuple[str, str, float, list[tuple[int, int]], str, bytes]) -> dict[str, Any]:
+    """Run the configured search on one detected file against one defense."""
+    defense, mdir, tau, targets, name, data = task
+    cfg, engine = _W["config"], _W["engine"]
+    if mdir not in _W["boosters"]:
+        _W["boosters"][mdir] = padded_booster(Path(mdir), engine.ext.dim)
+    booster = _W["boosters"][mdir]
+
+    def make_menu(rng: np.random.Generator) -> list[Candidate]:
+        return full_menu(engine, _W["donors"], rng, targets, _W["names"], cfg["ops"])
+
+    p_clean = float(booster.predict(engine.ext.feature_vector(data).reshape(1, -1))[0])
+    try:
+        overrun = has_overrun_section(pefile.PE(data=data))
+    except Exception:
+        overrun = False
+    cap = max(int(cfg["budget_frac"] * len(data)), cfg["budget_min"])
+    t0 = time.time()
+    if cfg["search"] == "beam":
+        r = beam_search(booster, engine, data, tau, make_menu, cfg["queries"], cfg["seed"], cap, beam=cfg["beam"],
+                        draws=cfg["draws"], patience=cfg["patience"], checkpoints=cfg["checkpoints"])
+    else:
+        r = greedy_search(booster, engine, data, tau, make_menu, cfg["queries"], cfg["seed"], cap)
+    r.update(defense=defense, name=name, tau=tau, p_clean=p_clean, truncated=len(data) >= MAX_LENGTH,
+             overrun_section=overrun, seconds=time.time() - t0)
+    return r
+
+
+################################################################################
 # Main
 ################################################################################
 
@@ -788,6 +980,15 @@ def main() -> None:
     parser.add_argument("--budget_min", type=int, default=512 * 1024)
     parser.add_argument("--num_malware", type=int, default=None)
     parser.add_argument("--seed", type=int, default=0)
+    parser.add_argument("--search", choices=["greedy", "beam"], default="greedy", help="greedy: runs 108/119; beam: "
+                        "the strong-attack search (beam_search).")
+    parser.add_argument("--beam", type=int, default=3, help="beam: files kept per step.")
+    parser.add_argument("--draws", type=int, default=2, help="beam: menus drawn per kept file per step.")
+    parser.add_argument("--patience", type=int, default=3, help="beam: steps without a new best before a restart.")
+    parser.add_argument("--checkpoints", type=int, nargs="*", default=[200, 1000, 5000],
+                        help="beam: query counts at which evasion is also reported.")
+    parser.add_argument("--num_workers", type=int, default=1, help="Processes, one search per (defense, file).")
+    parser.add_argument("--stall_timeout", type=float, default=2700.0)
     args = parser.parse_args()
 
     import lief
@@ -800,51 +1001,54 @@ def main() -> None:
     if manifest["feature_names"][: extractor.dim] != extractor.feature_names:
         raise RuntimeError(f"The store {args.features.as_posix()} ({manifest['feature_set']}) does not start with the "
                            "thrember features: the C1 engine has no recognizers for other layouts.")
-    engine = Engine(extractor)
     ops = tuple(args.operations) if args.operations else THREAT[args.threat_model]
     print(f"Scoring in thrember space ({extractor.dim} features); operations {','.join(ops)}.", flush=True)
 
     malware, goodware = load_pilot(args.pilot_files, args.db)
     if args.num_malware is not None:
         malware = malware[: args.num_malware]
-    donors = Donors(goodware)
-    names = bucket_names()
     print(f"Pilot: {len(malware)} malware, {len(goodware)} goodware donors; threat model {args.threat_model}.",
           flush=True)
 
-    rows: list[dict[str, Any]] = []
+    config = {"ops": ops, "pilot_files": args.pilot_files, "db": args.db, "search": args.search,
+              "queries": args.queries, "seed": args.seed, "budget_frac": args.budget_frac,
+              "budget_min": args.budget_min, "beam": args.beam, "draws": args.draws, "patience": args.patience,
+              "checkpoints": tuple(args.checkpoints)}
+    tasks: list[tuple[str, str, float, list[tuple[int, int]], str, bytes]] = []
     for d, mdir in defenses.items():
         booster = padded_booster(mdir, extractor.dim)
         tau = _threshold(mdir / "ts_predictions.parquet", args.fpr)
         targets = [(b, sign) for b in target_buckets(booster, extractor.feature_names, args.target_buckets)
                    for sign in (-1, 1)]
-
-        def make_menu(rng: np.random.Generator, targets: list[tuple[int, int]] = targets) -> list[Candidate]:
-            return full_menu(engine, donors, rng, targets, names, ops)
-
-        t0 = time.time()
+        detected = 0
         for name, data in malware:
-            phi0 = extractor.feature_vector(data)  # type: ignore[no-untyped-call]
-            p_clean = float(booster.predict(phi0.reshape(1, -1))[0])
-            if p_clean <= tau:
-                continue  # attack only what this defense detects
-            try:
-                pe = pefile.PE(data=data)
-                overrun = has_overrun_section(pe)
-            except Exception:
-                overrun = False
-            cap = max(int(args.budget_frac * len(data)), args.budget_min)
-            r = greedy_search(booster, engine, data, tau, make_menu, args.queries, args.seed, cap)
-            r.update(defense=d, name=name, tau=tau, p_clean=p_clean, truncated=len(data) >= MAX_LENGTH,
-                     overrun_section=overrun)
-            rows.append(r)
-        print(f"  {d}: tau={tau:.4f}, {time.time() - t0:.0f}s", flush=True)
+            p_clean = float(booster.predict(extractor.feature_vector(data).reshape(1, -1))[0])  # type: ignore[no-untyped-call]
+            if p_clean > tau:  # attack only what this defense detects
+                tasks.append((d, str(mdir), tau, targets, name, data))
+                detected += 1
+        print(f"  {d}: tau={tau:.4f}, {detected} detected", flush=True)
 
-    results = pl.DataFrame(rows)
+    t0 = time.time()
+    if args.num_workers > 1:
+        with get_context("spawn").Pool(args.num_workers, initializer=_init_worker, initargs=(config,)) as pool:
+            rows = map_watchdog(pool, _attack_file, tasks, lost=_lost, stall_timeout=args.stall_timeout)
+    else:
+        _init_worker(config, malware=malware, goodware=goodware)
+        rows = []
+        for i, t in enumerate(tasks):
+            rows.append(_attack_file(t))
+            if (i + 1) % 10 == 0:
+                print(f"  progress: {i + 1}/{len(tasks)} tasks in {time.time() - t0:.0f}s", flush=True)
+    rows = [r for r in rows if r is not None]
+    print(f"Searched {len(tasks)} (defense, file) pairs in {time.time() - t0:.0f}s.", flush=True)
+
+    results = pl.DataFrame(rows) if rows else pl.DataFrame(schema={"defense": pl.Utf8})  # nothing detected
     results.write_parquet(args.outdir / "adaptive.parquet")
     report: dict[str, Any] = {"threat_model": args.threat_model, "operations": list(ops), "fpr": args.fpr,
                               "queries": args.queries, "target_buckets": args.target_buckets,
                               "budget_frac": args.budget_frac, "budget_min": args.budget_min, "seed": args.seed,
+                              "search": args.search, "beam": args.beam, "draws": args.draws,
+                              "patience": args.patience, "checkpoints": args.checkpoints,
                               "defenses": {}}
     for d in defenses:
         r = results.filter(pl.col("defense") == d)
@@ -860,9 +1064,13 @@ def main() -> None:
             "rate_truncated": _rate(r.filter(pl.col("truncated"))),
             "rate_untruncated": _rate(r.filter(~pl.col("truncated"))),
         }
+        if args.search == "beam" and detected:
+            report["defenses"][d]["evaded_at"] = {str(q): int(r[f"evaded_at_{q}"].sum()) for q in args.checkpoints}
+            report["defenses"][d]["mismatches"] = int(r["mismatches"].sum())
         v = report["defenses"][d]
         flag = "  *** C4 SOUNDNESS VIOLATION (debug via Table A0)" if v["soundness_violation"] else ""
-        print(f"{d:16s} detected {detected:2d}  evaded {evaded:2d} (C1-declared)  min_delta_logit {worst:+.4f}{flag}",
+        at = "  at " + ", ".join(f"{q}: {n}" for q, n in v["evaded_at"].items()) if "evaded_at" in v else ""
+        print(f"{d:16s} detected {detected:2d}  evaded {evaded:2d}{at}  min_delta_logit {worst:+.4f}{flag}",
               flush=True)
     (args.outdir / "adaptive.json").write_text(json.dumps(report, indent=2))
     print(f"Wrote {args.outdir}/adaptive.parquet and adaptive.json", flush=True)

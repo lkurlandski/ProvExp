@@ -22,6 +22,7 @@ ROOT = Path(__file__).parent.parent
 sys.path.insert(0, str(ROOT / "scripts"))
 from a1_adaptive import DATA_PROPS  # noqa: E402
 from a1_adaptive import Donors  # noqa: E402
+from a1_adaptive import _tie_order  # noqa: E402
 from a1_adaptive import bucket_names  # noqa: E402
 from a1_adaptive import engine_predictors  # noqa: E402
 from a1_adaptive import menu  # noqa: E402
@@ -174,3 +175,24 @@ class TestSearchSteps:
         written = op[2](sample)
         assert not _overlay(written)
         assert len(written) > len(sample)
+
+
+################################################################################
+# The beam search's tie-breaking
+################################################################################
+
+
+class TestTieOrder:
+
+    def test_sorted_ascending(self) -> None:
+        logits = [3.0, -1.0, 2.0, 0.5]
+        order = _tie_order(logits, np.random.default_rng(0))
+        assert [logits[i] for i in order] == sorted(logits)
+
+    @pytest.mark.parametrize("eps", [0.0, 1e-12])
+    def test_ties_permuted_by_seed(self, eps: float) -> None:
+        logits = [1.0 + eps * i for i in range(8)] + [0.0]
+        orders = {tuple(_tie_order(logits, np.random.default_rng(seed))) for seed in range(20)}
+        assert all(o[0] == 8 for o in orders)  # the strict minimum always first
+        assert len(orders) > 1  # the eight tied entries are not left in index order
+        assert tuple(_tie_order(logits, np.random.default_rng(3))) == tuple(_tie_order(logits, np.random.default_rng(3)))
