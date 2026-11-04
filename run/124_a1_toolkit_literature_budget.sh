@@ -20,6 +20,15 @@
 #
 # Resources: smoke test (2026-11-04) ~100-200 s per (file, attack), 2-3x the low budget (searches stop after 5 rounds
 # without improvement). ~194 tasks in call (1), ~388 in call (2): ~2-2.5 h at 16 workers, ~1.5 h at 24.
+# Took (2026-11-04, 16 workers): call (2) 2 h 55 min (09:42-12:37); no LOST lines in either log.
+#
+# Result (read 2026-11-04): the larger budget adds nothing; the hypothesis's first part failed, the rest held.
+#   (1) Full store: gamma_api evades the unconstrained detector on 20/49 (21 uncapped; 22/49 at the low budget);
+#       run 122's advtrain 21/48. gamma_sections 0: every output adds >= 890 KB, and none falls below tau uncapped.
+#   (2) 10% subsample: reference 27/47 (30 uncapped; low budget 26/47), all through gamma_api; PV-seen 0/22 (low
+#       budget 4/22); the monotone rows 0 in their population (mfull-feat 0/28, mfull-sums 0/30, madd-sums 0/31),
+#       their one evasion each a file outside it, routed to the reference. gamma_sections 0 everywhere: all 47 of
+#       the reference's outputs are over the cap (6/47 evaded at the low budget, where donors are fewer and smaller).
 set -euo pipefail
 cd "$(dirname "$0")/.."
 source env/bin/activate

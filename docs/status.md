@@ -1,5 +1,17 @@
 # Status
 
+**2026-11-04 (session 13, in progress): run 124's 10% half read.** Runs 125 (this server; generation at 150/1,200 at
+13:05) and 127 (second server; not yet copied back) still pending.
+
+- **Run 124, 10% half** (`toolkit-literature/s10/table.json`, no LOST lines; 2 h 55 min at 16 workers). Hypothesis
+  held: the monotone rows are 0 in their population at the literature budget (mfull-feat 0/28, mfull-sums 0/30,
+  madd-sums 0/31); each row's one evasion is a file outside it, routed to the reference. Reference 27/47 capped, 30
+  uncapped (low budget 26/47), all through gamma_api; PV-seen 0/22 (low budget 4/22). gamma_sections 0 everywhere: on
+  the reference it adds >= 870 KB (median ~1 MB), so every output is over the cap; uncapped it lowers the score on
+  33/47 but by a median of 0.0006, and crosses tau on only 4/47 (at the low budget, 6/47 within the cap). Header
+  synced. Reading: the strong toolkit changes no Table 7 conclusion; proposed as a sentence, not a column (user to
+  decide).
+
 **2026-11-04 (session 12): run 126 read and into §5; run 124's full-store half read; Zainab et al.'s setup read; the
 beam search built and `run/127` running on a second server; the project made portable.** Nothing pushed. Next
 session: `docs/resume-prompt.md`.
