@@ -8,6 +8,7 @@ update it when the draft's stage changes. It writes its output here and adds a l
 
 | File | Date | What it reviews | Outcome |
 |---|---|---|---|
+| [2026-11-04-strategy.md](2026-11-04-strategy.md) | 2026-11-04 | Strategy, not prose: strongest claim, 2025-26 literature (ERDALT, Zainab et al. 2026), weaknesses W1-W3 | Recommends: diagnose the 1,060 two-sided features, strong attacks (budgeted adaptive search, MAB-Malware), fix the ERDALT portrayal; introduction waits |
 | [2026-11-02-body.md](2026-11-02-body.md) | 2026-11-02 | Body-only draft: Sections 3-5 and Appendix A | Weak reject / Weak reject / Weak accept; risk register R1-R16. Triaged 2026-11-02: three-tier plan in `PLAN.md`; premises checked in `docs/status.md` (2 of 8 toolkit attacks out of catalogue, not 5; P2 answered) |
 
 ## Explanation provenance (abandoned 2026-10-22; for reference only)
