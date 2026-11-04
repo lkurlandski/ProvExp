@@ -55,6 +55,22 @@ introduction and a simple baseline (writing decision for later).
   combined edits (run 111, 1,105 of 1,105) and the learned-constraints contrast (run 110). Record:
   `docs/direction-A-prime-plan.md`, Section 13.
 
+## Next steps (2026-11-04, session 14: runs 125, 127, 128 read; run 129 run; run 130 for the user)
+
+Done: run 125 read (adversarial training on the attacks that work halves them, toolkit 55% -> 31%, accuracy unchanged,
+greedy adaptive 24%); run 128 read (ERDALT: AUC 0.881, seen 0%, held-out 92%, beam 80%, 89.7% of its first layer's
+weight in the derived hole); run 127 read (beam at 5,000 candidates: unconstrained 51%, advtrain 42%, PV 64-68%,
+monotone 0% with min_delta_logit exactly 0; mismatches are pefile's unmodeled warnings, no verdict affected); run 129
+(greedy menus x 10% PV: nothing beyond the beam). Run 130 (beam x run 125's model) scripted for the user.
+
+Next, in order:
+1. Read run 130 when it has run.
+2. **Table 7 with the user:** the adaptive column's protocol (proposed: union of the three searches, at most 5,400
+   candidates per file; alternative: the beam alone), run 125's row, the ERDALT row, the 77% synthetic cell -> 64%;
+   then the §5 prose that cites them.
+3. Decide with the user: MAB-Malware (likely unnecessary); the headline (not adopted); §6's Chen 2021 sentence.
+4. Then the introduction and the other empty sections, spine first (`/paper-prose`).
+
 ## Next steps (2026-11-04, session 13: run 124 read; ERDALT row built; runs 125, 127, 128 pending)
 
 Done: run 124's 10% half read (the monotone rows 0 in their population at the literature budget; section injection over

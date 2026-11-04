@@ -1,5 +1,38 @@
 # Status
 
+**2026-11-04 (session 14): runs 125, 127, 128 read; run 129 run (PV greedy menus); run 130 scripted (beam x run 125's
+model, for the user).** Nothing pushed; manuscript untouched (the uncommitted §3-4 rewrite in the tree is not this
+session's). Table 7 waits on the user's choices below. Next session: `docs/resume-prompt.md`.
+
+- **Run 125 (strong adversarial training) read; hypothesis held.** Accuracy unchanged (AUC 0.9976, TPR 95.6% at 1%
+  FPR). Where it was trained it pays: gamma_api 22 -> 11 of 49, header_fields 11 -> 3 (low budget); GAMMA API at the
+  literature budget 20 -> 7; the eight attacks together 27 -> 15 (55% -> 31%). PV's split: seen 6/49 (12%), held-out
+  13/49 (27%; two of the four held-out attacks are trained on here). Adaptive (greedy, two-menu union) 12/49 (24%), vs
+  10/49 undefended. 2 LOST generation tasks (one file). Header synced; `--db` now `"$EMBER2024_DATA/tr"`.
+- **Run 128 (ERDALT) read.** Criterion met only at the last epoch (309: 3 violations; vl AUC 0.911). Test AUC 0.881,
+  TPR 61.1% at 1% FPR; detects 25/50 pilot malware. Faithful: seen 0/25. Held-out 23/25 (92%; hypothesis 20-40%:
+  failed, far weaker): gamma_api 22/25, header_fields 17/25. Beam 20/25 (80%; 17 already at 200 candidates). The hole:
+  89.7% of L's weight violates the derived M_full table, 88.7% in the both-ways features; 48/50 pilot files have an
+  allowed lowering move. AUC below the mock, as predicted. Header synced.
+- **Run 127 (beam, 5,000 candidates) read; copied back.** At 200 / 1,000 / 5,000: unconstrained 7/14/25 of 49 (51%;
+  hypothesis 35-45%: above); run 122's advtrain 8/15/20 of 48 (42%); PV full store 4 attacks 9/13/14 of 22 (64%;
+  hypothesis ~100%: failed); PV 10% 8 attacks 14/22, 4 attacks 15/22. Monotone rows 0/41 (M_full), 0/47 (M_add),
+  min_delta_logit exactly 0.0. The beam evades every file the greedy menus evade on the unconstrained and advtrain
+  rows, but misses 6 of the full-store PV's greedy evasions (union 20/22). Step 4 skipped -> `run/130`.
+- **Mismatches explained** (12 unconstrained, 25 advtrain, 2 ERDALT, 0 PV/monotone; the smoke test's 4): all in
+  pefile's two warning features (`warning_Byte 0x...`, `num_warnings`). No readout models them, so the engine keeps
+  the parent's values; an append that pushes the zero-byte share under pefile's 50% trigger removes the warning. Kept
+  children are always re-extracted, so no verdict depends on it. (Diagnostic: scratch script, 23/103 candidates on 3
+  files, only these two features.)
+- **Run 129 (Claude, 10 min): greedy menus x 10%-store PV.** Hypothesis (union ~18-20/22) failed: twelve-op 12/12,
+  append+add-section 10/11, union with the beam 14/22 (8 attacks) and 15/22 (4 attacks) = the beam alone. The
+  full-store PV's 16/22 under append+add-section does not carry over to the 10% models.
+- **Proposed Table 7 adaptive column (user to choose):** union of all three searches (two greedy menus + beam, at
+  most 5,400 candidates per file): unconstrained 25/49 (51%), advtrain 20/48 (42%), PV 4 attacks (full store, as now)
+  20/22 (91%, unchanged), PV 8 attacks (10%; no full-store model) 14/22 (64%; replaces the synthetic 77%), monotone 0%;
+  ERDALT 20/25 (80%); run 125's row waits on run 130. Alternative: the beam alone (one protocol), which lowers PV to
+  64% / 68%.
+
 **2026-11-04 (session 13): run 124's 10% half read and into §5; §6's VERIFY resolved; ERDALT row built (`run/128`,
 running).** Nothing pushed. Next session: `docs/resume-prompt.md`. Pending at session end: run 125 (this server;
 generation 1,150/1,200, then retraining and evaluations), run 127 (second server; not yet copied back), run 128 (user's
