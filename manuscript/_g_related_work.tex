@@ -48,9 +48,14 @@ that the attacker's edits cannot evade at all. If the edits can only raise each 
 score never falls when a feature rises, no sequence of edits lowers the score. Incer et al.~\cite{incer2018adversarially}
 built malware detectors on this principle. They decided by hand, for each feature, whether an attacker can cheaply raise
 it, lower it, both, or neither, dropped the features that move both ways, and trained a classifier constrained to be
-monotone in the rest. Gimenez et al.~\cite{gimenez2025certifiably} proved that the construction is also necessary:
-every robust detector is a monotone classifier over a suitable feature mapping. They select the features automatically,
-by running attacks on the training set and keeping the features that no attack lowered. Chen et al.\ reach verified
+monotone in the rest. Gimenez et al.~\cite{gimenez2025certifiably} proved the converse: every robust detector can be
+written as a monotone classifier over some post-processing of its features. They build robust detectors in two ways.
+The first trains a monotone classifier on 40 features they picked by hand to be difficult to change for an attacker
+without access to the malware's source code. The second, ERDALT, learns the post-processing from adversarial
+examples: a linear layer, trained so that the feature change of every observed attack maps to a nonnegative vector,
+feeds a monotone neural network. Such a detector is robust to the feature changes it was trained on, which is why they
+call it empirically robust. They also compare with a simpler selection that keeps the features no observed attack
+lowered. Chen et al.\ reach verified
 robustness through training. Their first classifiers for PDF malware~\cite{chen2020training} are verifiably robust to
 inserting or deleting subtrees of a document, and use the features of Šrndić and Laskov's
 Hidost~\cite{srndic2016hidost}, a PDF detector whose features each name a path in the document's object tree. With these
@@ -59,15 +64,18 @@ classifiers~\cite{chen2021learning} are trained to satisfy global properties, am
 an attacker can only increase. % VERIFY: Chen 2021's monotonicity property is stated over attacker-increasable features.
 All four works rest on the same input, the directions in which an attacker's edits can move each
 feature~\cite{incer2018adversarially,gimenez2025certifiably,chen2020training,chen2021learning}. Incer et al.\ derive
-the directions by hand, Gimenez et al.\ from the attacks they ran, and Chen et al.\ choose a feature set simple enough
-that the directions can be read off the feature definitions. A hand analysis is as complete as its authors' reading of
-the extractor, a selection from attacks is as complete as the attacks it observed, and a feature set chosen to be easy to
+the directions by hand, Gimenez et al.\ by hand for their certified detector and from the attacks they ran for their
+empirical ones, and Chen et al.\ choose a feature set simple enough that the directions can be read off the feature
+definitions. A hand analysis is as complete as its authors' reading of the extractor, a selection or post-processing
+learned from attacks is as complete as the attacks it observed, and a feature set chosen to be easy to
 analyze excludes the feature sets that deployed detectors use, such as EMBER's. Our framework computes the directions
 for every feature of a sum-then-readout extractor and for any declared set of edits, with a guarantee for every edit in
 the set. Each of the constructions above can then be applied to the feature sets detectors actually use, with the
 features to keep, re-encode, or drop following from the extractor and the threat model rather than from an analyst or
-an attack library. On EMBER, the computed directions find lowerable features in both Gimenez et al.'s hand-picked and
-automatically selected sets (\cref{sec:eval:detectors}).
+an attack library. On EMBER, the computed directions find lowerable features both in Gimenez et al.'s hand-picked set
+and in the features selected from attacks (\cref{sec:eval:detectors}).
+% ERDALT has no Table 7 row yet (decision pending, docs/reviews/2026-11-04-strategy.md); its learned layer needs the
+% same attacks as the selection from attacks.
 
 \paragraph{Incremental computation and provenance}
 Our side-effect computation uses machinery from databases and programming languages, fields that have long asked how a

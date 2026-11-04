@@ -270,8 +270,9 @@ from, and a narrower catalogue buys accuracy at the price of the edits it leaves
 for the same threat model, and the expert set's 40 hand-picked features keep 29.1\% detection where the derived table
 keeps 92.2\%.
 
-The closest baseline is Gimenez et al.'s feature selection from perturbation vectors (PV): run attacks on the training
-malware, keep the features no attack lowered, and train a monotone model on them. It resists the attacks it was built
+The closest baseline is the feature selection from perturbation vectors (PV) that Gimenez et al.\ compare against,
+which in their evaluation gave detectors no attack evaded: run attacks on malware, keep the features no attack
+lowered, and train a classifier on them. We run the attacks on the training malware and train a monotone model. It resists the attacks it was built
 from, by construction, and costs over 35 points of detection. It also has a hole that the derivation computes before
 any attack runs: 44.4\% of the PV model's gain lies in features the derived table proves lowerable, most of it in
 section-name hash buckets that no toolkit attack happened to lower. A further third of its gain rests on the

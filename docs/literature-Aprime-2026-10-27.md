@@ -76,6 +76,11 @@ that is new. The attack, the hash-bucket trick, and the concept of side effects 
 - **What they do:** benchmark nine problem-space attacks against eight Windows detectors, including EMBER GBDTs.
 - **For us:** none of the nine starts from a feature-space target. This is the current state of the field A' would
   enter.
+- **Added 2026-11-04 (HTML read for these points only):** attacks MAB-Malware, GAMMA shift/padding/section, MiniMal,
+  AIMED, AIMED-RL, ARMED, Game-up; detectors include EMBER-17/18/24 GBDTs and LGBM-SOREL. Mean evasion on EMBER-24:
+  MAB-Malware 83.4%, MiniMal 30.6%, GAMMA shift 12.7%. MAB-Malware + GAMMA shift cover ~99% of the other attacks'
+  adversarial examples. Hardening is "highly attack- and model-dependent". Code: github.com/mashalzainab/
+  windows-malware-adversarial-robustness. Setup (budgets, data) not read: verify before citing numbers.
 
 **Gimenez et al.** (arXiv 2508.10038): see `docs/direction-A-expert-set.md`.
 
@@ -137,7 +142,8 @@ ensembles).
   buckets, mixtures) is not a norm ball. Cite it among tree-ensemble verifiers. No threat.
 
 A targeted search (2026-10-30) for certified or verified robustness of Windows PE detectors under problem-space
-constraints found nothing beyond Gimenez et al. (monotone, hand-written add-only model) and the attack benchmarks
+constraints found nothing beyond Gimenez et al. (a monotone model on 40 hand-picked features; ERDALT, learned from
+attacks) and the attack benchmarks
 already listed (Zainab et al.).
 
 ## Not yet read

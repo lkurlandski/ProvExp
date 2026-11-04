@@ -245,7 +245,8 @@ signs the change of sum $s$ takes over every input in $F$ and every edit of oper
 gives each feature $j$ a direction $D_j$, one of fixed, up, down, or both; it is \emph{sound} for $\mathcal{M}$ over
 $F$ if no single operation instance on an input in $F$ changes a fixed feature, lowers an up feature, or raises a down
 one. These are Incer et al.'s four cases~\cite{incer2018adversarially}, which they assign by hand; Gimenez et
-al.~\cite{gimenez2025certifiably} derive them from the feature changes of observed attacks.
+al.~\cite{gimenez2025certifiably} keep only features that are up, picked by hand or kept because no observed attack
+lowered them.
 
 The table is computed in two steps. First, the last three columns of \Cref{tab:fw:terms} give the sign of each item's
 change to each term, and an operation's envelope on a sum lies within the sign sum of these signs over the changes its
@@ -280,8 +281,8 @@ lengthens the total gap, and the mean gap moves both ways.
 \subsection{Robust Detectors}
 \label{sec:fw:robustness}
 
-Gimenez et al.\ prove that a detector is robust when each feature can move only one way under the attacker's edits
-and the score never falls in those directions~\cite{gimenez2025certifiably}. With a computed table, this becomes a
+Gimenez et al.\ prove that a detector is robust when the attacker's edits can only raise each feature and the score
+never falls when features rise~\cite{gimenez2025certifiably}; a feature that can only fall is covered by negating it. With a computed table, this becomes a
 corollary of Theorem~\ref{thm:fw:directions}.
 
 \corollary[Robustness]

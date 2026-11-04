@@ -37,11 +37,14 @@ Crowded. What exists:
   assumption). UER drops from ~34% to ~0.1% at a TPR cost. **read next**: this is the realistic, empirical alternative
   to a provenance-derived constraint set.
 - **Gimenez, Sivaprasad & Fritz, "Certifiably robust malware detectors by design"** (arXiv 2508.10038, 2025, CISPA;
-  venue to check): EMBER features; robustness via monotonicity (monotone feature map w.r.t. the threat model's preorder
-  + monotone classifier); feature selection from empirical perturbation vectors of secml-malware attacks (PV: keep
-  features never decreased) and a manual 40-feature set that "could not be transposed to another domain without the
-  help of an expert". 100% robustness with PV selection + random forest against the 8 attacks used. **read next**:
-  closest competitor; PV selection only covers attacks it has seen.
+  venue to check): EMBER features and their own 40; robustness via monotonicity (monotone feature map w.r.t. the
+  threat model's preorder + monotone classifier, Prop. 1) and its converse (Prop. 2). Contributions, in their words:
+  "a characterization of certifiably robust detectors" and "ERDALT, a framework to learn empirically robust
+  detectors". Their certified route is a manual 40-feature set that "could not be transposed to another domain
+  without the help of an expert"; ERDALT learns a linear post-processing from adversarial examples; PV feature
+  selection (keep features never decreased by observed perturbation vectors) is the comparison method they define.
+  100% robustness with PV selection + random forest against the 8 attacks used. **read next**: closest competitor;
+  PV selection and ERDALT only cover attacks they have seen. (Corrected 2026-11-04: this entry omitted ERDALT.)
 - **Bostani et al., "Level Up with ML Vulnerability Identification"** (TOPS 2025; arXiv 2205.15128): learns feature-space
   domain constraints from data (Drebin) for realizable adversarial training; 77.9% robustness gain vs. unknown
   problem-space transformations.
@@ -112,6 +115,21 @@ for 4.3]**; Pierazzi et al. (formalization, side-effect features, ice-box) **[se
   preorder + monotone classifier (Prop. 1). PV feature selection keeps features never decreased by the perturbation
   vectors of 8 secml-malware attacks, and is evaluated against **the same 8 attacks** (200 malware, 60 s each): no
   held-out attacks. PV keeps 0% of byte and 1.9% of string features. The manual 40-feature set needs an expert.
+  **ERDALT (their main method; added 2026-11-04 after a full re-read):** "Empirically Robust by Design with
+  Adversarial Linear Transformation". By Prop. 2, every robust detector = monotone classifier over some
+  post-processing g of the features. ERDALT learns g as a linear layer (no bias, no activation), trained (loss l2) so
+  that every observed perturbation vector maps to a nonnegative vector, followed by a monotone neural network; l3
+  pushes the layer toward diagonal. Example: API substitution CreateFile -> CreateFileEx makes neither count
+  monotone, but their sum is. Assumption: the set of perturbation vectors of the threat model is finite and does not
+  depend on the program; Prop. 3: if that set is known during training, ERDALT is robust. Since it is learned from
+  attacks, they call it "not certifiably robust but only empirically robust" and "limited by its training dataset";
+  "with enough adversarial examples, it converges to a robust classifier". The layer also drops features it cannot
+  make monotone (automatic selection, no expert). Results (their Table 2, own dataset, EMBER features, 1,033
+  adversarial examples per method): ERDALT 93.0% AUC / 96.0% robust; ERDALT + adversarial training 85.5% / 100%;
+  PV + RF 95.2% / 100%; adversarial training (GBT) 97.6% / 96.5%. ERDALT keeps a near-superset of PV's features
+  (bytes 84.9% vs 0%, strings 94.2% vs 1.9%), by combining fragile ones. For us: Prop. 3 needs exactly the set of
+  feature changes a threat model allows, known in advance; Theorem 2 computes its sign envelope, and the dependence
+  on the file that ERDALT assumes away is what our populations and per-file deltas record.
 - **Severi et al.**: hand-built pefile watermarking tool; discarded **all hashed features** ("preimage resistance") and
   features "impacted by more than one other feature" (e.g., num_sections vs. num_write_sections), leaving 17 of
   ~2,400. Two openings: feature interdependence is shared provenance (overlapping columns of P); and hashed buckets are
@@ -190,7 +208,8 @@ Remaining papers: see the third pass below.
   from monotonicity + the threat analysis). 8 of 13 feature categories kept (header metadata, mutexes, API n-grams
   dropped).
   For us: the four cases are a **generic, domain-independent** description of what a threat model allows per feature
-  (which directions are reachable), and Incer et al. obtain it by hand; Gimenez et al. by perturbation vectors.
+  (which directions are reachable), and Incer et al. obtain it by hand; Gimenez et al. by hand (the 40 features) or
+  from observed perturbation vectors (PV, ERDALT).
 
 ## Fourth pass: robust-training consumers of a threat model (2026-10-22, late)
 
