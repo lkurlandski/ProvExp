@@ -60,13 +60,16 @@ robustness through training. Their first classifiers for PDF malware~\cite{chen2
 inserting or deleting subtrees of a document, and use the features of Šrndić and Laskov's
 Hidost~\cite{srndic2016hidost}, a PDF detector whose features each name a path in the document's object tree. With these
 features, a subtree edit can change only the features whose paths lie under the subtree. Their later
-classifiers~\cite{chen2021learning} are trained to satisfy global properties, among them monotonicity in features that
-an attacker can only increase. % VERIFY: Chen 2021's monotonicity property is stated over attacker-increasable features.
+classifiers~\cite{chen2021learning}, for cryptojacking and Twitter spam, are trained to satisfy global properties
+specified from domain knowledge, among them monotonicity in a feature whose larger values are more suspicious, or which
+an attacker can cheaply increase but only expensively decrease.
+% Verified 2026-11-04 against arXiv 2105.11363: Property 1 and Sec. 6.1 ("Monotonic Directions": suspiciousness and
+% economic cost); datasets: cryptojacking, Twitter spam accounts, Twitter spam URLs.
 All four works rest on the same input, the directions in which an attacker's edits can move each
 feature~\cite{incer2018adversarially,gimenez2025certifiably,chen2020training,chen2021learning}. Incer et al.\ derive
 the directions by hand, Gimenez et al.\ by hand for their certified detector and from the attacks they ran for their
 empirical ones, and Chen et al.\ choose a feature set simple enough that the directions can be read off the feature
-definitions. A hand analysis is as complete as its authors' reading of the extractor, a selection or post-processing
+definitions, or specify them from domain knowledge and from what each change costs the attacker. A hand analysis is as complete as its authors' reading of the extractor, a selection or post-processing
 learned from attacks is as complete as the attacks it observed, and a feature set chosen to be easy to
 analyze excludes the feature sets that deployed detectors use, such as EMBER's. Our framework computes the directions
 for every feature of a sum-then-readout extractor and for any declared set of edits, with a guarantee for every edit in
