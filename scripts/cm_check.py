@@ -59,6 +59,7 @@ from provexp.featuresets.ember2024.features import PEFeatureExtractor
 from provexp.models.malconv import MalConv
 from provexp.models.malconv import encode
 from provexp.models.malconv import load_pretrained_malconv
+from provexp.data.paths import EMBER2024_DATA
 
 sys.path.insert(0, str(Path(__file__).parent))
 
@@ -269,7 +270,7 @@ def main() -> None:
     parser.add_argument("--explanation_set", type=Path, default=ROOT / "artifacts" / "explanation_set" / "ts.parquet")
     parser.add_argument("--models", type=Path, default=ROOT / "artifacts" / "models")
     parser.add_argument("--checkpoints", type=Path, default=ROOT / "checkpoints")
-    parser.add_argument("--db", type=Path, default=Path("/shared/datasets/EMBER-2024/data/ts"))
+    parser.add_argument("--db", type=Path, default=EMBER2024_DATA / "ts")
     parser.add_argument("--outdir", type=Path, default=ROOT / "artifacts" / "experiments" / "cm_check")
     parser.add_argument("--num_workers", type=int, default=16)
     args = parser.parse_args()

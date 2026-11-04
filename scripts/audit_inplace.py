@@ -52,6 +52,7 @@ from provexp.models.malconv import MalConv
 from provexp.models.malconv import PADDING_IDX
 from provexp.models.malconv import encode
 from provexp.models.malconv import load_pretrained_malconv
+from provexp.data.paths import EMBER2024_DATA
 
 sys.path.insert(0, str(Path(__file__).parent))
 from shortcuts import preview  # noqa: E402
@@ -231,7 +232,7 @@ def main() -> None:
     parser.add_argument("--discover", type=Path, default=ROOT / "artifacts" / "experiments" / "audit_discover")
     parser.add_argument("--explanations", type=Path, default=ROOT / "artifacts" / "explanations" / "ember2024")
     parser.add_argument("--explanation_set", type=Path, default=ROOT / "artifacts" / "explanation_set" / "ts.parquet")
-    parser.add_argument("--db", type=Path, default=Path("/shared/datasets/EMBER-2024/data/ts"))
+    parser.add_argument("--db", type=Path, default=EMBER2024_DATA / "ts")
     parser.add_argument("--outdir", type=Path, default=ROOT / "artifacts" / "experiments" / "audit_inplace")
     parser.add_argument("--limit", type=int, default=None, help="Use at most this many files in total (for testing).")
     parser.add_argument("--num_workers", type=int, default=os.cpu_count())

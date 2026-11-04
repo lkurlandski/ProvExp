@@ -79,6 +79,7 @@ from provexp.items import ItemTable
 from provexp.reach import ByteEdit
 from provexp.reach import Prediction
 from provexp.reach import predict
+from provexp.data.paths import EMBER2024_DATA
 
 __all__ = [
     "OPS",
@@ -399,7 +400,7 @@ def _check_file(task: tuple[str, int]) -> list[dict[str, Any]]:
 def main() -> None:
     parser = ArgumentParser(description=__doc__.split("\n\n")[1])
     parser.add_argument("--files", type=Path, default=Path("artifacts/experiments/e1/seed-0/zeros/files.parquet"))
-    parser.add_argument("--db", type=Path, default=Path("/shared/datasets/EMBER-2024/data/ts"))
+    parser.add_argument("--db", type=Path, default=EMBER2024_DATA / "ts")
     parser.add_argument("--directions", type=Path,
                         default=Path("artifacts/experiments/a_directions_derived_sums_pilot/directions_sums.csv"))
     parser.add_argument("--outdir", type=Path, required=True)

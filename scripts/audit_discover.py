@@ -65,6 +65,7 @@ from provexp.featuresets.ember2024.features import PEFeatureExtractor
 from provexp.models.malconv import encode
 from provexp.models.malconv import load_pretrained_malconv
 from provexp.provenance import Provenance
+from provexp.data.paths import EMBER2024_DATA
 
 sys.path.insert(0, str(Path(__file__).parent))
 from faithfulness import load_sample  # noqa: E402
@@ -321,7 +322,7 @@ def main() -> None:
     parser.add_argument("--explanations", type=Path, default=ROOT / "artifacts" / "explanations" / "ember2024")
     parser.add_argument("--explanation_set", type=Path, default=ROOT / "artifacts" / "explanation_set" / "ts.parquet")
     parser.add_argument("--features", type=Path, default=ROOT / "artifacts" / "features" / "ember2024")
-    parser.add_argument("--db", type=Path, default=Path("/shared/datasets/EMBER-2024/data/ts"))
+    parser.add_argument("--db", type=Path, default=EMBER2024_DATA / "ts")
     parser.add_argument("--outdir", type=Path, default=ROOT / "artifacts" / "experiments" / "audit_discover")
     parser.add_argument("--limit", type=int, default=None, help="Use at most this many samples (for testing).")
     parser.add_argument("--part", type=int, default=0, help="Phase ig: which part of the files to do (one per GPU).")

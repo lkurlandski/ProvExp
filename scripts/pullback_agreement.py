@@ -48,6 +48,7 @@ from tqdm import tqdm
 from provexp.data.simpledb import SimpleDB
 from provexp.data.simpledb import SimpleDBIterator
 from provexp.featuresets.ember2024.features import PEFeatureExtractor
+from provexp.data.paths import EMBER2024_DATA
 
 
 ROOT = Path(__file__).parent.parent
@@ -197,7 +198,7 @@ def main() -> None:
     parser.add_argument("--seed", type=int, default=0, help="The seed of the explained models.")
     parser.add_argument("--explanations", type=Path, default=ROOT / "artifacts" / "explanations" / "ember2024")
     parser.add_argument("--explanation_set", type=Path, default=ROOT / "artifacts" / "explanation_set" / "ts.parquet")
-    parser.add_argument("--db", type=Path, default=Path("/shared/datasets/EMBER-2024/data/ts"))
+    parser.add_argument("--db", type=Path, default=EMBER2024_DATA / "ts")
     parser.add_argument("--num_bins", type=int, default=256)
     parser.add_argument("--num_workers", type=int, default=os.cpu_count())
     parser.add_argument("--timeout", type=int, default=600, help="The maximum number of seconds per file.")

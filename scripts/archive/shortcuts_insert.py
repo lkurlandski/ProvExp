@@ -49,6 +49,7 @@ from provexp.explain.feature import gbdt_function
 from provexp.featuresets.ember2024.ablation import parse
 from provexp.featuresets.ember2024.features import PEFeatureExtractor
 from provexp.featuresets.ember2024.trigger import apply_content
+from provexp.data.paths import EMBER2024_DATA
 
 
 ROOT = Path(__file__).parent.parent
@@ -246,7 +247,7 @@ def main() -> None:
     parser.add_argument("--explanation_set", type=Path, default=ROOT / "artifacts" / "explanation_set" / "ts.parquet")
     parser.add_argument("--features", type=Path, default=ROOT / "artifacts" / "features" / "ember2024")
     parser.add_argument("--models", type=Path, default=ROOT / "artifacts" / "models")
-    parser.add_argument("--db", type=Path, default=Path("/shared/datasets/EMBER-2024/data/ts"))
+    parser.add_argument("--db", type=Path, default=EMBER2024_DATA / "ts")
     parser.add_argument("--outdir", type=Path, default=ROOT / "artifacts" / "experiments" / "shortcuts_insert")
     parser.add_argument("--num_workers", type=int, default=os.cpu_count())
     parser.add_argument("--timeout", type=int, default=600, help="The maximum number of seconds per file.")

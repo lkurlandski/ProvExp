@@ -39,6 +39,7 @@ from tqdm import tqdm
 
 from provexp.featuresets.ember2024.sums import SUMS_GROUPS
 from provexp.featuresets.ember2024.sums import SumsFeatureExtractor
+from provexp.data.paths import EMBER2024_DATA
 
 sys.path.insert(0, str(Path(__file__).parent))
 from a1_adaptive import _parse_defenses  # noqa: E402
@@ -221,7 +222,7 @@ def main() -> None:
     parser.add_argument("--defense", action="append", default=None, help="name=model_dir (repeatable); default: the "
                         "three 10%% detectors.")
     parser.add_argument("--pilot_files", type=Path, default=ROOT / "artifacts/experiments/e1/seed-0/zeros/files.parquet")
-    parser.add_argument("--db", type=Path, default=Path("/shared/datasets/EMBER-2024/data/ts"))
+    parser.add_argument("--db", type=Path, default=EMBER2024_DATA / "ts")
     parser.add_argument("--num_files", type=int, default=None, help="At most this many files (malware first).")
     parser.add_argument("--goodware", action="store_true", help="Also test the pilot goodware.")
     parser.add_argument("--edits", type=int, default=12, help="Random edits per file (plus the empty edit).")

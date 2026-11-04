@@ -48,6 +48,7 @@ from provexp.data.simpledb import SimpleDBIterator
 from provexp.data.tabular import load_features
 from provexp.featuresets.ember2024.features import PEFeatureExtractor
 from provexp.provenance import Provenance
+from provexp.data.paths import EMBER2024_DATA
 
 
 ROOT = Path(__file__).parent.parent
@@ -287,7 +288,7 @@ def main() -> None:
     parser.add_argument("--explanations", type=Path, default=ROOT / "artifacts" / "explanations" / "ember2024")
     parser.add_argument("--explanation_set", type=Path, default=ROOT / "artifacts" / "explanation_set" / "ts.parquet")
     parser.add_argument("--features", type=Path, default=ROOT / "artifacts" / "features" / "ember2024")
-    parser.add_argument("--db", type=Path, default=Path("/shared/datasets/EMBER-2024/data/ts"))
+    parser.add_argument("--db", type=Path, default=EMBER2024_DATA / "ts")
     parser.add_argument("--outdir", type=Path, default=ROOT / "artifacts" / "experiments" / "shortcuts")
     parser.add_argument("--files", type=Path, default=None, help="Optionally, a parquet with a `name` column: use only these samples.")
     parser.add_argument("--limit", type=int, default=None, help="Use at most this many samples (for testing).")

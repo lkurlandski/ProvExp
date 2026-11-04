@@ -64,6 +64,7 @@ from provexp.items import ItemTable
 from provexp.reach import ByteEdit
 from provexp.reach import Prediction
 from provexp.reach import predict
+from provexp.data.paths import EMBER2024_DATA
 
 sys.path.insert(0, str(Path(__file__).parent))
 from a_c1_table0 import has_overrun_section  # noqa: E402
@@ -968,7 +969,7 @@ def main() -> None:
                         "min_delta_logit on one is an A1-A4 bug; on any other defense it is just the search working).")
     parser.add_argument("--features", type=Path, required=True, help="The feature store the defenses were trained on.")
     parser.add_argument("--pilot_files", type=Path, default=ROOT / "artifacts/experiments/e1/seed-0/zeros/files.parquet")
-    parser.add_argument("--db", type=Path, default=Path("/shared/datasets/EMBER-2024/data/ts"))
+    parser.add_argument("--db", type=Path, default=EMBER2024_DATA / "ts")
     parser.add_argument("--threat_model", choices=["M_add", "M_shift", "M_full"], default="M_full")
     parser.add_argument("--operations", nargs="*", default=None, help="Restrict to these operation names "
                         "(default: every operation of the threat model).")

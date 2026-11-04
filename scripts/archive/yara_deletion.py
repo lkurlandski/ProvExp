@@ -49,6 +49,7 @@ from provexp.explain.feature import gbdt_function
 from provexp.featuresets.ember2024.ablation import protect
 from provexp.featuresets.ember2024.ablation import verify
 from provexp.featuresets.ember2024.features import PEFeatureExtractor
+from provexp.data.paths import EMBER2024_DATA
 
 sys.path.insert(0, str(Path(__file__).parent))
 
@@ -201,7 +202,7 @@ def main() -> None:
     parser.add_argument("--num_files", type=int, default=0, help="Only the first files (0: all), for smoke tests.")
     parser.add_argument("--explanation_set", type=Path, default=ROOT / "artifacts" / "explanation_set" / "ts.parquet")
     parser.add_argument("--models", type=Path, default=ROOT / "artifacts" / "models")
-    parser.add_argument("--db", type=Path, default=Path("/shared/datasets/EMBER-2024/data/ts"))
+    parser.add_argument("--db", type=Path, default=EMBER2024_DATA / "ts")
     parser.add_argument("--outdir", type=Path, default=ROOT / "artifacts" / "experiments" / "yara_deletion")
     parser.add_argument("--num_workers", type=int, default=32)
     args = parser.parse_args()

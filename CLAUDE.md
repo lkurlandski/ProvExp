@@ -90,7 +90,9 @@ and manuscript remain as source material. Deadlines and conference cycles are no
 - `tmp/` holds the user's scratch files (gitignored). Do not mention, list, or ask about them.
 - Gitignored, never commit: `tests/data/` (real malware), `checkpoints/` (MalConv), `index/` (split files from SSViT),
   `artifacts` (symlink to `/scratch/lk3591/provexp`: feature store, models, reports, logs).
-- Binaries: SimpleDB at `/shared/datasets/EMBER-2024/data/{tr,vl,ts}`, truncated to 4,000,000 bytes.
+- Binaries: SimpleDB at `/shared/datasets/EMBER-2024/data/{tr,vl,ts}`, truncated to 4,000,000 bytes; scripts read
+  the location from `EMBER2024_DATA` (`src/provexp/data/paths.py`; set it on machines where the dataset lives
+  elsewhere). Copying the artifacts to another server: `run/sync_artifacts.sh`.
 - Run featurization with `PYTHONHASHSEED=0` (thrember's warning features depend on the hash seed).
 
 ## Working rules

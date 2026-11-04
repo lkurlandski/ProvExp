@@ -53,6 +53,7 @@ from provexp.featuresets.ember2024 import sums as sums_module
 from provexp.featuresets.ember2024.expert import ExpertFeatureExtractor
 from provexp.featuresets.ember2024.features import PEFeatureExtractor
 from provexp.featuresets.ember2024.sums import SumsFeatureExtractor
+from provexp.data.paths import EMBER2024_DATA
 
 
 ROOT = Path(__file__).parent.parent
@@ -248,7 +249,7 @@ def write_manifest(root: Path, splits: list[str], extractor: str = "ember2024", 
 
 def main() -> None:
     parser = ArgumentParser(description="Extract EMBER-2024 features from a SimpleDB into a feature store.")
-    parser.add_argument("--db", type=Path, default=Path("/shared/datasets/EMBER-2024/data"), help="Contains one SimpleDB per split.")
+    parser.add_argument("--db", type=Path, default=EMBER2024_DATA, help="Contains one SimpleDB per split.")
     parser.add_argument("--index", type=Path, default=ROOT / "index" / "ember2024" / "us", help="Contains {split}.txt.")
     parser.add_argument("--outdir", type=Path, default=ROOT / "artifacts" / "features" / "ember2024")
     parser.add_argument("--splits", type=str, nargs="+", default=["tr", "vl", "ts"])

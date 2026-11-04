@@ -28,6 +28,7 @@ from provexp.data.simpledb import SimpleDBIterator
 from provexp.featuresets.ember2024.ablation import TYPICAL_VALUES_FILE
 from provexp.featuresets.ember2024.ablation import header_fields
 from provexp.featuresets.ember2024.ablation import parse
+from provexp.data.paths import EMBER2024_DATA
 
 
 ROOT = Path(__file__).parent.parent
@@ -63,7 +64,7 @@ def main() -> None:
     parser.add_argument("--num_samples", type=int, default=2000, help="Files, balanced by label.")
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--features", type=Path, default=ROOT / "artifacts" / "features" / "ember2024")
-    parser.add_argument("--db", type=Path, default=Path("/shared/datasets/EMBER-2024/data"))
+    parser.add_argument("--db", type=Path, default=EMBER2024_DATA)
     parser.add_argument("--output", type=Path, default=TYPICAL_VALUES_FILE)
     parser.add_argument("--num_workers", type=int, default=os.cpu_count())
     args = parser.parse_args()

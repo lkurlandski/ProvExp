@@ -36,6 +36,7 @@ from provexp.data.simpledb import SimpleDBIterator
 from provexp.featuresets.ember2024.ablation import header_fields
 from provexp.featuresets.ember2024.ablation import parse
 from provexp.featuresets.ember2024.trigger import STRUCT_TRIGGER_FILE
+from provexp.data.paths import EMBER2024_DATA
 
 
 ROOT = Path(__file__).parent.parent
@@ -94,7 +95,7 @@ def main() -> None:
     parser.add_argument("--num_fields", type=int, default=3)
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--features", type=Path, default=ROOT / "artifacts" / "features" / "ember2024")
-    parser.add_argument("--db", type=Path, default=Path("/shared/datasets/EMBER-2024/data/tr"))
+    parser.add_argument("--db", type=Path, default=EMBER2024_DATA / "tr")
     parser.add_argument("--output", type=Path, default=STRUCT_TRIGGER_FILE)
     parser.add_argument("--num_workers", type=int, default=8)
     args = parser.parse_args()

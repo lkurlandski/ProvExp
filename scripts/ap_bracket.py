@@ -50,6 +50,7 @@ import numpy as np
 import polars as pl
 
 from provexp.featuresets.ember2024.sums import SumsFeatureExtractor
+from provexp.data.paths import EMBER2024_DATA
 
 sys.path.insert(0, str(Path(__file__).parent))
 from a1_adaptive import _parse_defenses  # noqa: E402
@@ -264,7 +265,7 @@ def main() -> None:
         ROOT / "artifacts/experiments/a1/toolkit_v2/results.parquet"])
     parser.add_argument("--adaptive", type=Path, nargs="*", default=[ROOT / "artifacts/experiments/ap_battery/adaptive/adaptive.parquet"])
     parser.add_argument("--pilot_files", type=Path, default=ROOT / "artifacts/experiments/e1/seed-0/zeros/files.parquet")
-    parser.add_argument("--db", type=Path, default=Path("/shared/datasets/EMBER-2024/data/ts"))
+    parser.add_argument("--db", type=Path, default=EMBER2024_DATA / "ts")
     parser.add_argument("--names", nargs="*", default=None, help="Only the files whose names start with these.")
     parser.add_argument("--family", nargs="+", choices=FAMILIES, default=list(FAMILIES))
     parser.add_argument("--fpr", type=float, default=0.01)

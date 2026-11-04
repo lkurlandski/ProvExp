@@ -18,6 +18,8 @@ from typing import Any
 import polars as pl
 from tqdm import tqdm
 
+from provexp.data.paths import EMBER2024_TABULAR
+
 
 ROOT = Path(__file__).parent.parent
 PATTERNS = ["*_Win32_*.jsonl", "*_Win64_*.jsonl", "*_Dot_Net_*.jsonl"]
@@ -78,7 +80,7 @@ def parse_file(args: tuple[Path, Path]) -> tuple[str, int]:
 
 def main() -> None:
     parser = ArgumentParser(description="Build a table of the released EMBER-2024 metadata for PE files.")
-    parser.add_argument("--src", type=Path, default=Path("/shared/datasets/EMBER-2024-tabular"))
+    parser.add_argument("--src", type=Path, default=EMBER2024_TABULAR)
     parser.add_argument("--outfile", type=Path, default=ROOT / "artifacts" / "metadata" / "ember2024.parquet")
     parser.add_argument("--num_workers", type=int, default=os.cpu_count())
     parser.add_argument("--max_files", type=int, default=None, help="Only process the first few files (for testing).")

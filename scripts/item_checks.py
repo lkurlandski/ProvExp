@@ -59,6 +59,7 @@ from provexp.items import evaluate
 from provexp.items import project
 from provexp.reach import ByteEdit
 from provexp.reach import predict
+from provexp.data.paths import EMBER2024_DATA
 
 warnings.filterwarnings("ignore", category=SyntaxWarning)
 
@@ -391,7 +392,7 @@ def main() -> None:
     parser = ArgumentParser(description=__doc__.split("\n\n")[1] if __doc__ else None)
     parser.add_argument("check", choices=["exact", "locating", "margins"])
     parser.add_argument("--files", type=Path, required=True, help="Parquet with a `name` column (and optionally `status`).")
-    parser.add_argument("--db", type=Path, default=Path("/shared/datasets/EMBER-2024/data/ts"))
+    parser.add_argument("--db", type=Path, default=EMBER2024_DATA / "ts")
     parser.add_argument("--outdir", type=Path, required=True)
     parser.add_argument("--workers", type=int, default=1)
     parser.add_argument("--limit", type=int, default=0, help="Only the first N files (0: all).")

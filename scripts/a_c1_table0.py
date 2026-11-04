@@ -65,6 +65,7 @@ from provexp.items import Readout
 from provexp.reach import ByteEdit
 from provexp.reach import Prediction
 from provexp.reach import predict
+from provexp.data.paths import EMBER2024_DATA
 
 __all__ = ["append_payload", "predict_add_section_sums", "predict_append", "predict_append_sums"]
 
@@ -554,7 +555,7 @@ def main() -> None:
     parser = ArgumentParser(description=__doc__)
     parser.add_argument("--outdir", type=Path, required=True)
     parser.add_argument("--pilot_files", type=Path, default=ROOT / "artifacts/experiments/e1/seed-0/zeros/files.parquet")
-    parser.add_argument("--db", type=Path, default=Path("/shared/datasets/EMBER-2024/data/ts"))
+    parser.add_argument("--db", type=Path, default=EMBER2024_DATA / "ts")
     parser.add_argument("--num_files", type=int, default=None)
     parser.add_argument("--append_size", type=int, default=4096)
     parser.add_argument("--tol", type=float, default=1e-4, help="Relative tolerance for a feature to count as matching.")

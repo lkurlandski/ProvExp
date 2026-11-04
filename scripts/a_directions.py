@@ -78,6 +78,7 @@ from provexp.reach import Signs as SignSet
 from provexp.reach import Vocabulary
 from provexp.reach import directions as derive_directions
 from provexp.reach import extension_monotone
+from provexp.data.paths import EMBER2024_DATA
 
 warnings.filterwarnings("ignore", category=SyntaxWarning)
 
@@ -548,7 +549,7 @@ def main() -> None:
     parser.add_argument("--derive", action="store_true", help="Derive the directions (C4): the default, kept for the "
                         "older run scripts.")
     parser.add_argument("--files", type=Path, default=Path("artifacts/experiments/e1/seed-0/zeros/files.parquet"), help="derive: the corpus (a `name` column).")
-    parser.add_argument("--db", type=Path, default=Path("/shared/datasets/EMBER-2024/data/ts"))
+    parser.add_argument("--db", type=Path, default=EMBER2024_DATA / "ts")
     parser.add_argument("--workers", type=int, default=1)
     parser.add_argument("--limit", type=int, default=0, help="derive: only the first N files (0: all).")
     args = parser.parse_args()

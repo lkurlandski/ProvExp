@@ -45,6 +45,7 @@ from provexp.featuresets.ember2024.ablation import parse
 from provexp.featuresets.ember2024.ablation import protect
 from provexp.featuresets.ember2024.ablation import verify
 from provexp.featuresets.ember2024.features import PEFeatureExtractor
+from provexp.data.paths import EMBER2024_DATA
 
 
 ROOT = Path(__file__).parent.parent
@@ -221,7 +222,7 @@ def main() -> None:
     parser.add_argument("--header", type=str, choices=["zeros", "typical"], default="zeros", help="Check mode: how ablation fills header fields.")
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--features", type=Path, default=ROOT / "artifacts" / "features" / "ember2024")
-    parser.add_argument("--db", type=Path, default=Path("/shared/datasets/EMBER-2024/data"))
+    parser.add_argument("--db", type=Path, default=EMBER2024_DATA)
     parser.add_argument("--outdir", type=Path, default=ROOT / "artifacts" / "reports" / "protected_fields")
     parser.add_argument("--num_workers", type=int, default=os.cpu_count())
     parser.add_argument("--timeout", type=int, default=600)

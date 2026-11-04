@@ -50,6 +50,7 @@ from tqdm import tqdm
 from provexp.data.simpledb import SimpleDB
 from provexp.data.simpledb import SimpleDBIterator
 from provexp.featuresets.ember2024.features import PEFeatureExtractor
+from provexp.data.paths import EMBER2024_DATA
 
 sys.path.insert(0, str(Path(__file__).parent))
 from faithfulness import load_sample  # noqa: E402
@@ -148,7 +149,7 @@ def main() -> None:
     parser.add_argument("--explanation_set", type=Path, default=ROOT / "artifacts" / "explanation_set" / "ts.parquet")
     parser.add_argument("--discover", type=Path, default=ROOT / "artifacts" / "experiments" / "audit_discover")
     parser.add_argument("--scramble", type=Path, default=ROOT / "artifacts" / "experiments" / "audit_scramble")
-    parser.add_argument("--db", type=Path, default=Path("/shared/datasets/EMBER-2024/data/ts"))
+    parser.add_argument("--db", type=Path, default=EMBER2024_DATA / "ts")
     parser.add_argument("--outdir", type=Path, default=ROOT / "artifacts" / "experiments" / "cm_global")
     parser.add_argument("--limit", type=int, default=None, help="Use at most this many files (for testing; push and compare must match).")
     parser.add_argument("--num_workers", type=int, default=os.cpu_count())

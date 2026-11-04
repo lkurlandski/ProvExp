@@ -51,6 +51,7 @@ from provexp.data.simpledb import SimpleDB
 from provexp.data.simpledb import SimpleDBReader
 from provexp.featuresets.ember2024.features import merge_import_descriptors
 from provexp.featuresets.ember2024.features import PEFeatureExtractor
+from provexp.data.paths import EMBER2024_DATA
 
 sys.path.insert(0, str(Path(__file__).parent))
 from a1_adaptive import add_section  # noqa: E402
@@ -274,7 +275,7 @@ def _witness_file(name: str) -> tuple[list[dict[str, Any]], list[str], list[str]
 def main() -> None:
     parser = ArgumentParser(description=__doc__.split("\n\n")[1])
     parser.add_argument("--files", type=Path, default=Path("artifacts/experiments/e1/seed-0/zeros/files.parquet"))
-    parser.add_argument("--db", type=Path, default=Path("/shared/datasets/EMBER-2024/data/ts"))
+    parser.add_argument("--db", type=Path, default=EMBER2024_DATA / "ts")
     parser.add_argument("--outdir", type=Path, required=True)
     parser.add_argument("--cases", nargs="+", default=list(EDITS), choices=list(EDITS))
     parser.add_argument("--donors", type=int, default=3, help="Donor Rich headers tried per file (rich_ext), smallest first.")

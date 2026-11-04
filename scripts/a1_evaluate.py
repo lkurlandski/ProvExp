@@ -59,6 +59,7 @@ from provexp.featuresets.ember2024.features import PEFeatureExtractor
 from provexp.featuresets.ember2024.expert import ExpertFeatureExtractor
 from provexp.featuresets.ember2024.features import merge_import_descriptors
 from provexp.featuresets.ember2024.sums import SumsFeatureExtractor
+from provexp.data.paths import EMBER2024_DATA
 
 sys.path.insert(0, str(Path(__file__).parent))
 from a_pv_attacks import ATTACKS  # noqa: E402
@@ -211,7 +212,7 @@ def main() -> None:
                         "defense `fallback` on files that fail the precondition check (repeatable).")
     parser.add_argument("--features", type=Path, required=True, help="The feature store the defenses were trained on.")
     parser.add_argument("--pilot_files", type=Path, default=ROOT / "artifacts/experiments/e1/seed-0/zeros/files.parquet")
-    parser.add_argument("--db", type=Path, default=Path("/shared/datasets/EMBER-2024/data/ts"))
+    parser.add_argument("--db", type=Path, default=EMBER2024_DATA / "ts")
     parser.add_argument("--attacks", nargs="+", default=list(ATTACKS), choices=list(ATTACKS))
     parser.add_argument("--seen", nargs="+", default=list(SEEN), choices=list(ATTACKS))
     parser.add_argument("--fpr", type=float, default=0.01)

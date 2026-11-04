@@ -48,6 +48,7 @@ from scipy.optimize import milp
 from scipy.sparse import coo_matrix
 
 from provexp.featuresets.ember2024.sums import SumsFeatureExtractor
+from provexp.data.paths import EMBER2024_DATA
 
 sys.path.insert(0, str(Path(__file__).parent))
 from a1_adaptive import _parse_defenses  # noqa: E402
@@ -325,7 +326,7 @@ def main() -> None:
                         help="Prefix of the direction files (sums extractor), e.g. .../M_add.")
     parser.add_argument("--regions", nargs="+", choices=REGIONS, default=list(REGIONS))
     parser.add_argument("--pilot_files", type=Path, default=ROOT / "artifacts/experiments/e1/seed-0/zeros/files.parquet")
-    parser.add_argument("--db", type=Path, default=Path("/shared/datasets/EMBER-2024/data/ts"))
+    parser.add_argument("--db", type=Path, default=EMBER2024_DATA / "ts")
     parser.add_argument("--num_malware", type=int, default=5)
     parser.add_argument("--fpr", type=float, default=0.01)
     parser.add_argument("--time_limit", type=float, default=1800.0, help="Seconds per solve.")

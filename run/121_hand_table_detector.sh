@@ -51,10 +51,11 @@ from provexp.featuresets.ember2024.features import PEFeatureExtractor
 from provexp.featuresets.ember2024.features import merge_import_descriptors
 from provexp.featuresets.ember2024.catalogue import passes_precondition
 from provexp.data.simpledb import SimpleDB, SimpleDBReader
+from provexp.data.paths import EMBER2024_DATA
 
 df = pl.read_parquet(sys.argv[1])
 extractor = merge_import_descriptors(PEFeatureExtractor())
-reader = SimpleDBReader(SimpleDB("/shared/datasets/EMBER-2024/data/ts", check=False))
+reader = SimpleDBReader(SimpleDB(EMBER2024_DATA / "ts", check=False))
 
 rows = []
 for r in df.iter_rows(named=True):

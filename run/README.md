@@ -10,6 +10,8 @@ Conventions, which matter for reproducibility:
   `train_classic.py`, where LightGBM needs every core (about 3 minutes instead of about 45).
 - Scripts take their defaults from `scripts/*.py`; only the arguments that differ from a default are written out, so
   a diff against the script shows what was chosen.
+- The dataset location comes from `EMBER2024_DATA` (default `/shared/datasets/EMBER-2024/data`); `run/sync_artifacts.sh`
+  (unnumbered, not an experiment) copies the artifacts a run needs to another server.
 - Long steps (hours) are meant to be run in `tmux`. The runtimes in the comments are what they actually took on this
   machine (2 sockets x 16 cores, hyperthreaded: 64 logical CPUs).
 

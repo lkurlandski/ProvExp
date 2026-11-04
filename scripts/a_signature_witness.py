@@ -35,6 +35,7 @@ from provexp.data.simpledb import SimpleDB
 from provexp.data.simpledb import SimpleDBReader
 from provexp.featuresets.ember2024.features import PEFeatureExtractor
 from provexp.featuresets.ember2024.features import merge_import_descriptors
+from provexp.data.paths import EMBER2024_DATA
 
 __all__ = [
     "security_entry",
@@ -81,7 +82,7 @@ def complete(bytez: bytes, offset: int, size: int, table: bytes) -> bytes:
 def main() -> None:
     parser = ArgumentParser(description=__doc__.split("\n\n")[1])
     parser.add_argument("--files", type=Path, default=Path("artifacts/experiments/e1/seed-0/zeros/files.parquet"))
-    parser.add_argument("--db", type=Path, default=Path("/shared/datasets/EMBER-2024/data/ts"))
+    parser.add_argument("--db", type=Path, default=EMBER2024_DATA / "ts")
     parser.add_argument("--outdir", type=Path, required=True)
     parser.add_argument("--donors", type=int, default=3, help="Donor tables tried per file, smallest first.")
     args = parser.parse_args()

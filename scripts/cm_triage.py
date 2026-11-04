@@ -53,6 +53,7 @@ from provexp.featuresets.ember2024.ablation import protect
 from provexp.featuresets.ember2024.ablation import verify
 from provexp.featuresets.ember2024.features import PEFeatureExtractor
 from provexp.models.malconv import load_pretrained_malconv
+from provexp.data.paths import EMBER2024_DATA
 
 sys.path.insert(0, str(Path(__file__).parent))
 
@@ -286,7 +287,7 @@ def main() -> None:
     parser.add_argument("--device", type=str, default="cuda" if torch.cuda.is_available() else "cpu")
     parser.add_argument("--models", type=Path, default=ROOT / "artifacts" / "models")
     parser.add_argument("--checkpoints", type=Path, default=ROOT / "checkpoints")
-    parser.add_argument("--db", type=Path, default=Path("/shared/datasets/EMBER-2024/data/ts"))
+    parser.add_argument("--db", type=Path, default=EMBER2024_DATA / "ts")
     parser.add_argument("--outdir", type=Path, default=ROOT / "artifacts" / "experiments" / "cm_triage")
     parser.add_argument("--fill", type=str, choices=["zeros", "random"], default="zeros", help="How deletion fills bytes.")
     parser.add_argument("--windows", type=int, default=0, help="Make the categories of this many windows instead of bytes (0: bytes).")

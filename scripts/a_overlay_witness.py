@@ -37,6 +37,7 @@ from provexp.data.simpledb import SimpleDBReader
 from provexp.featuresets.ember2024.sums import BodyByteEntropyHistogram
 from provexp.featuresets.ember2024.sums import BodyByteHistogram
 from provexp.featuresets.ember2024.sums import BodyStrings
+from provexp.data.paths import EMBER2024_DATA
 
 __all__ = [
     "extents_past_eof",
@@ -110,7 +111,7 @@ def main() -> None:
     parser = ArgumentParser(description=__doc__.split("\n\n")[1] if __doc__ else None)
     parser.add_argument("--outdir", type=Path, required=True)
     parser.add_argument("--pilot_files", type=Path, default=ROOT / "artifacts/experiments/e1/seed-0/zeros/files.parquet")
-    parser.add_argument("--db", type=Path, default=Path("/shared/datasets/EMBER-2024/data/ts"))
+    parser.add_argument("--db", type=Path, default=EMBER2024_DATA / "ts")
     parser.add_argument("--cap", type=int, default=8 * 2**20, help="Largest append tried, in bytes.")
     parser.add_argument("--seed", type=int, default=0)
     args = parser.parse_args()

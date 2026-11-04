@@ -22,6 +22,7 @@ from tqdm import tqdm
 from provexp.data.simpledb import Sample
 from provexp.data.simpledb import SimpleDB
 from provexp.data.simpledb import SimpleDBIterator
+from provexp.data.paths import EMBER2024_DATA
 
 
 ROOT = Path(__file__).parent.parent
@@ -66,7 +67,7 @@ def categorize(sample: Sample) -> list[str]:
 
 def main() -> None:
     parser = ArgumentParser(description="Copy a small, diverse set of executables into tests/data/.")
-    parser.add_argument("--db", type=Path, default=Path("/shared/datasets/EMBER-2024/data/ts"))
+    parser.add_argument("--db", type=Path, default=EMBER2024_DATA / "ts")
     parser.add_argument("--outdir", type=Path, default=ROOT / "tests" / "data")
     parser.add_argument("--per_category", type=int, default=2, help="Number of files per category per label.")
     parser.add_argument("--num_shards", type=int, default=8, help="Number of shards to scan.")

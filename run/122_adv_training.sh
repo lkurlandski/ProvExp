@@ -33,6 +33,7 @@ cd "$(dirname "$0")/.."
 source env/bin/activate
 export PYTHONHASHSEED=0
 NUM_WORKERS="${NUM_WORKERS:-16}"
+EMBER2024_DATA="${EMBER2024_DATA:-/shared/datasets/EMBER-2024/data}"
 export OMP_NUM_THREADS="${OMP_NUM_THREADS:-4}"
 ADV_MALWARE="${ADV_MALWARE:-400}"
 
@@ -46,7 +47,7 @@ echo "(1/4) GENERATE adversarial training examples ($ADV_MALWARE malware x 4 see
 python scripts/a_advtrain.py \
   --outdir "$GEN" \
   --features "$F" \
-  --db /shared/datasets/EMBER-2024/data/tr \
+  --db "$EMBER2024_DATA/tr" \
   --model "$M/seed-0/model.txt" \
   --num_malware "$ADV_MALWARE" \
   --num_goodware 50 \

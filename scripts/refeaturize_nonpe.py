@@ -35,6 +35,7 @@ from provexp.data.tabular import MANIFEST_FILE
 from provexp.data.tabular import META_FILE
 from provexp.featuresets.ember2024.features import PEFeatureExtractor
 from provexp.featuresets.ember2024.sums import SumsFeatureExtractor
+from provexp.data.paths import EMBER2024_DATA
 
 __all__ = [
     "main",
@@ -80,7 +81,7 @@ def main() -> None:
     parser = ArgumentParser(description=__doc__)
     parser.add_argument("--store", type=Path, required=True, help="The feature store (contains {split}/X.npy).")
     parser.add_argument("--extractor", type=str, choices=sorted(EXTRACTORS), required=True)
-    parser.add_argument("--db", type=Path, default=Path("/shared/datasets/EMBER-2024/data"), help="Contains one SimpleDB per split.")
+    parser.add_argument("--db", type=Path, default=EMBER2024_DATA, help="Contains one SimpleDB per split.")
     parser.add_argument("--splits", type=str, nargs="+", default=["tr", "vl", "ts"])
     parser.add_argument("--num_workers", type=int, default=16)
     parser.add_argument("--name", type=str, default="directory_guard", help="The name of the patch, for the manifest.")

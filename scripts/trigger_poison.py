@@ -44,6 +44,7 @@ from provexp.featuresets.ember2024.trigger import apply_content
 from provexp.featuresets.ember2024.trigger import apply_struct
 from provexp.featuresets.ember2024.trigger import content_block
 from provexp.featuresets.ember2024.trigger import struct_trigger
+from provexp.data.paths import EMBER2024_DATA
 
 
 ROOT = Path(__file__).parent.parent
@@ -120,7 +121,7 @@ def main() -> None:
     parser.add_argument("--seed", type=int, default=0, help="The seed of the file selection and of the random block.")
     parser.add_argument("--name", type=str, default=None, help="The output directory's name (default: the trigger's).")
     parser.add_argument("--features", type=Path, default=ROOT / "artifacts" / "features" / "ember2024")
-    parser.add_argument("--db", type=Path, default=Path("/shared/datasets/EMBER-2024/data/tr"))
+    parser.add_argument("--db", type=Path, default=EMBER2024_DATA / "tr")
     parser.add_argument("--outdir", type=Path, default=ROOT / "artifacts" / "poison")
     parser.add_argument("--num_workers", type=int, default=16)
     parser.add_argument("--limit", type=int, default=None, help="Poison at most this many files (for testing).")

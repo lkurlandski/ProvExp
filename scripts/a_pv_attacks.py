@@ -44,6 +44,7 @@ from provexp.data.simpledb import SimpleDB
 from provexp.data.simpledb import SimpleDBReader
 from provexp.featuresets.ember2024.features import merge_import_descriptors
 from provexp.featuresets.ember2024.features import PEFeatureExtractor
+from provexp.data.paths import EMBER2024_DATA
 
 __all__ = ["ATTACKS", "BUDGETS", "build_attack", "map_watchdog", "run_attack"]
 
@@ -370,7 +371,7 @@ def main() -> None:
     parser = ArgumentParser(description=__doc__)
     parser.add_argument("--outdir", type=Path, required=True)
     parser.add_argument("--pilot_files", type=Path, default=ROOT / "artifacts/experiments/e1/seed-0/zeros/files.parquet")
-    parser.add_argument("--db", type=Path, default=Path("/shared/datasets/EMBER-2024/data/ts"))
+    parser.add_argument("--db", type=Path, default=EMBER2024_DATA / "ts")
     parser.add_argument("--model", type=Path, default=ROOT / "artifacts/models/gbdt/seed-0/model.txt")
     parser.add_argument("--attacks", nargs="+", default=list(ATTACKS), choices=list(ATTACKS))
     parser.add_argument("--num_malware", type=int, default=None, help="Cap on malware files (for smoke tests).")

@@ -49,6 +49,7 @@ from tqdm import tqdm
 from provexp.data.simpledb import SimpleDB
 from provexp.data.simpledb import SimpleDBIterator
 from provexp.featuresets.ember2024.features import PEFeatureExtractor
+from provexp.data.paths import EMBER2024_DATA
 
 sys.path.insert(0, str(Path(__file__).parent))
 
@@ -268,7 +269,7 @@ def main() -> None:
     parser.add_argument("--num_mined", type=int, default=1000)
     parser.add_argument("--min_df", type=int, default=25, help="Mine only 4-grams in at least this many sampled files.")
     parser.add_argument("--features", type=Path, default=ROOT / "artifacts" / "features" / "ember2024")
-    parser.add_argument("--db", type=Path, default=Path("/shared/datasets/EMBER-2024/data/tr"))
+    parser.add_argument("--db", type=Path, default=EMBER2024_DATA / "tr")
     parser.add_argument("--outdir", type=Path, default=ROOT / "artifacts" / "experiments" / "shortcuts_train")
     parser.add_argument("--num_workers", type=int, default=25)
     parser.add_argument("--timeout", type=int, default=600)

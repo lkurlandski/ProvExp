@@ -30,6 +30,7 @@ from tqdm import tqdm
 from provexp.data.simpledb import SimpleDB
 from provexp.data.simpledb import SimpleDBIterator
 from provexp.featuresets.ember2024.features import PEFeatureExtractor
+from provexp.data.paths import EMBER2024_DATA
 
 
 __all__ = [
@@ -77,7 +78,7 @@ def measure_shard(task: dict[str, Any]) -> list[dict[str, Any]]:
 def main() -> None:
     parser = ArgumentParser(description=__doc__.split("\n\n")[1] if __doc__ else None)
     parser.add_argument("--explanation_set", type=Path, default=ROOT / "artifacts" / "explanation_set" / "ts.parquet")
-    parser.add_argument("--db", type=Path, default=Path("/shared/datasets/EMBER-2024/data/ts"))
+    parser.add_argument("--db", type=Path, default=EMBER2024_DATA / "ts")
     parser.add_argument("--outdir", type=Path, default=ROOT / "artifacts" / "experiments" / "provenance_cost")
     parser.add_argument("--limit", type=int, default=None, help="Use at most this many files (for testing).")
     parser.add_argument("--num_workers", type=int, default=os.cpu_count())

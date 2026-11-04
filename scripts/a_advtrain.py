@@ -42,6 +42,7 @@ from provexp.data.simpledb import SimpleDBReader
 from provexp.data.tabular import load_manifest
 from provexp.featuresets.ember2024.features import merge_import_descriptors
 from provexp.featuresets.ember2024.features import PEFeatureExtractor
+from provexp.data.paths import EMBER2024_DATA
 
 from a_pv_attacks import ATTACKS
 from a_pv_attacks import BUDGETS
@@ -141,7 +142,7 @@ def main() -> None:
     parser.add_argument("--outdir", type=Path, required=True)
     parser.add_argument("--features", type=Path, default=ROOT / "artifacts/features/ember2024",
                         help="The feature store (its tr/meta.parquet names the training split; the layout X.npy uses).")
-    parser.add_argument("--db", type=Path, default=Path("/shared/datasets/EMBER-2024/data/tr"),
+    parser.add_argument("--db", type=Path, default=EMBER2024_DATA / "tr",
                         help="The SimpleDB directory for the TRAINING split.")
     parser.add_argument("--model", type=Path, default=ROOT / "artifacts/models/gbdt/seed-0/model.txt",
                         help="The undefended detector the attacks target.")

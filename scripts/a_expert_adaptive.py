@@ -44,6 +44,7 @@ from provexp.featuresets.ember2024.expert import DEFAULT_DOS_STUB  # noqa: E402
 from provexp.featuresets.ember2024.expert import DOS_HEADER_SIZE  # noqa: E402
 from provexp.featuresets.ember2024.expert import SECTIONS  # noqa: E402
 from provexp.featuresets.ember2024.features import PEFeatureExtractor  # noqa: E402
+from provexp.data.paths import EMBER2024_DATA  # noqa: E402
 
 
 __all__ = ["dos_to_default", "section_names", "candidates", "greedy_evade"]
@@ -201,7 +202,7 @@ def main() -> None:
     parser.add_argument("--model", type=Path, required=True, help="The monotone expert model directory (model.txt, ts_predictions.parquet).")
     parser.add_argument("--outdir", type=Path, required=True)
     parser.add_argument("--pilot_files", type=Path, default=ROOT / "artifacts/experiments/e1/seed-0/zeros/files.parquet")
-    parser.add_argument("--db", type=Path, default=Path("/shared/datasets/EMBER-2024/data/ts"))
+    parser.add_argument("--db", type=Path, default=EMBER2024_DATA / "ts")
     parser.add_argument("--fpr", type=float, default=0.01)
     parser.add_argument("--max_steps", type=int, default=12)
     args = parser.parse_args()
