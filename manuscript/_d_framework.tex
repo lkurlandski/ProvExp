@@ -1,307 +1,428 @@
-% Section 3: the framework (items, sums, readouts; exact side effects; sound directions). Budget: about 2,500 words
-% (docs/paper-mock.md). Source: docs/formalization.md, Sections 1 and 3-7 (frozen). Proofs: _j_proofs.tex.
+% Section 3: the framework. Rewritten 2026-11-04 from docs/framework-spine.md with the user's decisions and comments
+% (theory without domain examples, D2; no tables or figures for now, D3/D4, the tables are backed up in
+% backup/framework-tables-2026-11-04.tex). Source of the math: docs/formalization.md (frozen). Proofs: _j_proofs.tex.
+% Removed examples are kept in "% EXAMPLE" comments for the user.
 
-\subsection{The Problem}
-\label{sec:fw:problem}
+The feature mappings we study find pieces of their input, add up what each piece contributes to a set of running
+totals, and compute each feature by a formula over a few totals. We define this class of \emph{sum-then-readout
+extractors} (\Cref{sec:fw:model}) and describe an attacker's edit by the pieces it adds, removes, or changes. We then
+show when those pieces can be found from the positions the edit writes, without extracting the features of the edited
+object (\Cref{sec:fw:edits}). Two results follow. For a single edit, the change of every feature, side effects
+included, is computed exactly from a record the extractor writes while it runs (\Cref{sec:fw:side-effects}). For all
+edits a threat model allows, the direction in which each feature can move is computed soundly without applying any
+edit (\Cref{sec:fw:directions}), and a detector that is monotone in these directions cannot be evaded by them
+(\Cref{sec:fw:robustness}). The proofs are in Appendix~\ref{sec:fw:proofs}, and Appendix~\ref{sec:symbols} lists the notation.
 
-Pierazzi et al.~\cite{pierazzi2020intriguing} separate the \emph{problem space} $Z$, the objects an attacker edits,
-from the \emph{feature space} $X \subseteq \mathbb{R}^n$ that a classifier with malware score $h$ sees, and connect
-the two by a feature mapping $\varphi: Z \to X$. The attacker edits an object $z$ with a transformation
-$T \in \mathcal{T}$ under the \emph{problem-space constraints} $\Gamma$: the available transformations, preserved
-semantics, plausibility, and robustness to preprocessing. These constraints determine which feature-space changes are
-possible, written $\Gamma \vdash \Omega$. An attack that aims for the feature change $\boldsymbol{\delta}^*$ and
-realizes it with $T$ obtains $\varphi(T(z)) = \varphi(z) + \boldsymbol{\delta}^* + \boldsymbol{\eta}$, where the
-\emph{side-effect vector} $\boldsymbol{\eta}$ is everything else the edit changed. Every question about realizable
-evasion is a question about the set
-\[
-  \mathrm{Reach}(z) = \{\, \varphi(T(z)) : T \in \mathcal{T} \,\}.
-\]
-Pierazzi et al.\ treat $\varphi$ as a black box, so $\boldsymbol{\eta}$ and $\Omega$ can only be observed, by applying
-$T$ and extracting the features again; they note that when $\varphi$ is neither differentiable nor invertible, as in
-malware detection, the side effects of a transformation generally cannot be computed in advance. Part of $\boldsymbol{\eta}$ comes from \emph{consolidation}: the bookkeeping an edit needs to keep the object
-valid, such as raising the section count when a section is added. We do not compute consolidation. Each operation of a
-threat model declares its own (\cref{sec:fw:side-effects}); what we compute is the extractor's response to the declared
-edit, and from it a sound bound on the direction of every coordinate of $\Omega$.
-
-This section opens the box. For extractors that find pieces of the input, add up what each piece contributes, and
-apply a formula per feature, the side effects of one edit can be computed exactly from a record the extractor writes
-while it runs, and the direction in which each feature can move under a whole threat model can be computed soundly,
-without running an attack. One edit serves as the running example: appending the 20~bytes
-\texttt{\textbackslash 0http://evil.example} to a Windows executable featurized by EMBER~\cite{anderson2018ember}.
-
-\subsection{Items, Sums, and Readouts}
+\subsection{Sum-then-Readout Extractors}
 \label{sec:fw:model}
 
-Written as code, the extractors we consider share one shape: they initialize a vector of running totals, loop over
-pieces of the input adding each piece's contribution to the totals, and finally apply a formula per feature. We call
-the three layers \emph{items}, \emph{sums}, and \emph{readouts}. An attacker's edit is easy to describe in the first layer
-(which pieces it adds, removes, or changes) and hard to describe in the last (how it moves thousands of features).
+The extractors we consider share a shape that is easiest to see in their code. They keep a set of running totals,
+initially zero, and loop over pieces of the input, adding each piece's contribution to the totals. When the loops
+end, they compute each feature by a formula over a few of the totals. The number of pieces of some kind, the total
+of an attribute over them, and the largest value of an attribute are totals; an average, a normalized histogram, and
+an entropy are formulas over totals. We call the three layers \emph{items}, \emph{sums}, and \emph{readouts}. The
+reason to separate them is that an attacker's edit is simple to describe in the first layer, by the items it adds,
+removes, or changes, and hard to describe in the last, where a single item can move many features.
 
-An input $z$ is a sequence of \emph{elements}, such as the bytes of a file or the packets of a trace, and $z[p]$ is
-the element at position $p$. An \emph{item} $\iota$ is one iteration of one of the extractor's loops. It has a
-\emph{kind} $\kappa(\iota)$ (section, string, byte, packet), an \emph{identity} that says how the extractor reaches it
-(``section table entry~3'', ``the string starting at offset 812''), \emph{members} $M(\iota)$, the positions its
-content is read from, and \emph{locating positions} $L(\iota)$, the positions whose values decide whether it exists
-and where its members lie. Two items of different inputs are the same item if they have the same kind and identity.
-In a PE file, a section is an item whose members are its table entry and its raw data, and whose locating positions
-are the section count and its entry's offset and size fields; a printable string is an item identified by its start
-offset, with no locating positions. A \emph{parsed} kind is found by following pointers or keys from fixed places
-(sections, header fields, flows grouped by their addresses and ports). A \emph{scanned} kind is found by examining
-content wherever it lies (bytes, strings, $n$-grams, consecutive packet pairs) and comes with a \emph{recognizer},
-which returns the items of the kind that overlap a given range of positions. Kinds have locating positions of their
-own, such as the section count, which decides whether the bytes after the last table entry form another entry;
-$L(z)$ collects all locating positions of $z$.
+An input $z \in \mathcal{Z}$ is a finite sequence of \emph{elements}, such as the bytes of a file or the packets of a
+trace, and $z[p]$ is the element at position $p$.
 
-The extractor keeps a finite set $S$ of \emph{sums}. Each item has a \emph{contribution} $\mathbf{v}(\iota)$, the
-amount it adds to each sum, and the \emph{sum vector} $\mathbf{s}(z)$ totals the contributions of all items of $z$.
-Most sums add; a few, called \emph{pools}, keep a maximum or a minimum. Contributions are written in a small
-vocabulary of \emph{terms} (\Cref{tab:fw:terms}), each with a known sign behavior that
-\Cref{sec:fw:directions} uses. Each feature $j$ has a \emph{readout} $\rho_j$, a formula of a known type over a few
-sums (\Cref{tab:fw:readouts}).
+\definition[Item]
+\label{def:fw:item}
+{
+An \emph{item} $\iota$ of an input $z$ is a collection of elements of $z$ that the extractor analyzes jointly. It
+has a \emph{kind} $\kappa(\iota)$, an \emph{identity}, and a set of \emph{members} $M(\iota)$, the positions of its
+elements; its \emph{content} $c(\iota)$ is the sequence of elements at its members. $\mathcal{I}(z)$ is the set of
+items of $z$.
+}
+
+\noindent The kind says which part of the extractor processes the item, and the identity says how the extractor
+reaches it, for example by an index into a table it parses or by the position at which the item starts. Two items of
+different inputs are the same item if they have the same kind and identity, which is what lets us compare the items of
+an object before and after an edit. A kind behaves like a type: the content of every item of kind $\kappa$ has the
+same type, and the extractor processes every item of the kind with the same code.
+
+% EXAMPLE (removed, D2): in a PE file, a section is an item whose identity is its index in the section table and whose
+% members are its table entry and its raw data; a printable string is an item identified by its start offset; each
+% byte is an item, for the histogram and the entropy. In an APK, each permission declaration, API call site, and
+% string constant is an item. In a trace, each packet is an item, and so is each pair of consecutive packets in a flow
+% (for the gaps between packets).
+
+The running totals are sums, and an item's effect on them is its contribution. We make the totals precise as
+commutative monoids, since the algebra of the monoid decides what can be computed from a total later.
+
+\definition[Sums and contributions]
+\label{def:fw:sums}
+{
+An extractor keeps a finite set $S$ of \emph{sums}. Each sum $s$ takes values in a commutative monoid $\mathbb{M}_s$:
+either $(\mathbb{R}, +, 0)$, for an \emph{additive} sum, or $(\mathbb{R} \cup \{-\infty\}, \max, -\infty)$, for a
+\emph{pool} (or the same with $\min$ and $+\infty$). Let $\mathbb{M} = \prod_{s \in S} \mathbb{M}_s$, with the
+operation $\oplus$ applied per sum. Each item $\iota$ has a \emph{contribution} $\mathbf{v}(\iota) \in \mathbb{M}$, which
+is the identity element on every sum the item does not touch. The \emph{sum vector} of $z$ is
+\[
+  \mathbf{s}(z) = \bigoplus_{\iota \in \mathcal{I}(z)} \mathbf{v}(\iota).
+\]
+}
+
+\noindent Because every $\mathbb{M}_s$ is commutative and associative, the sum vector does not depend on the order in
+which the loops visit the items, and the sum vector of a union of disjoint collections of items is the combination of
+their sum vectors. The two kinds of monoid differ in one way that matters for everything that follows.
+$(\mathbb{R}, +)$ is a group: removing an item from an additive sum is undone by subtracting its contribution, so the
+new total follows from the old total and the item. The maximum has no inverse: once the largest item is removed, the
+old maximum says nothing about the next largest, which is why the record we build keeps every item and not only the
+totals.
+
+Contributions are built from a few kinds of terms, each with a predictable effect on its sum. A \emph{count} adds 1,
+to the count of all items of a kind or to the count of the item's key. An \emph{attribute} adds a nonnegative value of
+the item, such as its length, or a value of 0 or 1 that says whether its content matches a pattern. A \emph{hashed}
+term adds an attribute, possibly negated, to the sum that a hash of the item's key selects from a family of sums. A
+\emph{slot} holds a value that exactly one item writes. An \emph{opaque} term holds a value computed by code the
+model does not open, within a declared range. \Cref{sec:fw:directions} uses the sign of each term's change.
+
+\definition[Readout]
+\label{def:fw:readout}
+{
+A \emph{readout} $\rho: \mathbb{M} \to \mathbb{R}$ is a formula of a known type that reads a bounded number of sums.
+}
+
+\noindent The types we need are few: the identity (the feature is a sum or a pool), a ratio of two sums, a bin of a
+histogram over the histogram's total, the entropy of a histogram, a standard deviation from a count, a total, and a
+total of squares, a presence bit that is nondecreasing in its sums, the number of keys with a positive count, a test
+of a bit in a slot, an attribute of the one item a rule selects, a sum over the difference of two pools (a rate),
+and an opaque value with a default for when its item is absent. We record each readout's type, not only its
+formula, because \Cref{sec:fw:directions} turns what is known about the sums into what is known about the feature by
+one rule per type. In the terms of Gray et al.'s data cube~\cite{gray1997data}, sums and pools are
+\emph{distributive} aggregates, which can be computed by combining the totals of disjoint parts, and readouts are
+\emph{algebraic} aggregates, fixed functions of a bounded number of distributive ones. A \emph{holistic} aggregate, such
+as a median, has no summary of bounded size and is not a readout.
 
 \definition[Sum-then-readout extractor]
 \label{def:fw:extractor}
 {
-An extractor $\varphi$ is a sum-then-readout extractor over the \emph{modeled features} $J$ if
-$\varphi_j(z) = \rho_j(\mathbf{s}(z))$ for every input $z$ and every $j \in J$.
+A feature mapping $\varphi$ is a \emph{sum-then-readout extractor} over a set of \emph{modeled features} $J \subseteq
+\{1, \dots, n\}$ if it has items, contributions, and readouts $\rho_j$ such that $\varphi_j(z) =
+\rho_j(\mathbf{s}(z))$ for every input $z$ and every $j \in J$.
 }
 
-The remaining features are \emph{residual}, and every result below lets them change arbitrarily. The \emph{item
-table} of $z$ lists every item with its kind, identity, members, locating positions, and contribution; the
-instrumented extractor writes it in the same pass that computes the features. In EMBER, the number of printable
-strings is a sum to which each string contributes~1, the total string length is one to which each string adds its
-length, and the average string length is their ratio; each of the 256 byte-histogram bins is a sum, read out both as a
-normalized vector and as the file's entropy.
+\noindent The remaining features are \emph{residual}, and every result below lets them change arbitrarily. An
+extractor of this class is instrumented once, so that in the same pass that computes the features it writes the
+\emph{item table} of $z$: every item with its kind, identity, members, and contribution, together with the positions
+that locate it, which \Cref{sec:fw:edits} defines.
 
-The sum vector is a fold of the contributions over commutative monoids: addition for sums, a maximum or a minimum for
-pools.
-Addition has an inverse and the maximum does not, so removing an item can be undone on a sum but not on a pool, which
-is why the model keeps every item, not only the totals. In the terms of Gray et al.'s data cube~\cite{gray1997data}, sums and pools are distributive aggregates and readouts are
-algebraic ones; a holistic aggregate such as a median packet length falls outside the class.
-We build the model for EMBER, for Windows executables, and sketch it for two extractors from other security domains
-(\Cref{tab:fw:domains}): Drebin~\cite{arp2014drebin} for Android apps, and CICFlowMeter, behind
-CIC-IDS2017~\cite{sharafaldin2018toward}, for network flows.
-
-\begin{table}[t]
-  \caption{Three feature extractors in the terms of the model: EMBER is built and evaluated, the other two are
-  sketched.}
-  \label{tab:fw:domains}
-  \small
-  \begin{tabular}{@{}p{0.2\columnwidth}p{0.37\columnwidth}p{0.35\columnwidth}@{}}
-    \toprule
-    Extractor & Items & Readouts \\
-    \midrule
-    EMBER (built) & bytes, strings, sections, header fields, imports & identity, ratio, entropy, maximum, distinct count \\
-    Drebin & manifest declarations, API call sites & presence \\
-    CICFlowMeter & packets, consecutive packet pairs, in flows & ratio, maximum, standard deviation, rate \\
-    \bottomrule
-  \end{tabular}
-\end{table}
-
-\begin{table*}[t]
-  \caption{Contribution terms and the sign of the change one item makes to a term when it is added, removed, or
-  modified. A pattern match (a string that is a URL) is an add term of 0 or~1, since a modification can change
-  whether it matches. A modification that changes an item's key counts as a removal from the old key and an addition
-  to the new one.}
-  \label{tab:fw:terms}
-  \small
-  \begin{tabular}{@{}lp{0.28\textwidth}p{0.22\textwidth}lll@{}}
-    \toprule
-    Term & What an item adds & Example & Added & Removed & Modified \\
-    \midrule
-    count, keyed & 1 to one sum, or to the count of its key & string count; Drebin permissions & $\{+\}$ & $\{-\}$ & $\{0\}$ \\
-    add, bins, max pool & a nonnegative attribute, or counts to a family of bins & total string length; byte histogram & $\{0,+\}$ & $\{-,0\}$ & $\{-,0,+\}$ \\
-    hashed (signed) & $\pm$ an attribute to bucket $\mathrm{hash}(\text{key})$ & section sizes by name & signs of reachable keys & negated & every sign \\
-    slot & the value of a field exactly one item holds & header fields; initial TCP window & --- & --- & every sign \\
-    opaque & a value from unopened code, in a declared range & signature checks & sign of value $-$ default & negated & every sign \\
-    \bottomrule
-  \end{tabular}
-\end{table*}
-
-\begin{table*}[t]
-  \caption{Readout types and the rule that turns the signs the sums can change by (their envelopes $E$) into the signs
-  the feature can change by. A min pool follows the max pool with signs flipped.}
-  \label{tab:fw:readouts}
-  \small
-  \begin{tabular}{@{}p{0.16\textwidth}p{0.2\textwidth}p{0.22\textwidth}p{0.34\textwidth}@{}}
-    \toprule
-    Readout & Formula & Example & Signs of the feature's change \\
-    \midrule
-    identity, max/min & the sum or pool & string count; longest packet & $E_s$ \\
-    presence & nondecreasing in its sums & Drebin features & $E_s \cup \{0\}$; over several sums, up if all within $\{0,+\}$ \\
-    ratio & $a/b$, with $a \ge 0$, and $b > 0$ before and after the edit & average string length & $E_a \boxplus ((-E_b) \cup \{0\})$ \\
-    normalized vector & a bin over the bins' total & byte histogram & the ratio rule \\
-    rate & a sum over the span of two pools & bytes per second & the ratio rule, denominator $E_{\max} \boxplus (-E_{\min})$ \\
-    distinct count & keys with a positive count & imported libraries & up if keys are only added, down if only removed \\
-    entropy, std.\ deviation & a fixed formula of several sums & file entropy & $\{0\}$ if no sum it reads can change, else every sign \\
-    field transform, selection & a bit test of a slot; an attribute of a chosen item & header flags; entry section's name & $\{0\}$ if nothing it reads is written, else every sign \\
-    opaque with default & an opaque value, or a default when its item is absent & signature features & the opaque term's entry in \Cref{tab:fw:terms} \\
-    residual & --- & parser warnings & every sign \\
-    \bottomrule
-  \end{tabular}
-\end{table*}
+Many feature sets used in security have this shape. For Windows executables, EMBER~\cite{anderson2018ember} counts
+and sizes sections, imports, and strings and summarizes byte histograms by their entropy, as did the features of Saxe
+and Berlin~\cite{saxe2015deep} before it, and byte $n$-gram features~\cite{kolter2004learning} count windows of $n$
+bytes. For Android apps, Drebin~\cite{arp2014drebin} records the presence of requested permissions, app components,
+and API calls. For PDF documents, the features of Hidost~\cite{srndic2016hidost} each correspond to a structural
+path in the document's object tree. % VERIFY: Hidost's feature values (path counts or presence bits).
+For network traffic, CICFlowMeter, the extractor behind the CIC-IDS2017
+dataset~\cite{sharafaldin2018toward}, computes per flow the counts, totals, extremes, means, and standard deviations
+of packet lengths and of the gaps between packets. The class excludes global program analyses, such as features of a
+call graph, in which a piece's contribution depends on the whole program, and learned representations, which have no
+items to record (\Cref{sec:discussion}).
 
 \subsection{Edits as Item Deltas}
 \label{sec:fw:edits}
 
-An edit takes $z$ to $z'$. Its \emph{written set} $W$ holds the positions where $z'$ differs from $z$, including
-those gained or lost at the end; the edit is \emph{in place} if no element moves, and \emph{shifts} elements if it
-inserts in the middle, as injecting a packet does. Its \emph{item
-delta} $\Delta = (I^-, I^+, I^\sim, I^\to)$ compares the items of $z$ and $z'$ by identity: removed, added, modified
-(same identity, different content), and moved (same content, different members). Under modification, count terms
-cancel: renaming a section leaves the section count fixed.
+An edit takes an input $z$ to an input $z'$. Its \emph{written set} $W$ holds the positions at which $z'$ differs
+from $z$, including any positions gained or lost at the end. The edit is \emph{in place} if no element changes
+position, as for overwriting, appending, and truncating, and it \emph{shifts} elements if it inserts or deletes in the
+middle. An edit is \emph{stated in elements} when it is given by the positions it writes and what it writes there,
+and \emph{stated in items} when it is given by the items it adds, removes, or changes. Either way, the extractor sees
+the edit through the items it changes.
 
-An \emph{operation} $o$ is a family of edits $T_{o,\theta}$ with parameters $\theta \in \Theta_o(z)$, such as any
-content of at most $B$ bytes. A \emph{threat model}
-$\mathcal{M} = (O, \mathrm{Pre})$ is a finite catalogue $O$ of operations with a precondition
-$\mathrm{Pre} \subseteq Z$, which is \emph{closed} if no operation leads out of it; $\mathrm{Reach}_\mathcal{M}(z)$
-is what finite sequences of operations produce from $z$. An operation's
-\emph{signature} $\Sigma_o$ lists which item kinds it can add, remove, or modify, and with which contributions. An
-operation stated in items (add a section named \texttt{.x}, inject a packet) comes with its signature; one stated in
-elements (append these bytes) does not. Whether an operation preserves behavior belongs to $\Gamma$, an input to the
-model.
+\definition[Item delta]
+\label{def:fw:delta}
+{
+The \emph{item delta} of an edit is $\Delta = (I^-, I^+, I^\sim, I^\to)$, which compares the items of $z$ and $z'$ by
+identity: the \emph{removed} items $I^-$ have an identity only in $z$, the \emph{added} items $I^+$ have one only in
+$z'$, the \emph{modified} items $I^\sim$ have an identity in both but different content, and the \emph{moved} items
+$I^\to$ have an identity in both and the same content at different members.
+}
 
-An interval query of $W$ against the recorded locating positions sorts every edit into one of four classes, without
-parsing $z'$. A \emph{content edit} writes no locating position and creates or destroys no item. An
-\emph{item-creating edit} writes none either, but creates or destroys scanned items. A \emph{declared structural edit}
-writes a locating position or shifts elements, and states its resulting delta, as adding a section or injecting a
-packet does. An \emph{undeclared structural edit}, such as overwriting a section's offset or changing a packet's
-port, writes a locating position and states nothing; it is flagged, not predicted. The running example is
-item-creating: it adds 20~bytes and one string of 19~characters (the leading zero byte keeps the text from joining a
-string at the old end of the file). On a file whose section table points past its truncated end, the same append
-writes a locating position, and the query catches it.
+\noindent Every other item is unchanged. Modification is kept apart from removal followed by addition because a
+modified item's count terms cancel: an item whose content changes is still counted once. Some sums, the slots, can
+only be modified, since exactly one item ever writes them.
+
+If $\Delta$ were known, the change of every sum would follow from the contributions of the items in it
+(\Cref{sec:fw:side-effects}). But $\Delta$ is defined by comparing the items of $z$ with those of $z'$, and finding the
+items of $z'$ means running the extractor's parser on $z'$, which is the re-extraction we want to avoid. The rest of
+this subsection shows when $\Delta$ follows from the item table of $z$ and the written set alone. Two questions
+about a written position decide it. The first is whose content the position belongs to, which the members answer.
+The second is whether the position decides which items exist and where their members lie.
+
+\definition[Locating positions]
+\label{def:fw:locating}
+{
+The \emph{locating positions} $L(\iota)$ of an item are the positions whose elements decide whether $\iota$ exists and
+where its members lie. A kind has locating positions of its own, which decide where items of the kind could be.
+$L(z)$ is the set of all locating positions of $z$.
+}
+
+\noindent Kinds come in two sorts. A \emph{parsed} kind is reached by following pointers or keys from fixed places,
+and its locating positions are the pointers and keys. A \emph{scanned} kind is found by examining content wherever it
+lies, and the extractor contains a \emph{recognizer} for it, a routine that returns the items of the kind that overlap
+a given range of positions. The item table records locating positions alongside members, and for an extractor that
+records them completely, an edit that writes none of them leaves the parse alone.
+
+% EXAMPLE (removed, D2): a PE section's locating positions are the header field holding the number of sections, which
+% decides whether its table entry is read at all, and the offset and size fields of its entry, which decide where its
+% raw data lies. The number of sections is also a kind-level locating position: it decides whether the bytes after the
+% last table entry form another section. In a trace, a packet's addresses, ports, protocol, FIN flag, and timestamp are
+% locating positions, since they decide which flow it belongs to.
+
+\begin{enumerate}[label=(R\arabic*),leftmargin=*,itemsep=1pt]
+  \item \emph{Complete record of structure.} If an in-place edit writes no recorded locating position, every item of a
+    parsed kind keeps its identity, members, and locating positions, and no parsed item appears. The one exception is
+    an \emph{end-anchored} item, whose members run to the end of the input by definition: it gains or loses the
+    positions added or removed at the end.
+\end{enumerate}
+
+\noindent End-anchored items exist because appending is the commonest edit of all. Treating the end of the input as a
+locating position instead would make every append structural, and the model could say nothing about it.
+
+% EXAMPLE (removed, D2): the overlay of a PE file, everything after the last section, is end-anchored. Where a parser
+% reads structure from the end, as for a ZIP archive's central directory, appending writes a locating position.
+
+Items of a scanned kind can change even where the edit does not write their members. New content can join an existing
+item, split one into two, or form a new one next to the written positions. The record can account for these changes
+only if they stay close to the edit.
+
+\begin{enumerate}[label=(R\arabic*),leftmargin=*,itemsep=1pt,resume]
+  \item \emph{Changes stay near the edit.} Each scanned kind $\kappa$ has a \emph{margin} $\mu_\kappa(z, W)$, a set of
+    positions computable from $z$ and $W$, such that after an edit that writes no locating position (i) every item
+    of kind $\kappa$ whose members lie outside the margin is unchanged, (ii) no item of the kind appears outside the
+    margin, and (iii) the kind's recognizer, run on the margin alone, finds every item of the kind that overlaps it.
+\end{enumerate}
+
+\noindent For maximal runs of elements of some class, the margin reaches the nearest element outside the class on each
+side, since a run's extent depends only on its neighbors; for windows of $n$ consecutive elements, it is $n - 1$
+elements on each side. These are the damage regions that incremental parsers rely on~\cite{wagner1998efficient}.
+
+% EXAMPLE (removed, D2): printable strings are maximal runs of printable bytes; byte n-grams are windows; a consecutive
+% packet pair has a margin of one packet on each side.
+
+The written set and the locating positions now sort every edit into four classes, by an interval query of $W$
+against $L(z)$ that needs no parse of $z'$. A \emph{content edit} writes no locating position and creates or destroys
+no item, so it only changes the content of existing items. An \emph{item-creating edit} writes no locating position
+either, but creates or destroys scanned items within the margins. A \emph{declared structural edit} writes a locating
+position or shifts elements, and declares its resulting delta, as every edit stated in items does (add an item of this
+kind with this content). An \emph{undeclared structural edit} writes a locating position and declares nothing, so the
+parse of $z'$ may differ from that of $z$ in ways the item table cannot reveal; it is flagged, not predicted. For the
+declared edits, the record has to take the editing tool at its word.
+
+\begin{enumerate}[label=(R\arabic*),leftmargin=*,itemsep=1pt,resume]
+  \item \emph{Honest tools.} A declared edit produces exactly the delta it declares, and changes scanned items only
+    within the range it declares.
+\end{enumerate}
+
+\noindent A tool that rebuilds the layout of the whole input to carry out a small edit does not satisfy (R3), and its
+edits count as undeclared.
+
+\lemma[Finding the changed items]
+\label{lem:fw:delta}
+{
+Let an edit that is a content, item-creating, or declared structural edit take $z$ to $z'$, and let (R1)--(R3) hold.
+Then its item delta $\Delta$ is computable from the item table of $z$, the written set $W$, and the elements of $z'$
+inside the margins, or inside the declared range.
+}
+
+\noindent Parsed items need only a lookup: by (R1), a parsed item changes only if $W$ meets its members, and its new
+content is read from $z'$. Scanned items need the recognizer on the margins, by (R2), and declared edits need their
+declaration, by (R3). The format of the input enters the model only here, through (R1) and (R2). An edit stated in
+items declares its delta and needs neither.
+
+% EXAMPLE (removed, D2): appending the 20 bytes "\0http://evil.example" to a PE file is item-creating: it adds 20
+% byte items and one string of 19 characters (the leading zero byte keeps the text from joining a string at the old
+% end of the file), and extends the overlay. On a file whose section table points past its truncated end, the same
+% append writes a locating position, and the query catches it.
 
 \subsection{Exact Side Effects}
 \label{sec:fw:side-effects}
 
-To predict the features of $z'$ without extracting them: list the items the edit adds,
-removes, or changes, then adjust the sums by those items' contributions and apply the readouts again. In the running
-example, the number of strings and the number of URLs rise by one; the average string length gains 19 in its
-numerator and 1 in its denominator; twenty histogram bins and their total rise, and the file's entropy follows; the
-overlay's entropy is recomputed, and with it the largest section entropy, in which the overlay counts as a section.
-No section table entry is touched, so the section count, the section-name buckets, and the imports stay fixed. One
-side effect is easy to miss by hand: EMBER divides each section's size by the file's size, so every section's size
-ratio falls.
+With the item delta in hand, the features of $z'$ follow in two steps: adjust each sum by the contributions of the
+items in $\Delta$, and apply the readouts again. The first step assumes that the items outside $\Delta$ contribute to
+$z'$ what they contributed to $z$. That holds only if an item's contribution depends on the item alone. An extractor
+that divides an item's attribute by a total over the whole input, or that counts an item only if no item with the
+same key came before it, gives the same item different contributions in different inputs, and an edit elsewhere then
+changes them.
 
-Each way the recipe can go wrong becomes a requirement, stated per item kind:
-\begin{enumerate}[label=(R\arabic*),leftmargin=*,itemsep=1pt]
-  \item \emph{Faithful recording.} The readouts applied to the recorded sums reproduce $\varphi_j$ exactly for every
-    $j \in J$.
-  \item \emph{Self-contained contributions.} An item's contribution depends only on its kind and content. EMBER
-    breaks this in three of the ways Pierazzi et al.\ list as obstacles: it divides a section's size by the file's
-    (repaired by moving the division into the readout), counts each library once (repaired by a count per name), and
-    lets a second import descriptor overwrite the first (patched; \Cref{sec:instances}).
-  \item \emph{Complete record of structure.} An in-place edit that writes no recorded locating position leaves every
-    parsed item with its identity, members, and locating positions, and adds none, except that an \emph{end-anchored}
-    item (an overlay, trailing data) gains or loses the positions at the end.
-  \item \emph{Changes stay near the edit.} Each scanned kind $\kappa$ has a margin $\mu_\kappa(z, W)$, computable from
-    $z$ and $W$, such that (i) no item of that kind outside the margin changes, (ii) none appears outside it, and
-    (iii) its recognizer finds the items inside it from the margin alone. For strings, the margin reaches the nearest non-printable byte on each side; for
-    windows of $n$ elements, $n-1$ elements; for packet pairs, one packet. These are the damage regions incremental
-    parsers rely on~\cite{wagner1998efficient}.
-  \item \emph{Honest tools.} Every edit of an operation has an item delta within its signature, and a declared edit
-    produces exactly the delta it declares; a tool that rebuilds the layout when adding a section does not.
+\begin{enumerate}[label=(R\arabic*),leftmargin=*,itemsep=1pt,resume]
+  \item \emph{Self-contained contributions.} An item's contribution depends only on its kind and its content:
+    $\mathbf{v}(\iota) = \mathbf{v}_{\kappa(\iota)}(c(\iota))$ for a function $\mathbf{v}_\kappa$ per kind.
 \end{enumerate}
-(R1), (R2), and (R5) are needed for every edit; (R3) and (R4) only for edits stated in elements, which are the one
-place where the input format enters. A threat model stated entirely in items needs neither.
+
+\noindent In the terms of \Cref{sec:fw:model}, (R4) says that the code processing a kind reads only the item, and
+that the sum vector is its fold over the items. Both violations above are repaired by moving work from the
+contribution into the readout: the item contributes its raw attribute and the total becomes a sum of its own, or the
+item contributes to a count per key and the readout counts the keys with a positive count. The second step needs the
+record to agree with the extractor.
+
+\begin{enumerate}[label=(R\arabic*),leftmargin=*,itemsep=1pt,resume]
+  \item \emph{Faithful recording.} On every input, the recorded readouts applied to the recorded sums give the
+    extractor's own values of the modeled features.
+\end{enumerate}
+
+\noindent (R3)--(R5) are needed for every edit, and (R1) and (R2) only for edits stated in elements.
 
 \proposition[Exact side effects]
 \label{prop:fw:side-effects}
 {
-Let an edit that is not undeclared structural take $z$ to $z'$, and let (R1)--(R5) hold. Then
-(i) its item delta $\Delta$ is computable from the item table of $z$, the written set $W$, and the elements of $z'$
-inside the margins (or the declared range);
-(ii) every additive sum $s$ satisfies
+Let an edit that is not undeclared structural take $z$ to $z'$, and let (R1)--(R5) hold. Then $\Delta$ is computable
+as in Lemma~\ref{lem:fw:delta}, and:
+(i) every additive sum $s$ satisfies
 \[
   \mathbf{s}(z')_s = \mathbf{s}(z)_s + \sum_{\iota \in I^+} \mathbf{v}(\iota)_s - \sum_{\iota \in I^-}
   \mathbf{v}(\iota)_s + \sum_{\iota \in I^\sim} \big(\mathbf{v}(\iota')_s - \mathbf{v}(\iota)_s\big),
 \]
-where $\iota'$ is a modified item after the edit, and moved items change nothing;
-(iii) a pool's new value is computable from the item table and $\Delta$, but in general not from its old value and
-$\Delta$; and (iv) $\varphi_j(z') = \rho_j(\mathbf{s}(z'))$ for every $j \in J$, so $\boldsymbol{\eta}$ is exact on
-$J$.
+where $\iota'$ is the modified item in $z'$;
+(ii) every pool's new value is computable from the item table of $z$ and $\Delta$, but in general not from its old
+value and $\Delta$; and
+(iii) $\varphi_j(z') = \rho_j(\mathbf{s}(z'))$ for every $j \in J$, so the change $\varphi(z') - \varphi(z)$, side
+effects included, is exact on the modeled features.
 }
 
-\noindent The residual features outside $J$ may change arbitrarily; the directions give them every sign
-(\Cref{tab:fw:readouts}), and the detectors of \Cref{sec:eval:detectors} drop them, so nothing rests on how they move.
+\noindent Part (i) is the delta rule of incremental view maintenance~\cite{gupta1995maintenance,koch2014dbtoaster}:
+the items of $z'$ split into the unchanged items and those of the delta, and by (R4) the unchanged items contribute
+what they did before; moved items keep their content and so contribute nothing new. Part (ii) is the missing inverse
+of \Cref{sec:fw:model}: two pools holding the values $\{5, 3\}$ and $\{5, 5\}$ both read 5, and removing an item of
+value 5 leaves 3 in one and 5 in the other. Part (iii) is (R5). A sequence of edits is handled one edit at a time, by
+carrying the item table forward. No feature of $z'$ is extracted, and the side-effect vector of an attack that aimed
+for $\boldsymbol{\delta}^*$ is $\boldsymbol{\eta} = \varphi(z') - \varphi(z) - \boldsymbol{\delta}^*$, exact on $J$.
 
-\noindent The proof (\Cref{sec:fw:proofs}) confines the changed items to $W$ and the margins, splits each sum over the
-partition of items into changed and unchanged ones, and uses that the maximum has no inverse. Sequences of edits
-follow by carrying the item table forward.
-
-Part~(iii) is where traffic differs from files. Injecting a forward packet between two packets of a CICFlowMeter flow
-removes the consecutive pair that spanned the gap and adds two shorter ones. If the removed pair held the flow's
-longest gap, the new longest gap is the largest of the \emph{other} gaps: the item table lists it, and the old maximum
-does not reveal it. Incremental view maintenance in databases knows the same fact.
+% EXAMPLE (removed, D2): appending "\0http://evil.example" raises the number of strings and the number of URLs by
+% one; the average string length gains 19 in its numerator and 1 in its denominator; twenty histogram bins and their
+% total rise, and the file's entropy follows; the overlay's entropy is recomputed, and with it the largest section
+% entropy, in which the overlay counts as a section. No section table entry is touched, so the section count, the
+% section-name buckets, and the imports stay fixed. Every section's size ratio falls, since EMBER divides each
+% section's size by the file's size: the side effect that is easy to miss by hand.
+% EXAMPLE (removed, D2), part (ii) in traffic: injecting a forward packet between two packets of a CICFlowMeter flow
+% removes the consecutive pair that spanned the gap and adds two shorter ones. If the removed pair held the flow's
+% longest gap, the new longest gap is the largest of the other gaps, which the item table lists and the old maximum
+% does not reveal.
 
 \subsection{Sound Directions}
 \label{sec:fw:directions}
 
-A detector meant to be robust needs to know, for each feature, whether the attacker can raise it, lower it, both, or
-neither, on every input the detector will face. A \emph{sign set} is a subset of $\{-, 0, +\}$, and the sign sum
-$A \boxplus B$ is the set of signs $x + y$ can have when $x$ has a sign in $A$ and $y$ in $B$; for example,
-$\{+\} \boxplus \{-\} = \{-, 0, +\}$. For a population $F$ of inputs, the \emph{envelope} $E^F_o(s)$ is the set of
-signs the change of sum $s$ takes over every input in $F$ and every edit of operation $o$. A \emph{direction table}
-gives each feature $j$ a direction $D_j$, one of fixed, up, down, or both; it is \emph{sound} for $\mathcal{M}$ over
-$F$ if no single operation instance on an input in $F$ changes a fixed feature, lowers an up feature, or raises a down
-one. These are Incer et al.'s four cases~\cite{incer2018adversarially}, which they assign by hand; Gimenez et
-al.~\cite{gimenez2025certifiably} keep only features that are up, picked by hand or kept because no observed attack
-lowered them.
+A detector has to hold against every edit an attacker may make, not against one. We describe the attacker's edits by
+operations. An \emph{operation} $o$ is a family of edits $T_{o,\theta}$ indexed by a parameter $\theta$ from a domain
+$\Theta_o(z)$ that may depend on the input, such as any content of at most a given length. A \emph{threat model}
+$\mathcal{M} = (O, \mathrm{Pre})$ is a finite catalogue $O$ of operations together with a \emph{precondition}
+$\mathrm{Pre} \subseteq \mathcal{Z}$, the inputs it applies to, and the precondition is \emph{closed} if no
+operation takes an input in it outside it. The threat model fixes the transformations of \Cref{sec:background}:
+$\mathcal{T}$ is the set of finite sequences of operation instances, and $\mathcal{R}(z)$ is what they reach. Whether
+an operation preserves the object's behavior or plausibility belongs to $\Gamma$ and is an input to the model. The
+\emph{signature} $\Sigma_o$ of an operation lists which kinds of items it can add, remove, or modify, and with which
+contributions. An operation stated in items comes with its signature, and one stated in elements
+does not.
 
-The table is computed in two steps. First, the last three columns of \Cref{tab:fw:terms} give the sign of each item's
-change to each term, and an operation's envelope on a sum lies within the sign sum of these signs over the changes its
-signature allows, the sign domain of abstract interpretation~\cite{cousot1977abstract}. Two refinements (\Cref{sec:fw:proofs}): the buckets
-that keys chosen from a set $K$ reach are found by enumerating $K$, which answers Severi et al.'s remark that hashing
-resists targeting~\cite{severi2021explanation}; and extending a string only adds matches of a pattern that does not
-look past its end. For an operation stated in elements, the signature is derived per input: by (R3) and (R4), an edit that
-writes no locating position modifies only the parsed items whose members it writes and changes only scanned items
-within the margins, both read from the item table. No edit is applied, but the result depends on the layout, which
-is why directions hold over a population. Second, the last column of \Cref{tab:fw:readouts} turns the
-sums' envelopes into the feature's signs. For appending up to $B$ bytes, the string and URL counts go up, the section
-count and name buckets are fixed, every section's size ratio goes down, and the average string length and the entropy
-go both ways.
+The question a detector asks is whether the attacker can raise each feature, lower it, both, or neither, on every
+input it will face. A \emph{sign set} is a subset of $\{-, 0, +\}$, and $-A$ flips every sign in $A$. The \emph{sign
+sum} $A \boxplus B$ is the set of signs that $a + b$ can have when $a$ has a sign in $A$ and $b$ a sign in $B$; for
+example, $\{+\} \boxplus \{0\} = \{+\}$, while $\{+\} \boxplus \{-\} = \{-, 0, +\}$.
+
+\definition[Envelopes and direction tables]
+\label{def:fw:directions}
+{
+Let $F \subseteq \mathrm{Pre}$ be a population of inputs. The \emph{envelope} $E^F_o(s)$ of operation $o$ on sum $s$ is
+the set of signs that the change of $s$ takes over every input in $F$ and every edit of $o$. A \emph{direction table}
+$D$ assigns each feature $j$ a direction $D_j$, one of $\mathsf{fixed}$, $\mathsf{up}$, $\mathsf{down}$, and
+$\mathsf{both}$. It is \emph{sound} for $\mathcal{M}$ over $F$ if no single operation instance on an input in $F$
+changes a fixed feature, lowers an up feature, or raises a down feature.
+}
+
+\noindent The four directions are Incer et al.'s four cases~\cite{incer2018adversarially}, which they assign by hand.
+Gimenez et al.~\cite{gimenez2025certifiably} use only features that are up, chosen by hand or kept because no observed
+attack lowered them. A sound table is a feature-space constraint in the sense of $\Omega$: under the closure condition
+of Theorem~\ref{thm:fw:directions}, every vector in $\mathcal{R}(z)$ differs from $\varphi(z)$ only in the allowed
+directions. We compute the table in two steps, first
+the envelopes of the sums and then the directions of the features, and write $E_s$ for an envelope when the operation
+and population are clear.
+
+The first step reads the signs off the terms. An added item raises a count, and a removed item lowers it; a modified
+item leaves it fixed if its key is unchanged, and otherwise lowers the old key's count and raises the new key's. An
+attribute, and a maximum pool fed by it, can rise or stay when an item is added, fall or stay when an item is removed,
+and move either way when an item is modified; a minimum pool behaves in the same way with the signs flipped. A
+hashed term moves only the sums that the hashes of the possible keys select, with the signs of those keys; when the
+attacker picks the key from a set $K$, enumerating $K$ finds every reachable sum and sign, which answers Severi et
+al.'s remark that hashing resists targeting~\cite{severi2021explanation}. A slot can take any sign when its item is
+modified, and an opaque term moves by the sign of its declared range minus its default. The change of a sum is the
+total of the changes of its terms, and the sign of a total lies in the sign sum of the signs of its parts. So an
+operation's envelope on a sum lies within the sign sum of these signs over the item changes its signature allows, one
+step of the sign domain of abstract interpretation~\cite{cousot1977abstract}. A pattern attribute changes either way
+when its item is modified, with one refinement: extending an item's content can only add matches of a pattern that
+does not look past the end of the match.
+
+The signature that this step needs is missing for operations stated in elements, and the
+requirements of \Cref{sec:fw:edits} supply it per input.
+
+\lemma[Signatures from the item table]
+\label{lem:fw:signature}
+{
+Let $o$ be an operation that, on every input in $F$ and for every parameter, is in place and writes no locating
+position, and let (R1) and (R2) hold on $F$. Then on each input of $F$, every edit of $o$ modifies only parsed items
+whose members it writes and changes only scanned items that overlap the margins of its written set. The signature
+of $o$ over $F$ is contained in the union of these changes over the inputs of $F$.
+}
+
+\noindent The changes are read from each input's item table, and no edit is applied. The result still depends on the
+layout of each input, which is why directions hold over a population and not for every possible input: an operation
+that writes no locating position on most inputs may write one on an input with an unusual layout, which the
+precondition must then exclude.
+
+The second step turns the envelopes of the sums a readout reads into the signs of the feature's change, by one rule
+per readout type (Appendix~\ref{sec:fw:proofs} lists them all). A readout that is monotone in its sums passes their signs
+through: an identity readout has the envelope of its sum, a presence bit within $E_s \cup \{0\}$, since a count can
+rise while its bit stays set, and a pool its pool's envelope. A ratio $a / b$ with $a \ge 0$, and $b > 0$ before and
+after the edit, changes with a sign in
+\[
+  E_a \boxplus \big((-E_b) \cup \{0\}\big),
+\]
+so it can rise only if its numerator can rise or its denominator can fall. A normalized histogram bin follows the
+ratio rule. A readout with no monotone structure, such as an entropy or a standard deviation, is $\{0\}$ if none of
+the sums it reads can change, and can take every sign otherwise.
 
 \theorem[Sound directions]
 \label{thm:fw:directions}
 {
-Let $F \subseteq \mathrm{Pre}$ be a population on which (R1), (R2), and (R5) hold, and (R3) and (R4) for operations
-stated in elements. For each operation, apply the readout rules to envelopes that contain the true ones over $F$;
+Let $F \subseteq \mathrm{Pre}$ be a population on which (R3)--(R5) hold, and (R1) and (R2) for operations stated in
+elements. For each operation, apply the readout rules to envelopes that contain the true ones over $F$;
 take the union of the resulting sign sets over all operations; read the union as fixed ($\{0\}$), up (within
 $\{0, +\}$), down (within $\{-, 0\}$), or both; and mark every residual feature as both. The resulting table $D$ is
-sound for $\mathcal{M}$ over $F$, and if $F$ is closed under $\mathcal{M}$, it holds along every sequence of edits from
+sound for $\mathcal{M}$ over $F$. If $F$ is closed under $\mathcal{M}$, it holds along every sequence of edits from
 any $z \in F$.
 }
 
-\noindent The proof (\Cref{sec:fw:proofs}) follows from the sign of a sum lying in the sign sum of its terms' signs,
-from the monotonicity of each readout (for a ratio, $a'/b' - a/b = (\alpha b - a \beta)/(b b')$ for changes $\alpha$
-and $\beta$), and from induction under closure. In traffic, injecting packets only between existing ones leaves the
-total gap fixed and raises the number of gaps, so the mean gap can only fall; allowing injection after the last packet
-lengthens the total gap, and the mean gap moves both ways.
+\noindent Soundness for one operation instance follows from the sign of a total lying in the sign sum of its parts and
+from the readout rules. For the ratio rule, write the changes as $a' = a + \alpha$ and $b' = b + \beta$; then
+$a'/b' - a/b = (\alpha b - a \beta)/(b b')$, whose denominator is positive, $\alpha b$ has the sign of $\alpha$, and
+$-a\beta$ is zero or opposite in sign to $\beta$. Sequences follow by induction, since closure keeps every
+intermediate input in $F$. Without closure, a sequence can leave $F$, and the table says nothing about the steps
+after that.
+
+% EXAMPLE (removed, D2): for appending up to B bytes to a PE file, the string and URL counts go up, the section count
+% and section-name buckets are fixed, every section's size ratio goes down, and the average string length and the
+% entropy go both ways. In traffic, injecting packets only between existing ones leaves the total gap fixed and raises
+% the number of gaps, so the mean gap can only fall; allowing injection after the last packet lengthens the total gap,
+% and the mean gap moves both ways.
 
 \subsection{Robust Detectors}
 \label{sec:fw:robustness}
 
+Let $h: \mathcal{X} \to \mathbb{R}$ be a detector's malware score, whose value an evasion attack tries to lower.
 Gimenez et al.\ prove that a detector is robust when the attacker's edits can only raise each feature and the score
-never falls when features rise~\cite{gimenez2025certifiably}; a feature that can only fall is covered by negating it. With a computed table, this becomes a
-corollary of Theorem~\ref{thm:fw:directions}.
+never falls when features rise~\cite{gimenez2025certifiably}; a feature that can only fall is covered by negating it.
+With a computed direction table, robustness for a threat model becomes a corollary of Theorem~\ref{thm:fw:directions}.
 
 \corollary[Robustness]
 \label{cor:fw:robustness}
 {
-Let $D$ be sound for $\mathcal{M}$ over a closed population $F$, and let the score $h$ read no feature marked both and
-never fall when up features rise, down features fall, and fixed features stay. Then
-$h(\varphi(z')) \ge h(\varphi(z))$ for every $z \in F$ and every $z' \in \mathrm{Reach}_\mathcal{M}(z)$.
+Let $D$ be sound for $\mathcal{M}$ over a population $F$ closed under $\mathcal{M}$, and let $h$ read no feature
+marked both and never fall when up features rise, down features fall, and fixed features stay. Then
+$h(\mathbf{x}') \ge h(\varphi(z))$ for every $z \in F$ and every $\mathbf{x}' \in \mathcal{R}(z)$.
 }
 
-\noindent A gradient-boosted tree model with monotone constraints is such a score. What Theorem~\ref{thm:fw:directions}
-adds to Gimenez et al.'s route is the table, computed for every feature. Global program analyses, learned
-representations, and time-decayed statistics fall outside the class (\Cref{sec:discussion}).
-
-Several pieces of this section are classical. Proposition~\ref{prop:fw:side-effects}'s sums follow the delta rules
-of incremental view maintenance~\cite{gupta1995maintenance,koch2014dbtoaster}, including the failure of the maximum
-to have an inverse; the item table is a provenance annotation in the sense of Green et al.~\cite{green2007provenance};
-recomputing only what an edit touches is the idea of self-adjusting computation~\cite{acar2002adaptive}; and the
-directions are one step of the sign domain. What these lack, and what we add, is the bridge from an edit of the raw
-input to a change of items: the locating positions and margins that say which items an edit of elements changes
-without parsing again, the vocabularies of terms and readouts that a feature extractor of this shape is written in,
-and signatures derived per input, which turn one sign computation into a table that holds over a population.
+\noindent A detected malware sample therefore stays detected under every sequence of edits the threat model allows.
+A gradient-boosted tree model trained with monotone constraints is such a score. What Theorem~\ref{thm:fw:directions}
+adds to Gimenez et al.'s route is the table itself, computed from the extractor for every feature instead of chosen by
+hand or kept from the attacks that were observed.

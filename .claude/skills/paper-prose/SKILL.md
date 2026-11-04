@@ -87,6 +87,18 @@ contradicts.
     example in the framework's opening read as LLM slop. A section lead states, literally, what the section defines and
     proves and for which class of extractors; the running example arrives where it is first needed. (§3.1, 2026-11-04)
 
+18. **Each subsection builds toward one formal endpoint.** A definition, a lemma, or a theorem, as §2 builds toward who
+    needs the reachable set and §3.1 toward Definition 4. A concept with no role in that build-up moves to where it is
+    first used (operations and threat models belong with the directions, not with single edits), and a concept that is
+    an ingredient of the endpoint is introduced as one (locating positions answer "which items does a write change?").
+    Weave the formal connections (monoids, aggregates, sign domains) in where they explain something, not in a closing
+    paragraph. (§3 spine, 2026-11-04)
+19. **State a mechanism with its real scope.** Cited concepts get the nuance their authors' examples allow: side effects
+    can be zero, consolidation is often but not always needed, and side effects also arise without it. (§2 P3,
+    2026-11-04)
+20. **Theory first, decoration later.** While a formal section is being settled: no domain examples in the text (keep
+    them in `% EXAMPLE` comments), no tables or figures, titles that fit on one line. (§3 decisions, 2026-11-04)
+
 ## Procedure
 
 1. **Spine first, always.** One line per paragraph (its claim, its citations or numbers), agreed with the user before

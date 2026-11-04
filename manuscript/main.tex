@@ -56,6 +56,7 @@
 \newcounter{xmltheorem}
 \newcounter{xmlproposition}
 \newcounter{xmlcorollary}
+\newcounter{xmllemma}
 \newcommand{\xmlthmlike}[3]{%
   \par\medskip\noindent\refstepcounter{#3}%
   \textbf{#1~\csname the#3\endcsname\ifblank{#2}{}{ (#2)}.}\ }
@@ -63,11 +64,12 @@
 \newcommand{\theorem}[1][]{\xmlthmlike{Theorem}{#1}{xmltheorem}}
 \newcommand{\proposition}[1][]{\xmlthmlike{Proposition}{#1}{xmlproposition}}
 \newcommand{\corollary}[1][]{\xmlthmlike{Corollary}{#1}{xmlcorollary}}
+\newcommand{\lemma}[1][]{\xmlthmlike{Lemma}{#1}{xmllemma}}
 
 \begin{document}
 
 % Working title (user to decide).
-\title{Computing What Adversarial Edits Do to Features}
+\title{Bridging the Gap: A Closer Look at Adversarial Examples in the Problem Space}
 \author{Anonymous Author(s)}  % the anonymous option hides the author block at submission
 
 \begin{abstract}
@@ -98,11 +100,11 @@
 \label{sec:introduction}
 \input{_b_introduction}
 
-\section{Background}
+\section{Background and Motivation}
 \label{sec:background}
 \input{_c_background}
 
-\section{Computing What Edits Do to Features}
+\section{Measuring Edits Across Feature Mappings}
 \label{sec:framework}
 \input{_d_framework}
 

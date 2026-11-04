@@ -19,7 +19,7 @@ Of the 2,568 features, 2,480 are modeled; the residual is the 88 warning flags t
 items. The scanned kinds are bytes, byte-entropy windows (2,048 bytes at steps of 1,024), printable strings, and the
 Rich header, which the parser searches for within a fixed range. The parsed kinds are sections, the overlay, header
 fields, imports, libraries, exports, the certificate table, and the entry section, which a selection readout picks.
-Every readout type of \Cref{tab:fw:readouts} occurs except presence, rate, and standard deviation. On 2,000 files,
+Every readout type of \Cref{sec:fw:model} occurs except presence, rate, and standard deviation. On 2,000 files,
 the readouts applied to the recorded sums reproduce the original extractor bit for bit on all 2,480 modeled features.
 
 Most of the instrumentation effort goes into locating positions. For each kind, they are the header fields and table
@@ -37,7 +37,7 @@ range.
 \subsection{Three Repairs}
 \label{sec:instances:repairs}
 
-EMBER breaks self-contained contributions (R2) in three places. Two are matters of bookkeeping. Each section's size
+EMBER breaks self-contained contributions (R4) in three places. Two are matters of bookkeeping. Each section's size
 is divided by the file's size, so a section's contribution would change whenever the file grows; we let the section
 contribute its raw size and move the division into the readout, where the file's size is itself a sum. The imported
 libraries are kept as a set; we keep a count per library and read out the number of libraries with a positive count.
@@ -103,7 +103,7 @@ Each operation stated in items declares its delta, including the fields it must 
 section count and the image size and writes a new section table entry. Each operation stated in elements declares only
 the region it writes and its content domain, and the engine derives the rest. All edits are written by our own
 byte-level code, which does exactly what the operation declares. A general editing library such as LIEF~\cite{lief}
-rebuilds the file's layout when it adds a section, which breaks honest tools (R5).
+rebuilds the file's layout when it adds a section, which breaks honest tools (R3).
 
 Directions hold over a population (\Cref{sec:fw:directions}), and ours is the files whose layout is plain: nothing
 the parse locates lies past the end of the file, sections lie within the image, and the headers hold only headers.

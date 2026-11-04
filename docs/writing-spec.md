@@ -97,6 +97,25 @@ side of detail and cut later.
 What the user accepted or rejected on real drafts, newest first. Each entry: the sentence or choice, the verdict, the
 rule it implies (folded into Sections 1-5 if general).
 
+- **2026-11-04, §3 spine (decisions D1-D5 and comments on P1-P10).** D1: Pierazzi's setup goes into a "Background and
+  Motivation" section. D2: no domain examples in the framework while the theory is drafted ("keep the theory pure");
+  keep the removed examples in LaTeX comments. D3: the term and readout tables are "simply disgusting"; out of the PDF,
+  source backed up. D4: no figures yet; make the core framework beautiful first. D5: paper title "Bridging the Gap: A
+  Closer Look at Adversarial Examples in the Problem Space"; section "Measuring Edits Across Feature Mappings" (or
+  "... Changes in the Feature Space"); every section or subsection title fits on one line. General: the feedback is
+  guidelines, not rules; follow Pierazzi's notation (calligraphic $\mathcal{Z}$, $\mathcal{X}$, bold vectors). P2:
+  consider a symbol for the reachable set (a stylized R, or common notation) only if it improves the paper. P3: the
+  consolidation account was overblown: side effects need not exist, consolidation is not always needed, and side
+  effects arise without consolidation; it needs nuance. P4 is the most important paragraph of the preliminaries (the
+  motivation and the shared gap). P5: plain language first or definitions first, either way balance the abstraction;
+  connections to type theory welcome if not pretentious. P6: "an iteration of an extractor loop" is too informal;
+  rather "a collection of elements analyzed jointly by the feature extractor". P8: separate the readout definition from
+  the sum-then-readout definition. P9: weave the connections to formal theory through the subsection instead of
+  appending them. P10: replace the domain table by a short paragraph on how common these extractors are, with examples
+  across domains. On §3.3 (edits): P11 and P14 related, but P12 and P13 felt disconnected and unnecessary; the user
+  could not critique the second half from the spine and asked for a whole-section draft instead. Implied: (a) a
+  subsection needs a thesis it builds toward, like a definition or a result; (b) state cited mechanisms with their
+  real scope (can, often, not always); (c) defer tables and figures until the prose is right.
 - **2026-11-04, §3 (framework, drafted 2026-11-02 before the paper-prose procedure), written review of §3.1.**
   Verdict: "so awful that it's hard to provide good feedback"; the math is mostly correct, the presentation is not;
   rewrite the whole section from a new spine, keeping the content. Genre: a textbook style like Pierazzi et al. (S&P

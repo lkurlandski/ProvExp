@@ -1,6 +1,13 @@
 # Section 3 (framework): per-paragraph spine for the rewrite (2026-11-04)
 
-Status: **proposal, not yet agreed.** The content comes from the current `_d_framework.tex` and the frozen
+Status (2026-11-04): **drafted.** Decisions and comments are in `docs/writing-spec.md` (reaction log). The draft
+departs from the spine below: P1-P4 became Section 2 (Background and Motivation); the second half was restructured
+around one endpoint per subsection (Lemma 1 for edits, Proposition 1, Theorem 1, the corollary); operations and
+threat models moved to the directions; the requirements were renumbered by the step that needs them ((R1) structure,
+(R2) margins, (R3) honest tools for finding the item delta; (R4) self-contained contributions, (R5) faithful recording
+for adjusting the sums); no tables, figures, or domain examples. Original proposal:
+
+Status then: proposal. The content comes from the current `_d_framework.tex` and the frozen
 `docs/formalization.md`. The prose is rewritten from scratch, Pierazzi-style (definition, a sentence or two of
 intuition, an example). Word budgets are loose. Feedback that produced this: `docs/writing-spec.md`, reaction log,
 2026-11-04 (§3.1).

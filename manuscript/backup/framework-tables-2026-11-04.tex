@@ -1,0 +1,62 @@
+% Backup (user, 2026-11-04, decision D3): the three tables removed from Section 3, verbatim, for a later cleanup.
+% Not \input anywhere.
+
+\begin{table}[t]
+  \caption{Three feature extractors in the terms of the model: EMBER is built and evaluated, the other two are
+  sketched.}
+  \label{tab:fw:domains}
+  \small
+  \begin{tabular}{@{}p{0.2\columnwidth}p{0.37\columnwidth}p{0.35\columnwidth}@{}}
+    \toprule
+    Extractor & Items & Readouts \\
+    \midrule
+    EMBER (built) & bytes, strings, sections, header fields, imports & identity, ratio, entropy, maximum, distinct count \\
+    Drebin & manifest declarations, API call sites & presence \\
+    CICFlowMeter & packets, consecutive packet pairs, in flows & ratio, maximum, standard deviation, rate \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\begin{table*}[t]
+  \caption{Contribution terms and the sign of the change one item makes to a term when it is added, removed, or
+  modified. A pattern match (a string that is a URL) is an add term of 0 or~1, since a modification can change
+  whether it matches. A modification that changes an item's key counts as a removal from the old key and an addition
+  to the new one.}
+  \label{tab:fw:terms}
+  \small
+  \begin{tabular}{@{}lp{0.28\textwidth}p{0.22\textwidth}lll@{}}
+    \toprule
+    Term & What an item adds & Example & Added & Removed & Modified \\
+    \midrule
+    count, keyed & 1 to one sum, or to the count of its key & string count; Drebin permissions & $\{+\}$ & $\{-\}$ & $\{0\}$ \\
+    add, bins, max pool & a nonnegative attribute, or counts to a family of bins & total string length; byte histogram & $\{0,+\}$ & $\{-,0\}$ & $\{-,0,+\}$ \\
+    hashed (signed) & $\pm$ an attribute to bucket $\mathrm{hash}(\text{key})$ & section sizes by name & signs of reachable keys & negated & every sign \\
+    slot & the value of a field exactly one item holds & header fields; initial TCP window & --- & --- & every sign \\
+    opaque & a value from unopened code, in a declared range & signature checks & sign of value $-$ default & negated & every sign \\
+    \bottomrule
+  \end{tabular}
+\end{table*}
+
+\begin{table*}[t]
+  \caption{Readout types and the rule that turns the signs the sums can change by (their envelopes $E$) into the signs
+  the feature can change by. A min pool follows the max pool with signs flipped.}
+  \label{tab:fw:readouts}
+  \small
+  \begin{tabular}{@{}p{0.16\textwidth}p{0.2\textwidth}p{0.22\textwidth}p{0.34\textwidth}@{}}
+    \toprule
+    Readout & Formula & Example & Signs of the feature's change \\
+    \midrule
+    identity, max/min & the sum or pool & string count; longest packet & $E_s$ \\
+    presence & nondecreasing in its sums & Drebin features & $E_s \cup \{0\}$; over several sums, up if all within $\{0,+\}$ \\
+    ratio & $a/b$, with $a \ge 0$, and $b > 0$ before and after the edit & average string length & $E_a \boxplus ((-E_b) \cup \{0\})$ \\
+    normalized vector & a bin over the bins' total & byte histogram & the ratio rule \\
+    rate & a sum over the span of two pools & bytes per second & the ratio rule, denominator $E_{\max} \boxplus (-E_{\min})$ \\
+    distinct count & keys with a positive count & imported libraries & up if keys are only added, down if only removed \\
+    entropy, std.\ deviation & a fixed formula of several sums & file entropy & $\{0\}$ if no sum it reads can change, else every sign \\
+    field transform, selection & a bit test of a slot; an attribute of a chosen item & header flags; entry section's name & $\{0\}$ if nothing it reads is written, else every sign \\
+    opaque with default & an opaque value, or a default when its item is absent & signature features & the opaque term's entry in \Cref{tab:fw:terms} \\
+    residual & --- & parser warnings & every sign \\
+    \bottomrule
+  \end{tabular}
+\end{table*}
+

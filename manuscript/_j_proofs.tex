@@ -4,39 +4,40 @@
 This appendix proves the results of \Cref{sec:framework}. Throughout, an edit takes $z$ to $z'$ with written set
 $W$ and item delta $\Delta = (I^-, I^+, I^\sim, I^\to)$.
 
-\paragraph{Finding the changed items (Proposition~\ref{prop:fw:side-effects}, part i).}
-Let the edit write no locating position. By (R3), every parsed item of $z$ survives in $z'$ with the same identity,
+\paragraph{Proof of Lemma~\ref{lem:fw:delta}.}
+Let the edit write no locating position. By (R1), every parsed item of $z$ survives in $z'$ with the same identity,
 members, and locating positions, and no parsed item appears, except that an end-anchored item's members gain or lose
 positions at the end, which lie in $W$. A parsed item whose members avoid $W$ is unchanged, since $z'$ equals $z$
 outside $W$. A parsed item whose members meet $W$ takes its new content from $z'$ and belongs to $I^\sim$ if that
-content differs. For each scanned kind, parts (i) and (ii) of (R4) say that the items outside the margin are the same
+content differs. For each scanned kind, parts (i) and (ii) of (R2) say that the items outside the margin are the same
 in $z$ and $z'$. The items of $z$ that overlap the margin are read from the item table, those of $z'$ are found by the
 recognizer on the margin alone (part iii), and comparing the two by identity gives the kind's part of $\Delta$. For a
-declared structural edit, (R5) says that the declared delta is the parsed part, and the scanned kinds are handled as
+declared structural edit, (R3) says that the declared delta is the parsed part, and the scanned kinds are handled as
 above with the declared range in place of the margin.
 
-\paragraph{Adjusting the sums (Proposition~\ref{prop:fw:side-effects}, parts ii--iv).}
-(ii) The items of $z'$ split into the unchanged items, $I^+$, the modified items after the edit, and the moved items;
+\paragraph{Proof of Proposition~\ref{prop:fw:side-effects}.}
+(i) The items of $z'$ split into the unchanged items, $I^+$, the modified items after the edit, and the moved items;
 those of $z$ into the unchanged items, $I^-$, the modified items before the edit, and the moved items. An additive sum
 splits over any partition of the items it adds. The unchanged items have the same content in both inputs, and so, by
-(R2), the same contributions; a moved item keeps its content, hence its contribution. Subtracting the two splits gives
-the formula. (iii) A pool's value over $z'$ is the maximum over the unchanged items, which the item table lists, and
+(R4), the same contributions; a moved item keeps its content, hence its contribution. Subtracting the two splits gives
+the formula. (ii) A pool's value over $z'$ is the maximum over the unchanged items, which the item table lists, and
 the added and modified ones, which $\Delta$ gives. The old value alone does not suffice: pools holding $\{5, 3\}$ and
-$\{5, 5\}$ both have value 5, and removing an item of value 5 leaves 3 in the first and 5 in the second. (iv) By (R1).
-Applying (i)--(iv) once per edit, with the item table carried forward, gives the side effects of a sequence of edits.
+$\{5, 5\}$ both have value 5, and removing an item of value 5 leaves 3 in the first and 5 in the second. (iii) By (R5).
+Applying (i)--(iii) once per edit, with the item table carried forward, gives the side effects of a sequence of edits.
 
-\paragraph{Signatures of operations stated in elements.}
-Let an operation stated in elements, on every input of a population $F$ and for every parameter, be in place and
-write no locating position. By (R3), no parsed item is added, removed, or moved, and a parsed item whose members avoid
-$W$ keeps its content; by (R4), no scanned item changes outside the margins. The operation's signature on an input is
+\paragraph{Proof of Lemma~\ref{lem:fw:signature}.}
+Let an operation, on every input of a population $F$ and for every parameter, be in place and
+write no locating position. By (R1), no parsed item is added, removed, or moved, and a parsed item whose members avoid
+$W$ keeps its content; by (R2), no scanned item changes outside the margins. The operation's signature on an input is
 therefore contained in the modifications of parsed items whose members $W$ meets, and the changes of scanned items
 that overlap the margins, both read from the input's item table. Its signature over $F$ is the union over the inputs.
-The condition must hold on every input of $F$: on a PE file whose section table points past its end, appending writes
-a locating position, and such inputs must be excluded by the precondition or treated as structural.
+The condition must hold on every input of $F$; inputs on which the operation writes a locating position must be
+excluded by the precondition or the operation treated as structural on them.
+% EXAMPLE (removed, D2): on a PE file whose section table points past its end, appending writes a locating position.
 
 \paragraph{Envelopes from signatures.}
-By (R2) and (R5), an edit's effect on a sum is the total of the term changes of the items in its delta, and each term
-change has a sign in the corresponding entry of \Cref{tab:fw:terms}, by the term's declared range. For a modified
+By (R4) and (R3), an edit's effect on a sum is the total of the term changes of the items in its delta, and each term
+change has the sign given for its term in \Cref{sec:fw:directions}, by the term's declared range. For a modified
 item, a count term contributes $+1 - 1 = 0$ to its key's count when the key is unchanged, and $-1$ to the old key's count and $+1$ to the new key's when it changes. Since $\mathrm{sgn}(x + y) \in \mathrm{sgn}(x) \boxplus \mathrm{sgn}(y)$,
 the sign of the total lies in the sign sum of the entries over the item changes the signature allows. A flagged change
 contributes $\{-, 0, +\}$ to every sum its kind writes.
@@ -55,7 +56,7 @@ matches. The same holds on the left for constructs that look before the match. A
 boundary, for example, can gain a match when a string is extended on the right and lose one when it is prefixed with
 a letter.
 
-\paragraph{The readout rules (\Cref{tab:fw:readouts}).}
+\paragraph{The readout rules.}
 Identity and pools pass the envelope through. A nondecreasing presence readout of one sum changes with a sign in
 $E_s \cup \{0\}$, since a count can rise while the bit stays set; of several sums, it can only rise if every sum can
 only rise, and only fall if every sum can only fall. A distinct count can only rise if keys are only added, and only
@@ -68,7 +69,9 @@ The denominator is positive, $\alpha b$ has the sign of $\alpha$, which lies in 
 $a = 0$ and otherwise has a sign in $-E_b$. A normalized vector is a ratio of a bin to the total, and a rate is a ratio
 whose denominator, the difference of a max pool and a min pool, changes with a sign in $E_{\max} \boxplus (-E_{\min})$.
 The remaining rules (entropy, standard deviation, field transforms, selections, residual features) answer $\{0\}$ only
-when nothing they read can change, and every sign otherwise, which is trivially sound.
+when nothing they read can change, and every sign otherwise, which is trivially sound. An opaque value with a
+default, for when its item is absent, follows its opaque term: the sign of its declared range minus the default when
+the item is added, its negation when the item is removed, and every sign when the item is modified.
 
 \paragraph{Proof of Theorem~\ref{thm:fw:directions}.}
 For one operation instance on an input of $F$, each sum's change has a sign in its envelope, and by the readout rules
@@ -79,7 +82,7 @@ not rise'' are transitive; induction on the length of the sequence completes the
 leave $F$, after which the envelopes say nothing about the next step.
 
 \paragraph{Proof of Corollary~\ref{cor:fw:robustness}.}
-By Theorem~\ref{thm:fw:directions}, the feature vectors of $z$ and of any $z' \in \mathrm{Reach}_\mathcal{M}(z)$ differ only
+By Theorem~\ref{thm:fw:directions}, the feature vectors of $z$ and of any $z' \in \mathcal{R}(z)$ differ only
 in the allowed directions. The score reads no feature marked both and does not fall in the allowed directions, so
 $h(\varphi(z')) \ge h(\varphi(z))$. This is Gimenez et al.'s Proposition~1~\cite{gimenez2025certifiably}, with the
 preorder ``$z'$ is reachable from $z$'' and a feature map made monotone by $D$.
