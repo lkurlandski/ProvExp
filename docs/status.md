@@ -1,5 +1,43 @@
 # Status
 
+**2026-11-04 (session 11): strategic review instead of the introduction; Gimenez et al. portrayed accurately; the
+two-sided-feature diagnostic (its hypothesis failed); `run/126` (price list) handed over.** Nothing pushed. Running
+in the user's tmux: `run/124` (strong toolkit column), then `run/125` (adversarial training on the attacks that
+work), and `run/126` (`NUM_WORKERS=8`). Next session: `docs/resume-prompt.md`.
+
+- **Introduction postponed (user).** Once an introduction exists, Claude tends to stay loyal to it, which narrows the
+  research; the body must be settled first. The user agreed to a strategic review and to strengthening existing
+  material before new leads.
+- **Strategic review** `docs/reviews/2026-11-04-strategy.md` (indexed). Strongest claim: the constraints that
+  constrained attacks and robust detectors take as input are computed from the extractor, soundly, for deployed
+  feature sets. Weaknesses: W1/W3 accuracy cost because only signs are kept (1,060 features dropped); W2 attacks
+  weaker than the framework allows and than the literature. Literature (2025-26): Gimenez et al.'s ERDALT (missed);
+  Zainab et al. 2026 (listed since 2026-10-30, but its EMBER-24 rates were not: MAB-Malware 83.4%, MiniMal 30.6%,
+  GAMMA shift 12.7%; setup not yet read); Giri et al. 2026 (randomized smoothing, not our task). Novelty unchanged.
+- **Gimenez et al. fixed everywhere** (`ccf6cf4`), from a full re-read of `papers/gimenez2025-certifiably-robust.pdf`:
+  their contributions are the characterization (Props. 1-2) and ERDALT; the certified route is the 40 hand-picked
+  features; PV is the comparison method they define. §6 ¶3 rewritten (Prop. 2 as the converse; both routes in their
+  terms; summary sentence); §3 two sentences (they keep only up features; Prop. 1 is for features that only rise);
+  §5's PV sentence (the selection they compare against; we run attacks on training malware and train a monotone
+  model); §3's leftover "no closed form" paraphrase replaced (`57d6247`). Literature notes gain an ERDALT entry (Props.
+  2-3, its file-independence assumption, their caveats, Table 2). A `%` comment in §6 records that ERDALT has no Table
+  7 row yet. `make check` clean.
+- **Diagnostic (item 1 of the review; Claude, minutes, existing tables and the s10 reference's gain shares).** Table 7
+  features row, M_full with precondition: 1,060 two-sided = 683 recovered by the sums re-encoding (21.4% gain) + 200
+  section hash buckets coupled under rename (3.7%) + 89 truly two-sided overwrites (11.0%: CheckSum, TimeDateStamp,
+  data-directory addresses, Rich header, section max/ratio) + 88 unmodeled parser warnings (6.3%). **Hypothesis
+  (mostly coupled) failed**; under rename the only one-sided combination of buckets is their total, so a computed
+  re-encoding is not worth building. Leave-one-out regains: rename 301, the three header overwrites 27, any other 0-17;
+  sec, shf, slk change nothing.
+- **`run/126_price_list.sh`** (`scripts/a_price_list.py`, ruff + mypy clean; `8f8d411`): 10 monotone GBDTs (M_full
+  minus each operation that changes the inputs, and minus dos+hdr+chk) + drop-only and warnings-only unconstrained
+  controls, on `ember2024-sums-10-v2`; table against the reference. Self-checks pass (composed M_full equals the
+  table's column and the sums row's training files; the table step reproduces 93.5 / 89.6 / 92.2). Hypothesis: no
+  single operation costs more than ~1 point; dropping and constraining each about half of the 3.9 points. Output:
+  `artifacts/experiments/a_price_list/table.json`; logs `artifacts/logs/train_classic-gbdt-0-s10-price-*.log`.
+  Estimate ~30-45 min at 8 workers.
+- Not done: runs 124/125 not read (still running); no introduction; nothing on strong attacks yet.
+
 **2026-11-04 (session 10b, writing only; ran alongside session 10): §6 related work reviewed by the user and
 revised; accepted as a draft for hand fine-tuning.** Nothing pushed. Next session: `docs/resume-prompt.md`.
 

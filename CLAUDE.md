@@ -35,6 +35,7 @@ and manuscript remain as source material. Deadlines and conference cycles are no
 - `docs/graveyard.md`: ideas and directions that did not pan out and why.
 - `docs/reviews/review-prompt.md`: the harsh simulated review for the current draft (body only; output `docs/reviews/<date>-<stage>.md`; index: `docs/reviews/README.md`).
   Update it when the draft's stage changes (e.g., once the introduction exists). Latest output:
+  `docs/reviews/2026-11-04-strategy.md` (strategy: what to strengthen before the introduction); before it
   `docs/reviews/2026-11-02-body.md` (body-only draft; risk register R1-R16), triaged with the user on 2026-11-02 into `PLAN.md`'s three-tier plan (premises checked: `docs/status.md`).
 - Old direction, for reference only: `docs/archive/PLAN-explanation-provenance-2026-10-21.md`, `docs/experiments/`
   (cp, pb1, pf1, trigger, cm, audit), `docs/theory.md`, `docs/appendix.md`, `docs/related_work.md`,

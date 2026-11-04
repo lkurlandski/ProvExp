@@ -55,6 +55,35 @@ introduction and a simple baseline (writing decision for later).
   combined edits (run 111, 1,105 of 1,105) and the learned-constraints contrast (run 110). Record:
   `docs/direction-A-prime-plan.md`, Section 13.
 
+## Next steps (2026-11-04, session 11: strategic review; strengthen what we have before writing on)
+
+**Decided with the user:** the introduction waits. Once written, it tends to lock the work into its framing, and the
+body is not settled enough for that. The strategic review (`docs/reviews/2026-11-04-strategy.md`) found no need for
+new directions: strengthen the current materials first. Findings: Gimenez et al.'s main method is ERDALT (a linear
+post-processing learned from attacks, plus a monotone network; "empirically robust"), which our text had omitted
+(fixed in §3, §5, §6 and the literature notes); Zainab et al. 2026 report MAB-Malware evading an EMBER-24 GBDT on 83%,
+so our attacks are not the strongest available; our adaptive search is handicapped by a 100-200-candidate budget
+matched to the toolkit, although scoring a candidate costs only a prediction. Magnitude bounds: deprioritized
+(Gimenez et al.'s argument that magnitude is irrelevant for malware; A' certified only up to 4 KB). The diagnostic of
+the 1,060 two-sided features **failed its hypothesis**: coupled movement is small (200 section hash buckets under
+rename, 3.7% of the gain) and its only one-sided combination is the bucket total, so a computed re-encoding (the ERDALT
+reply) is not worth building; 683 are already recovered by the sums re-encoding, 89 are truly two-sided overwrites,
+88 are the unmodeled parser warnings.
+
+Next, in order:
+1. **Read runs 124, 125, 126** (all running, the user's tmux): runs 124/125 into Table 7 (layout with the user);
+   run 126 (`artifacts/experiments/a_price_list/table.json`): the price of each operation, and dropping vs.
+   constraining. If the parser warnings cost a point or more, modeling them is a candidate (an extension of the existing
+   instrumentation, not a new direction).
+2. **Strong attacks (W2):** the adaptive search with a realistic scoring budget (thousands of predicted candidates per
+   file, restarts or a beam instead of a strict-improvement stop; every kept step still re-extracted). Go/no-go: beats
+   the eight-attack toolkit union (55%) on the undefended model. Then MAB-Malware as a held-out attack against every
+   Table 7 row (read Zainab et al.'s setup first). Smoke-test, then `run/127`+ for the user.
+3. Decide with the user whether ERDALT becomes a Table 7 row (the re-encoding reply is off, so it is a baseline
+   question only), and whether the paper's headline becomes "Gimenez et al.'s Proposition 2 needs a feature mapping;
+   we compute it" (a claim change; not adopted).
+4. Only then the introduction and the other empty sections (spine first, `paper-prose`).
+
 ## Next steps (2026-11-04, session 10b: §6 review done)
 
 §6 related work is revised after the user's written review and accepted as a draft for hand fine-tuning (the user
