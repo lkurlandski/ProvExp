@@ -1,1 +1,22 @@
-% Section 6, Related work (about 700 words): incremental view maintenance and parsing, abstract interpretation, provenance, constrained attacks, robust detectors.
+% Section 6, Related work (about 700 words; up to ~1,200 while drafting): problem-space attacks, constraints over
+% features, robust and monotone detectors, incremental computation and provenance. Abstract interpretation is cited
+% in the body where it is used, not here. Spine: docs/writing-spec.md reaction log (2026-11-03).
+
+\paragraph{Problem-space attacks}
+Our work builds on the formalization of problem-space attacks by Pierazzi et
+al.~\cite{pierazzi2020intriguing,cortellazzi2025intriguing}. They describe an attack as a sequence of transformations
+applied to an object under problem-space constraints, such as preserving its semantics, and relate the result to the
+feature space through the feature mapping. Because an edited object rarely lands exactly where the attacker aimed, the
+formalization also accounts for side-effect features, the changes an edit makes beyond the intended ones. The framework
+does not say how to determine these side effects in advance, and Pierazzi et al.\ note that the constraints generally
+have no closed form that would allow it. In practice, attacks find side effects by applying a transformation and
+extracting the features of the result. Šrndić and Laskov's evasion of PDFrate~\cite{srndic2014practical} worked this
+way, as do the toolkits now used against Windows malware
+detectors~\cite{demetrio2021adversarial,demetrio2021functionality,song2022mab}. An attack of this kind has to build and
+then re-extract or score every candidate edit, so it covers only the edits its search reaches, and its outcome is
+evidence about those edits and no others. If it fails to evade a detector, other edits may still succeed, and a defense
+trained or tuned on the edits it produced is protected only against those. Our work removes the need for this trial and
+error for one large class of extractors, those that add up what each piece of the input contributes and then apply a
+formula per feature. For these extractors, we compute the side effects of an edit exactly from a record the extractor
+keeps while it runs. For a whole set of allowed edits, we also compute the direction in which each feature can move,
+with a guarantee that holds for edits no attack has tried.
