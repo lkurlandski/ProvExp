@@ -2,18 +2,7 @@
 % and 7 (frozen). The EMBER checks and caveats belong to the instances and evaluation sections, not here.
 
 This appendix proves the results of \Cref{sec:framework}. Throughout, an edit takes $z$ to $z'$ with written set
-$W$ and item delta $\Delta = (I^-, I^+, I^\sim, I^\to)$.
-
-\paragraph{Proof of Lemma~\ref{lem:fw:delta}.}
-Let the edit write no locating position. By (R1), every parsed item of $z$ survives in $z'$ with the same identity,
-members, and locating positions, and no parsed item appears, except that an end-anchored item's members gain or lose
-positions at the end, which lie in $W$. A parsed item whose members avoid $W$ is unchanged, since $z'$ equals $z$
-outside $W$. A parsed item whose members meet $W$ takes its new content from $z'$ and belongs to $I^\sim$ if that
-content differs. For each scanned kind, parts (i) and (ii) of (R2) say that the items outside the margin are the same
-in $z$ and $z'$. The items of $z$ that overlap the margin are read from the item table, those of $z'$ are found by the
-recognizer on the margin alone (part iii), and comparing the two by identity gives the kind's part of $\Delta$. For a
-declared structural edit, (R3) says that the declared delta is the parsed part, and the scanned kinds are handled as
-above with the declared range in place of the margin.
+$W$ and item delta $(I^-, I^+)$.
 
 \paragraph{Proof of Proposition~\ref{prop:fw:side-effects}.}
 Let $B = \pi(z) - I^-$. Since $I^- \subseteq \pi(z)$, $\pi(z) = B \uplus I^-$, and by \eqref{eq:fw:delta},
@@ -29,6 +18,22 @@ If $I^- = \emptyset$, then $B = \pi(z)$ and $s_k(z') = s_k(z) \oplus \sigma(I^+)
 element to every sum in $K_j$, then $\sigma(I^-)$ and $\sigma(I^+)$ are neutral on $K_j$, so $\mathbf{s}(z)$ and
 $\mathbf{s}(z')$ both agree with $\sigma(B)$ on $K_j$. By Definition~\ref{def:fw:readout},
 $\rho_j(\mathbf{s}(z)) = \rho_j(\mathbf{s}(z'))$, and by \eqref{eq:fw:extractor}, $\varphi_j(z) = \varphi_j(z')$.
+
+\paragraph{Proof of Lemma~\ref{lem:fw:localization}.}
+(a) Write $\mu = \mu_\tau(z, W)$, let $A$ be the items of kind $\tau$ of $z$ whose members lie in $\mu$, and $A'$ those
+of $z'$. By condition (i) of Definition~\ref{def:fw:local}, the other items of kind $\tau$ are the same in $z$ and
+$z'$. Their members miss $W$, since $\mu$ contains the members of every item of kind $\tau$ that $W$ meets, and $z'$
+equals $z$ outside $W$, so their contents are the same too. By condition (ii), $A'$ depends only on the elements of
+$z'$ at the positions of $\mu$. Hence the items of kind $\tau$ of $z'$ are those of $z$ with $A$ replaced by $A'$. If
+$W$ misses the structure positions of every kind, take the union over the kinds: with $I^-$ and $I^+$ the multisets of
+the kinds and contents of the replaced items and of their replacements, $I^- \subseteq \pi(z)$ and
+$\pi(z') = (\pi(z) - I^-) \uplus I^+$, which is \eqref{eq:fw:delta}. The margins are computed from $z$ and $W$, the
+replaced items and the members and contributions of the others are in the item table of $z$, and the replacements,
+their members, and their contributions follow from the elements of $z'$ on the margins and the contribution functions.
+(b) Every written set $W$ of the family lies in $\hat{W}$, so it misses $L_\tau(z)$ and, since the margin grows with
+the written set, $\mu_\tau(z, W) \subseteq \mu_\tau(z, \hat{W})$. By (a), the edit removes only items whose members lie
+in $\mu_\tau(z, W)$ and adds only items whose members lie there. If the kind has a fixed layout, its items in $z'$
+have the same members as in $z$, so their number is the same.
 
 \paragraph{Proof of Lemma~\ref{lem:fw:signature}.}
 Let an operation, on every input of a population $F$ and for every parameter, be in place and

@@ -313,100 +313,111 @@ raise $x_4$, since it adds to the length of the input and not to the records.
 \subsection{Edits Given as Writes}
 \label{sec:fw:edits}
 
-% PLACEHOLDER: the draft's material on locating positions, (R1)-(R3), and the lemma, in the old notation (identity,
-% kappa, Delta with four parts), kept so that later references resolve. To be rewritten from docs/framework-design.md
-% (Sections 3 S3, 5 "3.3"). Not for review.
-An edit given by its writes has a \emph{written set} $W$, the positions at which $z'$ differs from $z$, including any
-positions gained or lost at the end. It is \emph{in place} if no element changes position, and it \emph{shifts}
-elements if it inserts or deletes in the middle. Two questions about a written position decide whether the delta
-follows from the item table of $z$ and $W$ alone. The first is whose content the position belongs to, which the
-members answer. The second is whether the position decides which items exist and where their members lie.
+% Spine: docs/framework-design.md, Section 13 (approved 2026-11-05 with the recommendations Q1-Q4).
+Many transformations are given by the elements they write rather than by the items they change: append bytes to a
+file, overwrite padding or an unused field, change a packet's timestamp. For one such edit the edited input $z'$ is at
+hand, but Proposition~\ref{prop:fw:side-effects} needs its delta. For a family of edits, such as appending any bytes,
+there is not even a single $z'$. This subsection shows when the delta follows from the item table of $z$, the
+positions an edit writes, and the new elements near them. It is the only part of the framework that depends on the
+input format, and the format enters through two sets of positions per kind, which the instrumentation provides. The
+\emph{written set} $W$ of an edit is the set of positions at which $z$ and $z'$ differ, including the positions that
+exist in only one of them. Overwriting and appending have small written sets; inserting an element in the middle
+moves every element after it, so its written set runs to the end of the input.
 
-\definition[Locating positions]
-\label{def:fw:locating}
+A write can change items in three ways. It can change the content of items whose members it writes, and these items
+are listed in the item table with their members, so they can be read again from $z'$. It can write an element that the
+extractor reads to decide where items lie, such as a count, an offset, or a length, and then items anywhere in the
+input may appear, vanish, or move. Or it can change content that the extractor scans for items, so that a run of
+printable bytes grows, splits, or joins its neighbor. Changes of the second sort can reach any part of the input and
+must be ruled out; changes of the third sort stay near the write and can be bounded.
+\begin{runex}
+In the toy format, the count in byte 0 and the offsets and lengths in the table decide where the records lie. Strings
+are found by scanning: every maximal run of at least four printable bytes is one, wherever it lies.
+\end{runex}
+
+\definition[Local kinds]
+\label{def:fw:local}
 {
-The \emph{locating positions} $L(\iota)$ of an item are the positions whose elements decide whether $\iota$ exists and
-where its members lie. A kind has locating positions of its own, which decide where items of the kind could be.
-$L(z)$ is the set of all locating positions of $z$.
+A kind $\tau$ is \emph{local} if it has, for every input $z$, a set $L_\tau(z)$ of \emph{structure positions}, and for
+every set $W$ of positions a \emph{margin} $\mu_\tau(z, W)$, a set of positions computable from $z$ and $W$ that grows
+with $W$ and contains $W$ and the members of every item of kind $\tau$ that $W$ meets, such that every edit of $z$
+whose written set $W$ misses $L_\tau(z)$ satisfies two conditions. (i) The items of kind $\tau$ of $z$ and of $z'$
+whose members do not all lie in the margin are the same. (ii) The items of kind $\tau$ of $z'$ whose members lie in the
+margin depend only on the elements of $z'$ at the positions of the margin. The kind has a \emph{fixed layout} if, in
+addition, its items in $z'$ have the same members as its items in $z$.
 }
 
-\noindent Kinds come in two sorts. A \emph{parsed} kind is reached by following pointers or keys from fixed places,
-and its locating positions are the pointers and keys. A \emph{scanned} kind is found by examining content wherever it
-lies, and the extractor contains a \emph{recognizer} for it, a routine that returns the items of the kind that overlap
-a given range of positions. The item table records locating positions alongside members, and for an extractor that
-records them completely, an edit that writes none of them leaves the parse alone.
+\noindent The structure positions of a kind are usually the elements the extractor reads to find its items, and the
+margin is where the write can change them. A kind found through fields, such as the records of the toy format or the
+sections of an executable, has a fixed layout, and its margin is $W$ with the members of the items $W$ meets. For a
+kind found by scanning for maximal runs of elements of some class, the margin extends $W$ on each side to the nearest
+element of $z$ that is outside the class and outside $W$; since that element is unchanged in $z'$, no run crosses it.
+For windows of $n$ consecutive elements, the margin extends $W$ by $n - 1$ elements on each side. These margins are the
+damage regions on which incremental parsers re-run~\cite{wagner1998efficient}. Data that runs to the end of the input,
+such as the overlay of an executable (the data after its last section), changes its members whenever the edit writes past the old end, so its margin
+contains it in that case. Every kind is local with all positions as its structure positions, since no nonempty written
+set then misses them, just as every extractor is a sum-then-readout extractor with one item
+(Remark~\ref{rem:fw:granularity}). The definition asks how few positions suffice, and a kind whose items the
+instrumentation cannot find again from a margin keeps its members among its structure positions.
+\begin{runex}
+In the toy format, the structure positions of the records are byte 0, the table, and any position past the end of the
+input to which an entry points; records have a fixed layout. Strings and bytes have no structure positions. The margin
+of the bytes is $W$, and the margin of the strings runs from the nearest non-printable byte before $W$ to the nearest
+one after it.
+\end{runex}
 
-% EXAMPLE (removed, D2): a PE section's locating positions are the header field holding the number of sections, which
-% decides whether its table entry is read at all, and the offset and size fields of its entry, which decide where its
-% raw data lies. The number of sections is also a kind-level locating position: it decides whether the bytes after the
-% last table entry form another section. In a trace, a packet's addresses, ports, protocol, FIN flag, and timestamp are
-% locating positions, since they decide which flow it belongs to.
-
-\begin{enumerate}[label=(R\arabic*),leftmargin=*,itemsep=1pt]
-  \item \emph{Complete record of structure.} If an in-place edit writes no recorded locating position, every item of a
-    parsed kind keeps its identity, members, and locating positions, and no parsed item appears. The one exception is
-    an \emph{end-anchored} item, whose members run to the end of the input by definition: it gains or loses the
-    positions added or removed at the end.
-\end{enumerate}
-
-\noindent End-anchored items exist because appending is the commonest edit of all. Treating the end of the input as a
-locating position instead would make every append structural, and the model could say nothing about it.
-
-% EXAMPLE (removed, D2): the overlay of a PE file, everything after the last section, is end-anchored. Where a parser
-% reads structure from the end, as for a ZIP archive's central directory, appending writes a locating position.
-
-Items of a scanned kind can change even where the edit does not write their members. New content can join an existing
-item, split one into two, or form a new one next to the written positions. The record can account for these changes
-only if they stay close to the edit.
-
-\begin{enumerate}[label=(R\arabic*),leftmargin=*,itemsep=1pt,resume]
-  \item \emph{Changes stay near the edit.} Each scanned kind $\kappa$ has a \emph{margin} $\mu_\kappa(z, W)$, a set of
-    positions computable from $z$ and $W$, such that after an edit that writes no locating position (i) every item
-    of kind $\kappa$ whose members lie outside the margin is unchanged, (ii) no item of the kind appears outside the
-    margin, and (iii) the kind's recognizer, run on the margin alone, finds every item of the kind that overlaps it.
-\end{enumerate}
-
-\noindent For maximal runs of elements of some class, the margin reaches the nearest element outside the class on each
-side, since a run's extent depends only on its neighbors; for windows of $n$ consecutive elements, it is $n - 1$
-elements on each side. These are the damage regions that incremental parsers rely on~\cite{wagner1998efficient}.
-
-% EXAMPLE (removed, D2): printable strings are maximal runs of printable bytes; byte n-grams are windows; a consecutive
-% packet pair has a margin of one packet on each side.
-
-The written set and the locating positions now sort every edit into four classes, by an interval query of $W$
-against $L(z)$ that needs no parse of $z'$. A \emph{content edit} writes no locating position and creates or destroys
-no item, so it only changes the content of existing items. An \emph{item-creating edit} writes no locating position
-either, but creates or destroys scanned items within the margins. A \emph{declared structural edit} writes a locating
-position or shifts elements, and declares its resulting delta, as every edit stated in items does (add an item of this
-kind with this content). An \emph{undeclared structural edit} writes a locating position and declares nothing, so the
-parse of $z'$ may differ from that of $z$ in ways the item table cannot reveal; it is flagged, not predicted. For the
-declared edits, the record has to take the editing tool at its word.
-
-\begin{enumerate}[label=(R\arabic*),leftmargin=*,itemsep=1pt,resume]
-  \item \emph{Honest tools.} A declared edit produces exactly the delta it declares, and changes scanned items only
-    within the range it declares.
-\end{enumerate}
-
-\noindent A tool that rebuilds the layout of the whole input to carry out a small edit does not satisfy (R3), and its
-edits count as undeclared.
-
-\lemma[Finding the changed items]
-\label{lem:fw:delta}
+\lemma[Localization]
+\label{lem:fw:localization}
 {
-Let an edit that is a content, item-creating, or declared structural edit take $z$ to $z'$, and let (R1)--(R3) hold.
-Then its item delta $\Delta$ is computable from the item table of $z$, the written set $W$, and the elements of $z'$
-inside the margins, or inside the declared range.
+Let $\tau$ be a local kind and let an edit take $z$ to $z'$ with a written set $W$ that misses $L_\tau(z)$.
+(a) The items of kind $\tau$ of $z'$ are those of $z$, except that the items whose members lie in
+$\mu_\tau(z, W)$ are replaced by the items of kind $\tau$ that the elements of $z'$ on the margin determine. If $W$
+misses the structure positions of every kind, removing the contents of the replaced items and adding those of their
+replacements is a delta of $(z, z')$, and the item table of $z'$, members included, follows from the item table of
+$z$, $W$, and the elements of $z'$ on the margins.
+(b) Let a family of edits of $z$ write only within a set $\hat{W}$ that misses $L_\tau(z)$. Then each edit of the
+family removes only items of kind $\tau$ whose members lie in $\mu_\tau(z, \hat{W})$ and adds only items of kind $\tau$
+whose members lie there, and it keeps the number of items of the kind if the kind has a fixed layout.
 }
 
-\noindent Parsed items need only a lookup: by (R1), a parsed item changes only if $W$ meets its members, and its new
-content is read from $z'$. Scanned items need the recognizer on the margins, by (R2), and declared edits need their
-declaration, by (R3). The format of the input enters the model only here, through (R1) and (R2). An edit stated in
-items declares its delta and needs neither.
+\noindent Outside the margin, the edit writes nothing the extractor reads to find items of the kind, and no item of
+the kind can reach across the edge of the margin, so the items there are the same in both inputs, with the same
+contents, since their members miss $W$. Inside the margin, $z'$ alone decides the items, so reading the margin of $z'$
+again finds them. Part (b) follows from (a) because every written set of the family lies in $\hat{W}$ and margins grow
+with the written set. The delta of (a) need not be the smallest, since an item inside a margin may come back
+unchanged, and Proposition~\ref{prop:fw:side-effects} does not need it to be. Part (a) also gives the new items'
+members, which a delta does not record, so a sequence of writes is followed by updating the item table one edit at a
+time. Part (b) needs neither the content of the writes nor any edited input: it bounds, from the item table of $z$
+alone, which items a whole family of edits can remove or add, which is what \Cref{sec:fw:directions} turns into
+directions. The proofs are in Appendix~\ref{sec:fw:proofs}.
+\begin{runex}
+The two deltas of \Cref{sec:fw:side-effects} follow from part (a). Overwriting a byte in the middle of the longest
+string with a non-printable byte writes one position, which is not a structure position of the records if the string
+lies outside the table. The margin of the strings runs between the non-printable bytes on either side of the string, so the string is replaced by the pieces of at
+least four bytes; the byte at the written position is replaced by the new byte, and a record that contains the string
+is replaced by a record of the same length. Appending a non-printable byte and $\ell$ printable bytes writes positions
+past the end. If the old input ends with a string, the margin of the strings contains it, and the lemma's delta
+removes it and adds it back unchanged, since the non-printable byte keeps it from growing; with the new string and the
+$\ell + 1$ bytes, this is the delta of \Cref{sec:fw:side-effects} with one string on both sides. For the family of all
+appends of at most $B$ bytes, part (b) says that records are unchanged if the table points within the input, bytes and
+strings are only added, and the only string that can be removed is one that ends the old input, which a string at
+least as long replaces.
+\end{runex}
 
-% EXAMPLE (removed, D2): appending the 20 bytes "\0http://evil.example" to a PE file is item-creating: it adds 20
-% byte items and one string of 19 characters (the leading zero byte keeps the text from joining a string at the old
-% end of the file), and extends the overlay. On a file whose section table points past its truncated end, the same
-% append writes a locating position, and the query catches it.
+An edit whose written set meets the structure positions of a kind can change the items of that kind anywhere, and the
+lemma says nothing about them; for the other kinds it still applies. Such an edit is handled when it comes with its
+delta, as an edit stated in items does; if a later edit is given as writes, it also needs the members of the items the
+first one added, which such an edit states along with their contents. \Cref{sec:instances} states every operation of
+our EMBER instance that changes structure in this way. An edit that comes with no delta is flagged, and the kinds
+whose structure positions it writes may change arbitrarily. Whether an edit is flagged is decided by comparing $W$
+with the structure positions in the item table, which needs no judgment, and the answer depends on the input.
+\begin{runex}
+On a toy input whose table points past its end, appending writes a structure position of the records, since the
+appended bytes may become part of a record, so the append is flagged on this input although it writes no structure
+position of any other.
+\end{runex}
+\noindent This dependence on the input is why the directions of \Cref{sec:fw:directions} hold over a population of
+inputs and not over all of them.
 
 \subsection{Sound Directions}
 \label{sec:fw:directions}

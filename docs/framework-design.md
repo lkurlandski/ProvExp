@@ -422,3 +422,108 @@ the old value; the pool example's delta is stated, derived in 3.3; s_k(z) and mu
 use; "edit" = one transformation applied to one input; no traffic example in ¶3 (no packet-injection attack in the
 bib). §3.2 drafted 2026-11-05; the old 3.2 material (locating positions, (R1)-(R3), the lemma) stays as a placeholder
 §3.3 until it is rewritten.
+
+## 13. Spine for §3.3 (proposal, 2026-11-05)
+
+Title: **Edits Given as Writes** (kept). Endpoint: **Lemma 1 (localization)**, parts (a) one edit, (b) an operation.
+New objects: the written set $W$, in-place edits, and per kind $\tau$ the structure positions $L_\tau(z)$ and the
+margin $\mu_\tau(z, W)$; nothing else. It supplies what §3.2 defers here: $W$; the members of the new items (so that
+write-given edits chain); the string-split delta of §3.2's example. Budget: ~500 words (the mock's 300 for edit
+classes plus the old requirements), up to ~800 while drafting. Everything in the placeholder (locating positions of an
+item, parsed/scanned, recognizers, end-anchored items, (R1)-(R3), four edit classes, honest tools) goes.
+
+1. **Why writes, and what is wanted.** Many transformations are given by the elements they write, not by items:
+   append bytes, overwrite padding or an unused field, change a timestamp. For one such edit $z'$ is at hand, but its
+   delta is not, and Prop 1 needs the delta; for an operation ("append any bytes up to $B$"), there is no single $z'$
+   at all. We want the delta from the item table of $z$, the positions written, and the new elements near them. Define
+   the *written set* $W$ (positions where $z'$ differs from $z$, with every position past the old end) and *in place*
+   (no element of $z$ changes position: overwriting and appending are in place, inserting in the middle is not). This
+   is the only subsection in which the input format enters.
+2. **The idea, before the definition.** A write changes items in two ways. It changes the content of items whose
+   members it writes; those are found from the members in the item table and re-read from $z'$. Or it changes which
+   items exist and where they lie, in two ways that differ in kind: by writing an element the extractor reads to find
+   items (a count, an offset, a length), after which anything may change; or by changing content that the extractor
+   scans for items (printable runs that grow, split, or join), which changes items only near the write. So the first
+   must be avoided and the second bounded, and the instrumentation supplies one set of positions for each.
+   (Example, purple: in the toy format, byte 0 and the table entries locate the records; strings are found by
+   scanning.)
+3. **Def 7 (local kind).** A kind $\tau$ is *local* if the instrumentation gives for each input a set $L_\tau(z)$ of
+   *structure positions*, and for each written set a *margin* $\mu_\tau(z, W) \supseteq W$, computable from the item
+   table of $z$ and $W$ and growing with $W$, such that for every in-place edit whose $W$ misses $L_\tau(z)$:
+   (i) $z$ and $z'$ have the same items of kind $\tau$ that are not contained in the margin (same members);
+   (ii) the items of kind $\tau$ of $z'$ contained in the margin are determined by the elements of $z'$ on it.
+   A kind is *fixed-layout* if, in addition, its items in $z'$ have the same members as in $z$ (the margin is then
+   just $W$ plus the members of the items $W$ meets).
+4. **What the definition covers (three generic shapes, then the trivial case).** A kind found through fields
+   (records, sections): $L$ = the fields read to find it, fixed-layout. A kind found by scanning: maximal runs of a
+   class of elements, margin = $W$ extended on each side to the nearest element of $z$ outside the class and outside
+   $W$ (that element is unchanged, so no run crosses it); windows of $n$ elements, $n - 1$ on each side; these are the
+   damage regions of incremental parsing~\cite{wagner1998efficient}. Data that runs to the end of the input (an
+   overlay, a field cut by the end): its margin contains it whenever $W$ reaches past the old end, so appending
+   rewrites it, and the old "end-anchored" exception is an instance, not a rule. Every kind is local with
+   $L_\tau(z)$ = all positions, as every extractor is sum-then-readout with one item (Remark 1): the definition says
+   how small $L$ can be, and a kind whose items the instrumentation cannot re-find locally puts its members in $L$.
+   (Example, purple: toy $L_{\text{record}}$ = byte 0 and the table; $L_{\text{string}} = L_{\text{byte}} = \emptyset$;
+   a byte's margin is $W$.)
+5. **Lemma 1 (localization).** Let every kind be local. (a) If an in-place edit's $W$ misses every $L_\tau(z)$, then
+   $I(z')$ is $I(z)$ with the items contained in the margins replaced by those that the elements of $z'$ on the margins
+   determine; hence a delta of $(z, z')$ is (the contents of the replaced items, the contents of the new ones), and
+   the item table of $z'$, members included, follows from the item table of $z$, $W$, and $z'$ on the margins. (b) If an
+   operation's edits on an input $z$ are all in place and write only within a region $\hat W(z)$ that misses every
+   $L_\tau(z)$, then each of its deltas removes only items of $z$ contained in $\mu_\tau(z, \hat W(z))$ and adds only
+   items of kind $\tau$ contained in it, and a fixed-layout kind keeps its number of items. Both parts are read off
+   the item table of $z$; no edit is applied.
+6. **Why it holds, and what it means (plain words).** Outside the margins nothing the extractor reads to find items
+   was written, and scanned items cannot reach across the margin's edge, so those items are the same in both inputs;
+   inside, the definition says $z'$ alone decides them, so re-reading the margin finds them. The delta is not the
+   smallest in general (an item inside a margin may come back unchanged), which §3.2 already allows. Part (a) is what
+   gives write-given edits the members that §3.2's deltas lack, so a sequence of writes is followed by updating the
+   item table. Part (b) is the bound §3.4 needs: which kinds an operation can change and how, per input, without
+   knowing what it writes. Proof in Appendix C.
+7. **The example, continued (purple): §3.2's two deltas derived.** Overwrite the middle byte of the longest string
+   with a non-printable byte: $W$ is one position, it misses $L_{\text{record}}$; the string margin runs from the
+   non-printable bytes bracketing the string; the old string and old byte are replaced by the new byte and the pieces
+   of length at least four, which is the delta §3.2 stated. Append a non-printable byte and $\ell$ printable ones:
+   the margin of strings starts at the last non-printable byte of $z$, so a string ending the old input is inside it
+   and could have been extended; the leading non-printable byte is why it is not. Lemma (b) for "append up to $B$
+   bytes": records keep their number and contents, strings and bytes can only be added, and the last string of $z$
+   can be replaced (by a longer one).
+8. **Edits outside the lemma.** An edit that writes a structure position, or that shifts elements, may change items
+   anywhere, and its delta cannot be read near the write. It is handled when it comes with its delta (an edit stated
+   in items; §4's catalogue states every structural operation this way), and otherwise flagged: the kinds whose $L$ it
+   writes may change arbitrarily, which §3.4 reads as "both" for the features they reach. Whether an edit is flagged
+   is an interval query of $W$ against the $L_\tau(z)$, so no person has to judge it, and it depends on the input: a
+   toy file whose table points past its end makes even an append write a structure position (it can extend a record),
+   which is why §3.4's directions hold over a population.
+
+**Check against §9 (every EMBER kind fits Def 7 as the code works).** Sections, header fields, imports, data
+directories: field-found, $L$ = the per-item locating ranges the code records (union per kind), fixed-layout.
+Strings, URLs and other patterns over printable runs: runs. Byte histogram: per-byte, margin $W$. Byte-entropy
+histogram: windows (window and step as in thrember; the margin covers every window overlapping $W$). Rich header:
+its margin is its search range. Overlay and fields padded by pefile past the end: data to the end. Kinds with
+`recognize_nothing`, and edits a recognizer rejects (`NotLocal`): their members go into $L$ (the trivial case), which
+is exactly how the code flags them. Exports (`local=False`): not self-contained, so outside the class at item
+granularity; §4 must merge them into one item (to confirm in `features.py`). Code vs definition: the code records
+locating ranges per item, the definition per kind; $L_\tau(z)$ is the union, plus kind-level positions such as the
+section count.
+
+Questions for the user:
+
+- **Q1. Fixed-layout as a named property** (needed so that §3.4 can say "append leaves the section count fixed"),
+  or folded into Lemma (b) as "a kind whose margin is $W$ plus the members $W$ meets keeps its number of items"?
+  Recommended: name it in Def 7, one sentence.
+- **Q2. The trivial case** ("every kind is local with $L$ = everything"), as a sentence mirroring Remark 1, or a
+  second Remark? Recommended: a sentence in ¶4.
+- **Q3. Chaining after an item-stated edit:** a later write needs the members of the items it added, which a delta
+  does not carry. State that an edit stated in items also states where its items lie (§4's catalogue does), one
+  clause in ¶8? Recommended: yes.
+- **Q4. Shifting edits** (insertion in the middle): only "given with delta or flagged", as above, or a line that
+  shifting moves members and the lemma applies after the shift? Recommended: the former; the latter adds a concept
+  for one case the catalogue already states in items.
+
+**Decisions (user, 2026-11-05):** Q1-Q4 as recommended. Drafted the same day. One simplification while drafting:
+$W$ is every position where $z$ and $z'$ differ (including positions in only one), so "in place" is not needed; an
+insertion in the middle has a written set running to the end of the input (Q4 then needs no sentence). The Lemma is
+stated per kind (a write that meets one kind's structure positions still localizes the others, as the code does).
+Label `lem:fw:localization`; Def 7 `def:fw:local`; the proof in `_j_proofs.tex` rewritten. §3.4 still has the old
+`lem:fw:signature` (now subsumed by Lemma 1(b)) and (R1)-(R5) until it is rewritten.
