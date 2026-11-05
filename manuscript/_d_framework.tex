@@ -422,107 +422,152 @@ inputs and not over all of them.
 \subsection{Sound Directions}
 \label{sec:fw:directions}
 
-A detector has to hold against every edit an attacker may make, not against one. We describe the attacker's edits by
-operations. An \emph{operation} $o$ is a family of edits $T_{o,\theta}$ indexed by a parameter $\theta$ from a domain
-$\Theta_o(z)$ that may depend on the input, such as any content of at most a given length. A \emph{threat model}
-$\mathcal{M} = (O, \mathrm{Pre})$ is a finite catalogue $O$ of operations together with a \emph{precondition}
-$\mathrm{Pre} \subseteq \mathcal{Z}$, the inputs it applies to, and the precondition is \emph{closed} if no
-operation takes an input in it outside it. The threat model fixes the transformations of \Cref{sec:background}:
-$\mathcal{T}$ is the set of finite sequences of operation instances, and $\mathcal{R}(z)$ is what they reach. Whether
-an operation preserves the object's behavior or plausibility belongs to $\Gamma$ and is an input to the model. The
-\emph{signature} $\Sigma_o$ of an operation lists which kinds of items it can add, remove, or modify, and with which
-contributions. An operation stated in items comes with its signature, and one stated in elements
-does not.
+% Spine: docs/framework-design.md, Section 14 (Q1-Q4 as recommended, 2026-11-05).
+A detector has to hold against every edit the attacker may make, on every input it will face, and not against one edit
+of one input. We describe the attacker's edits by operations. An \emph{operation} $o$ is a family of edits
+$T_{o,\theta}$, indexed by a parameter $\theta$ from a domain $\Theta_o(z)$ that may depend on the input, such as any
+content of at most $B$ elements to append. A \emph{threat model} $\mathcal{M}$ is a finite catalogue $O$ of
+operations, and it fixes the transformations of \Cref{sec:background}: $\mathcal{T}$ is the set of finite sequences of
+operation instances, and $\mathcal{R}(z)$ is what they reach. Whether an operation preserves the object's behavior or
+plausibility belongs to $\Gamma$ and is an input to the model. The results of this subsection hold over a
+\emph{population} $F \subseteq \mathcal{Z}$ of inputs, because whether an edit writes a structure position depends on
+the input (\Cref{sec:fw:edits}). The population is \emph{closed} under $\mathcal{M}$ if no operation takes an input of
+$F$ outside $F$.
 
-The question a detector asks is whether the attacker can raise each feature, lower it, both, or neither, on every
-input it will face. A \emph{sign set} is a subset of $\{-, 0, +\}$, and $-A$ flips every sign in $A$. The \emph{sign
-sum} $A \boxplus B$ is the set of signs that $a + b$ can have when $a$ has a sign in $A$ and $b$ a sign in $B$; for
-example, $\{+\} \boxplus \{0\} = \{+\}$, while $\{+\} \boxplus \{-\} = \{-, 0, +\}$.
+Proposition~\ref{prop:fw:side-effects} turns a delta into the change of every sum. For an operation we need less: not
+the change, only its sign, but over all of the operation's edits at once. The \emph{signature} $\Delta_o(F)$ of $o$
+over $F$ lists, for each kind, the sorts of change that the deltas of its edits on inputs of $F$ can make: \emph{add}
+items of the kind, \emph{remove} them, or \emph{replace} an item by another of the same kind. Each sort may restrict
+the contents, to any content, to keys from a set $Q$, to the same length as the replaced item, or to an extension of
+its content. A replacement is one removal paired with one addition, and we keep the pair because its effect is often
+smaller than the effects of its parts: an item rewritten in place still adds 1 to the count of its kind, so the count
+does not move, while a removal and an addition taken separately could move it either way. An operation stated in
+items comes with its signature. For an operation given as writes, Lemma~\ref{lem:fw:localization}(b) gives one on each
+input of $F$, and the signature over $F$ is their union, in which a kind whose structure positions the operation
+writes on some input may be added, removed, and replaced with any content. No edit is applied.
+
+A \emph{sign set} is a subset of $\{-, 0, +\}$, and $-A$ flips every sign in $A$. The \emph{sign sum} $A \boxplus B$
+is the set of signs that $a + b$ can have when $a$ has a sign in $A$ and $b$ a sign in $B$, so
+$\{0, +\} \boxplus \{0\} = \{0, +\}$, while $\{+\} \boxplus \{-\} = \{-, 0, +\}$. Sign sets with this sum are the sign
+domain of abstract interpretation, which computes what a program can do from the signs of its
+values~\cite{cousot1977abstract}. Each sort of change gives each sum a sign set: the signs that any number of changes of
+that sort can give the sum. For an additive sum, the sign set follows from the contributions, by
+Proposition~\ref{prop:fw:side-effects}(i), and contributions in feature sets take few forms, which
+\Cref{tab:fw:signs} lists with their sign sets. The form of a hashed key needs one remark: the sums it can reach and
+the signs it gives them are those of the keys in $Q$, which enumerating $Q$ finds, so hashing does not hide from the
+attacker which features a chosen key moves. This answers Severi et al.'s remark that hashing resists
+targeting~\cite{severi2021explanation}. A count of the items whose content matches a pattern, such as the strings
+that are URLs, gains matches but loses none when an item is extended, provided the pattern does not look past the end
+of a match.
+
+\begin{table*}[t]
+  \caption{The signs a sort of change gives a sum: the signs that any number of changes of the sort can give it.
+  Removal gives the signs of addition flipped. A min pool follows the max pool with every sign flipped.}
+  \label{tab:fw:signs}
+  \small
+  \begin{tabular}{@{}p{0.3\textwidth}p{0.28\textwidth}p{0.36\textwidth}@{}}
+    \toprule
+    An item contributes & Add & Replace \\
+    \midrule
+    1 to a count, or to the count of its key & $\{0, +\}$ & $\{0\}$ if the key is kept, else every sign \\
+    a value $\ge 0$ (a length, a size, a histogram bin) & $\{0, +\}$ & every sign; $\{0, +\}$ under extension; $\{0\}$
+      for a length under the same length \\
+    $\pm$ a value to the bucket its key hashes to & the buckets and signs of the keys in $Q$ & every sign on those
+      buckets \\
+    a value in a declared range $[l, u]$ & $\{0, +\}$ if $l \ge 0$, $\{-, 0\}$ if $u \le 0$, else every sign & every
+      sign, $\{0\}$ if $l = u$ \\
+    a value to a max pool & $\{0, +\}$ & $\{0, +\}$ under extension of the value it reads, else every sign \\
+    \bottomrule
+  \end{tabular}
+\end{table*}
 
 \definition[Envelopes and direction tables]
 \label{def:fw:directions}
 {
-Let $F \subseteq \mathrm{Pre}$ be a population of inputs. The \emph{envelope} $E^F_o(s)$ of operation $o$ on sum $s$ is
-the set of signs that the change of $s$ takes over every input in $F$ and every edit of $o$. A \emph{direction table}
-$D$ assigns each feature $j$ a direction $D_j$, one of $\mathsf{fixed}$, $\mathsf{up}$, $\mathsf{down}$, and
-$\mathsf{both}$. It is \emph{sound} for $\mathcal{M}$ over $F$ if no single operation instance on an input in $F$
-changes a fixed feature, lowers an up feature, or raises a down feature.
+The \emph{envelope} $E^F_o(k)$ of operation $o$ on sum $k$ over a population $F$ is the set of signs of
+$s_k(T_{o,\theta}(z)) - s_k(z)$ over every $z \in F$ and every $\theta \in \Theta_o(z)$. A \emph{direction table} $D$
+assigns each feature $j$ a direction $D_j$, one of $\mathsf{fixed}$, $\mathsf{up}$, $\mathsf{down}$, and
+$\mathsf{both}$. It is \emph{sound} for $\mathcal{M}$ over $F$ if no operation instance on an input of $F$ changes a
+fixed feature, lowers an up feature, or raises a down feature.
 }
 
-\noindent The four directions are Incer et al.'s four cases~\cite{incer2018adversarially}, which they assign by hand.
-Gimenez et al.~\cite{gimenez2025certifiably} use only features that are up, chosen by hand or kept because no observed
-attack lowered them. A sound table is a feature-space constraint in the sense of $\Omega$: under the closure condition
-of Theorem~\ref{thm:fw:directions}, every vector in $\mathcal{R}(z)$ differs from $\varphi(z)$ only in the allowed
-directions. We compute the table in two steps, first
-the envelopes of the sums and then the directions of the features, and write $E_s$ for an envelope when the operation
-and population are clear.
+\noindent The four directions are Incer et al.'s four cases, which they assign to each feature by
+hand~\cite{incer2018adversarially}. A sound direction table is a feature-space constraint in the sense of $\Omega$: it
+says which perturbations of $\varphi(z)$ the threat model cannot produce. We compute it in two steps, from the
+signature to the envelopes of the sums, and from the envelopes to the directions of the features, and write $E_k$
+for an envelope when the operation and the population are clear.
 
-The first step reads the signs off the terms. An added item raises a count, and a removed item lowers it; a modified
-item leaves it fixed if its key is unchanged, and otherwise lowers the old key's count and raises the new key's. An
-attribute, and a maximum pool fed by it, can rise or stay when an item is added, fall or stay when an item is removed,
-and move either way when an item is modified; a minimum pool behaves in the same way with the signs flipped. A
-hashed term moves only the sums that the hashes of the possible keys select, with the signs of those keys; when the
-attacker picks the key from a set $K$, enumerating $K$ finds every reachable sum and sign, which answers Severi et
-al.'s remark that hashing resists targeting~\cite{severi2021explanation}. A slot can take any sign when its item is
-modified, and an opaque term moves by the sign of its declared range minus its default. The change of a sum is the
-total of the changes of its terms, and the sign of a total lies in the sign sum of the signs of its parts. So an
-operation's envelope on a sum lies within the sign sum of these signs over the item changes its signature allows, one
-step of the sign domain of abstract interpretation~\cite{cousot1977abstract}. A pattern attribute changes either way
-when its item is modified, with one refinement: extending an item's content can only add matches of a pattern that
-does not look past the end of the match.
+The first step adds signs. An edit's delta combines changes of the sorts its signature allows, and the change of an
+additive sum is the total of what each change gives it, so its sign lies in the sign sum, over the sorts of change in
+the signature, of the sign sets of \Cref{tab:fw:signs}. A max pool has a coarser bound: it can only rise if every
+sort's sign set on it lies within $\{0, +\}$, since a maximum does not fall when values are only added or raised; it
+can only fall if every one lies within $\{-, 0\}$; and otherwise it can move either way. A min pool is the same with
+the signs flipped. Only signs are needed, so the pools need no item table here, unlike in
+Proposition~\ref{prop:fw:side-effects}(ii).
 
-The signature that this step needs is missing for operations stated in elements, and the
-requirements of \Cref{sec:fw:edits} supply it per input.
+The second step passes the envelopes through each readout, by the rules of \Cref{tab:fw:readouts}. The last rule
+holds for every readout, because a readout depends only on its support (Definition~\ref{def:fw:readout}); the others
+are sharper rules for the forms of \Cref{sec:fw:model}. The ratio is the one that is not monotone in its sums: it can
+rise only if its numerator can rise or its denominator can fall.
 
-\lemma[Signatures from the item table]
-\label{lem:fw:signature}
-{
-Let $o$ be an operation that, on every input in $F$ and for every parameter, is in place and writes no locating
-position, and let (R1) and (R2) hold on $F$. Then on each input of $F$, every edit of $o$ modifies only parsed items
-whose members it writes and changes only scanned items that overlap the margins of its written set. The signature
-of $o$ over $F$ is contained in the union of these changes over the inputs of $F$.
-}
-
-\noindent The changes are read from each input's item table, and no edit is applied. The result still depends on the
-layout of each input, which is why directions hold over a population and not for every possible input: an operation
-that writes no locating position on most inputs may write one on an input with an unusual layout, which the
-precondition must then exclude.
-
-The second step turns the envelopes of the sums a readout reads into the signs of the feature's change, by one rule
-per readout type (Appendix~\ref{sec:fw:proofs} lists them all). A readout that is monotone in its sums passes their signs
-through: an identity readout has the envelope of its sum, a presence bit within $E_s \cup \{0\}$, since a count can
-rise while its bit stays set, and a pool its pool's envelope. A ratio $a / b$ with $a \ge 0$, and $b > 0$ before and
-after the edit, changes with a sign in
-\[
-  E_a \boxplus \big((-E_b) \cup \{0\}\big),
-\]
-so it can rise only if its numerator can rise or its denominator can fall. A normalized histogram bin follows the
-ratio rule. A readout with no monotone structure, such as an entropy or a standard deviation, is $\{0\}$ if none of
-the sums it reads can change, and can take every sign otherwise.
+\begin{table}[t]
+  \caption{The signs of a feature's change, from the envelopes $E$ of the sums its readout reads.}
+  \label{tab:fw:readouts}
+  \small
+  \begin{tabular}{@{}p{0.25\columnwidth}p{0.25\columnwidth}p{0.4\columnwidth}@{}}
+    \toprule
+    Readout & Formula & Signs of the change \\
+    \midrule
+    identity & $s_k$, a sum or a pool & $E_k$ \\
+    presence & $1$ if $s_k > 0$, else $0$ & within $E_k \cup \{0\}$ \\
+    distinct count & keys $q$ with $s_q > 0$ & $\boxplus_q \, (E_q \cup \{0\})$ \\
+    ratio & $a / b$, with $a \ge 0$, and $b > 0$ before and after & $E_a \boxplus \big((-E_b) \cup \{0\}\big)$ \\
+    normalized bin & a bin over the histogram's total & the ratio rule \\
+    any readout & a function of its support $K_j$ & $\{0\}$ if $E_k = \{0\}$ for every $k \in K_j$, else every
+      sign \\
+    \bottomrule
+  \end{tabular}
+\end{table}
 
 \theorem[Sound directions]
 \label{thm:fw:directions}
 {
-Let $F \subseteq \mathrm{Pre}$ be a population on which (R3)--(R5) hold, and (R1) and (R2) for operations stated in
-elements. For each operation, apply the readout rules to envelopes that contain the true ones over $F$;
-take the union of the resulting sign sets over all operations; read the union as fixed ($\{0\}$), up (within
-$\{0, +\}$), down (within $\{-, 0\}$), or both; and mark every residual feature as both. The resulting table $D$ is
-sound for $\mathcal{M}$ over $F$. If $F$ is closed under $\mathcal{M}$, it holds along every sequence of edits from
-any $z \in F$.
+Let $\varphi$ be a sum-then-readout extractor over $J$, $F$ a population, and $\mathcal{M}$ a threat model, and give
+each operation of $\mathcal{M}$ a signature that contains the deltas of its edits on every input of $F$, with sign sets
+that contain the signs its changes give the sums. For each operation, bound the envelopes by the first step and the
+features' signs by the second; take the union of each feature's signs over the operations; read the union as
+$\mathsf{fixed}$ if it is $\{0\}$, $\mathsf{up}$ if it lies within $\{0, +\}$, $\mathsf{down}$ if it lies within
+$\{-, 0\}$, and $\mathsf{both}$ otherwise; and mark every residual feature $\mathsf{both}$. The resulting table $D$ is
+sound for $\mathcal{M}$ over $F$. If $F$ is closed under $\mathcal{M}$, then for every $z \in F$, every vector in
+$\mathcal{R}(z)$ differs from $\varphi(z)$ only in the directions $D$ allows.
 }
 
-\noindent Soundness for one operation instance follows from the sign of a total lying in the sign sum of its parts and
-from the readout rules. For the ratio rule, write the changes as $a' = a + \alpha$ and $b' = b + \beta$; then
-$a'/b' - a/b = (\alpha b - a \beta)/(b b')$, whose denominator is positive, $\alpha b$ has the sign of $\alpha$, and
-$-a\beta$ is zero or opposite in sign to $\beta$. Sequences follow by induction, since closure keeps every
-intermediate input in $F$. Without closure, a sequence can leave $F$, and the table says nothing about the steps
-after that.
-
-% EXAMPLE (removed, D2): for appending up to B bytes to a PE file, the string and URL counts go up, the section count
-% and section-name buckets are fixed, every section's size ratio goes down, and the average string length and the
-% entropy go both ways. In traffic, injecting packets only between existing ones leaves the total gap fixed and raises
-% the number of gaps, so the mean gap can only fall; allowing injection after the last packet lengthens the total gap,
-% and the mean gap moves both ways.
+\noindent For one operation instance, the theorem rests on three facts: the sign of a total lies in the sign sum of
+the signs of its parts; a maximum over more or larger values is no smaller; and each readout rule holds. The ratio's
+follows from writing its new value as $a' = a + \alpha$ over $b' = b + \beta$, since
+$a'/b' - a/b = (\alpha b - a \beta)/(b b')$ has a positive denominator, $\alpha b$ has the sign of $\alpha$, and
+$-a\beta$ is zero or has the sign opposite to $\beta$. For a sequence of edits, closure keeps every intermediate input
+in $F$, so the statement for one instance applies at every step, and a feature that does not fall at any step does not
+fall along the sequence. Without closure, a sequence can leave $F$, and the table says nothing about the steps after
+that. The table is computed from the item tables of the inputs in $F$ and from the catalogue, for every feature at
+once, and applies no edit. What it takes besides the extractor are the signatures and the sign sets of the
+contributions, each a statement about one sort of change to one kind of item. In our instance, the sign sets come
+partly from the form of each contribution, since a count is never negative, and partly from the item tables of a
+corpus, such as the smallest value a kind contributes and the keys it uses (\Cref{sec:instances}). The proofs are in
+Appendix~\ref{sec:fw:proofs}.
+\begin{runex}
+Take as the population the toy inputs whose table points only within the input; neither operation below writes the
+table, and neither shortens the input, so the population is closed under both. Appending at most $B$ bytes adds bytes
+and strings and may replace a string that ends the old input by an extension of it
+(\Cref{sec:fw:edits}). The number of strings can only rise, since the replacement keeps the count, and so can the
+total length of strings, the longest-string pool, and the length of the input; the total length of records is fixed.
+So $x_1$ and $x_3$ are up; $x_2$, a ratio whose numerator and denominator can both rise, is both; and $x_4$, whose
+numerator is fixed and whose denominator can rise, is down: the side effect of \Cref{sec:fw:side-effects}, now for
+every append. Overwriting any bytes outside the structure positions of the records adds, removes, and replaces
+strings, replaces bytes by bytes, which keeps the length of the input, and replaces records by records of the same
+length, read from their unchanged table entries. So $x_1$, $x_2$, and $x_3$ are both and $x_4$ is fixed. With both
+operations in the threat model, the union leaves $x_4$ down and the other three both.
+\end{runex}
 
 \subsection{Robust Detectors}
 \label{sec:fw:robustness}

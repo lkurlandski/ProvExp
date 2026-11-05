@@ -527,3 +527,113 @@ insertion in the middle has a written set running to the end of the input (Q4 th
 stated per kind (a write that meets one kind's structure positions still localizes the others, as the code does).
 Label `lem:fw:localization`; Def 7 `def:fw:local`; the proof in `_j_proofs.tex` rewritten. §3.4 still has the old
 `lem:fw:signature` (now subsumed by Lemma 1(b)) and (R1)-(R5) until it is rewritten.
+
+## 14. Spine for §3.4 (proposal, 2026-11-05)
+
+Title: **Sound Directions** (kept). Endpoint: **Theorem 1 (sound directions)**. New objects: operations, threat model,
+population and closure; an operation's *signature* (the deltas its edits can produce, per kind); sign sets and the
+sign sum; envelopes; the direction table. Everything else comes from 3.1-3.3: Prop 1(i) gives the change of an
+additive sum as a sum over the delta, and Lemma 1(b) gives the signatures of operations given as writes. Budget: the
+mock's 500 plus the share of its 700 that went to the term and readout tables, so ~800 words and two small tables, up
+to ~1,200 while drafting. Removed and not replaced: the term vocabulary as a 3.1 concept (count, attribute, hashed,
+slot, opaque), `lem:fw:signature` (subsumed by Lemma 1(b)), (R1)-(R5) in the theorem, the precondition $\mathrm{Pre}$
+(Q1), and $\Sigma_o$ (collides with "sum", lesson 26).
+
+**The one simplification.** The draft's terms existed to give each kind of item change a sign. After §3.2 that is
+direct: by Prop 1(i), an additive sum changes by the contributions of the added items minus those of the removed ones,
+so its sign lies in the sign sum of their signs. What an operation needs per kind and sum is therefore only the set of
+signs a contribution can have (and, for a replaced item, the signs of new minus old). The term forms survive as a
+small table of *common contribution forms and their sign sets*, a lookup, not a concept the reader must hold.
+
+1. **From one edit to all (motivation, then the objects).** A detector must hold against every edit the attacker may
+   make, on every input it will face, and §2's $\mathcal{R}(z)$ is the set those edits reach. An *operation* $o$ is a
+   family of edits $T_{o,\theta}$, $\theta \in \Theta_o(z)$ (append any content of at most $B$ elements); a *threat
+   model* $\mathcal{M}$ is a finite catalogue $O$ of operations, and it fixes $\mathcal{T}$ as the finite sequences
+   of their instances; whether an operation preserves behavior is $\Gamma$'s business and an input. Results hold over
+   a *population* $F \subseteq \mathcal{Z}$ (§3.3 ended on why: whether an edit writes structure positions depends
+   on the input); $F$ is *closed* if no operation takes an input of $F$ outside it.
+2. **Signatures.** The *signature* $\Delta_o(F)$ of $o$ over $F$ describes, per kind, the changes its deltas can
+   make: *add* items of the kind, *remove* them, or *replace* one by another, each with a constraint on contents
+   (any; keys from a set $K$; same length; an extension of the old content). Replace is a pairing of one removal with
+   one addition, kept because the pair cancels where separate signs would not: a count every item of the kind adds to
+   does not move when an item is rewritten. An operation stated in items comes with its signature; one given as writes
+   gets it from Lemma 1(b), per input of $F$, with every kind whose structure positions it writes on some input
+   marked as changing arbitrarily (add, remove, replace, any content). No edit is applied.
+3. **Signs of contributions; sign sets and the sign sum.** A *sign set* is a subset of $\{-, 0, +\}$; $-A$ flips it;
+   $A \boxplus B$ is the set of signs of $a + b$ with signs from $A$ and $B$ (two examples). The sign domain of abstract
+   interpretation~\cite{cousot1977abstract}, cited here. **Table (contribution forms)**, columns: form, what an item
+   adds, add, replace. Rows: count (1 to a sum, or to its key's sum): $\{+\}$, $\{0\}$ if the key is kept; nonnegative
+   attribute (a length, a size, histogram bins): $\{0, +\}$, any sign ($\{0, +\}$ under extension, $\{0\}$ for a length
+   under same length); hashed key ($\pm$ an attribute to bucket $h(\text{key})$): the buckets and signs of the keys in
+   $K$, found by enumerating $K$, which answers Severi et al.'s remark that hashing resists
+   targeting~\cite{severi2021explanation}; a value in a declared range (a field one item holds, or a value computed by
+   code we do not open): its range minus the neutral value. Remove is add negated (caption). A pattern count (strings
+   that are URLs) gains only matches under extension if the pattern does not look past the end of a match: one
+   sentence.
+4. **Def 8 (envelopes and direction tables).** The *envelope* $E^F_o(k)$ of $o$ on sum $k$: the signs the change of
+   $s_k$ takes over every input of $F$ and every edit of $o$. A *direction table* assigns each feature one of fixed,
+   up, down, both; it is *sound* for $\mathcal{M}$ over $F$ if no operation instance on an input of $F$ changes a fixed
+   feature, lowers an up one, or raises a down one. Gloss: the four directions are Incer et al.'s four cases, assigned
+   there by hand~\cite{incer2018adversarially}; a sound table is a constraint in $\Omega$'s sense.
+5. **Step one, sums.** An additive sum's envelope lies within the sign sum, over the changes the signature allows, of
+   the signs in the table (Prop 1(i)); a max pool can only rise or stay when items are only added, fall or stay when
+   they are only removed, and move either way under replacement except an extension of the attribute it reads; a min
+   pool with signs flipped. No reference to the old value is needed, unlike Prop 1(ii), because only the sign is asked.
+6. **Step two, features. Table (readout rules)**, columns: form, formula, sign rule. Rows: identity (a sum or a pool):
+   $E_k$; presence (a count is positive): within $E_k \cup \{0\}$; distinct count (keys with positive count): up if
+   every key's envelope is within $\{0,+\}$, down if within $\{-,0\}$, else both; ratio $a/b$ ($a \ge 0$, $b > 0$ before
+   and after): $E_a \boxplus ((-E_b) \cup \{0\})$; normalized bin: the ratio rule with the histogram's total; any other
+   readout (entropy, standard deviation, a bit of a field, the attribute of a chosen item): $\{0\}$ if every sum in its
+   support $K_j$ has envelope $\{0\}$, else every sign. The last row holds for every readout by Def 4's support; the
+   others are sharper rules for the forms of §3.1. One sentence on the ratio: it can rise only if its numerator can
+   rise or its denominator fall.
+7. **Theorem 1 (sound directions).** Let $\varphi$ be sum-then-readout over $J$, $F$ a population, and for each
+   operation a signature that contains every delta its edits produce on inputs of $F$, with sign sets that contain the
+   true signs of the contributions. Apply step one, then step two, per operation; take the union over operations; read
+   $\{0\}$ as fixed, within $\{0,+\}$ as up, within $\{-,0\}$ as down, else both; mark residual features both. Then the
+   table is sound for $\mathcal{M}$ over $F$, and if $F$ is closed under $\mathcal{M}$, every vector of
+   $\mathcal{R}(z)$, $z \in F$, differs from $\varphi(z)$ only in the allowed directions.
+8. **Why it holds, and what it means.** In words: the sign of a total lies in the sign sum of its parts' signs, the
+   maximum of more values is no smaller, each readout rule is a one-line fact (the ratio's, from
+   $a'/b' - a/b = (\alpha b - a\beta)/(b b')$), and sequences follow by induction because closure keeps every
+   intermediate input in $F$; without it a sequence may leave $F$ and the table says nothing after that. Meaning: the
+   table is computed from item tables and the catalogue alone, for every feature, and its only inputs beyond the
+   extractor are the signatures and the sign sets of contributions, each a statement about one kind of item (Q3).
+   Proof in Appendix C.
+9. **The example, continued (purple).** Population: toy inputs whose table points within the input; closed under
+   both operations below. Append at most $B$ bytes (signature from §3.3's Lemma 1(b) example: bytes and strings
+   added, the last string replaced by an extension, records untouched): $x_1$ up (the replaced string's count
+   cancels), $x_2$ both (a ratio with both parts rising), $x_3$ up, $x_4$ down (its numerator fixed, its denominator
+   rising), the side effect of §3.2 now for every append. Overwrite any bytes outside the structure positions of the
+   records: strings added, removed, and replaced, bytes replaced with the same count, records replaced with the same
+   length read from their unchanged entries: $x_1$, $x_2$, $x_3$ both, $x_4$ fixed. With both operations in the
+   threat model, the union gives $x_1$, $x_2$, $x_3$ both and $x_4$ down.
+
+Downstream once drafted: `_j_proofs.tex` (Theorem 1's proof to the new hypotheses; the proof of `lem:fw:signature`
+goes), `_i_symbols.tex` (drop (R1)-(R5), $\mathrm{Pre}$, $\Sigma_o$; add $\Delta_o(F)$, $\boxplus$, $E^F_o(k)$), §4's
+(R3)/(R4) wording and "precondition" (it becomes how §4 defines $F$), the §3 lead (subsection order: 3.2 side effects
+before 3.3 writes), and 3.5's corollary (unchanged in substance; check its symbols).
+
+Questions for the user:
+
+- **Q1. Drop the precondition from the threat model**, so $\mathcal{M}$ is the catalogue $O$ and the population $F$
+  does the precondition's job (§4's precondition check becomes the definition of our $F$)? Recommended: yes; $F$ and
+  $\mathrm{Pre}$ play the same role in every result, and one symbol goes.
+- **Q2. Replace as a third change in the signature**, with four content constraints (any, keys from $K$, same
+  length, extension)? Recommended: yes. With only add and remove, a rewritten header moves the section count both
+  ways and an extended string makes the longest-string pool "both"; the code relies on both refinements
+  (`_unconditional`, `rewrite`, `grow` in `reach.envelope`).
+- **Q3. Where the sign sets of contributions come from.** The theorem assumes they contain the true signs; our
+  instance reads them partly from the form (a count is never negative) and partly from the item tables of a corpus
+  (`reach.Vocabulary`: the smallest recorded value, the keys seen), which §5 checks (pilot vs 2,000 files). Say this
+  in one sentence in 3.4 with a pointer to §4, or only in §4? Recommended: one sentence in 3.4; it is the theorem's
+  one input a reviewer will look for.
+- **Q4. The second toy operation** (overwrite outside the records' structure positions), to show the union over
+  operations and a fixed feature? Recommended: yes, two sentences; without it the example never exercises the union.
+
+**Decisions (user, 2026-11-05):** "go ahead and write the subsection"; Q1-Q4 taken as recommended. Drafted the same
+day (~1,450 words with both tables and the example). While drafting: each sort of change's sign set is "the signs any
+number of such changes can give the sum" (so repetition needs no notation); pools get the coarse rule (up if every
+sort's set is within {0,+}, down if within {-,0}, else both), not the sign sum; keys are $Q$ (the symbol table's $K$
+collided with the sums); Table 1 is `table*`. Still to do downstream: §4's (R3)/(R4) and "precondition" wording, the §3
+lead's subsection order.

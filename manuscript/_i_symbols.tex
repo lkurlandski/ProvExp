@@ -37,19 +37,17 @@
     \midrule
     \multicolumn{2}{@{}l}{\emph{Edits}} \\
     $W$ & Written set: the positions at which $z'$ differs from $z$. \\
-    $\Delta$ & Item delta $(I^-, I^+, I^\sim, I^\to)$: removed, added, modified, moved. \\
-    $L(\iota)$, $L(z)$ & Locating positions of $\iota$; all of those of $z$. \\
-    $\mu_\kappa(z, W)$ & Margin of scanned kind $\kappa$. \\
-    (R1)--(R5) & Requirements: structure, margins, honest tools, self-contained contributions, faithful recording. \\
+    $(I^-, I^+)$ & Item delta: removed and added items, $\pi(z') = (\pi(z) - I^-) \uplus I^+$. \\
+    $L_\tau(z)$, $\mu_\tau(z, W)$ & Structure positions and margin of kind $\tau$. \\
     \midrule
     \multicolumn{2}{@{}l}{\emph{Threat models and directions}} \\
     $o$, $T_{o,\theta}$ & An operation; its edit with parameter $\theta \in \Theta_o(z)$. \\
-    $\mathcal{M}$ & Threat model $(O, \mathrm{Pre})$: operations and precondition. \\
-    $\Sigma_o$ & Signature of $o$. \\
-    $K$ & A set of keys an operation may choose from. \\
-    $F$ & A population of inputs, $F \subseteq \mathrm{Pre}$. \\
+    $\mathcal{M}$, $O$ & Threat model: a finite catalogue $O$ of operations. \\
+    $F$ & A population of inputs. \\
+    $\Delta_o(F)$ & Signature of $o$ over $F$: the sorts of change (add, remove, replace) its deltas make. \\
+    $Q$ & A set of keys an operation may choose from. \\
     $A \boxplus B$ & Sign sum of sign sets $A, B \subseteq \{-, 0, +\}$. \\
-    $E^F_o(s)$, $E_s$ & Envelope of $o$ on sum $s$ over $F$; short form. \\
+    $E^F_o(k)$, $E_k$ & Envelope of $o$ on sum $k$ over $F$; short form. \\
     $D$, $D_j$ & Direction table; direction of feature $j$. \\
     \bottomrule
   \end{tabular}
