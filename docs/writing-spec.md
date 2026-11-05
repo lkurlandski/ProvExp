@@ -97,6 +97,17 @@ side of detail and cut later.
 What the user accepted or rejected on real drafts, newest first. Each entry: the sentence or choice, the verdict, the
 rule it implies (folded into Sections 1-5 if general).
 
+- **2026-11-05, §3.2 first draft (item delta, Proposition 1, toy examples).** "Good", but "a little long-winded"
+  and taking on "the long-winded hard-to-read characteristics of LLM writing". Specifics: (a) the paragraph after
+  Definition 6 spelled out the patently obvious (a delta exists, the smallest one, others add the same items), while
+  the one notable idea, that pi keeps contents and forgets positions, was "under-appreciated, under-emphasized, and
+  under-discussed"; (b) Proposition 1 "extremely dense", complex notation, an index that seemed to mean two things
+  (it did not, but the word "sum" did: our term and the summation sign in one formula); (c) "what is a pool?": defined
+  only as two labels inside Definition 2's monoid list. Revised: the paragraph after Def 6 now develops why
+  positions matter only through contents and through which items exist; Prop 1 restated from the kept items B with no
+  summation signs or subscripts; "pools" defined in Def 2; ~1,100 -> ~880 words. Implied: spend a paragraph on the
+  idea, not on facts any reader infers; prefer notation that names an object (B) over index-heavy formulas; a term
+  used alone must be defined alone.
 - **2026-11-05, §3.1 redraft (factorization, identity-free items, toy example in purple).** "A significant
   improvement." Preliminary notes before §3.2: number the equations; use parallel calligraphic spaces for the stages
   (Z -> V -> S -> X instead of a text label, M, and R^J), which also removes J from the first paragraph; tau for kinds

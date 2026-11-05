@@ -87,7 +87,8 @@ leaves unchanged. Three monoids occur:
   \end{array}
 \end{equation}
 The \emph{sum space} is the product $\mathcal{S} = \prod_{k \in K} \mathbb{M}_k$, with the operation $\oplus$ that
-applies each sum's operation to its entry. Its neutral element holds the neutral element of every sum.
+applies each sum's operation to its entry. Its neutral element holds the neutral element of every sum. Max and
+min pools are together called \emph{pools}: each keeps the largest or the smallest value it receives.
 }
 
 \noindent The set $K$ may be large, with one count for each key of an open vocabulary, such as the names of imported
@@ -214,16 +215,14 @@ coarse items (Remark~\ref{rem:fw:granularity}), and learned representations have
 \subsection{Edits and Their Side Effects}
 \label{sec:fw:side-effects}
 
-% Spine: docs/framework-design.md, Section 12 (approved 2026-11-05, with the decisions recorded there).
-An edit applies a transformation $T \in \mathcal{T}$ to one input, taking $z$ to $z' = T(z)$. The direct way to learn
-what it does to the features is to extract $\varphi(z')$ and compare it with $\varphi(z)$. For an edit that has been
-carried out, this is the ground truth, and \Cref{sec:evaluation} checks every computation of this subsection against
-it. Extraction needs $z'$, though, a valid object built by carrying out the edit, and it reports which features
-changed but not through which items. It can also be expensive: it parses the whole object, and sometimes disassembles
-its code, while an edit usually changes a few of its items. The factorization \eqref{eq:fw:factorization} suggests
-another route. We describe the edit by how it changes $\pi(z)$ and obtain the change of every sum and every feature
-by arithmetic over the items that changed. Applied to all the edits an operation allows, the same arithmetic is what
-\Cref{sec:fw:directions} needs to bound the features without carrying out any edit.
+% Spine: docs/framework-design.md, Section 12 (approved 2026-11-05); revised after the user's first reading.
+An edit applies a transformation $T \in \mathcal{T}$ to one input, taking $z$ to $z' = T(z)$. Extracting
+$\varphi(z')$ shows what the edit does to the features, and \Cref{sec:evaluation} uses it as the ground truth for this
+subsection. But extraction needs $z'$, a valid object built by carrying out the edit. It does not say through which
+items the features changed, and it can be expensive, since it parses the whole object while an edit usually changes a
+few items. We instead describe an edit by how it changes $\pi(z)$ and compute the new sums and features from that
+change. Applied to every edit an operation allows, the same computation lets \Cref{sec:fw:directions} bound the
+features without carrying out any edit.
 
 \definition[Item delta]
 \label{def:fw:delta}
@@ -234,83 +233,75 @@ $I^- \subseteq \pi(z)$ and
   \label{eq:fw:delta}
   \pi(z') = \big(\pi(z) - I^-\big) \uplus I^+,
 \end{equation}
-where $\pi(z) - I^-$ removes each element of $I^-$ from $\pi(z)$ as often as it occurs in $I^-$. The items in $I^-$
-are \emph{removed} and those in $I^+$ are \emph{added}.
+where $-$ removes each element of $I^-$ once for each time it occurs there. The items in $I^-$ are \emph{removed} and
+those in $I^+$ are \emph{added}.
 }
 
-\noindent Every pair of inputs has a delta. The smallest one removes the items of $z$ that $z'$ lacks and adds the
-items of $z'$ that $z$ lacks, counted with multiplicity, and every other delta adds the same items to both sides.
-Because $\pi$ keeps the contents of items and forgets where they lie, an item whose content changes appears as one
-removal and one addition, and an item that only moves appears in neither. A delta need not be the smallest. An edit
-that rewrites a header may list it as removed and added back even where its content is unchanged, and nothing below
-depends on minimality.
-
-Many transformations in the literature are stated by the items they change, such as injecting a section into an
-executable~\cite{demetrio2021functionality}, adding permissions or other entries to an app's
-manifest~\cite{grosse2016adversarialTMP}, or transplanting a piece of code from another
-app~\cite{pierazzi2020intriguing}. Such an edit comes with a delta that its definition computes from $z$: a new
-section also changes the header field that counts the sections, and with it the header's content. Whether the
-elements an implementation writes produce this delta is a property of the implementation, and \Cref{sec:evaluation}
-checks ours against extraction. Edits given instead by the elements they write are the subject of
-\Cref{sec:fw:edits}, which derives their deltas.
+\noindent A delta is stated in kinds and contents, without positions, and this is what makes it small. Every
+modeled feature depends on the input only through $\pi$ \eqref{eq:fw:factorization}, so where an item lies cannot
+matter to the features by itself. Positions matter in two ways only. Some are recorded as contents, such as an offset
+in a table entry, and an edit that changes them changes the item that holds them. Others decide which items the
+extractor finds at all, which is the subject of \Cref{sec:fw:edits}. An item that moves with its content unchanged is
+in neither part of the delta, and an item whose content changes is one removal and one addition. A delta need not be
+the smallest one: an edit may list an unchanged header as removed and added back, and the results below hold for
+every delta.
 \begin{runex}
-Appending a string of $\ell \ge 4$ printable bytes to a toy input, preceded by one non-printable byte, is an edit of
-the first kind. Its delta removes nothing and adds the $\ell + 1$ new bytes and one string of length $\ell$. The
-non-printable byte keeps the new string from joining a string that ends the old input.
+In the toy format, inserting non-printable bytes in front of a string moves the string, and the string is not in the delta. Moving
+a record changes the offset in its table entry, which is one of its members, so the record is removed and added back
+with its new content.
 \end{runex}
 
-For a sum $k$, we write $s_k(z)$ for the entry of $\mathbf{s}(z)$ at $k$, and $\nu_\tau(c)_k$ for the entry of a
-contribution. Sums over a multiset count each element as often as it occurs.
+Many transformations in the literature are stated by the items they change: injecting a section into an
+executable~\cite{demetrio2021functionality}, adding entries to an app's manifest~\cite{grosse2016adversarialTMP}, or
+transplanting code from another app~\cite{pierazzi2020intriguing}. Such an edit comes with a delta, which its
+definition computes from $z$ (a new section also rewrites the header field that counts the sections), and
+\Cref{sec:evaluation} checks that our implementations of these edits produce the deltas they state. Edits given by the
+elements they write are the subject of \Cref{sec:fw:edits}.
+\begin{runex}
+Appending to a toy input one non-printable byte and then a string of $\ell \ge 4$ printable bytes removes nothing and
+adds $\ell + 1$ bytes and one string. The non-printable byte keeps the new string from joining a string that ends the
+old input.
+\end{runex}
+
+An item \emph{contributes to} a sum if its contribution there is not the neutral element.
 
 \proposition[Exact side effects]
 \label{prop:fw:side-effects}
 {
-Let $\varphi$ be a sum-then-readout extractor over $J$, and let $(I^-, I^+)$ be a delta of $(z, z')$. Then:
-(i) every additive sum $k$ satisfies
-\begin{equation}
-  \label{eq:fw:delta-rule}
-  s_k(z') = s_k(z) + \sum_{(\tau, c) \in I^+} \nu_\tau(c)_k - \sum_{(\tau, c) \in I^-} \nu_\tau(c)_k;
-\end{equation}
-(ii) every pool $k$ satisfies $s_k(z') = \sigma\big((\pi(z) - I^-) \uplus I^+\big)_k$, which the item table of $z$ and
-the delta determine, while $s_k(z)$ and the delta in general do not; and
-(iii) $\varphi_j(z') = \rho_j(\mathbf{s}(z'))$ for every $j \in J$, so the change $\varphi_j(z') - \varphi_j(z)$ of
-every modeled feature is exact, and $\varphi_j$ changes only if an item of the delta contributes a value other than
-the neutral element to a sum in its support $K_j$.
+Let $\varphi$ be a sum-then-readout extractor over $J$, let $(I^-, I^+)$ be a delta of $(z, z')$, and let
+$B = \pi(z) - I^-$ be the items the edit keeps. Then $\mathbf{s}(z) = \sigma(B) \oplus \sigma(I^-)$ and
+$\mathbf{s}(z') = \sigma(B) \oplus \sigma(I^+)$, and therefore:
+(i) on the additive sums, $\mathbf{s}(z') = \mathbf{s}(z) + \sigma(I^+) - \sigma(I^-)$;
+(ii) on the pools, $\mathbf{s}(z')$ follows from the contributions of $B$ and $I^+$, which the item table of $z$ and
+the delta give, but in general not from $\mathbf{s}(z)$ and the delta;
+(iii) $\varphi_j(z') = \rho_j(\mathbf{s}(z'))$ for every $j \in J$, and $\varphi_j(z') = \varphi_j(z)$ unless an
+item of $I^-$ or $I^+$ contributes to a sum in $K_j$.
 }
 
-\noindent The proposition needs nothing beyond Definition~\ref{def:fw:extractor}. The items of $z$ that the delta
-does not remove are in both inputs, so by \eqref{eq:fw:homomorphism} the sums of $z$ are their fold combined with the
-fold of $I^-$, and the sums of $z'$ are the same fold combined with that of $I^+$. An additive sum can subtract the
-first combination from the second, which gives (i). A pool cannot: two inputs whose pool contributions are $\{5, 3\}$
-and $\{5, 5\}$ both have the value 5, and removing an item of value 5 leaves 3 in the first and 5 in the second, so
-(ii) takes the pool over the remaining items, whose contributions the item table lists. When the delta removes
-nothing, the old value of the pool does suffice, combined with the contributions of the added items. The first part
-of (iii) is Definition~\ref{def:fw:extractor}, and the second holds because a readout depends only on its support.
-Part (i) is the delta rule of incremental view maintenance, which updates an aggregate over a database table from the
-rows inserted into it and deleted from it~\cite{gupta1995maintenance,koch2014dbtoaster}. The proof is in
-Appendix~\ref{sec:fw:proofs}. For an attacker who aimed at the change $\boldsymbol{\delta}^*$, the side effects
-$\boldsymbol{\eta} = \varphi(z') - \varphi(z) - \boldsymbol{\delta}^*$ of \Cref{sec:background} are therefore exact on
-the modeled features, and the residual features may take any value.
+\noindent The first statement is \eqref{eq:fw:homomorphism} applied to \eqref{eq:fw:delta}, and nothing beyond
+Definition~\ref{def:fw:extractor} is needed. Additive sums can subtract what the removed items contributed, which
+gives (i), the delta rule of incremental view maintenance~\cite{gupta1995maintenance,koch2014dbtoaster}. Pools cannot:
+pools over the contributions $\{5, 3\}$ and $\{5, 5\}$ both hold 5, and removing a 5 leaves 3 in one and 5 in the
+other. Unless the delta removes nothing, (ii) therefore takes each pool over the kept items again. Part (iii) holds
+because a readout reads only its support (proofs in Appendix~\ref{sec:fw:proofs}). For any target
+$\boldsymbol{\delta}^*$, the side effects $\boldsymbol{\eta} = \varphi(z') - \varphi(z) - \boldsymbol{\delta}^*$ of
+\Cref{sec:background} are therefore exact on the modeled features; the residual features may take any value.
 \begin{runex}
-In the toy format, let $N$ and $T$ be the number and the total length of the strings, $R$ the total length of the
-records, and $L$ the length of the input. The append adds one string and $\ell + 1$ bytes, so $x_1$ becomes $N + 1$,
-$x_2$ becomes $(T + \ell)/(N + 1)$, and $x_3$ becomes $\max(x_3, \ell)$, from the old value of the pool, since nothing
-was removed. The share of records $x_4$ falls from $R/L$ to $R/(L + \ell + 1)$ although no record was touched. This is
-a side effect, and by (iii) it comes through the length of the input, to which only the new bytes contribute.
-Overwriting a byte in the middle of the longest string with a non-printable byte is an edit whose delta
-\Cref{sec:fw:edits} derives. It removes the string and the old byte, and adds the new byte and those of the two
-pieces that are at least four bytes long. The old and the new byte both contribute 1 to the length of the input, so
-$L$ is unchanged, while $N$ rises by one, stays, or falls by one. The new $x_3$ is the longest of the other strings
-and the pieces, which the item table lists and the old value of $x_3$ does not reveal.
+In the toy format, let $N$ and $T$ be the number and total length of the strings, $R$ the total length of the
+records, and $L$ the length of the input. The append raises $x_1$ by one, changes $x_2 = T/N$ to
+$(T + \ell)/(N + 1)$, and raises $x_3$ to $\max(x_3, \ell)$, from the old value, since nothing was removed. The share
+of records $x_4 = R/L$ falls to $R/(L + \ell + 1)$ although no record was touched: a side effect, which by (iii)
+comes through $L$. Overwriting a byte in the middle of the longest string with a non-printable byte splits it. The
+delta, which \Cref{sec:fw:edits} derives, removes the string and the old byte and adds the new byte and each piece of
+at least four bytes. The two bytes cancel in $L$, $N$ changes by $-1$, $0$, or $+1$, and the new $x_3$ is the longest
+of the other strings and the pieces, which the item table gives and the old $x_3$ does not.
 \end{runex}
 
-A sequence of edits stated in items is handled one edit at a time, by updating $\pi(z)$ with each delta and the item
-table with the contributions of the added items. An edit given by its writes also needs the members of the items in
-the edited input, which \Cref{sec:fw:edits} takes up. The form of (i) matters more for what follows than any single
-edit does. The change of an additive sum is a total over the contributions of the items in the delta, and (iii) says
-which features a delta can change at all. A bound on which items an edit can add or remove therefore bounds the sign
-of the change of every sum, and with it which features can move, for edits that are never carried out.
-\Cref{sec:fw:directions} derives such bounds for the operations of a threat model.
+Edits stated in items can be chained by updating $\pi(z)$ with each delta; edits given by their writes also need the
+positions of the new items (\Cref{sec:fw:edits}). What \Cref{sec:fw:directions} takes from the proposition is its
+form: an additive sum changes by the contributions of the delta's items, and a feature changes only through the sums
+those items contribute to. A bound on which items an operation can add or remove therefore bounds the change of
+every sum, without carrying out any edit.
 
 \subsection{Edits Given as Writes}
 \label{sec:fw:edits}

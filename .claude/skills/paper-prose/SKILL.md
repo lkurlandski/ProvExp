@@ -119,6 +119,12 @@ contradicts.
     consolidation) gets a sentence; what the paper is built on (the reachable set) gets the emphasis. A list the
     reader must count (three viewpoints) should be visibly three. (§2, 2026-11-05)
 
+26. **Develop the idea, skip the obvious.** After a definition, spend the paragraph on its one non-obvious
+    consequence (pi forgets positions, so positions matter only through contents and through which items exist),
+    not on facts the reader infers (a delta exists; there is a smallest one). In formal statements, name an object
+    ($B$, the kept items) instead of writing index-heavy sums, avoid symbols that collide with our terms (Sigma vs
+    "sum"), and define every term that is used alone ("pool"). (§3.2, 2026-11-05)
+
 ## Procedure
 
 1. **Spine first, always.** One line per paragraph (its claim, its citations or numbers), agreed with the user before
