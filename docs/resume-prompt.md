@@ -59,43 +59,43 @@ your own files (`git status` first: the other session may have uncommitted work)
    rest on the same input" stretches Chen 2021). After those, the introduction and the other empty sections, spine
    first, coordinated with the writing track.
 
-## Writing track (session 15 writing, 2026-11-05): §3.1 rebuilt; next, the §3.2 spine
+## Writing track (session 15b writing, 2026-11-05): §3.2 drafted (not yet satisfactory); next, the §3.3 spine
 
-**Where things stand.** The user reviewed §2, §3.1, and §3.2 (reaction log, 2026-11-05: §3.2 was "unintelligible").
-We redesigned the structure of §3 before any prose: `docs/framework-design.md` (**read it first**; Sections 1-9 are
-the design, 10 the user's decisions A-H, 11 the §3.1 spine). The core idea: the extractor factors as
-$\varphi = \rho \circ \sigma \circ \pi$, $\mathcal{Z} \to \mathcal{V} \to \mathcal{S} \to \mathcal{X}$ (item map,
-fold, readouts), and each subsection is about one map:
-- 3.1 the class (**done**, `c6af95e`, `7e48d5a`; the user: "a significant improvement");
-- 3.2 edits and exact side effects (format-free; Prop 1 needs no requirements): **next**;
-- 3.3 edits given as writes (the only place the format enters: one "local kind" definition with structure positions
-  $L_\tau(z)$ and margins $\mu_\tau(z, W)$; one localization lemma with parts (a) one edit, (b) an operation's
-  signature);
+**Where things stand.** `docs/framework-design.md` is the design (**read it first**: Sections 1-9 the design, 10 the
+user's decisions A-H, 11 the §3.1 spine, 12 the §3.2 spine and its decisions). The extractor factors as
+$\varphi = \rho \circ \sigma \circ \pi$, $\mathcal{Z} \to \mathcal{V} \to \mathcal{S} \to \mathcal{X}$, and each
+subsection is about one map:
+- 3.1 the class (**done**; the user: "a significant improvement");
+- 3.2 edits and exact side effects (**drafted**, `ff5ac37`; the user's verdict after three drafts: "still largely
+  unsuccessful", move on; return later). Def 6 (item delta, $\pi(z') = (\pi(z) - I^-) \uplus I^+$, no positions),
+  Prop 1 from the kept items $B = \pi(z) - I^-$, explanation in words, toy append and string split;
+- 3.3 edits given as writes: **next**. Currently a `% PLACEHOLDER` holding the old locating-positions text, (R1)-(R3),
+  and the old Lemma 1, in the old notation, kept only so references resolve; replace it entirely;
 - 3.4 directions (terms and readout sign rules move here, as clean tables); 3.5 robust detectors (keep).
-Settled: no item identity (a delta is removed and added multisets of (kind, content)); self-containment and faithful
-recording are in the class definition; "honest tools" is gone (declared deltas are checked in §5); a toy running
-example (records located by a header count and table; strings as printable runs; features $x_1$-$x_4$) in purple
-(`runex` environment, `\runexinline{}`); a Remark environment (`\remark[...]`); numbered equations; new Appendix B
-"Types, Monoids, and Folds" (`_i2_types.tex`).
-Notation now: kinds $\tau$, items $\iota = (\tau, M)$, $I(z)$, $\pi(z) \in \mathcal{V}$, sums $k \in K$ with monoids
-$\mathbb{M}_k$, sum space $\mathcal{S}$, contributions $\nu_\tau$, fold $\sigma$, the sums of $z$ $\mathbf{s}(z)$ (not
-"sum vector"), readouts $\rho_j$ with support $K_j$, $\rho: \mathcal{S} \to \mathcal{X}$, $J$ only in Definition 5.
-§3.2 onward still uses the old notation ($\kappa$, $\mathbf{v}$, identity, (R1)-(R5)) until rewritten; the §3 lead
-still describes the old subsection order (update after 3.3).
+Notation: kinds $\tau$, items $(\tau, M)$, $I(z)$, $\pi(z) \in \mathcal{V}$, sums $k \in K$, monoids $\mathbb{M}_k$,
+"pools" = max and min pools (Def 2), sum space $\mathcal{S}$, contributions $\nu_\tau$, fold $\sigma$, sums of $z$
+$\mathbf{s}(z)$, readouts $\rho_j$ with support $K_j$. §3.3 onward still uses the old notation until rewritten; the §3
+lead still describes the old subsection order (update after 3.3).
+
+**What went wrong on §3.2, so it is not repeated** (reaction log, 2026-11-05; lessons 26-27): Claude did not read the
+rendered PDF; used equation numbers and section pointers as arguments ("pi (1)", "(5) applied to (7)"); spelled out
+obvious facts while under-developing the one real idea; did not explain what a result means or why it is exact; wrote
+an abstract closer; patched the user's listed defects instead of rewriting. For §3.3: explain the concept in words
+before the definition, give each result its plain reading, keep the lead to what the subsection contains and its role,
+and read the pdftotext output before showing anything.
 
 **Next, in order.**
-1. Invoke `/paper-prose`. Write the **per-paragraph spine for §3.2** (design doc Section 5 is the coarse plan) into
-   `docs/framework-design.md` and show it to the user; draft only after approval, then review, then 3.3.
-   - The motivation before the machinery (design Section 4): re-extraction is the ground truth for one edit; what it
-     cannot give is attribution and answers for edits not applied.
-   - Def (item delta): $\pi(z') = \pi(z) - I^- \uplus I^+$; the written set is *not* in 3.2.
-   - Prop 1 with no requirements; incremental view maintenance cited at it; pools via the item table.
-   - The toy example in purple: appending lowers $x_4$ (side effect); splitting the longest string (pool).
-2. Then 3.3, 3.4, 3.5 the same way (spine, approval, draft, review). Rewrite `_j_proofs.tex` to the new statements;
-   update §4/§5 wording ((R3)/(R4), locating positions, honest tools); rename the key set $K$ in 3.4 (now the sums).
-3. Notation round (the user is "not in love" with $\tau$ but accepts it for now; change only clear wins).
-4. Small open items: `% VERIFY` on Hidost's feature values; the claim "classifiers trained on them remain strong
-   baselines" (user to confirm or make specific).
+1. Invoke `/paper-prose`. Write the **per-paragraph spine for §3.3** into `docs/framework-design.md` (Section 13),
+   from the coarse plan (design Section 5, "3.3") and S3 (one "local kind" definition: structure positions
+   $L_\tau(z)$ and margins $\mu_\tau(z, W)$; one localization lemma, (a) one edit, (b) an operation's signature). It
+   must supply what §3.2 defers to it: the written set $W$; positions of new items (needed to chain write-given
+   edits); the derivation of the string-split delta used in §3.2's example. Show the spine; draft only after approval.
+   Check against §9 of the design (every EMBER kind fits the definition as stated).
+2. Then 3.4 and 3.5 the same way. Update `_j_proofs.tex` (the Lemma proofs), §4/§5 wording ((R3)/(R4), locating
+   positions, honest tools), the symbol table's (R1)-(R5) row, and the §3 lead.
+3. Return to §3.2 (Prop 1's statement density; the long purple examples) once §3.3 settles.
+4. Notation round (the user is "not in love" with $\tau$); small open items: `% VERIFY` on Hidost's feature values,
+   the "strong baselines" claim.
 
 ## Carry-forward (unchanged)
 

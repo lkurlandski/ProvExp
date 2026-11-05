@@ -1,5 +1,23 @@
 # Status
 
+**2026-11-05 (session 15b, writing track): §3.2 drafted three times; the user's verdict "still largely
+unsuccessful"; moving on to §3.3 in a new session.** Nothing pushed. Commits `3d57630`, `30dbbf8`, `f0c9282`,
+`ff5ac37`.
+
+- **§3.2 spine** (design doc Section 12) approved with Q1-Q3 as recommended and a cost hint for Q4; a critical pass
+  found mostly framing issues (user: fine at this stage; applied while drafting).
+- **§3.2 "Edits and Their Side Effects"** in `_d_framework.tex` (~950 words): identity-free item delta (Def 6),
+  Proposition 1 stated from the kept items $B$ with no requirements, the explanation in words (why it holds, why
+  exact), toy append and string split. Proof in `_j_proofs.tex` rewritten. "Pools" defined in Def 2. The old
+  locating-positions material, (R1)-(R3), and the old lemma sit as a **placeholder §3.3** ("Edits Given as Writes",
+  marked `% PLACEHOLDER`) so later references resolve.
+- **The user's two readings** (reaction log): long-winded, LLM-like; obvious facts spelled out while the positions
+  idea was under-developed; Prop 1 too dense; "pool" undefined; "pi (1)" and "(5) applied to (7)" (equation numbers
+  as arguments); no plain explanation of what the proposition gives or why it is exact; slop closer. Final verdict:
+  "still largely unsuccessful", but move on. Lessons 26-27 added; self-review now reads the rendered PDF.
+- **Open on §3.2** (return to it later, ideally after §3.3 shows what it needs): the statement of Prop 1 is still
+  dense (option: one sentence for the decomposition, then a short list); the purple examples are long.
+
 **2026-11-05 (session 15, writing track; ran alongside the research track): §3 redesigned; §3.1 rebuilt.** Nothing
 pushed. Commits `bfda3d8`, `1c8b13e`, `c6af95e`, `7e48d5a`. Next: `docs/resume-prompt.md`, writing track.
 
