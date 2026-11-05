@@ -336,3 +336,77 @@ structure position (byte 0 and the table), a margin (strings), and directions (a
 Appendix (new, ~300 words): a crash course on the type theory used. Types as sets of values; product types (𝕄);
 tagged unions (an item's (τ, c) is a value of the union of the content types, and ν is defined by case analysis on
 the tag); finite multisets as the free commutative monoid; a fold as the unique homomorphism out of it.
+
+## 12. Spine for §3.2 (proposal, 2026-11-05)
+
+Title: **Edits and Their Side Effects** (one subsection replaces the draft's "Edits as Item Deltas" and "Exact Side
+Effects"). Endpoint: **Proposition 1**. It uses only §3.1's objects plus one new one, the delta; nothing about
+positions, writes, or formats (those are 3.3). Budget: about 700 words (the mock's 300 for edits plus most of the old
+600 for side effects, now that the requirements are gone), up to ~1,000 while drafting.
+
+Removed from the draft's 3.2-3.3 and not replaced here: the written set, in-place vs shifting edits, "stated in
+elements", identity, modified and moved items as categories, locating positions, Lemma 1, (R4), (R5), and the slots
+sentence (slots go to 3.4 with the terms).
+
+1. **Why not re-extract (motivation, no new symbols).** A transformation $T$ takes $z$ to $z' = T(z)$ (§2). For one
+   edit that has been applied, extracting $\varphi(z')$ and comparing it with $\varphi(z)$ gives every feature's
+   change; it is our ground truth, and §5 checks every computation of this subsection against it. It gives two things
+   less: it says which features changed but not which parts of the edit changed them, and it needs $z'$, so it says
+   nothing about edits that have not been applied, such as all the edits one operation of a threat model allows
+   ("append any bytes"). The factorization gives both: describe the edit by how it changes $\pi(z)$, and the change of
+   every sum and feature follows by arithmetic. (Families are 3.4; this paragraph only says why the arithmetic form is
+   what 3.4 needs.)
+2. **Def 6 (item delta).** A *delta* of a pair of inputs $(z, z')$ is a pair $(I^-, I^+)$ of multisets in
+   $\mathcal{V}$ with $I^- \subseteq \pi(z)$ and
+   $$\pi(z') = (\pi(z) - I^-) \uplus I^+ .$$
+   Gloss: $I^-$ are the removed items, $I^+$ the added ones. A delta always exists; the smallest is
+   $(\pi(z) - \pi(z'),\ \pi(z') - \pi(z))$, and every other one adds the same items to both sides. Since $\pi$ keeps
+   contents and forgets positions, an item whose content changes is one removal and one addition, and an item that only
+   moves is in neither. A delta need not be the smallest (a rewritten header listed as removed and re-added; 3.3's
+   lemma produces such deltas), and nothing below needs it to be.
+3. **Edits given with their deltas.** Many transformations in the literature are stated by the items they change:
+   add a section or an import, add a permission or an API call, inject a packet. For these the delta is part of the
+   statement. Others are given as writes to the input, and 3.3 derives their deltas. Example (purple): appending to a
+   toy input a non-printable byte followed by $\ell \ge 4$ printable bytes has $I^- = \emptyset$ and $I^+$ = the
+   $\ell + 1$ new byte items and one new string (the non-printable byte keeps it from joining a string at the old
+   end; why that matters is 3.3's subject, so one clause only).
+4. **Prop 1 (exact side effects).** Let $\varphi$ be a sum-then-readout extractor over $J$ and $(I^-, I^+)$ a delta
+   of $(z, z')$. Then
+   (i) every additive sum satisfies
+   $s_k(z') = s_k(z) + \sum_{(\tau,c) \in I^+} \nu_\tau(c)_k - \sum_{(\tau,c) \in I^-} \nu_\tau(c)_k$;
+   (ii) every pool satisfies $s_k(z') = \sigma\big((\pi(z) - I^-) \uplus I^+\big)_k$, which the item table of $z$
+   and the delta determine, but $s_k(z)$ and the delta in general do not;
+   (iii) $\varphi_j(z') = \rho_j(\mathbf{s}(z'))$ for every $j \in J$, so the side effects
+   $\boldsymbol{\eta} = \varphi(z') - \varphi(z) - \boldsymbol{\delta}^*$ are exact on $J$; and $\varphi_j$ changes
+   only if some item of the delta contributes a non-neutral value to a sum in its support $K_j$.
+   No requirements: everything the draft required is now in Definition 5. Residual features: one clause (the
+   proposition says nothing about them).
+5. **Why it holds (2-3 sentences, then the citation).** Applying $\sigma$ to both sides of the delta equation and
+   using \eqref{eq:fw:homomorphism}: additive sums have inverses, so the contributions of $I^-$ are subtracted, which is
+   (i); pools have none ($\{5, 3\}$ and $\{5, 5\}$ both read 5; removing a 5 leaves 3 and 5), so (ii) recomputes the
+   pool over the remaining contributions, which the item table lists; (iii) is Definition 5, and the "only if" part is
+   Definition 4's support. Part (i) is the delta rule of incremental view maintenance, which updates an aggregate
+   over a table from the inserted and deleted rows~\cite{gupta1995maintenance,koch2014dbtoaster}. Proof in Appendix C.
+6. **The example, continued (purple).** The append: $x_1$ rises by 1, $x_2$ becomes $(T + \ell)/(N + 1)$, $x_3$
+   becomes $\max(x_3, \ell)$, and $x_4$ falls from $R/L$ to $R/(L + \ell + 1)$ although no record was touched: a
+   side effect, traced by (iii) to the new byte items through the input-length sum. The pool: overwriting a middle
+   byte of the longest string with a non-printable byte has $I^-$ = {that string, the old byte} and $I^+$ = {the two
+   pieces that are still strings, the new byte}; the two byte items cancel in the input length (a changed item is one
+   removal and one addition), and the new $x_3$ is the longest of the other strings and the pieces, read from the item
+   table, not from the old $x_3$.
+7. **What it gives (short closer, literal).** Every change of a sum is attributed to the items of the delta that
+   contributed it. A sequence of edits is handled one at a time by updating $\pi(z)$ with each delta (members are
+   needed only in 3.3). And the change of an additive sum is a sum over the delta's contributions, so a bound on which
+   items an edit can add or remove bounds the sign of every sum's change without the edit being applied: the step
+   3.4 takes for a threat model's operations.
+
+Questions for the user:
+
+- **Q1.** Merge into one subsection titled "Edits and Their Side Effects"? Recommended (one endpoint; the delta alone
+  is too small to be its own subsection).
+- **Q2.** The attribution clause ("changes only if ...") inside Proposition 1, or in the prose after it? Recommended:
+  inside, since ¶1 promises attribution and 3.4 uses it.
+- **Q3.** The sentence "every delta is the smallest one plus the same items on both sides": keep (3.3 depends on
+  non-minimal deltas being harmless) or cut? Recommended: keep, one sentence.
+- **Q4.** Leave the cost benefit (the beam search scores thousands of candidates from the item table) out of 3.2,
+  for §5? Recommended: out (lesson 16: nothing from the experiments in the framework).
