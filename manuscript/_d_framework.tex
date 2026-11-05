@@ -16,98 +16,174 @@ edit (\Cref{sec:fw:directions}), and a detector that is monotone in these direct
 \subsection{Sum-then-Readout Extractors}
 \label{sec:fw:model}
 
-The extractors we consider share a shape that is easiest to see in their code. They keep a set of running totals,
-initially zero, and loop over pieces of the input, adding each piece's contribution to the totals. When the loops
-end, they compute each feature by a formula over a few of the totals. The number of pieces of some kind, the total
-of an attribute over them, and the largest value of an attribute are totals; an average, a normalized histogram, and
-an entropy are formulas over totals. We call the three layers \emph{items}, \emph{sums}, and \emph{readouts}. The
-reason to separate them is that an attacker's edit is simple to describe in the first layer, by the items it adds,
-removes, or changes, and hard to describe in the last, where a single item can move many features.
+% Spine: docs/framework-design.md, Section 11 (approved 2026-11-05). Notation: lowercase Greek for the maps of the
+% factorization (pi, sigma, rho, nu); tau for kinds. The running example is in purple (runex) while drafted.
+The feature mappings we study compute their features in three stages. They find the pieces of the input they
+analyze, which we call \emph{items}; they add what each item contributes to a set of running totals, which we call
+\emph{sums}; and they compute each feature by a formula over a few sums, which we call a \emph{readout}. Each stage is
+a map, and the feature mapping is their composition:
+\[
+  \mathcal{Z} \xrightarrow{\;\pi\;} \{\text{multisets of items}\} \xrightarrow{\;\sigma\;} \mathbb{M}
+  \xrightarrow{\;\rho\;} \mathbb{R}^{J},
+  \qquad
+  \varphi_J = \rho \circ \sigma \circ \pi,
+\]
+where $J$ is the set of features computed this way (Definition~\ref{def:fw:extractor}). The item map $\pi$ is the only stage
+that depends on the format of the input; $\sigma$ and $\rho$ are arithmetic. We separate the stages because an
+attacker's edit is simple to describe at the first, by the items it adds and removes, and hard to describe at the
+last, where one item can move many features. The shape is common: the static feature sets most used in malware
+detection and the flow statistics used in network intrusion detection have it (end of this subsection), and
+classifiers trained on them remain strong baselines in their domains~\cite{anderson2018ember,arp2014drebin}.
 
-An input $z \in \mathcal{Z}$ is a finite sequence of \emph{elements}, such as the bytes of a file or the packets of a
-trace, and $z[p]$ is the element at position $p$.
+\begin{runex}
+\emph{Running example.} We illustrate the framework on a toy format. An input is a sequence of bytes. Its first byte
+holds a count $n$, and the next $n$ entries form a table, each giving the offset and the length of a record stored
+elsewhere in the input. The extractor computes four features: the number of strings $x_1$, where a string is a maximal
+run of at least four printable bytes anywhere in the input; their average length $x_2$; the length of the longest
+string $x_3$; and the share of the input's bytes that lie in records, $x_4$.
+\end{runex}
 
-\definition[Item]
+\definition[Items]
 \label{def:fw:item}
 {
-An \emph{item} $\iota$ of an input $z$ is a collection of elements of $z$ that the extractor analyzes jointly. It
-has a \emph{kind} $\kappa(\iota)$, an \emph{identity}, and a set of \emph{members} $M(\iota)$, the positions of its
-elements; its \emph{content} $c(\iota)$ is the sequence of elements at its members. $\mathcal{I}(z)$ is the set of
-items of $z$.
-}
-
-\noindent The kind says which part of the extractor processes the item, and the identity says how the extractor
-reaches it, for example by an index into a table it parses or by the position at which the item starts. Two items of
-different inputs are the same item if they have the same kind and identity, which is what lets us compare the items of
-an object before and after an edit. A kind behaves like a type: the content of every item of kind $\kappa$ has the
-same type, and the extractor processes every item of the kind with the same code.
-
-% EXAMPLE (removed, D2): in a PE file, a section is an item whose identity is its index in the section table and whose
-% members are its table entry and its raw data; a printable string is an item identified by its start offset; each
-% byte is an item, for the histogram and the entropy. In an APK, each permission declaration, API call site, and
-% string constant is an item. In a trace, each packet is an item, and so is each pair of consecutive packets in a flow
-% (for the gaps between packets).
-
-The running totals are sums, and an item's effect on them is its contribution. We make the totals precise as
-commutative monoids, since the algebra of the monoid decides what can be computed from a total later.
-
-\definition[Sums and contributions]
-\label{def:fw:sums}
-{
-An extractor keeps a finite set $S$ of \emph{sums}. Each sum $s$ takes values in a commutative monoid $\mathbb{M}_s$:
-either $(\mathbb{R}, +, 0)$, for an \emph{additive} sum, or $(\mathbb{R} \cup \{-\infty\}, \max, -\infty)$, for a
-\emph{pool} (or the same with $\min$ and $+\infty$). Let $\mathbb{M} = \prod_{s \in S} \mathbb{M}_s$, with the
-operation $\oplus$ applied per sum. Each item $\iota$ has a \emph{contribution} $\mathbf{v}(\iota) \in \mathbb{M}$, which
-is the identity element on every sum the item does not touch. The \emph{sum vector} of $z$ is
+An input $z \in \mathcal{Z}$ is a finite sequence of elements, such as the bytes of a file or the packets of a trace;
+for a set $M$ of positions, $z[M]$ is the sequence of the elements at those positions, in order. A feature mapping has
+a finite set of item \emph{kinds}. An \emph{item} of $z$ is a pair $\iota = (\tau, M)$ of a kind $\tau$ and a nonempty
+set $M$ of positions of $z$, its \emph{members}; its \emph{content} is $z[M]$. The extractor finds a set $I(z)$ of
+items in each input, and the \emph{item map} $\pi$ takes $z$ to the multiset of the kinds and contents of its items,
 \[
-  \mathbf{s}(z) = \bigoplus_{\iota \in \mathcal{I}(z)} \mathbf{v}(\iota).
+  \pi(z) = \mset{(\tau, z[M]) : (\tau, M) \in I(z)}.
 \]
 }
 
-\noindent Because every $\mathbb{M}_s$ is commutative and associative, the sum vector does not depend on the order in
-which the loops visit the items, and the sum vector of a union of disjoint collections of items is the combination of
-their sum vectors. The two kinds of monoid differ in one way that matters for everything that follows.
-$(\mathbb{R}, +)$ is a group: removing an item from an additive sum is undone by subtracting its contribution, so the
-new total follows from the old total and the item. The maximum has no inverse: once the largest item is removed, the
-old maximum says nothing about the next largest, which is why the record we build keeps every item and not only the
-totals.
+\noindent An item is what one pass of one of the extractor's loops reads: its kind says which loop, and its members
+say which elements the pass reads. Items of the same kind are processed by the same code, so a kind acts as a type,
+and the pair of an item's kind and content is a typed value (Appendix~\ref{sec:types}). The item map keeps what the
+items contain and forgets where they lie. Two items with the same kind and content are counted twice, and an item
+moved to other positions with its content unchanged is the same value of $\pi$.
+\begin{runex}
+In the toy format, each record is an item of kind \emph{record} whose members are its table entry and its bytes, each
+string is an item of kind \emph{string} whose members are its bytes, and each byte is an item of kind \emph{byte}, which
+the extractor needs for the length of the input.
+\end{runex}
 
-Contributions are built from a few kinds of terms, each with a predictable effect on its sum. A \emph{count} adds 1,
-to the count of all items of a kind or to the count of the item's key. An \emph{attribute} adds a nonnegative value of
-the item, such as its length, or a value of 0 or 1 that says whether its content matches a pattern. A \emph{hashed}
-term adds an attribute, possibly negated, to the sum that a hash of the item's key selects from a family of sums. A
-\emph{slot} holds a value that exactly one item writes. An \emph{opaque} term holds a value computed by code the
-model does not open, within a declared range. \Cref{sec:fw:directions} uses the sign of each term's change.
-
-\definition[Readout]
-\label{def:fw:readout}
+\definition[Sums]
+\label{def:fw:sums}
 {
-A \emph{readout} $\rho: \mathbb{M} \to \mathbb{R}$ is a formula of a known type that reads a bounded number of sums.
+A feature mapping keeps a set $S$ of \emph{sums}. Each sum $k \in S$ takes values in a commutative monoid
+$\mathbb{M}_k$: a set with an associative and commutative operation and a \emph{neutral element}, which the operation
+leaves unchanged. Three monoids occur:
+\[
+  \begin{array}{@{}ll@{}}
+    (\mathbb{R}, +, 0) & \text{for an \emph{additive sum},} \\
+    (\mathbb{R} \cup \{-\infty\}, \max, -\infty) & \text{for a \emph{max pool},} \\
+    (\mathbb{R} \cup \{+\infty\}, \min, +\infty) & \text{for a \emph{min pool}.}
+  \end{array}
+\]
+The \emph{sum space} is the product $\mathbb{M} = \prod_{k \in S} \mathbb{M}_k$, with the operation $\oplus$ that
+applies each sum's operation to its entry. Its neutral element holds the neutral element of every sum.
 }
 
-\noindent The types we need are few: the identity (the feature is a sum or a pool), a ratio of two sums, a bin of a
-histogram over the histogram's total, the entropy of a histogram, a standard deviation from a count, a total, and a
-total of squares, a presence bit that is nondecreasing in its sums, the number of keys with a positive count, a test
-of a bit in a slot, an attribute of the one item a rule selects, a sum over the difference of two pools (a rate),
-and an opaque value with a default for when its item is absent. We record each readout's type, not only its
-formula, because \Cref{sec:fw:directions} turns what is known about the sums into what is known about the feature by
-one rule per type. In the terms of Gray et al.'s data cube~\cite{gray1997data}, sums and pools are
-\emph{distributive} aggregates, which can be computed by combining the totals of disjoint parts, and readouts are
-\emph{algebraic} aggregates, fixed functions of a bounded number of distributive ones. A \emph{holistic} aggregate, such
-as a median, has no summary of bounded size and is not a readout.
+\noindent The set $S$ may be large, with one count for each key of an open vocabulary, such as the names of imported
+libraries or requested permissions.
+
+\definition[Contributions and the sum vector]
+\label{def:fw:contributions}
+{
+Each kind $\tau$ has a \emph{contribution function} $\nu_\tau$, which maps the content of an item of kind $\tau$ to an
+element of $\mathbb{M}$ that is neutral on all but finitely many sums. The \emph{fold} $\sigma$ takes a finite
+multiset $B$ of kinds and contents to
+\[
+  \sigma(B) = \bigoplus_{(\tau, c) \in B} \nu_\tau(c),
+\]
+with each element counted as often as it occurs, and takes the empty multiset to the neutral element. The
+\emph{sum vector} of $z$ is $\mathbf{s}(z) = \sigma(\pi(z))$.
+}
+
+\noindent A contribution is what one item adds to the running totals, and it depends only on the item's kind and
+content, not on the rest of the input. The sum vector holds the totals after every item has been added.
+\begin{runex}
+In the toy format, a string contributes 1 to the number of strings, its length to the total length of strings, and its
+length to a max pool, the longest string. A byte contributes 1 to the length of the input, and a record contributes
+its length, read from its table entry, to the total length of records. Every other entry of these contributions is
+neutral.
+\end{runex}
+
+Because every $\mathbb{M}_k$ is associative and commutative, $\sigma$ does not depend on the order in which the extractor visits the items, and the fold of the union of two
+multisets is the combination of their folds, $\sigma(A \uplus B) = \sigma(A) \oplus \sigma(B)$. In algebraic terms,
+the finite multisets of kinds and contents form the free commutative monoid on them, and $\sigma$ is the unique homomorphism from it to $\mathbb{M}$
+that agrees with the contribution functions on single items (Appendix~\ref{sec:types}). Additive sums and pools
+differ in whether the removal of an item can be undone. $(\mathbb{R}, +)$ is a group, in which every value has an inverse, so removing an item from an
+additive sum is undone by subtracting its contribution, and the new total follows from the old total and the item.
+The maximum and the minimum have no inverse.
+\begin{runex}
+If an edit splits the longest string of a toy input in two, the old value of the longest-string pool does not say how
+long the second-longest string is. The strings themselves do.
+\end{runex}
+\noindent This is why the record we build keeps every item, and not only the totals.
+
+\definition[Readouts]
+\label{def:fw:readout}
+{
+A \emph{readout} of feature $j$ is a function $\rho_j: \mathbb{M} \to \mathbb{R}$ that reads a fixed set
+$S_j \subseteq S$ of sums, its \emph{support}: $\rho_j(\mathbf{a}) = \rho_j(\mathbf{b})$ whenever $\mathbf{a}$ and
+$\mathbf{b}$ agree on $S_j$. We write $\rho = (\rho_j)_{j \in J}$ for the readouts of a set $J$ of features.
+}
+
+\noindent Readouts are where the arithmetic that cannot be split over items takes place. A total, a count, or a
+maximum can be computed over parts of the input and combined, which Gray et al.\ call a \emph{distributive}
+aggregate. An average cannot, but it is a fixed function of two distributive aggregates, a total and a count, which
+they call an \emph{algebraic} aggregate~\cite{gray1997data}. A readout with a small support turns sums into an
+algebraic aggregate in this sense, and the formulas that feature sets compute are of this form: the identity, which
+returns a sum or a pool; the ratio of two sums; a bin of a histogram divided by the histogram's total; the entropy of
+a histogram; a standard deviation, computed from a count, a total, and a total of squares; and a presence bit, which
+is 1 when a count is positive. The support may also be a whole family of sums, as for the number of distinct keys
+with a positive count. The results of \Cref{sec:fw:side-effects} need nothing of a readout beyond being a function of
+its support; \Cref{sec:fw:directions} adds one sign rule for each of these forms.
+\begin{runex}
+In the toy format, $x_1$ is the identity of the number of strings, $x_2$ the ratio of the total length of strings to
+their number, $x_3$ the identity of the longest-string pool, and $x_4$ the ratio of the total length of records to the
+length of the input.
+\end{runex}
 
 \definition[Sum-then-readout extractor]
 \label{def:fw:extractor}
 {
-A feature mapping $\varphi$ is a \emph{sum-then-readout extractor} over a set of \emph{modeled features} $J \subseteq
-\{1, \dots, n\}$ if it has items, contributions, and readouts $\rho_j$ such that $\varphi_j(z) =
-\rho_j(\mathbf{s}(z))$ for every input $z$ and every $j \in J$.
+Let $J \subseteq \{1, \dots, n\}$. A feature mapping $\varphi$ is a \emph{sum-then-readout extractor} over $J$ if it
+has an item map $\pi$, contribution functions $\nu_\tau$, and readouts $\rho_j$ such that, for every input $z$ and every
+$j \in J$,
+\[
+  \varphi_j(z) = \rho_j\big(\sigma(\pi(z))\big),
+  \qquad \text{that is,} \qquad
+  \varphi_J = \rho \circ \sigma \circ \pi.
+\]
 }
 
-\noindent The remaining features are \emph{residual}, and every result below lets them change arbitrarily. An
-extractor of this class is instrumented once, so that in the same pass that computes the features it writes the
-\emph{item table} of $z$: every item with its kind, identity, members, and contribution, together with the positions
-that locate it, which \Cref{sec:fw:edits} defines.
+\noindent The features in $J$ are \emph{modeled} and the others \emph{residual}. A residual feature is one that the
+mapping computes outside the three stages, such as a flag raised when its parser meets a malformed structure, which
+depends on how the parser fails rather than on any item. Every result in this section lets the residual features
+change arbitrarily. Instrumenting an extractor means writing down its items, contributions, and readouts, so that in
+the same pass that computes the features it records the \emph{item table} of $z$: every item in $I(z)$ with its kind,
+its members, and its contribution. That a contribution depends only on its item's kind and content is part of the
+definition, and real extractors do not always respect it. One that divides an item's size by the length of the input
+makes the item's contribution change whenever the input grows, although the item is untouched. Such cases are repaired
+without changing any feature value, by letting the item contribute its raw size and moving the division into a
+readout, where the length of the input is a sum of its own (\Cref{sec:instances}).
+\begin{runex}
+The toy extractor is already written this way: $x_4$ divides two sums, and no record's contribution depends on the
+length of the input.
+\end{runex}
+
+\remark[Granularity]
+\label{rem:fw:granularity}
+{
+Every feature mapping is a sum-then-readout extractor over all its features if the whole input is a single item:
+give that item one kind, let its contribution place each feature's value in an additive sum of its own, and let every
+readout be the identity. The definition therefore does not restrict what a mapping computes; it describes how finely
+the computation splits into items. With one item, every edit changes the only item there is, and the results of this
+section say no more than extracting the features again would. Finer items let them say more. The instrumented
+extractors of \Cref{sec:instances} use the items the extractor's own loops visit.
+}
 
 Many feature sets used in security have this shape. For Windows executables, EMBER~\cite{anderson2018ember} counts
 and sizes sections, imports, and strings and summarizes byte histograms by their entropy, as did the features of Saxe
@@ -117,9 +193,10 @@ and API calls. For PDF documents, the features of Hidost~\cite{srndic2016hidost}
 path in the document's object tree. % VERIFY: Hidost's feature values (path counts or presence bits).
 For network traffic, CICFlowMeter, the extractor behind the CIC-IDS2017
 dataset~\cite{sharafaldin2018toward}, computes per flow the counts, totals, extremes, means, and standard deviations
-of packet lengths and of the gaps between packets. The class excludes global program analyses, such as features of a
-call graph, in which a piece's contribution depends on the whole program, and learned representations, which have no
-items to record (\Cref{sec:discussion}).
+of packet lengths and of the gaps between packets. Feature mappings computed by a global analysis, such as features of
+a program's call graph, in which a piece's contribution depends on the whole program, fit the definition only with
+coarse items (Remark~\ref{rem:fw:granularity}), and learned representations have no items finer than the input
+(\Cref{sec:discussion}).
 
 \subsection{Edits as Item Deltas}
 \label{sec:fw:edits}

@@ -24,16 +24,14 @@
     $h$ & Malware score $h : \mathcal{X} \to \mathbb{R}$. \\
     \midrule
     \multicolumn{2}{@{}l}{\emph{Items, sums, and readouts}} \\
-    $p$, $z[p]$ & A position; the element of $z$ at $p$. \\
-    $\iota$, $\iota'$ & An item; a modified item after the edit. \\
-    $\kappa(\iota)$ & Kind of $\iota$. \\
-    $M(\iota)$, $c(\iota)$ & Members of $\iota$; its content. \\
-    $\mathcal{I}(z)$ & The items of $z$. \\
-    $S$, $\mathbb{M}_s$, $\mathbb{M}$ & Sums; the monoid of sum $s$; their product, with $\oplus$. \\
-    $\mathbf{v}(\iota)$, $\mathbf{v}_\kappa$ & Contribution of $\iota$; contribution function of kind $\kappa$. \\
-    $\mathbf{s}(z)$ & Sum vector $\bigoplus_{\iota \in \mathcal{I}(z)} \mathbf{v}(\iota)$. \\
-    $\rho_j$ & Readout of feature $j$. \\
-    $J$ & Modeled features; the others are residual. \\
+    $p$, $z[p]$; $z[M]$ & A position; the element of $z$ at $p$; the elements at positions $M$, in order. \\
+    $\iota = (\tau, M)$ & An item: its kind $\tau$ and its members $M$; its content is $z[M]$. \\
+    $I(z)$, $\pi(z)$ & The items of $z$; the item map: the multiset of their kinds and contents. \\
+    $S$, $k$, $\mathbb{M}_k$, $\mathbb{M}$ & Sums; one sum; its monoid; the sum space, with $\oplus$. \\
+    $\nu_\tau$ & Contribution function of kind $\tau$. \\
+    $\sigma$, $\mathbf{s}(z)$ & The fold of the contributions; the sum vector $\sigma(\pi(z))$. \\
+    $\rho_j$, $S_j$; $\rho$ & Readout of feature $j$ and its support; the readouts of $J$. \\
+    $J$ & Modeled features, $\varphi_J = \rho \circ \sigma \circ \pi$; the others are residual. \\
     \midrule
     \multicolumn{2}{@{}l}{\emph{Edits}} \\
     $W$ & Written set: the positions at which $z'$ differs from $z$. \\

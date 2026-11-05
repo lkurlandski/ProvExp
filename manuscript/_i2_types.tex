@@ -1,0 +1,34 @@
+% Appendix: a short course on the types, monoids, and folds that Section 3.1 uses (user, 2026-11-05: decision H).
+% Keep it to the notions the framework uses; no further type theory.
+
+This appendix collects the few notions from type theory and algebra that \Cref{sec:fw:model} uses. All of them are
+standard~\cite{pierce2002types,hutton1999tutorial}.
+
+\paragraph{Types.} A type is a set of values, such as the finite sequences of bytes. The \emph{product} $A \times B$
+of two types holds the pairs $(a, b)$ with $a \in A$ and $b \in B$; the sum space $\mathbb{M}$ is a product with one
+component per sum. The \emph{tagged union} of a family of types $C_\tau$, indexed by tags $\tau$, holds the pairs
+$(\tau, c)$ with $c \in C_\tau$: each value carries a tag that says which type its second component belongs to. The
+kinds and contents of items are values of a tagged union, with the kinds as tags and $C_\tau$ the contents an item of
+kind $\tau$ can have. A function on a tagged union is defined by cases, one function per tag, and in this way the
+contribution functions $\nu_\tau$ define a single function $\nu(\tau, c) = \nu_\tau(c)$ on the kinds and contents of
+all items.
+
+\paragraph{Monoids.} A \emph{monoid} $(A, \cdot, e)$ is a type with an associative operation and a \emph{neutral
+element} $e$, with $a \cdot e = e \cdot a = a$ for every $a$. It is \emph{commutative} if $a \cdot b = b \cdot a$. A
+\emph{homomorphism} of monoids is a function $h$ with $h(a \cdot b) = h(a) \cdot h(b)$ and $h(e) = e$. A \emph{group}
+is a monoid in which every $a$ has an \emph{inverse} $a^{-1}$, with $a \cdot a^{-1} = e$. $(\mathbb{R}, +, 0)$ is a
+group, and $(\mathbb{R} \cup \{-\infty\}, \max, -\infty)$ is not, since no $b$ gives $\max(5, b) = -\infty$.
+
+\paragraph{Multisets and folds.} The finite multisets over a set $A$, with multiset union $\uplus$ and the empty
+multiset, form a commutative monoid, the \emph{free commutative monoid} on $A$. For every commutative monoid
+$\mathbb{M}$ and every function $f: A \to \mathbb{M}$, there is exactly one homomorphism $\bar f$ from the finite
+multisets over $A$ to $\mathbb{M}$ with $\bar f(\mset{a}) = f(a)$, namely
+\[
+  \bar f(B) = \bigoplus_{a \in B} f(a),
+\]
+with each element counted as often as it occurs. We call $\bar f$ the \emph{fold} of $f$. The fold over lists, a
+standard construction in functional programming~\cite{hutton1999tutorial}, visits the elements in order; over
+multisets there is no order to visit, and commutativity makes it unnecessary. The fold $\sigma$ of
+Definition~\ref{def:fw:contributions} is the fold of $\nu$ into the sum space. When $\mathbb{M}$ is a group, the fold extends to
+multisets with negative multiplicities, by $\bar f(B - C) = \bar f(B) \ominus \bar f(C)$, where $\ominus$ combines with
+the inverse. This extension is what lets an additive sum absorb the removal of an item, and a pool cannot have it.

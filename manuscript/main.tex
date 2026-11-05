@@ -65,6 +65,17 @@
 \newcommand{\proposition}[1][]{\xmlthmlike{Proposition}{#1}{xmlproposition}}
 \newcommand{\corollary}[1][]{\xmlthmlike{Corollary}{#1}{xmlcorollary}}
 \newcommand{\lemma}[1][]{\xmlthmlike{Lemma}{#1}{xmllemma}}
+\newcounter{xmlremark}
+\newcommand{\remark}[1][]{\xmlthmlike{Remark}{#1}{xmlremark}}
+
+% --- the running example of Section 3, in purple while the framework is drafted (user, 2026-11-05) ---
+% \begin{runex} ... \end{runex} for a paragraph, \runexinline{...} inside a sentence. Drop the color when settled.
+\definecolor{runex}{RGB}{128,0,160}
+\newenvironment{runex}{\par\color{runex}}{\par}
+\newcommand{\runexinline}[1]{\textcolor{runex}{#1}}
+
+% --- multisets ---
+\newcommand{\mset}[1]{\{\!\!\{\, #1 \,\}\!\!\}}
 
 \begin{document}
 
@@ -133,6 +144,10 @@
 \section{Symbol Table}
 \label{sec:symbols}
 \input{_i_symbols}
+
+\section{Types, Monoids, and Folds}
+\label{sec:types}
+\input{_i2_types}
 
 \section{Proofs for the Framework}
 \label{sec:fw:proofs}
