@@ -75,10 +75,9 @@ analyze excludes the feature sets that deployed detectors use, such as EMBER's. 
 for every feature of a sum-then-readout extractor and for any declared set of edits, with a guarantee for every edit in
 the set. Each of the constructions above can then be applied to the feature sets detectors actually use, with the
 features to keep, re-encode, or drop following from the extractor and the threat model rather than from an analyst or
-an attack library. On EMBER, the computed directions find lowerable features both in Gimenez et al.'s hand-picked set
-and in the features selected from attacks (\cref{sec:eval:detectors}).
-% ERDALT has no Table 7 row yet (decision pending, docs/reviews/2026-11-04-strategy.md); its learned layer needs the
-% same attacks as the selection from attacks.
+an attack library. On EMBER, the computed directions find lowerable features in Gimenez et al.'s hand-picked set, in
+the features selected from attacks, and in ERDALT's learned layer (\cref{sec:eval:detectors}).
+% ERDALT's Table 7 row: run 128 (2026-11-04).
 
 \paragraph{Incremental computation and provenance}
 Our side-effect computation uses machinery from databases and programming languages, fields that have long asked how a

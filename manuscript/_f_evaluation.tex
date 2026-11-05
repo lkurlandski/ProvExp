@@ -25,12 +25,14 @@ The attacks come from two sources. The \emph{toolkit} attacks are the eight secm
 attacks~\cite{demetrio2021adversarial} that Gimenez et al.\ evaluate against: padding, GAMMA section
 injection~\cite{demetrio2021functionality}, GAMMA import injection, two content shifts, DOS-header extension, header
 fields, and a format exploit, each with a population of 10 for 10 iterations. We split them into four \emph{seen}
-attacks, from which the baseline below is built, and four \emph{held-out} ones. The \emph{adaptive} attack is ours. It
-searches the catalogue greedily for the edit that lowers a given detector's score most, scoring each candidate on the
-feature vector Proposition~\ref{prop:fw:side-effects} predicts instead of extracting it. It appends bytes and adds
-sections, and it aims section names at the hash
-buckets the detector relies on (\Cref{sec:fw:directions}). It is a white-box attacker with the same budget of 100
-scored candidates as the toolkit attacks, and it writes each kept step to disk with our own byte-level edits.
+attacks, from which the baseline below is built, and four \emph{held-out} ones. The \emph{adaptive} attack is ours, a
+white-box beam search over every operation in the catalogue. It scores each candidate edit on the feature vector
+Proposition~\ref{prop:fw:side-effects} predicts instead of extracting it, so a candidate costs one evaluation of the
+detector, and it aims section names at the hash buckets the detector relies on (\Cref{sec:fw:directions}). Each step
+draws random candidates from the three lowest-scoring files found so far and keeps the three lowest-scoring files
+among parents and children; after three steps without a new best score, it restarts from the original file. Every
+kept file is written to disk with our own byte-level edits and extracted again. The search may score 5,000 candidates
+per file, fifty times the toolkit attacks' budget of 100 queries.
 
 \subsection{Side Effects Are Exact}
 \label{sec:eval:side-effects}
@@ -195,8 +197,8 @@ sequence of edits in the threat model. We train such a detector on the features 
 
 \begin{table*}[t]
   \caption{Detectors under the full threat model. Evasion is over the detected pilot malware. Seen and held-out are
-  the toolkit attacks; adaptive is our search. The monotone rows send files outside the population to the
-  unconstrained detector.}
+  the toolkit attacks; adaptive is our beam search with 5,000 scored candidates. The monotone rows send files outside
+  the population to the unconstrained detector.}
   \label{tab:eval:detectors}
   \small
   \begin{tabular}{@{}lrrrrrr@{}}
@@ -204,12 +206,13 @@ sequence of edits in the threat model. We train such a detector on the features 
     Detector & AUC & TPR at 1\% FPR & Detected & Seen & Held-out & Adaptive \\
     \midrule
     unconstrained & 0.996 & 93.5\% & 47/50 & 17\% & 53\% & --- \\
-    unconstrained, full training set$^\S$ & 0.998 & 95.6\% & 49/50 & 10\% & 53\% & 20\% \\
-    adversarial training on the toolkit$^\S$ & 0.998 & 95.6\% & 48/50 & 8\% & 50\% & 19\% \\
-    feature selection from attacks (PV), 4 attacks & 0.954 & 56.2\% & 22/50 & 0\% & 18\% & 91\% \\
-    feature selection from attacks (PV), 8 attacks & 0.944 & 53.8\% & 22/50 & 0\% & --- & \synthetic{77\%} \\
+    unconstrained, full training set$^\S$ & 0.998 & 95.6\% & 49/50 & 10\% & 53\% & 51\% \\
+    adversarial training on the toolkit$^{\S\P}$ & 0.998 & 95.6\% & 49/50 & 12\% & 27\% & 49\% \\
+    feature selection from attacks (PV), 4 attacks & 0.954 & 56.2\% & 22/50 & 0\% & 18\% & 68\% \\
+    feature selection from attacks (PV), 8 attacks & 0.944 & 53.8\% & 22/50 & 0\% & --- & 64\% \\
+    ERDALT, learned from 4 attacks$^{\|}$ & 0.881 & 61.1\% & 25/50 & 0\% & 92\% & 80\% \\
     monotone on derived directions, features & 0.992 & 87.2\% & 40/50 & 0\% & 3\%$^\dagger$ & 0\% \\
-    monotone on derived directions, sums & 0.994 & 89.6\% & 42/50 & 0\% & 2\%$^\dagger$ & 0\% \\
+    monotone on derived directions, sums & 0.994 & 89.6\% & 42/50 & 0\% & 2\%$^\dagger$ & 0\%$^\ast$ \\
     \midrule
     \multicolumn{7}{@{}l}{\emph{Additions threat model} (append, add a section, add imports)} \\
     expert set (40 features), monotone & 0.844 & 29.1\% & 8/50 & 0\% & 0\% & --- \\
@@ -219,21 +222,25 @@ sequence of edits in the threat model. We train such a detector on the features 
   \\[2pt]
   {\footnotesize $^\dagger$ One header-field evasion, on a file outside the population, scored by the unconstrained
   detector. On files in the population: 0/28 and 0/30. $^\ddagger$ Header-field attacks, outside the additions threat
-  model. $^\S$ Trained on the full training set; the other rows' first five columns use a 10\%
-  subsample, and their adaptive columns the full training set.}
+  model. $^\S$ Trained on the full training set; the other rows use a 10\% subsample, except the monotone rows'
+  adaptive cells, which use the full training set. $^\P$ Trained on GAMMA's section and import injections and the
+  header-field attack; the seen and held-out columns keep PV's split, so two of the held-out attacks are ones it was
+  trained on. $^{\|}$ Our port of Gimenez et al.'s code, with the output layer also constrained to be monotone, batches
+  of 256, and the epoch selected on a validation split. $^\ast$ A greedy search over the same twelve operations with
+  200 scored candidates; the beam search scores only detectors on the features.}
 \end{table*}
-% MEASURED (2026-11-04): the adversarial-training row, run/122_adv_training.sh (400 training malware x the 4 "seen"
-% attacks, 1,597 valid rows appended; full store; adaptive = union of both menus, 9/48). Its reference, the full-store
-% unconstrained row: run/123_a1_toolkit_fullstore_ref.sh (toolkit) and runs 108/119 (adaptive, 10/49).
-% SYNTHETIC: PV with 8 attacks (run under the same two-menu union protocol as the 4-attack row below; not yet run). The expert
-% set has no adaptive cell: the search predicts with the instrumented extractor only.
-% MEASURED (adaptive cells): the adaptive attacker runs the search under both the append+add-section menu (run 108,
-% artifacts/experiments/a1/adaptive-v3) and the full twelve-operation menu (item 8, run 119,
-% artifacts/experiments/a1/adaptive-twelve/{mfull,madd}), and a file counts as evaded if either run evades it.
-% unconstrained: union 10/49 = 20% (twelve-op alone 10, run 108 alone 4; twelve-op dominates, union = twelve-op).
-% PV, 4 attacks: union 20/22 = 91% (run 108 16, twelve-op 12, intersection 8, run-108-only 8, twelve-op-only 4;
-% every evasion re-extracts, 0 predicted-vs-real mismatches in either run). Monotone rows: 0/41 (feat) and 0/43 (sums)
-% under M_full, 0/47 under M_add, min_delta_logit exactly 0.0 on every file and candidate, all twelve operations.
+% MEASURED (2026-11-05): adaptive = the beam search alone (user, 2026-11-04: one attack per cell, never a union),
+% 5,000 candidates, M_full. unconstrained full store 25/49 and the monotone features row 0/41 (run 127 step 1,
+% adaptive-beam/mfull); PV 10% 4 attacks 15/22, 8 attacks 14/22 (run 127 step 3, adaptive-beam/pv-s10; the PV rows'
+% adaptive cells now come from the 10% models, like their other columns); adversarial training 24/49 (run 130,
+% adaptive-beam/advtrain-strong); ERDALT 20/25 (run 128). min_delta_logit exactly 0.0 on the monotone rows.
+% The adversarial-training row is run 125 (run/125_adv_training_strong.sh: gamma_api, header_fields, gamma_sections at
+% the literature budget on 400 training malware; AUC 0.9976, TPR 95.6%; toolkit 27 -> 15 of 49), replacing run 122.
+% ERDALT: run/128_erdalt.sh (10% sums store, thrember features; criterion < 5 violations met only at the last epoch,
+% 309; temperature on the logit, no decision changed). The sums row's adaptive cell: greedy union of runs 108/119,
+% 0/43 (the beam has no routing to the sums store yet). The greedy searches (runs 108/119/125/129) evade a subset of
+% the beam's files on every row (checked 2026-11-05). The expert set has no adaptive cell: the search predicts with
+% the instrumented extractor only.
 
 \Cref{tab:eval:detectors} gives the results. That the monotone rows' score never falls under an edit in the
 catalogue is not an empirical finding: it is what Corollary~\ref{cor:fw:robustness} guarantees, and the adaptive
@@ -305,16 +312,24 @@ parser's warning flags, which the derivation cannot vouch for in either directio
 % hand rules', group by group. The 44.4% excludes pefile's warning flags, which the table leaves free as residual
 % features rather than proving them lowerable; with them, 77.5% of the gain (one flag alone ~30%; 33.2% from the
 % warnings). Decided (user left it to Claude, 2026-11-02): keep 44.4% as proved, add the warnings as a separate clause.
-The adaptive search fills the hole. Adding a section, it picks section names whose hash lands in buckets the model
+The adaptive search finds the hole. Adding a section, it picks section names whose hash lands in buckets the model
 trusts, with the sign that lowers the score; renaming an existing section reaches the same buckets without needing room
-for a new header. Run under both the section-adding menu and the full twelve-operation menu, and counting a file evaded
-if either run evades it, the search evades PV on 20 of the 22 files it detects, using \synthetic{a handful of}
-extractions per file; the two menus are complementary, the twelve-operation one evading four files the section-adding
-menu cannot. Building PV from all eight attacks does not close the hole: \synthetic{17 of 22}. The two files the search
-does not evade sit far enough above the threshold that no first edit lowers their score. Adversarial training on the
-toolkit's outputs keeps the unconstrained detector's accuracy and changes little else. The attacks it was trained on
-evade it on 8\% of the files it detects, against 10\% for the same detector trained without them, and the adaptive
-search evades it on 9 of 48, as often as it evades the unconstrained detector.
+for a new header. It evades PV on 15 of the 22 files it detects, and building PV from all eight attacks does not close
+the hole: the search evades that detector on 14 of 22. ERDALT, which learns its post-processing from the same four
+attacks, behaves the same way. Our port of it resists those attacks on all 25 files it detects, but the held-out
+attacks evade it on 23 and the adaptive search on 20. Checking its learned layer against the derived table shows why:
+89.7\% of the layer's weight lies on features the table shows an edit can lower, almost all of them features that edits
+move both ways, which a derived detector drops.
+% ERDALT hole: run 128 step 2 (scripts/a_erdalt_hole.py): 89.7% of L's weight violates the derived M_full table, 88.7%
+% in the both-ways features (1,060 of 1,060 columns), 0.8% in up features; 48/50 pilot files have an allowed lowering move.
+
+Adversarial training is the usual alternative. We retrained the unconstrained detector with the outputs of the two
+toolkit attacks that evade it, GAMMA's import injection and the header-field attack, and of GAMMA's section injection,
+all run at the GAMMA paper's budget on 400 training malware. Its accuracy does not change, and it holds where it was
+trained: import injection evades it on 11 of the 49 files it detects instead of 22, and the eight attacks together on
+15 instead of 27. The adaptive search evades it on 24 of 49, about as often as the unconstrained detector (25 of 49).
+On every row of the table, a greedy search over the same operations that scores at most 200 candidates evades only
+files the beam search also evades.
 
 The expert set is Gimenez et al.'s 40 features, picked by hand to be hard to lower without the malware's source code.
 With the extractor's two quirks patched it holds under additions, and no toolkit attack evades it, but 40 features keep
