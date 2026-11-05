@@ -21,6 +21,13 @@
 \usepackage{booktabs}
 \usepackage{array}
 \usepackage{tikz}
+\usepackage{listings}
+\lstset{
+  language=Python, basicstyle=\ttfamily\small, columns=fullflexible, keepspaces=true,
+  keywordstyle=\color{blue!50!black}\bfseries, commentstyle=\color{gray}\itshape,
+  showstringspaces=false, escapeinside={(*}{*)},
+}
+\newcommand{\stage}[2]{\colorbox{#1}{\sffamily\small\bfseries #2}}
 \usetikzlibrary{arrows.meta,positioning,calc,fit}
 
 \newcommand{\good}[1]{\textcolor{green!45!black}{#1}}
@@ -74,79 +81,587 @@
     \end{tikzpicture}
   \end{center}
   \vspace{-0.3em}
-  \begin{columns}[T]
-    \begin{column}{0.47\textwidth}
-      \textbf{\textcolor{red!70!black}{Feature-space attack}}: perturb the vector.\\
-      Fast (gradients, solvers), but \bad{no object may have} these features.
+  \begin{columns}[T,onlytextwidth]
+    \begin{column}{0.46\textwidth}
+      \textbf{\textcolor{red!70!black}{Feature-space attack}}\\
+      Fast, but \bad{may not be realizable}.
     \end{column}
-    \begin{column}{0.47\textwidth}
-      \textbf{\textcolor{blue!60!black}{Problem-space attack}}: edit the object.\\
-      Always realizable, but we only learn where an edit lands \bad{by running the extractor} on it.
+    \begin{column}{0.46\textwidth}
+      \textbf{\textcolor{blue!60!black}{Problem-space attack}}\\
+      Realizable, but \bad{slow to evaluate}.
     \end{column}
   \end{columns}
-  \vspace{0.6em}
-  {\footnotesize\color{gray} Setup and notation from Pierazzi et al., ``Intriguing properties of adversarial ML attacks
-  in the problem space'' (S\&P 2020).}
+  \vfill
+  {\footnotesize\color{gray} Setup and notation: Pierazzi et al., S\&P 2020.}
 \end{frame}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \begin{frame}{What an attacker can reach, and what comes along}
   \begin{block}{Reachable set}
-    Allowed edits keep the object valid (functional, plausible, \dots). Their feature vectors form
+    The feature vectors of all valid edits of $z$:
     \[
       \mathcal{R}(z) = \{\, \varphi(T(z)) : T \text{ an allowed edit} \,\}.
     \]
-    \vspace{-1.2em}\par An evasion is \emph{realizable} only if it lands in $\mathcal{R}(z)$.
+    \vspace{-1.2em}\par An evasion is \emph{realizable} if it lands in $\mathcal{R}(z)$.
   \end{block}
+  \vspace{0.6em}
   \begin{columns}[T]
-    \begin{column}{0.54\textwidth}
-      \textbf{Side effects.} The attacker aims for a change $\boldsymbol{\delta}^*$ and gets
-      $\varphi(T(z)) = \mathbf{x} + \boldsymbol{\delta}^* + \boldsymbol{\eta}$.
-      The extra change $\boldsymbol{\eta}$ comes from fixes the edit needs to stay valid, and from
-      features that read the edited bytes for other purposes.
+    \begin{column}{0.5\textwidth}
+      \textbf{Side effects:} aim for $\boldsymbol{\delta}^*$, get $\boldsymbol{\delta}^* + \boldsymbol{\eta}$.
+      \begin{itemize}
+        \item fixes that keep the edit valid
+        \item features that read the edited bytes
+      \end{itemize}
     \end{column}
-    \begin{column}{0.42\textwidth}
+    \begin{column}{0.44\textwidth}
       \begin{exampleblock}{Example (EMBER)}
-        Append bytes to an executable to add strings: every section's \emph{size ratio} falls too, though no
-        section was touched.
+        Appending strings also lowers every section's \emph{size ratio}.
       \end{exampleblock}
     \end{column}
   \end{columns}
+  \vfill
   \begin{center}
-    Once the edit is fixed, where it lands depends \textbf{only on the extractor $\varphi$}.
+    For a fixed edit, the landing point depends \textbf{only on $\varphi$}.
   \end{center}
 \end{frame}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \begin{frame}{Everyone needs the reachable set; nobody computes it}
-  \renewcommand{\arraystretch}{1.35}
-  \small
-  \begin{tabular}{@{}>{\raggedright}p{2.7cm} >{\raggedright}p{3.4cm} >{\raggedright}p{3.0cm} >{\raggedright\arraybackslash}p{3.6cm}@{}}
+  \renewcommand{\arraystretch}{1.4}\setlength{\tabcolsep}{7pt}
+  \begin{center}
+  \small\begin{tabular}{@{}llll@{}}
     \toprule
-    \textbf{Who} & \textbf{Needs} & \textbf{Gets it from} & \textbf{Limitation} \\
+    \textbf{Who} & \textbf{Needs} & \textbf{Source} & \textbf{Limitation} \\
     \midrule
-    Problem-space attacks &
-      where each candidate edit lands &
-      applying it, re-extracting &
-      one extraction per try; silent on untried edits \\
-    Constrained feature-space attacks &
-      constraints that keep vectors realizable &
-      a domain expert, or data &
-      as complete as the expert's reading or the data \\
-    Robust (monotone) detectors &
-      which way each feature can move &
-      a hand assignment, or observed attacks &
-      misses what nobody thought of or ran \\
+    Problem-space attacks & where an edit lands & trial & one edit at a time \\
+    Constrained attacks & valid-vector constraints & experts, data & incomplete \\
+    Monotone detectors & each feature's direction & experts, past attacks & misses the unseen \\
     \bottomrule
   \end{tabular}
-  \vspace{0.8em}
-  \begin{alertblock}{The gap}
-    All three descriptions come from \emph{outside} the extractor: trial, expert reading, or past attacks.\\
-    Yet $\mathcal{R}(z)$ is determined by $\varphi$, and $\varphi$ is code the defender has.
-  \end{alertblock}
-  \begin{center}
-    \textbf{Our question:} can we compute these descriptions from the extractor itself?
   \end{center}
+  \vfill
+  \begin{alertblock}{The gap}
+    All three come from \emph{outside} the extractor.\\
+    Yet $\varphi$ determines $\mathcal{R}(z)$, and the defender has its code.
+  \end{alertblock}
+  \vfill
+  \begin{center}
+    \textbf{Our question:} can we compute them from the extractor itself?
+  \end{center}
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Part II: the model
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}{Our answer: compute it from the extractor}
+  \begin{columns}[T]
+    \begin{column}{0.46\textwidth}
+      \begin{block}{One edit}
+        The exact feature vector it reaches,\\
+        side effects included.\\[0.3em]
+        \good{No re-extraction.}
+      \end{block}
+    \end{column}
+    \begin{column}{0.46\textwidth}
+      \begin{block}{All edits of a threat model}
+        Which way each feature can move:\\
+        up, down, fixed, or both.\\[0.3em]
+        \good{No edit applied.}
+      \end{block}
+    \end{column}
+  \end{columns}
+  \vfill
+  \begin{center}
+    \begin{tikzpicture}[
+        road/.style={draw, rounded corners, fill=blue!4, align=center, minimum height=1.0cm, text width=2.6cm},
+        map/.style={-{Stealth}, thick},
+      ]
+      \node[road] (m) {\textbf{Model}\\[-0.1em]{\footnotesize one shape}};
+      \node[road, right=0.6cm of m] (p) {\textbf{One edit}\\[-0.1em]{\footnotesize exact side effects}};
+      \node[road, right=0.6cm of p] (t) {\textbf{All edits}\\[-0.1em]{\footnotesize sound directions}};
+      \node[road, right=0.6cm of t] (c) {\textbf{Detectors}\\[-0.1em]{\footnotesize provably robust}};
+      \draw[map] (m) -- (p);
+      \draw[map] (p) -- (t);
+      \draw[map] (t) -- (c);
+    \end{tikzpicture}
+  \end{center}
+  \vfill
+  \begin{center}
+    The key: most security feature extractors share \textbf{one shape}.
+  \end{center}
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}{A toy format}
+  \begin{center}
+    \begin{tikzpicture}[
+        seg/.style={draw, minimum height=0.8cm, inner sep=0pt, font=\footnotesize},
+        hdr/.style={seg, fill=gray!20},
+        rec/.style={seg, fill=blue!20},
+        str/.style={seg, fill=green!25},
+        oth/.style={seg, fill=white},
+        ptr/.style={-{Stealth}, thin, gray!70!black},
+      ]
+      \node[hdr, minimum width=0.6cm, anchor=west] (n) at (0,0) {2};
+      \node[hdr, minimum width=1.2cm, right=0pt of n] (t1) {entry};
+      \node[hdr, minimum width=1.2cm, right=0pt of t1] (t2) {entry};
+      \node[oth, minimum width=0.8cm, right=0pt of t2] (o1) {};
+      \node[rec, minimum width=1.6cm, right=0pt of o1] (r1) {};
+      \node[str, minimum width=1.4cm, right=0pt of r1] (s1) {\texttt{hello}};
+      \node[oth, minimum width=0.6cm, right=0pt of s1] (o2) {};
+      \node[rec, minimum width=2.0cm, right=0pt of o2] (r2) {};
+      \node[str, minimum width=2.4cm, right=0pt of r2] (s2) {\texttt{http://ex.com}};
+      \node[oth, minimum width=0.6cm, right=0pt of s2] (o3) {};
+      \draw[ptr] (t1.north) to[bend left=30] (r1.north);
+      \draw[ptr] (t2.north) to[bend left=25] (r2.north);
+      \node[below=2pt of n, font=\scriptsize, gray] {count};
+      \node[anchor=north, yshift=-2pt, font=\scriptsize, gray] at ($(t1.south)!0.5!(t2.south)$) {table};
+      \node[below=2pt of r1, font=\scriptsize, gray] {record};
+      \node[below=2pt of s1, font=\scriptsize, gray] {string};
+      \node[below=2pt of r2, font=\scriptsize, gray] {record};
+      \node[below=2pt of s2, font=\scriptsize, gray] {string};
+    \end{tikzpicture}
+  \end{center}
+  \vfill
+  \begin{columns}[T]
+    \begin{column}{0.44\textwidth}
+      \textbf{Input:} a byte sequence.
+      \begin{itemize}
+        \item a count, then a table of records
+        \item strings: runs of printable bytes
+      \end{itemize}
+    \end{column}
+    \begin{column}{0.48\textwidth}
+      \textbf{Four features:}
+      \begin{itemize}
+        \item $x_1$: number of strings
+        \item $x_2$: average string length
+        \item $x_3$: longest string
+        \item $x_4$: share of bytes in records
+      \end{itemize}
+    \end{column}
+  \end{columns}
+  \vfill
+  \begin{center}
+    Small, but it has the same moving parts as EMBER.
+  \end{center}
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[fragile]{What an extractor looks like}
+\begin{lstlisting}
+def extract(data: bytes) -> list[float]:
+    (*\stage{green!15}{Items: find the pieces (format-specific)}*)
+    records = parse_table(data)
+    strings = find_strings(data, min_len=4)
+
+    (*\stage{blue!10}{Sums: add up what each piece contributes}*)
+    N = len(strings)
+    T = sum(len(s) for s in strings)
+    M = max((len(s) for s in strings), default=0)
+    R = sum(r.length for r in records)
+    L = len(data)
+
+    (*\stage{orange!18}{Readouts: one formula per feature}*)
+    return [N, T / max(N, 1), M, R / L]
+\end{lstlisting}
+  \vfill
+  \begin{center}
+    EMBER has the same structure, with thousands of features.
+  \end{center}
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}{Three stages: items, sums, readouts}
+  \begin{center}
+    \begin{tikzpicture}[
+        stage/.style={draw, rounded corners, align=left, minimum height=2.5cm, text width=2.7cm, font=\small},
+        map/.style={-{Stealth}, thick},
+      ]
+      \node[stage, text width=1.6cm, align=center] (z) {\textbf{Input}\\[0.3em] bytes};
+      \node[stage, fill=green!6, right=1.0cm of z] (v) {\textbf{Items}\\[0.3em]
+        2 records\\ 2 strings\\ every byte};
+      \node[stage, fill=blue!4, right=1.0cm of v] (s) {\textbf{Sums}\\[0.3em]
+        $N$: \# strings\\ $T$: string length\\ $M$: longest string\\ $R$: record bytes\\ $L$: input length};
+      \node[stage, fill=orange!8, right=1.0cm of s] (x) {\textbf{Features}\\[0.3em]
+        $x_1 = N$\\ $x_2 = T / N$\\ $x_3 = M$\\ $x_4 = R / L$};
+      \draw[map] (z) -- node[above] {$\pi$} node[below, font=\scriptsize, align=center] {find\\pieces} (v);
+      \draw[map] (v) -- node[above] {$\sigma$} node[below, font=\scriptsize, align=center] {add\\up} (s);
+      \draw[map] (s) -- node[above] {$\rho$} node[below, font=\scriptsize, align=center] {per\\feature} (x);
+    \end{tikzpicture}
+  \end{center}
+  \vfill
+  \begin{center}
+    \Large $\varphi = \rho \circ \sigma \circ \pi$
+  \end{center}
+  \vfill
+  \begin{itemize}
+    \item Only $\pi$ knows the format; $\sigma$ and $\rho$ are arithmetic.
+    \item Edits are simple to describe as items, hard to describe as features.
+  \end{itemize}
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}{Sums: add up what each item contributes}
+  \begin{itemize}
+    \item An item's contribution depends \textbf{only on the item}, not on the rest of the input.
+    \item Order does not matter: the extractor may visit items in any order.
+  \end{itemize}
+  \vfill
+  \begin{columns}[T]
+    \begin{column}{0.46\textwidth}
+      \begin{exampleblock}{Counts and totals}
+        Removing an item: subtract it.\\
+        The old total is enough.
+      \end{exampleblock}
+    \end{column}
+    \begin{column}{0.46\textwidth}
+      \begin{alertblock}{Maximum and minimum}
+        $\max(5,3) = \max(5,5) = 5$.\\
+        Remove a 5: is the rest 3 or 5?
+      \end{alertblock}
+    \end{column}
+  \end{columns}
+  \vfill
+  \begin{center}
+    So the instrumented extractor records \textbf{every item}: the \emph{item table}.\\
+    It comes for free, in the same pass that computes the features.
+  \end{center}
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}{Readouts: each feature is a formula over a few sums}
+  \renewcommand{\arraystretch}{1.3}
+  \begin{center}
+    \begin{tabular}{@{}ll@{}}
+      \toprule
+      \textbf{Formula} & \textbf{Example} \\
+      \midrule
+      a sum itself & number of imports \\
+      ratio of two sums & average string length \\
+      histogram bin / total & byte histogram \\
+      entropy of a histogram & section entropy \\
+      standard deviation & packet-length spread \\
+      presence bit & requests a permission \\
+      \bottomrule
+    \end{tabular}
+  \end{center}
+  \vfill
+  \begin{center}
+    A feature changes \textbf{only if a sum it reads changes}.
+  \end{center}
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}{How general is this shape?}
+  \begin{columns}[T]
+    \begin{column}{0.46\textwidth}
+      \begin{exampleblock}{Fits}
+        \begin{itemize}
+          \item EMBER (executables)
+          \item byte $n$-grams (any binary)
+          \item Drebin (Android apps)
+          \item Hidost (PDF documents)
+          \item CICFlowMeter (network flows)
+        \end{itemize}
+      \end{exampleblock}
+    \end{column}
+    \begin{column}{0.46\textwidth}
+      \begin{alertblock}{Fits only coarsely}
+        \begin{itemize}
+          \item call-graph features
+          \item learned representations
+        \end{itemize}
+      \end{alertblock}
+    \end{column}
+  \end{columns}
+  \vfill
+  \begin{block}{It is a question of granularity}
+    Any extractor fits if the whole input is one item.\\
+    Finer items $\Rightarrow$ the results say more.
+  \end{block}
+  \vfill
+  \begin{center}
+    Features outside the shape (e.g., parser error flags) are left unconstrained.
+  \end{center}
+\end{frame}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Part III: one edit, exactly
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}{Describe an edit by its items}
+  \begin{block}{Item delta}
+    An edit \textbf{removes} some items and \textbf{adds} others.\\
+    Only kinds and contents matter, not positions.
+  \end{block}
+  \vfill
+  \renewcommand{\arraystretch}{1.35}
+  \begin{center}
+    \small
+    \begin{tabular}{@{}lll@{}}
+      \toprule
+      \textbf{Toy edit} & \textbf{Removed} & \textbf{Added} \\
+      \midrule
+      append a string & --- & the string, its bytes \\
+      insert junk before a string & --- & the junk bytes \\
+      move a record & the record & the record, new offset \\
+      overwrite a byte inside a string & the string, the old byte & the pieces, the new byte \\
+      \bottomrule
+    \end{tabular}
+  \end{center}
+  \vfill
+  \begin{center}
+    Many attacks are already stated this way: add a section, a permission, a code snippet.
+  \end{center}
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}{One edit: exact side effects}
+  \begin{center}
+    \large new sums $=$ old sums $-$ removed items $+$ added items
+  \end{center}
+  \vfill
+  \begin{itemize}
+    \item \textbf{Counts and totals:} subtract and add, as above.
+    \item \textbf{Max and min:} recompute over the kept and added items, from the item table.
+    \item \textbf{Features:} apply each formula; a feature with no changed sum keeps its value.
+  \end{itemize}
+  \vfill
+  \begin{exampleblock}{Why exact, not an estimate}
+    The extractor \emph{is} this computation: same items, same sums, same formulas.
+  \end{exampleblock}
+  \vfill
+  \begin{center}
+    Nothing is extracted from the edited file. The side effects $\boldsymbol{\eta}$ fall out exactly.
+  \end{center}
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}{Two toy edits, worked out}
+  \small
+  Input: strings \texttt{hello}, \texttt{http://ex.com}; 20 record bytes; 64 bytes. Append: 10 bytes.
+  \vfill
+  \renewcommand{\arraystretch}{1.35}
+  \begin{center}
+    \normalsize
+    \begin{tabular}{@{}lccc@{}}
+      \toprule
+      \textbf{Feature} & \textbf{Before} & \textbf{Append string} & \textbf{Overwrite \texttt{e}} \\
+      \midrule
+      $x_1$: \# strings & 2 & 3 & 3 \\
+      $x_2$: average length & 9.0 & 9.3 & 5.7 \\
+      $x_3$: longest & 13 & 13 & \textbf{7} \\
+      $x_4$: share in records & 0.31 & \bad{0.27} & 0.31 \\
+      \bottomrule
+    \end{tabular}
+  \end{center}
+  \vfill
+  \begin{columns}[T]
+    \begin{column}{0.46\textwidth}
+      \bad{Side effect:} $x_4$ falls; no record changed.
+    \end{column}
+    \begin{column}{0.46\textwidth}
+      \textbf{Max:} 7 comes from the item table, not 13.
+    \end{column}
+  \end{columns}
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}{Edits given as raw bytes}
+  An edit may just say ``write these bytes here''. Which items changed?
+  \vfill
+  \begin{columns}[T]
+    \begin{column}{0.46\textwidth}
+      \begin{block}{Structure positions}
+        Bytes that decide where items lie.\\
+        Write none $\Rightarrow$ the layout holds.
+      \end{block}
+    \end{column}
+    \begin{column}{0.46\textwidth}
+      \begin{block}{Margin}
+        Scanned items change only near a write.\\
+        Rescan there, nowhere else.
+      \end{block}
+    \end{column}
+  \end{columns}
+  \vfill
+  \begin{itemize}
+    \item Toy: overwrite inside a string $\Rightarrow$ rescan to the nearest non-printable bytes.
+    \item Toy: overwrite the count $\Rightarrow$ structure changed; flagged, not predicted.
+  \end{itemize}
+  \vfill
+  \begin{center}
+    The format enters \textbf{only here}, once per extractor.
+  \end{center}
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}{Why not just re-extract?}
+  For one concrete edit, re-extraction gives the same numbers. The item view adds:
+  \vfill
+  \begin{enumerate}
+    \item \textbf{Attribution:} every side effect traced to the items that caused it.
+    \item \textbf{Edits never applied:} ``append any 1,000 bytes'' has no single result to extract.
+    \item \textbf{Cost:} thousands of candidate edits scored from the item table.
+  \end{enumerate}
+  \vfill
+  \begin{alertblock}{Next}
+    Point 2 is the main one: reason about \emph{all} edits of a threat model at once.
+  \end{alertblock}
+\end{frame}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Part IV: all edits at once
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\newcommand{\up}{\good{$\uparrow$ up}}
+\newcommand{\down}{\bad{$\downarrow$ down}}
+\newcommand{\fixed}{\textcolor{gray}{$=$ fixed}}
+\newcommand{\both}{\textcolor{orange!80!black}{$\updownarrow$ both}}
+
+\begin{frame}{Threat models: families of edits}
+  \begin{block}{Operation}
+    A family of edits with unknown content, e.g.\ ``append any bytes''.\\
+    Its \textbf{signature}: which kinds of items it can add, remove, or change.
+  \end{block}
+  \vfill
+  \begin{exampleblock}{Toy: append any bytes}
+    Adds bytes and strings; may extend the last string. Never touches a record.
+  \end{exampleblock}
+  \vfill
+  \begin{center}
+    \textbf{Question:} which way can each feature move, for \emph{every} edit allowed?
+  \end{center}
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}{Step 1: which way can each sum move?}
+  \begin{columns}[T]
+    \begin{column}{0.5\textwidth}
+      \textbf{Signs per item change}\\[0.4em]
+      \renewcommand{\arraystretch}{1.3}
+      \small
+      \begin{tabular}{@{}lccc@{}}
+        \toprule
+        & \textbf{add} & \textbf{remove} & \textbf{change} \\
+        \midrule
+        count & $+$ & $-$ & $0$ \\
+        total of sizes & $+$ & $-$ & $\pm$ \\
+        maximum & $+$ or $0$ & $-$ or $0$ & $\pm$ \\
+        \bottomrule
+      \end{tabular}
+    \end{column}
+    \begin{column}{0.42\textwidth}
+      \textbf{Toy: append any bytes}\\[0.4em]
+      \renewcommand{\arraystretch}{1.3}
+      \small
+      \begin{tabular}{@{}ll@{}}
+        \toprule
+        \textbf{Sum} & \textbf{Can move} \\
+        \midrule
+        $N$: \# strings & \up \\
+        $T$: string length & \up \\
+        $M$: longest string & \up \\
+        $R$: record bytes & \fixed \\
+        $L$: input length & \up \\
+        \bottomrule
+      \end{tabular}
+    \end{column}
+  \end{columns}
+  \vfill
+  \begin{center}
+    Combine the signs over the signature: $+$ with $+$ stays $+$; $+$ with $-$ could be anything.
+  \end{center}
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}{Step 2: from sums to features}
+  \renewcommand{\arraystretch}{1.35}
+  \begin{center}
+    \begin{tabular}{@{}ll@{}}
+      \toprule
+      \textbf{Formula} & \textbf{Feature can move} \\
+      \midrule
+      a sum itself & like its sum \\
+      ratio $a / b$ & up only if $a$ can rise or $b$ can fall \\
+      presence bit & like its count, or not at all \\
+      entropy, standard deviation & fixed if its sums are; otherwise both \\
+      \bottomrule
+    \end{tabular}
+  \end{center}
+  \vfill
+  \begin{columns}[T]
+    \begin{column}{0.46\textwidth}
+      $x_2 = T / N$: $T$ and $N$ rise $\Rightarrow$ \both
+    \end{column}
+    \begin{column}{0.46\textwidth}
+      $x_4 = R / L$: $R$ fixed, $L$ up $\Rightarrow$ \down
+    \end{column}
+  \end{columns}
+  \vfill
+  \begin{center}
+    One rule per formula type, written once.
+  \end{center}
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}{All edits: sound directions}
+  \begin{columns}[T]
+    \begin{column}{0.4\textwidth}
+      \textbf{Toy: append any bytes}\\[0.4em]
+      \renewcommand{\arraystretch}{1.3}
+      \small
+      \begin{tabular}{@{}ll@{}}
+        \toprule
+        $x_1$: \# strings & \up \\
+        $x_2$: average length & \both \\
+        $x_3$: longest & \up \\
+        $x_4$: share in records & \down \\
+        \bottomrule
+      \end{tabular}
+    \end{column}
+    \begin{column}{0.52\textwidth}
+      \begin{exampleblock}{EMBER: append any bytes}
+        String and URL counts: \up\\
+        Section count: \fixed\\
+        Section size ratios: \down\\
+        Entropy, average string length: \both
+      \end{exampleblock}
+    \end{column}
+  \end{columns}
+  \vfill
+  \begin{block}{Sound}
+    No allowed edit moves a feature against its entry. No edit is applied to compute it.
+  \end{block}
+  \vfill
+  \begin{itemize}
+    \item Holds over a population of inputs: an edit's effect can depend on the layout.
+    \item Holds for edit sequences while the edits keep inputs in that population.
+  \end{itemize}
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}{Robust detectors}
+  \begin{block}{Monotone detector}
+    Score never falls when up features rise or down features fall.\\
+    Ignores the features marked both.
+  \end{block}
+  \vfill
+  \begin{center}
+    \large sound directions $+$ monotone detector $\Rightarrow$ \good{no allowed edit evades it}
+  \end{center}
+  \vfill
+  \textbf{Before:} directions hand-picked or learned from observed attacks.\\[0.4em]
+  \textbf{Now:} directions \good{computed from the extractor}, for every feature.
+  \vfill
+  \begin{center}
+    A detected malware sample stays detected under every allowed edit sequence.
+  \end{center}
+  {\footnotesize\color{gray} Incer et al., IWSPA 2018; Gimenez et al., IFIP SEC 2025.}
 \end{frame}
 
 \end{document}
