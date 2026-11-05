@@ -17,20 +17,23 @@ edit (\Cref{sec:fw:directions}), and a detector that is monotone in these direct
 \label{sec:fw:model}
 
 % Spine: docs/framework-design.md, Section 11 (approved 2026-11-05). Notation: lowercase Greek for the maps of the
-% factorization (pi, sigma, rho, nu); tau for kinds. The running example is in purple (runex) while drafted.
+% factorization (pi, sigma, rho, nu); calligraphic for the spaces they connect (Z, V, S, X); tau for kinds. The running
+% example is in purple (runex) while drafted.
 The feature mappings we study compute their features in three stages. They find the pieces of the input they
 analyze, which we call \emph{items}; they add what each item contributes to a set of running totals, which we call
 \emph{sums}; and they compute each feature by a formula over a few sums, which we call a \emph{readout}. Each stage is
 a map, and the feature mapping is their composition:
-\[
-  \mathcal{Z} \xrightarrow{\;\pi\;} \{\text{multisets of items}\} \xrightarrow{\;\sigma\;} \mathbb{M}
-  \xrightarrow{\;\rho\;} \mathbb{R}^{J},
+\begin{equation}
+  \label{eq:fw:factorization}
+  \mathcal{Z} \xrightarrow{\;\pi\;} \mathcal{V} \xrightarrow{\;\sigma\;} \mathcal{S}
+  \xrightarrow{\;\rho\;} \mathcal{X},
   \qquad
-  \varphi_J = \rho \circ \sigma \circ \pi,
-\]
-where $J$ is the set of features computed this way (Definition~\ref{def:fw:extractor}). The item map $\pi$ is the only stage
-that depends on the format of the input; $\sigma$ and $\rho$ are arithmetic. We separate the stages because an
-attacker's edit is simple to describe at the first, by the items it adds and removes, and hard to describe at the
+  \varphi = \rho \circ \sigma \circ \pi,
+\end{equation}
+where $\mathcal{V}$ holds the multisets of items and $\mathcal{S}$ the values of the sums
+(Definitions~\ref{def:fw:item}--\ref{def:fw:contributions}); a few features of a real extractor may be computed
+otherwise (Definition~\ref{def:fw:extractor}). The item map $\pi$ is the only stage that depends on the format of the
+input; $\sigma$ and $\rho$ are arithmetic. We separate the stages because an attacker's edit is simple to describe at the first, by the items it adds and removes, and hard to describe at the
 last, where one item can move many features. The shape is common: the static feature sets most used in malware
 detection and the flow statistics used in network intrusion detection have it (end of this subsection), and
 classifiers trained on them remain strong baselines in their domains~\cite{anderson2018ember,arp2014drebin}.
@@ -50,10 +53,12 @@ An input $z \in \mathcal{Z}$ is a finite sequence of elements, such as the bytes
 for a set $M$ of positions, $z[M]$ is the sequence of the elements at those positions, in order. A feature mapping has
 a finite set of item \emph{kinds}. An \emph{item} of $z$ is a pair $\iota = (\tau, M)$ of a kind $\tau$ and a nonempty
 set $M$ of positions of $z$, its \emph{members}; its \emph{content} is $z[M]$. The extractor finds a set $I(z)$ of
-items in each input, and the \emph{item map} $\pi$ takes $z$ to the multiset of the kinds and contents of its items,
-\[
+items in each input. With $\mathcal{V}$ the set of finite multisets of kinds and contents, the \emph{item map}
+$\pi: \mathcal{Z} \to \mathcal{V}$ takes $z$ to the multiset of the kinds and contents of its items,
+\begin{equation}
+  \label{eq:fw:items}
   \pi(z) = \mset{(\tau, z[M]) : (\tau, M) \in I(z)}.
-\]
+\end{equation}
 }
 
 \noindent An item is what one pass of one of the extractor's loops reads: its kind says which loop, and its members
@@ -70,38 +75,41 @@ the extractor needs for the length of the input.
 \definition[Sums]
 \label{def:fw:sums}
 {
-A feature mapping keeps a set $S$ of \emph{sums}. Each sum $k \in S$ takes values in a commutative monoid
+A feature mapping keeps a set $K$ of \emph{sums}. Each sum $k \in K$ takes values in a commutative monoid
 $\mathbb{M}_k$: a set with an associative and commutative operation and a \emph{neutral element}, which the operation
 leaves unchanged. Three monoids occur:
-\[
+\begin{equation}
+  \label{eq:fw:monoids}
   \begin{array}{@{}ll@{}}
     (\mathbb{R}, +, 0) & \text{for an \emph{additive sum},} \\
     (\mathbb{R} \cup \{-\infty\}, \max, -\infty) & \text{for a \emph{max pool},} \\
     (\mathbb{R} \cup \{+\infty\}, \min, +\infty) & \text{for a \emph{min pool}.}
   \end{array}
-\]
-The \emph{sum space} is the product $\mathbb{M} = \prod_{k \in S} \mathbb{M}_k$, with the operation $\oplus$ that
+\end{equation}
+The \emph{sum space} is the product $\mathcal{S} = \prod_{k \in K} \mathbb{M}_k$, with the operation $\oplus$ that
 applies each sum's operation to its entry. Its neutral element holds the neutral element of every sum.
 }
 
-\noindent The set $S$ may be large, with one count for each key of an open vocabulary, such as the names of imported
+\noindent The set $K$ may be large, with one count for each key of an open vocabulary, such as the names of imported
 libraries or requested permissions.
 
-\definition[Contributions and the sum vector]
+\definition[Contributions]
 \label{def:fw:contributions}
 {
 Each kind $\tau$ has a \emph{contribution function} $\nu_\tau$, which maps the content of an item of kind $\tau$ to an
-element of $\mathbb{M}$ that is neutral on all but finitely many sums. The \emph{fold} $\sigma$ takes a finite
-multiset $B$ of kinds and contents to
-\[
+element of $\mathcal{S}$ that is neutral on all but finitely many sums. The \emph{fold}
+$\sigma: \mathcal{V} \to \mathcal{S}$ takes a multiset $B$ to
+\begin{equation}
+  \label{eq:fw:fold}
   \sigma(B) = \bigoplus_{(\tau, c) \in B} \nu_\tau(c),
-\]
-with each element counted as often as it occurs, and takes the empty multiset to the neutral element. The
-\emph{sum vector} of $z$ is $\mathbf{s}(z) = \sigma(\pi(z))$.
+\end{equation}
+with each element counted as often as it occurs, and takes the empty multiset to the neutral element. The \emph{sums
+of} $z$ are $\mathbf{s}(z) = \sigma(\pi(z))$.
 }
 
 \noindent A contribution is what one item adds to the running totals, and it depends only on the item's kind and
-content, not on the rest of the input. The sum vector holds the totals after every item has been added.
+content, not on the rest of the input. The sums of $z$ are the totals after every item has been added. They are not a
+vector: their entries lie in different monoids, and a pool cannot be subtracted from.
 \begin{runex}
 In the toy format, a string contributes 1 to the number of strings, its length to the total length of strings, and its
 length to a max pool, the longest string. A byte contributes 1 to the length of the input, and a record contributes
@@ -109,12 +117,16 @@ its length, read from its table entry, to the total length of records. Every oth
 neutral.
 \end{runex}
 
-Because every $\mathbb{M}_k$ is associative and commutative, $\sigma$ does not depend on the order in which the extractor visits the items, and the fold of the union of two
-multisets is the combination of their folds, $\sigma(A \uplus B) = \sigma(A) \oplus \sigma(B)$. In algebraic terms,
-the finite multisets of kinds and contents form the free commutative monoid on them, and $\sigma$ is the unique homomorphism from it to $\mathbb{M}$
-that agrees with the contribution functions on single items (Appendix~\ref{sec:types}). Additive sums and pools
-differ in whether the removal of an item can be undone. $(\mathbb{R}, +)$ is a group, in which every value has an inverse, so removing an item from an
-additive sum is undone by subtracting its contribution, and the new total follows from the old total and the item.
+Because every $\mathbb{M}_k$ is associative and commutative, $\sigma$ does not depend on the order in which the
+extractor visits the items, and the fold of the union of two multisets is the combination of their folds:
+\begin{equation}
+  \label{eq:fw:homomorphism}
+  \sigma(A \uplus B) = \sigma(A) \oplus \sigma(B).
+\end{equation}
+In algebraic terms, $\mathcal{V}$ is the free commutative monoid on the kinds and contents, and $\sigma$ is the unique
+homomorphism from it to $\mathcal{S}$ that agrees with the contribution functions on single items
+(Appendix~\ref{sec:types}). Additive sums and pools differ in whether the removal of an item can be undone.
+$(\mathbb{R}, +)$ is a group, in which every value has an inverse, so removing an item from an additive sum is undone by subtracting its contribution, and the new total follows from the old total and the item.
 The maximum and the minimum have no inverse.
 \begin{runex}
 If an edit splits the longest string of a toy input in two, the old value of the longest-string pool does not say how
@@ -125,9 +137,10 @@ long the second-longest string is. The strings themselves do.
 \definition[Readouts]
 \label{def:fw:readout}
 {
-A \emph{readout} of feature $j$ is a function $\rho_j: \mathbb{M} \to \mathbb{R}$ that reads a fixed set
-$S_j \subseteq S$ of sums, its \emph{support}: $\rho_j(\mathbf{a}) = \rho_j(\mathbf{b})$ whenever $\mathbf{a}$ and
-$\mathbf{b}$ agree on $S_j$. We write $\rho = (\rho_j)_{j \in J}$ for the readouts of a set $J$ of features.
+A \emph{readout} of feature $j$ is a function $\rho_j: \mathcal{S} \to \mathbb{R}$ that reads a fixed set
+$K_j \subseteq K$ of sums, its \emph{support}: $\rho_j(\mathbf{a}) = \rho_j(\mathbf{b})$ whenever $\mathbf{a}$ and
+$\mathbf{b}$ agree on $K_j$. The readouts of all $n$ features form the map $\rho = (\rho_1, \dots, \rho_n)$ from
+$\mathcal{S}$ to $\mathcal{X}$.
 }
 
 \noindent Readouts are where the arithmetic that cannot be split over items takes place. A total, a count, or a
@@ -149,14 +162,14 @@ length of the input.
 \definition[Sum-then-readout extractor]
 \label{def:fw:extractor}
 {
-Let $J \subseteq \{1, \dots, n\}$. A feature mapping $\varphi$ is a \emph{sum-then-readout extractor} over $J$ if it
-has an item map $\pi$, contribution functions $\nu_\tau$, and readouts $\rho_j$ such that, for every input $z$ and every
-$j \in J$,
-\[
-  \varphi_j(z) = \rho_j\big(\sigma(\pi(z))\big),
-  \qquad \text{that is,} \qquad
-  \varphi_J = \rho \circ \sigma \circ \pi.
-\]
+A feature mapping $\varphi$ is a \emph{sum-then-readout extractor} if it has an item map $\pi$, contribution
+functions $\nu_\tau$, and readouts $\rho_j$ such that $\varphi = \rho \circ \sigma \circ \pi$, as in
+\eqref{eq:fw:factorization}. It is one \emph{over} a set $J \subseteq \{1, \dots, n\}$ of features if the equality
+holds on the features in $J$:
+\begin{equation}
+  \label{eq:fw:extractor}
+  \varphi_j(z) = \rho_j\big(\sigma(\pi(z))\big) \qquad \text{for every } z \in \mathcal{Z} \text{ and } j \in J.
+\end{equation}
 }
 
 \noindent The features in $J$ are \emph{modeled} and the others \emph{residual}. A residual feature is one that the

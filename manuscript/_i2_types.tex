@@ -5,7 +5,7 @@ This appendix collects the few notions from type theory and algebra that \Cref{s
 standard~\cite{pierce2002types,hutton1999tutorial}.
 
 \paragraph{Types.} A type is a set of values, such as the finite sequences of bytes. The \emph{product} $A \times B$
-of two types holds the pairs $(a, b)$ with $a \in A$ and $b \in B$; the sum space $\mathbb{M}$ is a product with one
+of two types holds the pairs $(a, b)$ with $a \in A$ and $b \in B$; the sum space $\mathcal{S}$ is a product with one
 component per sum. The \emph{tagged union} of a family of types $C_\tau$, indexed by tags $\tau$, holds the pairs
 $(\tau, c)$ with $c \in C_\tau$: each value carries a tag that says which type its second component belongs to. The
 kinds and contents of items are values of a tagged union, with the kinds as tags and $C_\tau$ the contents an item of
@@ -29,6 +29,7 @@ multisets over $A$ to $\mathbb{M}$ with $\bar f(\mset{a}) = f(a)$, namely
 with each element counted as often as it occurs. We call $\bar f$ the \emph{fold} of $f$. The fold over lists, a
 standard construction in functional programming~\cite{hutton1999tutorial}, visits the elements in order; over
 multisets there is no order to visit, and commutativity makes it unnecessary. The fold $\sigma$ of
-Definition~\ref{def:fw:contributions} is the fold of $\nu$ into the sum space. When $\mathbb{M}$ is a group, the fold extends to
+Definition~\ref{def:fw:contributions} is the fold of $\nu$ into the sum space $\mathcal{S}$, and $\mathcal{V}$ is the free commutative monoid on the kinds
+and contents. When $\mathbb{M}$ is a group, the fold extends to
 multisets with negative multiplicities, by $\bar f(B - C) = \bar f(B) \ominus \bar f(C)$, where $\ominus$ combines with
 the inverse. This extension is what lets an additive sum absorb the removal of an item, and a pool cannot have it.

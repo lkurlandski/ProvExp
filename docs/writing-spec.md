@@ -97,6 +97,12 @@ side of detail and cut later.
 What the user accepted or rejected on real drafts, newest first. Each entry: the sentence or choice, the verdict, the
 rule it implies (folded into Sections 1-5 if general).
 
+- **2026-11-05, §3.1 redraft (factorization, identity-free items, toy example in purple).** "A significant
+  improvement." Preliminary notes before §3.2: number the equations; use parallel calligraphic spaces for the stages
+  (Z -> V -> S -> X instead of a text label, M, and R^J), which also removes J from the first paragraph; tau for kinds
+  "acceptable for now" (notation to improve later; change now only clear wins); no compound definition titles
+  ("Contributions and the sum vector" -> "Contributions"); the "sum vector" is not a vector, so do not call it one.
+  Implied: parallel objects get parallel notation; a name must be literally true; prefer simple definition titles.
 - **2026-11-05, written review of the rewritten §2, §3 lead, §3.1, §3.2 (stopped at §3.3).** Verdict: §2 and §3.1
   are workable with revisions; §3.2 from Definition 6 to Lemma 1 is "unintelligible", "a completely unhinged rant";
   the user assumed §3.3-3.6 are no better and did not read them. Agreed: fix the second half's structure before any
