@@ -262,3 +262,10 @@ rule it implies (folded into Sections 1-5 if general).
   the price is in the constraints", "two operations account for most of it"), the summary hedge "beyond noise", and an
   advisory closer ("so a defender can weigh each operation's cost before deciding ..."). Put in instead: "we retrained
   ...", literal verbs ("removing it recovers 2.1 points"), and a factual last sentence.
+- **2026-11-05, §3 as a whole (before reading §3.3-3.4).** Cut the toy example everywhere and every passage tying the
+  framework to real feature sets (EMBER, Drebin, Hidost, CICFlowMeter; to be refactored into §4). No replacement
+  plain-language examples ("not necessary", open to debate). Tables 1-2 "so unpleasant that it is hard to look at the
+  PDF": redesigned (short math cells, no prose in cells, footnotes for conditions) and moved to the proofs appendix.
+  And: "at times extremely hard to review your work because the writing is so unpleasant and challenging to get
+  through"; good writing is a precondition for good feedback. Implied: the prose itself must be easy to read before
+  the user reviews content; tables are never prose grids.

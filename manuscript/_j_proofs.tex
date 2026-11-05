@@ -35,6 +35,57 @@ the written set, $\mu_\tau(z, W) \subseteq \mu_\tau(z, \hat{W})$. By (a), the ed
 in $\mu_\tau(z, W)$ and adds only items whose members lie there. If the kind has a fixed layout, its items in $z'$
 have the same members as in $z$, so their number is the same.
 
+\paragraph{Sign rules.}
+\Cref{tab:fw:signs,tab:fw:readouts} list the rules that the two steps of \Cref{sec:fw:directions} apply: the sign sets
+of common contributions, and the sign rules of the readout forms of \Cref{sec:fw:model}. The paragraphs below prove
+them. In both tables, ``all'' stands for $\{-, 0, +\}$.
+
+\begin{table}[h]
+  \caption{Sign sets of common contributions: the signs that any number of changes of one sort can give a sum.
+  Removing items gives the signs of adding them, flipped, and a min pool follows the max pool with every sign
+  flipped. $\operatorname{sgn}[l, u]$ is the set of signs of the numbers in $[l, u]$.}
+  \label{tab:fw:signs}
+  \small
+  \begin{tabular}{@{}lccl@{}}
+    \toprule
+    Each item contributes & Add & \multicolumn{2}{c}{Replace} \\
+    \cmidrule(l){3-4}
+    & & any & restricted \\
+    \midrule
+    1 to a count & $\{0, +\}$ & all & $\{0\}$, same key \\
+    a value $\ge 0$ & $\{0, +\}$ & all & $\{0, +\}$, extension \\
+    & & & $\{0\}$, same length$^{*}$ \\
+    a value in $[l, u]$ & $\operatorname{sgn}[l, u]$ & all & $\{0\}$ if $l = u$ \\
+    $\pm$ a value to its key's bucket & per key$^{\dagger}$ & all$^{\dagger}$ & \\
+    a value to a max pool & $\{0, +\}$ & all & $\{0, +\}$, extension \\
+    \bottomrule
+  \end{tabular}
+
+  \smallskip
+  \raggedright\footnotesize
+  $^{*}$When the value is the item's length.
+  $^{\dagger}$Only on the buckets of the keys in $Q$, with the signs those keys give.
+\end{table}
+
+\begin{table}[h]
+  \caption{Sign rules of the readout forms: the signs of a feature's change, from the envelopes $E$ of the sums it
+  reads. The ratio needs $a \ge 0$, and $b > 0$ before and after the edit.}
+  \label{tab:fw:readouts}
+  \small
+  \begin{tabular}{@{}llc@{}}
+    \toprule
+    Readout & Formula & Signs of the change \\
+    \midrule
+    identity & $s_k$ & $E_k$ \\
+    presence & $[s_k > 0]$ & $\subseteq E_k \cup \{0\}$ \\
+    distinct count & $\#\{q : s_q > 0\}$ & $\boxplus_q \, (E_q \cup \{0\})$ \\
+    ratio & $a / b$ & $E_a \boxplus \big((-E_b) \cup \{0\}\big)$ \\
+    normalized bin & bin / total & as the ratio \\
+    any other & a function of $s_{K_j}$ & $\{0\}$ if every $E_k = \{0\}$, else all \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
 \paragraph{Envelopes from signatures.}
 Fix an operation $o$, an input $z \in F$, and a parameter $\theta$, and let $(I^-, I^+)$ be a delta of the edit that
 the signature contains: a combination of removals, additions, and replacements of the sorts it lists. For an additive

@@ -2,27 +2,28 @@
 % (theory without domain examples, D2; no tables or figures for now, D3/D4, the tables are backed up in
 % backup/framework-tables-2026-11-04.tex). Source of the math: docs/formalization.md (frozen). Proofs: _j_proofs.tex.
 % 2026-11-05: the toy example and the ties to real feature sets were cut (user); the pre-cut text is in
-% backup/framework-before-cuts-2026-11-05.tex, to refactor into Section 4 where useful.
+% backup/framework-before-cuts-2026-11-05.tex, to refactor into Section 4 where useful. The sign-rule tables moved to
+% the proofs appendix (_j_proofs.tex) the same day, and the prose had a readability pass (math unchanged).
 
 The feature mappings we study find pieces of their input, add up what each piece contributes to a set of running
-totals, and compute each feature by a formula over a few totals. We define this class of \emph{sum-then-readout
-extractors} (\Cref{sec:fw:model}) and describe an attacker's edit by the pieces it adds, removes, or changes. We then
-show when those pieces can be found from the positions the edit writes, without extracting the features of the edited
-object (\Cref{sec:fw:edits}). Two results follow. For a single edit, the change of every feature, side effects
-included, is computed exactly from a record the extractor writes while it runs (\Cref{sec:fw:side-effects}). For all
-edits a threat model allows, the direction in which each feature can move is computed soundly without applying any
-edit, so a detector that is monotone in these directions cannot be evaded by them (\Cref{sec:fw:directions}). The
-proofs are in Appendix~\ref{sec:fw:proofs}, and Appendix~\ref{sec:symbols} lists the notation.
+totals, and compute each feature by a formula over a few totals. \Cref{sec:fw:model} defines this class of
+\emph{sum-then-readout extractors}. \Cref{sec:fw:side-effects} describes an edit by the pieces it removes and adds,
+and shows that this description and a record the extractor writes while it runs give the exact change of every
+feature, side effects included, without extracting the features of the edited input. Many edits are given instead by
+the positions they write, and \Cref{sec:fw:edits} shows when the pieces they change can be found from those positions.
+\Cref{sec:fw:directions} moves from one edit to every edit a threat model allows. It computes, without applying any
+edit, the directions in which each feature can move, and a detector whose score cannot fall in those directions cannot
+be evaded by those edits. The proofs are in Appendix~\ref{sec:fw:proofs}, and Appendix~\ref{sec:symbols} lists the
+notation.
 
 \subsection{Sum-then-Readout Extractors}
 \label{sec:fw:model}
 
 % Spine: docs/framework-design.md, Section 11 (approved 2026-11-05). Notation: lowercase Greek for the maps of the
 % factorization (pi, sigma, rho, nu); calligraphic for the spaces they connect (Z, V, S, X); tau for kinds.
-The feature mappings we study compute their features in three stages. They find the pieces of the input they
-analyze, which we call \emph{items}; they add what each item contributes to a set of running totals, which we call
-\emph{sums}; and they compute each feature by a formula over a few sums, which we call a \emph{readout}. Each stage is
-a map, and the feature mapping is their composition:
+We call the pieces of the input that a feature mapping analyzes \emph{items}, the running totals to which each item
+contributes \emph{sums}, and the formula that computes a feature from a few sums its \emph{readout}. Each of the three
+stages is a map, and the feature mapping is their composition:
 \begin{equation}
   \label{eq:fw:factorization}
   \mathcal{Z} \xrightarrow{\;\pi\;} \mathcal{V} \xrightarrow{\;\sigma\;} \mathcal{S}
@@ -31,20 +32,21 @@ a map, and the feature mapping is their composition:
   \varphi = \rho \circ \sigma \circ \pi,
 \end{equation}
 where $\mathcal{V}$ holds the multisets of items and $\mathcal{S}$ the values of the sums
-(Definitions~\ref{def:fw:item}--\ref{def:fw:contributions}); a few features of a real extractor may be computed
-otherwise (Definition~\ref{def:fw:extractor}). The item map $\pi$ is the only stage that depends on the format of the
-input; $\sigma$ and $\rho$ are arithmetic. We separate the stages because an attacker's edit is simple to describe at the first, by the items it adds and removes, and hard to describe at the
-last, where one item can move many features.
-
+(Definitions~\ref{def:fw:item}--\ref{def:fw:contributions}). Only the item map $\pi$ depends on the format of the
+input; $\sigma$ and $\rho$ are arithmetic. We separate the stages because an attacker's edit is simple to describe at
+the first, by the items it adds and removes, and hard to describe at the last, where one item can move many features.
+A real extractor may compute a few of its features outside the three stages, and Definition~\ref{def:fw:extractor}
+allows for them.
 
 \definition[Items]
 \label{def:fw:item}
 {
-An input $z \in \mathcal{Z}$ is a finite sequence of elements; for a set $M$ of positions, $z[M]$ is the sequence of the elements at those positions, in order. A feature mapping has
-a finite set of item \emph{kinds}. An \emph{item} of $z$ is a pair $\iota = (\tau, M)$ of a kind $\tau$ and a nonempty
-set $M$ of positions of $z$, its \emph{members}; its \emph{content} is $z[M]$. The extractor finds a set $I(z)$ of
-items in each input. With $\mathcal{V}$ the set of finite multisets of kinds and contents, the \emph{item map}
-$\pi: \mathcal{Z} \to \mathcal{V}$ takes $z$ to the multiset of the kinds and contents of its items,
+An input $z \in \mathcal{Z}$ is a finite sequence of elements, and for a set $M$ of positions, $z[M]$ is the sequence
+of the elements at those positions, in order. A feature mapping has a finite set of item \emph{kinds}. An \emph{item}
+of $z$ is a pair $\iota = (\tau, M)$ of a kind $\tau$ and a nonempty set $M$ of positions of $z$, its \emph{members};
+its \emph{content} is $z[M]$. The extractor finds a set $I(z)$ of items in each input. With $\mathcal{V}$ the set of
+finite multisets of kinds and contents, the \emph{item map} $\pi: \mathcal{Z} \to \mathcal{V}$ takes $z$ to the
+multiset of the kinds and contents of its items,
 \begin{equation}
   \label{eq:fw:items}
   \pi(z) = \mset{(\tau, z[M]) : (\tau, M) \in I(z)}.
@@ -54,8 +56,8 @@ $\pi: \mathcal{Z} \to \mathcal{V}$ takes $z$ to the multiset of the kinds and co
 \noindent An item is what one pass of one of the extractor's loops reads: its kind says which loop, and its members
 say which elements the pass reads. Items of the same kind are processed by the same code, so a kind acts as a type,
 and the pair of an item's kind and content is a typed value (Appendix~\ref{sec:types}). The item map keeps what the
-items contain and forgets where they lie. Two items with the same kind and content are counted twice, and an item
-moved to other positions with its content unchanged is the same value of $\pi$.
+items contain and forgets where they lie. Two items with the same kind and content count twice, and moving an item
+to other positions without changing its content leaves $\pi(z)$ as it was.
 
 \definition[Sums]
 \label{def:fw:sums}
@@ -72,11 +74,11 @@ leaves unchanged. Three monoids occur:
   \end{array}
 \end{equation}
 The \emph{sum space} is the product $\mathcal{S} = \prod_{k \in K} \mathbb{M}_k$, with the operation $\oplus$ that
-applies each sum's operation to its entry. Its neutral element holds the neutral element of every sum. Max and
-min pools are together called \emph{pools}: each keeps the largest or the smallest value it receives.
+applies each sum's operation to its entry. Its neutral element holds the neutral element of every sum. Max and min
+pools are together called \emph{pools}; each keeps the largest or the smallest value it receives.
 }
 
-\noindent The set $K$ may be large, with one count for each key of an open vocabulary.
+\noindent The set $K$ may be large, since an extractor can keep one count for every key of an open vocabulary.
 
 \definition[Contributions]
 \label{def:fw:contributions}
@@ -92,21 +94,23 @@ with each element counted as often as it occurs, and takes the empty multiset to
 of} $z$ are $\mathbf{s}(z) = \sigma(\pi(z))$.
 }
 
-\noindent A contribution is what one item adds to the running totals, and it depends only on the item's kind and
-content, not on the rest of the input. The sums of $z$ are the totals after every item has been added. They are not a
-vector: their entries lie in different monoids, and a pool cannot be subtracted from.
+\noindent A contribution is what one item adds to the running totals. It depends only on the item's kind and content,
+never on the rest of the input. The sums of $z$ are the totals once every item has been added. They do not form a
+vector, since their entries lie in different monoids and a pool cannot be subtracted from.
 
-Because every $\mathbb{M}_k$ is associative and commutative, $\sigma$ does not depend on the order in which the
-extractor visits the items, and the fold of the union of two multisets is the combination of their folds:
+Because every $\mathbb{M}_k$ is associative and commutative, the fold does not depend on the order in which the
+extractor visits the items, and folding the union of two multisets combines their folds:
 \begin{equation}
   \label{eq:fw:homomorphism}
   \sigma(A \uplus B) = \sigma(A) \oplus \sigma(B).
 \end{equation}
 In algebraic terms, $\mathcal{V}$ is the free commutative monoid on the kinds and contents, and $\sigma$ is the unique
 homomorphism from it to $\mathcal{S}$ that agrees with the contribution functions on single items
-(Appendix~\ref{sec:types}). Additive sums and pools differ in whether the removal of an item can be undone.
-$(\mathbb{R}, +)$ is a group, in which every value has an inverse, so removing an item from an additive sum is undone by subtracting its contribution, and the new total follows from the old total and the item.
-The maximum and the minimum have no inverse, which is why the record we build keeps every item, and not only the totals.
+(Appendix~\ref{sec:types}). Additive sums and pools differ in one respect that matters below: whether an item's
+contribution can be taken out again. $(\mathbb{R}, +)$ is a group, in which every value has an inverse, so removing an
+item from an additive sum means subtracting its contribution, and the new total follows from the old total and the
+item. The maximum and the minimum have no inverse, which is why the record we define below keeps every item, and not
+only the totals.
 
 \definition[Readouts]
 \label{def:fw:readout}
@@ -117,16 +121,15 @@ $\mathbf{b}$ agree on $K_j$. The readouts of all $n$ features form the map $\rho
 $\mathcal{S}$ to $\mathcal{X}$.
 }
 
-\noindent Readouts are where the arithmetic that cannot be split over items takes place. A total, a count, or a
-maximum can be computed over parts of the input and combined, which Gray et al.\ call a \emph{distributive}
-aggregate. An average cannot, but it is a fixed function of two distributive aggregates, a total and a count, which
-they call an \emph{algebraic} aggregate~\cite{gray1997data}. A readout with a small support turns sums into an
-algebraic aggregate in this sense, and the formulas that feature sets compute are of this form: the identity, which
-returns a sum or a pool; the ratio of two sums; a bin of a histogram divided by the histogram's total; the entropy of
-a histogram; a standard deviation, computed from a count, a total, and a total of squares; and a presence bit, which
-is 1 when a count is positive. The support may also be a whole family of sums, as for the number of distinct keys
-with a positive count. The results of \Cref{sec:fw:side-effects} need nothing of a readout beyond being a function of
-its support; \Cref{sec:fw:directions} adds one sign rule for each of these forms.
+\noindent Readouts hold the arithmetic that cannot be split over items. A total, a count, or a maximum can be computed
+over parts of the input and the parts combined, and Gray et al.\ call such an aggregate \emph{distributive}. An
+average cannot, but it is a fixed function of two distributive aggregates, a total and a count, and Gray et al.\ call
+it \emph{algebraic}~\cite{gray1997data}. A readout with a small support computes an algebraic aggregate from sums, and
+the formulas that feature sets compute have this form: the identity, which returns a sum or a pool; the ratio of two
+sums; a bin of a histogram divided by the histogram's total; the entropy of a histogram; a standard deviation, from a
+count, a total, and a total of squares; and a presence bit, which is 1 when a count is positive. A support can also be
+a whole family of sums, as for the number of distinct keys whose count is positive. \Cref{sec:fw:side-effects} needs
+nothing of a readout beyond its support, and \Cref{sec:fw:directions} gives each of these forms a sign rule.
 
 \definition[Sum-then-readout extractor]
 \label{def:fw:extractor}
@@ -141,11 +144,11 @@ holds on the features in $J$:
 \end{equation}
 }
 
-\noindent The features in $J$ are \emph{modeled} and the others \emph{residual}. A residual feature is one that the
-mapping computes outside the three stages. Every result in this section lets the residual features
-change arbitrarily. Instrumenting an extractor means writing down its items, contributions, and readouts, so that in
-the same pass that computes the features it records the \emph{item table} of $z$: every item in $I(z)$ with its kind,
-its members, and its contribution.
+\noindent The features in $J$ are \emph{modeled} and the others \emph{residual}. The mapping computes a residual
+feature outside the three stages, and every result in this section lets the residual features change arbitrarily. To
+\emph{instrument} an extractor is to write down its items, contributions, and readouts, so that the pass that computes
+the features also records the \emph{item table} of $z$: every item in $I(z)$ with its kind, its members, and its
+contribution. The rest of this section computes from the item table.
 
 \remark[Granularity]
 \label{rem:fw:granularity}
@@ -154,8 +157,8 @@ Every feature mapping is a sum-then-readout extractor over all its features if t
 give that item one kind, let its contribution place each feature's value in an additive sum of its own, and let every
 readout be the identity. The definition therefore does not restrict what a mapping computes; it describes how finely
 the computation splits into items. With one item, every edit changes the only item there is, and the results of this
-section say no more than extracting the features again would. Finer items let them say more. The instrumented
-extractors of \Cref{sec:instances} use the items the extractor's own loops visit.
+section say no more than extracting the features again would. Finer items let them say more, and the instrumented
+extractors of \Cref{sec:instances} use the items that the extractor's own loops visit.
 }
 
 \subsection{Edits and Their Side Effects}
@@ -163,9 +166,8 @@ extractors of \Cref{sec:instances} use the items the extractor's own loops visit
 
 % Spine: docs/framework-design.md, Section 12 (approved 2026-11-05); rewritten after the user's second reading.
 An edit applies a transformation $T \in \mathcal{T}$ to an input $z$ and gives $z' = T(z)$. We describe an edit by the
-items it removes and adds, and show that this description, together with the item table of $z$, determines the sums
-and the modeled features of $z'$ exactly, without extracting them. \Cref{sec:fw:directions} applies the same computation to every edit a threat model
-allows.
+items it removes and adds, and show that this description and the item table of $z$ determine the sums and the
+modeled features of $z'$ exactly, without extracting them.
 
 \definition[Item delta]
 \label{def:fw:delta}
@@ -180,15 +182,15 @@ where $-$ removes each element of $I^-$ once for each time it occurs there. The 
 those in $I^+$ are \emph{added}.
 }
 
-\noindent A delta records kinds and contents but not positions. An item that moves with its content unchanged is in
+\noindent A delta records kinds and contents, not positions. An item that moves without changing its content is in
 neither part, and an item whose content changes is one removal and one addition. The features lose nothing by this,
-since they depend on the input only through its items (Definition~\ref{def:fw:extractor}). Positions still matter in
-two ways: some are stored as content, such as an offset in a table entry, and others decide which items the extractor
-finds, which \Cref{sec:fw:edits} takes up. A delta also need not be the smallest one, since an edit may list an
-unchanged item as removed and added back.
+since they see the input only through its items (Definition~\ref{def:fw:extractor}). Positions still matter in two
+ways: some are stored as content, such as an offset in a table entry, and others decide which items the extractor
+finds, which \Cref{sec:fw:edits} takes up. A delta need not be the smallest one, since an edit may list an unchanged
+item as both removed and added.
 
-Many transformations are stated by the items they change, and such an edit comes with a delta, which its definition
-computes from $z$. Edits given by the elements they write are the subject of \Cref{sec:fw:edits}.
+Many transformations are stated by the items they change, and their definitions give the delta on each input.
+\Cref{sec:fw:edits} derives the delta of an edit that is given instead by the elements it writes.
 
 \proposition[Exact side effects]
 \label{prop:fw:side-effects}
@@ -204,166 +206,156 @@ item of $I^-$ or $I^+$ has a contribution other than the neutral element on a su
 }
 
 \noindent In words, the sums of the edited input are the old sums with the contributions of the removed items taken
-out and those of the added items put in, and its features are the readouts of these sums. The kept items occur
-in both inputs with the same kinds and contents, and a contribution depends only on these
-(Definition~\ref{def:fw:contributions}), so the kept items contribute the same to both inputs. Since the fold does not
-depend on the order of the items, it can combine their contributions first and those of the removed or added items
-afterwards. An additive sum takes a removed item out by subtraction, which is part (i), the delta rule of
-incremental view maintenance~\cite{gupta1995maintenance,koch2014dbtoaster}. A pool cannot. The maximum of 5 and 3 and
-the maximum of 5 and 5 are both 5, but removing a 5 leaves 3 in the first case and 5 in the second, so part (ii)
-recomputes a pool over the kept and the added items, unless nothing was removed. A feature whose readout sees
-none of the changed contributions keeps its value, which is part (iii). The proofs are in
-Appendix~\ref{sec:fw:proofs}.
+out and those of the added items put in, and its modeled features are the readouts of these sums. The kept items have
+the same kinds and contents in both inputs, so they contribute the same to both, and since the fold ignores order, it
+can combine their contributions first and the others afterwards. An additive sum takes out a removed item by
+subtraction, which gives part (i), the delta rule of incremental view
+maintenance~\cite{gupta1995maintenance,koch2014dbtoaster}. A pool cannot. The maximum of 5 and 3 and the maximum of 5
+and 5 are both 5, but removing a 5 leaves 3 in the first case and 5 in the second, so part (ii) recomputes a pool over
+the kept and the added items, unless nothing was removed. Part (iii) holds because a feature whose readout sees none of
+the changed contributions keeps its value.
 
-The result is exact, and not an estimate, because Definition~\ref{def:fw:extractor} defines the class by this
-computation: the extractor's value of a modeled feature is the readout of the folded contributions, so updating the
-sums and applying the readouts returns what extracting the features of $z'$ would return. Nothing is extracted from
-$z'$, and an edit stated in items need not even be carried out, since its delta suffices. Extraction can
-be expensive and an edit usually changes few items, so the update may also be cheaper. The side effects of an attack
-that aimed at the change $\boldsymbol{\delta}^*$ (\Cref{sec:background}) are
-$\boldsymbol{\eta} = \varphi(z') - \varphi(z) - \boldsymbol{\delta}^*$, so they are exact on the modeled features too.
-The proposition says nothing about the residual features.
+The result is exact, not an estimate, because Definition~\ref{def:fw:extractor} defines the class by this
+computation. A modeled feature's value is the readout of the folded contributions, so updating the sums and applying
+the readouts returns what extracting the features of $z'$ would. Nothing is extracted from $z'$, and an edit stated in
+items need not even be applied, since its delta suffices. Extraction can be expensive and an edit usually changes few
+items, so the update can also be cheaper. The side effects of an attack that aimed at the change
+$\boldsymbol{\delta}^*$ (\Cref{sec:background}) are
+$\boldsymbol{\eta} = \varphi(z') - \varphi(z) - \boldsymbol{\delta}^*$, so they too are exact on the modeled features.
+On the residual features the proposition says nothing.
 
 The same reasoning applies when only the kinds of the changed items are known, and not their contents. An edit that
 only adds items cannot lower an additive sum whose contributions are never negative, such as a count, whatever the
-added items contain. \Cref{sec:fw:directions} derives such statements for the operations of a threat model.
+added items contain. \Cref{sec:fw:directions} derives statements of this sort for every operation of a threat model.
 
 \subsection{Edits Given as Writes}
 \label{sec:fw:edits}
 
 % Spine: docs/framework-design.md, Section 13 (approved 2026-11-05 with the recommendations Q1-Q4).
-Many transformations are given by the elements they write rather than by the items they change. For one such edit
-the edited input $z'$ is at hand, but Proposition~\ref{prop:fw:side-effects} needs its delta. For a family of edits,
-there is not even a single $z'$. This subsection shows when the delta follows from the item table of $z$, the
-positions an edit writes, and the new elements near them. It is the only part of the framework that depends on the
-input format, and the format enters through two sets of positions per kind, which the instrumentation provides. The
-\emph{written set} $W$ of an edit is the set of positions at which $z$ and $z'$ differ, including the positions that
-exist in only one of them. Overwriting and appending have small written sets; inserting an element in the middle
+Many transformations are given by the elements they write, not by the items they change. For one such edit, the edited
+input $z'$ is at hand, but Proposition~\ref{prop:fw:side-effects} needs its delta, and for a family of edits there is
+not even a single $z'$. This subsection shows when the delta follows from the item table of $z$, the positions the
+edit writes, and the new elements near them. It is the only part of the framework that depends on the input format,
+which enters through two sets of positions per kind that the instrumentation provides.
+
+The \emph{written set} $W$ of an edit is the set of positions at which $z$ and $z'$ differ, including the positions
+that exist in only one of them. Overwriting and appending have small written sets. Inserting an element in the middle
 moves every element after it, so its written set runs to the end of the input.
 
-A write can change items in three ways. It can change the content of items whose members it writes, and these items
-are listed in the item table with their members, so they can be read again from $z'$. It can write an element that the
+A write can change items in three ways. It can change the content of items whose members it writes, and since the
+item table lists these items with their members, they can be read again from $z'$. It can write an element that the
 extractor reads to decide where items lie, such as a count, an offset, or a length, and then items anywhere in the
-input may appear, vanish, or move. Or it can change content that the extractor scans for items, so that an
-item grows, splits, or joins its neighbor. Changes of the second sort can reach any part of the input and
-must be ruled out; changes of the third sort stay near the write and can be bounded.
+input may appear, vanish, or move. Or it can change content that the extractor scans for items, so that an item grows,
+splits, or merges with its neighbor. Changes of the second sort can reach any part of the input and must be ruled out.
+Changes of the third sort stay near the write and can be bounded. The next definition gives each kind one set of
+positions for each purpose. We say that an item \emph{lies within} a set of positions if all its members do.
 
 \definition[Local kinds]
 \label{def:fw:local}
 {
-A kind $\tau$ is \emph{local} if it has, for every input $z$, a set $L_\tau(z)$ of \emph{structure positions}, and for
-every set $W$ of positions a \emph{margin} $\mu_\tau(z, W)$, a set of positions computable from $z$ and $W$ that grows
-with $W$ and contains $W$ and the members of every item of kind $\tau$ that $W$ meets, such that every edit of $z$
-whose written set $W$ misses $L_\tau(z)$ satisfies two conditions. (i) The items of kind $\tau$ of $z$ and of $z'$
-whose members do not all lie in the margin are the same. (ii) The items of kind $\tau$ of $z'$ whose members lie in the
-margin depend only on the elements of $z'$ at the positions of the margin. The kind has a \emph{fixed layout} if, in
-addition, its items in $z'$ have the same members as its items in $z$.
+A kind $\tau$ is \emph{local} if, for every input $z$, it has a set $L_\tau(z)$ of \emph{structure positions} and, for
+every set $W$ of positions, a \emph{margin} $\mu_\tau(z, W)$, a set of positions that is computable from $z$ and $W$,
+grows with $W$, and contains $W$ and the members of every item of kind $\tau$ that $W$ meets, such that every edit of
+$z$ whose written set $W$ misses $L_\tau(z)$ satisfies two conditions:
+(i) the items of kind $\tau$ that do not lie within the margin are the same in $z$ and in $z'$;
+(ii) the items of kind $\tau$ of $z'$ that lie within the margin depend only on the elements of $z'$ on the margin.
+The kind has a \emph{fixed layout} if, in addition, its items in $z'$ have the same members as its items in $z$.
 }
 
 \noindent The structure positions of a kind are usually the elements the extractor reads to find its items, and the
-margin is where the write can change them. A kind found through fields has a fixed layout, and its margin is $W$ with
-the members of the items $W$ meets. For a kind found by scanning for maximal runs of elements of some class, the margin extends $W$ on each side to the nearest
-element of $z$ that is outside the class and outside $W$; since that element is unchanged in $z'$, no run crosses it.
-For windows of $n$ consecutive elements, the margin extends $W$ by $n - 1$ elements on each side. These margins are the
-damage regions on which incremental parsers re-run~\cite{wagner1998efficient}. Data that runs to the end of the input
-changes its members whenever the edit writes past the old end, so its margin contains it in that case. Every kind is local with all positions as its structure positions, since no nonempty written
-set then misses them, just as every extractor is a sum-then-readout extractor with one item
-(Remark~\ref{rem:fw:granularity}). The definition asks how few positions suffice, and a kind whose items the
-instrumentation cannot find again from a margin keeps its members among its structure positions.
+margin is the region in which a write can change them. A kind found through fields has a fixed layout, and its margin
+is $W$ with the members of the items $W$ meets. For a kind found by scanning for maximal runs of elements of some
+class, the margin extends $W$ on each side to the nearest element of $z$ that lies outside both the class and $W$.
+That element is unchanged in $z'$, so no run crosses it. For windows of $n$ consecutive elements, the margin extends
+$W$ by $n - 1$ elements on each side. These margins are the damage regions that incremental parsers
+re-parse~\cite{wagner1998efficient}. Data that runs to the end of the input changes its members whenever an edit
+writes past the old end, so in that case its margin contains it.
+
+Every kind is local if all positions are its structure positions, since no nonempty written set misses them, just as
+every extractor is a sum-then-readout extractor with a single item (Remark~\ref{rem:fw:granularity}). What the
+definition asks is therefore how few structure positions suffice. A kind whose items the instrumentation cannot find
+again from a margin keeps its members among its structure positions.
 
 \lemma[Localization]
 \label{lem:fw:localization}
 {
-Let $\tau$ be a local kind and let an edit take $z$ to $z'$ with a written set $W$ that misses $L_\tau(z)$.
-(a) The items of kind $\tau$ of $z'$ are those of $z$, except that the items whose members lie in
-$\mu_\tau(z, W)$ are replaced by the items of kind $\tau$ that the elements of $z'$ on the margin determine. If $W$
-misses the structure positions of every kind, removing the contents of the replaced items and adding those of their
-replacements is a delta of $(z, z')$, and the item table of $z'$, members included, follows from the item table of
-$z$, $W$, and the elements of $z'$ on the margins.
-(b) Let a family of edits of $z$ write only within a set $\hat{W}$ that misses $L_\tau(z)$. Then each edit of the
-family removes only items of kind $\tau$ whose members lie in $\mu_\tau(z, \hat{W})$ and adds only items of kind $\tau$
-whose members lie there, and it keeps the number of items of the kind if the kind has a fixed layout.
+Let $\tau$ be a local kind, and let an edit take $z$ to $z'$ with a written set $W$ that misses $L_\tau(z)$.
+(a) The items of kind $\tau$ of $z'$ are those of $z$, except that the items that lie within $\mu_\tau(z, W)$ are
+replaced by the items of kind $\tau$ that the elements of $z'$ on the margin determine. If $W$ misses the structure
+positions of every kind, removing the contents of the replaced items and adding those of their replacements is a
+delta of $(z, z')$, and the item table of $z'$, members included, follows from the item table of $z$, $W$, and the
+elements of $z'$ on the margins.
+(b) Let a family of edits of $z$ write only within a set $\hat{W}$ that misses $L_\tau(z)$. Then every edit of the
+family removes and adds only items of kind $\tau$ that lie within $\mu_\tau(z, \hat{W})$, and if the kind has a fixed
+layout, it keeps the number of items of the kind.
 }
 
-\noindent Outside the margin, the edit writes nothing the extractor reads to find items of the kind, and no item of
-the kind can reach across the edge of the margin, so the items there are the same in both inputs, with the same
-contents, since their members miss $W$. Inside the margin, $z'$ alone decides the items, so reading the margin of $z'$
-again finds them. Part (b) follows from (a) because every written set of the family lies in $\hat{W}$ and margins grow
-with the written set. The delta of (a) need not be the smallest, since an item inside a margin may come back
-unchanged, and Proposition~\ref{prop:fw:side-effects} does not need it to be. Part (a) also gives the new items'
-members, which a delta does not record, so a sequence of writes is followed by updating the item table one edit at a
-time. Part (b) needs neither the content of the writes nor any edited input: it bounds, from the item table of $z$
-alone, which items a whole family of edits can remove or add, which is what \Cref{sec:fw:directions} turns into
-directions. The proofs are in Appendix~\ref{sec:fw:proofs}.
+\noindent Outside the margin, the edit writes nothing the extractor reads to find items of the kind, and no item can
+reach across the margin's edge, so the items there are the same in both inputs. Their members miss $W$, so their
+contents are the same too. Inside the margin, $z'$ alone decides the items, so reading the margin of $z'$ again finds
+them. Part (b) follows from (a), because every written set of the family lies in $\hat{W}$ and margins grow with the
+written set.
+
+Part (a) gives the delta of a single write, and also the members of the new items, which a delta does not record, so
+a sequence of writes is handled by updating the item table one edit at a time. This delta need not be the smallest,
+since an item inside a margin may come back unchanged, and Proposition~\ref{prop:fw:side-effects} does not need it to
+be. Part (b) needs neither the content of the writes nor any edited input. It bounds, from the item table of $z$
+alone, which items a whole family of edits can remove or add, and \Cref{sec:fw:directions} turns this bound into
+directions.
 
 An edit whose written set meets the structure positions of a kind can change the items of that kind anywhere, and the
-lemma says nothing about them; for the other kinds it still applies. Such an edit is handled when it comes with its
-delta, as an edit stated in items does; if a later edit is given as writes, it also needs the members of the items the
-first one added, which such an edit states along with their contents. An edit that comes with no delta is flagged, and the kinds
-whose structure positions it writes may change arbitrarily. Whether an edit is flagged is decided by comparing $W$
-with the structure positions in the item table, which needs no judgment, and the answer depends on the input.
-\noindent This dependence on the input is why the directions of \Cref{sec:fw:directions} hold over a population of
-inputs and not over all of them.
+lemma says nothing about them, although it still applies to the other kinds. Such an edit is handled when it comes
+with its delta, as an edit stated in items does. A later edit given as writes then also needs the members of the items
+the first one added, so an edit stated in items states their members along with their contents. An edit that comes
+with no delta is flagged, and the kinds whose structure positions it writes may change arbitrarily. Whether an edit is
+flagged is decided by comparing $W$ with the structure positions in the item table, which takes no judgment. The
+answer depends on the input, which is why the directions of \Cref{sec:fw:directions} hold over a population of inputs
+and not over all of them.
 
 \subsection{Sound Directions}
 \label{sec:fw:directions}
 
 % Spine: docs/framework-design.md, Section 14 (Q1-Q4 as recommended, 2026-11-05).
-A detector has to hold against every edit the attacker may make, on every input it will face, and not against one edit
-of one input. We describe the attacker's edits by operations. An \emph{operation} $o$ is a family of edits
-$T_{o,\theta}$, indexed by a parameter $\theta$ from a domain $\Theta_o(z)$ that may depend on the input. A \emph{threat model} $\mathcal{M}$ is a finite catalogue $O$ of
-operations, and it fixes the transformations of \Cref{sec:background}: $\mathcal{T}$ is the set of finite sequences of
-operation instances, and $\mathcal{R}(z)$ is what they reach. Whether an operation preserves the object's behavior or
-plausibility belongs to $\Gamma$ and is an input to the model. The results of this subsection hold over a
-\emph{population} $F \subseteq \mathcal{Z}$ of inputs, because whether an edit writes a structure position depends on
-the input (\Cref{sec:fw:edits}). The population is \emph{closed} under $\mathcal{M}$ if no operation takes an input of
-$F$ outside $F$.
+A detector has to hold against every edit the attacker may make, on every input it will face, not against one edit of
+one input. We describe the attacker's edits by operations. An \emph{operation} $o$ is a family of edits
+$T_{o,\theta}$, indexed by a parameter $\theta$ from a domain $\Theta_o(z)$ that may depend on the input. A
+\emph{threat model} $\mathcal{M}$ is a finite catalogue $O$ of operations. It fixes the transformations of
+\Cref{sec:background}: $\mathcal{T}$ is the set of finite sequences of operation instances, and $\mathcal{R}(z)$ is
+the set of feature vectors they reach. Whether an operation preserves the object's behavior or plausibility is
+decided by $\Gamma$, which is an input to the model.
 
-Proposition~\ref{prop:fw:side-effects} turns a delta into the change of every sum. For an operation we need less: not
-the change, only its sign, but over all of the operation's edits at once. The \emph{signature} $\Delta_o(F)$ of $o$
-over $F$ lists, for each kind, the sorts of change that the deltas of its edits on inputs of $F$ can make: \emph{add}
-items of the kind, \emph{remove} them, or \emph{replace} an item by another of the same kind. Each sort may restrict
-the contents, to any content, to keys from a set $Q$, to the same length as the replaced item, or to an extension of
-its content. A replacement is one removal paired with one addition, and we keep the pair because its effect is often
-smaller than the effects of its parts: an item rewritten in place still adds 1 to the count of its kind, so the count
-does not move, while a removal and an addition taken separately could move it either way. An operation stated in
-items comes with its signature. For an operation given as writes, Lemma~\ref{lem:fw:localization}(b) gives one on each
-input of $F$, and the signature over $F$ is their union, in which a kind whose structure positions the operation
-writes on some input may be added, removed, and replaced with any content. No edit is applied.
+Whether an edit writes a structure position depends on the input (\Cref{sec:fw:edits}), so the results of this
+subsection hold over a \emph{population} $F \subseteq \mathcal{Z}$ of inputs. The population is \emph{closed} under
+$\mathcal{M}$ if no operation takes an input of $F$ outside $F$.
+
+Proposition~\ref{prop:fw:side-effects} turns one delta into the change of every sum. For an operation we ask for less,
+only the sign of the change, but over all of its edits at once. The \emph{signature} $\Delta_o(F)$ of $o$ over $F$
+lists, for each kind, the sorts of change that the deltas of the operation's edits on inputs of $F$ can make:
+\emph{add} items of the kind, \emph{remove} them, or \emph{replace} an item by another of the same kind. A sort may
+restrict the contents: to any content, to keys from a set $Q$, to the same length as the replaced item, or to an
+extension of its content. A replacement is a removal paired with an addition. We keep the pair because it often moves
+a sum less than its parts do: an item rewritten in place still adds 1 to the count of its kind, so the count does not
+move, while a removal and an addition taken separately could move it either way.
+
+An operation stated in items comes with its signature. For an operation given as writes,
+Lemma~\ref{lem:fw:localization}(b) gives a signature on each input of $F$, and the signature over $F$ is their union.
+On an input where the operation writes the structure positions of a kind, that kind may be added, removed, and
+replaced with any content. In both cases no edit is applied.
 
 A \emph{sign set} is a subset of $\{-, 0, +\}$, and $-A$ flips every sign in $A$. The \emph{sign sum} $A \boxplus B$
-is the set of signs that $a + b$ can have when $a$ has a sign in $A$ and $b$ a sign in $B$, so
+is the set of signs that $a + b$ can have when $a$ has a sign in $A$ and $b$ a sign in $B$; for instance,
 $\{0, +\} \boxplus \{0\} = \{0, +\}$, while $\{+\} \boxplus \{-\} = \{-, 0, +\}$. Sign sets with this sum are the sign
 domain of abstract interpretation, which computes what a program can do from the signs of its
-values~\cite{cousot1977abstract}. Each sort of change gives each sum a sign set: the signs that any number of changes of
-that sort can give the sum. For an additive sum, the sign set follows from the contributions, by
-Proposition~\ref{prop:fw:side-effects}(i), and contributions in feature sets take few forms, which
-\Cref{tab:fw:signs} lists with their sign sets. The form of a hashed key needs one remark: the sums it can reach and
-the signs it gives them are those of the keys in $Q$, which enumerating $Q$ finds, so hashing does not hide from the
-attacker which features a chosen key moves. This answers Severi et al.'s remark that hashing resists
-targeting~\cite{severi2021explanation}. A count of the items whose content matches a pattern gains matches but loses none when an item is extended, provided the pattern does not look past the end
-of a match.
+values~\cite{cousot1977abstract}. Each sort of change gives each sum a sign set: the signs that any number of changes
+of that sort can give the sum. For an additive sum, this set follows from the contributions by
+Proposition~\ref{prop:fw:side-effects}(i). The contributions found in feature sets take few forms, and
+\Cref{tab:fw:signs} in Appendix~\ref{sec:fw:proofs} lists them with their sign sets.
 
-\begin{table*}[t]
-  \caption{The signs a sort of change gives a sum: the signs that any number of changes of the sort can give it.
-  Removal gives the signs of addition flipped. A min pool follows the max pool with every sign flipped.}
-  \label{tab:fw:signs}
-  \small
-  \begin{tabular}{@{}p{0.3\textwidth}p{0.28\textwidth}p{0.36\textwidth}@{}}
-    \toprule
-    An item contributes & Add & Replace \\
-    \midrule
-    1 to a count, or to the count of its key & $\{0, +\}$ & $\{0\}$ if the key is kept, else every sign \\
-    a value $\ge 0$ (a length, a size, a histogram bin) & $\{0, +\}$ & every sign; $\{0, +\}$ under extension; $\{0\}$
-      for a length under the same length \\
-    $\pm$ a value to the bucket its key hashes to & the buckets and signs of the keys in $Q$ & every sign on those
-      buckets \\
-    a value in a declared range $[l, u]$ & $\{0, +\}$ if $l \ge 0$, $\{-, 0\}$ if $u \le 0$, else every sign & every
-      sign, $\{0\}$ if $l = u$ \\
-    a value to a max pool & $\{0, +\}$ & $\{0, +\}$ under extension of the value it reads, else every sign \\
-    \bottomrule
-  \end{tabular}
-\end{table*}
+Hashing needs one remark. When an item contributes to the bucket its key hashes to, the sums it can reach and the
+signs it gives them are those of the keys in $Q$, which enumerating $Q$ finds. Hashing therefore does not hide from
+the attacker which features a chosen key moves, which answers Severi et al.'s remark that hashing resists
+targeting~\cite{severi2021explanation}. Patterns behave well under extension: a count of the items whose content matches a pattern
+gains matches but loses none when an item is extended, provided the pattern does not look past the end of a match.
 
 \definition[Envelopes and direction tables]
 \label{def:fw:directions}
@@ -378,40 +370,22 @@ fixed feature, lowers an up feature, or raises a down feature.
 \noindent The four directions are Incer et al.'s four cases, which they assign to each feature by
 hand~\cite{incer2018adversarially}. A sound direction table is a feature-space constraint in the sense of $\Omega$: it
 says which perturbations of $\varphi(z)$ the threat model cannot produce. We compute it in two steps, from the
-signature to the envelopes of the sums, and from the envelopes to the directions of the features, and write $E_k$
-for an envelope when the operation and the population are clear.
+signature to the envelopes of the sums, and from the envelopes to the directions of the features. We write $E_k$ for
+an envelope when the operation and the population are clear.
 
 The first step adds signs. An edit's delta combines changes of the sorts its signature allows, and the change of an
-additive sum is the total of what each change gives it, so its sign lies in the sign sum, over the sorts of change in
-the signature, of the sign sets of \Cref{tab:fw:signs}. A max pool has a coarser bound: it can only rise if every
-sort's sign set on it lies within $\{0, +\}$, since a maximum does not fall when values are only added or raised; it
-can only fall if every one lies within $\{-, 0\}$; and otherwise it can move either way. A min pool is the same with
-the signs flipped. Only signs are needed, so the pools need no item table here, unlike in
-Proposition~\ref{prop:fw:side-effects}(ii).
+additive sum is the total of what each change gives it. Its sign therefore lies in the sign sum, over the sorts in the
+signature, of their sign sets. A max pool gets a coarser bound. It can only rise if every sort's sign set on it lies
+within $\{0, +\}$, since a maximum does not fall when values are only added or raised; it can only fall if every set
+lies within $\{-, 0\}$; and otherwise it can move either way. A min pool is the same with the signs flipped. Because
+only signs are asked for, the pools need no item table here, unlike in Proposition~\ref{prop:fw:side-effects}(ii).
 
-The second step passes the envelopes through each readout, by the rules of \Cref{tab:fw:readouts}. The last rule
-holds for every readout, because a readout depends only on its support (Definition~\ref{def:fw:readout}); the others
-are sharper rules for the forms of \Cref{sec:fw:model}. The ratio is the one that is not monotone in its sums: it can
-rise only if its numerator can rise or its denominator can fall.
-
-\begin{table}[t]
-  \caption{The signs of a feature's change, from the envelopes $E$ of the sums its readout reads.}
-  \label{tab:fw:readouts}
-  \small
-  \begin{tabular}{@{}p{0.25\columnwidth}p{0.25\columnwidth}p{0.4\columnwidth}@{}}
-    \toprule
-    Readout & Formula & Signs of the change \\
-    \midrule
-    identity & $s_k$, a sum or a pool & $E_k$ \\
-    presence & $1$ if $s_k > 0$, else $0$ & within $E_k \cup \{0\}$ \\
-    distinct count & keys $q$ with $s_q > 0$ & $\boxplus_q \, (E_q \cup \{0\})$ \\
-    ratio & $a / b$, with $a \ge 0$, and $b > 0$ before and after & $E_a \boxplus \big((-E_b) \cup \{0\}\big)$ \\
-    normalized bin & a bin over the histogram's total & the ratio rule \\
-    any readout & a function of its support $K_j$ & $\{0\}$ if $E_k = \{0\}$ for every $k \in K_j$, else every
-      sign \\
-    \bottomrule
-  \end{tabular}
-\end{table}
+The second step passes the envelopes through the readouts. Each readout form of \Cref{sec:fw:model} has a simple sign
+rule, which \Cref{tab:fw:readouts} lists: the identity passes the envelope through, a presence bit moves with its
+count or not at all, and a ratio can rise only if its numerator can rise or its denominator can fall. A readout of any
+other form gets the rule that holds for every readout, since a readout depends only on its support
+(Definition~\ref{def:fw:readout}): its feature is fixed if no sum in the support can change, and may move either way
+otherwise.
 
 \theorem[Sound directions]
 \label{thm:fw:directions}
@@ -427,24 +401,21 @@ $\mathcal{R}(z)$ differs from $\varphi(z)$ only in the directions $D$ allows.
 }
 
 \noindent For one operation instance, the theorem rests on three facts: the sign of a total lies in the sign sum of
-the signs of its parts; a maximum over more or larger values is no smaller; and each readout rule holds. The ratio's
-follows from writing its new value as $a' = a + \alpha$ over $b' = b + \beta$, since
-$a'/b' - a/b = (\alpha b - a \beta)/(b b')$ has a positive denominator, $\alpha b$ has the sign of $\alpha$, and
-$-a\beta$ is zero or has the sign opposite to $\beta$. For a sequence of edits, closure keeps every intermediate input
-in $F$, so the statement for one instance applies at every step, and a feature that does not fall at any step does not
-fall along the sequence. Without closure, a sequence can leave $F$, and the table says nothing about the steps after
-that. The table is computed from the item tables of the inputs in $F$ and from the catalogue, for every feature at
-once, and applies no edit. What it takes besides the extractor are the signatures and the sign sets of the
-contributions, each a statement about one sort of change to one kind of item. In our instance, the sign sets come
-partly from the form of each contribution, since a count is never negative, and partly from the item tables of a
-corpus, such as the smallest value a kind contributes and the keys it uses (\Cref{sec:instances}). The proofs are in
-Appendix~\ref{sec:fw:proofs}.
+the signs of its parts, a maximum over more or larger values is no smaller, and each readout rule holds. For a
+sequence of edits, closure keeps every intermediate input in $F$, so the statement for one instance applies at every
+step, and a feature that falls at no step does not fall along the sequence. Without closure, a sequence can leave $F$,
+and after that the table says nothing.
+
+The table is computed for every feature at once, from the catalogue and the item tables of the inputs in $F$, and no
+edit is applied. Beyond the extractor, it takes only the signatures and the sign sets of the contributions, each a
+statement about one sort of change to one kind of item. In our instance, the sign sets come partly from the form of
+each contribution, since a count is never negative, and partly from the item tables of a corpus, such as the smallest
+value a kind contributes and the keys it uses (\Cref{sec:instances}).
 
 A sound table bounds where the attacker can move the feature vector, so a detector whose score cannot fall in those
 directions cannot be pushed below its threshold. Let $h: \mathcal{X} \to \mathbb{R}$ be a detector's malware score.
 Gimenez et al.\ prove that a detector is robust when the attacker's edits can only raise each feature and the score
-never falls as features rise~\cite{gimenez2025certifiably}, and a feature that can only fall is covered by negating
-it.
+never falls as features rise~\cite{gimenez2025certifiably}; a feature that can only fall is covered by negating it.
 
 \corollary[Robustness]
 \label{cor:fw:robustness}
