@@ -10,8 +10,8 @@ show when those pieces can be found from the positions the edit writes, without 
 object (\Cref{sec:fw:edits}). Two results follow. For a single edit, the change of every feature, side effects
 included, is computed exactly from a record the extractor writes while it runs (\Cref{sec:fw:side-effects}). For all
 edits a threat model allows, the direction in which each feature can move is computed soundly without applying any
-edit (\Cref{sec:fw:directions}), and a detector that is monotone in these directions cannot be evaded by them
-(\Cref{sec:fw:robustness}). The proofs are in Appendix~\ref{sec:fw:proofs}, and Appendix~\ref{sec:symbols} lists the notation.
+edit, so a detector that is monotone in these directions cannot be evaded by them (\Cref{sec:fw:directions}). The
+proofs are in Appendix~\ref{sec:fw:proofs}, and Appendix~\ref{sec:symbols} lists the notation.
 
 \subsection{Sum-then-Readout Extractors}
 \label{sec:fw:model}
@@ -555,6 +555,28 @@ contributions, each a statement about one sort of change to one kind of item. In
 partly from the form of each contribution, since a count is never negative, and partly from the item tables of a
 corpus, such as the smallest value a kind contributes and the keys it uses (\Cref{sec:instances}). The proofs are in
 Appendix~\ref{sec:fw:proofs}.
+
+A sound table bounds where the attacker can move the feature vector, so a detector whose score cannot fall in those
+directions cannot be pushed below its threshold. Let $h: \mathcal{X} \to \mathbb{R}$ be a detector's malware score.
+Gimenez et al.\ prove that a detector is robust when the attacker's edits can only raise each feature and the score
+never falls as features rise~\cite{gimenez2025certifiably}, and a feature that can only fall is covered by negating
+it.
+
+\corollary[Robustness]
+\label{cor:fw:robustness}
+{
+Let $D$ be sound for $\mathcal{M}$ over a population $F$ closed under $\mathcal{M}$, and let $h$ read no feature
+marked both and never fall when up features rise, down features fall, and fixed features stay. Then
+$h(\mathbf{x}') \ge h(\varphi(z))$ for every $z \in F$ and every $\mathbf{x}' \in \mathcal{R}(z)$. The same holds for a
+score that reads sums instead of features, since a sum under the identity readout is a feature, and
+Theorem~\ref{thm:fw:directions} gives it a direction.
+}
+
+\noindent A detected malware sample therefore stays detected under every sequence of edits the threat model allows,
+and a gradient-boosted tree trained with monotone constraints is such a score. Theorem~\ref{thm:fw:directions} makes
+this guarantee available for any threat model, because the table it needs is computed from the extractor for every
+feature, where Gimenez et al.\ chose 40 features by hand or learned a post-processing of the features from the attacks
+they observed~\cite{gimenez2025certifiably}.
 \begin{runex}
 Take as the population the toy inputs whose table points only within the input; neither operation below writes the
 table, and neither shortens the input, so the population is closed under both. Appending at most $B$ bytes adds bytes
@@ -566,26 +588,7 @@ numerator is fixed and whose denominator can rise, is down: the side effect of \
 every append. Overwriting any bytes outside the structure positions of the records adds, removes, and replaces
 strings, replaces bytes by bytes, which keeps the length of the input, and replaces records by records of the same
 length, read from their unchanged table entries. So $x_1$, $x_2$, and $x_3$ are both and $x_4$ is fixed. With both
-operations in the threat model, the union leaves $x_4$ down and the other three both.
+operations in the threat model, the union leaves $x_4$ down and the other three both. A score that reads only $x_4$
+and does not fall as $x_4$ falls cannot be lowered by any sequence of appends and overwrites, while
+Corollary~\ref{cor:fw:robustness} says nothing about a score that reads $x_1$, $x_2$, or $x_3$.
 \end{runex}
-
-\subsection{Robust Detectors}
-\label{sec:fw:robustness}
-
-Let $h: \mathcal{X} \to \mathbb{R}$ be a detector's malware score, whose value an evasion attack tries to lower.
-Gimenez et al.\ prove that a detector is robust when the attacker's edits can only raise each feature and the score
-never falls when features rise~\cite{gimenez2025certifiably}; a feature that can only fall is covered by negating it.
-With a computed direction table, robustness for a threat model becomes a corollary of Theorem~\ref{thm:fw:directions}.
-
-\corollary[Robustness]
-\label{cor:fw:robustness}
-{
-Let $D$ be sound for $\mathcal{M}$ over a population $F$ closed under $\mathcal{M}$, and let $h$ read no feature
-marked both and never fall when up features rise, down features fall, and fixed features stay. Then
-$h(\mathbf{x}') \ge h(\varphi(z))$ for every $z \in F$ and every $\mathbf{x}' \in \mathcal{R}(z)$.
-}
-
-\noindent A detected malware sample therefore stays detected under every sequence of edits the threat model allows.
-A gradient-boosted tree model trained with monotone constraints is such a score. What Theorem~\ref{thm:fw:directions}
-adds to Gimenez et al.'s route is the table itself, computed from the extractor for every feature instead of chosen by
-hand or kept from the attacks that were observed.

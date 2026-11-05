@@ -637,3 +637,20 @@ number of such changes can give the sum" (so repetition needs no notation); pool
 sort's set is within {0,+}, down if within {-,0}, else both), not the sign sum; keys are $Q$ (the symbol table's $K$
 collided with the sums); Table 1 is `table*`. Still to do downstream: §4's (R3)/(R4) and "precondition" wording, the §3
 lead's subsection order.
+
+## 15. §3.5 folded into §3.4 (decision, 2026-11-05)
+
+The user asked whether §3.5 (Robust Detectors) belongs in §3. Assessment: not as a subsection. It is about the
+detector, not a map of the extractor (it breaks the arc of §2); its result is Gimenez et al.'s Proposition 1 with our
+table plugged in, so a heading promises more than it holds; and what is ours (the table) belongs next to Theorem 1.
+It stays in §3 (not §5 or §4) because contribution 4 and Table 7's "not an empirical finding" need the guarantee
+stated as theory. **Decision (user): fold it into the end of §3.4.** Done the same day:
+
+- One paragraph after Theorem 1's explanation: what a sound table is for, $h$, Gimenez et al.'s result as fact,
+  Corollary 1 (label `cor:fw:robustness` kept), and a closer saying Theorem 1 makes the guarantee available for any
+  threat model because the table is computed (Gimenez et al.: 40 hand-picked features, or ERDALT's learned
+  post-processing). The corollary now covers **scores that read sums** (a sum under the identity readout is a
+  feature), which Table 7's sums rows need; the proof in `_j_proofs.tex` gains one sentence.
+- The toy example ends with one sentence on the corollary ($x_4$ down; a score on $x_1$-$x_3$ gets no guarantee).
+- `sec:fw:robustness` removed; the §3 lead's pointer dropped (the lead's subsection order is still the old one, an
+  open item). $h$ added to the symbol table.
