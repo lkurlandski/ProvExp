@@ -132,6 +132,12 @@ contradicts.
     most one pointer, in format-neutral verbs. Before showing a draft, read the rendered text (pdftotext) as the
     reader will. (§3.2, 2026-11-05)
 
+28. **Readable before reviewable; tables are not prose grids.** The user cannot give content feedback on prose that
+    is hard to get through, so a draft gets a readability pass before it is shown: one point per paragraph, short
+    sentences after long ones, "lies within" instead of "whose members all lie in", no repeated "the proofs are in".
+    A table cell holds a symbol or a short formula, never a clause; conditions go to footnotes. Lookup tables (sign
+    rules) belong in an appendix, with two sentences in the body. (§3, 2026-11-05)
+
 ## Procedure
 
 1. **Spine first, always.** One line per paragraph (its claim, its citations or numbers), agreed with the user before
