@@ -664,4 +664,129 @@ def extract(data: bytes) -> list[float]:
   {\footnotesize\color{gray} Incer et al., IWSPA 2018; Gimenez et al., IFIP SEC 2025.}
 \end{frame}
 
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Part V: wrap-up
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}{What is new, and what is borrowed}
+  \begin{columns}[T]
+    \begin{column}{0.48\textwidth}
+      \begin{block}{Borrowed}
+        \begin{itemize}
+          \item problem space (Pierazzi)
+          \item sum and max updates (databases)
+          \item sign reasoning (abstract interp.)
+          \item monotone detectors (Incer, Gimenez)
+        \end{itemize}
+      \end{block}
+    \end{column}
+    \begin{column}{0.48\textwidth}
+      \begin{exampleblock}{New}
+        \begin{itemize}
+          \item a model of security extractors
+          \item exact side effects, no re-extraction
+          \item changed items from raw writes
+          \item sound directions for every feature
+        \end{itemize}
+      \end{exampleblock}
+    \end{column}
+  \end{columns}
+  \vfill
+  \begin{center}
+    Prior work updates outputs for \emph{one known} change.\\
+    An attacker gives neither: raw bytes, and \emph{every} allowed edit.
+  \end{center}
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}{Where the theory stands}
+  \renewcommand{\arraystretch}{1.35}
+  \begin{center}
+    \begin{tabular}{@{}lll@{}}
+      \toprule
+      \textbf{Piece} & \textbf{Result} & \textbf{Status} \\
+      \midrule
+      The model & definitions & \good{rewritten} \\
+      One edit & exact side effects & drafted; statement still dense \\
+      Raw byte writes & changed items & \bad{being rebuilt} \\
+      All edits & sound directions & drafted, older notation \\
+      Detectors & robustness & drafted, older notation \\
+      \bottomrule
+    \end{tabular}
+  \end{center}
+  \vfill
+  \begin{center}
+    Proofs in the appendix. Not in this talk: the EMBER instance and the evaluation.
+  \end{center}
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}{Questions for you}
+  \begin{enumerate}
+    \setlength{\itemsep}{0.8em}
+    \item ``Exact'' holds by construction. Does it read as a result, or as a tautology?
+    \item Any extractor fits with one item. Does that weaken the model, or frame it?
+    \item Directions hold over a population, not every input. Acceptable?
+    \item Is the model itself a contribution, or only the vehicle for the results?
+  \end{enumerate}
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Backup
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\appendix
+
+\begin{frame}
+  \begin{center}
+    \Huge\textcolor{blue!50!black}{\textbf{Backup}}
+  \end{center}
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}{Backup: the model, formally}
+  \small
+  \begin{itemize}
+    \setlength{\itemsep}{0.5em}
+    \item \textbf{Items.} An item is $(\tau, M)$: a kind and a set of positions. $\pi(z)$ is the multiset of
+      $(\tau, z[M])$.
+    \item \textbf{Sums.} Each sum lives in $(\mathbb{R}, +, 0)$, $(\mathbb{R} \cup \{-\infty\}, \max, -\infty)$, or
+      $(\mathbb{R} \cup \{+\infty\}, \min, +\infty)$.
+    \item \textbf{Fold.} $\sigma(B) = \bigoplus_{(\tau, c) \in B} \nu_\tau(c)$, so
+      $\sigma(A \uplus B) = \sigma(A) \oplus \sigma(B)$.
+    \item \textbf{Readout.} $\rho_j$ depends only on a fixed set $K_j$ of sums.
+    \item \textbf{Class.} $\varphi_j = \rho_j \circ \sigma \circ \pi$ for every modeled feature $j \in J$.
+  \end{itemize}
+  \vfill
+  \begin{block}{Proposition 1 (exact side effects)}
+    Let $\pi(z') = (\pi(z) - I^-) \uplus I^+$ and $B = \pi(z) - I^-$. Then
+    $\mathbf{s}(z') = \sigma(B) \oplus \sigma(I^+)$; on additive sums,
+    $\mathbf{s}(z') = \mathbf{s}(z) + \sigma(I^+) - \sigma(I^-)$; and $\varphi_j(z') = \rho_j(\mathbf{s}(z'))$ for
+    $j \in J$.
+  \end{block}
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}{Backup: directions, formally}
+  \small
+  \textbf{Sign sum.} $A \boxplus B$: the signs $a + b$ can take, with $a$'s sign in $A$ and $b$'s in $B$.\\[0.6em]
+  \textbf{Ratio rule.} For $a / b$ with $a \ge 0$ and $b > 0$ before and after, the change has a sign in
+  $E_a \boxplus \big((-E_b) \cup \{0\}\big)$, since
+  \[
+    \frac{a + \alpha}{b + \beta} - \frac{a}{b} = \frac{\alpha b - a \beta}{b (b + \beta)}.
+  \]
+  \vfill
+  \begin{block}{Theorem 1 (sound directions)}
+    Apply the readout rules to envelopes containing the true ones over a population $F$, take the union over
+    operations, and mark residual features both. The table is sound over $F$; if $F$ is closed under the threat
+    model, it holds along every edit sequence.
+  \end{block}
+  \vfill
+  \begin{block}{Corollary (robustness)}
+    If the score reads no feature marked both and is monotone in the table's directions, then
+    $h(\mathbf{x}') \ge h(\varphi(z))$ for every $z \in F$ and $\mathbf{x}' \in \mathcal{R}(z)$.
+  \end{block}
+\end{frame}
+
 \end{document}
