@@ -39,6 +39,17 @@ point lands in the time it is on screen. The source of the content is the manusc
    wildcard (it trips a safety prompt). Check for wrapped one-liners, collisions in TikZ labels, crowded columns, overflow at the bottom.
 5. Report briefly what each slide says; flag choices the user may push back on.
 
+## Clean-up pass (after a deck or part is complete)
+
+Read the deck end to end as the audience would, then check:
+- **No claim twice** on neighboring slides (e.g., "same structure as EMBER" on both the toy and the code slide).
+- **Every toy entry follows from what the slides said.** A direction or number that needs an unstated rule gets the
+  rule (one gray line) or a toy definition that makes it follow.
+- **Color carries meaning:** red/alert = a problem or limitation, green = what works, blue = neutral. A "Next"
+  pointer is blue, not red.
+- **No overclaims** ("for free", "provably" where only "by construction" holds).
+- Column headers short; the setup of a worked example stated above the table, not packed into its headers.
+
 ## Layout conventions
 
 - Preamble: beamer 16:9, 11pt, default theme, blue frame titles, colored blocks (block / alertblock / exampleblock);
