@@ -1,7 +1,64 @@
-# Resume: ProvExp (after 2026-11-04, sessions 14 and 14b): the user's read of the rewritten §2-3; run 130; then choose the next work
+# Resume: ProvExp (after 2026-11-05, session 15): research track (Table 7 updated; next: the user's read, the sums row's beam cell, the scale-up budget)
 
-Two tracks ran in parallel on 2026-11-04. Start with whichever the user brings: their notes on §2-3 (writing track),
-or run 130 (research track). Ask if unclear.
+Two tracks run in parallel in separate sessions. This prompt is for the **research track**. The writing track (§2-3)
+continues in its own session (session 15 writing: `bfda3d8`, the user's review of §2-3.2 logged, `/paper-prose`
+lessons 21-25, a §3 structural proposal in `docs/framework-design.md`); its section below is kept from session 14b
+and that session updates it. Do not edit `manuscript/_c_background.tex`, `_d_framework.tex`, `_i_symbols.tex`,
+`docs/framework-*.md`, `docs/writing-spec.md`, or the `paper-prose` skill from the research track, and commit only
+your own files (`git status` first: the other session may have uncommitted work).
+
+## Research track (session 15): the user reads the new §5 passages; then the sums row, the scale-up budget, ERDALT
+
+### Where things stand
+
+- **Run 130 read** (`9f9cecb`): the beam search (5,000 candidates, M_full) evades run 125's adversarially trained
+  GBDT on 24/49 (49%; 8 / 17 / 24 at 200 / 1,000 / 5,000), all confirmed on re-extraction; 35 mismatches (pefile's two
+  unmodeled warning features), no LOST lines. Hypothesis ~20-25 held. The beam evades all 12 files of run 125's
+  twelve-operation greedy menu and all 6 of its append+add-section menu.
+- **Table 7 updated** (`08c8535`, `manuscript/_f_evaluation.tex`, `tab:eval:detectors`). User agreed: run 125's row
+  replaces run 122's. Adaptive column = the beam alone (no union across searches, user decision):
+
+  | Row | Adaptive | Other cells |
+  |---|---|---|
+  | unconstrained, 10% | --- | unchanged |
+  | unconstrained, full store | 51% (25/49) | unchanged |
+  | adversarial training (run 125) | 49% (24/49) | AUC 0.998, TPR 95.6%, 49/50, seen 12%, held-out 27% |
+  | PV, 4 attacks (10% model) | 68% (15/22) | unchanged |
+  | PV, 8 attacks (10% model) | 64% (14/22) | unchanged; the synthetic 77% is gone |
+  | ERDALT (new, run 128) | 80% (20/25) | AUC 0.881, TPR 61.1%, 25/50, seen 0%, held-out 92% |
+  | monotone, features | 0% | unchanged |
+  | monotone, sums | 0%, footnoted: greedy search (the beam has no routing to the sums store) | unchanged |
+
+  New footnotes: run 125's training attacks (two of PV's held-out four are trained on); ERDALT's port (output layer
+  also monotone, batch 256, epoch selected on validation). Table 7 has no synthetic cell left.
+- **§5 prose synced:** the adaptive attack's setup paragraph (§5.1) now describes the beam (three files kept, restarts
+  after three steps without a new best, 5,000 scored candidates, every kept file re-extracted); the PV paragraph
+  reports 15/22 and 14/22 and adds ERDALT (seen 0/25, held-out 23/25, beam 20/25; 89.7% of its learned layer's weight
+  on features the table shows lowerable, almost all moved both ways); a new adversarial-training paragraph (import
+  injection 22 -> 11 of 49, all eight attacks 27 -> 15, beam 24/49 vs 25/49) ending in the greedy-subset sentence.
+  §6's closing pointer now names ERDALT's learned layer. `make check` clean. **Not yet read by the user.**
+- Docs updated: `docs/status.md` (session-15 block), `PLAN.md` ("Next steps (2026-11-05, session 15)"),
+  `docs/paper-mock.md` (Table 3 measured), `docs/direction-A-summary.md`. Nothing pushed.
+
+### Next session, in order
+
+1. **Take the user's read of the new §5 passages** if they bring one. Invoke `/paper-prose` first (lesson 15: report,
+   don't narrate); log the reaction in `docs/writing-spec.md` only if the writing session is not using it at the same
+   time (ask). `make` and `make check` in `manuscript/`.
+2. **The sums row's beam cell: a routing plan first**, agreed with the user before code. The beam
+   (`scripts/a1_adaptive.py --search beam`, `beam_search`) scores thrember-space detectors only; the sums detector
+   reads the sums store (`src/provexp/featuresets/ember2024/sums.py`), and files outside the population go to the
+   unconstrained model. Expected result: 0% with a largest score drop of exactly 0.0 (by construction), so the point
+   is consistency with the other cells, not new evidence; weigh it against cost. Then `run/131`, reading `NUM_WORKERS`.
+3. **The scale-up's adaptive budget** (decide with the user before scaling): ~10-20 CPU-min per (defense, file) at
+   5,000 candidates, and the monotone rows always spend the full budget, so ~3,000 CPU-h at 2,000 files. Options, with a
+   recommendation: report the 1,000-candidate checkpoint (already recorded per file, `evaded_at_1000`), attack a
+   fixed subset of the malware, or cap the monotone rows.
+4. **ERDALT at seeds 0-2:** its < 5-violation criterion was met only at the last epoch (309/310) at seed 0. More
+   epochs, or report the last epoch when the criterion is not met; decide before the scale-up.
+5. Still open: MAB-Malware (likely unnecessary), the headline (not adopted), §6's Chen 2021 sentence ("all four works
+   rest on the same input" stretches Chen 2021). After those, the introduction and the other empty sections, spine
+   first, coordinated with the writing track.
 
 ## Writing track (session 14b): the user reads the rewritten Sections 2-3
 
@@ -33,52 +90,6 @@ works.
    `srndic2016hidost`); §3 is ~3,900 words against 2,500 (within the drafting allowance; do not cut unless asked).
 5. **Later (user: only once the core reads well):** redesigned term and readout tables, figures, and domain examples.
    `docs/reviews/review-prompt.md` should be updated when the draft's stage changes.
-
-## Research track (session 14): read run 130, then choose the next work with the user
-
-### Where things stand
-
-Session 14 read runs 125, 127, and 128, ran run 129, and scripted run 130. The user runs run 130 overnight. Details
-and the good/bad/neutral assessment are in `docs/status.md` (session-14 block); the plan is in `PLAN.md` ("Next steps
-(2026-11-04, session 14)"). Session 14 did not touch the manuscript (the Sections 2-3 rewrite, `084055c`, is the
-writing track above). Nothing pushed.
-
-- **Run 125 (adversarial training on the attacks that work).** Accuracy unchanged (AUC 0.9976, TPR 95.6%). The
-  toolkit falls from 55% to 31% (gamma_api 22 -> 11, header_fields 11 -> 3 of 49). Greedy adaptive search: 12/49 (24%).
-- **Run 128 (ERDALT).** AUC 0.881, TPR 61.1%; detects 25/50. Seen 0/25 (faithful); held-out 23/25 (92%; the
-  hypothesis of 20-40% failed); beam 20/25 (80%). 89.7% of L's weight lies in the derived hole. The selection criterion
-  was met only at the last epoch (309/310). Risk: reviewers may call the port weak.
-- **Run 127 (beam, 5,000 candidates).** Unconstrained 25/49 (51%); run 122's adversarial training 20/48 (42%); PV on
-  the 10% store, 4 attacks 15/22 (68%), 8 attacks 14/22 (64%); monotone rows 0, with a largest score drop of exactly
-  0.0. Mismatches are pefile's two unmodeled warning features; every kept file is re-extracted, so no verdict depends
-  on them.
-- **Run 129 (greedy menus x 10% PV).** Adds nothing to the beam.
-- **Decided (user): Table 7 reports the beam alone.** Never a union ("any search evades") across attacks; report one
-  attack, or several separately. Claude's call: the greedy searches get no column, only one §5 sentence: on every row
-  of the table the beam evades every file they evade. The PV rows' adaptive cells come from the 10% models, like their
-  other columns.
-
-### Next session, in order
-
-1. **Read run 130**: `artifacts/experiments/a1/adaptive-beam/advtrain-strong/adaptive.json`, log
-   `artifacts/logs/a1_adaptive_beam_advtrain_strong.log`.
-   - Report evaded at 200, 1,000, and 5,000 candidates, `mismatches`, and any `LOST` lines.
-   - Hypothesis (header): ~20-25 of 49.
-   - Check that the beam evades every file run 125's greedy menus evade (`advtrain-strong/adaptive-{twelve,appsec}`),
-     since the §5 sentence rests on it.
-   - Sync `run/130`'s header with the result and runtime.
-2. **Decide with the user what to work on next.** Lay out the options briefly, with a recommendation:
-   - **Table 7 edits (ready).** The beam column with its budget; run 125's row replacing run 122's (Claude's
-     suggestion, not yet agreed); the ERDALT row with a footnote (the output-layer patch, batch 256, epoch selected on
-     validation, temperature, criterion met at the last epoch); the synthetic 77% -> 64%; the §5 prose that cites
-     these cells ("20 of the 22", "17 of 22", "9 of 48", ...). Optionally one §5 sentence on ERDALT and its hole.
-     Then `make` / `make check`, and `/paper-prose` for prose (lesson 15: report, don't narrate).
-   - **The sums row's beam cell.** It needs a routing plan first; the beam scores only thrember-space defenses.
-   - **The scale-up's adaptive budget.** Each pair costs ~10-20 CPU-min at 5,000 candidates, and the monotone rows
-     always spend it all: ~3,000 CPU-h at 2,000 files. Options: the 1,000-candidate checkpoint, or attacking a subset.
-   - **ERDALT's criterion at seeds 0-2**: more epochs, or report the last epoch when it is not met.
-   - Still open: MAB-Malware (likely unnecessary), the headline (not adopted), §6's Chen 2021 sentence. After those
-     come the introduction and the other empty sections, spine first.
 
 ## Carry-forward (unchanged)
 

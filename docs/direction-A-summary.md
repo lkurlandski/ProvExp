@@ -21,6 +21,11 @@ stay at 0% (largest score change exactly 0.0). Adversarial training on the attac
 (run 128) resists the attacks it learned from (0/25) and falls to the held-out ones (92%) and the beam (80%); 89.7% of
 its first layer's weight sits in the hole the derived table computes. Table 7 reports the beam alone (user decision).
 
+**Update (2026-11-05, session 15): run 130 closes Table 7's adaptive column.** The beam evades run 125's
+adversarially trained detector on 24/49 (49%), about the undefended rate (25/49): adversarial training holds where it
+was trained and not against the adaptive search. Table 7 now carries the beam on every thrember-space row and the ERDALT
+row; the sums row's cell is still the greedy search's 0% (no routing for the beam yet).
+
 **Update (2026-10-29): the C4 rows now use derived directions and are routed.** Retrained from the directions the
 engine derives (runs 99-100), the C4 models keep their accuracy (M_full slightly better: 88.1% / 89.9% TPR at 1% FPR).
 As precondition-row detectors (files that pass the check get the C4 model, the rest the unconstrained one), the M_full

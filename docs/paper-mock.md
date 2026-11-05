@@ -65,11 +65,14 @@ Rows: domain x operation. Columns: edits, exact, flagged by the engine, wrong.
   the attacks they were learned from. One row.
 
 **Table 3: useful: detectors** (Theorem 3; the measured Table A1).
-Rows: unconstrained; PV-seen; PV-all; expert set (Gimenez et al.'s 40 features); adversarial training (missing);
-monotone on derived directions (over sums; over features as they are). Columns: AUC, TPR at 1% FPR, evasion under
+Rows: unconstrained; PV-seen; PV-all; ERDALT (Gimenez et al.'s learned post-processing; measured, run 128); expert
+set (Gimenez et al.'s 40 features); adversarial training (measured, run 125); monotone on derived directions (over
+sums; over features as they are). Columns: AUC, TPR at 1% FPR, evasion under
 the toolkit, under held-out attacks (second toolkit: missing), under the adaptive search, smallest score change, cost
 to derive (bookkeeping: missing). Measured at pilot scale: the monotone rows 88-89% TPR, 0 evasions, smallest score
-change exactly 0.0; PV falls to the adaptive search on 21-22/22; expert set AUC 0.844.
+change exactly 0.0; PV falls to the adaptive search on 21-22/22; expert set AUC 0.844. **Measured (2026-11-05,
+PDF Table 7):** adaptive = the beam search alone (5,000 candidates): unconstrained 51%, adversarial training 49%, PV
+68% (4 attacks) and 64% (8 attacks), ERDALT 80%, monotone 0% (the sums row's cell is still the greedy search's).
 
 **Table 4 (candidate): the same on CTU-13.** A monotone botnet detector on the derived directions against FENCE and
 MoEvA2. MoEvA2 evades Simonetto et al.'s constraint-augmented model 80% of the time; hypothesis: 0% on ours for
@@ -80,7 +83,8 @@ in-model insertions, at a few points of AUC. Adopt it if Table 1's CTU-13 row pa
 Sections 3-5 and Appendix A are drafted in `.tex` (`manuscript/`); the mock's Tables 1-3 are Tables 5-7 of the PDF,
 EMBER rows only.
 1. **The synthetic cells** of Section 5's tables (`% SYNTHETIC` in the source): add-section exactness, cost,
-   PV with 8 attacks under the fixed adaptive search, the adversarial-training row.
+   PV with 8 attacks under the fixed adaptive search, the adversarial-training row (the last two measured
+   2026-11-05; Table 7 has no synthetic cell left).
 2. **A's gaps:** a second toolkit (MAB-Malware) for the held-out column, leave-one-out PV, scale (seeds 0-2, full
    splits, more malware; user's decision).
 3. **The remaining sections** (background, related work, discussion; introduction and abstract last) and Figure 1.

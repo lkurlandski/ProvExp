@@ -55,6 +55,28 @@ introduction and a simple baseline (writing decision for later).
   combined edits (run 111, 1,105 of 1,105) and the learned-constraints contrast (run 110). Record:
   `docs/direction-A-prime-plan.md`, Section 13.
 
+## Next steps (2026-11-05, session 15: run 130 read; Table 7 updated)
+
+Done: run 130 read (beam x run 125's adversarial training: 24/49, 49%; hypothesis ~20-25 held; the beam evades every
+file run 125's greedy menus evade). Table 7 edited (`08c8535`): the adaptive column is the beam alone (unconstrained
+51%, adversarial training 49%, PV 68% / 64%, ERDALT 80%, monotone 0%; the sums row keeps the greedy 0%, footnoted);
+run 125's row replaces run 122's (user agreed); the ERDALT row with its port footnote; no synthetic cell left in
+Table 7. §5 prose synced (the beam described in the setup, ERDALT and adversarial training in the detector results,
+the greedy-subset sentence); §6's pointer names ERDALT. Not yet read by the user.
+
+Next, in order (research track; the writing track on §2-3 runs in another session):
+1. **The user's read of the new §5 passages** (setup paragraph, PV/ERDALT paragraph, adversarial-training paragraph);
+   `/paper-prose` for the revision.
+2. **The sums row's beam cell.** Plan the routing first (the beam scores thrember-space detectors only; the sums
+   detector reads the sums store, and files outside the population go to the unconstrained model). Then a `run/131`.
+3. **The scale-up's adaptive budget.** ~10-20 CPU-min per (defense, file) at 5,000 candidates, monotone rows always
+   spend it all: ~3,000 CPU-h at 2,000 files. Options: report the 1,000-candidate checkpoint, attack a subset, or cap
+   the monotone rows (their 0 is by construction). Decide with the user before scaling.
+4. **ERDALT's selection criterion at seeds 0-2** (met only at the last epoch at seed 0): more epochs, or report the
+   last epoch when it is not met.
+5. Still open: MAB-Malware (likely unnecessary), the headline (not adopted), §6's Chen 2021 sentence. Then the
+   introduction and the other empty sections, spine first.
+
 ## Next steps (2026-11-04, session 14b, writing: Sections 2-3 rewritten)
 
 Done: §2 Background and Motivation and §3 rewritten from a per-paragraph spine (`docs/framework-spine.md`) and the
