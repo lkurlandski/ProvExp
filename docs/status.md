@@ -1,5 +1,20 @@
 # Status
 
+**2026-11-05 (session 15, writing track; ran alongside the research track): §3 redesigned; §3.1 rebuilt.** Nothing
+pushed. Commits `bfda3d8`, `1c8b13e`, `c6af95e`, `7e48d5a`. Next: `docs/resume-prompt.md`, writing track.
+
+- **The user's review** of §2, §3.1, §3.2 logged (reaction log); §3.2 "unintelligible" (identity, locating
+  positions, kinds, honest tools). Lessons 21-25 added to `paper-prose`; procedure step 1 now asks for the
+  architecture before the spine.
+- **Design** (`docs/framework-design.md`): $\varphi = \rho \circ \sigma \circ \pi$ as the spine of §3; identity-free
+  items; self-containment and faithfulness inside the class; one locality definition replacing (R1)-(R3) and five
+  concepts; honest tools dropped; terms and readout forms move to 3.4. User decisions A-H recorded (toy example in
+  purple, a Remark environment, tables back where needed, a types appendix).
+- **§3.1 rewritten** to the approved spine (~1,700 words) plus Appendix B (types, monoids, folds; Pierce, Hutton
+  added to `main.bib`); then numbered equations, spaces $\mathcal{Z} \to \mathcal{V} \to \mathcal{S} \to \mathcal{X}$,
+  sums indexed by $K$, "the sums of $z$". Dropped as false: "holistic aggregates are excluded" (with open key
+  families a median is a readout). The user: "a significant improvement".
+
 **2026-11-05 (session 15, research track): run 130 read; Table 7 updated (`9f9cecb`, `08c8535`).** Nothing pushed.
 
 - **Run 130 (beam x run 125's adversarial training): 24/49 (49%)**, at 200 / 1,000 / 5,000 candidates 8 / 17 / 24;

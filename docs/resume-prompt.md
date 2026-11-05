@@ -2,8 +2,7 @@
 
 Two tracks run in parallel in separate sessions. This prompt is for the **research track**. The writing track (§2-3)
 continues in its own session (session 15 writing: `bfda3d8`, the user's review of §2-3.2 logged, `/paper-prose`
-lessons 21-25, a §3 structural proposal in `docs/framework-design.md`); its section below is kept from session 14b
-and that session updates it. Do not edit `manuscript/_c_background.tex`, `_d_framework.tex`, `_i_symbols.tex`,
+lessons 21-25, a §3 structural proposal in `docs/framework-design.md`); its section below is maintained by that session. Do not edit `manuscript/_c_background.tex`, `_d_framework.tex`, `_i_symbols.tex`,
 `docs/framework-*.md`, `docs/writing-spec.md`, or the `paper-prose` skill from the research track, and commit only
 your own files (`git status` first: the other session may have uncommitted work).
 
@@ -60,36 +59,43 @@ your own files (`git status` first: the other session may have uncommitted work)
    rest on the same input" stretches Chen 2021). After those, the introduction and the other empty sections, spine
    first, coordinated with the writing track.
 
-## Writing track (session 14b): the user reads the rewritten Sections 2-3
+## Writing track (session 15 writing, 2026-11-05): §3.1 rebuilt; next, the §3.2 spine
 
-**Where things stand.** §2 "Background and Motivation" (`manuscript/_c_background.tex`) and §3 "Measuring Edits Across
-Feature Mappings" (`manuscript/_d_framework.tex`) were rewritten from scratch (`084055c`), from the spine in
-`docs/framework-spine.md` and the user's decisions D1-D5 and comments (`docs/writing-spec.md`, reaction log, the two
-2026-11-04 §3 entries). Details: `docs/status.md`, session-14b block. In short:
-- no domain examples (kept as `% EXAMPLE (removed, D2)` comments), no tables (source in
-  `manuscript/backup/framework-tables-2026-11-04.tex`), no figures; Pierazzi's notation; reachable set
-  $\mathcal{R}(z)$; symbol table in Appendix A;
-- one endpoint per subsection: Lemma 1 (finding the item delta), Proposition 1 (exact side effects), Lemma 2
-  (signatures from the item table), Theorem 1 (sound directions; formerly Theorem 2), Corollary 1 (robustness);
-- requirements renumbered by step: (R1) structure, (R2) margins, (R3) honest tools, (R4) self-contained
-  contributions, (R5) faithful recording.
-
-The user was unsure about the edits subsection from the spine (P12 and P13 felt disconnected) and reads the prose to
-judge whether the new arc (which items a write changes, answered by locating positions and margins, ending in Lemma 1)
-works.
+**Where things stand.** The user reviewed §2, §3.1, and §3.2 (reaction log, 2026-11-05: §3.2 was "unintelligible").
+We redesigned the structure of §3 before any prose: `docs/framework-design.md` (**read it first**; Sections 1-9 are
+the design, 10 the user's decisions A-H, 11 the §3.1 spine). The core idea: the extractor factors as
+$\varphi = \rho \circ \sigma \circ \pi$, $\mathcal{Z} \to \mathcal{V} \to \mathcal{S} \to \mathcal{X}$ (item map,
+fold, readouts), and each subsection is about one map:
+- 3.1 the class (**done**, `c6af95e`, `7e48d5a`; the user: "a significant improvement");
+- 3.2 edits and exact side effects (format-free; Prop 1 needs no requirements): **next**;
+- 3.3 edits given as writes (the only place the format enters: one "local kind" definition with structure positions
+  $L_\tau(z)$ and margins $\mu_\tau(z, W)$; one localization lemma with parts (a) one edit, (b) an operation's
+  signature);
+- 3.4 directions (terms and readout sign rules move here, as clean tables); 3.5 robust detectors (keep).
+Settled: no item identity (a delta is removed and added multisets of (kind, content)); self-containment and faithful
+recording are in the class definition; "honest tools" is gone (declared deltas are checked in §5); a toy running
+example (records located by a header count and table; strings as printable runs; features $x_1$-$x_4$) in purple
+(`runex` environment, `\runexinline{}`); a Remark environment (`\remark[...]`); numbered equations; new Appendix B
+"Types, Monoids, and Folds" (`_i2_types.tex`).
+Notation now: kinds $\tau$, items $\iota = (\tau, M)$, $I(z)$, $\pi(z) \in \mathcal{V}$, sums $k \in K$ with monoids
+$\mathbb{M}_k$, sum space $\mathcal{S}$, contributions $\nu_\tau$, fold $\sigma$, the sums of $z$ $\mathbf{s}(z)$ (not
+"sum vector"), readouts $\rho_j$ with support $K_j$, $\rho: \mathcal{S} \to \mathcal{X}$, $J$ only in Definition 5.
+§3.2 onward still uses the old notation ($\kappa$, $\mathbf{v}$, identity, (R1)-(R5)) until rewritten; the §3 lead
+still describes the old subsection order (update after 3.3).
 
 **Next, in order.**
-1. **Take the user's review of §2-3.** Invoke `/paper-prose` first. Log the reaction raw in `docs/writing-spec.md`
-   (reaction log), then update the skill's lessons (add, sharpen, or delete; lessons 16-20 are new and untested).
-2. **Revise** per the review; if the second half's arc still does not land, fix the structure (spine) before prose.
-   `make` and `make check` in `manuscript/`; keep `_i_symbols.tex` in sync with any notation change; commit.
-3. **Notation round** against the symbol table (the user promised specific comments). Known candidates: $\kappa$ (item
-   kind) vs Pierazzi's confidence $\kappa$ (unused in §2, so no clash yet); $T$, $T_{o,\theta}$, $\mathcal{T}$, $O$,
-   $\mathcal{M}$; $E^F_o(s)$ vs $E_s$.
-4. **Small open items:** a `% VERIFY` in §3.1 on Hidost's feature values (path counts or presence bits; check
-   `srndic2016hidost`); §3 is ~3,900 words against 2,500 (within the drafting allowance; do not cut unless asked).
-5. **Later (user: only once the core reads well):** redesigned term and readout tables, figures, and domain examples.
-   `docs/reviews/review-prompt.md` should be updated when the draft's stage changes.
+1. Invoke `/paper-prose`. Write the **per-paragraph spine for §3.2** (design doc Section 5 is the coarse plan) into
+   `docs/framework-design.md` and show it to the user; draft only after approval, then review, then 3.3.
+   - The motivation before the machinery (design Section 4): re-extraction is the ground truth for one edit; what it
+     cannot give is attribution and answers for edits not applied.
+   - Def (item delta): $\pi(z') = \pi(z) - I^- \uplus I^+$; the written set is *not* in 3.2.
+   - Prop 1 with no requirements; incremental view maintenance cited at it; pools via the item table.
+   - The toy example in purple: appending lowers $x_4$ (side effect); splitting the longest string (pool).
+2. Then 3.3, 3.4, 3.5 the same way (spine, approval, draft, review). Rewrite `_j_proofs.tex` to the new statements;
+   update §4/§5 wording ((R3)/(R4), locating positions, honest tools); rename the key set $K$ in 3.4 (now the sums).
+3. Notation round (the user is "not in love" with $\tau$ but accepts it for now; change only clear wins).
+4. Small open items: `% VERIFY` on Hidost's feature values; the claim "classifiers trained on them remain strong
+   baselines" (user to confirm or make specific).
 
 ## Carry-forward (unchanged)
 
