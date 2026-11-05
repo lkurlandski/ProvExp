@@ -55,6 +55,20 @@ introduction and a simple baseline (writing decision for later).
   combined edits (run 111, 1,105 of 1,105) and the learned-constraints contrast (run 110). Record:
   `docs/direction-A-prime-plan.md`, Section 13.
 
+## Next steps (2026-11-05, session 15c, writing: §3.3-3.4 drafted, §3.5 folded into §3.4)
+
+Done: §3.3 (local kinds, Lemma 1) and §3.4 (signatures, sign tables, Theorem 1) drafted from approved spines
+(`docs/framework-design.md` Sections 13-14); §3.5 folded into the end of §3.4 (Section 15): Corollary 1 now covers
+scores on sums. §3 has four subsections. None of it read by the user yet.
+
+Next, in order (writing track):
+1. **The user's read of §3.3-3.4** (with the fold); log it in `docs/writing-spec.md`, update `/paper-prose`, revise.
+2. **Downstream consistency:** the §3 lead (subsection order and contents); §4's (R3)/(R4) wording; §5's
+   "precondition" as the definition of $F$; check §5's uses of Corollary 1 for the sums rows.
+3. **Return to §3.2** (Prop 1's statement density; the purple examples).
+4. Notation round; `% VERIFY` on Hidost; the "strong baselines" claim. Then the introduction and the other empty
+   sections, spine first, coordinated with the research track.
+
 ## Next steps (2026-11-05, session 15: run 130 read; Table 7 updated)
 
 Done: run 130 read (beam x run 125's adversarial training: 24/49, 49%; hypothesis ~20-25 held; the beam evades every

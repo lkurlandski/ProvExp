@@ -1,8 +1,8 @@
 # Resume: ProvExp (after 2026-11-05, session 15): research track (Table 7 updated; next: the user's read, the sums row's beam cell, the scale-up budget)
 
 Two tracks run in parallel in separate sessions. This prompt is for the **research track**. The writing track (§2-3)
-continues in its own session (session 15 writing: `bfda3d8`, the user's review of §2-3.2 logged, `/paper-prose`
-lessons 21-25, a §3 structural proposal in `docs/framework-design.md`); its section below is maintained by that session. Do not edit `manuscript/_c_background.tex`, `_d_framework.tex`, `_i_symbols.tex`,
+continues in its own session (latest: session 15c writing, §3.3-3.4 drafted and §3.5 folded into §3.4, `0bb0e31`);
+its section below is maintained by that session. Do not edit `manuscript/_c_background.tex`, `_d_framework.tex`, `_i_symbols.tex`,
 `docs/framework-*.md`, `docs/writing-spec.md`, or the `paper-prose` skill from the research track, and commit only
 your own files (`git status` first: the other session may have uncommitted work).
 
@@ -59,43 +59,40 @@ your own files (`git status` first: the other session may have uncommitted work)
    rest on the same input" stretches Chen 2021). After those, the introduction and the other empty sections, spine
    first, coordinated with the writing track.
 
-## Writing track (session 15b writing, 2026-11-05): §3.2 drafted (not yet satisfactory); next, the §3.3 spine
+## Writing track (session 15c writing, 2026-11-05): §3.1-3.4 drafted, §3.5 folded into §3.4; next, the user's read
 
 **Where things stand.** `docs/framework-design.md` is the design (**read it first**: Sections 1-9 the design, 10 the
-user's decisions A-H, 11 the §3.1 spine, 12 the §3.2 spine and its decisions). The extractor factors as
-$\varphi = \rho \circ \sigma \circ \pi$, $\mathcal{Z} \to \mathcal{V} \to \mathcal{S} \to \mathcal{X}$, and each
-subsection is about one map:
+user's decisions A-H, 11-14 the spines of §3.1-3.4 with their decisions, 15 the §3.5 fold). The extractor factors as
+$\varphi = \rho \circ \sigma \circ \pi$, $\mathcal{Z} \to \mathcal{V} \to \mathcal{S} \to \mathcal{X}$, and §3
+now has **four** subsections:
 - 3.1 the class (**done**; the user: "a significant improvement");
-- 3.2 edits and exact side effects (**drafted**, `ff5ac37`; the user's verdict after three drafts: "still largely
-  unsuccessful", move on; return later). Def 6 (item delta, $\pi(z') = (\pi(z) - I^-) \uplus I^+$, no positions),
-  Prop 1 from the kept items $B = \pi(z) - I^-$, explanation in words, toy append and string split;
-- 3.3 edits given as writes: **next**. Currently a `% PLACEHOLDER` holding the old locating-positions text, (R1)-(R3),
-  and the old Lemma 1, in the old notation, kept only so references resolve; replace it entirely;
-- 3.4 directions (terms and readout sign rules move here, as clean tables); 3.5 robust detectors (keep).
-Notation: kinds $\tau$, items $(\tau, M)$, $I(z)$, $\pi(z) \in \mathcal{V}$, sums $k \in K$, monoids $\mathbb{M}_k$,
-"pools" = max and min pools (Def 2), sum space $\mathcal{S}$, contributions $\nu_\tau$, fold $\sigma$, sums of $z$
-$\mathbf{s}(z)$, readouts $\rho_j$ with support $K_j$. §3.3 onward still uses the old notation until rewritten; the §3
-lead still describes the old subsection order (update after 3.3).
+- 3.2 edits and exact side effects (drafted, `ff5ac37`; the user's verdict "still largely unsuccessful", return later):
+  Def 6 (item delta), Prop 1;
+- 3.3 edits given as writes (drafted, `b6fa4ab`, **unread**): Def 7 (local kind: structure positions $L_\tau(z)$,
+  margin $\mu_\tau(z, W)$, fixed-layout), Lemma 1 (a) one edit, (b) an operation; $W$ = every differing position;
+- 3.4 sound directions (drafted, `00ef2c2`, **unread**): operations, threat model = catalogue (no precondition;
+  population $F$), signatures (add/remove/replace), sign sets and $\boxplus$, Tables 1-2, Def 8, Theorem 1; then
+  (`0bb0e31`, **unread**) Corollary 1 (robustness, Gimenez et al.'s Proposition 1 with our table), now also for
+  scores that read sums, and the toy example's last sentence. `sec:fw:robustness` is gone.
 
-**What went wrong on §3.2, so it is not repeated** (reaction log, 2026-11-05; lessons 26-27): Claude did not read the
-rendered PDF; used equation numbers and section pointers as arguments ("pi (1)", "(5) applied to (7)"); spelled out
-obvious facts while under-developing the one real idea; did not explain what a result means or why it is exact; wrote
-an abstract closer; patched the user's listed defects instead of rewriting. For §3.3: explain the concept in words
-before the definition, give each result its plain reading, keep the lead to what the subsection contains and its role,
-and read the pdftotext output before showing anything.
+**Lessons to keep** (reaction log, 2026-11-05; `paper-prose` lessons 26-27): read the rendered PDF (pdftotext)
+before showing anything; no equation numbers as arguments; explain each concept in words before its definition and
+each result's plain meaning after it; spend words on the one real idea, not on obvious facts; no abstract closers; no
+deference about cited work (lesson 13: "The guarantee is Gimenez et al.'s." was caught and rewritten this session).
 
 **Next, in order.**
-1. Invoke `/paper-prose`. Write the **per-paragraph spine for §3.3** into `docs/framework-design.md` (Section 13),
-   from the coarse plan (design Section 5, "3.3") and S3 (one "local kind" definition: structure positions
-   $L_\tau(z)$ and margins $\mu_\tau(z, W)$; one localization lemma, (a) one edit, (b) an operation's signature). It
-   must supply what §3.2 defers to it: the written set $W$; positions of new items (needed to chain write-given
-   edits); the derivation of the string-split delta used in §3.2's example. Show the spine; draft only after approval.
-   Check against §9 of the design (every EMBER kind fits the definition as stated).
-2. Then 3.4 and 3.5 the same way. Update `_j_proofs.tex` (the Lemma proofs), §4/§5 wording ((R3)/(R4), locating
-   positions, honest tools), the symbol table's (R1)-(R5) row, and the §3 lead.
-3. Return to §3.2 (Prop 1's statement density; the long purple examples) once §3.3 settles.
-4. Notation round (the user is "not in love" with $\tau$); small open items: `% VERIFY` on Hidost's feature values,
-   the "strong baselines" claim.
+1. Invoke `/paper-prose`. **Take the user's read of §3.3-3.4** (including the fold); log it raw in
+   `docs/writing-spec.md`'s reaction log, update the skill's lessons, revise from a spine change if the structure is
+   at fault, not by patching sentences.
+2. **Downstream consistency** (mechanical once 3.3-3.4 stand): the §3 lead (`_d_framework.tex` top) still describes
+   the old order (positions from writes before side effects); §4's "self-contained contributions (R4)"
+   (`_e_instances.tex:40`) and "honest tools (R3)" (`:106`), now part of the class definition or dropped (decision C);
+   §5's "precondition" (`_f_evaluation.tex:102, 267`) should say it is how §4 defines $F$; §5's uses of Corollary 1
+   for the sums rows. A 1.5pt overfull vbox (float placement, since `0bb0e31`) to clear eventually.
+3. **Return to §3.2** (Prop 1's statement density; the long purple examples).
+4. Notation round (the user is "not in love" with $\tau$); `% VERIFY` on Hidost's feature values
+   (`_d_framework.tex:207`); the "strong baselines" claim. Then the introduction and the other empty sections, spine
+   first, coordinated with the research track.
 
 ## Carry-forward (unchanged)
 

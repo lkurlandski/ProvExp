@@ -1,5 +1,27 @@
 # Status
 
+**2026-11-05 (session 15c, writing track): §3.3 and §3.4 drafted; §3.5 folded into §3.4, so §3 has four
+subsections.** Nothing pushed. Commits `b6fa4ab` (§3.3), `00ef2c2` (§3.4), `0bb0e31` (the fold).
+
+- **§3.3 "Edits Given as Writes"** (spine: design doc Section 13, Q1-Q4 as recommended): Def 7 (local kind:
+  structure positions $L_\tau(z)$, margin $\mu_\tau(z, W)$, fixed-layout kinds), Lemma 1 (localization; (a) one
+  edit, (b) an operation), stated per kind; $W$ = every position where $z$ and $z'$ differ, so "in place" is gone.
+  The placeholder (locating positions, (R1)-(R3), recognizers, end-anchored items) is gone. Proof rewritten.
+- **§3.4 "Sound Directions"** (spine: Section 14, Q1-Q4 as recommended): operations, threat model = catalogue $O$
+  (no precondition; the population $F$ does its job), signatures as add/remove/replace with content constraints,
+  sign sets and $\boxplus$, Table 1 (contribution forms, `table*`) and Table 2 (readout rules), Def 8 (envelopes,
+  direction tables), Theorem 1 without (R1)-(R5), toy example with two operations. `lem:fw:signature` gone
+  (subsumed by Lemma 1(b)). Proofs and symbol table updated.
+- **§3.5 folded into §3.4** (this session; user agreed with the assessment, design doc Section 15): §3.5 was about
+  the detector, not the extractor, and its result is Gimenez et al.'s Proposition 1 with our table, so it did not
+  earn a subsection; it stays in §3 because Table 7 cites it as theory. Corollary 1 (label kept) now closes §3.4
+  and covers **scores that read sums** (Table 7's sums rows); the toy example shows it; $h$ in the symbol table.
+  A 1.5pt overfull vbox (float placement) appeared with it; left for now.
+- **Not yet read by the user:** §3.3, §3.4, the fold. No reaction logged for them.
+- **Open:** the §3 lead still describes the old order (positions from writes before side effects); §4's "(R4)"
+  (`_e_instances.tex:40`) and "honest tools (R3)" (`:106`); §5's "precondition" wording (it should say it defines
+  $F$); §3.2's dense Prop 1 and long purple examples; the notation round ($\tau$); `% VERIFY` on Hidost's values.
+
 **2026-11-05 (session 15b, writing track): §3.2 drafted three times; the user's verdict "still largely
 unsuccessful"; moving on to §3.3 in a new session.** Nothing pushed. Commits `3d57630`, `30dbbf8`, `f0c9282`,
 `ff5ac37`.
