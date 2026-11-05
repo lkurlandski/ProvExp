@@ -1,7 +1,8 @@
 % Section 3: the framework. Rewritten 2026-11-04 from docs/framework-spine.md with the user's decisions and comments
 % (theory without domain examples, D2; no tables or figures for now, D3/D4, the tables are backed up in
 % backup/framework-tables-2026-11-04.tex). Source of the math: docs/formalization.md (frozen). Proofs: _j_proofs.tex.
-% Removed examples are kept in "% EXAMPLE" comments for the user.
+% 2026-11-05: the toy example and the ties to real feature sets were cut (user); the pre-cut text is in
+% backup/framework-before-cuts-2026-11-05.tex, to refactor into Section 4 where useful.
 
 The feature mappings we study find pieces of their input, add up what each piece contributes to a set of running
 totals, and compute each feature by a formula over a few totals. We define this class of \emph{sum-then-readout
@@ -17,8 +18,7 @@ proofs are in Appendix~\ref{sec:fw:proofs}, and Appendix~\ref{sec:symbols} lists
 \label{sec:fw:model}
 
 % Spine: docs/framework-design.md, Section 11 (approved 2026-11-05). Notation: lowercase Greek for the maps of the
-% factorization (pi, sigma, rho, nu); calligraphic for the spaces they connect (Z, V, S, X); tau for kinds. The running
-% example is in purple (runex) while drafted.
+% factorization (pi, sigma, rho, nu); calligraphic for the spaces they connect (Z, V, S, X); tau for kinds.
 The feature mappings we study compute their features in three stages. They find the pieces of the input they
 analyze, which we call \emph{items}; they add what each item contributes to a set of running totals, which we call
 \emph{sums}; and they compute each feature by a formula over a few sums, which we call a \emph{readout}. Each stage is
@@ -34,23 +34,13 @@ where $\mathcal{V}$ holds the multisets of items and $\mathcal{S}$ the values of
 (Definitions~\ref{def:fw:item}--\ref{def:fw:contributions}); a few features of a real extractor may be computed
 otherwise (Definition~\ref{def:fw:extractor}). The item map $\pi$ is the only stage that depends on the format of the
 input; $\sigma$ and $\rho$ are arithmetic. We separate the stages because an attacker's edit is simple to describe at the first, by the items it adds and removes, and hard to describe at the
-last, where one item can move many features. The shape is common: the static feature sets most used in malware
-detection and the flow statistics used in network intrusion detection have it (end of this subsection), and
-classifiers trained on them remain strong baselines in their domains~\cite{anderson2018ember,arp2014drebin}.
+last, where one item can move many features.
 
-\begin{runex}
-\emph{Running example.} We illustrate the framework on a toy format. An input is a sequence of bytes. Its first byte
-holds a count $n$, and the next $n$ entries form a table, each giving the offset and the length of a record stored
-elsewhere in the input. The extractor computes four features: the number of strings $x_1$, where a string is a maximal
-run of at least four printable bytes anywhere in the input; their average length $x_2$; the length of the longest
-string $x_3$; and the share of the input's bytes that lie in records, $x_4$.
-\end{runex}
 
 \definition[Items]
 \label{def:fw:item}
 {
-An input $z \in \mathcal{Z}$ is a finite sequence of elements, such as the bytes of a file or the packets of a trace;
-for a set $M$ of positions, $z[M]$ is the sequence of the elements at those positions, in order. A feature mapping has
+An input $z \in \mathcal{Z}$ is a finite sequence of elements; for a set $M$ of positions, $z[M]$ is the sequence of the elements at those positions, in order. A feature mapping has
 a finite set of item \emph{kinds}. An \emph{item} of $z$ is a pair $\iota = (\tau, M)$ of a kind $\tau$ and a nonempty
 set $M$ of positions of $z$, its \emph{members}; its \emph{content} is $z[M]$. The extractor finds a set $I(z)$ of
 items in each input. With $\mathcal{V}$ the set of finite multisets of kinds and contents, the \emph{item map}
@@ -66,11 +56,6 @@ say which elements the pass reads. Items of the same kind are processed by the s
 and the pair of an item's kind and content is a typed value (Appendix~\ref{sec:types}). The item map keeps what the
 items contain and forgets where they lie. Two items with the same kind and content are counted twice, and an item
 moved to other positions with its content unchanged is the same value of $\pi$.
-\begin{runex}
-In the toy format, each record is an item of kind \emph{record} whose members are its table entry and its bytes, each
-string is an item of kind \emph{string} whose members are its bytes, and each byte is an item of kind \emph{byte}, which
-the extractor needs for the length of the input.
-\end{runex}
 
 \definition[Sums]
 \label{def:fw:sums}
@@ -91,8 +76,7 @@ applies each sum's operation to its entry. Its neutral element holds the neutral
 min pools are together called \emph{pools}: each keeps the largest or the smallest value it receives.
 }
 
-\noindent The set $K$ may be large, with one count for each key of an open vocabulary, such as the names of imported
-libraries or requested permissions.
+\noindent The set $K$ may be large, with one count for each key of an open vocabulary.
 
 \definition[Contributions]
 \label{def:fw:contributions}
@@ -111,12 +95,6 @@ of} $z$ are $\mathbf{s}(z) = \sigma(\pi(z))$.
 \noindent A contribution is what one item adds to the running totals, and it depends only on the item's kind and
 content, not on the rest of the input. The sums of $z$ are the totals after every item has been added. They are not a
 vector: their entries lie in different monoids, and a pool cannot be subtracted from.
-\begin{runex}
-In the toy format, a string contributes 1 to the number of strings, its length to the total length of strings, and its
-length to a max pool, the longest string. A byte contributes 1 to the length of the input, and a record contributes
-its length, read from its table entry, to the total length of records. Every other entry of these contributions is
-neutral.
-\end{runex}
 
 Because every $\mathbb{M}_k$ is associative and commutative, $\sigma$ does not depend on the order in which the
 extractor visits the items, and the fold of the union of two multisets is the combination of their folds:
@@ -128,12 +106,7 @@ In algebraic terms, $\mathcal{V}$ is the free commutative monoid on the kinds an
 homomorphism from it to $\mathcal{S}$ that agrees with the contribution functions on single items
 (Appendix~\ref{sec:types}). Additive sums and pools differ in whether the removal of an item can be undone.
 $(\mathbb{R}, +)$ is a group, in which every value has an inverse, so removing an item from an additive sum is undone by subtracting its contribution, and the new total follows from the old total and the item.
-The maximum and the minimum have no inverse.
-\begin{runex}
-If an edit splits the longest string of a toy input in two, the old value of the longest-string pool does not say how
-long the second-longest string is. The strings themselves do.
-\end{runex}
-\noindent This is why the record we build keeps every item, and not only the totals.
+The maximum and the minimum have no inverse, which is why the record we build keeps every item, and not only the totals.
 
 \definition[Readouts]
 \label{def:fw:readout}
@@ -154,11 +127,6 @@ a histogram; a standard deviation, computed from a count, a total, and a total o
 is 1 when a count is positive. The support may also be a whole family of sums, as for the number of distinct keys
 with a positive count. The results of \Cref{sec:fw:side-effects} need nothing of a readout beyond being a function of
 its support; \Cref{sec:fw:directions} adds one sign rule for each of these forms.
-\begin{runex}
-In the toy format, $x_1$ is the identity of the number of strings, $x_2$ the ratio of the total length of strings to
-their number, $x_3$ the identity of the longest-string pool, and $x_4$ the ratio of the total length of records to the
-length of the input.
-\end{runex}
 
 \definition[Sum-then-readout extractor]
 \label{def:fw:extractor}
@@ -174,19 +142,10 @@ holds on the features in $J$:
 }
 
 \noindent The features in $J$ are \emph{modeled} and the others \emph{residual}. A residual feature is one that the
-mapping computes outside the three stages, such as a flag raised when its parser meets a malformed structure, which
-depends on how the parser fails rather than on any item. Every result in this section lets the residual features
+mapping computes outside the three stages. Every result in this section lets the residual features
 change arbitrarily. Instrumenting an extractor means writing down its items, contributions, and readouts, so that in
 the same pass that computes the features it records the \emph{item table} of $z$: every item in $I(z)$ with its kind,
-its members, and its contribution. That a contribution depends only on its item's kind and content is part of the
-definition, and real extractors do not always respect it. One that divides an item's size by the length of the input
-makes the item's contribution change whenever the input grows, although the item is untouched. Such cases are repaired
-without changing any feature value, by letting the item contribute its raw size and moving the division into a
-readout, where the length of the input is a sum of its own (\Cref{sec:instances}).
-\begin{runex}
-The toy extractor is already written this way: $x_4$ divides two sums, and no record's contribution depends on the
-length of the input.
-\end{runex}
+its members, and its contribution.
 
 \remark[Granularity]
 \label{rem:fw:granularity}
@@ -198,19 +157,6 @@ the computation splits into items. With one item, every edit changes the only it
 section say no more than extracting the features again would. Finer items let them say more. The instrumented
 extractors of \Cref{sec:instances} use the items the extractor's own loops visit.
 }
-
-Many feature sets used in security have this shape. For Windows executables, EMBER~\cite{anderson2018ember} counts
-and sizes sections, imports, and strings and summarizes byte histograms by their entropy, as did the features of Saxe
-and Berlin~\cite{saxe2015deep} before it, and byte $n$-gram features~\cite{kolter2004learning} count windows of $n$
-bytes. For Android apps, Drebin~\cite{arp2014drebin} records the presence of requested permissions, app components,
-and API calls. For PDF documents, the features of Hidost~\cite{srndic2016hidost} each correspond to a structural
-path in the document's object tree. % VERIFY: Hidost's feature values (path counts or presence bits).
-For network traffic, CICFlowMeter, the extractor behind the CIC-IDS2017
-dataset~\cite{sharafaldin2018toward}, computes per flow the counts, totals, extremes, means, and standard deviations
-of packet lengths and of the gaps between packets. Feature mappings computed by a global analysis, such as features of
-a program's call graph, in which a piece's contribution depends on the whole program, fit the definition only with
-coarse items (Remark~\ref{rem:fw:granularity}), and learned representations have no items finer than the input
-(\Cref{sec:discussion}).
 
 \subsection{Edits and Their Side Effects}
 \label{sec:fw:side-effects}
@@ -240,23 +186,9 @@ since they depend on the input only through its items (Definition~\ref{def:fw:ex
 two ways: some are stored as content, such as an offset in a table entry, and others decide which items the extractor
 finds, which \Cref{sec:fw:edits} takes up. A delta also need not be the smallest one, since an edit may list an
 unchanged item as removed and added back.
-\begin{runex}
-In the toy format, inserting non-printable bytes in front of a string moves the string, and the string is not in the delta. Moving
-a record changes the offset in its table entry, which is one of its members, so the record is removed and added back
-with its new content.
-\end{runex}
 
-Many transformations in the literature are stated by the items they change: injecting a section into an
-executable~\cite{demetrio2021functionality}, adding entries to an app's manifest~\cite{grosse2016adversarialTMP}, or
-transplanting code from another app~\cite{pierazzi2020intriguing}. Such an edit comes with a delta, which its
-definition computes from $z$ (a new section also rewrites the header field that counts the sections), and
-\Cref{sec:evaluation} checks that our implementations of these edits produce the deltas they state. Edits given by the
-elements they write are the subject of \Cref{sec:fw:edits}.
-\begin{runex}
-Appending to a toy input one non-printable byte and then a string of $\ell \ge 4$ printable bytes removes nothing and
-adds $\ell + 1$ bytes and one string. The non-printable byte keeps the new string from joining a string that ends the
-old input.
-\end{runex}
+Many transformations are stated by the items they change, and such an edit comes with a delta, which its definition
+computes from $z$. Edits given by the elements they write are the subject of \Cref{sec:fw:edits}.
 
 \proposition[Exact side effects]
 \label{prop:fw:side-effects}
@@ -291,32 +223,17 @@ be expensive and an edit usually changes few items, so the update may also be ch
 that aimed at the change $\boldsymbol{\delta}^*$ (\Cref{sec:background}) are
 $\boldsymbol{\eta} = \varphi(z') - \varphi(z) - \boldsymbol{\delta}^*$, so they are exact on the modeled features too.
 The proposition says nothing about the residual features.
-\begin{runex}
-In the toy format, let $N$ and $T$ be the number and total length of the strings, $R$ the total length of the
-records, and $L$ the length of the input. The append raises $x_1$ by one, changes $x_2 = T/N$ to
-$(T + \ell)/(N + 1)$, and raises $x_3$ to $\max(x_3, \ell)$, from the old value, since nothing was removed. The share
-of records $x_4 = R/L$ falls to $R/(L + \ell + 1)$ although no record was touched: a side effect, which by (iii)
-comes through $L$. Overwriting a byte in the middle of the longest string with a non-printable byte splits it. The
-delta, which \Cref{sec:fw:edits} derives, removes the string and the old byte and adds the new byte and each piece of
-at least four bytes. The two bytes cancel in $L$, $N$ changes by $-1$, $0$, or $+1$, and the new $x_3$ is the longest
-of the other strings and the pieces, which the item table gives and the old $x_3$ does not.
-\end{runex}
 
 The same reasoning applies when only the kinds of the changed items are known, and not their contents. An edit that
 only adds items cannot lower an additive sum whose contributions are never negative, such as a count, whatever the
 added items contain. \Cref{sec:fw:directions} derives such statements for the operations of a threat model.
-\begin{runex}
-In the toy format, an edit that only adds strings and bytes, whatever they contain, cannot lower $x_1$, and it cannot
-raise $x_4$, since it adds to the length of the input and not to the records.
-\end{runex}
 
 \subsection{Edits Given as Writes}
 \label{sec:fw:edits}
 
 % Spine: docs/framework-design.md, Section 13 (approved 2026-11-05 with the recommendations Q1-Q4).
-Many transformations are given by the elements they write rather than by the items they change: append bytes to a
-file, overwrite padding or an unused field, change a packet's timestamp. For one such edit the edited input $z'$ is at
-hand, but Proposition~\ref{prop:fw:side-effects} needs its delta. For a family of edits, such as appending any bytes,
+Many transformations are given by the elements they write rather than by the items they change. For one such edit
+the edited input $z'$ is at hand, but Proposition~\ref{prop:fw:side-effects} needs its delta. For a family of edits,
 there is not even a single $z'$. This subsection shows when the delta follows from the item table of $z$, the
 positions an edit writes, and the new elements near them. It is the only part of the framework that depends on the
 input format, and the format enters through two sets of positions per kind, which the instrumentation provides. The
@@ -327,13 +244,9 @@ moves every element after it, so its written set runs to the end of the input.
 A write can change items in three ways. It can change the content of items whose members it writes, and these items
 are listed in the item table with their members, so they can be read again from $z'$. It can write an element that the
 extractor reads to decide where items lie, such as a count, an offset, or a length, and then items anywhere in the
-input may appear, vanish, or move. Or it can change content that the extractor scans for items, so that a run of
-printable bytes grows, splits, or joins its neighbor. Changes of the second sort can reach any part of the input and
+input may appear, vanish, or move. Or it can change content that the extractor scans for items, so that an
+item grows, splits, or joins its neighbor. Changes of the second sort can reach any part of the input and
 must be ruled out; changes of the third sort stay near the write and can be bounded.
-\begin{runex}
-In the toy format, the count in byte 0 and the offsets and lengths in the table decide where the records lie. Strings
-are found by scanning: every maximal run of at least four printable bytes is one, wherever it lies.
-\end{runex}
 
 \definition[Local kinds]
 \label{def:fw:local}
@@ -348,23 +261,15 @@ addition, its items in $z'$ have the same members as its items in $z$.
 }
 
 \noindent The structure positions of a kind are usually the elements the extractor reads to find its items, and the
-margin is where the write can change them. A kind found through fields, such as the records of the toy format or the
-sections of an executable, has a fixed layout, and its margin is $W$ with the members of the items $W$ meets. For a
-kind found by scanning for maximal runs of elements of some class, the margin extends $W$ on each side to the nearest
+margin is where the write can change them. A kind found through fields has a fixed layout, and its margin is $W$ with
+the members of the items $W$ meets. For a kind found by scanning for maximal runs of elements of some class, the margin extends $W$ on each side to the nearest
 element of $z$ that is outside the class and outside $W$; since that element is unchanged in $z'$, no run crosses it.
 For windows of $n$ consecutive elements, the margin extends $W$ by $n - 1$ elements on each side. These margins are the
-damage regions on which incremental parsers re-run~\cite{wagner1998efficient}. Data that runs to the end of the input,
-such as the overlay of an executable (the data after its last section), changes its members whenever the edit writes past the old end, so its margin
-contains it in that case. Every kind is local with all positions as its structure positions, since no nonempty written
+damage regions on which incremental parsers re-run~\cite{wagner1998efficient}. Data that runs to the end of the input
+changes its members whenever the edit writes past the old end, so its margin contains it in that case. Every kind is local with all positions as its structure positions, since no nonempty written
 set then misses them, just as every extractor is a sum-then-readout extractor with one item
 (Remark~\ref{rem:fw:granularity}). The definition asks how few positions suffice, and a kind whose items the
 instrumentation cannot find again from a margin keeps its members among its structure positions.
-\begin{runex}
-In the toy format, the structure positions of the records are byte 0, the table, and any position past the end of the
-input to which an entry points; records have a fixed layout. Strings and bytes have no structure positions. The margin
-of the bytes is $W$, and the margin of the strings runs from the nearest non-printable byte before $W$ to the nearest
-one after it.
-\end{runex}
 
 \lemma[Localization]
 \label{lem:fw:localization}
@@ -390,32 +295,13 @@ members, which a delta does not record, so a sequence of writes is followed by u
 time. Part (b) needs neither the content of the writes nor any edited input: it bounds, from the item table of $z$
 alone, which items a whole family of edits can remove or add, which is what \Cref{sec:fw:directions} turns into
 directions. The proofs are in Appendix~\ref{sec:fw:proofs}.
-\begin{runex}
-The two deltas of \Cref{sec:fw:side-effects} follow from part (a). Overwriting a byte in the middle of the longest
-string with a non-printable byte writes one position, which is not a structure position of the records if the string
-lies outside the table. The margin of the strings runs between the non-printable bytes on either side of the string, so the string is replaced by the pieces of at
-least four bytes; the byte at the written position is replaced by the new byte, and a record that contains the string
-is replaced by a record of the same length. Appending a non-printable byte and $\ell$ printable bytes writes positions
-past the end. If the old input ends with a string, the margin of the strings contains it, and the lemma's delta
-removes it and adds it back unchanged, since the non-printable byte keeps it from growing; with the new string and the
-$\ell + 1$ bytes, this is the delta of \Cref{sec:fw:side-effects} with one string on both sides. For the family of all
-appends of at most $B$ bytes, part (b) says that records are unchanged if the table points within the input, bytes and
-strings are only added, and the only string that can be removed is one that ends the old input, which a string at
-least as long replaces.
-\end{runex}
 
 An edit whose written set meets the structure positions of a kind can change the items of that kind anywhere, and the
 lemma says nothing about them; for the other kinds it still applies. Such an edit is handled when it comes with its
 delta, as an edit stated in items does; if a later edit is given as writes, it also needs the members of the items the
-first one added, which such an edit states along with their contents. \Cref{sec:instances} states every operation of
-our EMBER instance that changes structure in this way. An edit that comes with no delta is flagged, and the kinds
+first one added, which such an edit states along with their contents. An edit that comes with no delta is flagged, and the kinds
 whose structure positions it writes may change arbitrarily. Whether an edit is flagged is decided by comparing $W$
 with the structure positions in the item table, which needs no judgment, and the answer depends on the input.
-\begin{runex}
-On a toy input whose table points past its end, appending writes a structure position of the records, since the
-appended bytes may become part of a record, so the append is flagged on this input although it writes no structure
-position of any other.
-\end{runex}
 \noindent This dependence on the input is why the directions of \Cref{sec:fw:directions} hold over a population of
 inputs and not over all of them.
 
@@ -425,8 +311,7 @@ inputs and not over all of them.
 % Spine: docs/framework-design.md, Section 14 (Q1-Q4 as recommended, 2026-11-05).
 A detector has to hold against every edit the attacker may make, on every input it will face, and not against one edit
 of one input. We describe the attacker's edits by operations. An \emph{operation} $o$ is a family of edits
-$T_{o,\theta}$, indexed by a parameter $\theta$ from a domain $\Theta_o(z)$ that may depend on the input, such as any
-content of at most $B$ elements to append. A \emph{threat model} $\mathcal{M}$ is a finite catalogue $O$ of
+$T_{o,\theta}$, indexed by a parameter $\theta$ from a domain $\Theta_o(z)$ that may depend on the input. A \emph{threat model} $\mathcal{M}$ is a finite catalogue $O$ of
 operations, and it fixes the transformations of \Cref{sec:background}: $\mathcal{T}$ is the set of finite sequences of
 operation instances, and $\mathcal{R}(z)$ is what they reach. Whether an operation preserves the object's behavior or
 plausibility belongs to $\Gamma$ and is an input to the model. The results of this subsection hold over a
@@ -456,8 +341,7 @@ Proposition~\ref{prop:fw:side-effects}(i), and contributions in feature sets tak
 \Cref{tab:fw:signs} lists with their sign sets. The form of a hashed key needs one remark: the sums it can reach and
 the signs it gives them are those of the keys in $Q$, which enumerating $Q$ finds, so hashing does not hide from the
 attacker which features a chosen key moves. This answers Severi et al.'s remark that hashing resists
-targeting~\cite{severi2021explanation}. A count of the items whose content matches a pattern, such as the strings
-that are URLs, gains matches but loses none when an item is extended, provided the pattern does not look past the end
+targeting~\cite{severi2021explanation}. A count of the items whose content matches a pattern gains matches but loses none when an item is extended, provided the pattern does not look past the end
 of a match.
 
 \begin{table*}[t]
@@ -577,18 +461,3 @@ and a gradient-boosted tree trained with monotone constraints is such a score. T
 this guarantee available for any threat model, because the table it needs is computed from the extractor for every
 feature, where Gimenez et al.\ chose 40 features by hand or learned a post-processing of the features from the attacks
 they observed~\cite{gimenez2025certifiably}.
-\begin{runex}
-Take as the population the toy inputs whose table points only within the input; neither operation below writes the
-table, and neither shortens the input, so the population is closed under both. Appending at most $B$ bytes adds bytes
-and strings and may replace a string that ends the old input by an extension of it
-(\Cref{sec:fw:edits}). The number of strings can only rise, since the replacement keeps the count, and so can the
-total length of strings, the longest-string pool, and the length of the input; the total length of records is fixed.
-So $x_1$ and $x_3$ are up; $x_2$, a ratio whose numerator and denominator can both rise, is both; and $x_4$, whose
-numerator is fixed and whose denominator can rise, is down: the side effect of \Cref{sec:fw:side-effects}, now for
-every append. Overwriting any bytes outside the structure positions of the records adds, removes, and replaces
-strings, replaces bytes by bytes, which keeps the length of the input, and replaces records by records of the same
-length, read from their unchanged table entries. So $x_1$, $x_2$, and $x_3$ are both and $x_4$ is fixed. With both
-operations in the threat model, the union leaves $x_4$ down and the other three both. A score that reads only $x_4$
-and does not fall as $x_4$ falls cannot be lowered by any sequence of appends and overwrites, while
-Corollary~\ref{cor:fw:robustness} says nothing about a score that reads $x_1$, $x_2$, or $x_3$.
-\end{runex}
