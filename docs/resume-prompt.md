@@ -1,8 +1,8 @@
 # Resume: ProvExp (after 2026-11-05, session 15): research track (Table 7 updated; next: the user's read, the sums row's beam cell, the scale-up budget)
 
 Two tracks run in parallel in separate sessions. This prompt is for the **research track**. The writing track (§2-3)
-continues in its own session (latest: session 15c writing, §3.3-3.4 drafted and §3.5 folded into §3.4, `0bb0e31`);
-its section below is maintained by that session. Do not edit `manuscript/_c_background.tex`, `_d_framework.tex`, `_i_symbols.tex`,
+continues in its own session (latest: session 15d writing, §3 cut, tables moved to Appendix C, readability pass, `4001a9d`);
+its section below is maintained by that session. Do not edit `manuscript/_c_background.tex`, `_d_framework.tex`, `_i_symbols.tex`, `_j_proofs.tex`,
 `docs/framework-*.md`, `docs/writing-spec.md`, or the `paper-prose` skill from the research track, and commit only
 your own files (`git status` first: the other session may have uncommitted work).
 
@@ -59,40 +59,41 @@ your own files (`git status` first: the other session may have uncommitted work)
    rest on the same input" stretches Chen 2021). After those, the introduction and the other empty sections, spine
    first, coordinated with the writing track.
 
-## Writing track (session 15c writing, 2026-11-05): §3.1-3.4 drafted, §3.5 folded into §3.4; next, the user's read
+## Writing track (session 15d writing, 2026-11-05): §3 cut and smoothed; next, the user's read of all of §3
 
-**Where things stand.** `docs/framework-design.md` is the design (**read it first**: Sections 1-9 the design, 10 the
-user's decisions A-H, 11-14 the spines of §3.1-3.4 with their decisions, 15 the §3.5 fold). The extractor factors as
-$\varphi = \rho \circ \sigma \circ \pi$, $\mathcal{Z} \to \mathcal{V} \to \mathcal{S} \to \mathcal{X}$, and §3
-now has **four** subsections:
-- 3.1 the class (**done**; the user: "a significant improvement");
-- 3.2 edits and exact side effects (drafted, `ff5ac37`; the user's verdict "still largely unsuccessful", return later):
-  Def 6 (item delta), Prop 1;
-- 3.3 edits given as writes (drafted, `b6fa4ab`, **unread**): Def 7 (local kind: structure positions $L_\tau(z)$,
-  margin $\mu_\tau(z, W)$, fixed-layout), Lemma 1 (a) one edit, (b) an operation; $W$ = every differing position;
-- 3.4 sound directions (drafted, `00ef2c2`, **unread**): operations, threat model = catalogue (no precondition;
-  population $F$), signatures (add/remove/replace), sign sets and $\boxplus$, Tables 1-2, Def 8, Theorem 1; then
-  (`0bb0e31`, **unread**) Corollary 1 (robustness, Gimenez et al.'s Proposition 1 with our table), now also for
-  scores that read sums, and the toy example's last sentence. `sec:fw:robustness` is gone.
+**Where things stand.** §3 (`manuscript/_d_framework.tex`) has four subsections built on
+$\varphi = \rho \circ \sigma \circ \pi$ ($\mathcal{Z} \to \mathcal{V} \to \mathcal{S} \to \mathcal{X}$):
+3.1 the class (Defs 1-5, Remark 1), 3.2 item deltas and exact side effects (Def 6, Prop 1), 3.3 edits given as writes
+(Def 7 local kinds, Lemma 1 localization), 3.4 sound directions (signatures, sign sets, Def 8, Theorem 1, Corollary 1).
+Design and spines: `docs/framework-design.md` (Sections 11-15). This session (`db2a327`, `4001a9d`, `4510e07`):
+- **Cut (user):** the toy example everywhere and every tie to real feature sets (EMBER, Drebin, Hidost,
+  CICFlowMeter, PE examples). No replacement plain-language examples (the user's view; open to debate). Pre-cut text in
+  `manuscript/backup/framework-before-cuts-2026-11-05.tex`, to refactor into §4.
+- **Tables 1-2** redesigned (symbols in cells, conditions in footnotes) and moved to Appendix C ("Sign rules");
+  the body states the readout rules in one sentence.
+- **§3 lead** rewritten in the current order. **Readability pass** over all of §3, math unchanged; new term: an
+  item *lies within* a set of positions. ~4,450 words (budget 2,500; drafting allowance ~4,400).
+- Kept for the user to decide: "such as an offset in a table entry", "such as a count", "such as a count, an offset,
+  or a length", the 5-vs-3 max example, and §3.4's sentence on where our sign sets come from.
 
-**Lessons to keep** (reaction log, 2026-11-05; `paper-prose` lessons 26-27): read the rendered PDF (pdftotext)
-before showing anything; no equation numbers as arguments; explain each concept in words before its definition and
-each result's plain meaning after it; spend words on the one real idea, not on obvious facts; no abstract closers; no
-deference about cited work (lesson 13: "The guarantee is Gimenez et al.'s." was caught and rewritten this session).
+**Lessons to keep** (`paper-prose` lessons 26-28): read the rendered PDF (pdftotext; render tables with pdftoppm and
+look) before showing anything; readable before reviewable (the user: the prose was "extremely hard to review");
+table cells hold symbols, never clauses; explain each concept in words before its definition and each result's plain
+meaning after it; no equation numbers as arguments; no abstract closers; no deference about cited work.
 
 **Next, in order.**
-1. Invoke `/paper-prose`. **Take the user's read of §3.3-3.4** (including the fold); log it raw in
-   `docs/writing-spec.md`'s reaction log, update the skill's lessons, revise from a spine change if the structure is
-   at fault, not by patching sentences.
-2. **Downstream consistency** (mechanical once 3.3-3.4 stand): the §3 lead (`_d_framework.tex` top) still describes
-   the old order (positions from writes before side effects); §4's "self-contained contributions (R4)"
-   (`_e_instances.tex:40`) and "honest tools (R3)" (`:106`), now part of the class definition or dropped (decision C);
-   §5's "precondition" (`_f_evaluation.tex:102, 267`) should say it is how §4 defines $F$; §5's uses of Corollary 1
-   for the sums rows. A 1.5pt overfull vbox (float placement, since `0bb0e31`) to clear eventually.
-3. **Return to §3.2** (Prop 1's statement density; the long purple examples).
-4. Notation round (the user is "not in love" with $\tau$); `% VERIFY` on Hidost's feature values
-   (`_d_framework.tex:207`); the "strong baselines" claim. Then the introduction and the other empty sections, spine
-   first, coordinated with the research track.
+1. Invoke `/paper-prose`. **Take the user's read of all of §3.** Log it raw in `docs/writing-spec.md`'s reaction log,
+   update the skill's lessons, and revise: from a spine change if the structure is at fault, not by patching
+   sentences. Settle the kept clauses above.
+2. **Downstream consistency:** §4's "self-contained contributions (R4)" (`_e_instances.tex:40`) and "honest tools
+   (R3)" (`:106`), now part of the class or dropped; §5's "precondition" (`_f_evaluation.tex:102, 267`) should say it
+   is how §4 defines $F$; §5's uses of Corollary 1 for the sums rows; the proofs appendix says "whose members lie in"
+   where §3 says "lies within".
+3. **Refactor the cut material into §4** where it serves the instances (which feature sets have the shape; the
+   size/length repair as a contribution moved into a readout; item-stated operations); the scope sentence (call
+   graphs, learned representations) to §7.
+4. Notation round (the user is "not in love" with $\tau$); the "strong baselines" claim (cut; reinstate only with
+   support). Then the introduction and the other empty sections, spine first, coordinated with the research track.
 
 ## Carry-forward (unchanged)
 

@@ -55,6 +55,22 @@ introduction and a simple baseline (writing decision for later).
   combined edits (run 111, 1,105 of 1,105) and the learned-constraints contrast (run 110). Record:
   `docs/direction-A-prime-plan.md`, Section 13.
 
+## Next steps (2026-11-05, session 15d, writing: §3 cut, tables to Appendix C, readability pass)
+
+Done: the toy example and all real-feature-set passages cut from §3 (backup in `manuscript/backup/`); Tables 1-2
+redesigned and moved to Appendix C; the §3 lead in the current order; a readability pass over §3 (math unchanged).
+§3 is ~4,450 words. The user reads all of §3 next.
+
+Next, in order (writing track):
+1. **The user's read of §3** (all four subsections). Log it raw in `docs/writing-spec.md`, update `/paper-prose`,
+   revise; a spine change only if the structure is at fault. Settle the kept "such as" clauses and the 5-vs-3 example.
+2. **Downstream consistency:** §4's (R3)/(R4) wording; §5's "precondition" as the definition of $F$; §5's uses of
+   Corollary 1 for the sums rows; the proofs appendix's wording ("lies within").
+3. **Refactor the cut material into §4** where it serves the instances (which feature sets have the shape, the
+   size/length repair, the item-stated catalogue); the scope sentence (call graphs, learned representations) to §7.
+4. Notation round ($\tau$); the "strong baselines" claim (cut from §3; reinstate only with support). Then the
+   introduction and the other empty sections, spine first, coordinated with the research track.
+
 ## Next steps (2026-11-05, session 15c, writing: §3.3-3.4 drafted, §3.5 folded into §3.4)
 
 Done: §3.3 (local kinds, Lemma 1) and §3.4 (signatures, sign tables, Theorem 1) drafted from approved spines

@@ -1,5 +1,35 @@
 # Status
 
+**2026-11-05 (session 15d, writing track): §3 cut, tables moved, lead fixed, readability pass; next, the user reads
+all of §3.** Nothing pushed. Commits `db2a327` (cuts), `4001a9d` (pass, lead, tables), `4510e07` (skill lesson 28).
+
+- **Cuts (user):** the toy example removed everywhere (15 purple blocks, ~1,170 words), and every passage tying the
+  framework to real feature sets: the EMBER/Saxe/n-gram/Drebin/Hidost/CICFlowMeter survey paragraph at the end of
+  §3.1 (with the call-graph and learned-representation scope sentence), the "strong baselines" sentence, the EMBER
+  size/length repair example, §3.2's item-stated attack list (Demetrio, Grosse, Pierazzi) and its pointer to §5,
+  §3.3's PE examples (padding, timestamps, sections, overlay, printable runs), and smaller "such as" clauses. The
+  user does not want replacement plain-language examples (open to debate). Pre-cut text:
+  `manuscript/backup/framework-before-cuts-2026-11-05.tex`, to refactor into §4 where useful. The Hidost
+  `% VERIFY` went with the cut.
+- **Kept for the user's decision** (format-neutral clauses): "such as an offset in a table entry" (§3.2), "such as a
+  count" (§3.2 end), "such as a count, an offset, or a length" (§3.3), the 5-vs-3 max example after Prop 1, and the
+  one sentence on where our instance's sign sets come from (§3.4, pointer to §4).
+- **Tables 1-2** ("so unpleasant it is hard to look at the PDF"): redesigned (symbols and short formulas in cells,
+  conditions in footnotes, single column, "all" for {-,0,+}, `sgn[l,u]`) and moved to Appendix C under a "Sign
+  rules" paragraph; labels `tab:fw:signs`, `tab:fw:readouts` kept. The body states the readout rules in one sentence.
+  Fixed a clash: the hashed row's `h(q)` vs the score $h$.
+- **§3 lead** rewritten in the current order (class; exact side effects; edits as writes; directions and the
+  robustness guarantee); the only proofs pointer in §3.
+- **Readability pass** over all of §3 (user: the prose was "extremely hard to review"); math unchanged. One new term,
+  an item *lies within* a set of positions (Def 7, Lemma 1); paragraphs split by topic; repeated "proofs are in"
+  pointers removed; the ratio's algebra left the body (it is in the appendix). §3 is ~4,450 words (budget 2,500,
+  drafting allowance ~4,400). `make check` clean; the 1.5pt overfull vbox is gone.
+- **Not yet read by the user:** all of §3 in its new form. Reaction logged in `docs/writing-spec.md`; lesson 28 in
+  `paper-prose`.
+- **Open:** §4's "(R4)" (`_e_instances.tex:40`) and "honest tools (R3)" (`:106`); §5's "precondition" wording (it
+  defines $F$); where the cut real-feature-set material lands in §4 (and the scope sentence, perhaps §7); the
+  notation round ($\tau$); the proofs appendix still writes "whose members lie in" where §3 now says "lies within".
+
 **2026-11-05 (session 15c, writing track): §3.3 and §3.4 drafted; §3.5 folded into §3.4, so §3 has four
 subsections.** Nothing pushed. Commits `b6fa4ab` (§3.3), `00ef2c2` (§3.4), `0bb0e31` (the fold).
 
