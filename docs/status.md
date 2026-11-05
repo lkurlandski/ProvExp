@@ -1,5 +1,21 @@
 # Status
 
+**2026-11-05 (session 15, research track): run 130 read; Table 7 updated (`9f9cecb`, `08c8535`).** Nothing pushed.
+
+- **Run 130 (beam x run 125's adversarial training): 24/49 (49%)**, at 200 / 1,000 / 5,000 candidates 8 / 17 / 24;
+  hypothesis ~20-25 held. All 24 confirmed on re-extraction; 35 mismatches (pefile's warning features), no LOST lines.
+  The beam evades all 12 + 6 files run 125's greedy menus evade, so the §5 greedy sentence holds on every row.
+- **Table 7 (user: go ahead; run 125's row replacing run 122's accepted).** Adaptive column = the beam alone:
+  unconstrained full store 51%, adversarial training (run 125) 49%, PV 10% 4 attacks 68%, 8 attacks 64% (synthetic
+  77% gone), ERDALT 80%, monotone features 0%; the sums row keeps the greedy 0% with a footnote (no beam routing to
+  the sums store yet). New footnotes: run 125's training attacks vs PV's seen/held-out split; ERDALT port details.
+- **§5 prose:** the adaptive attack's setup paragraph now describes the beam (5,000 candidates); the PV paragraph
+  reports 15/22 and 14/22 and adds ERDALT (seen 0/25, held-out 23/25, beam 20/25, 89.7% of L's weight in the hole);
+  a new adversarial-training paragraph (run 125's numbers) ends with the greedy-subset sentence. §6's closing pointer
+  names ERDALT's learned layer. `make check` clean. Not yet read by the user.
+- **Still open (research):** the sums row's beam cell (routing plan), the adaptive budget at scale (~3,000 CPU-h at
+  5,000 candidates), ERDALT's selection criterion at seeds 0-2.
+
 **2026-11-04 (session 14b, writing only; ran alongside session 14): Sections 2-3 rewritten from scratch; the user
 reads them next.** Nothing pushed. Commits `6197efb`, `084055c`. Next session: `docs/resume-prompt.md` (writing track).
 
