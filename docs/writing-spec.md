@@ -97,6 +97,47 @@ side of detail and cut later.
 What the user accepted or rejected on real drafts, newest first. Each entry: the sentence or choice, the verdict, the
 rule it implies (folded into Sections 1-5 if general).
 
+- **2026-11-05, written review of the rewritten §2, §3 lead, §3.1, §3.2 (stopped at §3.3).** Verdict: §2 and §3.1
+  are workable with revisions; §3.2 from Definition 6 to Lemma 1 is "unintelligible", "a completely unhinged rant";
+  the user assumed §3.3-3.6 are no better and did not read them. Agreed: fix the second half's structure before any
+  prose, and spend real effort on organization ("if we nail the organizational design, filling in the gaps becomes
+  much simpler"). Word budgets are loose at this stage; the user simplifies by hand later.
+  §2: tone "distant and passive" throughout. ¶1: add a sentence on how a feature-space attack's vector is turned into
+  an object. ¶2: too much space on the problem-space constraints unless the framework uses them; more emphasis on the
+  reachable set ("semi-novel idea of ours ... integral to our research"). ¶3: "A problem-space attack often starts
+  from a feature-space target" confused the user (isn't that the feature-space attack?) and is not needed to reach
+  side effects; too much credence to Pierazzi ("Pierazzi et al. write", "Their account of"): their paper is gospel,
+  state its ideas as fact and cite; consolidation over-emphasized (just one source of side effects). ¶4: "really
+  good"; make the three viewpoints stand out (on first read the user saw two); asked whether the three viewpoints map
+  to our experiments; define "monotone".
+  §3 general: too many symbols, and symbol types used inconsistently for similar constructs. Lead: "pretty good".
+  §3.1 ¶1: fine but simplistic; consider tying it to a type theory; say that such features are extremely common and
+  effective across domains; "an extractor doing stuff" is informal (though parts rely on it). ¶2 (elements): odd, no
+  transition, too short; a definition? Def 1 (item): "wet clay", more vocabulary than needed; "identity" has no
+  symbol; content could be written as $z$ restricted to the members. ¶3: identity "smells like a leaky abstraction",
+  tied to pointers and executables, unbounded (identities of identities?); "same item iff same identity" seems
+  wrong; the paragraph is informal and ungrounded. ¶4 (monoid lead-in): comes out of nowhere, delete. Def 2: write
+  out both max and min pools; "much, much better" than Def 1, tight and intentional; "the identity element" was
+  never introduced. ¶5: mention min pools; is this used later? ¶6 (terms): no idea what count/attribute/... mean or
+  what contributions are for; consider separating the sum and contribution definitions (tightly coupled, discuss).
+  Def 3 and Def 4: too thin, more detail. ¶7: readouts are not something we "need"; they are a class of mathematical
+  object we identified, with commonly used feature functions as examples. ¶8: "residual" unexplained; the
+  implementation remark is unwarranted. ¶9 (prevalence): good; cleaned-up tables may return here later.
+  §3.2 ¶1: too abrupt an entry into the math; the written set is a convenience and should not be in the spotlight.
+  Def 5 (item delta): "really good". ¶2: the forward reference is hand-wavy; must say that the standard way to get
+  the delta is re-extraction, and why we would avoid it, which the section has not explained; "awful", "weird,
+  LLM-passive voice", confusing. Def 6 (locating positions): the same thing as identity again; boring, overblown.
+  ¶3-10: kinds appear abruptly after a definition about locating positions; incomprehensible; "honest tools" is "one
+  of the stupidest sentences I have ever read" ("perhaps we should add a requirement about honest computers or honest
+  physics"). Lemma 1: the claim is graspable, but not why it is true. ¶11: "LLM slop".
+  Implied: (a) a definition that needs a paragraph of informal glossing to make sense ("identity", "locating
+  positions decide whether an item exists") is not a definition; define by what the later results use, or drop it;
+  (b) never stack concepts without examples or motivation, and introduce a concept before its subdivisions;
+  (c) requirements must be about the mathematics, not anthropomorphic properties of software ("honest tools");
+  (d) motivation comes before machinery: the reader must know why we want something (avoiding re-extraction)
+  before the section works toward it; (e) state established ideas as fact with a citation instead of narrating
+  what an author wrote; (f) active voice, a present author; (g) a whole subsection drafted without a reviewed spine
+  failed: when the user cannot critique a spine, the spine is the problem.
 - **2026-11-04, §3 spine (decisions D1-D5 and comments on P1-P10).** D1: Pierazzi's setup goes into a "Background and
   Motivation" section. D2: no domain examples in the framework while the theory is drafted ("keep the theory pure");
   keep the removed examples in LaTeX comments. D3: the term and readout tables are "simply disgusting"; out of the PDF,

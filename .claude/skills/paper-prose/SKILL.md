@@ -98,11 +98,33 @@ contradicts.
     2026-11-04)
 20. **Theory first, decoration later.** While a formal section is being settled: no domain examples in the text (keep
     them in `% EXAMPLE` comments), no tables or figures, titles that fit on one line. (§3 decisions, 2026-11-04)
+    Under review (2026-11-05): with no example, §3.2's abstractions were incomprehensible; ask before relying on
+    this lesson for a subsection whose concepts are hard to picture.
+21. **A definition must stand without glossing.** If a defined notion needs a paragraph of informal explanation to
+    make sense ("identity: how the extractor reaches the item"; "positions that decide whether an item exists"), it
+    is "wet clay" and a leaky abstraction. Define only what later results use, in terms already defined (content is
+    $z$ restricted to the members, not a new symbol), or drop it. Def 2 (sums) was praised as "tight and
+    intentional": that is the bar. (§3.1-3.2, 2026-11-05)
+22. **Motivation before machinery, and one concept before its subdivisions.** The reader must know why we want a
+    thing (finding the item delta without re-extraction: why avoid re-extraction?) before the text builds it, and a
+    concept (locating positions) must be explained before its kinds or exceptions appear. Six concepts in a row with
+    no example or purpose read as "an unhinged rant". (§3.2, 2026-11-05)
+23. **Requirements are mathematics, not software virtues.** "Honest tools" was ridiculed ("honest computers, honest
+    physics"). State an assumption as a property of the objects in the model (the delta an edit is given with), and
+    move implementation checks to the evaluation. (§3.2, 2026-11-05)
+24. **Established ideas as fact, a present author, active voice.** Pierazzi et al.'s framework is standard: state its
+    ideas with a citation, not "Pierazzi et al. write ... Their account of ...". The register was "distant and
+    passive". (§2, 2026-11-05)
+25. **Give space by later use.** Material the rest of the paper does not use (the four problem-space constraints,
+    consolidation) gets a sentence; what the paper is built on (the reachable set) gets the emphasis. A list the
+    reader must count (three viewpoints) should be visibly three. (§2, 2026-11-05)
 
 ## Procedure
 
 1. **Spine first, always.** One line per paragraph (its claim, its citations or numbers), agreed with the user before
-   prose. Keep this paragraph-by-paragraph plan even when the drafting unit grows to a whole section: it is where the
+   prose. For a formal section, settle the architecture before the spine: which objects and maps exist, which result
+   each subsection proves, and what each result needs. If the user cannot critique a spine, the spine is too abstract;
+   fix it, do not draft past it (§3.2 failed this way, 2026-11-05). Keep this paragraph-by-paragraph plan even when the drafting unit grows to a whole section: it is where the
    user corrects the structure before it becomes "a spaghetti of a section" (user, 2026-11-04).
 2. **Draft one unit** (one paragraph while the lessons are young; larger units as they stop drawing corrections, see
    step 6).
