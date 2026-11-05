@@ -16,14 +16,19 @@ declared structural edit, (R3) says that the declared delta is the parsed part, 
 above with the declared range in place of the margin.
 
 \paragraph{Proof of Proposition~\ref{prop:fw:side-effects}.}
-(i) The items of $z'$ split into the unchanged items, $I^+$, the modified items after the edit, and the moved items;
-those of $z$ into the unchanged items, $I^-$, the modified items before the edit, and the moved items. An additive sum
-splits over any partition of the items it adds. The unchanged items have the same content in both inputs, and so, by
-(R4), the same contributions; a moved item keeps its content, hence its contribution. Subtracting the two splits gives
-the formula. (ii) A pool's value over $z'$ is the maximum over the unchanged items, which the item table lists, and
-the added and modified ones, which $\Delta$ gives. The old value alone does not suffice: pools holding $\{5, 3\}$ and
-$\{5, 5\}$ both have value 5, and removing an item of value 5 leaves 3 in the first and 5 in the second. (iii) By (R5).
-Applying (i)--(iii) once per edit, with the item table carried forward, gives the side effects of a sequence of edits.
+Let $B = \pi(z) - I^-$. Since $I^- \subseteq \pi(z)$, $\pi(z) = B \uplus I^-$, and by \eqref{eq:fw:delta},
+$\pi(z') = B \uplus I^+$. By \eqref{eq:fw:homomorphism}, $\mathbf{s}(z) = \sigma(B) \oplus \sigma(I^-)$ and
+$\mathbf{s}(z') = \sigma(B) \oplus \sigma(I^+)$. (i) For an additive sum $k$, both are sums of real numbers, so
+$s_k(z') - s_k(z) = \sigma(I^+)_k - \sigma(I^-)_k$, which is \eqref{eq:fw:delta-rule} by \eqref{eq:fw:fold}.
+(ii) For a pool $k$, $s_k(z') = \sigma(B \uplus I^+)_k$. The item table of $z$ lists the contribution of every item
+of $\pi(z)$, hence those of $B$, and the contributions of $I^+$ follow from the contribution functions. The old value
+does not suffice: let $\nu(c) = c$ on a pool, and let $z_1$ and $z_2$ have items contributing $\{5, 3\}$ and
+$\{5, 5\}$. Both have $s_k = 5$, and the same delta, removing one item of value 5, gives 3 for $z_1$ and 5 for $z_2$.
+If $I^- = \emptyset$, then $B = \pi(z)$ and $s_k(z') = s_k(z) \oplus \sigma(I^+)_k$. (iii) The first part is
+\eqref{eq:fw:extractor} applied to $z'$. For the second, if every element of $I^-$ and $I^+$ contributes the neutral
+element to every sum in $K_j$, then $\sigma(I^-)$ and $\sigma(I^+)$ are neutral on $K_j$, so $\mathbf{s}(z)$ and
+$\mathbf{s}(z')$ both agree with $\sigma(B)$ on $K_j$. By Definition~\ref{def:fw:readout},
+$\rho_j(\mathbf{s}(z)) = \rho_j(\mathbf{s}(z'))$, and by \eqref{eq:fw:extractor}, $\varphi_j(z) = \varphi_j(z')$.
 
 \paragraph{Proof of Lemma~\ref{lem:fw:signature}.}
 Let an operation, on every input of a population $F$ and for every parameter, be in place and

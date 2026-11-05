@@ -211,35 +211,118 @@ a program's call graph, in which a piece's contribution depends on the whole pro
 coarse items (Remark~\ref{rem:fw:granularity}), and learned representations have no items finer than the input
 (\Cref{sec:discussion}).
 
-\subsection{Edits as Item Deltas}
-\label{sec:fw:edits}
+\subsection{Edits and Their Side Effects}
+\label{sec:fw:side-effects}
 
-An edit takes an input $z$ to an input $z'$. Its \emph{written set} $W$ holds the positions at which $z'$ differs
-from $z$, including any positions gained or lost at the end. The edit is \emph{in place} if no element changes
-position, as for overwriting, appending, and truncating, and it \emph{shifts} elements if it inserts or deletes in the
-middle. An edit is \emph{stated in elements} when it is given by the positions it writes and what it writes there,
-and \emph{stated in items} when it is given by the items it adds, removes, or changes. Either way, the extractor sees
-the edit through the items it changes.
+% Spine: docs/framework-design.md, Section 12 (approved 2026-11-05, with the decisions recorded there).
+An edit applies a transformation $T \in \mathcal{T}$ to one input, taking $z$ to $z' = T(z)$. The direct way to learn
+what it does to the features is to extract $\varphi(z')$ and compare it with $\varphi(z)$. For an edit that has been
+carried out, this is the ground truth, and \Cref{sec:evaluation} checks every computation of this subsection against
+it. Extraction needs $z'$, though, a valid object built by carrying out the edit, and it reports which features
+changed but not through which items. It can also be expensive: it parses the whole object, and sometimes disassembles
+its code, while an edit usually changes a few of its items. The factorization \eqref{eq:fw:factorization} suggests
+another route. We describe the edit by how it changes $\pi(z)$ and obtain the change of every sum and every feature
+by arithmetic over the items that changed. Applied to all the edits an operation allows, the same arithmetic is what
+\Cref{sec:fw:directions} needs to bound the features without carrying out any edit.
 
 \definition[Item delta]
 \label{def:fw:delta}
 {
-The \emph{item delta} of an edit is $\Delta = (I^-, I^+, I^\sim, I^\to)$, which compares the items of $z$ and $z'$ by
-identity: the \emph{removed} items $I^-$ have an identity only in $z$, the \emph{added} items $I^+$ have one only in
-$z'$, the \emph{modified} items $I^\sim$ have an identity in both but different content, and the \emph{moved} items
-$I^\to$ have an identity in both and the same content at different members.
+A \emph{delta} of a pair of inputs $(z, z')$ is a pair $(I^-, I^+)$ of multisets in $\mathcal{V}$ such that
+$I^- \subseteq \pi(z)$ and
+\begin{equation}
+  \label{eq:fw:delta}
+  \pi(z') = \big(\pi(z) - I^-\big) \uplus I^+,
+\end{equation}
+where $\pi(z) - I^-$ removes each element of $I^-$ from $\pi(z)$ as often as it occurs in $I^-$. The items in $I^-$
+are \emph{removed} and those in $I^+$ are \emph{added}.
 }
 
-\noindent Every other item is unchanged. Modification is kept apart from removal followed by addition because a
-modified item's count terms cancel: an item whose content changes is still counted once. Some sums, the slots, can
-only be modified, since exactly one item ever writes them.
+\noindent Every pair of inputs has a delta. The smallest one removes the items of $z$ that $z'$ lacks and adds the
+items of $z'$ that $z$ lacks, counted with multiplicity, and every other delta adds the same items to both sides.
+Because $\pi$ keeps the contents of items and forgets where they lie, an item whose content changes appears as one
+removal and one addition, and an item that only moves appears in neither. A delta need not be the smallest. An edit
+that rewrites a header may list it as removed and added back even where its content is unchanged, and nothing below
+depends on minimality.
 
-If $\Delta$ were known, the change of every sum would follow from the contributions of the items in it
-(\Cref{sec:fw:side-effects}). But $\Delta$ is defined by comparing the items of $z$ with those of $z'$, and finding the
-items of $z'$ means running the extractor's parser on $z'$, which is the re-extraction we want to avoid. The rest of
-this subsection shows when $\Delta$ follows from the item table of $z$ and the written set alone. Two questions
-about a written position decide it. The first is whose content the position belongs to, which the members answer.
-The second is whether the position decides which items exist and where their members lie.
+Many transformations in the literature are stated by the items they change, such as injecting a section into an
+executable~\cite{demetrio2021functionality}, adding permissions or other entries to an app's
+manifest~\cite{grosse2016adversarialTMP}, or transplanting a piece of code from another
+app~\cite{pierazzi2020intriguing}. Such an edit comes with a delta that its definition computes from $z$: a new
+section also changes the header field that counts the sections, and with it the header's content. Whether the
+elements an implementation writes produce this delta is a property of the implementation, and \Cref{sec:evaluation}
+checks ours against extraction. Edits given instead by the elements they write are the subject of
+\Cref{sec:fw:edits}, which derives their deltas.
+\begin{runex}
+Appending a string of $\ell \ge 4$ printable bytes to a toy input, preceded by one non-printable byte, is an edit of
+the first kind. Its delta removes nothing and adds the $\ell + 1$ new bytes and one string of length $\ell$. The
+non-printable byte keeps the new string from joining a string that ends the old input.
+\end{runex}
+
+For a sum $k$, we write $s_k(z)$ for the entry of $\mathbf{s}(z)$ at $k$, and $\nu_\tau(c)_k$ for the entry of a
+contribution. Sums over a multiset count each element as often as it occurs.
+
+\proposition[Exact side effects]
+\label{prop:fw:side-effects}
+{
+Let $\varphi$ be a sum-then-readout extractor over $J$, and let $(I^-, I^+)$ be a delta of $(z, z')$. Then:
+(i) every additive sum $k$ satisfies
+\begin{equation}
+  \label{eq:fw:delta-rule}
+  s_k(z') = s_k(z) + \sum_{(\tau, c) \in I^+} \nu_\tau(c)_k - \sum_{(\tau, c) \in I^-} \nu_\tau(c)_k;
+\end{equation}
+(ii) every pool $k$ satisfies $s_k(z') = \sigma\big((\pi(z) - I^-) \uplus I^+\big)_k$, which the item table of $z$ and
+the delta determine, while $s_k(z)$ and the delta in general do not; and
+(iii) $\varphi_j(z') = \rho_j(\mathbf{s}(z'))$ for every $j \in J$, so the change $\varphi_j(z') - \varphi_j(z)$ of
+every modeled feature is exact, and $\varphi_j$ changes only if an item of the delta contributes a value other than
+the neutral element to a sum in its support $K_j$.
+}
+
+\noindent The proposition needs nothing beyond Definition~\ref{def:fw:extractor}. The items of $z$ that the delta
+does not remove are in both inputs, so by \eqref{eq:fw:homomorphism} the sums of $z$ are their fold combined with the
+fold of $I^-$, and the sums of $z'$ are the same fold combined with that of $I^+$. An additive sum can subtract the
+first combination from the second, which gives (i). A pool cannot: two inputs whose pool contributions are $\{5, 3\}$
+and $\{5, 5\}$ both have the value 5, and removing an item of value 5 leaves 3 in the first and 5 in the second, so
+(ii) takes the pool over the remaining items, whose contributions the item table lists. When the delta removes
+nothing, the old value of the pool does suffice, combined with the contributions of the added items. The first part
+of (iii) is Definition~\ref{def:fw:extractor}, and the second holds because a readout depends only on its support.
+Part (i) is the delta rule of incremental view maintenance, which updates an aggregate over a database table from the
+rows inserted into it and deleted from it~\cite{gupta1995maintenance,koch2014dbtoaster}. The proof is in
+Appendix~\ref{sec:fw:proofs}. For an attacker who aimed at the change $\boldsymbol{\delta}^*$, the side effects
+$\boldsymbol{\eta} = \varphi(z') - \varphi(z) - \boldsymbol{\delta}^*$ of \Cref{sec:background} are therefore exact on
+the modeled features, and the residual features may take any value.
+\begin{runex}
+In the toy format, let $N$ and $T$ be the number and the total length of the strings, $R$ the total length of the
+records, and $L$ the length of the input. The append adds one string and $\ell + 1$ bytes, so $x_1$ becomes $N + 1$,
+$x_2$ becomes $(T + \ell)/(N + 1)$, and $x_3$ becomes $\max(x_3, \ell)$, from the old value of the pool, since nothing
+was removed. The share of records $x_4$ falls from $R/L$ to $R/(L + \ell + 1)$ although no record was touched. This is
+a side effect, and by (iii) it comes through the length of the input, to which only the new bytes contribute.
+Overwriting a byte in the middle of the longest string with a non-printable byte is an edit whose delta
+\Cref{sec:fw:edits} derives. It removes the string and the old byte, and adds the new byte and those of the two
+pieces that are at least four bytes long. The old and the new byte both contribute 1 to the length of the input, so
+$L$ is unchanged, while $N$ rises by one, stays, or falls by one. The new $x_3$ is the longest of the other strings
+and the pieces, which the item table lists and the old value of $x_3$ does not reveal.
+\end{runex}
+
+A sequence of edits stated in items is handled one edit at a time, by updating $\pi(z)$ with each delta and the item
+table with the contributions of the added items. An edit given by its writes also needs the members of the items in
+the edited input, which \Cref{sec:fw:edits} takes up. The form of (i) matters more for what follows than any single
+edit does. The change of an additive sum is a total over the contributions of the items in the delta, and (iii) says
+which features a delta can change at all. A bound on which items an edit can add or remove therefore bounds the sign
+of the change of every sum, and with it which features can move, for edits that are never carried out.
+\Cref{sec:fw:directions} derives such bounds for the operations of a threat model.
+
+\subsection{Edits Given as Writes}
+\label{sec:fw:edits}
+
+% PLACEHOLDER: the draft's material on locating positions, (R1)-(R3), and the lemma, in the old notation (identity,
+% kappa, Delta with four parts), kept so that later references resolve. To be rewritten from docs/framework-design.md
+% (Sections 3 S3, 5 "3.3"). Not for review.
+An edit given by its writes has a \emph{written set} $W$, the positions at which $z'$ differs from $z$, including any
+positions gained or lost at the end. It is \emph{in place} if no element changes position, and it \emph{shifts}
+elements if it inserts or deletes in the middle. Two questions about a written position decide whether the delta
+follows from the item table of $z$ and $W$ alone. The first is whose content the position belongs to, which the
+members answer. The second is whether the position decides which items exist and where their members lie.
 
 \definition[Locating positions]
 \label{def:fw:locating}
@@ -326,70 +409,6 @@ items declares its delta and needs neither.
 % byte items and one string of 19 characters (the leading zero byte keeps the text from joining a string at the old
 % end of the file), and extends the overlay. On a file whose section table points past its truncated end, the same
 % append writes a locating position, and the query catches it.
-
-\subsection{Exact Side Effects}
-\label{sec:fw:side-effects}
-
-With the item delta in hand, the features of $z'$ follow in two steps: adjust each sum by the contributions of the
-items in $\Delta$, and apply the readouts again. The first step assumes that the items outside $\Delta$ contribute to
-$z'$ what they contributed to $z$. That holds only if an item's contribution depends on the item alone. An extractor
-that divides an item's attribute by a total over the whole input, or that counts an item only if no item with the
-same key came before it, gives the same item different contributions in different inputs, and an edit elsewhere then
-changes them.
-
-\begin{enumerate}[label=(R\arabic*),leftmargin=*,itemsep=1pt,resume]
-  \item \emph{Self-contained contributions.} An item's contribution depends only on its kind and its content:
-    $\mathbf{v}(\iota) = \mathbf{v}_{\kappa(\iota)}(c(\iota))$ for a function $\mathbf{v}_\kappa$ per kind.
-\end{enumerate}
-
-\noindent In the terms of \Cref{sec:fw:model}, (R4) says that the code processing a kind reads only the item, and
-that the sum vector is its fold over the items. Both violations above are repaired by moving work from the
-contribution into the readout: the item contributes its raw attribute and the total becomes a sum of its own, or the
-item contributes to a count per key and the readout counts the keys with a positive count. The second step needs the
-record to agree with the extractor.
-
-\begin{enumerate}[label=(R\arabic*),leftmargin=*,itemsep=1pt,resume]
-  \item \emph{Faithful recording.} On every input, the recorded readouts applied to the recorded sums give the
-    extractor's own values of the modeled features.
-\end{enumerate}
-
-\noindent (R3)--(R5) are needed for every edit, and (R1) and (R2) only for edits stated in elements.
-
-\proposition[Exact side effects]
-\label{prop:fw:side-effects}
-{
-Let an edit that is not undeclared structural take $z$ to $z'$, and let (R1)--(R5) hold. Then $\Delta$ is computable
-as in Lemma~\ref{lem:fw:delta}, and:
-(i) every additive sum $s$ satisfies
-\[
-  \mathbf{s}(z')_s = \mathbf{s}(z)_s + \sum_{\iota \in I^+} \mathbf{v}(\iota)_s - \sum_{\iota \in I^-}
-  \mathbf{v}(\iota)_s + \sum_{\iota \in I^\sim} \big(\mathbf{v}(\iota')_s - \mathbf{v}(\iota)_s\big),
-\]
-where $\iota'$ is the modified item in $z'$;
-(ii) every pool's new value is computable from the item table of $z$ and $\Delta$, but in general not from its old
-value and $\Delta$; and
-(iii) $\varphi_j(z') = \rho_j(\mathbf{s}(z'))$ for every $j \in J$, so the change $\varphi(z') - \varphi(z)$, side
-effects included, is exact on the modeled features.
-}
-
-\noindent Part (i) is the delta rule of incremental view maintenance~\cite{gupta1995maintenance,koch2014dbtoaster}:
-the items of $z'$ split into the unchanged items and those of the delta, and by (R4) the unchanged items contribute
-what they did before; moved items keep their content and so contribute nothing new. Part (ii) is the missing inverse
-of \Cref{sec:fw:model}: two pools holding the values $\{5, 3\}$ and $\{5, 5\}$ both read 5, and removing an item of
-value 5 leaves 3 in one and 5 in the other. Part (iii) is (R5). A sequence of edits is handled one edit at a time, by
-carrying the item table forward. No feature of $z'$ is extracted, and the side-effect vector of an attack that aimed
-for $\boldsymbol{\delta}^*$ is $\boldsymbol{\eta} = \varphi(z') - \varphi(z) - \boldsymbol{\delta}^*$, exact on $J$.
-
-% EXAMPLE (removed, D2): appending "\0http://evil.example" raises the number of strings and the number of URLs by
-% one; the average string length gains 19 in its numerator and 1 in its denominator; twenty histogram bins and their
-% total rise, and the file's entropy follows; the overlay's entropy is recomputed, and with it the largest section
-% entropy, in which the overlay counts as a section. No section table entry is touched, so the section count, the
-% section-name buckets, and the imports stay fixed. Every section's size ratio falls, since EMBER divides each
-% section's size by the file's size: the side effect that is easy to miss by hand.
-% EXAMPLE (removed, D2), part (ii) in traffic: injecting a forward packet between two packets of a CICFlowMeter flow
-% removes the consecutive pair that spanned the gap and adds two shorter ones. If the removed pair held the flow's
-% longest gap, the new longest gap is the largest of the other gaps, which the item table lists and the old maximum
-% does not reveal.
 
 \subsection{Sound Directions}
 \label{sec:fw:directions}

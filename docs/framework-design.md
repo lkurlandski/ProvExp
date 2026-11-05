@@ -410,3 +410,15 @@ Questions for the user:
   non-minimal deltas being harmless) or cut? Recommended: keep, one sentence.
 - **Q4.** Leave the cost benefit (the beam search scores thousands of candidates from the item table) out of 3.2,
   for §5? Recommended: out (lesson 16: nothing from the experiments in the framework).
+
+**Decisions (user, 2026-11-05):** Q1-Q3 as recommended. Q4: a hint only, that there could be cost benefits, since
+feature extraction can be expensive. The critical pass (session 15 writing, in the conversation) found mostly framing
+issues, which the user judged minor at this stage; they are applied in the draft as follows: ¶1 claims for one edit
+only what Prop 1 gives (no z' to build, through which items, possibly cheaper) and points to 3.4 for families; (iii)'s
+clause says which features a delta can change, not attribution; an item-stated edit comes with a delta its definition
+computes from z, and §5 checks our implementation's deltas; sequences are claimed only for item-stated edits (the
+delta carries no positions; writes need members, 3.3); η leaves the proposition; pools under pure additions update from
+the old value; the pool example's delta is stated, derived in 3.3; s_k(z) and multiset difference are defined at first
+use; "edit" = one transformation applied to one input; no traffic example in ¶3 (no packet-injection attack in the
+bib). §3.2 drafted 2026-11-05; the old 3.2 material (locating positions, (R1)-(R3), the lemma) stays as a placeholder
+§3.3 until it is rewritten.
