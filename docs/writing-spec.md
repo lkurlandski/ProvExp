@@ -97,6 +97,18 @@ side of detail and cut later.
 What the user accepted or rejected on real drafts, newest first. Each entry: the sentence or choice, the verdict, the
 rule it implies (folded into Sections 1-5 if general).
 
+- **2026-11-05, §3.2 second draft.** "Not making much progress"; asked Claude to reflect on its failures first.
+  (1) The lead rambled and over-referenced other sections; it should say quickly what the subsection contains and its
+  purpose in the framework; "parses" is needless domain specificity. (2) The paragraph after Def 6 still long-winded
+  at the end; "what the hell is pi(1)" (an \eqref right after a symbol renders as an application). (3) A one-sentence
+  definition ("contributes to") sitting alone looks strange: put it in the previous subsection if it is core, or
+  inside the proposition, briefly. (4) "(5) applied to (7)" unintelligible: write "Definition 5 applied to ..."; the
+  paragraph after Prop 1 was unreadable from notation and abbreviations. (5) No human interpretation of what the
+  proposition gives, nor why the side effects are exact. (6) The last paragraph was LLM slop. Claude's reflection:
+  it never read the rendered PDF, used equation numbers and section pointers in place of arguments, never said what
+  the proposition means or why it is exact, and patched listed defects instead of rewriting. Implied: read the
+  rendered text before showing; explain a result in words (what it says, why it holds, why exact) before or instead
+  of a symbolic sketch; no \eqref as an argument.
 - **2026-11-05, §3.2 first draft (item delta, Proposition 1, toy examples).** "Good", but "a little long-winded"
   and taking on "the long-winded hard-to-read characteristics of LLM writing". Specifics: (a) the paragraph after
   Definition 6 spelled out the patently obvious (a delta exists, the smallest one, others add the same items), while

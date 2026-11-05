@@ -125,6 +125,13 @@ contradicts.
     ($B$, the kept items) instead of writing index-heavy sums, avoid symbols that collide with our terms (Sigma vs
     "sum"), and define every term that is used alone ("pool"). (§3.2, 2026-11-05)
 
+27. **Explain a result in words, and read the PDF.** After a proposition, say what it means in plain terms, why it
+    holds, and why it is exact (here: the class is defined by the computation itself), as sentences, not as a chain
+    of equation numbers ("(5) applied to (7)"). Never put an \eqref right after a symbol ("through pi (1)" reads as
+    pi of 1). A subsection lead says what the subsection contains and its role in two or three sentences, with at
+    most one pointer, in format-neutral verbs. Before showing a draft, read the rendered text (pdftotext) as the
+    reader will. (§3.2, 2026-11-05)
+
 ## Procedure
 
 1. **Spine first, always.** One line per paragraph (its claim, its citations or numbers), agreed with the user before
@@ -135,6 +142,7 @@ contradicts.
 2. **Draft one unit** (one paragraph while the lessons are young; larger units as they stop drawing corrections, see
    step 6).
 3. **Self-review before showing**, and fix what it finds:
+   - Read the rendered PDF text of the passage, not the source (lesson 27).
    - Read the paragraph's sentences in order and ask, of each, what question it answers and whether the previous
      sentence raised it (lesson 1). Read first sentences only across the section (flow).
    - For each citation: why this work, and does its space match its role (lessons 2-3)?
