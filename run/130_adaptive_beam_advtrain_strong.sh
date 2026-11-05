@@ -8,7 +8,13 @@
 # adversarial training 20/48): ~20-25 of 49. Training on GAMMA API and header-field outputs does not reach the edits
 # the search uses (section names aimed at trusted buckets, renames, imports); greedy already evades 12/49 (run 125).
 #
-# Resources: 49 (defense, file) pairs at ~10-20 CPU-min each (run 127): ~45-60 min at 16 workers.
+# Result (read 2026-11-05): evaded 24/49 (49%; at 200 candidates 8, at 1,000 17, at 5,000 24); every evasion
+# confirmed on re-extraction (evaded_real 24); 35 C1/real mismatches (pefile's unmodeled warning features), no LOST
+# lines. Within the hypothesis. The beam evades all 12 files run 125's greedy menus evade (adaptive-twelve) and all 6
+# of adaptive-appsec.
+#
+# Resources: 49 (defense, file) pairs at ~10-20 CPU-min each (run 127): ~45-60 min at 16 workers. Took 2,330 s
+# (39 min) at 16 workers.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 source env/bin/activate
