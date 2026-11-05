@@ -278,3 +278,61 @@ Changes from the draft:
   so they need no special case in Prop 1.
 - `docs/formalization.md` stays frozen as the record; this restatement is equivalent, and the paper's appendix
   follows the new form.
+
+## 10. The user's decisions (2026-11-05)
+
+- **A. Adopted.** Each component of the factorization gets the same class of symbol: lowercase Greek for the maps
+  (proposed: π item map, σ fold, ρ readouts, ν_τ contributions). §3.1 defines all components; later subsections use
+  them and never define a component of φ.
+- **B. Adopted.** No identity; modified and moved items are written as removals and additions.
+- **C. Adopted provisionally**; the user judges S3/S4 from the prose. Downsides of S2 given to the user (session 15).
+- **D. Adopted** (contributions a separate definition).
+- **E. A toy running example, in purple** (a `\example{...}` macro) so the user sees where it is.
+- **F. Tables back where necessary**, clean and tight.
+- **G. The coarsening remark kept** in a boldface **Remark** environment (like the theorem environments), as a
+  self-contained aside, not part of the chain of results.
+- **H. Kinds as types and σ as a fold**, plus a short appendix: a crash course on the type theory used.
+
+## 11. Spine for §3.1 (proposal, 2026-11-05)
+
+Running example (purple): a toy container format. Byte 0 holds a count n; a table of n entries follows, each giving
+the offset and length of a record; strings are maximal runs of at least four printable bytes anywhere in the input.
+Features: (x1) number of strings, (x2) average string length, (x3) longest string, (x4) share of the input taken by
+records. It is chosen to show, later: a side effect (appending lowers x4), a pool (x3 after a string is split), a
+structure position (byte 0 and the table), a margin (strings), and directions (append: x1 up, x2 both, x3 up, x4 down).
+
+1. **The three stages and the factorization.** φ_J = ρ ∘ σ ∘ π as a displayed chain of maps; one sentence each on
+   π, σ, ρ; why separate them (an edit is simple at the items, hard at the features). Such feature sets are the
+   standard ones in security and effective (one sentence; pointer to ¶9).
+2. **The running example** introduced (purple).
+3. **Def 1 (items).** Input z, a finite sequence of elements; z[M] the elements at positions M, in order. A finite
+   set of item kinds. An item of z is a pair (τ, M) of a kind and a nonempty set of positions, its members; its
+   content is z[M]. The extractor finds a set I(z) of items; the item map π(z) is the multiset of their (τ, z[M]).
+   Intuition: an item is what one pass of one of the extractor's loops reads; items of a kind are processed by the
+   same code, so their contents are values of one type. Example (purple): kinds header, record, string, byte.
+4. **Def 2 (sums).** Finite set S of sums, each with a monoid: (ℝ, +, 0) additive; (ℝ ∪ {−∞}, max, −∞) max pool;
+   (ℝ ∪ {+∞}, min, +∞) min pool; the neutral element named before it is used; 𝕄 the product, ⊕ per sum.
+5. **Def 3 (contributions and the sum vector).** ν_τ: contents of kind τ -> 𝕄, neutral on the sums the kind does not
+   touch; σ folds ν over a multiset; s(z) = σ(π(z)). Plain gloss: a contribution is what one item adds to the
+   running totals. Example (purple): a string adds 1 to the string count, its length to the total length and to the
+   longest-string pool; each byte adds 1 to the input length; a record adds its length to the total record length.
+6. **The algebra, because Prop 1 uses it.** σ does not depend on order: it is the fold (the unique homomorphism from
+   finite multisets to 𝕄 extending ν), so σ(A + B) = σ(A) ⊕ σ(B). Additive sums have inverses, so removing an item
+   is undone by subtraction; pools do not: after the longest string is removed, the old maximum does not say what
+   the second longest was, which is why the record keeps every item.
+7. **Def 4 (readouts).** ρ: 𝕄 -> ℝ that depends on a fixed finite set of sums, the same for every input. Presented
+   as a class: Gray's algebraic aggregates over distributive ones; holistic ones (a median) are excluded. The common
+   feature functions are examples (identity, ratio, normalized histogram bin, entropy, standard deviation from a
+   count, total and total of squares, presence). Example (purple): x2 and x4 are ratios, x3 reads a pool.
+8. **Def 5 (sum-then-readout extractor)** over modeled features J: φ_j = ρ_j ∘ σ ∘ π for j in J. Residual
+   features explained (computed outside any item, such as flags a parser raises on malformed input; every result
+   lets them change arbitrarily). The item table: what an instrumented extractor records (each item's kind, members,
+   contribution). That contributions depend only on content is part of the definition; an extractor that divides an
+   item's size by the input's length joins the class once the division moves into a readout (§4).
+   **Remark (coarsening)**: with the whole input as one item, every φ is in the class, and the model says nothing
+   finer than re-extraction; the class is about granularity.
+9. **Prevalence across domains** (the current ¶9, kept).
+
+Appendix (new, ~300 words): a crash course on the type theory used. Types as sets of values; product types (𝕄);
+tagged unions (an item's (τ, c) is a value of the union of the content types, and ν is defined by case analysis on
+the tag); finite multisets as the free commutative monoid; a fold as the unique homomorphism out of it.
