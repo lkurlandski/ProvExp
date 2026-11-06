@@ -145,6 +145,14 @@ contradicts.
     A table cell holds a symbol or a short formula, never a clause; conditions go to footnotes. Lookup tables (sign
     rules) belong in an appendix, with two sentences in the body. (§3, 2026-11-05)
 
+30. **State the structure before mapping into it; illustrate the cited idea simply.** A definition that says
+    "the product of the monoids" without saying what an element is and how the operation acts leaves every later map
+    into it unreadable ("what does the contribution map *to*?"). Write the element and the operation out, with a
+    one-line formula. A borrowed idea (Gray et al.'s distributive vs algebraic) gets its plainest example (split the
+    items in two: totals add, averages do not), never a compressed paraphrase; "a very simple idea that you made very
+    difficult". A vague qualifier with no criterion ("a small support") reads as gibberish. A short generic pseudocode
+    listing grounded the abstract loop/item/contribution/readout language. (§3.1, 2026-11-06)
+
 ## Procedure
 
 1. **Spine first, always.** One line per paragraph (its claim, its citations or numbers), agreed with the user before

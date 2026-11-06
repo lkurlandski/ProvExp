@@ -281,3 +281,15 @@ rule it implies (folded into Sections 1-5 if general).
   And: "at times extremely hard to review your work because the writing is so unpleasant and challenging to get
   through"; good writing is a precondition for good feedback. Implied: the prose itself must be easy to read before
   the user reviews content; tables are never prose grids.
+- **2026-11-06, §3.1 review (session 17).** Mostly questions, from confusion: what the contribution function maps to
+  (because the sum space $\mathcal{S}$ was "the product" with no structure stated, and $\oplus$ was mentioned in
+  passing); whether the big $\bigoplus$ is the small $\oplus$; what "agree on $K_j$" means; whether the three monoids are
+  the only ones. On the Gray et al. paragraph: "a very simple idea that you made very difficult to understand" (why a
+  total combines over parts and an average does not), and "how small must the support be" was rhetorical: the
+  sentence "didn't make any sense", "gibberish". A proposed sentence on extending to other monoids was "choppy and
+  robotic. Write this like a human would." Wanted: the loop language after Def 1 grounded by a short generic code
+  listing ("tight and clean"), Remark 1 (granularity) gone as a tangent, the lead's §3.3 description as a bridge
+  (items vs elements) and §3.4 in one sentence, "without extracting" corrected (readouts are re-evaluated). Approved
+  phrasing pattern: ", a property that we exploit in Section X". Implied: a definition must state the structure of
+  every object it introduces (what an element of $\mathcal{S}$ is, how $\oplus$ acts) before anything maps into it;
+  an idea from a cited work gets its simplest concrete illustration, not a compressed paraphrase.
