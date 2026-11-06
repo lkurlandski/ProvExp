@@ -97,6 +97,18 @@ side of detail and cut later.
 What the user accepted or rejected on real drafts, newest first. Each entry: the sentence or choice, the verdict, the
 rule it implies (folded into Sections 1-5 if general).
 
+- **2026-11-06, §2 review (written comments; plan approved, then implemented).** (1) Again: state Pierazzi et
+  al.'s ideas as fact with a citation, not "Pierazzi et al. name/write ...", "Their account of ...". (2) Clarify what
+  makes an attack feature- or problem-space (can a problem-space attack search in feature space?); answer: what it
+  returns; keep it short. (3) The reachable set in its own paragraph, to mark it as our perspective (placed after side
+  effects). (4) The side-effects paragraph ~20% too long ("good, but trim some fat"). (5) The motivation paragraph is
+  the most important of §2: open with the unifying claim and **bold** each problem in the prose. (6) "Feels like we're
+  missing something": the taxonomy is attacks/defenses x feature/problem space; naming needs our evaluation does not
+  cover is fine, the closing makes the scope clear. (7) "Compute two descriptions" confusing; "the exact point one
+  transformation reaches" sounds like plain extraction; the closing goes in its own paragraph, short and summative,
+  saying the framework addresses the gap, with no terms §3 has not defined yet ("items"). Implied: a motivation
+  section's key claim leads its paragraph; avoid vague nouns ("descriptions") for what we produce; never use a later
+  section's terms in a summary.
 - **2026-11-05, §3.2 second draft.** "Not making much progress"; asked Claude to reflect on its failures first.
   (1) The lead rambled and over-referenced other sections; it should say quickly what the subsection contains and its
   purpose in the framework; "parses" is needless domain specificity. (2) The paragraph after Def 6 still long-winded

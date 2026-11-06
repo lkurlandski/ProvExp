@@ -114,7 +114,14 @@ contradicts.
     move implementation checks to the evaluation. (§3.2, 2026-11-05)
 24. **Established ideas as fact, a present author, active voice.** Pierazzi et al.'s framework is standard: state its
     ideas with a citation, not "Pierazzi et al. write ... Their account of ...". The register was "distant and
-    passive". (§2, 2026-11-05)
+    passive". (§2, 2026-11-05) Recurred 2026-11-06: one attribution where the source is introduced, then plain
+    statements with `~\cite` ("A transformation must satisfy four kinds of constraints~\cite{...}").
+
+29. **Motivation: claim first, concrete outputs, no forward terms.** The paragraph that carries a section's main
+    claim opens with it (here: attacks and defenses in both spaces all need part of R(z)), with each line of work in
+    bold where it enters. Check the taxonomy for a missing cell (defenses in both spaces). A closing that names what
+    we contribute is short, says what the reader gets and not "two descriptions", and uses no term a later section
+    defines ("items"). (§2, 2026-11-06)
 25. **Give space by later use.** Material the rest of the paper does not use (the four problem-space constraints,
     consolidation) gets a sentence; what the paper is built on (the reachable set) gets the emphasis. A list the
     reader must count (three viewpoints) should be visibly three. (§2, 2026-11-05)

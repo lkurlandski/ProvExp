@@ -1,72 +1,83 @@
-% Section 2, Background and Motivation: Pierazzi et al.'s problem space, constraints, reachable set, and side effects;
-% who needs which description of the reachable set, and the gap they share. Spine: docs/framework-spine.md (P1-P4),
-% with the user's decisions and comments of 2026-11-04 (no domain examples while the theory is drafted).
+% Section 2, Background and Motivation: Pierazzi et al.'s problem space, constraints, side effects, and the reachable
+% set; the four lines of work (attacks and defenses, in either space) that need part of the reachable set, and the gap
+% they share. Spine: docs/framework-spine.md (P1-P4), with the user's decisions and comments of 2026-11-04 (no domain
+% examples while the theory is drafted). Revised 2026-11-06 after the user's review: Pierazzi et al.'s ideas stated
+% as fact, the reachable set in its own paragraph, the 2x2 attacks/defenses framing, and a short closing paragraph.
 
 We follow the formalization of problem-space attacks by Pierazzi et al.~\cite{pierazzi2020intriguing}. A classifier
 does not see the objects of its domain, such as programs, documents, or network traffic, but vectors of numbers
 computed from them. The objects form the \emph{problem space} $\mathcal{Z}$, the vectors form the \emph{feature space}
 $\mathcal{X} \subseteq \mathbb{R}^n$, and a \emph{feature mapping} $\varphi: \mathcal{Z} \to \mathcal{X}$ takes each
 object $z$ to its feature vector $\mathbf{x} = \varphi(z)$. An evasion attack changes a malicious object's
-representation until the classifier labels it benign, and it can work in either space. A \emph{feature-space attack}
-perturbs the vector directly, searching for a perturbation $\boldsymbol{\delta}$ such that $\mathbf{x} +
-\boldsymbol{\delta}$ is misclassified. Its search is cheap, since gradients and optimizers work on vectors, but
-nothing guarantees that any object has the features $\mathbf{x} + \boldsymbol{\delta}$. A \emph{problem-space attack}
-edits the object itself with a \emph{transformation} $T: \mathcal{Z} \to \mathcal{Z}$, and the classifier then sees
-$\varphi(T(z))$, the features of an object that exists.
+representation until the classifier labels it benign. A \emph{feature-space attack} perturbs the vector directly,
+searching for a perturbation $\boldsymbol{\delta}$ such that $\mathbf{x} + \boldsymbol{\delta}$ is misclassified. Its
+search is cheap, since gradients and optimizers work on vectors, but nothing guarantees that any object has the features
+$\mathbf{x} + \boldsymbol{\delta}$. A \emph{problem-space attack} edits the object itself with a \emph{transformation}
+$T: \mathcal{Z} \to \mathcal{Z}$, and the classifier then sees $\varphi(T(z))$, the features of an object that exists.
+The two differ in what they return, a vector or an object, and not in where they search: a problem-space attack may
+choose its transformations by following the gradient in the feature space~\cite{pierazzi2020intriguing}.
 
-Not every transformation serves the attacker. Pierazzi et al.\ name four kinds of \emph{problem-space constraints}
-$\Gamma$ that a transformation must satisfy. It must be one of the transformations available to the attacker. It must
-preserve the semantics that matter, such as a program's malicious behavior. It must keep the object plausible, so
-that the result does not look altered to an analyst who inspects it. And it must be robust to preprocessing, so that
-the non-learned processing a detector may apply before extracting features, such as removing dead code, does not
-undo it. The problem-space constraints determine the \emph{feature-space constraints} $\Omega$, the restrictions on
-which perturbations of $\mathbf{x}$ correspond to valid objects. Let $\mathcal{T}$ be the set of transformations,
-and of finite sequences of them, that satisfy $\Gamma$. The \emph{reachable set} of $z$ is the set of feature vectors
-these transformations produce,
-\[
-  \mathcal{R}(z) = \{\, \varphi(T(z)) : T \in \mathcal{T} \,\} \subseteq \mathcal{X}.
-\]
-An evasion is \emph{realizable} if the misclassified vector lies in $\mathcal{R}(z)$, that is, if some valid
-transformation of the object produces it. A feature-space attack can return vectors outside $\mathcal{R}(z)$, and
-$\Omega$ is the means of keeping it inside.
+Not every transformation serves the attacker. A transformation must satisfy four kinds of \emph{problem-space
+constraints} $\Gamma$: it must be available to the attacker, preserve the semantics that matter, such as a program's
+malicious behavior, keep the object plausible to an analyst who inspects it, and survive the non-learned preprocessing
+a detector may apply before extracting features~\cite{pierazzi2020intriguing}. The problem-space constraints determine
+the \emph{feature-space constraints} $\Omega$, the restrictions on which perturbations of $\mathbf{x}$ correspond to
+valid objects.
 
 A problem-space attack often starts from a feature-space target: a perturbation $\boldsymbol{\delta}^*$ that would
-evade the classifier, which the attacker then tries to produce with a transformation. Pierazzi et al.\ write the result
-as $\varphi(T(z)) = \mathbf{x} + \boldsymbol{\delta}^* + \boldsymbol{\eta}$, where the \emph{side-effect features}
-$\boldsymbol{\eta}$ are the difference between what the transformation produced and what the attacker aimed for. Their
-account of where side effects come from is the constraints. To keep the object valid, a transformation may need
-\emph{consolidation}, changes beyond the intended one, such as importing the dependencies of an added API call or
-declaring the classes it uses, and these changes move features of their own. Consolidation is not the only source.
-The feature mapping does not follow the attacker's intent, and one changed element of the object can be read by many
-features, so an edit that needs no consolidation can still move features it did not aim at. Nor are side effects
-inevitable: an edit that moves exactly the features it targets has $\boldsymbol{\eta} = \mathbf{0}$. Pierazzi et al.\
-observe that when the feature mapping is neither differentiable nor invertible, as is usually the case in malware
-detection, the side effects of a transformation generally cannot be computed in advance, and attacks find them by
-applying each candidate transformation and extracting the features of the result. Whatever their source, once a
-transformation is fully specified, consolidation included, the vector it produces is fixed by the feature mapping
-alone, so computing its side effects is a question about $\varphi$.
+evade the classifier, which the attacker then tries to produce with a transformation. The result is $\varphi(T(z)) =
+\mathbf{x} + \boldsymbol{\delta}^* + \boldsymbol{\eta}$, where the \emph{side-effect features} $\boldsymbol{\eta}$ are
+the difference between what the transformation produced and what the attacker aimed for~\cite{pierazzi2020intriguing}.
+Side effects often come from \emph{consolidation}: to keep the object valid, a transformation may need changes beyond
+the intended one, such as importing the dependencies of an added API call, and these changes move features of their
+own. They also arise without consolidation, since one changed element of the object can be read by many features, and
+they are zero when an edit moves exactly the features it targets. When the feature mapping is neither differentiable
+nor invertible, as is usual in malware detection, the side effects of a transformation generally cannot be computed in
+advance~\cite{pierazzi2020intriguing}, and attacks find them by applying each candidate transformation and extracting
+the features of the result. Yet once a transformation is fully specified, consolidation included, the vector it
+produces is fixed by the feature mapping alone, so computing its side effects is a question about $\varphi$.
 
 % EXAMPLE (removed, D2): appending content to a file changes every feature normalized by the file's size, although
 % the content touches none of the structures those features describe (EMBER: every section's size ratio falls).
 
-Each line of work that cares whether an evasion is realizable needs some description of the reachable set, and each
-needs a different one. A problem-space attack that searches over candidate transformations needs, for each candidate,
-the point $\varphi(T(z))$ it reaches, side effects included. The attacks against deployed malware detectors obtain
-it by applying the candidate and extracting the features of the
-result~\cite{demetrio2021functionality,song2022mab}, which costs one extraction per candidate and says nothing about
-the candidates the search never tries. A feature-space attack that respects realizability needs $\Omega$ written out
-as constraints over features, which domain-independent attacks then take as
-input~\cite{simonetto2022unified,chernikova2022fence}. The constraints are written by hand with a domain
-expert~\cite{dyrmishi2023empirical} or learned from data~\cite{sheatsley2021robustness}. A detector meant to resist
-problem-space attacks needs to know, for each feature, whether any transformation in $\mathcal{T}$ can lower it, on
-every object the detector will face, since a detector whose score never falls when the attacker's edits raise
-features cannot be evaded by those edits~\cite{incer2018adversarially,gimenez2025certifiably}. These directions are
-assigned by hand~\cite{incer2018adversarially,gimenez2025certifiably} or learned from the attacks that have been
-observed~\cite{gimenez2025certifiably}. All three descriptions come from outside the feature mapping: from trial, from
-an analyst's reading of the extractor, or from the attacks someone happened to run. Trial is exact but answers only for
-the transformations tried. A hand analysis is as complete as its author's reading of thousands of features, and a
-description learned from attacks covers only what those attacks did. Yet $\mathcal{R}(z)$ is determined by $\varphi$
-once $\mathcal{T}$ is fixed, and the feature mapping is code that the defender has. In the next section we compute
-two descriptions from that code, for a broad class of feature mappings: the exact point that one transformation
-reaches, and, for every transformation a threat model allows, a sound bound on the direction in which each feature
-can move, which is both a feature-space constraint and what a monotone detector needs.
+Side effects concern the point that one transformation reaches. Whether an attack can succeed, or a defense hold,
+depends on every point the attacker can reach. Let $\mathcal{T}$ be the set of transformations, and of finite sequences
+of them, that satisfy $\Gamma$. The \emph{reachable set} of $z$ is the set of feature vectors these transformations
+produce,
+\[
+  \mathcal{R}(z) = \{\, \varphi(T(z)) : T \in \mathcal{T} \,\} \subseteq \mathcal{X},
+\]
+and it is the central object of this paper. An evasion is \emph{realizable} if the misclassified vector lies in
+$\mathcal{R}(z)$, that is, if some valid transformation of the object produces it. A feature-space attack can return
+vectors outside $\mathcal{R}(z)$, and $\Omega$ is the means of keeping it inside.
+
+Attacks and defenses, in the feature space and in the problem space, are usually studied as separate problems, yet each
+needs to know part of $\mathcal{R}(z)$, and each obtains it from outside the feature mapping. \textbf{Problem-space
+attacks} that search over candidate transformations need, for each candidate, the point $\varphi(T(z))$ it reaches,
+side effects included. The attacks against deployed malware detectors obtain it by applying the candidate and
+extracting the features of the result~\cite{demetrio2021functionality,song2022mab}, which costs one extraction per
+candidate and says nothing about the candidates the search never tries. \textbf{Feature-space attacks} that respect
+realizability need $\Omega$ written out as constraints over features, which domain-independent attacks take as
+input~\cite{simonetto2022unified,chernikova2022fence}. The constraints are written by hand, typically with a domain
+expert~\cite{dyrmishi2023empirical}, or learned from data~\cite{sheatsley2021robustness}. \textbf{Problem-space
+defenses}, such as adversarial training on the objects that problem-space attacks produce, need the same points as the attacks, for many
+candidates on many training objects, and the cost of generating realistic adversarial examples limits such
+training~\cite{dyrmishi2023empirical,lucas2023adversarial}. \textbf{Feature-space defenses} train or certify a detector
+on vectors, and need $\mathcal{R}(z)$ to know which vectors to defend. Hardening a malware detector on unconstrained
+feature-space examples brings little robustness against realistic attacks, because those examples move the features in
+other directions~\cite{dyrmishi2023empirical}. Verified training needs a region of the feature space that contains every
+vector the attacker's edits reach~\cite{chen2020training}. A monotone detector needs to know, for each feature, whether
+any transformation in $\mathcal{T}$ can lower it, since a detector whose score never falls when the attacker's edits
+raise features cannot be evaded by those edits~\cite{incer2018adversarially,gimenez2025certifiably}. These directions
+are assigned by hand~\cite{incer2018adversarially,gimenez2025certifiably} or learned from the attacks that have been
+observed~\cite{gimenez2025certifiably}. Across the four lines of work, the knowledge comes from trial, from an analyst's
+reading of the extractor, or from the attacks someone happened to run. Trial is exact but answers only for the
+transformations tried, a hand analysis is as complete as its author's reading of thousands of features, and knowledge
+learned from attacks covers only what those attacks did. Yet $\mathcal{R}(z)$ is determined by $\varphi$ once
+$\mathcal{T}$ is fixed, and the feature mapping is code that the defender has.
+
+Our framework derives this knowledge from the feature mapping's code, for a broad class of feature mappings. It gives
+the side effects of a transformation before the transformation is applied, and, for every transformation a threat
+model allows, a sound bound on the direction in which each feature can move, which serves both as a feature-space
+constraint and as what a monotone detector needs. \Cref{sec:framework} defines the class and proves both results, and
+\Cref{sec:evaluation} uses them to attack malware detectors and to build robust ones.
