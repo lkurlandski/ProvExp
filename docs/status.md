@@ -1,5 +1,22 @@
 # Status
 
+**2026-11-06 (session 17, writing track): §3.1 revised in two rounds after the user's review; verdict "improved
+enormously".** Nothing pushed. Commits `164e1b5` (round 1), `bb585ca` (log, lesson 30), `a167b08` (round 2), plus the
+harness update (lessons 20 revised, 31 added, procedure step 7).
+
+- **Round 1** (questions answered first, then a 12-item plan, approved): the §3 lead (single-edit result "before the
+  edit is applied", readouts re-evaluated; §3.3 as the bridge from written positions to items; §3.4 in one sentence;
+  appendix pointer); **Algorithm 1**, a generic pseudocode extractor (record/token/element loops, readouts);
+  positions sentence cut to one clause; Def 2 states $\mathcal{S}$ as a product monoid with $\star_k$, $e_k$, and
+  $(\mathbf{a} \oplus \mathbf{b})_k$; any commutative monoid allowed (three used; a new one needs Prop 1's pool
+  recomputation and a sign rule); Def 3 says what $\nu_\tau$ returns; Def 4's support written out; the readout
+  paragraph rewritten (Gray et al. checked against `papers/gray1997data.pdf`); Remark 1 removed (one clause kept in
+  §3.3). Appendix B has the product of monoids; symbol table updated; `algorithm`/`algpseudocode` in `main.tex`.
+- **Round 2** (six small points): appendices in order; Def 1 names with symbols; a line on $\oplus$; Σ analogy cut;
+  Def 4 glossed; readout paragraph opens with Gray et al.'s classes; "many kinds of features reduce to this shape".
+- **Open:** §3.2's first paragraph still says "without extracting them" (align with the lead); the user's read of
+  §3.2-3.4; the older items in the session-16 block below.
+
 **2026-11-06 (session 16, writing track): §2 revised after the user's review; §6 aligned; next, the user's §3.1
 review in a new session.** Nothing pushed. Commits `7e73b85` (§2, reaction log, lesson 29), `e18e4b6` (§6, bib).
 

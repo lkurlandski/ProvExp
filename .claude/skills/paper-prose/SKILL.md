@@ -98,8 +98,9 @@ contradicts.
     2026-11-04)
 20. **Theory first, decoration later.** While a formal section is being settled: no domain examples in the text (keep
     them in `% EXAMPLE` comments), no tables or figures, titles that fit on one line. (§3 decisions, 2026-11-04)
-    Under review (2026-11-05): with no example, §3.2's abstractions were incomprehensible; ask before relying on
-    this lesson for a subsection whose concepts are hard to picture.
+    Revised (2026-11-06): abstraction with nothing to picture fails (§3.2, 2026-11-05). A short, format-neutral
+    pseudocode listing is the right kind of example in a theory section: §3.1's Algorithm 1 (three loops, `+=`/`max`
+    updates, readouts at the end) grounded items, contributions, and readouts at once. Domain examples stay out.
 21. **A definition must stand without glossing.** If a defined notion needs a paragraph of informal explanation to
     make sense ("identity: how the extractor reaches the item"; "positions that decide whether an item exists"), it
     is "wet clay" and a leaky abstraction. Define only what later results use, in terms already defined (content is
@@ -152,6 +153,13 @@ contradicts.
     items in two: totals add, averages do not), never a compressed paraphrase; "a very simple idea that you made very
     difficult". A vague qualifier with no criterion ("a small support") reads as gibberish. A short generic pseudocode
     listing grounded the abstract loop/item/contribution/readout language. (§3.1, 2026-11-06)
+31. **Introduce, name, and gloss together.** In a definition, a symbol and its name arrive in the same clause ("its
+    *content* $z[M]$ is ..."), not two sentences apart. Every operator gets one sentence on what it does ($\oplus$
+    updates the running totals). An equation inside a definition gets a plain sentence on what it means ("the
+    readout depends only on the sums in its support"). Cut analogies that add nothing ("as $\sum$ combines with
+    $+$"). A paragraph built on a cited concept opens with the cited distinction itself (Gray et al.'s two classes),
+    and the rest follows from it. Frame a list of instances by its purpose: "many kinds of features reduce to this
+    shape" (breadth), not "readouts take a few forms". (§3.1 round 2, 2026-11-06; verdict: "improved enormously")
 
 ## Procedure
 
@@ -170,6 +178,9 @@ contradicts.
    - Scan for the staging tics of lesson 5 and the rationed habits in `docs/writing-spec.md` §1; count them per
      paragraph, and cut any that cluster.
    - Check that every factual claim about a cited work is one we have verified; mark the rest `% VERIFY` and say so.
+   - For each new symbol, operator, and equation in a definition: is its structure stated, is it named where it
+     appears, and does a plain sentence say what it means (lessons 30-31)? Would a reader asking "what does this
+     map *to*?" find the answer before the map?
    - For each described citation: is its role visible in its own sentence (lesson 3)? For each name: introduced
      (lesson 10)? For the closer: does it say concretely what we compute and enable (lesson 13)?
 4. **Show the draft** with a short note of what changed and why. Do not hand over long prose unseen.
@@ -179,6 +190,14 @@ contradicts.
 6. **Widen the unit as trust grows.** When a unit is accepted with no or only minor changes, draft the next one larger
    (two paragraphs, then a subsection) before review. Status (2026-11-04): §6 reached the bar after one written review,
    so the next section (the introduction) is drafted whole, from an agreed per-paragraph spine.
-7. **Into the manuscript.** Write the approved text into its `.tex` file, `\cite` every work named (add missing entries
+7. **Revising after a written review** (worked for §2 and §3.1, 2026-11-06). Separate questions from feedback and
+   answer the questions first, plainly and in words; a confusion usually marks a definition that does not stand on
+   its own (lesson 21), so each answer also names the fix. Verify cited claims against `papers/` and the math against
+   the proofs. Then a numbered plan, one item per comment, one recommendation each, open questions last, and no edit
+   until approved. Implement an interlocking unit (a subsection whose definitions build on each other) in one pass,
+   not piecemeal, and point the user first to the passages that are new prose, where the next round is likely. A
+   second round of small, concrete fixes is implemented directly and reported per item. Apply the staging scan to
+   the plan's own proposed sentences too (an announced count slipped into a proposal, 2026-11-06).
+8. **Into the manuscript.** Write the approved text into its `.tex` file, `\cite` every work named (add missing entries
    to `main.bib`, checked against a real record), wrap at 120 columns, run `make` and `make check` in `manuscript/`,
    and commit in a logical piece.

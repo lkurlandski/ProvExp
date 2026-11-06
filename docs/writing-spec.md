@@ -293,3 +293,10 @@ rule it implies (folded into Sections 1-5 if general).
   phrasing pattern: ", a property that we exploit in Section X". Implied: a definition must state the structure of
   every object it introduces (what an element of $\mathcal{S}$ is, how $\oplus$ acts) before anything maps into it;
   an idea from a cited work gets its simplest concrete illustration, not a compressed paraphrase.
+- **2026-11-06, §3.1 round 2 and verdict.** "This is fantastic", then six small points: appendices referenced in
+  order (A, B, C); in Def 1 a symbol ($M$, $z[M]$) was introduced two sentences before its name, and "elements" was
+  not emphasized; $\oplus$ needed one line saying what it is; the "as $\sum$ combines with $+$" analogy was unneeded;
+  Def 4's colon and an equation stated with no comment on what it means; the readout paragraph should open with Gray
+  et al.'s classes so the rest follows; "take a few forms" undersold the point (breadth: many features reduce to the
+  shape). After the fixes: "§3.1 has improved enormously based on this round of feedback and editing." Implied:
+  the question-first review procedure works; the remaining defects were introduce/name/gloss mechanics (lesson 31).

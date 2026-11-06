@@ -58,7 +58,14 @@ your own files (`git status` first: the other session may have uncommitted work)
    rest on the same input" stretches Chen 2021). After those, the introduction and the other empty sections, spine
    first, coordinated with the writing track.
 
-## Writing track (session 16, 2026-11-06): §2 revised and §6 aligned; next, the user's §3.1 review
+## Writing track (session 17, 2026-11-06): §3.1 revised and accepted ("improved enormously"); next, the user's §3.2-3.4 read
+
+**Update (session 17).** §3.1 went through two review rounds (`docs/status.md`, session-17 block); the procedure
+below worked again and is now step 7 of the `paper-prose` procedure. Next: the user's comments on §3.2-3.4 (same
+procedure: questions first), starting with aligning §3.2's "without extracting them" with the new lead. Item 1 below
+is done; item 2 (the §2 ripple) is done in the lead.
+
+### Previous: session 16
 
 **Start here.** Invoke `/paper-prose` first. Read `docs/status.md` (session-16 block), then `manuscript/_d_framework.tex`
 §3.1 (`sec:fw:model`: the factorization, Defs 1-5, Remark 1) and `manuscript/_c_background.tex` (the new §2, so §3.1
