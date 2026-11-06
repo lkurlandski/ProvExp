@@ -7,7 +7,7 @@ missed or its revision got wrong. Success: the user's comments on the improved v
 steps 5-8 are unnecessary. §2 and §3.1 are done (session 17).
 
 **Tools.** The reader model `.claude/skills/paper-prose/reader-model.md` (how the user reads; update after every
-scored round), the `paper-prose` lessons (how to write), the reaction log in `docs/writing-spec.md` (raw reactions).
+round), the `paper-prose` lessons (how to write), the reaction log in `docs/writing-spec.md` (raw reactions).
 Not `docs/reviews/review-prompt.md`, which simulates a conference reviewer.
 
 ## Protocol (one subsection per session; order 3.2, 3.3, 3.4)
@@ -21,7 +21,7 @@ Not `docs/reviews/review-prompt.md`, which simulates a conference reviewer.
 2. **Proposed changes.** A numbered plan in the chat (one item per predicted comment or group, the concrete change,
    one recommendation, ripples into other subsections, open questions last). Copy it into the log.
 3. **The user's feedback on the plan.** Record per item: accepted / changed / rejected, with the reason. Rejected
-   items are false alarms for scoring.
+   items are false alarms.
 4. **Implement.** One pass; `make`, `make check`, "??" check, read the rendered text; commit; point the user to the
    passages that are new prose.
 5. **The user's first read**, of the improved version only (never the old draft). Paste the comments verbatim.
@@ -53,8 +53,8 @@ the other subsection early; each is handled in its own subsection's session (ste
 ### 2. Proposed changes
 ### 3. User's feedback on the plan
 ### 4. Implemented
-### 5. User's review
-### 6. Score and plan
+### 5. User's first read
+### 6. Classification and plan
 ### 7-8. Feedback and implementation
 ### Retro
 
@@ -64,8 +64,8 @@ the other subsection early; each is handled in its own subsection's session (ste
 ### 2. Proposed changes
 ### 3. User's feedback on the plan
 ### 4. Implemented
-### 5. User's review
-### 6. Score and plan
+### 5. User's first read
+### 6. Classification and plan
 ### 7-8. Feedback and implementation
 ### Retro
 
@@ -75,8 +75,8 @@ the other subsection early; each is handled in its own subsection's session (ste
 ### 2. Proposed changes
 ### 3. User's feedback on the plan
 ### 4. Implemented
-### 5. User's review
-### 6. Score and plan
+### 5. User's first read
+### 6. Classification and plan
 ### 7-8. Feedback and implementation
 ### Retro
 

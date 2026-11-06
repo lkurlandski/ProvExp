@@ -1,10 +1,11 @@
 # Reader model: how the user reads a draft
 
 Used in the self-review sprint (`docs/sprint-framework-review.md`, step 1): read the rendered subsection as the user
-would and write down the comments they would write, before they read it. Built from the reaction log in
+would and write down the comments they would write, then fix them, so that the user's first read is of the improved
+version. Built from the reaction log in
 `docs/writing-spec.md` (2026-11-03 to 2026-11-06). The lessons in `SKILL.md` say how to write; this file predicts how
-the user reads. **Update it after every scored round:** add a trigger for each miss, sharpen one that hit, and delete
-or weaken one that produced a false alarm. Keep each entry to a trigger, a real quote, and the question to ask.
+the user reads. **Update it after every round:** each comment the user still makes on the improved version is a trigger
+this file lacked or one the revision did not act on; add or sharpen it, and weaken one that produced a false alarm. Keep each entry to a trigger, a real quote, and the question to ask.
 
 ## How the user reads and comments
 
@@ -90,6 +91,6 @@ or weaken one that produced a false alarm. Keep each entry to a trigger, a real 
 
 ## Calibration (update after each scored round)
 
-| Round | Predicted | Hits | Misses | False alarms | Notes |
-|---|---|---|---|---|---|
-| (seed, no round yet) | | | | | |
+| Round | Predicted (step 1) | Rejected in step 3 | User comments on improved version: missed / fell short / introduced / new taste | Notes |
+|---|---|---|---|---|
+| (seed, no round yet) | | | | |
