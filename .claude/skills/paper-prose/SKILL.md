@@ -9,7 +9,7 @@ description: >
 
 # Writing paper prose for ProvExp
 
-Taste reference: `docs/writing-spec.md` (habits to ration, techniques, exemplars, layout) and its reaction log (the
+Reader model: `reader-model.md` (predicts how the user reads; used in step 8). Taste reference: `docs/writing-spec.md` (habits to ration, techniques, exemplars, layout) and its reaction log (the
 raw feedback). This skill is the operational part: the lessons that feedback has taught, and how to work. Nothing
 here is a rule to apply literally; real writing has variance, and a risk with a sentence is fine.
 
@@ -198,6 +198,12 @@ contradicts.
    not piecemeal, and point the user first to the passages that are new prose, where the next round is likely. A
    second round of small, concrete fixes is implemented directly and reported per item. Apply the staging scan to
    the plan's own proposed sentences too (an announced count slipped into a proposal, 2026-11-06).
-8. **Into the manuscript.** Write the approved text into its `.tex` file, `\cite` every work named (add missing entries
+8. **Simulated review before the user reads** (sprint from 2026-11-06, `docs/sprint-framework-review.md`). For an
+   existing draft the user has not reviewed, read it as the user would, with `reader-model.md` open: rendered text,
+   paragraph by paragraph, each trigger as a question. Write the predicted review in the user's format (numbered,
+   Q/F/M, confidence), answer the predicted questions, then propose a plan as in step 7. After the user's own review,
+   score hits, misses, and false alarms, and update `reader-model.md` (misses become triggers, false alarms weaken
+   them).
+9. **Into the manuscript.** Write the approved text into its `.tex` file, `\cite` every work named (add missing entries
    to `main.bib`, checked against a real record), wrap at 120 columns, run `make` and `make check` in `manuscript/`,
    and commit in a logical piece.

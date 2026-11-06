@@ -1,0 +1,95 @@
+# Reader model: how the user reads a draft
+
+Used in the self-review sprint (`docs/sprint-framework-review.md`, step 1): read the rendered subsection as the user
+would and write down the comments they would write, before they read it. Built from the reaction log in
+`docs/writing-spec.md` (2026-11-03 to 2026-11-06). The lessons in `SKILL.md` say how to write; this file predicts how
+the user reads. **Update it after every scored round:** add a trigger for each miss, sharpen one that hit, and delete
+or weaken one that produced a false alarm. Keep each entry to a trigger, a real quote, and the question to ask.
+
+## How the user reads and comments
+
+- **Linearly, in the rendered PDF**, paragraph by paragraph, with headers per subsection and bullets per point, in
+  the order of the text. They stop where a passage becomes unreadable and say so rather than pushing through
+  ("unintelligible", "stopped at §3.3").
+- **Questions first, from genuine confusion.** A question ("what does it map *to*?", "is this big ⊕ the same as the
+  small one?") almost always means the text failed, not the reader. Several questions in one passage mean the
+  passage is the problem.
+- **Mixed granularity in one review:** structural verdicts (a tangent to remove, a paragraph to rewrite) next to
+  small mechanics (a missing comma, a colon, appendix order, emphasis on a defined term). Expect both.
+- **They propose alternatives as options** ("(i) remove ... or (ii) a code example; do you think one would help?")
+  and want a recommendation back, not a menu.
+- **They reason about the design, not only the text:** "we could represent items as (type, content, position);
+  would that simplify the framework?" Predict design questions where a convention is a choice with alternatives.
+- **They distinguish "brief is fine" from "wrong":** "I'm not necessarily asking you to change the prose ... this is
+  for my own clarity." Mark predictions that are clarity questions, not change requests.
+
+## Triggers, by kind
+
+### Confusion (highest yield: these become questions)
+
+1. **An object whose structure is never stated.** "What does the contribution function map *to*?" because 𝒮 was
+   "the product" with no element or operation spelled out. Ask: for every set, space, or operator introduced, could a
+   reader say what one element looks like and how the operation acts?
+2. **A symbol before its name, or a name before its symbol.** "Introduces M and z[M] but doesn't name them until two
+   sentences later." Ask: does each symbol arrive in the same clause as its name and emphasis?
+3. **An equation in a definition with no plain gloss.** "The identity is not explained ... its relevance is
+   unclear"; "what does 'agree' mean here?" Ask: is there a sentence saying what each displayed condition means?
+4. **A vague qualifier with no criterion.** "How small does the support have to be?" (rhetorical: "didn't make any
+   sense"). Ask: small, few, most, usually, local: is there a criterion, or is it hiding a gap?
+5. **A cited idea compressed into a paraphrase.** Gray et al.: "a very simple idea that you made very difficult to
+   understand". Ask: is the borrowed idea given its plainest concrete case, opening with the source's own
+   distinction?
+6. **The same notation, two meanings, or two notations, one meaning.** Big ⨁ vs small ⊕; "sum" as our term and as
+   Σ. Ask: does any symbol or word look like it means two things?
+7. **A claim the user can check and finds loose.** "We claim we can determine the change without extracting, but
+   don't we re-apply formulas?" Ask: is each capability claim literally true, including what is still computed?
+8. **Abstraction with nothing to picture.** §3.2 without examples was incomprehensible; Algorithm 1 fixed §3.1.
+   Ask: could the reader draw or write code for this concept? If not, a generic listing or a two-line case helps.
+9. **Equation numbers or pointers used as arguments.** "What the hell is pi (1)"; "(5) applied to (7)". Ask: does
+   any sentence lean on \eqref or a section pointer instead of saying the thing?
+10. **Concepts stacked before motivation.** "Why would we avoid re-extraction?" Six concepts with no purpose read as
+    "an unhinged rant". Ask: before each new concept, does the reader know why we want it?
+
+### Structure
+
+11. **Tangents.** Remark 1 (granularity): "a tangent that distracts from the main ideas". Ask: does each
+    paragraph or remark serve the subsection's endpoint (lesson 18)? A defense against a reviewer objection belongs
+    elsewhere.
+12. **The lead or a description that misstates a subsection's role.** "As I understand it, 3.3 bridges the
+    item-based and element-based views." Ask: does each pointer say what the target contributes, in one sentence?
+13. **Obvious facts spelled out while the real idea is under-developed.** "Under-appreciated, under-emphasized,
+    under-discussed" (positions forgotten by π). Ask: what is the one non-obvious consequence here, and does it get
+    the paragraph?
+14. **A dense formal statement.** Prop 1 "extremely dense". Ask: could the statement name an object (B) instead of
+    an index-heavy formula, or split into a sentence and a short list?
+15. **Missing human interpretation of a result.** "No interpretation of what the proposition gives, nor why it is
+    exact." Ask: after each result, is there a plain "what it says, why it holds, why it matters"?
+16. **Purpose of a list misframed.** "Take a few forms" vs "many kinds of features reduce to this shape". Ask: is
+    the list there to show breadth, and does the framing say so?
+
+### Register (the user flags these on sight)
+
+17. **LLM staging:** announced counts ("at the cost of two things:"), colon reveals, cadenced triads, metaphors,
+    mirrored pairs; "choppy and robotic". This includes Claude's own proposed sentences in a plan.
+18. **Slop closers and figurative announcements.** "This section opens the box"; a last paragraph that restates.
+19. **Distant or passive register; narrating authors.** "Pierazzi et al. write ..." -> state as fact with a cite.
+20. **Software virtues as assumptions.** "Honest tools" -> "honest computers, honest physics".
+21. **Needless analogy or domain word.** "As Σ combines with +"; "parses". Ask: does the clause add anything?
+
+### Mechanics (small, but reliably noticed)
+
+22. Appendices or sections referenced out of order; a missing comma after an appositive; colon placement inside a
+    definition; a defined term not emphasized; a term used alone but defined only inside a list ("pool").
+
+## What the user does not comment on (avoid false alarms)
+
+- Exact numbers and word counts while drafting; page limits; length up to 50-75% over budget.
+- Pure sentence-level rewordings with no gain in clarity (memory: no pedantic rewordings). Grammar that obscures
+  meaning (colon, comma) does get flagged.
+- Notation choices already deferred ("tau for kinds acceptable for now"), unless a clash causes confusion.
+
+## Calibration (update after each scored round)
+
+| Round | Predicted | Hits | Misses | False alarms | Notes |
+|---|---|---|---|---|---|
+| (seed, no round yet) | | | | | |
