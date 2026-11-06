@@ -53,27 +53,27 @@ vectors outside $\mathcal{R}(z)$, and $\Omega$ is the means of keeping it inside
 
 Attacks and defenses, in the feature space and in the problem space, are usually studied as separate problems, yet each
 needs to know part of $\mathcal{R}(z)$, and each obtains it from outside the feature mapping. \textbf{Problem-space
-attacks} that search over candidate transformations need, for each candidate, the point $\varphi(T(z))$ it reaches,
-side effects included. The attacks against deployed malware detectors obtain it by applying the candidate and
-extracting the features of the result~\cite{demetrio2021functionality,song2022mab}, which costs one extraction per
-candidate and says nothing about the candidates the search never tries. \textbf{Feature-space attacks} that respect
-realizability need $\Omega$ written out as constraints over features, which domain-independent attacks take as
+attacks} that search over candidate transformations need, for each candidate, the point $\varphi(T(z))$ it reaches, side
+effects included. The attacks against deployed malware detectors obtain it by applying the candidate and extracting the
+features of the result~\cite{demetrio2021functionality,song2022mab}, which costs one extraction per candidate and says
+nothing about the candidates the search never tries. \textbf{Feature-space attacks} that respect realizability need
+$\Omega$ written out as constraints over features, which domain-independent attacks take as
 input~\cite{simonetto2022unified,chernikova2022fence}. The constraints are written by hand, typically with a domain
 expert~\cite{dyrmishi2023empirical}, or learned from data~\cite{sheatsley2021robustness}. \textbf{Problem-space
-defenses}, such as adversarial training on the objects that problem-space attacks produce, need the same points as the attacks, for many
-candidates on many training objects, and the cost of generating realistic adversarial examples limits such
-training~\cite{dyrmishi2023empirical,lucas2023adversarial}. \textbf{Feature-space defenses} train or certify a detector
-on vectors, and need $\mathcal{R}(z)$ to know which vectors to defend. Hardening a malware detector on unconstrained
-feature-space examples brings little robustness against realistic attacks, because those examples move the features in
-other directions~\cite{dyrmishi2023empirical}. Verified training needs a region of the feature space that contains every
-vector the attacker's edits reach~\cite{chen2020training}. A monotone detector needs to know, for each feature, whether
-any transformation in $\mathcal{T}$ can lower it, since a detector whose score never falls when the attacker's edits
-raise features cannot be evaded by those edits~\cite{incer2018adversarially,gimenez2025certifiably}. These directions
-are assigned by hand~\cite{incer2018adversarially,gimenez2025certifiably} or learned from the attacks that have been
-observed~\cite{gimenez2025certifiably}. Across the four lines of work, the knowledge comes from trial, from an analyst's
-reading of the extractor, or from the attacks someone happened to run. Trial is exact but answers only for the
-transformations tried, a hand analysis is as complete as its author's reading of thousands of features, and knowledge
-learned from attacks covers only what those attacks did. Yet $\mathcal{R}(z)$ is determined by $\varphi$ once
+defenses}, such as adversarial training on the objects that problem-space attacks produce, need the same points as the
+attacks, for many candidates on many training objects, and the cost of generating realistic adversarial examples limits
+such training~\cite{dyrmishi2023empirical,lucas2023adversarial}. \textbf{Feature-space defenses} train or certify a
+detector on vectors, and need $\mathcal{R}(z)$ to know which vectors to defend. Hardening a malware detector on
+unconstrained feature-space examples brings little robustness against realistic attacks, because those examples move the
+features in other directions~\cite{dyrmishi2023empirical}. Verified training needs a region of the feature space that
+contains every vector the attacker's edits reach~\cite{chen2020training}. A monotone detector needs to know, for each
+feature, whether any transformation in $\mathcal{T}$ can lower it, since a detector whose score never falls when the
+attacker's edits raise features cannot be evaded by those edits~\cite{incer2018adversarially,gimenez2025certifiably}.
+These directions are assigned by hand~\cite{incer2018adversarially,gimenez2025certifiably} or learned from the attacks
+that have been observed~\cite{gimenez2025certifiably}. Across the four lines of work, the knowledge comes from trial,
+from an analyst's reading of the extractor, or from the attacks someone happened to run. Trial is exact but answers only
+for the transformations tried, a hand analysis is as complete as its author's reading of thousands of features, and
+knowledge learned from attacks covers only what those attacks did. Yet $\mathcal{R}(z)$ is determined by $\varphi$ once
 $\mathcal{T}$ is fixed, and the feature mapping is code that the defender has.
 
 Our framework derives this knowledge from the feature mapping's code, for a broad class of feature mappings. It gives

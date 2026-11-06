@@ -4,19 +4,14 @@
 
 \paragraph{Problem-space attacks}
 Our work builds on the formalization of problem-space attacks by Pierazzi et al.~\cite{pierazzi2020intriguing}. They
-describe an attack as a sequence of transformations applied to an object under problem-space constraints, such as
-preserving its semantics, and relate the result to the feature space through the feature mapping. Because an edited
-object rarely lands exactly where the attacker aimed, the formalization also accounts for side-effect features, the
-changes an edit makes beyond the intended ones. Pierazzi et al.\ observe that when the feature mapping is neither
-differentiable nor invertible, as in malware detection, the side effects of a transformation generally cannot be
-computed in advance. In practice, attacks find side effects by applying a transformation and extracting the features of
+describe an attack as a sequence of transformations applied to an object under problem-space constraints, and relate the
+result to the feature space through the feature mapping, side-effect features included. Since those side effects
+generally cannot be computed in advance, attacks find them by applying a transformation and extracting the features of
 the result. Šrndić and Laskov's evasion of PDFrate~\cite{srndic2014practical} worked this way, as do the toolkits now
 used against Windows malware detectors~\cite{demetrio2021adversarial,demetrio2021functionality,song2022mab}. Such an
-attack learns only about the edits its search reaches. If it fails, other edits may still evade the detector, and a
-defense trained on the edits it produced is protected only against those. For sum-then-readout extractors
-(\cref{def:fw:extractor}), our work replaces this trial and error with computation. From a record the extractor keeps
-while it runs, we compute the side effects of an edit exactly, and for a whole set of allowed edits we compute the
-direction in which each feature can move, with a guarantee that covers edits no attack has tried.
+attack learns only about the edits its search reaches, and if it fails, other edits may still evade the detector. For
+sum-then-readout extractors (Definition~\ref{def:fw:extractor}), our work replaces this trial and error with computation
+that covers the edits no attack has tried.
 
 % Paragraphs 1-4 revised after the user's written review (2026-11-04) and accepted as a draft; the user will fine-tune
 % them by hand.
@@ -29,33 +24,40 @@ this approach domain-independent. They define a grammar in which linear and non-
 written, and give two attacks that respect any constraint set written in it, which they apply to botnet detection,
 malware detection, credit scoring, and phishing. Chernikova and Oprea's FENCE~\cite{chernikova2022fence} does the same
 for network-traffic and malicious-domain classifiers, updating dependent features after each step so that they stay
-consistent. Both frameworks take the constraints as input, which leaves open where the constraints come from. Dyrmishi et
-al.~\cite{dyrmishi2023empirical}, who compare hardening against such attacks with hardening against realistic ones,
+consistent. Both frameworks take the constraints as input, which leaves open where the constraints come from. Dyrmishi
+et al.~\cite{dyrmishi2023empirical}, who compare hardening against such attacks with hardening against realistic ones,
 note that the attacker must write the constraints in analytical form, typically with a domain expert. For Windows
 malware, they took the immutable features from Microsoft's description of the executable format and the dependencies
 among features from sample files. Sheatsley et al.~\cite{sheatsley2021robustness} learn constraints from data around a
 few features chosen by hand, which reduces the expert's part but ties the constraints to the examples they were learned
-from. Either way, nothing checks the constraints against the extractor that produces the features. A hand-written
-constraint is only as complete as its author's reading of the extractor, and a learned one can admit vectors that no
-edit reaches and exclude vectors that some edit does. We derive what these attacks take as input. For a
-sum-then-readout extractor and a declared set of edits, we compute from the extractor itself which way each feature can
-move, without an expert or a sample, and the result holds for every edit in the set, including edits no sample
-contains.
+from. Bostani et al.~\cite{bostani2025level} learn dependencies among features from the feature vectors of many Android
+apps and use them to generate realizable feature-space examples for adversarial training, and they note that constraints
+learned from a finite sample describe only part of the realizable feature space. In each case, nothing checks the
+constraints against the extractor that produces the features. A hand-written constraint is only as complete as its
+author's reading of the extractor, and a learned one can admit vectors that no edit reaches and exclude vectors that
+some edit does. We derive what these attacks take as input. For a sum-then-readout extractor and a declared set of
+edits, we compute from the extractor itself which way each feature can move, without an expert or a sample, and the
+result holds for every edit in the set, including edits no sample contains.
 
 \paragraph{Robust and monotone detectors}
-Constraints tell an attacker which feature vectors to search. A defender can use the same knowledge to build a detector
-that the attacker's edits cannot evade at all. If the edits can only raise each feature they touch, and the detector's
-score never falls when a feature rises, no sequence of edits lowers the score. Incer et al.~\cite{incer2018adversarially}
-built malware detectors on this principle. They decided by hand, for each feature, whether an attacker can cheaply raise
-it, lower it, both, or neither, dropped the features that move both ways, and trained a classifier constrained to be
-monotone in the rest. Gimenez et al.~\cite{gimenez2025certifiably} proved the converse: every robust detector can be
-written as a monotone classifier over some post-processing of its features. They build robust detectors in two ways.
-The first trains a monotone classifier on 40 features they picked by hand to be difficult to change for an attacker
-without access to the malware's source code. The second, ERDALT, learns the post-processing from adversarial
-examples: a linear layer, trained so that the feature change of every observed attack maps to a nonnegative vector,
-feeds a monotone neural network. Such a detector is robust to the feature changes it was trained on, which is why they
-call it empirically robust. They also compare with a simpler selection that keeps the features no observed attack
-lowered. Chen et al.\ reach verified
+Constraints tell an attacker which feature vectors to search. A defender can use the same knowledge to harden a detector
+by adversarial training, retraining it on adversarial examples, but the examples must be realistic. Dyrmishi et
+al.~\cite{dyrmishi2023empirical} found that hardening a malware detector on unconstrained feature-space examples brought
+little robustness against a problem-space attack, because those examples moved the features in other directions than the
+realistic ones did. Realistic examples are costly to generate, and Lucas et al.~\cite{lucas2023adversarial} made
+adversarial training of raw-binary detectors practical by generating problem-space examples efficiently and at scale. A
+hardened detector resists the kinds of edits it was trained on. A defender can also build a detector that the attacker's
+edits cannot evade at all. If the edits can only raise each feature they touch, and the detector's score never falls
+when a feature rises, no sequence of edits lowers the score. Incer et al.~\cite{incer2018adversarially} built malware
+detectors on this principle. They decided by hand, for each feature, whether an attacker can cheaply raise it, lower it,
+both, or neither, dropped the features that move both ways, and trained a classifier constrained to be monotone in the
+rest. Gimenez et al.~\cite{gimenez2025certifiably} proved the converse: every robust detector can be written as a
+monotone classifier over some post-processing of its features. They build robust detectors in two ways. The first trains
+a monotone classifier on 40 features they picked by hand to be difficult to change for an attacker without access to the
+malware's source code. The second, ERDALT, learns the post-processing from adversarial examples: a linear layer, trained
+so that the feature change of every observed attack maps to a nonnegative vector, feeds a monotone neural network. Such
+a detector is robust to the feature changes it was trained on, which is why they call it empirically robust. They also
+compare with a simpler selection that keeps the features no observed attack lowered. Chen et al.\ reach verified
 robustness through training. Their first classifiers for PDF malware~\cite{chen2020training} are verifiably robust to
 inserting or deleting subtrees of a document, and use the features of Šrndić and Laskov's
 Hidost~\cite{srndic2016hidost}, a PDF detector whose features each name a path in the document's object tree. With these
@@ -65,18 +67,20 @@ specified from domain knowledge, among them monotonicity in a feature whose larg
 an attacker can cheaply increase but only expensively decrease.
 % Verified 2026-11-04 against arXiv 2105.11363: Property 1 and Sec. 6.1 ("Monotonic Directions": suspiciousness and
 % economic cost); datasets: cryptojacking, Twitter spam accounts, Twitter spam URLs.
-All four works rest on the same input, the directions in which an attacker's edits can move each
-feature~\cite{incer2018adversarially,gimenez2025certifiably,chen2020training,chen2021learning}. Incer et al.\ derive
-the directions by hand, Gimenez et al.\ by hand for their certified detector and from the attacks they ran for their
-empirical ones, and Chen et al.\ choose a feature set simple enough that the directions can be read off the feature
-definitions, or specify them from domain knowledge and from what each change costs the attacker. A hand analysis is as complete as its authors' reading of the extractor, a selection or post-processing
-learned from attacks is as complete as the attacks it observed, and a feature set chosen to be easy to
-analyze excludes the feature sets that deployed detectors use, such as EMBER's. Our framework computes the directions
-for every feature of a sum-then-readout extractor and for any declared set of edits, with a guarantee for every edit in
-the set. Each of the constructions above can then be applied to the feature sets detectors actually use, with the
-features to keep, re-encode, or drop following from the extractor and the threat model rather than from an analyst or
-an attack library. On EMBER, the computed directions find lowerable features in Gimenez et al.'s hand-picked set, in
-the features selected from attacks, and in ERDALT's learned layer (\cref{sec:eval:detectors}).
+The detectors of Incer et al., Gimenez et al., and Chen et al.\ rest on the same input, what an attacker's edits can do
+to each feature: the directions in which they can move it or, for Chen et al.'s first classifiers, which features a
+subtree edit can change~\cite{incer2018adversarially,gimenez2025certifiably,chen2020training,chen2021learning}. Incer et
+al.\ derive the directions by hand, Gimenez et al.\ by hand for their certified detector and from the attacks they ran
+for their empirical ones, and Chen et al.\ choose a feature set simple enough that the changed features can be read off
+the feature definitions, or specify the directions from domain knowledge and from what each change costs the attacker. A
+hand analysis is as complete as its authors' reading of the extractor, a selection or post-processing learned from
+attacks is as complete as the attacks it observed, and a feature set chosen to be easy to analyze excludes the feature
+sets that deployed detectors use, such as EMBER's. Our framework computes the directions for every feature of a
+sum-then-readout extractor and for any declared set of edits, with a guarantee for every edit in the set. Each of the
+constructions above can then be applied to the feature sets detectors actually use, with the features to keep,
+re-encode, or drop following from the extractor and the threat model rather than from an analyst or an attack library.
+On EMBER, the computed directions find lowerable features in Gimenez et al.'s hand-picked set, in the features selected
+from attacks, and in ERDALT's learned layer (\cref{sec:eval:detectors}).
 % ERDALT's Table 7 row: run 128 (2026-11-04).
 
 \paragraph{Incremental computation and provenance}
