@@ -1,5 +1,33 @@
 # Status
 
+**2026-11-06 (session 16, writing track): §2 revised after the user's review; §6 aligned; next, the user's §3.1
+review in a new session.** Nothing pushed. Commits `7e73b85` (§2, reaction log, lesson 29), `e18e4b6` (§6, bib).
+
+- **The user's §2 review** (seven written comments) went through a numbered plan, approved with answers, then
+  implemented. Verdict: "extremely pleased"; the session as a whole "extremely satisfied". The procedure that worked:
+  read the comments, verify claims against the PDFs in `papers/` before planning, a numbered plan with one
+  recommendation per item and the open questions at the end, flag scope risks (overclaiming), implement only after
+  approval, read the rendered PDF, report what changed per item.
+- **§2 now** (~950 words; `_c_background.tex`): Pierazzi et al. named once, their ideas stated as fact with
+  `\cite`; attacks differ in what they return, not where they search (Pierazzi's gradient-driven strategy); the
+  constraints in one sentence; side effects trimmed ~20%; **a new reachable-set paragraph** after side effects ("the
+  central object of this paper"); the motivation paragraph opens with the unifying claim, four bold lines of work
+  (problem-space attacks, feature-space attacks, problem-space defenses: Dyrmishi, Lucas; feature-space defenses:
+  Dyrmishi's hardening finding, Chen 2020's region, Incer/Gimenez's directions); **a short closing paragraph**: the
+  framework derives this knowledge from the feature mapping's code (side effects before applying a transformation;
+  sound directions under a threat model), pointers to §3 and §5. No "items", no "descriptions".
+- **Corrected in planning:** Pierazzi et al. do not run adversarial training (checked), so they are not cited for it.
+- **§6 aligned** (`_g_related_work.tex`, ~1,450 words): ¶1 cut to ~110 words (no repeat of §2); Bostani et al. 2025
+  (learned feature dependencies for realizable adversarial training; they say learned constraints cover only part of
+  the realizable space) after Sheatsley; adversarial training (Dyrmishi, Lucas) opens the detectors paragraph; "All
+  four works" now names Incer, Gimenez, Chen and says "which features a subtree edit can change" for Chen 2020 (this
+  also settles the "stretches Chen 2021" item). A broken `\cref{def:fw:extractor}` ("?? 5") fixed; `make check`
+  does not catch it. `bostani2025level` in `main.bib` lacks volume and pages.
+- **Logged:** reaction in `docs/writing-spec.md`; `paper-prose` lesson 24 sharpened (recurred), lesson 29 added
+  (claim first, bold lines of work, concrete outputs, no forward terms).
+- **Deferred by the user:** renaming §6's paragraphs to the 2x2; any §3 change from the §2 ripple (the §3 lead's
+  framing of the single-edit result) until the §3.1 review.
+
 **2026-11-05 (session 15d, writing track): §3 cut, tables moved, lead fixed, readability pass; next, the user reads
 all of §3.** Nothing pushed. Commits `db2a327` (cuts), `4001a9d` (pass, lead, tables), `4510e07` (skill lesson 28).
 

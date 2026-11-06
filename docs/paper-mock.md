@@ -28,11 +28,11 @@ hand analysis, more complete than learned constraints, and useful: it yields det
 | Section | Content | Words |
 |---|---|---|
 | 1 Introduction | the gap, the three ways people cross it today, our claim, results | 1,000 |
-| 2 Background and Motivation | Pierazzi et al.'s problem space, constraints, reachable set, side effects (with nuance); who needs which description of the reachable set and the gap they share (written 2026-11-04) | 800 |
+| 2 Background and Motivation | Pierazzi et al.'s problem space (attacks differ in what they return), constraints, side effects (with nuance), the reachable set as the central object; attacks and defenses in feature and problem space each need part of the reachable set and get it from outside the feature mapping; a short closing on what we derive (written 2026-11-04, revised 2026-11-06, ~950 words) | 800 |
 | 3 Measuring Edits Across Feature Mappings | below (rewritten 2026-11-04: no domain examples, tables, or figures for now; spine in `docs/framework-spine.md`) | 2,500 |
 | 4 Instances | EMBER (what is recorded, the three repairs, the import-overwrite patch); CTU-13 features; the edit catalogues | 1,000 |
 | 5 Evaluation | Tables 1-4 | 3,000 |
-| 6 Related work | incremental view maintenance and parsing, abstract interpretation, provenance, constrained attacks, robust detectors | 700 |
+| 6 Related work | problem-space attacks, constraints over features (incl. learned: Sheatsley, Bostani), robust detectors (adversarial training, monotone, verified), incremental computation and provenance (~1,450 words, 2026-11-06) | 700 |
 | 7 Discussion | what does not fit (global analyses, learned features, time decay), honest tools, cost of instrumenting | 500 |
 | Appendix | proofs; lemmas on hashed keys, patterns, single inputs; requirement checks; EMBER caveats | — |
 

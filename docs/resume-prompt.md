@@ -1,9 +1,8 @@
-# Resume: ProvExp (after 2026-11-05, session 15): research track (Table 7 updated; next: the user's read, the sums row's beam cell, the scale-up budget)
+# Resume: ProvExp (writing track after 2026-11-06, session 16; research track after 2026-11-05, session 15)
 
-Two tracks run in parallel in separate sessions. This prompt is for the **research track**. The writing track (§2-3)
-continues in its own session (latest: session 15d writing, §3 cut, tables moved to Appendix C, readability pass, `4001a9d`);
-its section below is maintained by that session. Do not edit `manuscript/_c_background.tex`, `_d_framework.tex`, `_i_symbols.tex`, `_j_proofs.tex`,
-`docs/framework-*.md`, `docs/writing-spec.md`, or the `paper-prose` skill from the research track, and commit only
+Two tracks run in parallel in separate sessions. **Next session: the writing track** (the user's §3.1 review; its section is below the research track's). The
+research track's section is maintained by that track (latest writing commits: `7e73b85`, `e18e4b6`, §2 and §6). From the research track, do not edit `manuscript/_c_background.tex`, `_d_framework.tex`, `_i_symbols.tex`, `_j_proofs.tex`,
+`docs/framework-*.md`, `docs/writing-spec.md`, or the `paper-prose` skill, and commit only
 your own files (`git status` first: the other session may have uncommitted work).
 
 ## Research track (session 15): the user reads the new §5 passages; then the sums row, the scale-up budget, ERDALT
@@ -59,41 +58,44 @@ your own files (`git status` first: the other session may have uncommitted work)
    rest on the same input" stretches Chen 2021). After those, the introduction and the other empty sections, spine
    first, coordinated with the writing track.
 
-## Writing track (session 15d writing, 2026-11-05): §3 cut and smoothed; next, the user's read of all of §3
+## Writing track (session 16, 2026-11-06): §2 revised and §6 aligned; next, the user's §3.1 review
 
-**Where things stand.** §3 (`manuscript/_d_framework.tex`) has four subsections built on
-$\varphi = \rho \circ \sigma \circ \pi$ ($\mathcal{Z} \to \mathcal{V} \to \mathcal{S} \to \mathcal{X}$):
-3.1 the class (Defs 1-5, Remark 1), 3.2 item deltas and exact side effects (Def 6, Prop 1), 3.3 edits given as writes
-(Def 7 local kinds, Lemma 1 localization), 3.4 sound directions (signatures, sign sets, Def 8, Theorem 1, Corollary 1).
-Design and spines: `docs/framework-design.md` (Sections 11-15). This session (`db2a327`, `4001a9d`, `4510e07`):
-- **Cut (user):** the toy example everywhere and every tie to real feature sets (EMBER, Drebin, Hidost,
-  CICFlowMeter, PE examples). No replacement plain-language examples (the user's view; open to debate). Pre-cut text in
-  `manuscript/backup/framework-before-cuts-2026-11-05.tex`, to refactor into §4.
-- **Tables 1-2** redesigned (symbols in cells, conditions in footnotes) and moved to Appendix C ("Sign rules");
-  the body states the readout rules in one sentence.
-- **§3 lead** rewritten in the current order. **Readability pass** over all of §3, math unchanged; new term: an
-  item *lies within* a set of positions. ~4,450 words (budget 2,500; drafting allowance ~4,400).
-- Kept for the user to decide: "such as an offset in a table entry", "such as a count", "such as a count, an offset,
-  or a length", the 5-vs-3 max example, and §3.4's sentence on where our sign sets come from.
+**Start here.** Invoke `/paper-prose` first. Read `docs/status.md` (session-16 block), then `manuscript/_d_framework.tex`
+§3.1 (`sec:fw:model`: the factorization, Defs 1-5, Remark 1) and `manuscript/_c_background.tex` (the new §2, so §3.1
+follows from it). The user has reviewed §3.1 and has **a lot of comments, and several parts they find confusing**:
+they will paste them at the start of the session.
 
-**Lessons to keep** (`paper-prose` lessons 26-28): read the rendered PDF (pdftotext; render tables with pdftoppm and
-look) before showing anything; readable before reviewable (the user: the prose was "extremely hard to review");
-table cells hold symbols, never clauses; explain each concept in words before its definition and each result's plain
-meaning after it; no equation numbers as arguments; no abstract closers; no deference about cited work.
+**How to work (this is what made session 16 effective; the user was "extremely satisfied"):**
+1. Read the comments carefully. Separate questions (answer them plainly first, in words, before any fix; the user
+   finds parts of §3.1 confusing, so an explanation may be what is needed, or the confusion may show a definition that
+   does not stand on its own, lesson 21) from feedback.
+2. Verify before planning: any claim about a cited work against the PDF in `papers/` (pdftotext into the scratchpad),
+   any claim about §3's math against `docs/formalization.md` and `_j_proofs.tex`.
+3. Give a **numbered plan**, one item per comment, each with the concrete change and one recommendation; flag scope
+   risks and effects on other sections; put the genuinely open questions at the end. Do not edit until approved.
+4. Implement; `make` and `make check` in `manuscript/`; read the rendered text (pdftotext) as the reader will; check
+   for "??" in the PDF (`make check` misses a broken `\cref` to a theorem-like label: use `Definition~\ref{...}`).
+   Rewrap to 120 columns. Report per item what changed, briefly.
+5. Log the reaction raw in `docs/writing-spec.md`; update `paper-prose` lessons; commit in logical pieces.
+
+**Where things stand.** §2 (~950 words) now: problem/feature space, attacks differ in what they return; constraints;
+side effects; the reachable set $\mathcal{R}(z)$ as the paper's central object; attacks and defenses in either space
+each need part of $\mathcal{R}(z)$; a short closing (the framework derives it from the feature mapping's code: side
+effects before applying a transformation, sound directions under a threat model). §3 has four subsections on
+$\varphi = \rho \circ \sigma \circ \pi$: 3.1 the class, 3.2 item deltas and exact side effects (Prop 1), 3.3
+edits given as writes (Def 7, Lemma 1), 3.4 sound directions (Def 8, Theorem 1, Corollary 1); ~4,450 words; the sign
+tables are in Appendix C. §6 aligned with §2 (`e18e4b6`).
 
 **Next, in order.**
-1. Invoke `/paper-prose`. **Take the user's read of all of §3.** Log it raw in `docs/writing-spec.md`'s reaction log,
-   update the skill's lessons, and revise: from a spine change if the structure is at fault, not by patching
-   sentences. Settle the kept clauses above.
-2. **Downstream consistency:** §4's "self-contained contributions (R4)" (`_e_instances.tex:40`) and "honest tools
-   (R3)" (`:106`), now part of the class or dropped; §5's "precondition" (`_f_evaluation.tex:102, 267`) should say it
-   is how §4 defines $F$; §5's uses of Corollary 1 for the sums rows; the proofs appendix says "whose members lie in"
-   where §3 says "lies within".
-3. **Refactor the cut material into §4** where it serves the instances (which feature sets have the shape; the
-   size/length repair as a contribution moved into a readout; item-stated operations); the scope sentence (call
-   graphs, learned representations) to §7.
-4. Notation round (the user is "not in love" with $\tau$); the "strong baselines" claim (cut; reinstate only with
-   support). Then the introduction and the other empty sections, spine first, coordinated with the research track.
+1. **The user's §3.1 review** (above). Revise from a spine change if the structure is at fault, not by patching.
+2. **The §2 ripple into §3**, only if the review leaves it open: the §3 lead should frame the single-edit result as
+   §2's closing does (side effects before the transformation is applied), not as "the exact change of every feature".
+3. Then the user's read of §3.2-3.4, and the older writing items: the kept "such as" clauses and the 5-vs-3 max
+   example; downstream consistency (§4's "(R4)" at `_e_instances.tex:40` and "honest tools (R3)" at `:106`; §5's
+   "precondition" as how §4 defines $F$; the proofs appendix's "whose members lie in" vs "lies within"); the cut
+   material into §4 (`manuscript/backup/framework-before-cuts-2026-11-05.tex`); the notation round ($\tau$).
+4. Small: `bostani2025level` in `main.bib` lacks volume and pages; renaming §6's paragraphs to the 2x2 (user: maybe
+   later).
 
 ## Carry-forward (unchanged)
 

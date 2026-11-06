@@ -55,6 +55,23 @@ introduction and a simple baseline (writing decision for later).
   combined edits (run 111, 1,105 of 1,105) and the learned-constraints contrast (run 110). Record:
   `docs/direction-A-prime-plan.md`, Section 13.
 
+## Next steps (2026-11-06, session 16, writing: §2 revised after the user's review; §6 aligned)
+
+Done: the user's written review of §2 (seven comments) answered from an approved plan (`7e73b85`); the user was
+"extremely pleased". §2 now states Pierazzi et al.'s ideas as fact, says attacks differ in what they return, gives the
+reachable set its own paragraph (the paper's central object, after side effects), frames the motivation as attacks and
+defenses in either space (2x2, bold), and closes with a short summative paragraph. §6 aligned (`e18e4b6`): shorter
+¶1, Bostani et al. 2025 added, adversarial training (Dyrmishi, Lucas), Chen 2020 as "which features a subtree edit can
+change". The user passed on renaming §6's paragraphs to match the 2x2 (maybe later).
+
+Next, in order (writing track):
+1. **The user's §3.1 review in a new session** (the user has comments and several confusing parts). Same procedure as
+   session 16: take the comments, answer questions plainly, give a numbered plan with a recommendation per item,
+   implement after approval, log the reaction. Do not edit §3 before that review (the §2 ripple, the §3 lead's framing
+   of the single-edit result, waits for it).
+2. Then the user's read of §3.2-3.4, and the items of the session-15d list below (downstream consistency, the cut
+   material into §4, the notation round).
+
 ## Next steps (2026-11-05, session 15d, writing: §3 cut, tables to Appendix C, readability pass)
 
 Done: the toy example and all real-feature-set passages cut from §3 (backup in `manuscript/backup/`); Tables 1-2
