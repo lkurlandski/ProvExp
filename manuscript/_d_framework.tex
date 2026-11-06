@@ -9,12 +9,14 @@ The feature mappings we study find pieces of their input, add up what each piece
 totals, and compute each feature by a formula over a few totals. \Cref{sec:fw:model} defines this class of
 \emph{sum-then-readout extractors}. \Cref{sec:fw:side-effects} describes an edit by the pieces it removes and adds,
 and shows that this description and a record the extractor writes while it runs give the exact change of every
-feature, side effects included, without extracting the features of the edited input. Many edits are given instead by
-the positions they write, and \Cref{sec:fw:edits} shows when the pieces they change can be found from those positions.
-\Cref{sec:fw:directions} moves from one edit to every edit a threat model allows. It computes, without applying any
-edit, the directions in which each feature can move, and a detector whose score cannot fall in those directions cannot
-be evaded by those edits. The proofs are in Appendix~\ref{sec:fw:proofs}, and Appendix~\ref{sec:symbols} lists the
-notation.
+feature, side effects included, before the edit is applied: the totals are updated from the record, and only the
+formulas that read a changed total are evaluated again. Attackers' edits are usually given instead by the positions
+they write, and \Cref{sec:fw:edits} shows when the pieces such an edit removes and adds can be found from those
+positions and the record, so that the results of this section apply to these edits as well. \Cref{sec:fw:directions}
+bounds, without applying any edit, the direction in which each feature can move under the edits a threat model
+allows, and shows that a detector whose score cannot fall in those directions cannot be evaded by those edits.
+Appendix~\ref{sec:types} is a short introduction to the algebra that \Cref{sec:fw:model} uses,
+Appendix~\ref{sec:fw:proofs} holds the proofs, and Appendix~\ref{sec:symbols} lists the notation.
 
 \subsection{Sum-then-Readout Extractors}
 \label{sec:fw:model}
@@ -53,18 +55,51 @@ multiset of the kinds and contents of its items,
 \end{equation}
 }
 
-\noindent An item is what one pass of one of the extractor's loops reads: its kind says which loop, and its members
-say which elements the pass reads. Items of the same kind are processed by the same code, so a kind acts as a type,
-and the pair of an item's kind and content is a typed value (Appendix~\ref{sec:types}). The item map keeps what the
-items contain and forgets where they lie. Two items with the same kind and content count twice, and moving an item
-to other positions without changing its content leaves $\pi(z)$ as it was.
+\noindent \Cref{alg:fw:extractor} shows the shape in code. Each loop of an extractor finds the items of one kind,
+and each pass of the loop reads one item. Items of the same kind are processed by the same code, so a kind acts as a
+type, and the pair of an item's kind and content is a typed value (Appendix~\ref{sec:types}). The item map drops the
+positions of the items, so that two inputs can be compared by their items without matching the items of one to those
+of the other, a property that we exploit in \Cref{sec:fw:side-effects}.
+
+\begin{algorithm}[t]
+  \caption{A sum-then-readout extractor. Each loop finds the items of one kind, the body of the loop adds an item's
+  contribution to the sums, and the last lines are readouts. Every sum starts at its neutral element.}
+  \label{alg:fw:extractor}
+  \begin{algorithmic}[1]
+    \For{each record of $z$, with members $M$} \Comment{kind \emph{record}}
+      \State $s[\mathrm{records}] \gets s[\mathrm{records}] + 1$
+      \State $s[\mathrm{size}] \gets s[\mathrm{size}] + |z[M]|$
+      \State $s[\mathrm{largest}] \gets \max(s[\mathrm{largest}], |z[M]|)$
+    \EndFor
+    \For{each token of $z$, with members $M$} \Comment{kind \emph{token}}
+      \State $s[\mathrm{token}{:}\, z[M]] \gets s[\mathrm{token}{:}\, z[M]] + 1$ \Comment{one sum per key}
+    \EndFor
+    \For{each position $p$ of $z$} \Comment{kind \emph{element}}
+      \State $s[\mathrm{value}{:}\, z[p]] \gets s[\mathrm{value}{:}\, z[p]] + 1$
+    \EndFor
+    \State $x_1 \gets s[\mathrm{size}] / s[\mathrm{records}]$ \Comment{readouts}
+    \State $x_2 \gets s[\mathrm{largest}]$
+    \State $x_3 \gets$ entropy of the counts $s[\mathrm{value}{:}\, \cdot\,]$
+    \State $x_4 \gets$ number of keys $q$ with $s[\mathrm{token}{:}\, q] > 0$
+  \end{algorithmic}
+\end{algorithm}
 
 \definition[Sums]
 \label{def:fw:sums}
 {
 A feature mapping keeps a set $K$ of \emph{sums}. Each sum $k \in K$ takes values in a commutative monoid
-$\mathbb{M}_k$: a set with an associative and commutative operation and a \emph{neutral element}, which the operation
-leaves unchanged. Three monoids occur:
+$(\mathbb{M}_k, \star_k, e_k)$: a set with an associative and commutative operation $\star_k$ and a \emph{neutral
+element} $e_k$, which the operation leaves unchanged. The \emph{sum space} $\mathcal{S} = \prod_{k \in K}
+\mathbb{M}_k$ holds the tuples $\mathbf{a}$ that give every sum $k$ a value $a_k \in \mathbb{M}_k$. Two tuples combine
+sum by sum, each sum with its own operation,
+\begin{equation}
+  \label{eq:fw:oplus}
+  (\mathbf{a} \oplus \mathbf{b})_k = a_k \star_k b_k \qquad \text{for every } k \in K,
+\end{equation}
+and the neutral element $\mathbf{e}$ of $\mathcal{S}$ holds $e_k$ on every sum.
+}
+
+\noindent The definition allows any commutative monoid, and the feature sets we know of use three:
 \begin{equation}
   \label{eq:fw:monoids}
   \begin{array}{@{}ll@{}}
@@ -73,30 +108,34 @@ leaves unchanged. Three monoids occur:
     (\mathbb{R} \cup \{+\infty\}, \min, +\infty) & \text{for a \emph{min pool}.}
   \end{array}
 \end{equation}
-The \emph{sum space} is the product $\mathcal{S} = \prod_{k \in K} \mathbb{M}_k$, with the operation $\oplus$ that
-applies each sum's operation to its entry. Its neutral element holds the neutral element of every sum. Max and min
-pools are together called \emph{pools}; each keeps the largest or the smallest value it receives.
-}
-
-\noindent The set $K$ may be large, since an extractor can keep one count for every key of an open vocabulary.
+Max and min pools are together called \emph{pools}, and each keeps the largest or the smallest value it receives. In
+\Cref{alg:fw:extractor}, \textit{largest} is a max pool and the other sums are additive. Other monoids fit the
+framework too. \Cref{sec:fw:side-effects} would recompute such a sum as it recomputes a pool, and
+\Cref{sec:fw:directions} would need a rule for how its operation moves a sum up or down, a rule we give for the three
+monoids above. The set $K$ may be large, since an extractor can keep one count for every key of an open
+vocabulary, as the token loop of \Cref{alg:fw:extractor} does.
 
 \definition[Contributions]
 \label{def:fw:contributions}
 {
 Each kind $\tau$ has a \emph{contribution function} $\nu_\tau$, which maps the content of an item of kind $\tau$ to an
-element of $\mathcal{S}$ that is neutral on all but finitely many sums. The \emph{fold}
-$\sigma: \mathcal{V} \to \mathcal{S}$ takes a multiset $B$ to
+element of $\mathcal{S}$: the value that the item adds to each sum. The value is the neutral element $e_k$ on every
+sum $k$ that the item does not touch, and an item touches finitely many sums. The \emph{fold}
+$\sigma: \mathcal{V} \to \mathcal{S}$ combines the contributions of the members of a multiset $B$,
 \begin{equation}
   \label{eq:fw:fold}
   \sigma(B) = \bigoplus_{(\tau, c) \in B} \nu_\tau(c),
 \end{equation}
-with each element counted as often as it occurs, and takes the empty multiset to the neutral element. The \emph{sums
-of} $z$ are $\mathbf{s}(z) = \sigma(\pi(z))$.
+where $\bigoplus$ combines its terms with the operation $\oplus$ of \eqref{eq:fw:oplus}, as $\sum$ combines its terms
+with $+$. Each member counts as often as it occurs, and the empty multiset goes to $\mathbf{e}$. The \emph{sums of}
+$z$ are $\mathbf{s}(z) = \sigma(\pi(z))$.
 }
 
-\noindent A contribution is what one item adds to the running totals. It depends only on the item's kind and content,
-never on the rest of the input. The sums of $z$ are the totals once every item has been added. They do not form a
-vector, since their entries lie in different monoids and a pool cannot be subtracted from.
+\noindent A contribution is what one item adds to the running totals: in \Cref{alg:fw:extractor}, a record
+contributes 1 to \textit{records}, its length to \textit{size} and to \textit{largest}, and the neutral element to
+every other sum. A contribution depends only on the item's kind and content, never on the rest of the input. The sums
+of $z$ are the totals once every item has been added. They do not form a vector, since their entries lie in different
+monoids and a pool cannot be subtracted from.
 
 Because every $\mathbb{M}_k$ is associative and commutative, the fold does not depend on the order in which the
 extractor visits the items, and folding the union of two multisets combines their folds:
@@ -115,20 +154,23 @@ only the totals.
 \definition[Readouts]
 \label{def:fw:readout}
 {
-A \emph{readout} of feature $j$ is a function $\rho_j: \mathcal{S} \to \mathbb{R}$ that reads a fixed set
-$K_j \subseteq K$ of sums, its \emph{support}: $\rho_j(\mathbf{a}) = \rho_j(\mathbf{b})$ whenever $\mathbf{a}$ and
-$\mathbf{b}$ agree on $K_j$. The readouts of all $n$ features form the map $\rho = (\rho_1, \dots, \rho_n)$ from
-$\mathcal{S}$ to $\mathcal{X}$.
+A \emph{readout} of feature $j$ is a function $\rho_j: \mathcal{S} \to \mathbb{R}$ whose value depends only on a
+fixed set $K_j \subseteq K$ of sums, its \emph{support}: $\rho_j(\mathbf{a}) = \rho_j(\mathbf{b})$ whenever
+$a_k = b_k$ for every $k \in K_j$. The readouts of all $n$ features form the map $\rho = (\rho_1, \dots, \rho_n)$
+from $\mathcal{S}$ to $\mathcal{X}$.
 }
 
-\noindent Readouts hold the arithmetic that cannot be split over items. A total, a count, or a maximum can be computed
-over parts of the input and the parts combined, and Gray et al.\ call such an aggregate \emph{distributive}. An
-average cannot, but it is a fixed function of two distributive aggregates, a total and a count, and Gray et al.\ call
-it \emph{algebraic}~\cite{gray1997data}. A readout with a small support computes an algebraic aggregate from sums, and
-the formulas that feature sets compute have this form: the identity, which returns a sum or a pool; the ratio of two
-sums; a bin of a histogram divided by the histogram's total; the entropy of a histogram; a standard deviation, from a
-count, a total, and a total of squares; and a presence bit, which is 1 when a count is positive. A support can also be
-a whole family of sums, as for the number of distinct keys whose count is positive. \Cref{sec:fw:side-effects} needs
+\noindent Readouts hold the arithmetic that cannot be done one item at a time. A total can be: split the items into
+two groups, and the total of all of them is the total of the first group plus the total of the second. A count and a
+maximum combine in the same way, and Gray et al.\ call such an aggregate \emph{distributive}~\cite{gray1997data}. An
+average does not combine this way, since the average of two groups is not the average of their averages unless the
+groups have the same size. It follows, however, from two distributive aggregates, the total and the count, and Gray
+et al.\ call such an aggregate \emph{algebraic}. Sums hold the distributive aggregates, and readouts compute the
+features from them, as the last lines of \Cref{alg:fw:extractor} do. The readouts in feature sets take a few forms:
+the identity, which returns a sum or a pool; the ratio of two sums; a bin of a histogram divided by the histogram's
+total; the entropy of a histogram; a standard deviation, from a count, a total, and a total of squares; and a presence
+bit, which is 1 when a count is positive. Most read a fixed handful of sums. Some read a whole family, such as the
+number of distinct keys whose count is positive ($x_4$ in \Cref{alg:fw:extractor}). \Cref{sec:fw:side-effects} needs
 nothing of a readout beyond its support, and \Cref{sec:fw:directions} gives each of these forms a sign rule.
 
 \definition[Sum-then-readout extractor]
@@ -149,17 +191,6 @@ feature outside the three stages, and every result in this section lets the resi
 \emph{instrument} an extractor is to write down its items, contributions, and readouts, so that the pass that computes
 the features also records the \emph{item table} of $z$: every item in $I(z)$ with its kind, its members, and its
 contribution. The rest of this section computes from the item table.
-
-\remark[Granularity]
-\label{rem:fw:granularity}
-{
-Every feature mapping is a sum-then-readout extractor over all its features if the whole input is a single item:
-give that item one kind, let its contribution place each feature's value in an additive sum of its own, and let every
-readout be the identity. The definition therefore does not restrict what a mapping computes; it describes how finely
-the computation splits into items. With one item, every edit changes the only item there is, and the results of this
-section say no more than extracting the features again would. Finer items let them say more, and the instrumented
-extractors of \Cref{sec:instances} use the items that the extractor's own loops visit.
-}
 
 \subsection{Edits and Their Side Effects}
 \label{sec:fw:side-effects}
@@ -272,7 +303,7 @@ re-parse~\cite{wagner1998efficient}. Data that runs to the end of the input chan
 writes past the old end, so in that case its margin contains it.
 
 Every kind is local if all positions are its structure positions, since no nonempty written set misses them, just as
-every extractor is a sum-then-readout extractor with a single item (Remark~\ref{rem:fw:granularity}). What the
+every extractor is a sum-then-readout extractor if the whole input is a single item. What the
 definition asks is therefore how few structure positions suffice. A kind whose items the instrumentation cannot find
 again from a margin keeps its members among its structure positions.
 

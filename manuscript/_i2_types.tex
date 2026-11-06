@@ -14,7 +14,10 @@ contribution functions $\nu_\tau$ define a single function $\nu(\tau, c) = \nu_\
 all items.
 
 \paragraph{Monoids.} A \emph{monoid} $(A, \cdot, e)$ is a type with an associative operation and a \emph{neutral
-element} $e$, with $a \cdot e = e \cdot a = a$ for every $a$. It is \emph{commutative} if $a \cdot b = b \cdot a$. A
+element} $e$, with $a \cdot e = e \cdot a = a$ for every $a$. It is \emph{commutative} if $a \cdot b = b \cdot a$.
+The \emph{product} of a family of monoids $(A_k, \cdot_k, e_k)$ is the product of their types, with the operation
+applied component by component, $(a \cdot b)_k = a_k \cdot_k b_k$, and the neutral element that holds $e_k$ in
+every component; it is commutative if every factor is. The sum space $\mathcal{S}$ is the product of the monoids of the sums. A
 \emph{homomorphism} of monoids is a function $h$ with $h(a \cdot b) = h(a) \cdot h(b)$ and $h(e) = e$. A \emph{group}
 is a monoid in which every $a$ has an \emph{inverse} $a^{-1}$, with $a \cdot a^{-1} = e$. $(\mathbb{R}, +, 0)$ is a
 group, and $(\mathbb{R} \cup \{-\infty\}, \max, -\infty)$ is not, since no $b$ gives $\max(5, b) = -\infty$.
