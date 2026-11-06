@@ -15,8 +15,8 @@ they write, and \Cref{sec:fw:edits} shows when the pieces such an edit removes a
 positions and the record, so that the results of this section apply to these edits as well. \Cref{sec:fw:directions}
 bounds, without applying any edit, the direction in which each feature can move under the edits a threat model
 allows, and shows that a detector whose score cannot fall in those directions cannot be evaded by those edits.
-Appendix~\ref{sec:types} is a short introduction to the algebra that \Cref{sec:fw:model} uses,
-Appendix~\ref{sec:fw:proofs} holds the proofs, and Appendix~\ref{sec:symbols} lists the notation.
+Appendix~\ref{sec:symbols} lists the notation, Appendix~\ref{sec:types} is a short introduction to the algebra that
+\Cref{sec:fw:model} uses, and Appendix~\ref{sec:fw:proofs} holds the proofs.
 
 \subsection{Sum-then-Readout Extractors}
 \label{sec:fw:model}
@@ -43,11 +43,11 @@ allows for them.
 \definition[Items]
 \label{def:fw:item}
 {
-An input $z \in \mathcal{Z}$ is a finite sequence of elements, and for a set $M$ of positions, $z[M]$ is the sequence
-of the elements at those positions, in order. A feature mapping has a finite set of item \emph{kinds}. An \emph{item}
-of $z$ is a pair $\iota = (\tau, M)$ of a kind $\tau$ and a nonempty set $M$ of positions of $z$, its \emph{members};
-its \emph{content} is $z[M]$. The extractor finds a set $I(z)$ of items in each input. With $\mathcal{V}$ the set of
-finite multisets of kinds and contents, the \emph{item map} $\pi: \mathcal{Z} \to \mathcal{V}$ takes $z$ to the
+An input $z \in \mathcal{Z}$ is a finite sequence of \emph{elements}. A feature mapping has a finite set of item
+\emph{kinds}. An \emph{item} of $z$ is a pair $\iota = (\tau, M)$ of a kind $\tau$ and a nonempty set $M$ of
+positions of $z$, its \emph{members}, and its \emph{content} $z[M]$ is the sequence of the elements at those
+positions, in order. The extractor finds a set $I(z)$ of items in each input. With $\mathcal{V}$, the set of finite
+multisets of kinds and contents, the \emph{item map} $\pi: \mathcal{Z} \to \mathcal{V}$ takes $z$ to the
 multiset of the kinds and contents of its items,
 \begin{equation}
   \label{eq:fw:items}
@@ -108,12 +108,14 @@ and the neutral element $\mathbf{e}$ of $\mathcal{S}$ holds $e_k$ on every sum.
     (\mathbb{R} \cup \{+\infty\}, \min, +\infty) & \text{for a \emph{min pool}.}
   \end{array}
 \end{equation}
-Max and min pools are together called \emph{pools}, and each keeps the largest or the smallest value it receives. In
-\Cref{alg:fw:extractor}, \textit{largest} is a max pool and the other sums are additive. Other monoids fit the
-framework too. \Cref{sec:fw:side-effects} would recompute such a sum as it recomputes a pool, and
-\Cref{sec:fw:directions} would need a rule for how its operation moves a sum up or down, a rule we give for the three
-monoids above. The set $K$ may be large, since an extractor can keep one count for every key of an open
-vocabulary, as the token loop of \Cref{alg:fw:extractor} does.
+Max and min pools are together called \emph{pools}, and each keeps the largest or the smallest value it receives. The
+operation $\oplus$ is how the extractor updates its running totals: combining the sums with an item's contribution adds
+the contribution to every additive sum and keeps the larger or the smaller value in every pool. In
+\Cref{alg:fw:extractor}, \textit{largest} is a max pool and the other sums are additive. Other monoids fit the framework
+too. \Cref{sec:fw:side-effects} would recompute such a sum as it recomputes a pool, and \Cref{sec:fw:directions} would
+need a rule for how its operation moves a sum up or down, a rule we give for the three monoids above. The set $K$ may be
+large, since an extractor can keep one count for every key of an open vocabulary, as the token loop of
+\Cref{alg:fw:extractor} does.
 
 \definition[Contributions]
 \label{def:fw:contributions}
@@ -126,9 +128,8 @@ $\sigma: \mathcal{V} \to \mathcal{S}$ combines the contributions of the members 
   \label{eq:fw:fold}
   \sigma(B) = \bigoplus_{(\tau, c) \in B} \nu_\tau(c),
 \end{equation}
-where $\bigoplus$ combines its terms with the operation $\oplus$ of \eqref{eq:fw:oplus}, as $\sum$ combines its terms
-with $+$. Each member counts as often as it occurs, and the empty multiset goes to $\mathbf{e}$. The \emph{sums of}
-$z$ are $\mathbf{s}(z) = \sigma(\pi(z))$.
+where $\bigoplus$ combines its terms with the operation $\oplus$ of \eqref{eq:fw:oplus}. Each member counts as often as
+it occurs, and the empty multiset goes to $\mathbf{e}$. The \emph{sums of} $z$ are $\mathbf{s}(z) = \sigma(\pi(z))$.
 }
 
 \noindent A contribution is what one item adds to the running totals: in \Cref{alg:fw:extractor}, a record
@@ -154,24 +155,27 @@ only the totals.
 \definition[Readouts]
 \label{def:fw:readout}
 {
-A \emph{readout} of feature $j$ is a function $\rho_j: \mathcal{S} \to \mathbb{R}$ whose value depends only on a
-fixed set $K_j \subseteq K$ of sums, its \emph{support}: $\rho_j(\mathbf{a}) = \rho_j(\mathbf{b})$ whenever
-$a_k = b_k$ for every $k \in K_j$. The readouts of all $n$ features form the map $\rho = (\rho_1, \dots, \rho_n)$
+A \emph{readout} of feature $j$ is a function $\rho_j: \mathcal{S} \to \mathbb{R}$ together with a fixed set
+$K_j \subseteq K$ of sums, its \emph{support}, such that $\rho_j(\mathbf{a}) = \rho_j(\mathbf{b})$ whenever
+$a_k = b_k$ for every $k \in K_j$. The readout thus depends only on the sums in its support, and a change to any other
+sum leaves the feature as it was. The readouts of all $n$ features form the map $\rho = (\rho_1, \dots, \rho_n)$
 from $\mathcal{S}$ to $\mathcal{X}$.
 }
 
-\noindent Readouts hold the arithmetic that cannot be done one item at a time. A total can be: split the items into
-two groups, and the total of all of them is the total of the first group plus the total of the second. A count and a
-maximum combine in the same way, and Gray et al.\ call such an aggregate \emph{distributive}~\cite{gray1997data}. An
-average does not combine this way, since the average of two groups is not the average of their averages unless the
-groups have the same size. It follows, however, from two distributive aggregates, the total and the count, and Gray
-et al.\ call such an aggregate \emph{algebraic}. Sums hold the distributive aggregates, and readouts compute the
-features from them, as the last lines of \Cref{alg:fw:extractor} do. The readouts in feature sets take a few forms:
-the identity, which returns a sum or a pool; the ratio of two sums; a bin of a histogram divided by the histogram's
-total; the entropy of a histogram; a standard deviation, from a count, a total, and a total of squares; and a presence
-bit, which is 1 when a count is positive. Most read a fixed handful of sums. Some read a whole family, such as the
-number of distinct keys whose count is positive ($x_4$ in \Cref{alg:fw:extractor}). \Cref{sec:fw:side-effects} needs
-nothing of a readout beyond its support, and \Cref{sec:fw:directions} gives each of these forms a sign rule.
+\noindent Gray et al.\ sort aggregate functions by whether they can be computed in parts~\cite{gray1997data}. Split
+the items into two groups. An aggregate is \emph{distributive} if its value over all the items follows from its values
+over the two groups: the total of all items is the total of the first group plus the total of the second, and counts,
+maxima, and minima combine in the same way. An aggregate is \emph{algebraic} if a fixed number of values computed over
+each group suffices to obtain it. An average is algebraic but not distributive, since the average of all items is not
+the average of the two groups' averages unless the groups have the same size, yet it follows from each group's total
+and count. Sums are distributive aggregates, which is why the extractor can add up items one at a time, and readouts
+compute the rest from them, as the last lines of \Cref{alg:fw:extractor} do. Many kinds of features reduce to this
+shape: the identity, which returns a sum or a pool; the ratio of two sums; a bin of a histogram divided by the
+histogram's total; the entropy of a histogram; a standard deviation, from a count, a total, and a total of squares;
+and a presence bit, which is 1 when a count is positive. Most read a fixed handful of sums. Some read a whole family,
+such as the number of distinct keys whose count is positive ($x_4$ in \Cref{alg:fw:extractor}).
+\Cref{sec:fw:side-effects} needs nothing of a readout beyond its support, and \Cref{sec:fw:directions} gives each
+of these forms a sign rule.
 
 \definition[Sum-then-readout extractor]
 \label{def:fw:extractor}
