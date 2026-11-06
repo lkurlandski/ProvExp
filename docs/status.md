@@ -16,7 +16,9 @@ harness update (lessons 20 revised, 31 added, procedure step 7).
   Def 4 glossed; readout paragraph opens with Gray et al.'s classes; "many kinds of features reduce to this shape".
 - **Sprint set up** (user's plan): Claude reviews §3.2-3.4 as the user would before they read, one subsection per
   session, scored against the user's review. Log `docs/sprint-framework-review.md`; reader model
-  `.claude/skills/paper-prose/reader-model.md`; `paper-prose` procedure step 8. Next: §3.2, step 1.
+  `.claude/skills/paper-prose/reader-model.md`; `paper-prose` procedure step 8. The user reads only the improved
+  version of each subsection; their remaining comments are classified (missed / fix fell short / introduced / new
+  taste). Next: §3.2, step 1; resume with `docs/resume-prompt-review.md`.
 - **Open:** §3.2's first paragraph still says "without extracting them" (align with the lead); the user's read of
   §3.2-3.4; the older items in the session-16 block below.
 

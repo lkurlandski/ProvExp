@@ -55,6 +55,23 @@ introduction and a simple baseline (writing decision for later).
   combined edits (run 111, 1,105 of 1,105) and the learned-constraints contrast (run 110). Record:
   `docs/direction-A-prime-plan.md`, Section 13.
 
+## Next steps (2026-11-06, session 17, writing: §3.1 done; the §3.2-3.4 review sprint begins)
+
+Done: the user's §3.1 review in two rounds (`164e1b5`, `a167b08`): questions answered first, a 12-item plan, then six
+small fixes; verdict "improved enormously". The user considers §2 and §3.1 essentially done. New: Algorithm 1 (a
+generic pseudocode extractor), $\mathcal{S}$ as a product monoid with $(\mathbf{a} \oplus \mathbf{b})_k = a_k
+\star_k b_k$, any commutative monoid allowed, the readout paragraph opening with Gray et al.'s classes, Remark 1
+removed, the §3 lead reframed (side effects before the edit is applied; §3.3 as the bridge from written positions to
+items). Harness: `paper-prose` lessons 30-31, procedure steps 7 (revising after a review) and 8 (simulated review).
+
+Next, in order (writing track): **the review sprint** (`docs/sprint-framework-review.md`; resume with
+`docs/resume-prompt-review.md`). For each of §3.2, §3.3, §3.4, one session each: Claude analyzes the draft as the user
+would (reader model `.claude/skills/paper-prose/reader-model.md`), proposes changes, the user approves the plan, Claude
+implements, and the user's *first* read is of the improved version; their remaining comments are classified (missed /
+fix fell short / introduced / new taste) and update the reader model and lessons. Goal: by §3.4, no second round.
+After the sprint: the older writing items (downstream consistency in §4/§5, the cut material into §4, the notation
+round), then the introduction.
+
 ## Next steps (2026-11-06, session 16, writing: §2 revised after the user's review; §6 aligned)
 
 Done: the user's written review of §2 (seven comments) answered from an approved plan (`7e73b85`); the user was

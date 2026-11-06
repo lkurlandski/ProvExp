@@ -60,8 +60,9 @@ your own files (`git status` first: the other session may have uncommitted work)
 
 ## Writing track (session 17, 2026-11-06): §3.1 revised and accepted ("improved enormously"); next, the user's §3.2-3.4 read
 
-**Sprint (agreed 2026-11-06): self-review of §3.2, §3.3, §3.4, one subsection per session.** Follow the protocol
-in `docs/sprint-framework-review.md` (steps 1-8 and the retro). Next session: **§3.2, step 1** (simulated review
+**Sprint (agreed 2026-11-06): self-review of §3.2, §3.3, §3.4, one subsection per session.** The writing track
+now resumes from **`docs/resume-prompt-review.md`** (paste-ready); the protocol is in
+`docs/sprint-framework-review.md` (steps 1-8 and the retro). Next session: **§3.2, step 1** (simulated review
 with `.claude/skills/paper-prose/reader-model.md`), then the plan for the user's feedback. Do not wait for the user's
 comments: producing the analysis is the point.
 
