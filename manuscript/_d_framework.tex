@@ -199,10 +199,16 @@ contribution. The rest of this section computes from the item table.
 \subsection{Edits and Their Side Effects}
 \label{sec:fw:side-effects}
 
-% Spine: docs/framework-design.md, Section 12 (approved 2026-11-05); rewritten after the user's second reading.
-An edit applies a transformation $T \in \mathcal{T}$ to an input $z$ and gives $z' = T(z)$. We describe an edit by the
-items it removes and adds, and show that this description and the item table of $z$ determine the sums and the
-modeled features of $z'$ exactly, without extracting them.
+% Spine: docs/framework-design.md, Section 12 (approved 2026-11-05). Revised 2026-11-07 in the review sprint
+% (docs/sprint-framework-review.md, plan items 1-8): motivation first, the example from Algorithm 1, Prop 1 as a list.
+An edit applies a transformation $T$ to an input $z$ and gives $z' = T(z)$. The direct way to find its side effects is
+the one attacks use (\Cref{sec:background}): apply the edit, extract the features of $z'$, and compare them with those
+of $z$. The answer is exact, and it is the ground truth against which \Cref{sec:evaluation} checks our computations.
+It gives only the difference, however. It does not say which part of the edit moved each feature, and it needs $z'$,
+so it says nothing about the edits that one operation of a threat model allows, such as adding content the attacker
+chooses later, for which there is no single $z'$ to extract (\Cref{sec:fw:directions}). This subsection describes an
+edit by the items it removes and adds and computes the sums of $z'$ from this description and the item table of $z$
+by arithmetic, after which only the readouts that read a changed sum are evaluated again.
 
 \definition[Item delta]
 \label{def:fw:delta}
@@ -219,49 +225,65 @@ those in $I^+$ are \emph{added}.
 
 \noindent A delta records kinds and contents, not positions. An item that moves without changing its content is in
 neither part, and an item whose content changes is one removal and one addition. The features lose nothing by this,
-since they see the input only through its items (Definition~\ref{def:fw:extractor}). Positions still matter in two
-ways: some are stored as content, such as an offset in a table entry, and others decide which items the extractor
-finds, which \Cref{sec:fw:edits} takes up. A delta need not be the smallest one, since an edit may list an unchanged
-item as both removed and added.
+since they see the input only through its items (Definition~\ref{def:fw:extractor}). Positions matter only where the
+extractor reads them. An item's content may hold a position, such as the location of another item, and then moving
+the other item changes this content. The positions an edit writes also decide which items the extractor finds, which
+\Cref{sec:fw:edits} takes up. An edit can have several deltas, since an unchanged item can be listed as both removed
+and added, and the results below hold for each of them.
 
-Many transformations are stated by the items they change, and their definitions give the delta on each input.
-\Cref{sec:fw:edits} derives the delta of an edit that is given instead by the elements it writes.
+Many transformations are stated by the items they change, such as adding or removing a record, and their definitions
+give the delta. Take an input of the extractor in \Cref{alg:fw:extractor} with two records, of lengths 5 and 3, and
+delete the first record. The delta removes the record, the five element items at its positions, and the tokens inside
+it, and adds nothing. Every item after the deleted record moves but keeps its content, so it is in neither part. This
+assumes that tokens lie inside records, so that the deletion cannot join the end of one token to the start of
+another. \Cref{sec:fw:edits} treats edits where it can.
 
 \proposition[Exact side effects]
 \label{prop:fw:side-effects}
 {
 Let $\varphi$ be a sum-then-readout extractor over $J$, let $(I^-, I^+)$ be a delta of $(z, z')$, and let
 $B = \pi(z) - I^-$ be the items the edit keeps. Then $\mathbf{s}(z) = \sigma(B) \oplus \sigma(I^-)$ and
-$\mathbf{s}(z') = \sigma(B) \oplus \sigma(I^+)$, and therefore:
-(i) on the additive sums, $\mathbf{s}(z') = \mathbf{s}(z) + \sigma(I^+) - \sigma(I^-)$;
-(ii) on the pools, $\mathbf{s}(z')$ follows from the contributions of $B$ and $I^+$, which the item table of $z$ and
-the delta give, but in general not from $\mathbf{s}(z)$ and the delta;
-(iii) $\varphi_j(z') = \rho_j(\mathbf{s}(z'))$ for every $j \in J$, and $\varphi_j(z') = \varphi_j(z)$ unless an
-item of $I^-$ or $I^+$ has a contribution other than the neutral element on a sum that $\rho_j$ reads.
+$\mathbf{s}(z') = \sigma(B) \oplus \sigma(I^+)$. In particular, writing $s_k(z)$ for the value of sum $k$ in
+$\mathbf{s}(z)$,
+\begin{enumerate}[label=(\roman*), leftmargin=*, nosep]
+  \item every additive sum $k$ satisfies $s_k(z') = s_k(z) + \sigma(I^+)_k - \sigma(I^-)_k$;
+  \item every pool $k$ satisfies $s_k(z') = \sigma(B \uplus I^+)_k$, which the item table of $z$ and the delta
+    determine, but $s_k(z)$ and the delta in general do not;
+  \item every modeled feature $j \in J$ satisfies $\varphi_j(z') = \rho_j(\mathbf{s}(z'))$, and
+    $\varphi_j(z') = \varphi_j(z)$ unless an item of $I^-$ or $I^+$ contributes a value other than the neutral element
+    to a sum in the support $K_j$.
+\end{enumerate}
 }
 
 \noindent In words, the sums of the edited input are the old sums with the contributions of the removed items taken
-out and those of the added items put in, and its modeled features are the readouts of these sums. The kept items have
-the same kinds and contents in both inputs, so they contribute the same to both, and since the fold ignores order, it
-can combine their contributions first and the others afterwards. An additive sum takes out a removed item by
-subtraction, which gives part (i), the delta rule of incremental view
-maintenance~\cite{gupta1995maintenance,koch2014dbtoaster}. A pool cannot. The maximum of 5 and 3 and the maximum of 5
-and 5 are both 5, but removing a 5 leaves 3 in the first case and 5 in the second, so part (ii) recomputes a pool over
-the kept and the added items, unless nothing was removed. Part (iii) holds because a feature whose readout sees none of
-the changed contributions keeps its value.
+out and those of the added items put in, and its modeled features are the readouts of these sums. The side effects
+$\boldsymbol{\eta} = \varphi(z') - \varphi(z) - \boldsymbol{\delta}^*$ of an edit that aimed at the change
+$\boldsymbol{\delta}^*$ (\Cref{sec:background}) are therefore exact on the modeled features. The proposition holds
+because the kept items have the same kinds and contents in both inputs, so they contribute the same to both, and
+because the fold ignores order, so it can combine their contributions first and the others afterwards. An additive sum
+takes out a removed item's contribution by subtraction, which is part (i). Databases maintain stored totals over a
+table in the same way, updating them from the inserted and deleted rows instead of recomputing them, a technique known
+as incremental view maintenance~\cite{gupta1995maintenance,koch2014dbtoaster}. Part (iii) holds because a readout
+depends only on the sums in its support.
 
-The result is exact, not an estimate, because Definition~\ref{def:fw:extractor} defines the class by this
-computation. A modeled feature's value is the readout of the folded contributions, so updating the sums and applying
-the readouts returns what extracting the features of $z'$ would. Nothing is extracted from $z'$, and an edit stated in
-items need not even be applied, since its delta suffices. Extraction can be expensive and an edit usually changes few
-items, so the update can also be cheaper. The side effects of an attack that aimed at the change
-$\boldsymbol{\delta}^*$ (\Cref{sec:background}) are
-$\boldsymbol{\eta} = \varphi(z') - \varphi(z) - \boldsymbol{\delta}^*$, so they too are exact on the modeled features.
-On the residual features the proposition says nothing.
+In the example, part (i) lowers \textit{records} by 1 and \textit{size} by 5, so $x_1$ goes from 4 to 3. A pool has
+no subtraction. The deletion lowers \textit{largest} from 5 to 3, and the item table shows this, since it lists the
+remaining record. The old value alone cannot: an input with two records of length 5 has the same \textit{largest}, and
+deleting one of them leaves it at 5. Part (ii) therefore recomputes a pool over the kept and the added items, except
+when nothing is removed, and then the old value and the added items suffice.
 
-The same reasoning applies when only the kinds of the changed items are known, and not their contents. An edit that
-only adds items cannot lower an additive sum whose contributions are never negative, such as a count, whatever the
-added items contain. \Cref{sec:fw:directions} derives statements of this sort for every operation of a threat model.
+The result is exact, not an estimate, because Definition~\ref{def:fw:extractor} defines the class by this computation.
+A modeled feature's value is the readout of the folded contributions, so updating the sums and applying the readouts
+returns what extracting the features of $z'$ would. The computation reads the item table of $z$ and the delta. It
+updates only the sums to which an item of the delta contributes and evaluates again only the readouts whose support
+contains one of them. Nothing is extracted from $z'$, and an edit stated in items need not be applied at all, since its
+definition gives the delta from $z$. Extraction can be expensive, and the update touches only part of the sums and
+features, so it can also be cheaper. On the residual features the proposition says nothing.
+
+Part (i) writes the change of an additive sum as a total over the contributions of the delta's items, so its sign can
+be known when only the kinds of the changed items are known, and not their contents. Adding items of any content
+cannot lower a count, for instance, since each item contributes 1 or nothing to it. \Cref{sec:fw:directions} bounds in
+this way the direction in which every sum and feature can move under each operation of a threat model.
 
 \subsection{Edits Given as Writes}
 \label{sec:fw:edits}

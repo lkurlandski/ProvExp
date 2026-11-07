@@ -64,6 +64,10 @@ generic pseudocode extractor), $\mathcal{S}$ as a product monoid with $(\mathbf{
 removed, the §3 lead reframed (side effects before the edit is applied; §3.3 as the bridge from written positions to
 items). Harness: `paper-prose` lessons 30-31, procedure steps 7 (revising after a review) and 8 (simulated review).
 
+Sprint progress (2026-11-07, session 18): §3.2 steps 1-4 done (15 predicted comments, an 8-item plan approved
+unchanged, implemented: motivation first, an example from Algorithm 1, Prop 1 as a list). Next: the user's first read
+of §3.2 (step 5).
+
 Next, in order (writing track): **the review sprint** (`docs/sprint-framework-review.md`; resume with
 `docs/resume-prompt-review.md`). For each of §3.2, §3.3, §3.4, one session each: Claude analyzes the draft as the user
 would (reader model `.claude/skills/paper-prose/reader-model.md`), proposes changes, the user approves the plan, Claude

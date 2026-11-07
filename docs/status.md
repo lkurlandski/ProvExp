@@ -1,5 +1,17 @@
 # Status
 
+**2026-11-07 (session 18, writing track): §3.2 revised in the review sprint (steps 1-4); waiting on the user's first
+read.** Nothing pushed.
+
+- Simulated review of §3.2 (P1-P15, `docs/sprint-framework-review.md`): main finding, the draft had lost the spine's
+  motivation paragraph (why not re-extract) and had no example. Plan of 8 items approved unchanged.
+- §3.2 now (~990 words): motivation first (re-extraction is exact but gives no cause and needs $z'$; families of
+  edits have none); Def 6 unchanged; positions gloss without the announced count; an example from Algorithm 1
+  (deleting a record: moved items are in neither part); Prop 1 with (i)-(iii) as a list, per sum $k$; η exact stated
+  right after; incremental view maintenance glossed; the pool case on the example (\textit{largest} 5 -> 3); a literal
+  closer pointing to §3.4.
+- Next: the user reads §3.2 (step 5); then classification and plan (step 6). Ripples for §3.3 in the log.
+
 **2026-11-06 (session 17, writing track): §3.1 revised in two rounds after the user's review; verdict "improved
 enormously".** Nothing pushed. Commits `164e1b5` (round 1), `bb585ca` (log, lesson 30), `a167b08` (round 2), plus the
 harness update (lessons 20 revised, 31 added, procedure step 7).

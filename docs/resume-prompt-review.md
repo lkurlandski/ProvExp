@@ -1,7 +1,9 @@
 # Resume: the §3 review sprint (ProvExp, writing track)
 
 Paste this into a fresh session. It picks up the review sprint over §3.2, §3.3, and §3.4 of the manuscript.
-**Current position: §3.2, step 1** (nothing done yet for §3.2). Update the "Current position" line and the
+**Current position: §3.2, step 5** (steps 1-4 done in session 18: the user reads the revised §3.2 next; then
+classify their comments, step 6, as in `docs/sprint-framework-review.md`; the "Start here" list below describes steps
+1-2, reuse it for §3.3). Update the "Current position" line and the
 "Where things stand" list at the end of every session.
 
 ## What the sprint is
@@ -72,4 +74,8 @@ protocol, the formats, and the classification rules are in `docs/sprint-framewor
 
 - 2026-11-06 (session 17): §3.1 done (commits `164e1b5`, `a167b08`); sprint scaffolding set up (`c7223ed`,
   `8bd8dc9`, `8dcaa42`). §3.2: not started. §3.3, §3.4: not started.
-- Ripples open: one (§3.2's "without extracting them").
+- 2026-11-07 (session 18): §3.2 steps 1-4. Simulated review P1-P15 and the 8-item plan in the log; plan approved
+  unchanged (Q1: Algorithm 1 is the encouraged kind of example; Q2: length ~990 words accepted, trim later);
+  implemented in one pass. Waiting on: the user's first read of §3.2 (step 5).
+- Ripples open: two, both for §3.3 (its first sentence after §3.2's pointer paragraph was removed; continue the
+  record-deletion example). The "without extracting them" ripple is resolved.
