@@ -584,7 +584,19 @@ options A (drop), B (fold into §3.4; formal part to the appendix), C (short sub
 anything here' change on this input?"). The user chose a dedicated analysis session first:
 `docs/resume-prompt-s33-decision.md`. Sprint halted at §3.3 until then.
 
+### Decision analysis (session 20, 2026-11-08)
+
+`docs/s33-decision.md`. Finding: the user is mostly right on substance. §3.3 has no result of its own (Lemma 1
+restates Def 8), and it formalizes the instance's way of finding items as framework. What §5 needs is EMBER's record
+of the positions the parser reads (Table 5's Flagged column, Table 6 rows 3-8), not the lemma; rows 1-2 (the headline
+and the hand-detector experiment) are declared deltas. Recommended D: remove §3.3; define the *footprint* of a write
+(it changes items only within it; the whole input always is one) at §3.4's signatures; EMBER's computation of
+footprints to §4.1. Fallback A: write signatures as a pure input. Waiting on the user.
+
 ### Retro
+
+(No score: no improved version was read. Lesson for the reader model, to confirm after the decision: when a concept
+fails with the user in several framings, check whether the framework needs it at all before reframing it again.)
 
 ## §3.4 Sound Directions
 

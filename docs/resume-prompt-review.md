@@ -1,9 +1,10 @@
 # Resume: the §3 review sprint (ProvExp, writing track)
 
 Paste this into a fresh session. It picks up the review sprint over §3.2, §3.3, and §3.4 of the manuscript.
-**Current position: halted at §3.3** (session 19, 2026-11-08): the user questioned whether §3.3 should exist; a
-dedicated analysis runs first (`docs/resume-prompt-s33-decision.md`). Resume the sprint (§3.3 under whatever structure
-is decided, then §3.4) only after that decision. Update the "Current
+**Current position: halted at §3.3, decision pending** (session 20, 2026-11-08): the analysis is
+`docs/s33-decision.md` (recommended: remove §3.3; the footprint of a write defined in §3.4's signature paragraph;
+§3 becomes three subsections). Once the user decides, apply the cut and resume the sprint with §3.4 (to become §3.3,
+Sound Directions), whose plan includes the footprint paragraphs (spine items 3-5 of the decision document). Update the "Current
 position" line and the "Where things stand" list at the end of every session.
 
 ## What the sprint is
@@ -99,3 +100,5 @@ protocol, the formats, and the classification rules are in `docs/sprint-framewor
 - Ripples open: §3.4 makes the "sign from the kinds alone" argument itself and can cite Lemma 1(iii) for its replace
   sort; framework-wide, decide after §3.4 whether to drop residual features (user's note); §4 (research track) says
   "locating positions". Closed: §3.3 says where a delta comes from (its lead, session 19).
+- 2026-11-08 (session 20): no sprint step. The §3.3 decision analysis (`docs/s33-decision.md`): recommendation D
+  (remove §3.3; footprint in §3.4; computation to §4.1), fallback A; open questions to the user.
