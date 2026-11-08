@@ -602,8 +602,201 @@ fails with the user in several framings, check whether the framework needs it at
 
 ## §3.4 Sound Directions
 
+(Now the third subsection, §3.3 in the PDF, label `sec:fw:directions`. Kept as "§3.4" here for the log.)
+
 ### 1. Simulated review
+
+Session 21 (2026-11-08). Read in the rendered PDF (pages 5-6, ~1,660 words), with the proofs (`_j_proofs.tex`: sign
+rules, envelopes from signatures, Theorem 1, Corollary 1), the spine (`docs/framework-design.md` §14), the decision
+document (`docs/s33-decision.md`, spine items 3-5), and what §4-§5 use (signatures "per file from the item table",
+population and closure, the direction table, Theorem 1 vs the hand table, Corollary 1; the derived detectors drop the
+features marked both, the 88 warning flags included). Main findings before the comments: (a) the goal, the direction
+table, is defined two-thirds of the way in, after signatures, footprints, populations, sign sets, and hashing, so the
+reader builds machinery for an unknown purpose; (b) $\Delta_o(F)$ uses $F$ three paragraphs before populations are
+defined; (c) the footprint placeholder has a gap: the signature records kinds and sorts, not positions, so "items are
+added, removed, or replaced only within the footprint" is not yet a signature (the missing step: the items of $z$
+within the footprint are listed by the item table; if the footprint keeps positions and none lies within it, the kind
+is untouched); "writes only within $W$" is undefined now that §3.3 is gone; (d) Theorem 1 states a procedure; (e) the
+subsection is ~2x its share of the budget, with tangents (hashing, Severi, patterns, $E_k$ notation) that §5 does not
+use.
+
+**¶1 (lead + operations)**
+- **P1 F (H).** The first paragraph is not a lead: it never says what the subsection defines and proves (lesson 33).
+  It opens with a motivating sentence, then defines operation, threat model, $\mathcal{T}$, $\mathcal{R}(z)$, and
+  $\Gamma$ in one run.
+- **P2 M (L).** "Whether an operation preserves ... is decided by $\Gamma$, which is an input to the model" is fine but
+  reads as a dangling disclaimer at the end of the paragraph.
+
+**¶2 (signatures)**
+- **P3 Q (H).** "The signature $\Delta_o(F)$ of $o$ over $F$": what is $F$? *Answer:* the population, defined three
+  paragraphs later. Symbol before definition (trigger 2).
+- **P4 Q (M).** Is the signature the exact set of sorts, or any list that covers them? The theorem later says "a
+  signature that contains the deltas", a relation never defined. *Answer:* any list of sorts such that every edit's
+  delta combines changes of those sorts; the theorem needs only that it covers them. Define "covers" with the
+  signature.
+- **P5 Q (L).** "Keys from a set $Q$", "an extension of its content": what is a key, what is an extension? *Answer:*
+  the content that selects a keyed sum (Algorithm 1's token counts); content with more elements appended.
+- **P6 F (M).** A new concept with a term and a symbol that the theorem and §4 use, given in prose (new-taste U3 of
+  §3.3: such a concept gets a short definition).
+
+**¶3-4 (footprint placeholder, Def 7, gloss)**
+- **P7 Q (H).** "An operation given as writes ... writes within a set of positions": what does "writes only within
+  $W$" mean? Inserting content moves everything after it. *Answer:* $z'$ keeps every element of $z$ outside $W$ at its
+  position; that covers overwrites and appends; insertions move elements and are stated in items in our catalogue.
+- **P8 Q (H).** "The signature on $z$ follows": how? The signature lists sorts per kind, not positions. *Answer:* the
+  items the write can remove are the items of $z$ that lie within the footprint, which the item table lists; added
+  items have any content; if the footprint keeps positions, each such item can only be replaced by one of the same
+  length, and if none lies within the footprint, the kind is untouched. The text skips the step that makes a
+  footprint useful.
+- **P9 F (M).** "A write whose only known footprint is the whole input": known by whom? (trigger 4/7). Say: the
+  signature uses the footprint the instrumentation supplies; if that is the whole input, the kind may change in any way.
+- **P10 F (M).** "In every case no edit is applied." A slogan closer (trigger 18), and it recurs two paragraphs after
+  the theorem.
+- **P11 M (L).** "as a readout depends only on the sums in its support": a useful parallel or a needless analogy
+  (trigger 21)? Low confidence; it was approved in the decision.
+
+**¶5 (populations)**
+- **P12 Q (H).** "Where one part of an input says that an item extends past the end": items have members in $z$; how
+  can one extend past the end? Executable minutiae in §3 (truncated files). The paragraph's real reason, that what an
+  operation can do depends on the input, is already in its domain $\Theta_o(z)$.
+- **P13 F (M).** The population is the results' scope and should come before signatures use it; closure arrives here
+  with no reason (the reason, sequences, is two pages later in the theorem's explanation).
+
+**¶6 (sign sets)**
+- **P14 F (M).** "The contributions found in feature sets take few forms, and Table 6 in Appendix C lists them": the
+  body gives no sign set of a single real contribution, so the reader has nothing to picture before step one. One
+  sentence with the count (additions $\{0, +\}$; a replacement that keeps the key $\{0\}$) would do.
+
+**¶7 (hashing and patterns)**
+- **P15 F (H).** "Hashing needs one remark." Staging (trigger 17) and a tangent (trigger 11): a defense against
+  Severi et al. inside the framework; §5 does not use it. The pattern sentence is a second, unrelated job (trigger 27).
+  Both are already proved in Appendix C.
+
+**Def 8 and gloss**
+- **P16 F (H).** The goal of the subsection, finally (trigger 10). Two concepts in one definition: the envelope (an
+  intermediate) and the direction table (the endpoint).
+- **P17 M (M).** "We write $E_k$ for an envelope when ..." is used only by the appendix table (lesson 16: a symbol must
+  earn its place in the body).
+
+**¶ step one, ¶ step two**
+- **P18 M (L).** "Because only signs are asked for, the pools need no item table here, unlike in Proposition 1(ii)":
+  a remark that looks back without need (trigger 23). Otherwise both paragraphs read well.
+
+**Theorem 1**
+- **P19 F (H).** Extremely dense (trigger 14): the statement is the whole procedure (bound, union, read, mark residuals)
+  plus two conclusions. The steps belong before it; the theorem should name the resulting table ("the derived table")
+  and state soundness and the reachable-set consequence.
+- **P20 Q (M).** "mark every residual feature both": the user's note U10 (drop residual features from the framework)
+  was to be decided after this subsection; this is where it bites.
+
+**¶ after the theorem**
+- **P21 F (M).** "the theorem rests on three facts:" announced count with a colon (trigger 17).
+
+**¶ "The table is computed for every feature at once"**
+- **P22 Q (H).** "the sign sets come partly ... from the item tables of a corpus": then is the table sound only on the
+  corpus? A concession with no consolidation (trigger 24). *Answer:* a sign set read from a corpus (the smallest value
+  a kind contributes, the keys it uses) is a hypothesis of the theorem, not a consequence; where the form decides the
+  sign (a count), it is proved; §5 checks the corpus-read ones on held-out files. Say which is which.
+
+**¶ before Cor 1, Cor 1, closer**
+- **P23 F (M).** The corollary's last sentence (scores over sums) is a remark inside a statement (trigger 26).
+- **P24 F (M).** "makes this guarantee available for any threat model" overclaims (signatures and sign sets must be
+  supplied, the population closed) and the closer does two jobs (what a detector gets; contrast with Gimenez et al.).
+
+**Whole subsection**
+- **P25 F (M).** Long (~1,660 words for a share of ~800; the user called the framework too long in §3.3's U17). The
+  tangents (P15, P17, P18) and the repeated "no edit is applied" give back ~250 words; the footprint adds ~150.
+- **P26 M (L).** "Stated in items" vs "given as writes" in §3, "stated in elements" in §4's catalogue table: three
+  names for two classes.
+
 ### 2. Proposed changes
+
+**What this subsection is for, plainly.** It turns "this one edit changes these features" (§3.2) into "no edit the
+threat model allows can move this feature down", for every feature, without applying an edit, and proves it; robust
+detectors follow from it. The mathematics is right and stays. The structure must change in one way: the goal (the
+direction table and what "sound" means) comes right after the threat model, so that every later piece is built for a
+known purpose, and the population comes before the signatures that use it. The theorem states its result about a
+named table instead of containing the procedure. Tangents go to the appendix, where their proofs already are.
+
+**Paragraph spine of the revised subsection (target ~1,150-1,250 words).**
+
+1. **Lead** (2-3 sentences, no pointers; P1). A detector must hold against every edit a threat model allows, on every
+   input it will face. This subsection bounds, for every feature, the direction in which those edits can move it,
+   without applying an edit, proves that the bound is sound, and derives robust detectors from it.
+2. **Operations and threat models** (P2). Operation, parameter domain $\Theta_o(z)$, threat model, $\mathcal{T}$ and
+   $\mathcal{R}(z)$ fixed by the catalogue; $\Gamma$ as an input in one clause inside the paragraph, not as its end.
+3. **Populations and closure** (P12, P13; moved up). What an operation can do depends on the input (its parameter
+   domain, and which items lie near what it writes), so the results hold over a population $F$; closure, with its
+   reason in one clause (a sequence of edits must stay where the bound holds). No truncated-file example.
+4. **Lead-in + Definition 7 (Direction tables)** (P16): direction table, the four directions, sound for $\mathcal{M}$
+   over $F$. Envelope leaves the definition.
+5. **Gloss** (2-3 sentences): Incer et al.'s four cases, assigned by hand; a sound table is a feature-space constraint
+   in $\Omega$'s sense and what a monotone detector needs (§2's two uses, no pointer). The route in one sentence: from
+   what an operation does to items, to the signs of the sums, to the directions of the features.
+6. **Lead-in + Definition 8 (Signatures)** (P3-P6): Proposition 1 turns one delta into the change of every sum; for an
+   operation we ask only for signs, over all its edits. A signature lists, per kind, sorts (add, remove, replace) with
+   content restrictions (any, keys from $Q$, same length, extension of the content); it *covers* $o$ over $F$ if the
+   delta of every edit of $o$ on an input of $F$ combines changes of the listed sorts. "Key" and "extension" glossed
+   in the definition's clauses.
+7. **Gloss** (one job: why replace is a sort): an item rewritten in place leaves its count unchanged, a removal and an
+   addition taken separately do not. An operation stated in items comes with its signature.
+8. **Lead-in + Definition 9 (Footprint)** (P7; spine item 3 of the decision): an operation stated as writes fixes
+   where it writes, not what; "writes only within $W$" defined in the lead-in ($z'$ keeps every element of $z$ outside
+   $W$ at its position: overwrites and appends; insertions are stated in items). The definition as in the
+   placeholder.
+9. **From a footprint to a signature** (P8-P10; spine item 4): the items of $z$ within the footprint are listed by the
+   item table; a write removes only those and adds only items within the footprint; if the footprint keeps positions,
+   each is replaced by one of the same length, and a kind with no item within it is untouched. The covering signature
+   over $F$ is the union over its inputs, since footprints depend on the input. For one write, the items within the
+   footprints in $z$ and $z'$ form a delta for Proposition 1. The whole input is always a footprint, so no kind is
+   lost: if the instrumentation supplies only that, the kind may change in any way (*flagged*). Finding small
+   footprints is the instance's work, the one place where the format enters beyond the item map. (Support analogy:
+   one clause in the gloss, P11 kept as approved.) No "no edit is applied".
+10. **Sign sets** (P14): sign set, flip, sign sum with its two examples, abstract interpretation; each sort gives each
+    sum a sign set; one concrete case (a count: additions $\{0, +\}$, a replacement that keeps the key $\{0\}$); the
+    appendix table lists the common forms, hashed keys and patterns among them (one clause; P15: the hashing paragraph,
+    Severi, and patterns move to Appendix C, which already proves them).
+11. **Step one, sums**, as now, minus the Prop 1(ii) remark (P18). The envelope is named here, in prose, as the set of
+    signs a sum's change takes over the operation's edits on $F$; $E_k$ notation to the appendix (P17).
+12. **Step two, features, and the derived table** (P19 lead-in): readout rules as now; then the union over operations,
+    the reading as fixed/up/down/both; call the result the *derived table*.
+13. **Theorem 1** (P19, P20): if every signature covers its operation over $F$ and the sign sets contain the signs
+    their sorts give the sums, the derived table is sound for $\mathcal{M}$ over $F$; if $F$ is closed, every vector
+    of $\mathcal{R}(z)$ differs from $\varphi(z)$ only in allowed directions. Residuals per Q1.
+14. **Why it holds** (P21): the sign of a total, the maximum of more or larger values, the readout rules, then sequences
+    by induction under closure; without closure the table says nothing after a step leaves $F$. Plain sentences.
+15. **Where the inputs come from** (P22): the table is computed for every feature from the catalogue and the item
+    tables; beyond the extractor it takes the signatures and the sign sets, each about one sort of change to one kind
+    of item, which can be checked one at a time, unlike a hand assignment over thousands of features. A sign set fixed
+    by the contribution's form (a count is never negative) is proved; one read from a corpus (the smallest value, the
+    keys seen) is a hypothesis, and §5 checks it on held-out files.
+16. **Lead-in to Corollary 1**, as now (Gimenez et al.'s result; negating falling features).
+17. **Corollary 1**, without the sums sentence (P23).
+18. **What it gives** (P24): a detected sample stays detected under every sequence the threat model allows; a GBDT with
+    monotone constraints is such a score; the same holds for a score over sums, which keep directions that normalized
+    features lose (moved from the statement). Contrast: Gimenez et al. chose 40 features by hand; the derived table
+    covers every feature for any catalogue whose signatures are supplied (no "any threat model").
+
+**Ripples.**
+- `_j_proofs.tex`: "the signature contains" -> "covers"; the Severi sentence joins "Hashed keys"; the $E_k$ notation
+  sentence moves to the sign-rules paragraph; residuals per Q1. No change to the proofs' logic.
+- `_i_symbols.tex`: footprint and signature lines; $\Delta_o(F)$ dropped if the symbol goes (Q2).
+- §3 lead: unchanged ("stated by the pieces they change or by the positions they write" already fits).
+- Ripples list: "§3.4 makes the sign-from-the-kinds argument" closed by items 6-7 and 15; "cite Lemma 1(iii)" closed
+  (keeps positions is in the footprint); U10 decided by Q1.
+- Research track, proposals only: §4's catalogue table "Stated in: elements" -> "writes" to match §3 (P26); §4.1's
+  margins as footprints (from the decision); §6 line ~94 "margins" -> "footprint".
+
+**Open questions.**
+- **Q1. Residual features (U10).** Recommended: drop them from the framework now (Def 5 without "over $J$", Prop 1(iii)
+  and Theorem 1 without residual clauses; small edits to accepted §3.1-3.2). §4 then says the 88 warning flags are
+  outside the class and are treated as marked both, which is what the derived detectors already do (they drop them),
+  so no run changes. Alternative: keep them until after the user's read.
+- **Q2. Signature as Definition 8, without the symbol $\Delta_o(F)$** (nothing outside §3 uses it). Recommended: yes.
+  Three definitions in the subsection, each one concept.
+- **Q3. Hashing, Severi, and patterns out of the body** (Appendix C keeps the proofs; Severi's remark could also go to
+  related work). Recommended: appendix only.
+
 ### 3. User's feedback on the plan
 ### 4. Implemented
 ### 5. User's first read
