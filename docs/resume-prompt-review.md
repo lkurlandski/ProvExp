@@ -1,8 +1,9 @@
 # Resume: the §3 review sprint (ProvExp, writing track)
 
 Paste this into a fresh session. It picks up the review sprint over §3.2, §3.3, and §3.4 of the manuscript.
-**Current position: Sound Directions, round 2 implemented (2026-11-08, session 21); next is the user's second read,
-then classification and the retro.** The user stopped round 1 before Def 9 (U1-U19 in the log). Update the "Current
+**Current position: Sound Directions round 3 implemented (2026-11-08, session 21) from a gated plan after the
+user's audit request; next is the user's read, then the retro.** Read the paragraph gate at the top of `paper-prose`
+first. Update the "Current
 position" line and the "Where things stand" list at the end of every session.
 
 ## What the sprint is
@@ -108,3 +109,7 @@ protocol, the formats, and the classification rules are in `docs/sprint-framewor
 - 2026-11-08 (session 21, cont.): the user's read of round 1: "pretty bad", stopped before Def 9 (U1-U19: 9 missed,
   5 introduced, 3 fell short, 1 new taste: neutral framing). Round 2 implemented (operations as sets of transformations,
   no theta/sort/instance, the append example). Next: the user's second read.
+- 2026-11-08 (session 21, cont.): round 2 drew "paragraphs that don't mean anything"; audit, the paragraph gate
+  added to `paper-prose`; round 3 from a gated 13-paragraph plan (threat model = set of transformations, operations
+  and footprint out of §3), ~1,040 words. Next: the user's read.
+

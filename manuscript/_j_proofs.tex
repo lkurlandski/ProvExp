@@ -20,10 +20,10 @@ $\mathbf{s}(z')$ both agree with $\sigma(B)$ on $K_j$. By Definition~\ref{def:fw
 $\rho_j(\mathbf{s}(z)) = \rho_j(\mathbf{s}(z'))$, and by \eqref{eq:fw:extractor}, $\varphi_j(z) = \varphi_j(z')$.
 
 \paragraph{Sign rules.}
-\Cref{tab:fw:signs,tab:fw:readouts} list the rules that the second and third steps of \Cref{sec:fw:directions}
-apply: the sign sets of common contributions, and the sign rules of the readout forms of \Cref{sec:fw:model}. The
-paragraphs below prove them. In both tables, ``all'' stands for $\{-, 0, +\}$, and $E_k$ is the envelope
-$E^F_o(k)$ when the operation and the population are clear.
+\Cref{tab:fw:signs,tab:fw:readouts} list the rules that \Cref{sec:fw:directions} applies to sums and readouts: the sign
+sets of common contributions, and the sign rules of the readout forms of \Cref{sec:fw:model}. The paragraphs below prove
+them. In both tables, ``all'' stands for $\{-, 0, +\}$, and $E_k$ is the set of signs that the change of sum $k$ can
+take under the threat model, as bounded by the rules for sums.
 
 \begin{table}[h]
   \caption{Sign sets of common contributions: the signs that any number of changes of one kind (addition, removal,
@@ -71,9 +71,9 @@ $E^F_o(k)$ when the operation and the population are clear.
   \end{tabular}
 \end{table}
 
-\paragraph{Envelopes from signatures.}
-Fix an operation $o$, an input $z \in F$, and a transformation $T \in o$, and let $(I^-, I^+)$ be a delta of the edit
-made of changes the signature lists, which exists because the signature covers the operation. For an additive sum $k$,
+\paragraph{Sums from signatures.}
+Fix an input $z \in F$ and a transformation $T \in \mathcal{M}$, and let $(I^-, I^+)$ be a delta of the edit made of
+changes the signature lists, which exists because the signature covers $\mathcal{M}$. For an additive sum $k$,
 Proposition~\ref{prop:fw:side-effects}(i) writes $s_k(z') - s_k(z)$ as the total, over the listed changes, of what the
 changes of each listed kind give $s_k$, and each such part has a sign in that change's sign set, which by assumption
 contains the signs that any number of such changes can give the sum. Since $\mathrm{sgn}(x + y) \in \mathrm{sgn}(x)
@@ -115,13 +115,13 @@ rule follows from Definition~\ref{def:fw:readout}: if no sum in $K_j$ can change
 before and after, and otherwise every sign is allowed.
 
 \paragraph{Proof of Theorem~\ref{thm:fw:directions}.}
-For one edit of an operation on an input of $F$, the edit has a delta made of changes its signature lists, since the
-signature covers the operation, so each sum's change has a sign in the bound of the second step (above), and by the
-readout rules each feature's change has a sign in the third step's output, which lies in the union over the operations.
-Reading the union as a direction is therefore sound for single edits. If $F$ is closed under $\mathcal{M}$, every
-intermediate input of a sequence of edits stays in $F$, the single-edit statement applies at every step, and ``does not
-fall'' and ``does not rise'' are transitive; induction on the length of the sequence completes the proof. Without
-closure, a step can leave $F$, after which the signatures say nothing about the next step.
+For one transformation of $\mathcal{M}$ applied to an input of $F$, the edit has a delta made of changes the signature
+lists, since the signature covers $\mathcal{M}$, so each sum's change has a sign in the bound for sums (above), and by
+the readout rules each feature's change has a sign in the resulting set. Reading the union as a direction is therefore
+sound for single edits. If $F$ is closed under $\mathcal{M}$, every intermediate input of a sequence of edits stays in
+$F$, the single-edit statement applies at every step, and ``does not fall'' and ``does not rise'' are transitive;
+induction on the length of the sequence completes the proof. Without closure, a step can leave $F$, after which the
+signatures say nothing about the next step.
 
 \paragraph{Proof of Corollary~\ref{cor:fw:robustness}.}
 By Theorem~\ref{thm:fw:directions}, the feature vectors of $z$ and of any $z' \in \mathcal{R}(z)$ differ only

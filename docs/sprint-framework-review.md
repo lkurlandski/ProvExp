@@ -999,6 +999,15 @@ Ripples: `_j_proofs.tex` (one signature for $\mathcal{M}$, no union over operati
 with the union sentence, write signatures and corpus-read sign sets in §4.1; §6 "margins/footprint" sentence and the
 paper mock (deferred with §4.1).
 
+**Round 3 implemented (2026-11-08)** from the gated plan, unchanged: 13 paragraphs, ~1,040 words (texcount, from
+~1,940). Def 7 is now Threat models and direction tables (threat model = the set of single-step transformations);
+Def 8 Signatures $\Delta_{\mathcal{M}}(F)$; operations, the footprint, the inputs paragraph, the append example, and
+"envelope" are gone from the body. Proofs: one signature for $\mathcal{M}$, no union over operations; "Sums from
+signatures"; $E_k$ defined in Appendix C. Symbols updated. `make check` clean, no "??". Research-track ripples
+(proposals): §4 defines operations as catalogue rows (a table per row, united: sound since each edit is one row's, at
+least as tight as one signature for the threat model), where write signatures come from (locating positions), and
+corpus-read sign sets as the theorem's hypothesis, checked in §5; §6's "margins" sentence; the paper mock.
+
 ### Retro
 
 ## Sprint retro
