@@ -825,7 +825,119 @@ it (treated as both); §4's catalogue "Stated in: elements" -> "writes"; §4.1's
 cross-reference to §3.2; §6 ~line 94 "margins" -> "footprint".
 
 ### 5. User's first read
+
+2026-11-08. Verdict: "pretty bad"; stopped before Definition 9 ("not productive to continue"). Condensed, U1-U19:
+- U1 ¶1: an abrupt topic shift, not a continuation of where §3.2 left off.
+- U2 ¶1: takes the defender's perspective; the subsection should be neutral: how and where features can move.
+- U3 ¶2: are operation and threat model important enough for terms and symbols? If so, they need a definition
+  (together is fine, but clearly their own constructs).
+- U4 ¶2: $\theta$ and $\Theta_o(z)$: why needed? "Indexed by a parameter" says nothing about why it exists.
+- U5 ¶2: "operation instance": does it just mean operation?
+- U6 ¶2: isn't an operation just a transformation or a sequence of them? Why a new term?
+- U7 ¶3: confusing because of ¶2.
+- U8 ¶3: "Our results": which results?
+- U9 ¶4: the one-sentence paragraph belongs at the end of ¶3 ("..., which are defined next").
+- U10 Def 7: too much jargon ("operation instance"); "pretentious".
+- U11 ¶5: Incer et al. not introduced; the four directions are obvious enough not to need credit; related work.
+- U12 ¶5: monotone detectors not mentioned before.
+- U13 ¶5: the paragraph's purpose and value are unclear.
+- U14 ¶6: "We ask ..." is weird and unnatural; say it directly.
+- U15 Def 8: no idea what the first sentence means; it seems to define "sort" as "items are changing"; bizarre and
+  useless.
+- U16 Def 8: lost what a signature is for, because of "sort".
+- U17 ¶7: what does it accomplish?
+- U18 ¶7: "replacement" is a common English word and needs no definition.
+- U19 ¶8 (lead-in to Def 9): what is it trying to communicate?
+
 ### 6. Classification and plan
+
+| Comment | Class | What the reader model or lessons should have said |
+|---|---|---|
+| U1 | fell short | P1 flagged the lead, but the fix said what the subsection proves without starting from where §3.2 ends (one edit with a known delta -> a whole set of edits). New trigger: a subsection's first sentence picks up the previous subsection's endpoint. |
+| U2 | new taste | The framework is neutral (how and where features move); detectors are one consequence, at the end. The lead named detectors as a goal. |
+| U3 | missed | §3.3's U3 already said it (a concept with a term and symbol gets a definition); applied to signatures, not to operations and threat models. |
+| U4, U6 | missed | Inherited text; step 1 gave ¶2 only P2 (L). An index set with no stated purpose; a new term next to an existing one (transformation) with no reason. Reader-model note: they reason about the design ("isn't X just Y?"). |
+| U5, U10 | missed | "Operation instance" never defined; jargon scan skipped inherited sentences. |
+| U7 | (knock-on) | |
+| U8 | missed | Vague referent (trigger 4). |
+| U9 | introduced | Trigger 25 (lead-in before a statement) over-applied as its own paragraph. |
+| U11 | missed | Lesson 10 (introduce every name); a credit the reader does not need belongs in related work. |
+| U12 | missed | §2 mentions monotone detectors in passing; the gloss leaned on it with no reminder. |
+| U13 | introduced | Plan item 5 gave the gloss two jobs (credit, Ω, monotone use, roadmap). |
+| U14 | missed | "We ask for less" survived from the old draft; indirect register (trigger 17-19 family). |
+| U15, U16 | introduced | Plan item 6 promoted "sort" to a defined term; a word coined to name "a kind of change" is wet clay (lesson 21). |
+| U17, U18 | fell short | P6 kept the replacement paragraph as a gloss; defining a common word reads as filler. The reason (a rewrite leaves counts unchanged) fits in one clause. |
+| U19 | introduced | The new lead-in defined "writes only within $W$" before saying why writes need anything. |
+
+Totals: missed 9 (U3-U6, U8, U10-U12, U14), introduced 5 (U9, U13, U15, U16, U19), fell short 3 (U1, U17, U18),
+new taste 1 (U2). Main cause: step 1 scanned the new and placeholder text closely and treated the inherited operation
+and threat-model paragraph as near the bar; it is where the reader stopped. Second cause: the plan formalized two
+words (sort, covers) and added a lead-in paragraph per definition, which added jargon and staging.
+
+**Answers to the user's questions.**
+- U6 (operation vs transformation): an operation is a *set* of transformations described together, such as "append
+  any content": one transformation per possible content. A single transformation is one edit (append these bytes).
+  The bound is computed per operation because an operation's one description says which kinds of item its edits can
+  change, while its transformations are too many to apply one by one. The term is needed (§4-§5 catalogue twelve
+  operations), but as a plain set of transformations.
+- U4 ($\theta$): it only names which member of the set is meant (which content is appended). Once an operation is
+  defined as a set of transformations, $\theta$ and $\Theta_o(z)$ are unnecessary: a member is just $T \in o$, and a
+  transformation that acts differently on each input (overwrite whatever region the input reserves) is still a map
+  $\mathcal{Z} \to \mathcal{Z}$.
+- U5: "operation instance" meant one transformation of an operation. It goes.
+- U8: "our results" meant Theorem 1 and Corollary 1. The population will be introduced inside the soundness
+  definition, where it is used.
+- U15: the sentence listed the three kinds of change a set of edits can make to the items of one kind (add, remove,
+  rewrite in place), and called each a "sort". The word goes; the signature lists these changes directly.
+- U17: ¶7 explained why a rewrite in place is listed separately from a removal plus an addition: it leaves the count of
+  the kind unchanged, so the derived bound is tighter. One clause in the signature's gloss is enough.
+
+**Plan: a paragraph spine for the subsection (neutral; no defined "sort", "instance", $\theta$).**
+1. (U1, U2) **Lead, continuing from §3.2.** Proposition 1 gives the exact change of every feature for one edit whose
+   delta is known. Many questions concern a whole set of edits instead, such as every content that could be appended,
+   which are too many to apply and whose deltas are not known in advance. This subsection bounds, for every feature,
+   the direction in which any edit of such a set can move it, and proves the bound sound. No detectors.
+2. (U3-U6, U10) **Definition 7 (Operations and threat models)**, after one sentence of reason (edits come in families
+   with one description). An *operation* is a set of transformations; a *threat model* $\mathcal{M}$ is a finite set
+   of operations, and the transformations it allows, with their finite sequences, form $\mathcal{T}$ of §2. Gloss: why
+   operations (one description per set; too many members to apply); which operations satisfy $\Gamma$ is decided
+   outside the model, in one clause. No $\theta$.
+3. (U7-U9, U11-U13) **Definition 8 (Direction tables)**, ending the same paragraph's lead-in ("assigns each feature one
+   of four directions, defined next"): direction table; sound for $\mathcal{M}$ over a set $F$ of inputs, a
+   *population*, if no transformation of $\mathcal{M}$ applied to an input of $F$ changes a fixed feature, lowers an
+   up one, or raises a down one; $F$ is *closed* if these transformations keep inputs in $F$. Gloss, one job: why a
+   population (the same edit can do different things to different inputs) and why closure (a sequence passes
+   through intermediate inputs); a sound table is a feature-space constraint in the sense of $\Omega$ (§2's term). No
+   Incer et al. (related work), no monotone detectors here. Last sentence: the three steps (items, sums, features).
+4. (U14-U18) **Definition 9 (Signature)**, after one direct sentence: the sign of each sum's change follows from which
+   kinds of item an operation's edits can add, remove, or rewrite in place. The signature $\Delta_o(F)$ lists, per
+   kind, which of the three changes the edits of $o$ make on inputs of $F$, and for a rewrite whether the new content
+   is free, has the same length, or extends the old one. It *covers* $o$ if every edit of $o$ on an input of $F$ has a
+   delta made of such changes. Gloss (two sentences): a rewrite is listed separately because it leaves the count of
+   its kind unchanged; an operation described by the items it changes comes with its signature, e.g. adding a record
+   in Algorithm 1 adds one record, its element items, and possibly tokens (Q3). Keys from $Q$ leave the body (the
+   appendix's hashing paragraph).
+5. (U19) **Footprints, motivated before defined.** Some operations are described by where they write, not by the
+   items they change, and which items change then depends on the input: appending letters to an input of Algorithm 1
+   that ends in a letter extends its last token, while its records stay as the header gives them (Q3). An edit writes
+   only within $W$ if every element outside $W$ stays in place. Definition 10 (Footprint) as now.
+6. **From footprint to signature**, as implemented (unread by the user), with the jargon scan applied.
+7. **Sign sets and the second step**, as implemented, scanned (no "sort": "each kind of change").
+8. **Third step and the derived table**, as implemented.
+9. **Theorem 1**, as implemented ("every edit of $\mathcal{M}$" for "operation instance").
+10. **Why it holds**, as implemented.
+11. **Where the inputs come from**, as implemented.
+12. (U2) **One consequence: detectors.** Lead-in now introduces monotone detectors in a sentence (a score that never
+    falls as features rise), with Gimenez et al.'s result; Corollary 1; the closer as implemented. Neutral framing:
+    "A sound table also yields detectors ...".
+
+Ripples: `_j_proofs.tex` ("sort" -> "kind of change", "operation instance" -> "edit of an operation"); symbol table
+($\Theta_o$, $T_{o,\theta}$ out; $o$ as a set of transformations); §4-§5 (research track) use "operation" in the same
+sense, so no change there. Expected length: about the same (~1,750); the definitions get shorter, the examples add two
+sentences.
+
+Open questions (Q1-Q4): in the chat.
+
 ### 7-8. Feedback and implementation
 ### Retro
 
