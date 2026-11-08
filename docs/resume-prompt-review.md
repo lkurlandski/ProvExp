@@ -1,9 +1,8 @@
 # Resume: the §3 review sprint (ProvExp, writing track)
 
 Paste this into a fresh session. It picks up the review sprint over §3.2, §3.3, and §3.4 of the manuscript.
-**Current position: Sound Directions, steps 1-4 done (2026-11-08, session 21); next is the user's first read (step 5),
-then classification (step 6).** The log's "§3.4 Sound Directions" section has the simulated review (P1-P26), the
-18-paragraph spine, the user's answers, and what was implemented. Update the "Current
+**Current position: Sound Directions, round 2 implemented (2026-11-08, session 21); next is the user's second read,
+then classification and the retro.** The user stopped round 1 before Def 9 (U1-U19 in the log). Update the "Current
 position" line and the "Where things stand" list at the end of every session.
 
 ## What the sprint is
@@ -105,3 +104,7 @@ protocol, the formats, and the classification rules are in `docs/sprint-framewor
 - 2026-11-08 (session 21): Sound Directions steps 1-4. Simulated review P1-P26; 18-paragraph spine approved (residual
   features dropped framework-wide; signature a definition, symbol kept; hashing/patterns to Appendix C); implemented
   in one pass (~1,800 words, over the planned ~1,200). Next: the user's first read.
+
+- 2026-11-08 (session 21, cont.): the user's read of round 1: "pretty bad", stopped before Def 9 (U1-U19: 9 missed,
+  5 introduced, 3 fell short, 1 new taste: neutral framing). Round 2 implemented (operations as sets of transformations,
+  no theta/sort/instance, the append example). Next: the user's second read.

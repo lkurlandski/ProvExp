@@ -939,6 +939,21 @@ sentences.
 Open questions (Q1-Q4): in the chat.
 
 ### 7-8. Feedback and implementation
+
+2026-11-08: Q1-Q4 as recommended (operation as a set of transformations, no $\theta$; "threat model" kept as a defined
+term; examples from Algorithm 1; no Incer et al. here). Implemented: the lead continues from Prop 1 and ends with the
+families sentence (no detectors); Def 7 (Operations and threat models) and a gloss that ends with the lead-in to Def 8;
+Def 8 (Direction tables) with population and closure inside; gloss (why a population, why closure, $\Omega$, the
+three steps); a direct lead-in from Prop 1(i); Def 9 (Signatures) with add / remove / rewrite and the rewrite's
+restrictions (free, same key, same length, extension), no "sort"; gloss: why a rewrite is listed apart, plus the append
+example (signature: additions for elements, additions and extensions for tokens, nothing for records). One example,
+not two: an item-stated "add a record" example dragged in header and token-boundary details, so the append serves both
+the signature and the footprint. The footprint lead-in now motivates (where it writes, what lies near), then "writes
+only within $W$"; the footprint gloss places the append's footprints after the general claims. Rest scanned: "sort",
+"operation instance", $\theta$ gone (body, proofs, symbol table); "stage" -> "step" (stage means the extractor's three
+stages in §3.1); the detector part opens neutrally ("A sound table also yields detectors") and defines monotone.
+Rendered ~1,940 words (texcount), longer than round 1. `make check` clean, no "??".
+
 ### Retro
 
 ## Sprint retro

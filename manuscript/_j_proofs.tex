@@ -20,15 +20,15 @@ $\mathbf{s}(z')$ both agree with $\sigma(B)$ on $K_j$. By Definition~\ref{def:fw
 $\rho_j(\mathbf{s}(z)) = \rho_j(\mathbf{s}(z'))$, and by \eqref{eq:fw:extractor}, $\varphi_j(z) = \varphi_j(z')$.
 
 \paragraph{Sign rules.}
-\Cref{tab:fw:signs,tab:fw:readouts} list the rules that the second and third stages of \Cref{sec:fw:directions}
+\Cref{tab:fw:signs,tab:fw:readouts} list the rules that the second and third steps of \Cref{sec:fw:directions}
 apply: the sign sets of common contributions, and the sign rules of the readout forms of \Cref{sec:fw:model}. The
-paragraphs below prove them. In both tables, ``all'' stands for $\{-, 0, +\}$, and $E_k$ is the envelope $E^F_o(k)$ when the operation and
-the population are clear.
+paragraphs below prove them. In both tables, ``all'' stands for $\{-, 0, +\}$, and $E_k$ is the envelope
+$E^F_o(k)$ when the operation and the population are clear.
 
 \begin{table}[h]
-  \caption{Sign sets of common contributions: the signs that any number of changes of one sort can give a sum.
-  Removing items gives the signs of adding them, flipped, and a min pool follows the max pool with every sign
-  flipped. $\operatorname{sgn}[l, u]$ is the set of signs of the numbers in $[l, u]$.}
+  \caption{Sign sets of common contributions: the signs that any number of changes of one kind (addition, removal,
+  rewrite) can give a sum. Removing items gives the signs of adding them, flipped, and a min pool follows the max pool
+  with every sign flipped. $\operatorname{sgn}[l, u]$ is the set of signs of the numbers in $[l, u]$.}
   \label{tab:fw:signs}
   \small
   \begin{tabular}{@{}lccl@{}}
@@ -72,18 +72,18 @@ the population are clear.
 \end{table}
 
 \paragraph{Envelopes from signatures.}
-Fix an operation $o$, an input $z \in F$, and a parameter $\theta$, and let $(I^-, I^+)$ be a delta of the edit made of
-changes of the sorts the signature lists, which exists because the signature covers the operation. For an additive
-sum $k$, Proposition~\ref{prop:fw:side-effects}(i) writes $s_k(z') - s_k(z)$ as the total, over the sorts, of what the
-changes of each sort give $s_k$, and each such part has a sign in the sort's sign set, which by assumption contains the
-signs that any number of changes of the sort can give the sum. Since $\mathrm{sgn}(x + y) \in \mathrm{sgn}(x) \boxplus
-\mathrm{sgn}(y)$, the change has a sign in the sign sum of the sign sets. For a max pool, if every sort's sign set lies
-within $\{0, +\}$, every change only adds values or replaces a value by one at least as large, so the maximum does not
-fall; symmetrically, if every set lies within $\{-, 0\}$, it does not rise; and in every other case the bound
-allows every sign. A min pool is the same with the signs
-flipped. The sign sets of \Cref{tab:fw:signs} hold for the forms they name: a count adds 1 per item, so additions can
-only raise it and a replacement that keeps the key leaves it unchanged; a value $\ge 0$ can only be added, and an
-extension of an item does not shorten it; and a value in $[l, u]$ has the sign of a number in that interval.
+Fix an operation $o$, an input $z \in F$, and a transformation $T \in o$, and let $(I^-, I^+)$ be a delta of the edit
+made of changes the signature lists, which exists because the signature covers the operation. For an additive sum $k$,
+Proposition~\ref{prop:fw:side-effects}(i) writes $s_k(z') - s_k(z)$ as the total, over the listed changes, of what the
+changes of each listed kind give $s_k$, and each such part has a sign in that change's sign set, which by assumption
+contains the signs that any number of such changes can give the sum. Since $\mathrm{sgn}(x + y) \in \mathrm{sgn}(x)
+\boxplus \mathrm{sgn}(y)$, the change has a sign in the sign sum of the sign sets. For a max pool, if the sign set of
+every listed change lies within $\{0, +\}$, every change only adds values or replaces a value by one at least as large,
+so the maximum does not fall; symmetrically, if every set lies within $\{-, 0\}$, it does not rise; and in every other
+case the bound allows every sign. A min pool is the same with the signs flipped. The sign sets of \Cref{tab:fw:signs}
+hold for the forms they name: a count adds 1 per item, so additions can only raise it and a replacement that keeps the
+key leaves it unchanged; a value $\ge 0$ can only be added, and an extension of an item does not shorten it; and a value
+in $[l, u]$ has the sign of a number in that interval.
 
 \paragraph{Hashed keys.}
 For a contribution of $\pm$ a value to the bucket its key hashes to, with the key picked from a set $Q$, the
@@ -115,14 +115,13 @@ rule follows from Definition~\ref{def:fw:readout}: if no sum in $K_j$ can change
 before and after, and otherwise every sign is allowed.
 
 \paragraph{Proof of Theorem~\ref{thm:fw:directions}.}
-For one operation instance on an input of $F$, the instance has a delta made of changes of the sorts its signature
-lists, since the signature covers the operation, so each sum's change has a sign in the bound of the second stage
-(above), and by the readout rules each feature's change has a sign in the third stage's output, which lies in the
-union over the operations. Reading the union as a direction is therefore sound for single instances. If $F$ is closed
-under $\mathcal{M}$, every intermediate input of a sequence of edits stays in $F$, the single-instance statement
-applies at every step, and ``does not fall'' and ``does not rise'' are transitive; induction on the length of the
-sequence completes the proof. Without closure, a step can leave $F$, after which the signatures say nothing about the
-next step.
+For one edit of an operation on an input of $F$, the edit has a delta made of changes its signature lists, since the
+signature covers the operation, so each sum's change has a sign in the bound of the second step (above), and by the
+readout rules each feature's change has a sign in the third step's output, which lies in the union over the operations.
+Reading the union as a direction is therefore sound for single edits. If $F$ is closed under $\mathcal{M}$, every
+intermediate input of a sequence of edits stays in $F$, the single-edit statement applies at every step, and ``does not
+fall'' and ``does not rise'' are transitive; induction on the length of the sequence completes the proof. Without
+closure, a step can leave $F$, after which the signatures say nothing about the next step.
 
 \paragraph{Proof of Corollary~\ref{cor:fw:robustness}.}
 By Theorem~\ref{thm:fw:directions}, the feature vectors of $z$ and of any $z' \in \mathcal{R}(z)$ differ only

@@ -279,65 +279,72 @@ incremental view maintenance~\cite{gupta1995maintenance,koch2014dbtoaster}, and 
 \label{sec:fw:directions}
 
 % Spine: docs/framework-design.md, Section 14 (Q1-Q4 as recommended, 2026-11-05); footprint from docs/s33-decision.md
-% (option D, 2026-11-08). Revised in the review sprint (docs/sprint-framework-review.md), 2026-11-08, from an
-% 18-paragraph spine; the remarks on hashing and patterns moved to Appendix C.
-A detector has to hold against every edit that a threat model allows, on every input it will face. This subsection
-bounds, for every feature, the direction in which those edits can move it, without applying any edit, proves that the
-bound is sound, and derives from it detectors that the edits cannot evade.
+% (option D, 2026-11-08). Revised in the review sprint (docs/sprint-framework-review.md), 2026-11-08: round 1 from an
+% 18-paragraph spine (hashing and patterns to Appendix C); round 2 after the user's read (neutral lead, operations as
+% sets of transformations, no "sort", the append example).
+Proposition~\ref{prop:fw:side-effects} gives the exact change of every feature under one edit whose delta is known.
+Many questions about a feature mapping concern a whole set of edits instead, such as appending every possible content
+to an input: there are too many to apply one by one, and their deltas are not known in advance. This subsection
+bounds, for every feature, the direction in which any edit of such a set can move it, and proves that the bound is
+sound. Edits come in families that share one description, such as appending any content of at most a given length, which
+holds one transformation for each content.
 
-We describe the attacker's edits by operations. An \emph{operation} $o$ is a family of edits $T_{o,\theta}$, indexed by
-a parameter $\theta$ from a domain $\Theta_o(z)$ that may depend on the input. A \emph{threat model} $\mathcal{M}$ is a
-finite catalogue $O$ of operations, whose validity under the problem-space constraints $\Gamma$ is an input to the
-model. It fixes the transformations of
-\Cref{sec:background}: $\mathcal{T}$ is the set of finite sequences of operation instances, and $\mathcal{R}(z)$ is
-the set of feature vectors they reach.
+\definition[Operations and threat models]
+\label{def:fw:operations}
+{
+An \emph{operation} $o$ is a set of transformations, and an edit of $o$ applies one of them to an input. A
+\emph{threat model} $\mathcal{M}$ is a finite set of operations. The transformations $\mathcal{T}$ it allows are those
+in its operations and the finite sequences of them, and $\mathcal{R}(z)$ is the set of feature vectors they reach.
+}
 
-What an operation can do depends on the input, through its parameter domain and through the items that lie where it
-writes. Our results therefore hold over a \emph{population} $F \subseteq \mathcal{Z}$ of inputs. A sequence of edits
-passes through intermediate inputs, and a bound that holds on $F$ covers the sequence only if these stay in $F$, so we
-call $F$ \emph{closed} under $\mathcal{M}$ if no operation takes an input of $F$ outside $F$.
-
-The bound assigns each feature one of four directions.
+\noindent A transformation may act differently on each input, for instance by overwriting whatever region the input
+leaves unused, so an operation is described once for all inputs. We bound the features per operation, because one
+description says which kinds of item its edits can change, while its transformations are too many to apply. Which
+operations satisfy the problem-space constraints $\Gamma$ is decided outside the model. The bound for a threat model
+holds on a set of inputs rather than on one, and it assigns each feature one of four directions, defined next.
 
 \definition[Direction tables]
 \label{def:fw:directions}
 {
 A \emph{direction table} $D$ assigns each feature $j$ a direction $D_j$, one of $\mathsf{fixed}$, $\mathsf{up}$,
-$\mathsf{down}$, and $\mathsf{both}$. It is \emph{sound} for $\mathcal{M}$ over $F$ if no operation instance on an
-input of $F$ changes a fixed feature, lowers an up feature, or raises a down feature.
+$\mathsf{down}$, and $\mathsf{both}$. Let $F \subseteq \mathcal{Z}$ be a set of inputs, a \emph{population}. The table
+is \emph{sound} for $\mathcal{M}$ over $F$ if no edit of an operation of $\mathcal{M}$ on an input of $F$ changes a
+fixed feature, lowers an up feature, or raises a down feature. The population is \emph{closed} under $\mathcal{M}$ if
+no such edit takes an input of $F$ outside $F$.
 }
 
-\noindent The four directions are Incer et al.'s four cases, which they assign to each feature by
-hand~\cite{incer2018adversarially}. A sound table is a feature-space constraint in the sense of $\Omega$, and it tells a
-monotone detector which features the attacker can only raise or only lower. We compute it in three stages: from what
-each operation does to items, to the signs of the changes of the sums, to the directions of the features.
+\noindent A population is needed because the same edit can change different items on different inputs, so a direction
+may hold on some inputs and not on others. Closure matters for sequences of edits: a sequence passes through
+intermediate inputs, and the table bounds each step only while these stay in $F$. A sound table is a feature-space
+constraint in the sense of $\Omega$, since it rules out perturbations of $\varphi(z)$ that the threat model cannot
+produce. We compute one in three steps: what each operation does to the items of each kind, the signs this gives the
+changes of the sums, and the directions this gives the features.
 
-Proposition~\ref{prop:fw:side-effects} turns one delta into the change of every sum. For an operation we ask only for
-the sign of the change, but over all of its edits at once, so the first stage records only which kinds of item these
-edits change and how.
+By Proposition~\ref{prop:fw:side-effects}(i), the change of an additive sum is the contribution of the added items
+minus that of the removed ones. Its sign therefore follows from which kinds of item an edit adds, removes, or rewrites
+in place, and how, and the first step records this for every edit of an operation.
 
 \definition[Signatures]
 \label{def:fw:signature}
 {
-A \emph{sort} of change to the items of a kind $\tau$ is to \emph{add} an item of kind $\tau$, to \emph{remove} one,
-or to \emph{replace} one by another of kind $\tau$. A sort may restrict the content it adds: to \emph{keys} from a set
-$Q$, the contents that select a sum of their own, as the tokens of \Cref{alg:fw:extractor} do; to the length of the
-replaced item; or to an \emph{extension} of its content, the old content with elements appended. The
-\emph{signature} $\Delta_o(F)$ of an operation $o$ over $F$ lists a set of sorts for each kind. It \emph{covers} $o$
-if, for every $z \in F$ and every $\theta \in \Theta_o(z)$, the edit $T_{o,\theta}$ has a delta made of changes of
-the listed sorts.
+The \emph{signature} $\Delta_o(F)$ of an operation $o$ over $F$ lists, for each kind, which of three changes the edits
+of $o$ make to items of that kind on inputs of $F$: \emph{add} items, \emph{remove} items, or \emph{rewrite} items in
+place, replacing an item by another of the same kind. For a rewrite, it also says whether the new content is free, keeps
+the key of the old content, has its length, or \emph{extends} it by appending elements. The signature \emph{covers} $o$
+if every edit of $o$ on an input of $F$ has a delta made of the changes it lists.
 }
 
-\noindent A replacement is a removal paired with an addition. It is a sort of its own because the pair often moves a
-sum less than its parts do: an item rewritten in place still adds 1 to the count of its kind, so the count does not
-move, while a removal and an addition taken separately could move it either way. An operation stated in items defines
-its delta and so comes with a covering signature.
+\noindent A rewrite is listed apart from a removal and an addition because it leaves the count of its kind unchanged,
+while a removal and an addition taken separately could move that count either way. An operation described by the items
+it adds and removes comes with its signature. For other operations, the signature depends on the input. Appending
+letters to an input of \Cref{alg:fw:extractor} that ends in a letter adds element items, extends the last token, and
+may add new tokens, so its signature lists additions for elements, additions and extensions for tokens, and nothing
+for records, provided that the records are found through positions the append does not write.
 
-An operation stated as writes, such as appending any content, fixes where it writes but not what. An edit
-\emph{writes only within} a set $W$ of positions if $z'$ has every element of $z$ outside $W$ at the same position, as
-an overwrite does, and as an append does when $W$ holds the positions past the end of $z$. An insertion moves the
-elements after it, and we state insertions in items. A write gets its signature from the input, through the
-following set.
+Such an operation is described by where it writes, and which items it changes depends on what lies near the positions
+it writes. An edit \emph{writes only within} a set $W$ of positions if every element of $z$ outside $W$ keeps its value
+and its position in $z'$, as an overwrite within $W$ does, and as an append does when $W$ holds the positions past the
+end of $z$. An insertion moves the elements after it, and we describe insertions by their items.
 
 \definition[Footprint]
 \label{def:fw:footprint}
@@ -352,32 +359,34 @@ do. The footprint \emph{keeps positions} if every such edit replaces each of the
 support. Every item the write removes lies within the footprint in $z$, and the item table lists these items with their
 contributions; every item it adds lies within the footprint in $z'$ and may have any content. If the footprint keeps
 positions, the write can only replace each of these items by one with the same members, hence of the same length, and a
-kind with no item within the footprint does not change at all. This gives a covering signature on $z$, and the signature
-over $F$ is the union over its inputs, since a footprint depends on the input. For a single write, the items within the
-footprints in $z$ and in $z'$ form a delta for Proposition~\ref{prop:fw:side-effects}. The whole input is always a
-footprint, so no kind escapes the definition. When the instrumentation supplies no smaller footprint for a kind, we call
-the write \emph{flagged} for that kind, and its signature lets the kind change in any way. Finding small footprints is
-the instance's work, and the one place besides the item map where the input format enters.
+kind with no item within the footprint does not change at all. In the example of the append, the footprint for tokens
+holds the appended positions and the last token of $z$, and the footprint for records is $W$ itself, within which no
+record lies. This gives a covering signature on $z$, and the signature over $F$ is the union over its inputs, since a
+footprint depends on the input. For a single write, the items within the footprints in $z$ and in $z'$ form a delta for
+Proposition~\ref{prop:fw:side-effects}. The whole input is always a footprint, so no kind escapes the definition. When
+the instrumentation supplies no smaller footprint for a kind, we call the write \emph{flagged} for that kind, and its
+signature lets the kind change in any way. Finding small footprints is the instance's work, and the one place besides
+the item map where the input format enters.
 
-The second stage gives the sums signs. A \emph{sign set} is a subset of $\{-, 0, +\}$, and $-A$ flips every sign in $A$.
+The second step gives the sums signs. A \emph{sign set} is a subset of $\{-, 0, +\}$, and $-A$ flips every sign in $A$.
 The \emph{sign sum} $A \boxplus B$ is the set of signs that $a + b$ can have when $a$ has a sign in $A$ and $b$ a sign
 in $B$; for instance, $\{0, +\} \boxplus \{0\} = \{0, +\}$, while $\{+\} \boxplus \{-\} = \{-, 0, +\}$. Sign sets with
-this sum are the sign domain of abstract interpretation~\cite{cousot1977abstract}. Each sort of change gives each sum a
-sign set: the signs that any number of changes of that sort can give the sum. The count of a kind's items gets $\{0,
-+\}$ from additions, $\{-, 0\}$ from removals, and $\{0\}$ from replacements. For an additive sum, the sign set follows
-from the contributions by Proposition~\ref{prop:fw:side-effects}(i), and \Cref{tab:fw:signs} in
+this sum are the sign domain of abstract interpretation~\cite{cousot1977abstract}. Each change a signature can list
+gives each sum a sign set: the signs that any number of such changes can give the sum. The count of a kind's items gets
+$\{0, +\}$ from additions, $\{-, 0\}$ from removals, and $\{0\}$ from rewrites. For an additive sum, the sign set
+follows from the contributions by Proposition~\ref{prop:fw:side-effects}(i), and \Cref{tab:fw:signs} in
 Appendix~\ref{sec:fw:proofs} lists the sign sets of the contribution forms common in feature sets, hashed keys and
 patterns among them.
 
 The \emph{envelope} $E^F_o(k)$ of operation $o$ on sum $k$ over $F$ is the set of signs of
-$s_k(T_{o,\theta}(z)) - s_k(z)$ over every $z \in F$ and every $\theta \in \Theta_o(z)$, and the sign sets bound it.
-An edit's delta combines changes of the sorts its signature allows, and the change of an additive sum is the total of
-what each change gives it. Its sign therefore lies in the sign sum, over the sorts in the signature, of their sign
-sets. A max pool gets a coarser bound. It can only rise if every sort's sign set on it lies within $\{0, +\}$, since a
+$s_k(T(z)) - s_k(z)$ over every $z \in F$ and every $T \in o$, and the sign sets bound it. An edit's delta combines
+changes that the signature lists, and the change of an additive sum is the total of what each change gives it. Its
+sign therefore lies in the sign sum, over the listed changes, of their sign sets. A max pool gets a coarser bound. It
+can only rise if the sign set of every listed change lies within $\{0, +\}$, since a
 maximum does not fall when values are only added or raised; it can only fall if every set lies within $\{-, 0\}$; and
 otherwise it can move either way. A min pool is the same with the signs flipped.
 
-The third stage passes the envelopes through the readouts. Each readout form of \Cref{sec:fw:model} has a simple sign
+The third step passes the envelopes through the readouts. Each readout form of \Cref{sec:fw:model} has a simple sign
 rule, which \Cref{tab:fw:readouts} lists: the identity passes the envelope through, a presence bit moves with its
 count or not at all, and a ratio can rise only if its numerator can rise or its denominator can fall. A readout of any
 other form gets the rule that holds for every readout, since a readout depends only on its support
@@ -391,29 +400,29 @@ otherwise.
 \label{thm:fw:directions}
 {
 Let $\varphi$ be a sum-then-readout extractor, $F$ a population, and $\mathcal{M}$ a threat model. If the signature of
-each operation covers it over $F$, and the sign sets contain the signs that their sorts give the sums, then the
+each operation covers it over $F$, and the sign sets contain the signs that the listed changes give the sums, then the
 derived table $D$ is sound for $\mathcal{M}$ over $F$. If $F$ is moreover closed under $\mathcal{M}$, then for every
 $z \in F$, every vector in $\mathcal{R}(z)$ differs from $\varphi(z)$ only in the directions $D$ allows.
 }
 
-\noindent For a single operation instance, the bound holds because the sign of a total lies in the sign sum of the
+\noindent For a single edit, the bound holds because the sign of a total lies in the sign sum of the
 signs of its parts, because a maximum over more or larger values is no smaller, and because each readout rule holds.
-Along a sequence of edits, closure keeps every intermediate input in $F$, so the bound for one instance applies at
+Along a sequence of edits, closure keeps every intermediate input in $F$, so the bound for one edit applies at
 every step, and a feature that falls at no step does not fall along the sequence. Without closure, a sequence can leave
 $F$, and after that the table says nothing.
 
-The derived table is computed for every feature at once, from the catalogue and the item tables of the inputs in $F$.
-Beyond the extractor, it takes only the signatures and the sign sets, each a statement about one sort of change to one
+The derived table is computed for every feature at once, from the threat model and the item tables of the inputs in $F$.
+Beyond the extractor, it takes only the signatures and the sign sets, each a statement about one change to one
 kind of item, where a hand assignment decides each of thousands of features by reading the extractor. A sign set that
 follows from the form of a contribution, such as that a count is never negative, holds by construction. One read from
 the item tables of a corpus, such as the smallest value a kind contributes or the keys it uses, is a hypothesis of the
 theorem, and we check that the table derived from a small corpus equals the one from a larger corpus
 (\Cref{sec:evaluation}).
 
-A sound table bounds where the attacker can move the feature vector, so a detector whose score cannot fall in those
-directions cannot be pushed below its threshold. Let $h: \mathcal{X} \to \mathbb{R}$ be a detector's malware score.
-Gimenez et al.\ prove that a detector is robust when the attacker's edits can only raise each feature and the score
-never falls as features rise~\cite{gimenez2025certifiably}; a feature that can only fall is covered by negating it.
+A sound table also yields detectors that the edits of a threat model cannot evade. Let $h: \mathcal{X} \to
+\mathbb{R}$ be a detector's malware score. A detector is \emph{monotone} if its score never falls as certain features
+rise, and Gimenez et al.\ prove that a monotone detector is robust when the attacker's edits can only raise those
+features~\cite{gimenez2025certifiably}; a feature that can only fall is covered by negating it.
 
 \corollary[Robustness]
 \label{cor:fw:robustness}
@@ -429,4 +438,4 @@ sums instead of features, since a sum under the identity readout is a feature an
 A sum can keep a direction that a feature computed from it loses, as a count that can only rise may feed a normalized
 frequency that moves either way. Gimenez et al.\ chose 40 features by hand or learned a
 post-processing of the features from the attacks they observed~\cite{gimenez2025certifiably}; the derived table gives
-every feature a direction, for any catalogue of operations whose signatures are supplied.
+every feature a direction, for any threat model whose signatures are supplied.
