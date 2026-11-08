@@ -284,46 +284,74 @@ incremental view maintenance~\cite{gupta1995maintenance,koch2014dbtoaster}, and 
 \label{sec:fw:edits}
 
 % Spine: docs/framework-design.md, Section 13 (approved 2026-11-05 with the recommendations Q1-Q4). Revised in the
-% review sprint (docs/sprint-framework-review.md, 2026-11-08) from a ten-paragraph spine: fixed layout moved out of
-% Definition 7, Lemma 1 restated as a main claim with (i)-(iii).
-An edit stated in items, such as one that adds an item with a given content or removes one, comes with its delta by
-its definition. Many edits are given instead by the elements they write: they overwrite some elements, append new
-ones, or insert them. For one such edit, the delta could be found by building $z'$ and extracting its items, and for a
-family of writes, such as appending any content up to some length, there is no single $z'$ at all. This subsection
-gives conditions on each kind under which the delta of a write follows from the item table of $z$, the positions the
-edit writes, and the elements it writes there, and under which the deltas of a whole family are bounded by the item
-table of $z$ alone.
+% review sprint (docs/sprint-framework-review.md): round 1 2026-11-08; round 2 in progress, items 1-4 (lead, written
+% set, Algorithm 2 with structure positions and margins, the three cases, local kinds) drafted for the user's read.
+An edit stated in items, such as one that adds an item with a given content, comes with its delta. Many edits are given
+instead by the elements they write: they overwrite some elements, append new ones, or insert them.
+\Cref{sec:fw:directions} needs to know which items such edits can change, for every content an attacker might write,
+without trying any of them. This subsection shows that a write that leaves alone the positions an extractor reads to
+locate items changes items only near the positions it writes. The delta of one write can then be read from the elements
+near the write, and the items that any write within a region can change are known from the items of $z$ alone.
 
-The \emph{written set} $W$ of an edit is the set of positions at which $z$ and $z'$ differ, including the positions
-that exist in only one of them. The edited input holds the written elements on $W$ and the elements of $z$ everywhere
-else, so its elements at any set of positions are known without building it. Overwriting and appending have small
-written sets. Inserting an element in the middle moves every element after it, so its written set runs to the end of
-the input.
+\definition[Written set]
+\label{def:fw:written}
+{
+The \emph{written set} $W$ of an edit that takes $z$ to $z'$ is the set of positions at which $z$ and $z'$ differ,
+including the positions that exist in only one of them.
+}
 
-A write can change the items of a kind in three ways. It can change the content of items whose members it writes, and
-since the item table lists these items with their members, they can be read again from $z'$. It can write an element
-that the extractor reads to decide where items lie, such as a count, an offset, or a length, and then items anywhere in
-the input may appear, vanish, or move. Or it can change content that the extractor scans for items, so that an item
-grows, splits, or merges with its neighbor. Changes of the second sort can reach any part of the input and must be
-ruled out, while changes of the first and third sorts stay near the write. The next definition therefore gives each
-kind two sets of positions: its structure positions, which a write must miss, and a margin around the write, outside
-which the items of the kind stay as they were and inside which the elements of $z'$ decide them.
+\noindent Overwriting and appending have small written sets. Inserting an element in the middle moves every element
+after it, so its written set runs to the end of the input.
+
+\begin{algorithm}[t]
+  \caption{How the extractor of \Cref{alg:fw:extractor} finds its records and tokens. A header at the start of $z$
+  locates the records, and the tokens are found by scanning.}
+  \label{alg:fw:finding}
+  \begin{algorithmic}[1]
+    \State $n \gets z[1]$ \Comment{header: the number of records}
+    \For{$i = 1, \dots, n$}
+      \State $o \gets z[2i]$, $\ell \gets z[2i + 1]$ \Comment{entry $i$: offset and length}
+      \State record $i$ has the members $\{o, \dots, o + \ell - 1\}$
+    \EndFor
+    \State the tokens are the maximal runs of letters in $z$ \Comment{scanning}
+  \end{algorithmic}
+\end{algorithm}
+
+\Cref{alg:fw:finding} shows the two ways in which an extractor finds its items. Records are \emph{located}: the
+extractor reads a count and, for each record, an offset and a length, so the positions of the header decide where every
+record lies. We call the positions that decide where the items of a kind $\tau$ lie its \emph{structure positions}
+$L_\tau(z)$. For records they are the header, and tokens and elements have none. A write that changes no structure
+position of records leaves every record where it was, and changes at most the content of the records it writes. Tokens
+are \emph{scanned}: a write can lengthen a token, split it, or merge it with its neighbor, but only near the write,
+since a run of letters cannot extend past an unchanged element that is not a letter. The tokens that can change
+therefore lie between the nearest such element before the write and the nearest one after it. We call the region
+around a write in which the items of $\tau$ can change the \emph{margin} $\mu_\tau(z, W)$. It depends on the input and
+on the written set, it contains the written set and every item that has a member there, and a larger written set has a
+larger margin. The margin of records is the written set together with the members of the records it writes, and that
+of elements is the written set itself.
+
+Every edit then falls into one of three cases. An edit stated in items comes with its delta. A write that changes no
+structure position changes items only within the margins, and Lemma~\ref{lem:fw:localization} below reads its delta
+there. A write that changes a structure position, such as the count of records or an offset, may change the items of
+that kind anywhere. The framework does not predict what such a write does, and the end of this subsection says how it
+is treated.
 
 \definition[Local kinds]
 \label{def:fw:local}
 {
-A kind $\tau$ is \emph{local} if it has, for every input $z$, a set $L_\tau(z)$ of \emph{structure positions} and, for
-every set $W$ of positions, a \emph{margin} $\mu_\tau(z, W)$ that contains $W$ and the members of every item of kind
-$\tau$ that $W$ meets, and that grows with $W$. An item \emph{lies within} a set of positions if all its members do.
-The structure positions and the margins must satisfy two conditions for every edit of $z$ whose written set $W$ misses
-$L_\tau(z)$:
+A kind $\tau$ is \emph{local} if it has structure positions $L_\tau(z)$ and margins $\mu_\tau(z, W)$ such that every
+edit of $z$ whose written set $W$ contains no structure position of $\tau$ satisfies two conditions, where an item
+\emph{lies within} a set of positions if all its members do:
 \begin{enumerate}[label=(\roman*), leftmargin=*, nosep]
   \item the items of kind $\tau$ that do not lie within $\mu_\tau(z, W)$ are the same in $z$ and in $z'$;
   \item the items of kind $\tau$ of $z'$ that lie within $\mu_\tau(z, W)$ are determined by the elements of $z'$ on
     $\mu_\tau(z, W)$.
 \end{enumerate}
+Its margins must contain $W$ and the members of every item of kind $\tau$ that has a member in $W$, and must grow with
+$W$.
 }
 
+% ROUND 2: the text below is still the round-1 version (items 5-8 of the round-2 plan come after the user's read).
 \noindent Condition (ii) says that reading the margin of $z'$ again finds the items of the kind there, and the usual
 ways of finding items meet both conditions with small margins. A kind found through fields, such as a record that a
 count and an offset locate, has as structure positions the fields read to find its items, and its margin is $W$ with

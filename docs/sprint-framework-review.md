@@ -488,8 +488,84 @@ the why-it-holds paragraph; the last paragraph (flagging, the item-table gap fix
 excluded). Cut: "computable", "usually", the Remark 1 analogy, the smallest-delta sentence, "takes no judgment", the
 population sentence. `make check`: clean; no "??".
 ### 5. User's first read
+
+2026-11-08 (verbatim in the session; condensed, U1-U18). Summary: "I became confused very early on ... so I didn't
+really understand it enough to provide good feedback"; preliminary; "a few iterations and a lot of communication".
+- U1 ¶1: "for a family of writes ... there is no single $z'$" is confusing or tautological.
+- U2 ¶1: the last sentence (what the subsection gives) is the most important and is "LLM-speech, i.e., gobbledygook".
+- U3 ¶2: should the written set be a definition (new concept, term, symbol)? Weigh pros and cons.
+- U4 ¶2: "The edited input holds the written elements on $W$ ..." phrased strangely; "building it" unimportant and
+  confusing, an executable-specific idea leaking in.
+- U5 ¶3: can sum-then-readout extractors handle writes to a count, offset, or length? Too specific to model; ignore?
+- U6 ¶3: "must be ruled out", so we ignore them? The text bounces between what we model and what we do not; separate
+  the limitations cleanly; unclear which writes we account for.
+- U7 ¶3: "which a write must miss": why must it?
+- U8 ¶3: well-intended, the narrative connection to the definition is the right design; too confusing as is.
+- U9 Def 7: the first sentence introduces three complicated concepts with terms and symbols.
+- U10 Def 7: clear that it holds for every $z$; very unclear how the written set factors in.
+- U11 Def 7: "after about five minutes of thinking about it, I've given up".
+- U12 ¶4: long-winded, dips into ideas that apply only to executables.
+- U13 ¶5: should do more to lead into the lemma.
+- U14 Lemma 1: the list of consequences is unsightly, verbose.
+- U15 ¶6: "The main claim is Definition 7 applied to one edit" communicates almost nothing; structure reasonable.
+- U16 ¶7: good; simplify the language 10-15% (niche terms: item table, family).
+- U17 ¶6-7: remove ¶6 (move it to the appendix with the proofs) and keep ¶7; the framework is too long.
+- U18 ¶8: "a write that meets the structure positions" means nothing to the reader; important but nearly impossible
+  to understand.
+
 ### 6. Classification and plan
+
+| Comment | Class | What the reader model or lessons should have said |
+|---|---|---|
+| U1 | missed | The sentence survived from the old draft. A claim that is true by definition reads as filler; say what is hard (the deltas of every edit at once, without trying them). |
+| U2 | fell short | P1-P3 targeted the lead, but the rewrite stated the result in the definition's abstract terms before they exist. A lead says what the result means in plain words. |
+| U3 | new taste | A new concept with its own term and symbol, used by later results, gets a (short) definition. |
+| U4 | introduced | Added for P1 (the "before the edit is applied" claim); it serves only a cost argument and reads as format-specific. |
+| U5, U6 | missed | The old and new drafts mixed what the lemma covers with what it excludes. New trigger: a reader must know, before the machinery, which cases are modeled and which are not, and the limitation gets its own place. |
+| U7 | introduced | "A write must miss" states a requirement without saying it is the lemma's hypothesis. |
+| U9-U11 | fell short | P7 split Def 7 into sentences but kept three concepts in one definition with nothing to picture. Structure positions and margins are unfamiliar *structure*: the case where an example earns its place (lesson 20; Algorithm 1 in §3.1). |
+| U12 | fell short | P11; also "a record that a count and an offset locate" and "everything after the last field" read as executables. |
+| U13 | fell short | P14; the one-sentence lead-in did not set up the lemma. |
+| U14 | introduced | Prop 1's list format applied to longer clauses. |
+| U15 | introduced | A sentence that names the source of a claim instead of saying the claim. |
+| U16 | new taste | Even a good paragraph should shed niche vocabulary where a plain word works. |
+| U17 | new taste | Proof sketches go to the appendix when the "what it gives" paragraph carries the meaning; the framework is long. |
+| U18 | missed | "Meets" (set intersection) as a verb in prose; P21-P22 looked elsewhere in the paragraph. |
+
+Totals: missed 4 (U1, U5, U6, U18), fell short 6 (U2, U9-U13), introduced 4 (U4, U7, U14, U15), new taste 3 (U3, U16,
+U17), positive 1 (U8). Main cause: the subsection's concepts were never made picturable, so the reader lost the thread
+at ¶3 and nothing after it could be reviewed. The step-1 review found the right places (P1, P7, P11, P14, P15) but
+treated them as prose problems; the problem is that structure positions and margins need a concrete picture and a
+clean statement of what is and is not covered, before any definition.
+
+**Answers to the user's questions (in the session).**
+- U1: of course a family has many $z'$; the point was that §3.4 needs the deltas of all of them at once, too many to
+  enumerate or try. Rewrite the sentence to say that.
+- U5/U6: the framework never models what a count or offset means; it only needs to know *where* such fields are.
+  Three cases, cleanly: edits stated in items (delta given); writes that avoid those positions (delta from the lemma);
+  writes that touch them with no stated delta (not modeled: flagged, and the affected features may move either way).
+- U7: "must miss" means: the lemma applies only to writes that touch none of these positions.
+- U10: the margin is a function of the write: for every possible written set, the margin is the region around it.
+- U18: "meets" means "writes at least one of".
+- U4: "building" meant applying the edit to produce $z'$; cut.
+
+**Plan (to be agreed in conversation before prose).** See the session; summarized: written set as a short
+definition; a small generic listing of how items are located (records via a header) and scanned (tokens as runs);
+structure positions and margins introduced one at a time from it; Def "local kind" with only the two conditions; a
+short generic cases paragraph (no end-of-input item); a lead-in; a shorter lemma; ¶6 to the appendix; ¶7 simplified;
+the limitation (writes that touch structure positions) in its own last paragraph.
 ### 7-8. Feedback and implementation
+
+2026-11-08. Round-2 plan approved "for now"; the user is unsure about the algorithm example but willing to try it, and
+asked to do items 1-4 first and discuss before the rest. (The user did not find the "plain explanation" in the reply:
+it was the section headed "What §3.3 is for, in plain words"; a heading the reader does not recognize as the thing a
+question refers to.) Drafted items 1-4: the lead (what §3.4 needs; a write that leaves the locating positions alone
+changes items only near it), Def 7 (Written set) with the overwrite/append/insert sentence, Algorithm 2 (records
+located by a header of a count and offset/length entries; tokens as maximal runs of letters), one paragraph that
+introduces structure positions and then the margin from it, a paragraph with the three cases (stated in items; writes
+that change no structure position; writes that change one, not predicted), and Def 8 (Local kinds) with only the two
+conditions and the margin's requirements as a last sentence. The rest of §3.3 is still the round-1 text (comment
+`% ROUND 2` marks the boundary). `make check` clean.
 ### Retro
 
 ## §3.4 Sound Directions
