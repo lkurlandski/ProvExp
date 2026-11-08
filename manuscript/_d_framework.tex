@@ -283,86 +283,108 @@ incremental view maintenance~\cite{gupta1995maintenance,koch2014dbtoaster}, and 
 \subsection{Edits Given as Writes}
 \label{sec:fw:edits}
 
-% Spine: docs/framework-design.md, Section 13 (approved 2026-11-05 with the recommendations Q1-Q4).
-Many transformations are given by the elements they write, not by the items they change. For one such edit, the edited
-input $z'$ is at hand, but Proposition~\ref{prop:fw:side-effects} needs its delta, and for a family of edits there is
-not even a single $z'$. This subsection shows when the delta follows from the item table of $z$, the positions the
-edit writes, and the new elements near them. It is the only part of the framework that depends on the input format,
-which enters through two sets of positions per kind that the instrumentation provides.
+% Spine: docs/framework-design.md, Section 13 (approved 2026-11-05 with the recommendations Q1-Q4). Revised in the
+% review sprint (docs/sprint-framework-review.md, 2026-11-08) from a ten-paragraph spine: fixed layout moved out of
+% Definition 7, Lemma 1 restated as a main claim with (i)-(iii).
+An edit stated in items, such as one that adds an item with a given content or removes one, comes with its delta by
+its definition. Many edits are given instead by the elements they write: they overwrite some elements, append new
+ones, or insert them. For one such edit, the delta could be found by building $z'$ and extracting its items, and for a
+family of writes, such as appending any content up to some length, there is no single $z'$ at all. This subsection
+gives conditions on each kind under which the delta of a write follows from the item table of $z$, the positions the
+edit writes, and the elements it writes there, and under which the deltas of a whole family are bounded by the item
+table of $z$ alone.
 
 The \emph{written set} $W$ of an edit is the set of positions at which $z$ and $z'$ differ, including the positions
-that exist in only one of them. Overwriting and appending have small written sets. Inserting an element in the middle
-moves every element after it, so its written set runs to the end of the input.
+that exist in only one of them. The edited input holds the written elements on $W$ and the elements of $z$ everywhere
+else, so its elements at any set of positions are known without building it. Overwriting and appending have small
+written sets. Inserting an element in the middle moves every element after it, so its written set runs to the end of
+the input.
 
-A write can change items in three ways. It can change the content of items whose members it writes, and since the
-item table lists these items with their members, they can be read again from $z'$. It can write an element that the
-extractor reads to decide where items lie, such as a count, an offset, or a length, and then items anywhere in the
-input may appear, vanish, or move. Or it can change content that the extractor scans for items, so that an item grows,
-splits, or merges with its neighbor. Changes of the second sort can reach any part of the input and must be ruled out.
-Changes of the third sort stay near the write and can be bounded. The next definition gives each kind one set of
-positions for each purpose. We say that an item \emph{lies within} a set of positions if all its members do.
+A write can change the items of a kind in three ways. It can change the content of items whose members it writes, and
+since the item table lists these items with their members, they can be read again from $z'$. It can write an element
+that the extractor reads to decide where items lie, such as a count, an offset, or a length, and then items anywhere in
+the input may appear, vanish, or move. Or it can change content that the extractor scans for items, so that an item
+grows, splits, or merges with its neighbor. Changes of the second sort can reach any part of the input and must be
+ruled out, while changes of the first and third sorts stay near the write. The next definition therefore gives each
+kind two sets of positions: its structure positions, which a write must miss, and a margin around the write, outside
+which the items of the kind stay as they were and inside which the elements of $z'$ decide them.
 
 \definition[Local kinds]
 \label{def:fw:local}
 {
-A kind $\tau$ is \emph{local} if, for every input $z$, it has a set $L_\tau(z)$ of \emph{structure positions} and, for
-every set $W$ of positions, a \emph{margin} $\mu_\tau(z, W)$, a set of positions that is computable from $z$ and $W$,
-grows with $W$, and contains $W$ and the members of every item of kind $\tau$ that $W$ meets, such that every edit of
-$z$ whose written set $W$ misses $L_\tau(z)$ satisfies two conditions:
-(i) the items of kind $\tau$ that do not lie within the margin are the same in $z$ and in $z'$;
-(ii) the items of kind $\tau$ of $z'$ that lie within the margin depend only on the elements of $z'$ on the margin.
-The kind has a \emph{fixed layout} if, in addition, its items in $z'$ have the same members as its items in $z$.
+A kind $\tau$ is \emph{local} if it has, for every input $z$, a set $L_\tau(z)$ of \emph{structure positions} and, for
+every set $W$ of positions, a \emph{margin} $\mu_\tau(z, W)$ that contains $W$ and the members of every item of kind
+$\tau$ that $W$ meets, and that grows with $W$. An item \emph{lies within} a set of positions if all its members do.
+The structure positions and the margins must satisfy two conditions for every edit of $z$ whose written set $W$ misses
+$L_\tau(z)$:
+\begin{enumerate}[label=(\roman*), leftmargin=*, nosep]
+  \item the items of kind $\tau$ that do not lie within $\mu_\tau(z, W)$ are the same in $z$ and in $z'$;
+  \item the items of kind $\tau$ of $z'$ that lie within $\mu_\tau(z, W)$ are determined by the elements of $z'$ on
+    $\mu_\tau(z, W)$.
+\end{enumerate}
 }
 
-\noindent The structure positions of a kind are usually the elements the extractor reads to find its items, and the
-margin is the region in which a write can change them. A kind found through fields has a fixed layout, and its margin
-is $W$ with the members of the items $W$ meets. For a kind found by scanning for maximal runs of elements of some
-class, the margin extends $W$ on each side to the nearest element of $z$ that lies outside both the class and $W$.
-That element is unchanged in $z'$, so no run crosses it. For windows of $n$ consecutive elements, the margin extends
-$W$ by $n - 1$ elements on each side. These margins are the damage regions that incremental parsers
-re-parse~\cite{wagner1998efficient}. Data that runs to the end of the input changes its members whenever an edit
-writes past the old end, so in that case its margin contains it.
+\noindent Condition (ii) says that reading the margin of $z'$ again finds the items of the kind there, and the usual
+ways of finding items meet both conditions with small margins. A kind found through fields, such as a record that a
+count and an offset locate, has as structure positions the fields read to find its items, and its margin is $W$ with
+the members of the items that $W$ meets. A write that misses these fields leaves every item where it was, and we say
+that such a kind has a \emph{fixed layout}: under every write that misses its structure positions, its items in $z'$
+have the same members as its items in $z$. A kind found by scanning the input for maximal runs of elements of some
+class needs no structure positions, and its margin extends $W$ on each side to the nearest element of $z$ that lies
+outside both the class and $W$. That element is unchanged in $z'$, so no run crosses it. For windows of $n$
+consecutive elements, the margin extends $W$ by $n - 1$ elements on each side. These margins are the regions that an
+incremental parser reads again after an edit, since it re-parses only the part of a program near the
+change~\cite{wagner1998efficient}. An item whose members run to the end of the input, such as everything after the last
+field, changes its members whenever a write reaches past the old end, so its margin then contains the whole item.
 
-Every kind is local if all positions are its structure positions, since no nonempty written set misses them, just as
-every extractor is a sum-then-readout extractor if the whole input is a single item. What the
-definition asks is therefore how few structure positions suffice. A kind whose items the instrumentation cannot find
-again from a margin keeps its members among its structure positions.
+A write that misses the structure positions of a kind thus splits the items of that kind in two: those outside the
+margin, which the edit keeps, and those inside, which the elements of $z'$ on the margin decide.
 
 \lemma[Localization]
 \label{lem:fw:localization}
 {
-Let $\tau$ be a local kind, and let an edit take $z$ to $z'$ with a written set $W$ that misses $L_\tau(z)$.
-(a) The items of kind $\tau$ of $z'$ are those of $z$, except that the items that lie within $\mu_\tau(z, W)$ are
-replaced by the items of kind $\tau$ that the elements of $z'$ on the margin determine. If $W$ misses the structure
-positions of every kind, removing the contents of the replaced items and adding those of their replacements is a
-delta of $(z, z')$, and the item table of $z'$, members included, follows from the item table of $z$, $W$, and the
-elements of $z'$ on the margins.
-(b) Let a family of edits of $z$ write only within a set $\hat{W}$ that misses $L_\tau(z)$. Then every edit of the
-family removes and adds only items of kind $\tau$ that lie within $\mu_\tau(z, \hat{W})$, and if the kind has a fixed
-layout, it keeps the number of items of the kind.
+Let $\tau$ be a local kind, and let an edit take $z$ to $z'$ with a written set $W$ that misses $L_\tau(z)$. The items
+of kind $\tau$ of $z'$ are those of $z$, except that the items that lie within $\mu_\tau(z, W)$ are replaced by the
+items of kind $\tau$ that the elements of $z'$ on the margin determine. Consequently:
+\begin{enumerate}[label=(\roman*), leftmargin=*, nosep]
+  \item if every kind is local and $W$ misses the structure positions of every kind, the kinds and contents of the
+    replaced items and of their replacements form a delta of $(z, z')$, which follows, with the members of the
+    replacements, from $z$, its item table, $W$, and the written elements;
+  \item if a family of edits of $z$ writes only within a set $\hat{W}$ that misses $L_\tau(z)$, every edit of the
+    family removes and adds only items of kind $\tau$ that lie within $\mu_\tau(z, \hat{W})$;
+  \item if $\tau$ has a fixed layout, the edit only replaces items of kind $\tau$, each by an item with the same
+    members.
+\end{enumerate}
 }
 
-\noindent Outside the margin, the edit writes nothing the extractor reads to find items of the kind, and no item can
-reach across the margin's edge, so the items there are the same in both inputs. Their members miss $W$, so their
-contents are the same too. Inside the margin, $z'$ alone decides the items, so reading the margin of $z'$ again finds
-them. Part (b) follows from (a), because every written set of the family lies in $\hat{W}$ and margins grow with the
-written set.
+\noindent The main claim is Definition~\ref{def:fw:local} applied to one edit. Its first condition keeps the items
+outside the margin, and their contents are unchanged as well: the margin contains the members of every item that $W$
+meets, so the members of these items miss $W$. Its second condition says that the items inside are those the elements of
+$z'$ on the margin determine. For part (i), the margins depend only on $z$ and $W$, the item table of $z$ lists the
+items within them with their contents, and the elements of $z'$ on a margin are those of $z$ with the written elements
+on $W$. Reading these elements finds the replacements with their members and, through the contribution functions, their
+contributions, without building $z'$, and doing so for every kind gives the two multisets of a delta. Part (ii) holds
+because every written set of the family lies in $\hat{W}$ and the margin grows with the written set. Part (iii) holds
+because a fixed layout keeps the members of every item, so each replaced item has a replacement with the same members.
+The input format enters only through the structure positions and the margins, which the instrumentation provides for
+each kind, so applying the lemma to an extractor comes down to meeting Definition~\ref{def:fw:local}.
 
-Part (a) gives the delta of a single write, and also the members of the new items, which a delta does not record, so
-a sequence of writes is handled by updating the item table one edit at a time. This delta need not be the smallest,
-since an item inside a margin may come back unchanged, and Proposition~\ref{prop:fw:side-effects} does not need it to
-be. Part (b) needs neither the content of the writes nor any edited input. It bounds, from the item table of $z$
-alone, which items a whole family of edits can remove or add, and \Cref{sec:fw:directions} turns this bound into
-directions.
+For a single write, part (i) gives the delta that Proposition~\ref{prop:fw:side-effects} needs, and also the members of
+the new items, which a delta does not record. The item table of $z'$ is therefore known as well, and a sequence of
+writes is followed by updating the item table one edit at a time. Part (ii) needs neither the content of the writes nor
+any edited input. It bounds, from the item table of $z$ alone, which items of each kind a whole family of edits can
+remove or add, and part (iii) says that a kind with a fixed layout can only be rewritten in place.
+\Cref{sec:fw:directions} turns these bounds into directions.
 
-An edit whose written set meets the structure positions of a kind can change the items of that kind anywhere, and the
-lemma says nothing about them, although it still applies to the other kinds. Such an edit is handled when it comes
-with its delta, as an edit stated in items does. A later edit given as writes then also needs the members of the items
-the first one added, so an edit stated in items states their members along with their contents. An edit that comes
-with no delta is flagged, and the kinds whose structure positions it writes may change arbitrarily. Whether an edit is
-flagged is decided by comparing $W$ with the structure positions in the item table, which takes no judgment. The
-answer depends on the input, which is why the directions of \Cref{sec:fw:directions} hold over a population of inputs
-and not over all of them.
+A write that meets the structure positions of a kind can change the items of that kind anywhere, and the lemma says
+nothing about them, although it still applies to the other kinds. Such an edit is handled when it is also stated in
+items, so that it comes with its delta. A later write then also needs the members of the items the first edit added, so
+an edit stated in items states their members along with their contents. A write that comes with no delta is
+\emph{flagged}, and the items of the kinds whose structure positions it writes may change arbitrarily. Whether a write
+is flagged is decided by comparing $W$ with the structure positions, which the instrumentation records together with the
+item table. Definition~\ref{def:fw:local} excludes no kind. Every kind is local if all positions are its structure
+positions, and a kind whose items cannot be found again from a small margin takes more positions as structure positions.
+A large set of structure positions costs flags, since more writes are flagged, but never a wrong delta.
 
 \subsection{Sound Directions}
 \label{sec:fw:directions}
@@ -390,7 +412,7 @@ a sum less than its parts do: an item rewritten in place still adds 1 to the cou
 move, while a removal and an addition taken separately could move it either way.
 
 An operation stated in items comes with its signature. For an operation given as writes,
-Lemma~\ref{lem:fw:localization}(b) gives a signature on each input of $F$, and the signature over $F$ is their union.
+Lemma~\ref{lem:fw:localization}(ii) gives a signature on each input of $F$, and the signature over $F$ is their union.
 On an input where the operation writes the structure positions of a kind, that kind may be added, removed, and
 replaced with any content. In both cases no edit is applied.
 

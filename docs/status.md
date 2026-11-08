@@ -1,3 +1,11 @@
+**2026-11-08 (session 19, writing track): §3.3 through sprint steps 1-4.** Simulated review (P1-P22: no reason
+given for the lemma when $z'$ is at hand; Def 7 one 110-word sentence; fixed layout with no purpose; a concession with
+no consolidation; Lemma 1 abrupt and dense; two math gaps: "every kind" under "a local kind", structure positions
+"in the item table"). Ten-paragraph spine approved with Q1-Q2 as recommended; implemented in one pass (Lemma 1 now a
+main claim + (i)-(iii), proof rewritten, §3.4 cites (ii)). ~1,560 rendered words, over the planned 850-950. Next: the
+user's first read of §3.3 (step 5). Note for the research track: §4 says "locating positions" for structure
+positions. Nothing pushed.
+
 # Status
 
 **2026-11-07/08 (session 18, writing track): §3.2 through the review sprint in two rounds; accepted ("quite

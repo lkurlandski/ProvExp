@@ -54,6 +54,9 @@ the other subsection early; each is handled in its own subsection's session (ste
 - §3.4 makes the "sign from the kinds alone" argument itself; §3.2's closer that previewed it is cut. (from §3.2
   round 2, session 18)
 - Framework-wide: decide whether to drop residual features (U10), after §3.4.
+- §3.4 can cite Lemma 1(iii) (a fixed layout only replaces items) for its "replace" sort; the reference to the old
+  Lemma 1(b) is now (ii). (from §3.3, session 19)
+- §4 (research track's file) says "locating positions" for what §3 calls structure positions. (from §3.3, session 19)
 
 ## §3.2 Edits and Their Side Effects
 
@@ -307,9 +310,183 @@ ethics/open-science page.
 ## §3.3 Edits Given as Writes
 
 ### 1. Simulated review
+
+Session 19 (2026-11-08). Read in the rendered PDF (pages 4-5, ~1,100 words against the spine's 500-800), with the
+proof (`_j_proofs.tex`), the spine (`docs/framework-design.md` §13), and what later text uses: §3.4 cites
+Lemma 1(b) for signatures and the flagged case ("that kind may be added, removed, and replaced with any content");
+its "replace" sort is what a fixed layout gives, though §3.4 never says so; §4 (research track) still says "locating
+positions" for structure positions. Math: Lemma 1 and its proof agree; two gaps. (1) The lemma opens "Let $\tau$ be a
+local kind" and then makes a claim about every kind, which needs every kind local. (2) The last paragraph compares
+$W$ "with the structure positions in the item table", but §3.1's item table holds kinds, members, and contributions
+only. Main finding before the comments: §3.3 never says why a write-given single edit needs the lemma when $z'$ is at
+hand (extract it), so its motivation stands only on the family case, and the "before the edit is applied" claim of
+the §3 lead is never earned (the elements of $z'$ on a margin are those of $z$ plus the written ones, but the text
+does not say so).
+
+**¶1 (lead)**
+- **P1 Q (H).** "For one such edit, the edited input $z'$ is at hand, but Proposition 1 needs its delta": if $z'$ is
+  at hand, why not extract it and compare $\pi(z)$ with $\pi(z')$? *Answer:* one could; that is the re-extraction
+  §3.2 avoids. The lemma's gains for a single edit are that $z'$ need not be built (its elements on a margin are those
+  of $z$ with the written values) and that only the margins are read again. The essential case is the family (any
+  content written within a region), for which there is no $z'$ and §3.4 needs the bound.
+- **P2 F (H).** "Given by the elements they write, not by the items they change": nothing to picture, and "the items
+  they change" answers a §3.2 paragraph that no longer exists (Ripples). The reader has never been told that some
+  edits come with their delta (an edit stated in items) and others do not.
+- **P3 F (M).** "Which enters through two sets of positions per kind that the instrumentation provides": a teaser for
+  objects not yet defined; the format sentence also repeats §3.1 ("Only the item map depends on the format").
+
+**¶2 (written set)**
+- **P4 Q (L).** Why tell me that an insertion's written set runs to the end? *Answer:* such an edit almost always
+  writes a structure position, so it is handled by its delta (last paragraph); the connection is not made.
+
+**¶3 (three ways)**
+- **P5 F (M).** Good motivation, but the end does not say which set serves which purpose ("one set of positions for
+  each purpose"), and "lies within" is defined in the paragraph's last sentence, away from where it is used.
+- **P6 Q (M).** "Reads to decide where items lie": is this the locating positions / identity again? *Answer:* the
+  same intuition, but Def 7 does not define structure positions by what the extractor reads; it defines them by the
+  guarantee (a write that misses them changes items only near it). The text should keep that distinction visible.
+
+**Def 7**
+- **P7 F (H).** One sentence of ~110 words stacking three objects (structure positions, margin, fixed layout), three
+  requirements on the margin, and two conditions inline: the "wet clay" / "unhinged rant" pattern in a milder form
+  (triggers 10, 14).
+- **P8 Q (M).** "Depend only on the elements of $z'$ on the margin": what does depend mean? *Answer:* reading the
+  margin of $z'$ finds them; any two edited inputs that agree on the margin have the same items of the kind there.
+- **P9 Q (M).** "Computable from $z$ and $W$": why say it, and computable by whom? *Answer:* the notation
+  $\mu_\tau(z, W)$ already makes it a function of $z$ and $W$ (not of $z'$), which is what the lemma needs; "computable"
+  is a software property (trigger 20). Cut.
+- **P10 Q (M).** Fixed layout: what is it for? Its purpose is never given, and in Lemma 1(b) it yields only "keeps
+  the number of items", which is obvious from "same members". *Answer:* what §3.4 needs is that such a kind is only
+  *replaced* (each item by one with the same members): the "replace" sort, which keeps a count fixed.
+
+**¶ after Def 7 (margins)**
+- **P11 F (M).** Several jobs (interpret $L$ and $\mu$, three cases, a citation, an exception); "usually" with no
+  criterion; "damage regions that incremental parsers re-parse" is a cited idea compressed into a name (trigger 5;
+  the IVM remark of §3.2 was liked once glossed).
+- **P12 Q (M).** "Data that runs to the end of the input ... its margin contains it": what data, and contains what?
+  *Answer:* an item whose members run to the last element (everything after the last field). A write past the old
+  end changes its members, so the margin must contain the whole item; it has no fixed layout under appending.
+
+**¶ "Every kind is local if all positions ..."**
+- **P13 F (H).** Reads as a concession with no consolidation (trigger 24), and "just as every extractor is a
+  sum-then-readout extractor if the whole input is a single item" points to Remark 1, which §3.1 no longer has. "A kind
+  whose items the instrumentation cannot find again from a margin keeps its members among its structure positions" is
+  hard to parse. *Consolidation:* no kind is excluded; a larger $L$ only means more edits are flagged, never a wrong
+  delta.
+
+**Lemma 1**
+- **P14 F (H).** Abrupt: the sentence before it is the trivial-case remark, not a lead-in (trigger 25).
+- **P15 F (H).** Dense: (a) holds three sentences, a second hypothesis in the middle ("If $W$ misses the structure
+  positions of every kind"), and a remark ("members included"); (b) switches to a family. The accepted Prop 1 format
+  (main claim, then "Consequently" with a short list) would fit.
+- **P16 M (M).** "Let $\tau$ be a local kind" and then "every kind": needs every kind local (math gap 1).
+
+**¶ after Lemma 1 (why it holds)**
+- **P17 Q (M).** Is the lemma anything but Def 7 restated? *Answer:* the first claim is the definition read on one
+  edit; the lemma's content is the delta, the item table of $z'$ from the margins only, and the family bound. The
+  format-specific work is in meeting Def 7, which the instrumentation must do per kind. Say so plainly. Also "no item
+  can reach across the margin's edge" is the runs intuition, not the general reason.
+
+**¶ "Part (a) gives the delta ..."**
+- **P18 F (H).** "This delta need not be the smallest ... Prop 1 does not need it to be": the U4 comment of §3.2
+  ("obvious; its reason not visibly connected"). Prop 1 already takes any delta. Cut.
+- **P19 M (L).** Pointer to §3.4 at the end: one is fine.
+
+**¶ last (edits outside the lemma)**
+- **P20 Q (H).** "As an edit stated in items does": where were these defined? §3.2 no longer says (Ripples). Answer:
+  an edit stated by the items it adds and removes (add a record with this content) has its delta by its definition.
+- **P21 F (M).** Several jobs (what goes wrong, delta-given edits, chaining, flagging, "takes no judgment", the
+  population pointer). "Takes no judgment" defends against an unstated objection (trigger 11/20). The population
+  sentence repeats what §3.4's second paragraph says.
+- **P22 M (M).** "The structure positions in the item table": the item table has none (math gap 2); say the
+  instrumentation records $L_\tau(z)$ with it.
+
 ### 2. Proposed changes
+
+What §3.3 is for, plainly: an edit stated in items comes with its delta; an edit given as writes does not, and a
+family of writes (any content within a region) has no single edited input. §3.3 gives two sets of positions per kind
+under which the delta of a write can be read near the write, without building $z'$, and a family's possible deltas
+bounded from the item table of $z$ alone; §3.4 needs the second. The structure stays (motivation, written set, idea,
+Def 7, what it covers, Lemma 1, why, what it gives, what falls outside), but every paragraph is rewritten from this
+spine, the concession moves into the last paragraph, and the lemma takes Prop 1's format. Target ~850-950 words.
+
+Spine (one job per paragraph):
+1. (P1-P3, Ripples) **Lead: where deltas come from and what §3.3 proves.** An edit stated in items (add an item
+   with given content, remove one) has its delta by its definition. Many edits are given as writes: overwrite some
+   elements, append, insert. For one of them the delta could be found by building $z'$ and extracting it, and for a
+   family of writes there is no single $z'$. This subsection gives conditions on each kind under which the delta of a
+   write follows from the item table of $z$, the positions written, and the written elements, and the deltas of a
+   family are bounded from the item table alone. No format sentence, no teaser.
+2. (P4) **Written set.** Definition of $W$ as now; then: the elements of $z'$ are the written ones on $W$ and those
+   of $z$ elsewhere, so $z'$ is known at any position without being built. Overwriting and appending have small
+   written sets; an insertion's runs to the end of the input.
+3. (P5, P6) **The idea before the definition.** The three ways a write changes the items of a kind, as now, ending
+   with what each set is for: the structure positions are those a write must miss, and the margin is the region
+   around the write outside which the items stay as they were and inside which the elements of $z'$ decide them.
+4. (P7-P9) **Def 7, split.** Structure positions $L_\tau(z)$ and the margin $\mu_\tau(z, W)$ (contains $W$ and the
+   members of the items $W$ meets, grows with $W$; "computable" cut); "lies within" defined here; the two conditions
+   displayed as a short list (as in Prop 1), (ii) worded as "are the items that the elements of $z'$ on the margin
+   determine". Fixed layout leaves the definition (moves to ¶5).
+5. (P10-P12, P8) **What the definition covers (breadth).** Opens with condition (ii) in words (reading the margin
+   of $z'$ again finds the items there), then the usual ways to find items: through fields ($L$ = the fields read
+   to find the items; margin $W$ plus the items it meets; their members never change, which we call a *fixed
+   layout*); maximal runs (margin to the nearest unwritten element outside the class); windows ($n - 1$ each side);
+   these are the regions an incremental parser re-reads after an edit~\cite{wagner1998efficient}, glossed in a
+   clause; an item that runs to the end of the input, whose margin contains the whole item once a write reaches past
+   the old end. "Usually" cut.
+6. (P14) **Lead-in to Lemma 1**, one or two sentences: a write that misses a kind's structure positions splits its
+   items into those outside the margin, which it keeps, and those inside, which the margin of $z'$ decides.
+7. (P15, P16, P10) **Lemma 1, Prop 1's format.** Main claim per kind: the items of kind $\tau$ of $z'$ are those of
+   $z$ with the items within the margin replaced by the ones the margin of $z'$ determines. Consequently, (i) if every
+   kind is local and $W$ misses every $L_\tau(z)$, the replaced items and their replacements form a delta, found with
+   the members of the replacements from the item table of $z$, $W$, and the written elements; (ii) every edit of a
+   family that writes only within $\hat{W}$, which misses $L_\tau(z)$, removes and adds only items of kind $\tau$
+   within $\mu_\tau(z, \hat{W})$; (iii) if the kind has a fixed layout, such an edit only replaces items of the kind,
+   each by one with the same members.
+8. (P17) **Why it holds, in order.** The main claim is Def 7 read on one edit (with the reason contents outside are
+   unchanged); (i) margins depend on $z$ and $W$ only, the item table gives the replaced items, and the elements of
+   $z'$ on a margin are known from ¶2, so the kind's item finder runs on the margin without building $z'$; (ii)
+   margins grow with $W$; (iii) same members. One sentence that the format enters only through meeting Def 7.
+9. (P18, P19) **What it gives.** For a single write, the delta and the members of the new items, so the item table
+   stays current and a sequence of writes is followed one edit at a time; for a family, a bound that needs neither the
+   content of the writes nor any edited input, which §3.4 turns into directions. The smallest-delta sentence cut.
+10. (P13, P20-P22) **Writes outside the lemma, with the consolidation.** A write that meets $L_\tau(z)$ can change
+    the kind's items anywhere (the lemma still holds for the other kinds). It is handled when the edit is stated in
+    items, which then also states the members of the items it adds; otherwise it is flagged and the kind may change
+    arbitrarily. The flag compares $W$ with the structure positions, which the instrumentation records with the item
+    table. No kind is excluded by Def 7: a kind whose items cannot be found again from a margin puts its members into
+    $L_\tau$, so every write to it is flagged; a large $L$ costs flags, never a wrong delta. The Remark 1 analogy, "takes
+    no judgment", and the population sentence are cut (§3.4 says the latter).
+
+Proofs appendix: rewritten to the new lemma parts (main claim, (i)-(iii)); (iii) one line.
+
+Ripples: §3.4 cites Lemma 1(b) (line "Lemma~\ref{lem:fw:localization}(b) gives a signature"); the reference becomes
+(ii) in this pass so nothing breaks, and §3.4's own session can cite (iii) for its "replace" sort. §4 (research track,
+not edited here) calls structure positions "locating positions": a note for the user.
+
+Open questions:
+- Q1. Fixed layout moves out of Def 7 into the cases paragraph (where fields motivate it), and the lemma's clause
+  becomes "only replaces items, each by one with the same members" instead of "keeps the number of items".
+  Recommended: yes (it is what §3.4's replace sort needs, and the count follows).
+- Q2. Lemma 1 relabelled from (a)/(b) to a main claim and (i)-(iii), in the format the user accepted for Prop 1.
+  Recommended: yes.
 ### 3. User's feedback on the plan
+
+2026-11-08. Plan approved as proposed ("seems reasonable"; the user has not read the subsection, so could say little
+about the plan). Q1 and Q2 as recommended. No false alarms recorded (no item was judged).
+
 ### 4. Implemented
+
+2026-11-08, one pass from the ten-paragraph spine (`_d_framework.tex`, proof in `_j_proofs.tex`, §3.4's reference
+to Lemma 1(b) changed to (ii)). Length: ~1,230 -> ~1,560 rendered words, over the plan's 850-950 (the lead, the
+why-it-holds paragraph, and Lemma 1's list grew); not trimmed, per the drafting rule. New prose: the lead (edits
+stated in items vs writes, the family case); the sentence that $z'$ is known on any positions without being built;
+the end of the three-ways paragraph (what each set is for); Def 7 split with a displayed list and "lies within"
+inside it; the cases paragraph (opens with condition (ii) in words, fixed layout defined at the fields case,
+incremental parsing glossed, the end-of-input item); the lead-in to Lemma 1; Lemma 1 as a main claim and (i)-(iii);
+the why-it-holds paragraph; the last paragraph (flagging, the item-table gap fixed, the consolidation that no kind is
+excluded). Cut: "computable", "usually", the Remark 1 analogy, the smallest-delta sentence, "takes no judgment", the
+population sentence. `make check`: clean; no "??".
 ### 5. User's first read
 ### 6. Classification and plan
 ### 7-8. Feedback and implementation

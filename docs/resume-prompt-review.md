@@ -1,7 +1,8 @@
 # Resume: the §3 review sprint (ProvExp, writing track)
 
 Paste this into a fresh session. It picks up the review sprint over §3.2, §3.3, and §3.4 of the manuscript.
-**Current position: §3.3, step 1** (§3.2 done and accepted in session 18: "quite satisfied"). Update the "Current
+**Current position: §3.3, step 5 (the user's first read of the revised §3.3)**; steps 1-4 done in session 19
+(2026-11-08). After the user's comments: step 6 (classify, plan as a paragraph spine), 7, 8, retro; then §3.4. Update the "Current
 position" line and the "Where things stand" list at the end of every session.
 
 ## What the sprint is
@@ -89,5 +90,10 @@ protocol, the formats, and the classification rules are in `docs/sprint-framewor
   implemented in one pass. The user's first read (U1-U18): 4 missed, 6 fell short, 6 introduced, 1 new taste;
   round 2 (2026-11-08) rewritten from a six-paragraph spine, no example. Verdict: "quite satisfied"; the user made
   small spacing and wording edits (commit `5dcb9e7`). §3.2 done. §3.3: not started. §3.4: not started.
-- Ripples open: §3.3 says where a delta comes from (its first sentence); §3.4 makes the "sign from the kinds alone"
-  argument itself; framework-wide, decide after §3.4 whether to drop residual features (user's note).
+- 2026-11-08 (session 19): §3.3 steps 1-4. Simulated review P1-P22 and a ten-paragraph spine in the log; approved
+  unchanged (Q1 fixed layout out of Def 7, Lemma 1(iii) "only replaces"; Q2 Lemma 1 as main claim + (i)-(iii));
+  implemented in one pass, ~1,230 -> ~1,560 rendered words (over the planned 850-950, not trimmed). Next: the user's
+  first read.
+- Ripples open: §3.4 makes the "sign from the kinds alone" argument itself and can cite Lemma 1(iii) for its replace
+  sort; framework-wide, decide after §3.4 whether to drop residual features (user's note); §4 (research track) says
+  "locating positions". Closed: §3.3 says where a delta comes from (its lead, session 19).
