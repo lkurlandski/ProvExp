@@ -591,7 +591,9 @@ restates Def 8), and it formalizes the instance's way of finding items as framew
 of the positions the parser reads (Table 5's Flagged column, Table 6 rows 3-8), not the lemma; rows 1-2 (the headline
 and the hand-detector experiment) are declared deltas. Recommended D: remove §3.3; define the *footprint* of a write
 (it changes items only within it; the whole input always is one) at §3.4's signatures; EMBER's computation of
-footprints to §4.1. Fallback A: write signatures as a pure input. Waiting on the user.
+footprints to §4.1. Fallback A: write signatures as a pure input. **Approved (user, 2026-11-08), with every recommended answer; applied the
+same day** (backup `manuscript/backup/framework-s33-2026-11-08.tex`). §4.1/§6 deferred. The sprint continues with
+Sound Directions (heading below kept as §3.4 for the log), its plan including the footprint paragraphs.
 
 ### Retro
 

@@ -36,13 +36,12 @@
     $J$ & Modeled features, on which $\varphi_j = \rho_j \circ \sigma \circ \pi$; the others are residual. \\
     \midrule
     \multicolumn{2}{@{}l}{\emph{Edits}} \\
-    $W$ & Written set: the positions at which $z'$ differs from $z$. \\
     $(I^-, I^+)$ & Item delta: removed and added items, $\pi(z') = (\pi(z) - I^-) \uplus I^+$. \\
-    $L_\tau(z)$, $\mu_\tau(z, W)$ & Structure positions and margin of kind $\tau$. \\
     \midrule
     \multicolumn{2}{@{}l}{\emph{Threat models and directions}} \\
     $o$, $T_{o,\theta}$ & An operation; its edit with parameter $\theta \in \Theta_o(z)$. \\
     $\mathcal{M}$, $O$ & Threat model: a finite catalogue $O$ of operations. \\
+    $W$, $\mu_\tau(z, W)$ & A set of positions an operation writes; its footprint for kind $\tau$. \\
     $F$ & A population of inputs. \\
     $\Delta_o(F)$ & Signature of $o$ over $F$: the sorts of change (add, remove, replace) its deltas make. \\
     $Q$ & A set of keys an operation may choose from. \\

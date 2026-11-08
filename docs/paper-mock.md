@@ -15,7 +15,7 @@ hand analysis, more complete than learned constraints, and useful: it yields det
 
 1. A model of sum-then-readout extractors (items, sums, readouts) and the requirements under which an edit's side
    effects are exact and a threat model's feature directions are sound, with proofs. Format-free; the format enters
-   only for edits stated in raw elements.
+   only through the footprints of edits stated in raw elements.
 2. An instrumented EMBER extractor (2,480 of 2,568 features modeled) and a second instance in traffic (CTU-13 botnet
    features), checked against re-extraction.
 3. Derived directions and constraints that correct hand analysis on EMBER and replace 360 hand-written constraints on
@@ -29,7 +29,7 @@ hand analysis, more complete than learned constraints, and useful: it yields det
 |---|---|---|
 | 1 Introduction | the gap, the three ways people cross it today, our claim, results | 1,000 |
 | 2 Background and Motivation | Pierazzi et al.'s problem space (attacks differ in what they return), constraints, side effects (with nuance), the reachable set as the central object; attacks and defenses in feature and problem space each need part of the reachable set and get it from outside the feature mapping; a short closing on what we derive (written 2026-11-04, revised 2026-11-06, ~950 words) | 800 |
-| 3 Measuring Edits Across Feature Mappings | below (rewritten 2026-11-04: no domain examples, tables, or figures for now; spine in `docs/framework-spine.md`) | 2,500 |
+| 3 Measuring Edits Across Feature Mappings | three subsections since 2026-11-08 (extractors, side effects, sound directions; §3.3 "Edits Given as Writes" removed, its idea is the footprint definition in sound directions: `docs/s33-decision.md`); below (rewritten 2026-11-04: no domain examples, tables, or figures for now; spine in `docs/framework-spine.md`) | 2,500 |
 | 4 Instances | EMBER (what is recorded, the three repairs, the import-overwrite patch); CTU-13 features; the edit catalogues | 1,000 |
 | 5 Evaluation | Tables 1-4 | 3,000 |
 | 6 Related work | problem-space attacks, constraints over features (incl. learned: Sheatsley, Bostani), robust detectors (adversarial training, monotone, verified), incremental computation and provenance (~1,450 words, 2026-11-06) | 700 |

@@ -1,8 +1,8 @@
 % Appendix: proofs for the framework section (_d_framework.tex). Source: docs/formalization.md, Sections 5.3, 6.2-6.4,
 % and 7 (frozen). The EMBER checks and caveats belong to the instances and evaluation sections, not here.
 
-This appendix proves the results of \Cref{sec:framework}. Throughout, an edit takes $z$ to $z'$ with written set
-$W$ and item delta $(I^-, I^+)$.
+This appendix proves the results of \Cref{sec:framework}. Throughout, an edit takes $z$ to $z'$ with item delta
+$(I^-, I^+)$.
 
 \paragraph{Proof of Proposition~\ref{prop:fw:side-effects}.}
 Let $B = \pi(z) - I^-$. Since $I^- \subseteq \pi(z)$, $\pi(z) = B \uplus I^-$, and by \eqref{eq:fw:delta},
@@ -18,26 +18,6 @@ If $I^- = \emptyset$, then $B = \pi(z)$ and $s_k(z') = s_k(z) \oplus \sigma(I^+)
 element to every sum in $K_j$, then $\sigma(I^-)$ and $\sigma(I^+)$ are neutral on $K_j$, so $\mathbf{s}(z)$ and
 $\mathbf{s}(z')$ both agree with $\sigma(B)$ on $K_j$. By Definition~\ref{def:fw:readout},
 $\rho_j(\mathbf{s}(z)) = \rho_j(\mathbf{s}(z'))$, and by \eqref{eq:fw:extractor}, $\varphi_j(z) = \varphi_j(z')$.
-
-\paragraph{Proof of Lemma~\ref{lem:fw:localization}.}
-Write $\mu = \mu_\tau(z, W)$, let $A$ be the items of kind $\tau$ of $z$ that lie within $\mu$, and $A'$ those of $z'$.
-By condition (i) of Definition~\ref{def:fw:local}, the other items of kind $\tau$ are the same in $z$ and $z'$. Their
-members miss $W$, since $\mu$ contains the members of every item of kind $\tau$ that $W$ meets, and $z'$ equals $z$
-outside $W$, so their contents are the same too. By condition (ii), $A'$ is determined by the elements of $z'$ at the
-positions of $\mu$. Hence the items of kind $\tau$ of $z'$ are those of $z$ with $A$ replaced by $A'$.
-(i) If every kind is local and $W$ misses the structure positions of every kind, apply the main claim to each kind and
-take the union: with $I^-$ and $I^+$ the multisets of the kinds and contents of the replaced items and of their
-replacements, $I^- \subseteq \pi(z)$ and $\pi(z') = (\pi(z) - I^-) \uplus I^+$, which is \eqref{eq:fw:delta}. The
-margins are functions of $z$ and $W$, and the replaced items, with their contents, and the members and contributions
-of the other items are in the item table of $z$. The elements of $z'$ on the margins are those of $z$ outside $W$ and
-the written elements on $W$, so the replacements, their members, and, through the contribution functions, their
-contributions follow without building $z'$.
-(ii) Every written set $W$ of the family lies in $\hat{W}$, so it misses $L_\tau(z)$ and, since the margin grows with
-the written set, $\mu_\tau(z, W) \subseteq \mu_\tau(z, \hat{W})$. By the main claim, the edit removes only items that
-lie within $\mu_\tau(z, W)$ and adds only items that lie there.
-(iii) With a fixed layout, the items of kind $\tau$ of $z'$ have the same members as those of $z$. The items outside
-$\mu$ are kept, so the members of the items in $A'$ are those of the items in $A$, and each replaced item is replaced
-by the item of $z'$ with the same members.
 
 \paragraph{Sign rules.}
 \Cref{tab:fw:signs,tab:fw:readouts} list the rules that the two steps of \Cref{sec:fw:directions} apply: the sign sets

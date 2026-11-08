@@ -10,11 +10,9 @@ totals, and compute each feature by a formula over a few totals. \Cref{sec:fw:mo
 \emph{sum-then-readout extractors}. \Cref{sec:fw:side-effects} describes an edit by the pieces it removes and adds,
 and shows that this description and a record the extractor writes while it runs give the exact change of every
 feature, side effects included, before the edit is applied: the totals are updated from the record, and only the
-formulas that read a changed total are evaluated again. Attackers' edits are usually given instead by the positions
-they write, and \Cref{sec:fw:edits} shows when the pieces such an edit removes and adds can be found from those
-positions and the record, so that the results of this section apply to these edits as well. \Cref{sec:fw:directions}
-bounds, without applying any edit, the direction in which each feature can move under the edits a threat model
-allows, and shows that a detector whose score cannot fall in those directions cannot be evaded by those edits.
+formulas that read a changed total are evaluated again. \Cref{sec:fw:directions} bounds, without applying any edit,
+the direction in which each feature can move under the edits a threat model allows, whether they are stated by the
+pieces they change or by the positions they write, and shows that a detector whose score cannot fall in those directions cannot be evaded by those edits.
 Appendix~\ref{sec:symbols} lists the notation, Appendix~\ref{sec:types} is a short introduction to the algebra that
 \Cref{sec:fw:model} uses, and Appendix~\ref{sec:fw:proofs} holds the proofs.
 
@@ -280,140 +278,6 @@ readouts whose support contains one of these sums. Databases keep stored aggrega
 that totals a table is updated from the inserted and deleted rows instead of being recomputed, a technique known as
 incremental view maintenance~\cite{gupta1995maintenance,koch2014dbtoaster}, and part (i) is its rule for totals.
 
-\subsection{Edits Given as Writes}
-\label{sec:fw:edits}
-
-% Spine: docs/framework-design.md, Section 13 (approved 2026-11-05 with the recommendations Q1-Q4). Revised in the
-% review sprint (docs/sprint-framework-review.md): round 1 2026-11-08; round 2 in progress, items 1-4 (lead, written
-% set, Algorithm 2 with structure positions and margins, the three cases, local kinds) drafted for the user's read.
-An edit stated in items, such as one that adds an item with a given content, comes with its delta. Many edits are given
-instead by the elements they write: they overwrite some elements, append new ones, or insert them.
-\Cref{sec:fw:directions} needs to know which items such edits can change, for every content an attacker might write,
-without trying any of them. This subsection shows that a write that leaves alone the positions an extractor reads to
-locate items changes items only near the positions it writes. The delta of one write can then be read from the elements
-near the write, and the items that any write within a region can change are known from the items of $z$ alone.
-
-\definition[Written set]
-\label{def:fw:written}
-{
-The \emph{written set} $W$ of an edit that takes $z$ to $z'$ is the set of positions at which $z$ and $z'$ differ,
-including the positions that exist in only one of them.
-}
-
-\noindent Overwriting and appending have small written sets. Inserting an element in the middle moves every element
-after it, so its written set runs to the end of the input.
-
-\begin{algorithm}[t]
-  \caption{How the extractor of \Cref{alg:fw:extractor} finds its records and tokens. A header at the start of $z$
-  locates the records, and the tokens are found by scanning.}
-  \label{alg:fw:finding}
-  \begin{algorithmic}[1]
-    \State $n \gets z[1]$ \Comment{header: the number of records}
-    \For{$i = 1, \dots, n$}
-      \State $o \gets z[2i]$, $\ell \gets z[2i + 1]$ \Comment{entry $i$: offset and length}
-      \State record $i$ has the members $\{o, \dots, o + \ell - 1\}$
-    \EndFor
-    \State the tokens are the maximal runs of letters in $z$ \Comment{scanning}
-  \end{algorithmic}
-\end{algorithm}
-
-\Cref{alg:fw:finding} shows the two ways in which an extractor finds its items. Records are \emph{located}: the
-extractor reads a count and, for each record, an offset and a length, so the positions of the header decide where every
-record lies. We call the positions that decide where the items of a kind $\tau$ lie its \emph{structure positions}
-$L_\tau(z)$. For records they are the header, and tokens and elements have none. A write that changes no structure
-position of records leaves every record where it was, and changes at most the content of the records it writes. Tokens
-are \emph{scanned}: a write can lengthen a token, split it, or merge it with its neighbor, but only near the write,
-since a run of letters cannot extend past an unchanged element that is not a letter. The tokens that can change
-therefore lie between the nearest such element before the write and the nearest one after it. We call the region
-around a write in which the items of $\tau$ can change the \emph{margin} $\mu_\tau(z, W)$. It depends on the input and
-on the written set, it contains the written set and every item that has a member there, and a larger written set has a
-larger margin. The margin of records is the written set together with the members of the records it writes, and that
-of elements is the written set itself.
-
-Every edit then falls into one of three cases. An edit stated in items comes with its delta. A write that changes no
-structure position changes items only within the margins, and Lemma~\ref{lem:fw:localization} below reads its delta
-there. A write that changes a structure position, such as the count of records or an offset, may change the items of
-that kind anywhere. The framework does not predict what such a write does, and the end of this subsection says how it
-is treated.
-
-\definition[Local kinds]
-\label{def:fw:local}
-{
-A kind $\tau$ is \emph{local} if it has structure positions $L_\tau(z)$ and margins $\mu_\tau(z, W)$ such that every
-edit of $z$ whose written set $W$ contains no structure position of $\tau$ satisfies two conditions, where an item
-\emph{lies within} a set of positions if all its members do:
-\begin{enumerate}[label=(\roman*), leftmargin=*, nosep]
-  \item the items of kind $\tau$ that do not lie within $\mu_\tau(z, W)$ are the same in $z$ and in $z'$;
-  \item the items of kind $\tau$ of $z'$ that lie within $\mu_\tau(z, W)$ are determined by the elements of $z'$ on
-    $\mu_\tau(z, W)$.
-\end{enumerate}
-Its margins must contain $W$ and the members of every item of kind $\tau$ that has a member in $W$, and must grow with
-$W$.
-}
-
-% ROUND 2: the text below is still the round-1 version (items 5-8 of the round-2 plan come after the user's read).
-\noindent Condition (ii) says that reading the margin of $z'$ again finds the items of the kind there, and the usual
-ways of finding items meet both conditions with small margins. A kind found through fields, such as a record that a
-count and an offset locate, has as structure positions the fields read to find its items, and its margin is $W$ with
-the members of the items that $W$ meets. A write that misses these fields leaves every item where it was, and we say
-that such a kind has a \emph{fixed layout}: under every write that misses its structure positions, its items in $z'$
-have the same members as its items in $z$. A kind found by scanning the input for maximal runs of elements of some
-class needs no structure positions, and its margin extends $W$ on each side to the nearest element of $z$ that lies
-outside both the class and $W$. That element is unchanged in $z'$, so no run crosses it. For windows of $n$
-consecutive elements, the margin extends $W$ by $n - 1$ elements on each side. These margins are the regions that an
-incremental parser reads again after an edit, since it re-parses only the part of a program near the
-change~\cite{wagner1998efficient}. An item whose members run to the end of the input, such as everything after the last
-field, changes its members whenever a write reaches past the old end, so its margin then contains the whole item.
-
-A write that misses the structure positions of a kind thus splits the items of that kind in two: those outside the
-margin, which the edit keeps, and those inside, which the elements of $z'$ on the margin decide.
-
-\lemma[Localization]
-\label{lem:fw:localization}
-{
-Let $\tau$ be a local kind, and let an edit take $z$ to $z'$ with a written set $W$ that misses $L_\tau(z)$. The items
-of kind $\tau$ of $z'$ are those of $z$, except that the items that lie within $\mu_\tau(z, W)$ are replaced by the
-items of kind $\tau$ that the elements of $z'$ on the margin determine. Consequently:
-\begin{enumerate}[label=(\roman*), leftmargin=*, nosep]
-  \item if every kind is local and $W$ misses the structure positions of every kind, the kinds and contents of the
-    replaced items and of their replacements form a delta of $(z, z')$, which follows, with the members of the
-    replacements, from $z$, its item table, $W$, and the written elements;
-  \item if a family of edits of $z$ writes only within a set $\hat{W}$ that misses $L_\tau(z)$, every edit of the
-    family removes and adds only items of kind $\tau$ that lie within $\mu_\tau(z, \hat{W})$;
-  \item if $\tau$ has a fixed layout, the edit only replaces items of kind $\tau$, each by an item with the same
-    members.
-\end{enumerate}
-}
-
-\noindent The main claim is Definition~\ref{def:fw:local} applied to one edit. Its first condition keeps the items
-outside the margin, and their contents are unchanged as well: the margin contains the members of every item that $W$
-meets, so the members of these items miss $W$. Its second condition says that the items inside are those the elements of
-$z'$ on the margin determine. For part (i), the margins depend only on $z$ and $W$, the item table of $z$ lists the
-items within them with their contents, and the elements of $z'$ on a margin are those of $z$ with the written elements
-on $W$. Reading these elements finds the replacements with their members and, through the contribution functions, their
-contributions, without building $z'$, and doing so for every kind gives the two multisets of a delta. Part (ii) holds
-because every written set of the family lies in $\hat{W}$ and the margin grows with the written set. Part (iii) holds
-because a fixed layout keeps the members of every item, so each replaced item has a replacement with the same members.
-The input format enters only through the structure positions and the margins, which the instrumentation provides for
-each kind, so applying the lemma to an extractor comes down to meeting Definition~\ref{def:fw:local}.
-
-For a single write, part (i) gives the delta that Proposition~\ref{prop:fw:side-effects} needs, and also the members of
-the new items, which a delta does not record. The item table of $z'$ is therefore known as well, and a sequence of
-writes is followed by updating the item table one edit at a time. Part (ii) needs neither the content of the writes nor
-any edited input. It bounds, from the item table of $z$ alone, which items of each kind a whole family of edits can
-remove or add, and part (iii) says that a kind with a fixed layout can only be rewritten in place.
-\Cref{sec:fw:directions} turns these bounds into directions.
-
-A write that meets the structure positions of a kind can change the items of that kind anywhere, and the lemma says
-nothing about them, although it still applies to the other kinds. Such an edit is handled when it is also stated in
-items, so that it comes with its delta. A later write then also needs the members of the items the first edit added, so
-an edit stated in items states their members along with their contents. A write that comes with no delta is
-\emph{flagged}, and the items of the kinds whose structure positions it writes may change arbitrarily. Whether a write
-is flagged is decided by comparing $W$ with the structure positions, which the instrumentation records together with the
-item table. Definition~\ref{def:fw:local} excludes no kind. Every kind is local if all positions are its structure
-positions, and a kind whose items cannot be found again from a small margin takes more positions as structure positions.
-A large set of structure positions costs flags, since more writes are flagged, but never a wrong delta.
-
 \subsection{Sound Directions}
 \label{sec:fw:directions}
 
@@ -426,10 +290,6 @@ $T_{o,\theta}$, indexed by a parameter $\theta$ from a domain $\Theta_o(z)$ that
 the set of feature vectors they reach. Whether an operation preserves the object's behavior or plausibility is
 decided by $\Gamma$, which is an input to the model.
 
-Whether an edit writes a structure position depends on the input (\Cref{sec:fw:edits}), so the results of this
-subsection hold over a \emph{population} $F \subseteq \mathcal{Z}$ of inputs. The population is \emph{closed} under
-$\mathcal{M}$ if no operation takes an input of $F$ outside $F$.
-
 Proposition~\ref{prop:fw:side-effects} turns one delta into the change of every sum. For an operation we ask for less,
 only the sign of the change, but over all of its edits at once. The \emph{signature} $\Delta_o(F)$ of $o$ over $F$
 lists, for each kind, the sorts of change that the deltas of the operation's edits on inputs of $F$ can make:
@@ -439,10 +299,34 @@ extension of its content. A replacement is a removal paired with an addition. We
 a sum less than its parts do: an item rewritten in place still adds 1 to the count of its kind, so the count does not
 move, while a removal and an addition taken separately could move it either way.
 
-An operation stated in items comes with its signature. For an operation given as writes,
-Lemma~\ref{lem:fw:localization}(ii) gives a signature on each input of $F$, and the signature over $F$ is their union.
-On an input where the operation writes the structure positions of a kind, that kind may be added, removed, and
-replaced with any content. In both cases no edit is applied.
+% PLACEHOLDER (2026-11-08, docs/s33-decision.md, option D): the footprint paragraphs (spine items 3-5 of the
+% decision document) are written in the sprint session for this subsection; this is a minimal stand-in so that the
+% section reads through. The population paragraph moved here from after the threat-model paragraph.
+An operation stated in items comes with its signature. An operation given as writes, such as appending any content,
+writes within a set of positions that depends only on the input, while its content is free.
+
+\definition[Footprint]
+\label{def:fw:footprint}
+{
+Let $\tau$ be a kind, $z$ an input, and $W$ a set of positions. A set of positions $\mu_\tau(z, W) \supseteq W$ is a
+\emph{footprint} of $W$ for $\tau$ if every edit of $z$ that writes only within $W$ removes and adds only items of
+kind $\tau$ that lie within $\mu_\tau(z, W)$, where an item \emph{lies within} a set of positions if all its members
+do. The footprint \emph{keeps positions} if every such edit replaces each of these items by one with the same members.
+}
+
+\noindent A write changes the items of a kind only within its footprint, as a readout depends only on the sums in
+its support. The signature on $z$ follows: items of kind $\tau$ are added, removed, or replaced only within the
+footprint, and only replaced, by items of the same length, if the footprint keeps positions. For one write, the items
+of $z$ and of $z'$ that lie within the footprints form a delta for Proposition~\ref{prop:fw:side-effects}. The whole
+input is always a footprint, so no kind is excluded; a larger footprint only loosens the signature. A write whose
+only known footprint is the whole input is \emph{flagged}, and the items of that kind may change in any way. Finding
+small footprints is the work of the instrumentation, and the only place where the input format enters
+(\Cref{sec:instances}). In every case no edit is applied.
+
+A footprint depends on the input: where one part of an input says that an item extends past the end, a write after
+the end lies within that item. The results of this subsection therefore hold over a \emph{population}
+$F \subseteq \mathcal{Z}$ of inputs, and the signature over $F$ is the union of the signatures on its inputs. The
+population is \emph{closed} under $\mathcal{M}$ if no operation takes an input of $F$ outside $F$.
 
 A \emph{sign set} is a subset of $\{-, 0, +\}$, and $-A$ flips every sign in $A$. The \emph{sign sum} $A \boxplus B$
 is the set of signs that $a + b$ can have when $a$ has a sign in $A$ and $b$ a sign in $B$; for instance,
