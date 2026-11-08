@@ -19,6 +19,37 @@ from scratch. So spend effort on what the user cannot cheaply fix (facts checked
 argument, the role of each citation, a confident statement of our contribution) over sentence polish, which the user
 will do by hand. First accepted at this bar: §6 after one written review.
 
+## The paragraph gate (user, 2026-11-08; overrides any lesson that seems to ask for more text)
+
+"You keep writing entire paragraphs that don't mean anything and don't add anything ... utterly meaningless
+rambling" (Sound Directions, round 2). An audit found that half the subsection had no job: a gloss after every
+definition, written because the template said so, filled with disclaimers, roadmaps, restated definitions, leftovers
+from the chat, and answers to imagined reviewers. **Before a paragraph is written, and again before it is shown,
+it must pass this gate. If it fails, it is deleted, not reworded.**
+
+1. **Name its job in one line**, and the reader's question it answers or the later result, section, or table that
+   uses it (by label). "Explains the definition", "connects", "motivates", "consolidates" are not jobs unless the
+   line also says what the reader could not do without it.
+2. **For each sentence: what does the reader know after it that they did not know before?** If nothing, cut it.
+   Restating a definition in words ("a write changes items only within its footprint" after defining exactly that),
+   a roadmap of steps that are announced again where they happen, and "X is decided elsewhere" disclaimers all fail.
+3. **No sentence exists to answer the chat.** A point the user raised in conversation (why $	heta$, why an
+   operation) is fixed in the definition or the structure, never by adding a sentence that argues it.
+4. **No sentence exists to pre-empt a reviewer** unless the later sections need it. Comparisons with hand rules,
+   credits, and scope disclaimers go to related work, the instance, or the evaluation.
+5. **A concept no result uses is cut, even if an earlier decision kept it** (the footprint: Theorem 1 takes
+   signatures as given, so the footprint was instance work dressed as framework, rejected in four framings).
+6. **No gloss by template.** A definition is followed by prose only if a reader would otherwise misread it or not
+   see why it is there; most definitions need nothing after them. A statement may open its own paragraph; a lead-in
+   sentence is written only when the statement would otherwise be abrupt, and is never attached to an unrelated
+   paragraph to avoid a one-sentence paragraph.
+7. **A definition must be informative.** It says what makes its objects belong together and what they are for; a
+   definition that only names a set ("an operation is a set of transformations") is empty, and two constructs where
+   one would do ("a threat model is a set of operations") must be merged or justified by a result that needs both.
+8. **Plan by the gate.** A revision plan lists every paragraph with its job and its user (label). Paragraphs with no
+   user are not in the plan. Report the expected length honestly before writing; if the draft runs over, cut by the
+   gate, never by compressing sentences.
+
 ## Lessons from feedback
 
 Each lesson names the round it came from (dates in the reaction log). Newest evidence wins; delete a lesson the user
@@ -78,7 +109,8 @@ contradicts.
     tell the reader what a defender can now do. (§5 price list, 2026-11-04)
 
 16. **Framework prose: one topic per paragraph, every symbol earns its place.** A formal section may be textbook-like
-    (Pierazzi et al.'s §II is the model: a definition, then a sentence or two of intuition and an example), but each
+    (Pierazzi et al.'s §II is the model: a definition, then intuition or an example only where needed; see the
+    paragraph gate), but each
     paragraph introduces one concept and nothing from the experiments. Introduce a symbol only if a later definition,
     result, or table uses it; gloss a borrowed concept briefly and correctly in its source's terms (the problem space is
     not "what an attacker edits": feature-space attacks edit vectors). An idea raised only to say we do not handle it
@@ -171,8 +203,20 @@ contradicts.
 33. **Lead with the subsection, consolidate concessions, keep statements clean.** A subsection's first paragraph says
     what it defines and proves, with no tour of other sections. A sentence about what the model forgets says why
     nothing is lost (positions reach the features only through items, so the delta records them). A proposition
-    holds only the result; a sentence before it sets up its first equation, and remarks ("but not from the old
+    holds only the result; a sentence before it sets up its first equation when it would otherwise be abrupt (not by
+    reflex; see the paragraph gate), and remarks ("but not from the old
     value") go to the explanation with the reason they matter. (§3.2, 2026-11-07)
+
+34. **Leads in plain words, no LLM-speech.** A subsection's lead says what problem it takes over from the previous
+    subsection and what it computes, with each technical claim spelled out ("deltas are not known in advance": why
+    not; "proves the bound is sound": sound meaning what). No illustrative "such as ..." aside that the next sentence
+    does not use, and no closing sentence that is a lead-in to the next construct. (Sound Directions, 2026-11-08)
+35. **Neutral framework, applications last.** The framework describes how and where features can move; detectors,
+    attackers, and defenders appear only in the consequence (a corollary), never as the subsection's goal.
+    (Sound Directions, 2026-11-08)
+36. **Inherited text gets the same audit as new text.** The paragraph the user stopped at in Sound Directions was
+    inherited from the old draft and passed the simulated review with one low-confidence note; $\theta$, "operation
+    instance", and an empty definition were all there. (Sound Directions, 2026-11-08)
 
 ## Procedure
 
@@ -184,6 +228,8 @@ contradicts.
 2. **Draft one unit** (one paragraph while the lessons are young; larger units as they stop drawing corrections, see
    step 6).
 3. **Self-review before showing**, and fix what it finds:
+   - **First, the paragraph gate** (top of this file) on every paragraph and sentence, new or inherited: write each
+     paragraph's job and its user next to it; delete what has none. Only then the checks below.
    - Read the rendered PDF text of the passage, not the source (lesson 27).
    - Read the paragraph's sentences in order and ask, of each, what question it answers and whether the previous
      sentence raised it (lesson 1). Read first sentences only across the section (flow).

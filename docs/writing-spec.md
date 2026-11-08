@@ -316,3 +316,14 @@ rule it implies (folded into Sections 1-5 if general).
   et al.'s classes so the rest follows; "take a few forms" undersold the point (breadth: many features reduce to the
   shape). After the fixes: "§3.1 has improved enormously based on this round of feedback and editing." Implied:
   the question-first review procedure works; the remaining defects were introduce/name/gloss mechanics (lesson 31).
+- **2026-11-08, Sound Directions (rounds 1-2 of the sprint).** Round 1 (from an 18-paragraph spine): "pretty bad",
+  stopped before Def 9: abrupt lead with a defender's perspective; operation, $\theta$, "operation instance", and
+  threat model unexplained or redundant; Incer et al. and monotone detectors unintroduced; "We ask ..." unnatural;
+  "sort" a bizarre definition; the replacement paragraph and the footprint lead-in purposeless. Round 2: "We're having
+  major problems. You keep writing entire paragraphs that don't mean anything and don't add anything. Its incredibly
+  frustrating ... utterly meaningless rambling." On the round-2 lead: "too much LLM-speech"; drop "such as appending
+  every possible content"; elaborate "deltas are not known in advance"; say what "sound" means; the last sentence
+  "pure gobbledygook". On Def 7: not informative (what makes the transformations a group?); why both operation and
+  threat model?; the last sentence repeats the preliminaries. Implied: every paragraph must pass a job test (the
+  paragraph gate, `paper-prose`), definitions must be informative and non-redundant, the framework is neutral.
+

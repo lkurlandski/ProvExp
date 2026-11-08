@@ -958,6 +958,47 @@ User's reaction to round 2 (2026-11-08, before a full read): "We're having major
 paragraphs that don't mean anything and don't add anything ... utterly meaningless rambling." Asked for a
 paragraph-by-paragraph audit ("why is this paragraph here?"), reported in the session; no edit yet.
 
+**Audit (session 21)**, reported in the chat: about half of round 2 had no job (glosses after Defs 7-10, the
+footprint block, the inputs paragraph, most of the closer); Theorem 1 does not use the footprint.
+
+**User's comments on the round-2 lead and Def 7 (2026-11-08):** lead improved but "too much LLM-speech"; drop "such as
+appending every possible content"; elaborate "deltas are not known in advance"; say what "proves the bound is sound"
+means; the last sentence "pure gobbledygook". Def 7 not informative: what makes the transformations a group? If a
+threat model is a set of operations, why both? Its last sentence repeats the preliminaries. The user also asked for
+the writing skill to be fixed: done (`paper-prose`: the paragraph gate at the top, lessons 34-36, procedure step 3;
+reader model triggers 28-33 and a calibration row; reaction log; memory `paragraph-gate`).
+
+**Round 3 plan (gated: each paragraph with its job and its user).** Answer to Def 7: the theorem needs no grouping; a
+threat model is the set of single edits allowed, with one signature. Operations exist only because the instance writes
+that signature one catalogue row at a time, so they move to §4 (with one sentence there: the instance computes a table
+per row and takes the union, which is sound because each edit belongs to one row, and at least as tight).
+
+| # | Paragraph | Job | User |
+|---|---|---|---|
+| 1 | Lead (4 sentences) | Prop 1 needs an edit's delta; a set of edits has one delta per edit, each depending on the content written and on the input, too many to compute and not fixed until the content is chosen; we compute for every feature the directions any edit of the set can move it, from the item tables and a description of which kinds of item the edits change, with no delta computed; sound = no edit of the set moves a feature in a direction the table excludes. No "such as", no trailing lead-in. | whole subsection |
+| 2 | Def 7 (Threat models and direction tables) | threat model $\mathcal{M}$ = set of transformations (the single edits allowed), whose finite sequences form $\mathcal{T}$; population $F$; direction table; sound; closed. | Thm 1, Cor 1, §4 population, §5 threat models and Tables 6-7 |
+| 3 | One sentence after Def 7 | a sound table is the feature-space constraint $\Omega$ that §2 promised the framework would derive. | §2's closing claim |
+| 4 | Lead-in + Def 8 (Signatures, $\Delta_{\mathcal{M}}(F)$) | by Prop 1(i) the sign follows from which kinds of item are added, removed, rewritten; the definition (with the rewrite's restrictions: free, same key, same length, extension) and "covers". | Thm 1 hypothesis; §4 catalogue |
+| 5 | One sentence after Def 8 | where signatures come from: an edit defined by the items it adds and removes gives them directly; one defined by where it writes gets them from the item tables, which is the instance's work (§4). | §4 ("signatures per file from the item table"); §3 lead's "positions they write" |
+| 6 | Sign sets | sign set, sign sum, abstract interpretation (one clause); each change gives each sum a sign set; the count example (which also shows why a rewrite is listed); appendix table. | Thm 1 hypothesis; Appendix C |
+| 7 | Second step: sums | sign sum for additive sums; the pool rule. No "envelope" in the body. | Thm 1 |
+| 8 | Third step: features, derived table | readout rules (appendix table), the fallback rule from the support; read signs as fixed/up/down/both = the derived table. | Thm 1 |
+| 9 | Theorem 1 | as now, with $\Delta_{\mathcal{M}}(F)$. | §5 Table 6, Cor 1 |
+| 10 | Why it holds | the three facts in plain sentences; closure for sequences (the only place closure is explained). | the reader's "why true" |
+| 11 | Lead-in to Cor 1 | define a monotone detector; Gimenez et al.'s result; negation. | Cor 1 |
+| 12 | Cor 1 | as now. | §5 Table 7 |
+| 13 | Two sentences | a GBDT with monotone constraints is such a score; a score over sums is covered (a sum is a feature under the identity readout). | §4.3, §5's detectors |
+
+Cut, with destinations: Def 7 (operations) and its paragraph (operations -> §4); the footprint lead-in, Def 10, and its
+paragraph (option A of `docs/s33-decision.md`; how EMBER finds the items a write changes -> §4.1); the population
+and closure "why" paragraph; the inputs paragraph (corpus-read sign sets -> §4); the hand-rule and Gimenez contrasts
+(related work); the append example; "envelope" (appendix only). Expected length ~850-950 words (from ~1,940).
+
+Ripples: `_j_proofs.tex` (one signature for $\mathcal{M}$, no union over operations; $E_k$ defined there);
+`_i_symbols.tex` ($o$, $W$, $\mu$ out; $\Delta_{\mathcal{M}}(F)$); research track: §4 operations as catalogue rows
+with the union sentence, write signatures and corpus-read sign sets in §4.1; §6 "margins/footprint" sentence and the
+paper mock (deferred with §4.1).
+
 ### Retro
 
 ## Sprint retro

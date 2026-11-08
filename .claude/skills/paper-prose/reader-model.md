@@ -97,6 +97,28 @@ this file lacked or one the revision did not act on; add or sharpen it, and weak
     "now we're jumping back to (i)!?"; "written without any real plan". Ask: what is this paragraph's one job, does the
     justification follow the parts in order, and does each paragraph move forward?
 
+### Added after Sound Directions (2026-11-08)
+
+28. **A paragraph with no job.** "Entire paragraphs that don't mean anything and don't add anything"; "what is the
+    purpose of this?"; "again, what are you trying to communicate?" Ask, of every paragraph, new or inherited: which
+    later result uses it, or which question of the reader does it answer? A gloss after a definition, a roadmap, a
+    disclaimer, a restated definition: the user reads these as rambling, and they stop reading.
+29. **An empty or redundant definition.** "What about the set of transformations makes us group them?"; "if a threat
+    model is just a set of operations, why do we need both?"; "Def 8's first sentence seems to define 'sort' to mean
+    items are changing". Ask: does the definition say what makes its objects belong together and what they are for?
+    Could one construct replace two?
+30. **Unexplained machinery in a definition.** "Why is $\theta$ needed? 'Indexed by' isn't helpful"; "what's an
+    operation instance?" Ask: is every index, parameter, and coined term needed by a result, and is its purpose in the
+    sentence that introduces it?
+31. **LLM-speech in a lead.** "Too much LLM-speech"; an illustrative aside ("such as appending every possible content");
+    a claim with its reason missing ("deltas are not known in advance"); "proves that the bound is sound" with sound
+    undefined; a last sentence that is "pure gobbledygook". Ask: does each sentence of the lead state something the
+    reader can check?
+32. **Perspective.** "Takes the defender's perspective"; the framework should be neutral (how and where features
+    move). Ask: is the subsection's goal stated without attackers or detectors?
+33. **A repeated sentence from preliminaries.** "The last sentence just repeats what's already been covered by the
+    preliminaries." Ask: does any sentence restate §2 without adding to it?
+
 ### Mechanics (small, but reliably noticed)
 
 22. Appendices or sections referenced out of order; a missing comma after an appositive; colon placement inside a
@@ -114,3 +136,4 @@ this file lacked or one the revision did not act on; add or sharpen it, and weak
 | Round | Predicted (step 1) | Rejected in step 3 | User comments on improved version: missed / fell short / introduced / new taste | Notes |
 |---|---|---|---|---|
 | §3.2 (2026-11-07) | 15 (P1-P15) | 0 of 8 plan items | 4 / 6 / 6 / 1 (+1 design note) | Problems found were real; per-comment patching added unplanned paragraphs. Round 2 from a paragraph spine: "quite satisfied", only hand edits for terseness. |
+| Sound Directions (2026-11-08) | 26 (P1-P26) | 0 of 18 spine items (Q2 changed: keep the symbol) | round 1: 9 / 3 / 5 / 1 (stopped before Def 9); round 2: "paragraphs that don't mean anything", stopped again | The review flagged real problems but scanned inherited text lightly and planned a gloss after every definition. Gate added (SKILL.md, top). |
