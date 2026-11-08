@@ -46,6 +46,8 @@ this file lacked or one the revision did not act on; add or sharpen it, and weak
    don't we re-apply formulas?" Ask: is each capability claim literally true, including what is still computed?
 8. **Abstraction with nothing to picture.** §3.2 without examples was incomprehensible; Algorithm 1 fixed §3.1.
    Ask: could the reader draw or write code for this concept? If not, a generic listing or a two-line case helps.
+   But only for unfamiliar *structure*: a worked example of arithmetic the reader can follow ("delete the record of
+   length 5", max of {5, 3}) "largely fails" and is "more work than thinking about the math" (§3.2, 2026-11-07).
 9. **Equation numbers or pointers used as arguments.** "What the hell is pi (1)"; "(5) applied to (7)". Ask: does
    any sentence lean on \eqref or a section pointer instead of saying the thing?
 10. **Concepts stacked before motivation.** "Why would we avoid re-extraction?" Six concepts with no purpose read as
@@ -77,6 +79,24 @@ this file lacked or one the revision did not act on; add or sharpen it, and weak
 20. **Software virtues as assumptions.** "Honest tools" -> "honest computers, honest physics".
 21. **Needless analogy or domain word.** "As Σ combines with +"; "parses". Ask: does the clause add anything?
 
+### Added after §3.2 (2026-11-07)
+
+23. **Pointers without need.** "References past and future parts of the framework without good reason"; "no need
+    for a forward reference to 3.3". Ask: does the reader need the other section to follow this sentence? If not, cut
+    the pointer (a lead has at most one).
+24. **A concession with no consolidation.** "Feels like we're admitting to a significant limitation ... without any
+    consolidation". Ask: does a sentence about what the model forgets or cannot do also say why nothing is lost or
+    where it is handled?
+25. **A formal statement with no lead-in, or a wrong joint.** Prop 1 "feels abrupt"; "In particular" before parts
+    that are consequences, not special cases. Ask: does the sentence before a statement set up its first equation,
+    and does the joint word match the logic?
+26. **A remark inside a statement.** "Which the item table ... determine, but ... do not": "important, or word
+    salad?" Ask: is every clause of a proposition part of the result? Negative remarks go to the explanation, with why
+    they matter.
+27. **A paragraph with several jobs, or one that jumps back.** "Summarizes, relates to side effects, and justifies";
+    "now we're jumping back to (i)!?"; "written without any real plan". Ask: what is this paragraph's one job, does the
+    justification follow the parts in order, and does each paragraph move forward?
+
 ### Mechanics (small, but reliably noticed)
 
 22. Appendices or sections referenced out of order; a missing comma after an appositive; colon placement inside a
@@ -93,4 +113,4 @@ this file lacked or one the revision did not act on; add or sharpen it, and weak
 
 | Round | Predicted (step 1) | Rejected in step 3 | User comments on improved version: missed / fell short / introduced / new taste | Notes |
 |---|---|---|---|---|
-| (seed, no round yet) | | | | |
+| §3.2 (2026-11-07) | 15 (P1-P15) | 0 of 8 plan items | 4 / 6 / 6 / 1 (+1 design note) | Problems found were real; per-comment patching added unplanned paragraphs. Round 2 from a paragraph spine. |

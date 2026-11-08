@@ -101,6 +101,9 @@ contradicts.
     Revised (2026-11-06): abstraction with nothing to picture fails (§3.2, 2026-11-05). A short, format-neutral
     pseudocode listing is the right kind of example in a theory section: §3.1's Algorithm 1 (three loops, `+=`/`max`
     updates, readouts at the end) grounded items, contributions, and readouts at once. Domain examples stay out.
+    Limited (2026-11-07): an example earns its place only where the reader cannot picture the structure. A worked
+    example of arithmetic the reader can follow (deleting a record and updating the sums; max of {5, 3}) "largely
+    fails"; say the point in words instead.
 21. **A definition must stand without glossing.** If a defined notion needs a paragraph of informal explanation to
     make sense ("identity: how the extractor reaches the item"; "positions that decide whether an item exists"), it
     is "wet clay" and a leaky abstraction. Define only what later results use, in terms already defined (content is
@@ -160,6 +163,16 @@ contradicts.
     $+$"). A paragraph built on a cited concept opens with the cited distinction itself (Gray et al.'s two classes),
     and the rest follows from it. Frame a list of instances by its purpose: "many kinds of features reduce to this
     shape" (breadth), not "readouts take a few forms". (§3.1 round 2, 2026-11-06; verdict: "improved enormously")
+
+32. **A revision is planned as a paragraph spine, not as patches.** After a review, list the paragraphs the revised
+    unit will have, each with its one job, and map the comments onto them. Patching per comment added a pointer tour,
+    an example, and two closers that "were written without any real plan" (§3.2 round 1, 2026-11-07); the spine-based
+    round 2 fixed it. Every paragraph needs a reason to exist, and an explanation of a result follows its parts in order.
+33. **Lead with the subsection, consolidate concessions, keep statements clean.** A subsection's first paragraph says
+    what it defines and proves, with no tour of other sections. A sentence about what the model forgets says why
+    nothing is lost (positions reach the features only through items, so the delta records them). A proposition
+    holds only the result; a sentence before it sets up its first equation, and remarks ("but not from the old
+    value") go to the explanation with the reason they matter. (§3.2, 2026-11-07)
 
 ## Procedure
 

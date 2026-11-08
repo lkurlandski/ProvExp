@@ -199,16 +199,12 @@ contribution. The rest of this section computes from the item table.
 \subsection{Edits and Their Side Effects}
 \label{sec:fw:side-effects}
 
-% Spine: docs/framework-design.md, Section 12 (approved 2026-11-05). Revised 2026-11-07 in the review sprint
-% (docs/sprint-framework-review.md, plan items 1-8): motivation first, the example from Algorithm 1, Prop 1 as a list.
-An edit applies a transformation $T$ to an input $z$ and gives $z' = T(z)$. The direct way to find its side effects is
-the one attacks use (\Cref{sec:background}): apply the edit, extract the features of $z'$, and compare them with those
-of $z$. The answer is exact, and it is the ground truth against which \Cref{sec:evaluation} checks our computations.
-It gives only the difference, however. It does not say which part of the edit moved each feature, and it needs $z'$,
-so it says nothing about the edits that one operation of a threat model allows, such as adding content the attacker
-chooses later, for which there is no single $z'$ to extract (\Cref{sec:fw:directions}). This subsection describes an
-edit by the items it removes and adds and computes the sums of $z'$ from this description and the item table of $z$
-by arithmetic, after which only the readouts that read a changed sum are evaluated again.
+% Spine: docs/framework-design.md, Section 12 (approved 2026-11-05). Revised in the review sprint
+% (docs/sprint-framework-review.md): round 1 2026-11-07, round 2 2026-11-08 from a six-paragraph spine (no example).
+An edit applies a transformation $T$ to an input $z$ and gives $z' = T(z)$. Its side effects are usually found by
+applying the edit and extracting the features of $z'$. This subsection describes an edit instead by its delta, the
+items it removes and adds, and proves that the delta and the item table of $z$ give the sums and the modeled features
+of $z'$ exactly, and with them the side effects of the edit, before the edit is applied.
 
 \definition[Item delta]
 \label{def:fw:delta}
@@ -219,71 +215,71 @@ $I^- \subseteq \pi(z)$ and
   \label{eq:fw:delta}
   \pi(z') = \big(\pi(z) - I^-\big) \uplus I^+,
 \end{equation}
-where $-$ removes each element of $I^-$ once for each time it occurs there. The items in $I^-$ are \emph{removed} and
-those in $I^+$ are \emph{added}.
+where $-$ removes each element of $I^-$ once for each time it occurs there and $\uplus$ adds each element of $I^+$ for
+each time it occurs there. In other words, the items in $I^-$ are \emph{removed} from $\pi(z)$ and those in $I^+$ are
+\emph{added}.
 }
 
 \noindent A delta records kinds and contents, not positions. An item that moves without changing its content is in
 neither part, and an item whose content changes is one removal and one addition. The features lose nothing by this,
-since they see the input only through its items (Definition~\ref{def:fw:extractor}). Positions matter only where the
-extractor reads them. An item's content may hold a position, such as the location of another item, and then moving
-the other item changes this content. The positions an edit writes also decide which items the extractor finds, which
-\Cref{sec:fw:edits} takes up. An edit can have several deltas, since an unchanged item can be listed as both removed
-and added, and the results below hold for each of them.
+since they see the input only through its items (Definition~\ref{def:fw:extractor}), and positions reach them only
+through items as well. A position that an item stores is part of its content, and a write that changes which items
+the extractor finds changes $\pi(z)$, so the delta records both effects.
 
-Many transformations are stated by the items they change, such as adding or removing a record, and their definitions
-give the delta. Take an input of the extractor in \Cref{alg:fw:extractor} with two records, of lengths 5 and 3, and
-delete the first record. The delta removes the record, the five element items at its positions, and the tokens inside
-it, and adds nothing. Every item after the deleted record moves but keeps its content, so it is in neither part. This
-assumes that tokens lie inside records, so that the deletion cannot join the end of one token to the start of
-another. \Cref{sec:fw:edits} treats edits where it can.
+The delta splits the items of $z$ into those the edit keeps and those it removes, and the items of $z'$ into the same
+kept items and the added ones. The kept items contribute the same to both inputs, and the fold does not depend on the
+order of its terms, so the sums of either input are the fold of the kept items combined with the fold of the removed
+or of the added items.
 
 \proposition[Exact side effects]
 \label{prop:fw:side-effects}
 {
 Let $\varphi$ be a sum-then-readout extractor over $J$, let $(I^-, I^+)$ be a delta of $(z, z')$, and let
-$B = \pi(z) - I^-$ be the items the edit keeps. Then $\mathbf{s}(z) = \sigma(B) \oplus \sigma(I^-)$ and
-$\mathbf{s}(z') = \sigma(B) \oplus \sigma(I^+)$. In particular, writing $s_k(z)$ for the value of sum $k$ in
-$\mathbf{s}(z)$,
+$B = \pi(z) - I^-$ be the items the edit keeps. Then
+\[
+  \mathbf{s}(z) = \sigma(B) \oplus \sigma(I^-)
+  \qquad \text{and} \qquad
+  \mathbf{s}(z') = \sigma(B) \oplus \sigma(I^+).
+\]
+Consequently, writing $s_k(z)$ for the value of sum $k$ in $\mathbf{s}(z)$,
 \begin{enumerate}[label=(\roman*), leftmargin=*, nosep]
   \item every additive sum $k$ satisfies $s_k(z') = s_k(z) + \sigma(I^+)_k - \sigma(I^-)_k$;
-  \item every pool $k$ satisfies $s_k(z') = \sigma(B \uplus I^+)_k$, which the item table of $z$ and the delta
-    determine, but $s_k(z)$ and the delta in general do not;
+  \item every pool $k$ satisfies $s_k(z') = \sigma(B \uplus I^+)_k$, the largest or, in a min pool, the smallest
+    contribution of the kept and the added items;
   \item every modeled feature $j \in J$ satisfies $\varphi_j(z') = \rho_j(\mathbf{s}(z'))$, and
     $\varphi_j(z') = \varphi_j(z)$ unless an item of $I^-$ or $I^+$ contributes a value other than the neutral element
     to a sum in the support $K_j$.
 \end{enumerate}
 }
 
-\noindent In words, the sums of the edited input are the old sums with the contributions of the removed items taken
-out and those of the added items put in, and its modeled features are the readouts of these sums. The side effects
-$\boldsymbol{\eta} = \varphi(z') - \varphi(z) - \boldsymbol{\delta}^*$ of an edit that aimed at the change
-$\boldsymbol{\delta}^*$ (\Cref{sec:background}) are therefore exact on the modeled features. The proposition holds
-because the kept items have the same kinds and contents in both inputs, so they contribute the same to both, and
-because the fold ignores order, so it can combine their contributions first and the others afterwards. An additive sum
-takes out a removed item's contribution by subtraction, which is part (i). Databases maintain stored totals over a
-table in the same way, updating them from the inserted and deleted rows instead of recomputing them, a technique known
-as incremental view maintenance~\cite{gupta1995maintenance,koch2014dbtoaster}. Part (iii) holds because a readout
-depends only on the sums in its support.
+\noindent The two decompositions hold because $\pi(z) = B \uplus I^-$ and $\pi(z') = B \uplus I^+$, and folding a union
+of multisets combines their folds. Part (i) follows on an additive sum, where every value is a real number: subtracting
+the contribution of the removed items from $s_k(z)$ leaves that of the kept items, and adding the contribution of the
+added items gives $s_k(z')$. Part (ii) is the second decomposition read on a pool, which cannot be updated in the same
+way, since the maximum has no subtraction. The old maximum does not say whether a removed item held it, nor which
+contribution is the largest among those that remain, and the same holds for a minimum. The item table of $z$ lists the
+contribution of every item, hence of the kept ones, and the contribution functions give those of the added items. This
+is why the item table keeps every item and not only the sums. When the edit removes nothing, $B = \pi(z)$, and the old
+value combined with the contributions of the added items suffices. In part (iii), the first claim is
+Definition~\ref{def:fw:extractor} for $z'$. The second follows from Definition~\ref{def:fw:readout}: a readout depends
+only on the sums in its support, and if no item of the delta contributes anything but the neutral element to them, these
+sums are the same in $z$ and $z'$.
 
-In the example, part (i) lowers \textit{records} by 1 and \textit{size} by 5, so $x_1$ goes from 4 to 3. A pool has
-no subtraction. The deletion lowers \textit{largest} from 5 to 3, and the item table shows this, since it lists the
-remaining record. The old value alone cannot: an input with two records of length 5 has the same \textit{largest}, and
-deleting one of them leaves it at 5. Part (ii) therefore recomputes a pool over the kept and the added items, except
-when nothing is removed, and then the old value and the added items suffice.
+The proposition gives the side effects of an edit exactly. An edit that aimed at the change $\boldsymbol{\delta}^*$
+has the side effects $\boldsymbol{\eta} = \varphi(z') - \varphi(z) - \boldsymbol{\delta}^*$ (\Cref{sec:background}).
+The features $\varphi(z)$ are known and $\boldsymbol{\delta}^*$ is the attacker's own target, so $\boldsymbol{\eta}$ is
+exact wherever $\varphi(z')$ is, and part (iii) gives $\varphi_j(z')$ for every modeled feature as the value the
+extractor itself returns on $z'$, not an estimate of it. The reason is that Definition~\ref{def:fw:extractor} defines
+the class by this computation. A modeled feature is the readout of the folded contributions of its input's items, and
+the proposition folds the contributions of the same items, only in a different order. Part (iii) also says which
+features can have side effects at all: only those whose support contains a sum to which an item of the delta
+contributes. On the residual features the proposition says nothing.
 
-The result is exact, not an estimate, because Definition~\ref{def:fw:extractor} defines the class by this computation.
-A modeled feature's value is the readout of the folded contributions, so updating the sums and applying the readouts
-returns what extracting the features of $z'$ would. The computation reads the item table of $z$ and the delta. It
-updates only the sums to which an item of the delta contributes and evaluates again only the readouts whose support
-contains one of them. Nothing is extracted from $z'$, and an edit stated in items need not be applied at all, since its
-definition gives the delta from $z$. Extraction can be expensive, and the update touches only part of the sums and
-features, so it can also be cheaper. On the residual features the proposition says nothing.
-
-Part (i) writes the change of an additive sum as a total over the contributions of the delta's items, so its sign can
-be known when only the kinds of the changed items are known, and not their contents. Adding items of any content
-cannot lower a count, for instance, since each item contributes 1 or nothing to it. \Cref{sec:fw:directions} bounds in
-this way the direction in which every sum and feature can move under each operation of a threat model.
+Computing the features of $z'$ this way can also be cheaper than extracting them. The update needs only the item table
+of $z$ and the delta, changes only the sums to which an item of the delta contributes, and evaluates again only the
+readouts whose support contains one of these sums. Databases keep stored aggregates current in the same way: a view
+that totals a table is updated from the inserted and deleted rows instead of being recomputed, a technique known as
+incremental view maintenance~\cite{gupta1995maintenance,koch2014dbtoaster}, and part (i) is its rule for totals.
 
 \subsection{Edits Given as Writes}
 \label{sec:fw:edits}

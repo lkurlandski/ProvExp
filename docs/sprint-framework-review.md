@@ -48,8 +48,12 @@ the other subsection early; each is handled in its own subsection's session (ste
   lead ("before the edit is applied"; readouts are evaluated again). (from §3.1, session 17; handled in §3.2 plan item 1)
 - §3.3's first sentence ("Many transformations are given by the elements they write ...") answered §3.2's stranded
   pointer paragraph, which the §3.2 plan removes; check that §3.3 still opens well. (from §3.2, session 18)
-- §3.3 could continue §3.2's record-deletion example from Algorithm 1: a deletion that joins two tokens across the
-  gap is a write whose effect reaches past the written positions. (from §3.2, session 18)
+- (withdrawn: §3.2 no longer has the record-deletion example.)
+- §3.3 states where a delta comes from (item-stated edits give it by their definition; writes need §3.3); §3.2 no
+  longer says it. (from §3.2 round 2, session 18)
+- §3.4 makes the "sign from the kinds alone" argument itself; §3.2's closer that previewed it is cut. (from §3.2
+  round 2, session 18)
+- Framework-wide: decide whether to drop residual features (U10), after §3.4.
 
 ## §3.2 Edits and Their Side Effects
 
@@ -177,9 +181,125 @@ glossed). `make check`: no undefined refs; one 1.7pt overfull vbox on the last a
 in §3.2). No "??".
 
 ### 5. User's first read
+
+2026-11-07 (verbatim in the session; condensed here, one line per comment, U1-U18).
+- U1 ¶1: long and unfocused, references past and future parts without reason; fails to introduce or summarize.
+- U2 Def 6: "quite good"; the user added a gloss of $\uplus$ by hand.
+- U3 ¶2: when, where, and why positions matter is confusing; reads as admitting a significant limitation with no
+  consolidation; three sentences for one point.
+- U4 ¶2: "an edit can have several deltas" is obvious, its reason is not visibly connected to it; value unclear.
+- U5 ¶3: the first sentence reads oddly.
+- U6 ¶3: the example reads oddly and is probably unnecessary; the concept is simple.
+- U7 ¶3: "no idea" what the tokens-inside-records caveat means.
+- U8 ¶3: no need for the forward reference to §3.3.
+- U9 Prop 1: abrupt; the paragraph before does nothing to lead into it, and ¶1 did not outline the subsection.
+- U10 Prop 1: consider dropping residual features from the framework altogether (fewer "over J", "modeled"); decide
+  after reading the whole framework; note only.
+- U11 Prop 1: do (i)-(iii) follow from the decomposition? "In particular" is a poor transition.
+- U12 Prop 1 (ii): the second half ("which the item table ... determine, but ...") is unclear; important or word salad?
+- U13 ¶4: not clear how the proposition gives exact side effects.
+- U14 ¶4: the plain-language explanation undersells the exactness.
+- U15 ¶4: justify (i), (ii), (iii) in order; the databases remark is "really cool" but interferes where it is.
+- U16 ¶4: does three jobs (summary, side effects, correctness); reorganize.
+- U17 ¶5: the example fails; §3.1 needed one to picture the extractor, here the math is self-explanatory.
+- U18 ¶6-7: jump back to side effects and to part (i); "gobbledygook"; written without a plan; every paragraph needs a
+  reason to exist.
+
 ### 6. Classification and plan
+
+| Comment | Class | What the reader model or lessons should have said |
+|---|---|---|
+| U1 | introduced | Lesson 27 already says a lead has at most one pointer; plan item 1 added three (§2, §5, §3.4). |
+| U2 | missed (M) | Lesson 31: every operator gets a sentence; $\uplus$ had none. |
+| U3 | fell short | P3 fixed the staging but kept three sentences; new trigger: a passage that reads as a concession must say how the framework handles it. |
+| U4 | fell short | P4 flagged it; the fix gave a reason instead of cutting. Prop 1 already says "a delta"; the sentence served only §3.3. |
+| U5 | fell short | P5 flagged the stranded paragraph; its first sentence survived as the example's opener. |
+| U6, U17 | introduced / new taste | Plan items 3 and 5. An example earns its place where the reader cannot picture the structure (§3.1), not for arithmetic the reader can follow. Revise lesson 20 and trigger 8. |
+| U7 | introduced | A caveat needed only to keep the example correct; it shows the example cost more than it gave. |
+| U8 | introduced | Same as U1. |
+| U9 | missed | New trigger: a formal statement needs a lead-in sentence that sets up its first equation. |
+| U10 | design note | Framework-wide; recorded below, decide after §3.4. |
+| U11 | missed | "In particular" for parts that are consequences, not special cases; the statement did not show how they follow. |
+| U12 | missed | A negative claim ("but not from ...") inside a statement; it belongs in the explanation, with its reason (why the table keeps every item). |
+| U13, U14 | fell short | P8 moved $\boldsymbol{\eta}$ up but never said why exact equals what the extractor computes. |
+| U15, U16 | fell short | P11 glossed IVM inside the proof sketch; no paragraph plan, so one paragraph did three jobs. |
+| U18 | introduced | Plan items 6-7 rewrote paragraphs without a paragraph spine (procedure step 1 skipped for a revision). |
+
+Totals: missed 4, fell short 6, introduced 6 (U6/U17 also new taste), design note 1. Severity: the structural ones (U1,
+U9, U16, U18) dominate. Main cause: the revision was planned per comment, not per paragraph, so it added material
+(motivation tour, example, closer) without a spine.
+
+**Answers to the user's questions.**
+- U4: an edit has several deltas because an unchanged item can be put in both $I^-$ and $I^+$ and cancel. The sentence
+  existed because §3.3's lemma produces such deltas (it removes and re-adds every item near a write, changed or not).
+  Prop 1 already says "let $(I^-, I^+)$ be *a* delta", so nothing needs the sentence. Cut.
+- U11: yes. (i): on an additive sum, subtract the removed items' contribution from the first decomposition and add the
+  added items' (both are real numbers there). (ii): the second decomposition read on a pool. (iii): Definition 5 for
+  $z'$; then Definition 4: a readout sees only its support.
+- U12: it says that a pool's new value can be computed from the list of individual contributions (the item table) but
+  not from the old pool value alone. It matters, because it is why the item table stores every item rather than only
+  the totals, but it is a remark, not part of the result: move it to the explanation of (ii).
+- U13: $\boldsymbol{\eta} = \varphi(z') - \varphi(z) - \boldsymbol{\delta}^*$; $\varphi(z)$ is known and
+  $\boldsymbol{\delta}^*$ is the attacker's target, so $\boldsymbol{\eta}$ is exact wherever $\varphi(z')$ is. Part
+  (iii) gives $\varphi_j(z')$ as the value the extractor itself returns, because a modeled feature is *defined* as the
+  readout of the folded contributions (Def 5): updating the sums folds the same contributions in another order.
+
+**Plan: a paragraph spine for §3.2 (six paragraphs, no example).**
+1. (U1) ¶1, two to three sentences, no pointers: what an edit is; side effects are usually found by applying the edit
+   and extracting the features of $z'$; this subsection defines the delta (the items removed and added), proves that
+   the delta and the item table of $z$ give the sums and modeled features of $z'$ exactly, and with them the side
+   effects, before the edit is applied.
+2. (U2) Def 6 with the user's gloss of $\uplus$ (rewrapped only).
+3. (U3, U4, U5-U8) ¶2, one point: a delta keeps kinds and contents and forgets positions, and the features lose nothing,
+   since positions reach them only through items: a stored position is content, and a write that changes which items
+   exist changes $\pi(z)$, so both appear in the delta. Cut the several-deltas sentence, the example paragraph, and
+   the forward reference.
+4. (U9) Lead-in to Prop 1, one or two sentences (end of ¶2 or its own short paragraph): the kept items contribute the
+   same to $z$ and $z'$ and the fold ignores order, so the sums of either input are the fold of the kept items combined
+   with the removed or the added ones.
+5. (U11, U12) Prop 1: the two decompositions, then "Consequently," (i) per additive sum; (ii) per pool,
+   $s_k(z') = \sigma(B \uplus I^+)_k$, the largest (smallest) contribution of the kept and added items; (iii) as now.
+   The negative claim leaves the statement.
+6. (U15, U16) ¶3, why it holds, in the order (i), (ii), (iii): decompositions; subtraction; a pool's old value does not
+   say what remains ({5, 3} and {5, 5}, one clause), so recompute from the item table, which is why the table keeps
+   every item, and only additions update from the old value; readouts see only their support.
+7. (U13, U14) ¶4, exact side effects: $\boldsymbol{\eta}$ from $\varphi(z')$; why the value equals the extractor's
+   own (same contributions, folded in another order); (iii) also says which features can have side effects at all;
+   residual features: one clause.
+8. (U15, U18) ¶5, cost, with the databases remark: the update needs only the item table and the delta and touches only
+   the sums a delta item contributes to and the features that read them, so it can be cheaper than extraction;
+   databases keep stored totals current the same way, from inserted and deleted rows (incremental view maintenance).
+   Old ¶5-7 cut.
+
+Ripples: §3.4 must make the "sign from the kinds alone" argument itself (the old closer is cut); §3.3 states where a
+delta comes from (item-stated edits give it by definition, writes need §3.3), since §3.2 no longer says it. The
+record-deletion ripple is withdrawn.
+
+**Framework-wide note (U10, decide after §3.4):** drop residual features from the framework (assume every feature is
+modeled; handle the residual ones in §4/§5 as an implementation matter), which would remove "over $J$", "modeled",
+and the residual clauses from Def 5, Prop 1, and §3.3-3.4.
+
 ### 7-8. Feedback and implementation
+
+2026-11-08. Plan approved as proposed; Q1 as recommended (the lead-in to Prop 1 is its own short paragraph). The user
+doubted the {5, 3} example ("no need to show how max and min behave with real numbers"; left to Claude): replaced by
+one sentence in words (the old maximum does not say whether a removed item held it, nor which contribution remains
+largest). Implemented in one pass from the six-paragraph spine; ~990 -> ~820 words. New prose: ¶1, ¶2 (positions as a
+strength), the lead-in paragraph, Prop 1's consequences, the why-it-holds paragraph, the exact-side-effects paragraph,
+the cost paragraph with incremental view maintenance. `make check`: no undefined refs; the 1.4pt overfull vbox is on the
+ethics/open-science page.
+
 ### Retro
+
+- Counts (round 1 residuals): missed 4, fell short 6, introduced 6, new taste 1, design note 1; false alarms 0 (all 8
+  plan items approved). The step-1 review found real problems (P1, P3-P5, P8, P11 all recurred in the user's read) but
+  the fixes were planned per comment, not per paragraph, so the revision added unplanned paragraphs (the pointer-tour
+  lead, the example, two closers) that produced six new defects.
+- What worked in round 2: a paragraph spine in the plan, each paragraph with one job; answering the questions in
+  words before planning.
+- Change: a revision plan is a paragraph spine (one line per paragraph, its single job), never a list of per-comment
+  patches; any paragraph the plan adds must name its job. Examples only where the reader cannot picture the structure.
+- Reader model: triggers 8 (revised), 23-27 (new); calibration row added. `paper-prose`: lessons 20 (revised), 32-33.
 
 ## §3.3 Edits Given as Writes
 

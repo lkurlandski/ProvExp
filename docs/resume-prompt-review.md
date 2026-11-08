@@ -1,10 +1,10 @@
 # Resume: the §3 review sprint (ProvExp, writing track)
 
 Paste this into a fresh session. It picks up the review sprint over §3.2, §3.3, and §3.4 of the manuscript.
-**Current position: §3.2, step 5** (steps 1-4 done in session 18: the user reads the revised §3.2 next; then
-classify their comments, step 6, as in `docs/sprint-framework-review.md`; the "Start here" list below describes steps
-1-2, reuse it for §3.3). Update the "Current position" line and the
-"Where things stand" list at the end of every session.
+**Current position: §3.3, step 1** (§3.2 finished in session 18, two rounds; the "Start here" list below describes
+steps 1-2 for §3.2: apply it to §3.3, `sec:fw:edits`, Lemma 1, spine in `docs/framework-design.md` Section 13, and
+handle the §3.3 Ripples in the log first). New since §3.2: plan a revision as a paragraph spine (lesson 32), not as
+per-comment patches; examples only for unfamiliar structure (lesson 20, limited); reader-model triggers 23-27.
 
 ## What the sprint is
 
@@ -76,6 +76,7 @@ protocol, the formats, and the classification rules are in `docs/sprint-framewor
   `8bd8dc9`, `8dcaa42`). §3.2: not started. §3.3, §3.4: not started.
 - 2026-11-07 (session 18): §3.2 steps 1-4. Simulated review P1-P15 and the 8-item plan in the log; plan approved
   unchanged (Q1: Algorithm 1 is the encouraged kind of example; Q2: length ~990 words accepted, trim later);
-  implemented in one pass. Waiting on: the user's first read of §3.2 (step 5).
-- Ripples open: two, both for §3.3 (its first sentence after §3.2's pointer paragraph was removed; continue the
-  record-deletion example). The "without extracting them" ripple is resolved.
+  implemented in one pass. The user's first read (U1-U18): 4 missed, 6 fell short, 6 introduced, 1 new taste;
+  round 2 (2026-11-08) rewritten from a six-paragraph spine, no example. §3.2 done pending the user's next read.
+- Ripples open: §3.3 says where a delta comes from (its first sentence); §3.4 makes the "sign from the kinds alone"
+  argument itself; framework-wide, decide after §3.4 whether to drop residual features (user's note).

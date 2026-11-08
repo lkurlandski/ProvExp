@@ -97,6 +97,17 @@ side of detail and cut later.
 What the user accepted or rejected on real drafts, newest first. Each entry: the sentence or choice, the verdict, the
 rule it implies (folded into Sections 1-5 if general).
 
+- **2026-11-07, §3.2 first read of the sprint-revised version (U1-U18 in `docs/sprint-framework-review.md`).** Def 6
+  "quite good" (the user glossed $\uplus$ by hand). ¶1 "long and unfocussed", references other sections without
+  reason, fails to introduce the subsection. The positions paragraph reads as "admitting to a significant limitation
+  ... without any consolidation"; "an edit can have several deltas" obvious and its reason unconnected. The example
+  from Algorithm 1 "largely fails": §3.1 needed one to picture the extractor, here "the math is somewhat
+  self-explanatory"; the tokens caveat incomprehensible; no forward reference needed. Prop 1 abrupt; "In particular" a
+  poor joint; (ii)'s "but not from the old value" unclear ("word salad?"). The explanation paragraph did three jobs;
+  justify (i)-(iii) in order; the databases remark "really cool" but misplaced. The last two paragraphs "gobbledygook",
+  "written without any real plan". Round 2 (2026-11-08) from a six-paragraph spine, plan approved; the {5, 3} example
+  also dropped at the user's suggestion. Implied: lessons 32-33, lesson 20 limited.
+
 - **2026-11-06, §2 review (written comments; plan approved, then implemented).** (1) Again: state Pierazzi et
   al.'s ideas as fact with a citation, not "Pierazzi et al. name/write ...", "Their account of ...". (2) Clarify what
   makes an attack feature- or problem-space (can a problem-space attack search in feature space?); answer: what it
