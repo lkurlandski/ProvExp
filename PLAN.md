@@ -65,7 +65,7 @@ removed, the §3 lead reframed (side effects before the edit is applied; §3.3 a
 items). Harness: `paper-prose` lessons 30-31, procedure steps 7 (revising after a review) and 8 (simulated review).
 
 Sprint progress (2026-11-08, session 18): §3.2 done and accepted in two rounds (round 1 from per-comment patches drew 17 residual
-comments; round 2 rewritten from a paragraph spine). Next: §3.3, step 1. Open, framework-wide: whether to drop residual
+comments; round 2 rewritten from a paragraph spine). §3.3 steps 1-4 done (session 19, 2026-11-08: simulated review, spine approved, rewritten); next: the user's first read of §3.3. Open, framework-wide: whether to drop residual
 features (decide after §3.4).
 
 Next, in order (writing track): **the review sprint** (`docs/sprint-framework-review.md`; resume with
