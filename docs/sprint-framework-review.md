@@ -954,6 +954,10 @@ only within $W$"; the footprint gloss places the append's footprints after the g
 stages in §3.1); the detector part opens neutrally ("A sound table also yields detectors") and defines monotone.
 Rendered ~1,940 words (texcount), longer than round 1. `make check` clean, no "??".
 
+User's reaction to round 2 (2026-11-08, before a full read): "We're having major problems. You keep writing entire
+paragraphs that don't mean anything and don't add anything ... utterly meaningless rambling." Asked for a
+paragraph-by-paragraph audit ("why is this paragraph here?"), reported in the session; no edit yet.
+
 ### Retro
 
 ## Sprint retro
