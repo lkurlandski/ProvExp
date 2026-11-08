@@ -1,10 +1,14 @@
-**2026-11-08 (session 19, writing track): §3.3 through sprint steps 1-4.** Simulated review (P1-P22: no reason
-given for the lemma when $z'$ is at hand; Def 7 one 110-word sentence; fixed layout with no purpose; a concession with
-no consolidation; Lemma 1 abrupt and dense; two math gaps: "every kind" under "a local kind", structure positions
-"in the item table"). Ten-paragraph spine approved with Q1-Q2 as recommended; implemented in one pass (Lemma 1 now a
-main claim + (i)-(iii), proof rewritten, §3.4 cites (ii)). ~1,560 rendered words, over the planned 850-950. Next: the
-user's first read of §3.3 (step 5). Note for the research track: §4 says "locating positions" for structure
-positions. Nothing pushed.
+**2026-11-08 (session 19, writing track): §3.3 through sprint steps 1-8, then halted for a decision.** Round 1
+(simulated review P1-P22, ten-paragraph spine, rewritten, commit `5e7447c`): the user lost the thread at Def 7
+(U1-U18; classified 4 missed, 6 fell short, 4 introduced, 3 new taste). Round 2, items 1-4 only (lead, Def 7 written
+set, Algorithm 2 located/scanned, structure positions and margins, three cases, Def 8 local kinds; `61eb5fa`): the
+user questioned whether §3.3 should exist (PE-oriented, no standalone value, "locates" new to the framework,
+located/scanned "made no sense"), while hoping the problem is presentation. Claude: partly right (no standalone value
+as a subsection; parsing framing), partly not (§5's derived-vs-hand corrections rest on locating positions; the issue
+exists in any format where content says where other content lies); options A (drop), B (fold into §3.4, formal part
+to the appendix; recommended), C (short subsection). **Next: a dedicated analysis session with
+`docs/resume-prompt-s33-decision.md`** before any further edit; §3.3 in the manuscript is half round-2 (items 1-4 new,
+rest round-1 below `% ROUND 2`). Nothing pushed.
 
 # Status
 

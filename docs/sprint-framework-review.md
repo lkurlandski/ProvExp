@@ -566,6 +566,24 @@ introduces structure positions and then the margin from it, a paragraph with the
 that change no structure position; writes that change one, not predicted), and Def 8 (Local kinds) with only the two
 conditions and the margin's requirements as a last sentence. The rest of §3.3 is still the round-1 text (comment
 `% ROUND 2` marks the boundary). `make check` clean.
+User's read of items 1-4 (2026-11-08, message cut off at the end): "pretty unhappy"; questions whether the
+subsection should exist. It adds a property to the sum-then-readout extractor (how it finds items) and formalizes it,
+and that behavior feels specific to PE or executable formats; "if all we're doing is providing a formalized description
+of EMBER features for PE files, then we've failed". Gave up after ¶1: "locates" appears nowhere else in the framework;
+the motivation "because we need it for the next subsection" is not enough: "every subsection should be able to stand
+on its own". The paragraph after Def 7 is obvious and unimportant. The located/scanned distinction "made no sense"
+(should have been said in the previous round). "Soup"; "pointless formalization of something completely unimportant".
+Claude's recommendation (in the session): drop §3.3 as a subsection; the signature of an operation becomes an input
+of §3.4 (as $\Gamma$ is in Pierazzi et al.), and how the EMBER instance derives the signatures of write operations
+moves to §4 (research track's file), where the locating positions already are. The user then completed the cut-off
+sentence: "I hope that I'm wrong about this and that my criticism just comes down to poor presentation on your part
+and misunderstanding on mine." Claude's reply: partly right (no standalone value as a subsection; the parsing framing
+reopens what §3.1 keeps out), partly not (§5's derived-vs-hand corrections rest on locating positions, e.g. appends to
+files whose section table points past the end; the issue exists wherever content says where other content lies);
+options A (drop), B (fold into §3.4; formal part to the appendix), C (short subsection around "which items can 'write
+anything here' change on this input?"). The user chose a dedicated analysis session first:
+`docs/resume-prompt-s33-decision.md`. Sprint halted at §3.3 until then.
+
 ### Retro
 
 ## §3.4 Sound Directions
