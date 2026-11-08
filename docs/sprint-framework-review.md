@@ -53,7 +53,8 @@ the other subsection early; each is handled in its own subsection's session (ste
   longer says it. (from §3.2 round 2, session 18)
 - §3.4 makes the "sign from the kinds alone" argument itself; §3.2's closer that previewed it is cut. (from §3.2
   round 2, session 18)
-- Framework-wide: decide whether to drop residual features (U10), after §3.4.
+- Framework-wide: decide whether to drop residual features (U10), after §3.4. (Decided 2026-11-08: dropped; §4/§5
+  wording proposed to the research track.)
 - §3.4 can cite Lemma 1(iii) (a fixed layout only replaces items) for its "replace" sort; the reference to the old
   Lemma 1(b) is now (ii). (from §3.3, session 19)
 - §4 (research track's file) says "locating positions" for what §3 calls structure positions. (from §3.3, session 19)
@@ -798,7 +799,31 @@ named table instead of containing the procedure. Tangents go to the appendix, wh
   related work). Recommended: appendix only.
 
 ### 3. User's feedback on the plan
+
+2026-11-08: "Nice analysis. I largely agree with the proposed plan." All 18 spine items accepted. Q1 accepted (drop
+residual features now). Q2 changed: a definition, but **keep the symbol** $\Delta_o(F)$. Q3 accepted (hashing, Severi,
+patterns to Appendix C). False alarms: 0 (Q2's symbol was a recommendation, not a predicted comment).
+
 ### 4. Implemented
+
+2026-11-08, one pass from the spine. Rendered ~1,800 words (texcount), over the planned 1,150-1,250: the three
+definitions, the footprint-to-signature paragraph, and the inputs paragraph cost more than estimated; not cut further.
+New prose: the lead; the population paragraph (reason: the parameter domain and the items where an operation writes);
+Def 7 (direction tables only) and its gloss with the three stages; the lead-in and Def 8 (Signatures: sorts, keys,
+extension, "covers"); the lead-in to Def 9 ("writes only within $W$"; insertions stated in items); the
+footprint-to-signature paragraph; the count example in the sign-set paragraph; the envelope defined in prose at the
+second stage; the derived table at the end of the third stage; Theorem 1 restated about the derived table; the
+inputs paragraph (form-given sign sets hold by construction, corpus-read ones are a hypothesis checked in §5); the
+closer (sums moved out of the corollary; no "any threat model"). Residual features dropped: Def 5 without "over $J$"
+(one sentence: a mapping with a few features computed otherwise is an extractor on the rest), Prop 1 and its
+explanation, Theorem 1, the proof, the symbol table. Appendix C: "covers" in the proofs, the stages renamed, $E_k$
+defined there, the Severi sentence under "Hashed keys". `make check` clean, no "??".
+
+Ripples to the research track (proposals, not edited): §4.1 says "2,480 are modeled; the residual is the 88 warning
+flags" and §5 says "modeled features" in three places: reword as features in the class vs the 88 warning flags outside
+it (treated as both); §4's catalogue "Stated in: elements" -> "writes"; §4.1's margins as footprints and its
+cross-reference to §3.2; §6 ~line 94 "margins" -> "footprint".
+
 ### 5. User's first read
 ### 6. Classification and plan
 ### 7-8. Feedback and implementation

@@ -1,10 +1,9 @@
 # Resume: the §3 review sprint (ProvExp, writing track)
 
 Paste this into a fresh session. It picks up the review sprint over §3.2, §3.3, and §3.4 of the manuscript.
-**Current position: §3.3 removed; next is Sound Directions** (now the third subsection, label `sec:fw:directions`).
-Option D of `docs/s33-decision.md` was approved and applied on 2026-11-08: the subsection has a PLACEHOLDER footprint
-definition and paragraphs (comment in `_d_framework.tex`); run the sprint's steps 1-4 on the whole subsection, with
-spine items 3-5 of the decision document as part of the plan. §4.1 and §6 wording is deferred (user: framework first). Update the "Current
+**Current position: Sound Directions, steps 1-4 done (2026-11-08, session 21); next is the user's first read (step 5),
+then classification (step 6).** The log's "§3.4 Sound Directions" section has the simulated review (P1-P26), the
+18-paragraph spine, the user's answers, and what was implemented. Update the "Current
 position" line and the "Where things stand" list at the end of every session.
 
 ## What the sprint is
@@ -103,3 +102,6 @@ protocol, the formats, and the classification rules are in `docs/sprint-framewor
 - 2026-11-08 (session 20): no sprint step. The §3.3 decision analysis (`docs/s33-decision.md`): recommendation D
   (remove §3.3; footprint in §3.4; computation to §4.1), fallback A; open questions to the user.
 - 2026-11-08 (session 20, cont.): D approved and applied; §3.3 cut, placeholder footprint in Sound Directions.
+- 2026-11-08 (session 21): Sound Directions steps 1-4. Simulated review P1-P26; 18-paragraph spine approved (residual
+  features dropped framework-wide; signature a definition, symbol kept; hashing/patterns to Appendix C); implemented
+  in one pass (~1,800 words, over the planned ~1,200). Next: the user's first read.
