@@ -203,8 +203,8 @@ contribution. The rest of this section computes from the item table.
 % (docs/sprint-framework-review.md): round 1 2026-11-07, round 2 2026-11-08 from a six-paragraph spine (no example).
 An edit applies a transformation $T$ to an input $z$ and gives $z' = T(z)$. Its side effects are usually found by
 applying the edit and extracting the features of $z'$. This subsection describes an edit instead by its delta, the
-items it removes and adds, and proves that the delta and the item table of $z$ give the sums and the modeled features
-of $z'$ exactly, and with them the side effects of the edit, before the edit is applied.
+items it removes and adds, and proves that the delta and the item table of $z$ give $z'$ exactly (before the edit is
+applied) and thus the side effects of the transformation, $T$.
 
 \definition[Item delta]
 \label{def:fw:delta}
@@ -216,8 +216,7 @@ $I^- \subseteq \pi(z)$ and
   \pi(z') = \big(\pi(z) - I^-\big) \uplus I^+,
 \end{equation}
 where $-$ removes each element of $I^-$ once for each time it occurs there and $\uplus$ adds each element of $I^+$ for
-each time it occurs there. In other words, the items in $I^-$ are \emph{removed} from $\pi(z)$ and those in $I^+$ are
-\emph{added}.
+each time it occurs there. The items in $I^-$ are \emph{removed} from $\pi(z)$ and those in $I^+$ are \emph{added}.
 }
 
 \noindent A delta records kinds and contents, not positions. An item that moves without changing its content is in
@@ -236,15 +235,15 @@ or of the added items.
 {
 Let $\varphi$ be a sum-then-readout extractor over $J$, let $(I^-, I^+)$ be a delta of $(z, z')$, and let
 $B = \pi(z) - I^-$ be the items the edit keeps. Then
-\[
+\begin{equation}
   \mathbf{s}(z) = \sigma(B) \oplus \sigma(I^-)
   \qquad \text{and} \qquad
   \mathbf{s}(z') = \sigma(B) \oplus \sigma(I^+).
-\]
+\end{equation}
 Consequently, writing $s_k(z)$ for the value of sum $k$ in $\mathbf{s}(z)$,
 \begin{enumerate}[label=(\roman*), leftmargin=*, nosep]
   \item every additive sum $k$ satisfies $s_k(z') = s_k(z) + \sigma(I^+)_k - \sigma(I^-)_k$;
-  \item every pool $k$ satisfies $s_k(z') = \sigma(B \uplus I^+)_k$, the largest or, in a min pool, the smallest
+  \item every pool $k$ satisfies $s_k(z') = \sigma(B \uplus I^+)_k$, the largest or smallest
     contribution of the kept and the added items;
   \item every modeled feature $j \in J$ satisfies $\varphi_j(z') = \rho_j(\mathbf{s}(z'))$, and
     $\varphi_j(z') = \varphi_j(z)$ unless an item of $I^-$ or $I^+$ contributes a value other than the neutral element
