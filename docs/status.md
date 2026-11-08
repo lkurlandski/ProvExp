@@ -1,6 +1,8 @@
 # Status
 
-**2026-11-07/08 (session 18, writing track): §3.2 through the review sprint in two rounds.** Nothing pushed.
+**2026-11-07/08 (session 18, writing track): §3.2 through the review sprint in two rounds; accepted ("quite
+satisfied", the user's hand edits in `5dcb9e7`). Next: §3.3, step 1, in a new session with
+`docs/resume-prompt-review.md`.** Nothing pushed.
 
 - Round 1: simulated review (P1-P15), 8-item plan approved, implemented (commit `1ae654c`). The user's first read
   (U1-U18): the problems found were real, but the per-comment patches added a pointer-tour lead, an Algorithm 1
@@ -11,8 +13,8 @@
   order; exact side effects (same contributions, folded in another order); cost and incremental view maintenance.
 - Retro done: reader model triggers 8 (revised), 23-27, first calibration row; `paper-prose` lessons 20 (limited),
   32-33; reaction log entry.
-- Open: the user's read of the round-2 §3.2 (optional); §3.3 next (step 1); ripples for §3.3-3.4; the user's note to
-  consider dropping residual features framework-wide, after §3.4.
+- Open: §3.3 next (step 1); ripples for §3.3-3.4; the user's note to consider dropping residual features
+  framework-wide, after §3.4.
 
 **2026-11-06 (session 17, writing track): §3.1 revised in two rounds after the user's review; verdict "improved
 enormously".** Nothing pushed. Commits `164e1b5` (round 1), `bb585ca` (log, lesson 30), `a167b08` (round 2), plus the

@@ -113,4 +113,4 @@ this file lacked or one the revision did not act on; add or sharpen it, and weak
 
 | Round | Predicted (step 1) | Rejected in step 3 | User comments on improved version: missed / fell short / introduced / new taste | Notes |
 |---|---|---|---|---|
-| §3.2 (2026-11-07) | 15 (P1-P15) | 0 of 8 plan items | 4 / 6 / 6 / 1 (+1 design note) | Problems found were real; per-comment patching added unplanned paragraphs. Round 2 from a paragraph spine. |
+| §3.2 (2026-11-07) | 15 (P1-P15) | 0 of 8 plan items | 4 / 6 / 6 / 1 (+1 design note) | Problems found were real; per-comment patching added unplanned paragraphs. Round 2 from a paragraph spine: "quite satisfied", only hand edits for terseness. |

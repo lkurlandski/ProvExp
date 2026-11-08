@@ -300,6 +300,9 @@ ethics/open-science page.
 - Change: a revision plan is a paragraph spine (one line per paragraph, its single job), never a list of per-comment
   patches; any paragraph the plan adds must name its job. Examples only where the reader cannot picture the structure.
 - Reader model: triggers 8 (revised), 23-27 (new); calibration row added. `paper-prose`: lessons 20 (revised), 32-33.
+- Verdict on round 2 (2026-11-08): "quite satisfied". The user's own small edits (`5dcb9e7`): a shorter lead, "In other
+  words" cut, "the largest or smallest" for the longer min-pool phrase, Prop 1's decompositions numbered. §3.2 closed
+  after one residual round (goal for §3.3: fewer residual comments, none of class "introduced").
 
 ## §3.3 Edits Given as Writes
 

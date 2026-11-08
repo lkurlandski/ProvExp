@@ -64,7 +64,7 @@ generic pseudocode extractor), $\mathcal{S}$ as a product monoid with $(\mathbf{
 removed, the §3 lead reframed (side effects before the edit is applied; §3.3 as the bridge from written positions to
 items). Harness: `paper-prose` lessons 30-31, procedure steps 7 (revising after a review) and 8 (simulated review).
 
-Sprint progress (2026-11-08, session 18): §3.2 done in two rounds (round 1 from per-comment patches drew 17 residual
+Sprint progress (2026-11-08, session 18): §3.2 done and accepted in two rounds (round 1 from per-comment patches drew 17 residual
 comments; round 2 rewritten from a paragraph spine). Next: §3.3, step 1. Open, framework-wide: whether to drop residual
 features (decide after §3.4).
 

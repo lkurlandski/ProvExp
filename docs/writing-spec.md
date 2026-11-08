@@ -97,6 +97,11 @@ side of detail and cut later.
 What the user accepted or rejected on real drafts, newest first. Each entry: the sentence or choice, the verdict, the
 rule it implies (folded into Sections 1-5 if general).
 
+- **2026-11-08, §3.2 round 2 verdict.** "Quite satisfied." Hand edits only, for spacing and terseness: the lead
+  shortened to "give $z'$ exactly (before the edit is applied) and thus the side effects of the transformation", "In
+  other words" cut from Def 6, "the largest or smallest" instead of "the largest or, in a min pool, the smallest", and
+  Prop 1's decompositions numbered. Implied: once the structure is right, the user trims wording by hand; prefer the
+  shorter phrasing in leads and statements.
 - **2026-11-07, §3.2 first read of the sprint-revised version (U1-U18 in `docs/sprint-framework-review.md`).** Def 6
   "quite good" (the user glossed $\uplus$ by hand). ¶1 "long and unfocussed", references other sections without
   reason, fails to introduce the subsection. The positions paragraph reads as "admitting to a significant limitation
