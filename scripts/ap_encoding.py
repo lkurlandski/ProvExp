@@ -1,5 +1,5 @@
 """
-Direction A', step 4: the edit-choice encoding (docs/direction-A-prime-encoding.md).
+Direction A', step 4: the edit-choice encoding (docs/archive/a-prime/direction-A-prime-encoding.md).
 
 The solver's variables are the attacker's choices in the edit catalogue (add up to K sections, then append), and every
 feature those edits move is written as a function of the choices, starting from the file's item table: the old sums
@@ -1496,7 +1496,7 @@ def certify(enc: Encoding, ens: Ensemble, below: float, time_limit: float, minim
     With `minimize`, the solver also minimizes the score among the edits that go below `below`, so that a solve
     stopped by the time limit still returns a proven floor: HiGHS's dual bound d bounds the lowest score over the
     edits below `below`; if there are none, the true lowest score is above `below` >= d. Either way d is a lower bound
-    on the lowest score any edit in the catalogue reaches (the bracket's floor; docs/direction-A-prime-plan.md).
+    on the lowest score any edit in the catalogue reaches (the bracket's floor; docs/archive/a-prime/direction-A-prime-plan.md).
 
     Returns:
         status, message, seconds, evaded (a choice was found), certified (proved infeasible), the found score, the

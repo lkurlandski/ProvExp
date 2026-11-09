@@ -1,5 +1,5 @@
 """
-Derivation step 6, the catalogue check G7 (docs/item-layer-design.md, "Validation and go/no-go checks"): do the
+Derivation step 6, the catalogue check G7 (docs/evidence/item-layer-design.md, "Validation and go/no-go checks"): do the
 operations of the threat models change features only in the directions the C4 engine derived for them?
 
 The derived directions (scripts/a_directions.py --derive --extractor sums) rest on the edit catalogue

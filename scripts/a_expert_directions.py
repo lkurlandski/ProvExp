@@ -1,5 +1,5 @@
 """
-The C4 derivation for the instrumented expert set (item 11; docs/direction-A-expert-set.md): the directions each
+The C4 derivation for the instrumented expert set (item 11; docs/evidence/direction-A-expert-set.md): the directions each
 threat-model operation can move each of Gimenez et al.'s forty features, and the M_full holes (features the monotone
 model constrains up that an edit can lower).
 
@@ -18,7 +18,7 @@ model; their item changes over the expert kinds are:
                   fields, checksum, and debug directory are not expert features).
 
 The in-place operations' byte regions and their item changes reuse catalogue.regions and reach.region_changes; the
-structural ones are stated directly. Go/no-go (docs/direction-A-expert-set.md): the M_full holes are exactly rows 27 and
+structural ones are stated directly. Go/no-go (docs/evidence/direction-A-expert-set.md): the M_full holes are exactly rows 27 and
 30-39 -- modified_dos_stub and the ten section-name features -- eleven of forty.
 """
 
@@ -62,7 +62,7 @@ STRUCTURAL: dict[str, list[Change]] = {
 # format-level; the expert item changes follow from them). rsg additionally adds the no_sig marker.
 REGION_OPS = ("slk", "dos", "hdr", "chk", "ren", "rdb", "rsg")
 
-# The reasoned M_full holes (docs/direction-A-expert-set.md, rows 27 and 30-39).
+# The reasoned M_full holes (docs/evidence/direction-A-expert-set.md, rows 27 and 30-39).
 EXPECTED_HOLES = (
     "expert:modified_dos_stub", "expert:unknown_sections", "expert:info_unknown_sections",
     "expert:.text_info", "expert:.text-size", "expert:.data_info", "expert:.data-size",

@@ -1,5 +1,5 @@
 """
-CM, triage tied to a decision (docs/experiments/cm.md, "Triage tied to a decision"; revision plan B9).
+CM, triage tied to a decision (docs/archive/explanation-provenance/experiments/cm.md, "Triage tied to a decision"; revision plan B9).
 
 Does the disagreement triage (A = GBDT, B = MalConv) tell an *attack-caused* disagreement from an *organic* one? We
 build two populations of GBDT-only-flagged malware and run the same blind/oppose/agree split on each:

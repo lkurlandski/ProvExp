@@ -1,5 +1,5 @@
 #!/bin/bash
-# Derivation step 4, check G5 (docs/item-layer-design.md; assumption A1): flip every byte of the header region (XOR
+# Derivation step 4, check G5 (docs/evidence/item-layer-design.md; assumption A1): flip every byte of the header region (XOR
 # 0xFF, at most 1,024 bytes per file) of 20 files and re-parse. Every item that appears, disappears, or moves must
 # have the flipped byte among its recorded locating ranges, and every item whose contributions change must have it
 # among its member or locating ranges. Step 1: 20 pilot files (seed 0); step 2: 20 fresh files from the 2,000-file

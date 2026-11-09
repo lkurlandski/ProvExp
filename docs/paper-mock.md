@@ -1,6 +1,10 @@
 # Paper mock (2026-11-02)
 
-At most two pages. It decides what the paper contains; everything not listed here stays in `docs/formalization.md`
+> **Stale in parts (2026-11-09); rewrite next session** (PLAN.md, next step 1). Written against the old §3: the
+> "requirements", "footprints", Theorems 2-3, and the CTU-13 rows no longer match the manuscript or the plan. §4's new
+> structure (a template that EMBER fills in) and the §2/§5 alignment are in PLAN.md, "Decisions of 2026-11-09".
+
+At most two pages. It decides what the paper contains; everything not listed here stays in `docs/archive/framework/formalization.md`
 or out. "Measured" means a pilot-scale number exists; final numbers need the scale-up (user's decision).
 
 ## Thesis
@@ -29,7 +33,7 @@ hand analysis, more complete than learned constraints, and useful: it yields det
 |---|---|---|
 | 1 Introduction | the gap, the three ways people cross it today, our claim, results | 1,000 |
 | 2 Background and Motivation | Pierazzi et al.'s problem space (attacks differ in what they return), constraints, side effects (with nuance), the reachable set as the central object; attacks and defenses in feature and problem space each need part of the reachable set and get it from outside the feature mapping; a short closing on what we derive (written 2026-11-04, revised 2026-11-06, ~950 words) | 800 |
-| 3 Measuring Edits Across Feature Mappings | three subsections since 2026-11-08 (extractors, side effects, sound directions; §3.3 "Edits Given as Writes" removed, its idea is the footprint definition in sound directions: `docs/s33-decision.md`); below (rewritten 2026-11-04: no domain examples, tables, or figures for now; spine in `docs/framework-spine.md`) | 2,500 |
+| 3 Measuring Edits Across Feature Mappings | three subsections since 2026-11-08 (extractors, side effects, sound directions; §3.3 "Edits Given as Writes" removed, its idea is the footprint definition in sound directions: `docs/archive/framework/s33-decision.md`); below (rewritten 2026-11-04: no domain examples, tables, or figures for now; spine in `docs/archive/framework/framework-spine.md`) | 2,500 |
 | 4 Instances | EMBER (what is recorded, the three repairs, the import-overwrite patch); CTU-13 features; the edit catalogues | 1,000 |
 | 5 Evaluation | Tables 1-4 | 3,000 |
 | 6 Related work | problem-space attacks, constraints over features (incl. learned: Sheatsley, Bostani), robust detectors (adversarial training, monotone, verified), incremental computation and provenance (~1,450 words, 2026-11-06) | 700 |

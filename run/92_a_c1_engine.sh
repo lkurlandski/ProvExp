@@ -1,5 +1,5 @@
 #!/bin/bash
-# Derivation step 5, check G4 (docs/item-layer-design.md): the C1 engine (provexp.reach, with the extractor's
+# Derivation step 5, check G4 (docs/evidence/item-layer-design.md): the C1 engine (provexp.reach, with the extractor's
 # recognizers and the catalogue's add_section declaration) re-runs Table A0's protocol (run 79: the 100 pilot files,
 # append / dos_overwrite / LIEF add_section, tolerance 1e-4) next to the hand predictors, and is compared with both.
 # Hypothesis: append exact on the 89 clean files, with the 11 overrun files flagged by the engine itself (the append

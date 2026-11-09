@@ -1,5 +1,5 @@
 #!/bin/bash
-# Sections 5.1 and 5.2 (GBDT) under the shared protocol (docs/experiments/specs.md; implementation plan WP1-WP2):
+# Sections 5.1 and 5.2 (GBDT) under the shared protocol (docs/archive/explanation-provenance/experiments/specs.md; implementation plan WP1-WP2):
 # KernelSHAP over windows at 64/256/1,024 windows (8 coalitions per window; 256 reused from run 21) and adaptive
 # KernelSHAP (Owen values over 16,384 leaf windows) at budgets matched to occlusion's 64/256/1,024/4,096 windows, plus
 # the pushforward of every window explanation, TreeSHAP's resolution trend, and random feature explanations, all scored

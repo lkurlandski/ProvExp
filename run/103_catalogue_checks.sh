@@ -1,5 +1,5 @@
 #!/bin/bash
-# Derivation step 6, the catalogue check G7 (docs/item-layer-design.md): every operation of the threat models applied
+# Derivation step 6, the catalogue check G7 (docs/evidence/item-layer-design.md): every operation of the threat models applied
 # to real files with our own byte-level edits, including adversarial parameters (repeated or case-variant DLL names,
 # an import with no functions, empty, colliding, and case-variant section names, printable content next to strings,
 # a forged Rich header in the DOS stub and in an inserted gap; a section's data after or before the overlay), each

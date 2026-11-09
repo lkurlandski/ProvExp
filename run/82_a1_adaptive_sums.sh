@@ -1,5 +1,5 @@
 #!/bin/bash
-# Direction A, Table A1's adaptive column on the sums-space defenses (docs/direction-A-A1-design.md, step 4). Run after
+# Direction A, Table A1's adaptive column on the sums-space defenses (docs/evidence/direction-A-A1-design.md, step 4). Run after
 # run 80 (the 10% sums store and the s10 models) and run 81 (which trains seed-0-s10-pv-seen). FOR ACADEMIC SECURITY
 # RESEARCH ONLY: the C1-declared adaptive soundness test against our own detectors on our own pilot malware.
 #

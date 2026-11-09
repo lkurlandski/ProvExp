@@ -1,5 +1,5 @@
 #!/bin/bash
-# G3 witness for the signature case (docs/item-layer-design.md, "structures past the end of the file"; rebuilt from
+# G3 witness for the signature case (docs/evidence/item-layer-design.md, "structures past the end of the file"; rebuilt from
 # the 2026-10-27 scratch witness): on every pilot file whose certificate table lies past its end, append zeros up to
 # the table and a table copied from a signed pilot file (3 donors per file, smallest first), and re-extract.
 # Hypothesis: 4294f2f053c2 reproduces num_certs 0 -> 1; the second file (48d9cc0c855f) may start its table inside the

@@ -1,5 +1,5 @@
 """
-Direction A', check 2 (docs/direction-A-prime-mock.md): do the solver's evasions realize?
+Direction A', check 2 (docs/archive/a-prime/direction-A-prime-mock.md): do the solver's evasions realize?
 
 Each saved solver evasion (`ap_check1b.py`'s `solutions/{defense}_{name}.npy`) is written as a file by
 `ap_realize.realize` (with the solver's split sides, so byte counts are nudged onto its side of the histogram

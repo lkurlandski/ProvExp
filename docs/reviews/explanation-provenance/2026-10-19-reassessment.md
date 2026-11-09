@@ -3,8 +3,8 @@
 The simulated CCS review (`docs/reviews/explanation-provenance/2026-10-16-ccs.md`, 2026-10-16) was written against the old manuscript (one section per operator,
 the field oracle, the trigger, the black-box P). Since then: Sections 5-6 reorganized; oracle, trigger, black-box P and
 the naive translation cut; one byte-deletion measurement and one cost unit; adaptive KernelSHAP; a shared Section 6
-setting; 6.1 gains attack transfer and adjudication; 6.2 gains the localized audit (`docs/experiments/specs.md`,
-`docs/implementation-plan-2026-10-19.md`, manuscript commit fd814be). This note asks two questions: is the planned work
+setting; 6.1 gains attack transfer and adjudication; 6.2 gains the localized audit (`docs/archive/explanation-provenance/experiments/specs.md`,
+`docs/archive/explanation-provenance/implementation-plan-2026-10-19.md`, manuscript commit fd814be). This note asks two questions: is the planned work
 worth doing, and what cheap wins are left?
 
 ## 1. The review's weaknesses, one by one

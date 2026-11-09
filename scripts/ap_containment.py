@@ -1,5 +1,5 @@
 """
-Direction A', step 4's test (docs/direction-A-prime-encoding.md, "The test"): the edit-choice encoding must contain the
+Direction A', step 4's test (docs/archive/a-prime/direction-A-prime-encoding.md, "The test"): the edit-choice encoding must contain the
 real file.
 
 For each pilot file the encoding covers, draw random edits from the catalogue (up to K sections with random names,

@@ -1,5 +1,5 @@
 """
-Poison a fraction of the training files with a planted trigger (docs/experiments/trigger.md) and extract their features.
+Poison a fraction of the training files with a planted trigger (docs/archive/explanation-provenance/experiments/trigger.md) and extract their features.
 
 The trigger is written into the bytes and the features are re-extracted, so that the bytes, the provenance, and the
 model all see the same object. Poisoned files *replace* their clean versions (the training set keeps its size), and

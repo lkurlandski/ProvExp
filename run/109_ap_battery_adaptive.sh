@@ -1,5 +1,5 @@
 #!/bin/bash
-# A' battery, the adaptive half (docs/direction-A-prime-mock.md, Table A'1's "attack battery" column): the C1-declared
+# A' battery, the adaptive half (docs/archive/a-prime/direction-A-prime-mock.md, Table A'1's "attack battery" column): the C1-declared
 # adaptive search of run 108 against the 10%-subsample detectors that the toolkit columns (run 105,
 # artifacts/experiments/a1/toolkit-v2) and the solver (run 89) use, so that the battery is a per-file union over one set
 # of models. Run 108 searched the full-data models (seed-0, and seed-0-pv, which is PV from all eight attacks), which

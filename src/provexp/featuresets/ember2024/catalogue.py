@@ -1,6 +1,6 @@
 """
-The edit catalogue: the threat model's operations as item operations on EMBER's item table (docs/item-layer-design.md,
-component 3; docs/direction-A-threat-model.md, Section 1).
+The edit catalogue: the threat model's operations as item operations on EMBER's item table (docs/evidence/item-layer-design.md,
+component 3; docs/evidence/direction-A-threat-model.md, Section 1).
 
 Each operation maps the item table of a file z and a parameter value to the edited file (or its declared layout) and
 the item delta, which the C1 engine (provexp.reach) turns into the new sums and features. Operations that write bytes
@@ -177,8 +177,8 @@ def add_section(extractor: PEFeatureExtractor, table: ItemTable, z: bytes, name:
 # any parameter value), not one concrete edit. The in-place operations are derived from the bytes they write on each
 # file (`regions`, through provexp.reach.region_changes, unioned over a corpus); the structural ones are declared here
 # (`declared_changes`). The declared deltas are provisional until the catalogue's step 6 checks them against
-# re-extraction (G7); they follow docs/direction-A-threat-model.md, Section 1, and name the anticipated
-# disagreements of docs/item-layer-design.md where the hand rules disagree.
+# re-extraction (G7); they follow docs/evidence/direction-A-threat-model.md, Section 1, and name the anticipated
+# disagreements of docs/evidence/item-layer-design.md where the hand rules disagree.
 
 # The kinds recognized from content wherever it lies, and what an in-place write anywhere does to them: byte counts
 # and windows get new values (the number of bytes stays), strings may appear, disappear, merge, or split.

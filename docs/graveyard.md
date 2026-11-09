@@ -20,7 +20,7 @@ black-box window explainers), and the security outcomes weak or already known (h
 field attack beside the paper's own 81% stub attack; a predicted drop a defender could simulate). Structural reason:
 where flat P is precise (named header fields) it is not needed; where it would be needed (hashed and aggregate
 features) it is diffuse. The user judged the draft a strong reject (2026-10-22). Manuscript, plan
-(`docs/archive/PLAN-explanation-provenance-2026-10-21.md`), and the 2026-10-21 simulated review (`docs/reviews/explanation-provenance/2026-10-21-ccs.md`)
+(`docs/archive/explanation-provenance/PLAN-explanation-provenance-2026-10-21.md`), and the 2026-10-21 simulated review (`docs/reviews/explanation-provenance/2026-10-21-ccs.md`)
 remain as source material.
 
 ### A': realizable worst-case evaluation of a detector (dropped 2026-11-02; two pieces folded into A)
@@ -29,9 +29,9 @@ remain as source material.
 over the attacker's edit choices (Kantchelian et al.'s GBDT encoding), every feature computed from those choices
 through provenance, including how one edit moves many features together (claims C2-C3). Per file, a bracket: a proven
 floor on the lowest reachable score beside the best real attack. Budget-only and learned regions (constraints learned
-from attack outputs) as the practitioner's alternatives. Working documents: `docs/direction-A-prime-plan.md` (the
-adopted plan and every result, Sections 9-13), `docs/direction-A-prime-mock.md` (checks 0-2, 1b, decision 7), and
-`docs/literature-Aprime-2026-10-27.md`.
+from attack outputs) as the practitioner's alternatives. Working documents: `docs/archive/a-prime/direction-A-prime-plan.md` (the
+adopted plan and every result, Sections 9-13), `docs/archive/a-prime/direction-A-prime-mock.md` (checks 0-2, 1b, decision 7), and
+`docs/archive/a-prime/literature-Aprime-2026-10-27.md`.
 
 **Why it failed.** Sound throughout, but it certifies only where the edits barely touch the detector or the budget is
 tiny. Appending on PV certifies every covered file, but PV was built from padding attacks, so that is close to
@@ -82,7 +82,7 @@ bytes reach the features (representation gap) and whether the GBDT relies on the
 ψ = PᵀD⁺b — the operator whose application it was supposed to demonstrate. The "reliance" column was the pullback's
 mass on the matched bytes, the "representation" column was Pᵀ1_S, and the deletion check used no P at all. The
 go/no-go's hypothesis also failed where it mattered (agreement came from generic API rules; anti-debug rules, the
-interesting case, showed a reliance gap of only 0.15). Superseded by the pushforward audit (see `docs/experiments/audit.md`),
+interesting case, showed a reliance gap of only 0.15). Superseded by the pushforward audit (see `docs/archive/explanation-provenance/experiments/audit.md`),
 which uses the pushforward essentially. Full doc: `docs/rules_plan.md` before commit (see history).
 
 ### The pushforward-as-shortcut-forging framing (no-go 2026-10-13, within the audit)
@@ -93,7 +93,7 @@ credit is real and specific in the file it explains, but does not **transfer** t
 only the strongest convolution window per channel and a field's contribution depends on its context and offset within
 that window. The forgeable-shortcut premise does not fit MalConv. The fix (approved by the user) was to flip to
 *destroying* malware evidence in place — scrambling the bytes P names — which needs no transfer and became the working
-audit. Recorded in `docs/experiments/audit.md`.
+audit. Recorded in `docs/archive/explanation-provenance/experiments/audit.md`.
 
 ## Directions the user has generally found unproductive
 
@@ -117,3 +117,9 @@ plus, not a rule); the other items still apply.
 
 - `docs/archive/plan_phase2.md`, `docs/archive/pilot.md`: the old "Phase 2" plan and pilot census, with the retired
   experiment IDs E1–E4 and A1–A3. Superseded by `PLAN.md`'s intrinsic/extrinsic structure. In history.
+- Archived 2026-11-09 (holistic review; superseded, not failed): the framework's design sources, now replaced by
+  `manuscript/_d_framework.tex` (`docs/archive/framework/`: the formalization and its review log, framework design and
+  spine, the three-layer model with claims C1-C4, the §3.3 decision, the Sound Directions math note, the review sprint
+  log); direction A's mock and pilot summary (`docs/archive/direction-A/`); A' (`docs/archive/a-prime/`); the old
+  direction (`docs/archive/explanation-provenance/`); the session logs of `docs/status.md` and `PLAN.md`
+  (`docs/archive/`). Index: `docs/README.md`.

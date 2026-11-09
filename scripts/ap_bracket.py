@@ -1,5 +1,5 @@
 """
-Direction A': the bracket of each detector's worst case under realistic edits (docs/direction-A-prime-plan.md).
+Direction A': the bracket of each detector's worst case under realistic edits (docs/archive/a-prime/direction-A-prime-plan.md).
 
 For each detector and each pilot malware it detects, two bounds on the lowest raw score an attacker can reach:
 
@@ -74,7 +74,7 @@ __all__ = [
 
 ROOT = Path(__file__).resolve().parent.parent
 FAMILIES = ("append", "sections", "both")
-# G1 (docs/direction-A-prime-plan.md): at most this share of the covered, unevaded files open on a hardened detector.
+# G1 (docs/archive/a-prime/direction-A-prime-plan.md): at most this share of the covered, unevaded files open on a hardened detector.
 G1_OPEN_SHARE = 0.5
 
 

@@ -1,5 +1,5 @@
 #!/bin/bash
-# AU, robustness of the evasion result (docs/experiments/audit.md, "Held-out evasion and realizability"): the same
+# AU, robustness of the evasion result (docs/archive/explanation-provenance/experiments/audit.md, "Held-out evasion and realizability"): the same
 # recipes as run 46, but on 1,000 fresh held-out malware (excluding run 44's 200 files, on which the fields were
 # confirmed), scoring only files MalConv detects at its 1% FPR threshold, redrawing random recipes that break the parse,
 # and adding the realizable recipes (only what the Windows loader lets an attacker change) with their own null.

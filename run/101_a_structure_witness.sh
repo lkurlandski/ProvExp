@@ -1,5 +1,5 @@
 #!/bin/bash
-# G3 witnesses for the remaining class-1 cases (docs/item-layer-design.md, "Anticipated disagreements" and "structures
+# G3 witnesses for the remaining class-1 cases (docs/evidence/item-layer-design.md, "Anticipated disagreements" and "structures
 # past the end of the file"; the signature case is run 98): an edit per case on every file it applies to, re-extracted.
 #   entry     add an executable section (sec) to a file whose entry point lies in no section and has no executable one
 #   rich_ext  extend the DOS stub (ext) of a file without a Rich header; a donor's Rich header written into the gap only

@@ -1,5 +1,5 @@
 #!/bin/bash
-# Section 6.1, editing the shared fields (docs/experiments/specs.md, "Part A'"; replaces run 68's attack transfer as the
+# Section 6.1, editing the shared fields (docs/archive/explanation-provenance/experiments/specs.md, "Part A'"; replaces run 68's attack transfer as the
 # result): loader-safe edits to 3 fields per file, chosen by the GBDT's pullback and MalConv's IG together, against the
 # same number of fields chosen by windows, by one detector, or at random. Run 68's 100 both-detected malware.
 # Hypothesis: the shared fields make both detectors drop on the most files; MalConv's own fields barely move the GBDT.

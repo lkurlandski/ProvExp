@@ -1,5 +1,5 @@
 """
-Direction A, Table A1 (docs/direction-A-A1-design.md): the attack-evaluation harness for the toolkit columns.
+Direction A, Table A1 (docs/evidence/direction-A-A1-design.md): the attack-evaluation harness for the toolkit columns.
 
 FOR ACADEMIC SECURITY RESEARCH ONLY. This runs Gimenez et al.'s eight published secml-malware attacks against our own
 detectors, on our own pilot samples, solely to evaluate defenses: which detectors stay robust to attacks that were
@@ -25,7 +25,7 @@ pass the precondition check (catalogue.precondition: nothing the parse is locate
 file) are scored by the defense's model, the others by the fallback defense's model, each calibrated to its own
 threshold (a_pv_attacks.make_wrapper); the check is made on every file the attack queries. Results are also split by
 whether the original file passes the check (the guarantee covers only those). The quick seen/held-out split (`--seen`) is a quick check only; the formal version is
-leave-one-out (eight PV models; docs/direction-A-A1-design.md, decision 2).
+leave-one-out (eight PV models; docs/evidence/direction-A-A1-design.md, decision 2).
 
 Outputs, in `{outdir}/`:
     results.parquet   one row per (defense, attack, file): p_clean, p_adv, tau, evaded, bytes_added, over_budget, ok,

@@ -17,7 +17,7 @@ change from the all-empty feature vector, sum_i b_i = beta . Delta.
 NOTE: the data-flow cost of Appendix C's second paragraph (how far the data-flow convention for the non-additive
 features departs from their true Shapley provenance) is NOT computed here. It needs a faithful recomputation of each
 non-additive feature (byte entropy, string statistics) from subsets of its items, which the extractor does not expose
-per-subset; it is a separate, sampling-based measurement (see docs/plan-2026-10-19.md, Phase 4).
+per-subset; it is a separate, sampling-based measurement (see docs/archive/explanation-provenance/plan-2026-10-19.md, Phase 4).
 
 Outputs, in `{outdir}/`:
     files.parquet   one row per file: the max and l1 pullback-vs-direct difference, the attribution scale, the

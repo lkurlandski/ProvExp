@@ -25,8 +25,8 @@ Do not soften findings. A problem found now costs a week; a problem a reviewer f
   source with the run that replaces them) are predictions. Do not flag them as missing evidence or fabrication. Review
   them as claims: would the design support the claim if the run came out as predicted, and what would a different
   outcome do to the paper? List each once, in the risk register.
-- **Sources behind the text.** `docs/formalization.md` (the frozen formal model; full proofs and the EMBER caveats),
-  `docs/direction-A-summary.md`, `docs/direction-A-A1-design.md`, `docs/item-layer-design.md` (the runs behind every
+- **Sources behind the text.** `docs/archive/framework/formalization.md` (the frozen formal model; full proofs and the EMBER caveats),
+  `docs/archive/direction-A/direction-A-summary.md`, `docs/evidence/direction-A-A1-design.md`, `docs/evidence/item-layer-design.md` (the runs behind every
   number), `docs/status.md` (decisions and results). Local PDFs of the closest work are in `papers/` (`pdftotext`
   works on them): Pierazzi et al., Gimenez et al., Incer et al., Severi et al., Simonetto et al., Dyrmishi et al.,
   Demontis et al., Kantchelian et al.
@@ -51,7 +51,7 @@ sink the paper), say so once, in the risk register, with the reason; otherwise l
   the old provenance matrix; a tightness theorem; a cost theorem (cost is a table column); the coupling row (default:
   out).
 - **Writing rules:** continuous prose; limitations light and confident, no Threats to Validity section; no internal
-  IDs; the page limit does not matter yet. `docs/formalization.md` is frozen: do not propose editing it.
+  IDs; the page limit does not matter yet. `docs/archive/framework/formalization.md` is frozen: do not propose editing it.
 - **Never raise deadlines or conference cycles.** Quality is the only planning constraint.
 
 `docs/graveyard.md` records abandoned ideas and why.
@@ -114,7 +114,7 @@ what it must establish, which reviewer concern it answers, and what it must not 
 ### 3. The framework: correctness and presentation
 
 - Are the definitions, requirements (R1)-(R5), Theorems 1-2, and Corollary 1 stated correctly and consistently with
-  the appendix proofs? Check the proofs in Appendix A against `docs/formalization.md`. Flag any gap a careful reader
+  the appendix proofs? Check the proofs in Appendix A against `docs/archive/framework/formalization.md`. Flag any gap a careful reader
   would find (a quantifier, an unstated assumption, a case the proof skips).
 - Is every symbol defined before use? Is the running example carried consistently?
 - Do the three tables (cross-domain, terms, readouts) earn their space?

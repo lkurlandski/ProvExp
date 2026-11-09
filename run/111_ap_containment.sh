@@ -1,5 +1,5 @@
 #!/bin/bash
-# A' step 4's test (docs/direction-A-prime-encoding.md, "The test"): the edit-choice encoding (scripts/ap_encoding.py)
+# A' step 4's test (docs/archive/a-prime/direction-A-prime-encoding.md, "The test"): the edit-choice encoding (scripts/ap_encoding.py)
 # must contain the real file. Every pilot file (malware and goodware) the encoding covers, 12 random edits each (0-3
 # added sections with random names, flags, and contents, then an append) plus the empty edit, written with our own
 # byte-level edits and re-extracted. Checks per edit: the exact features equal re-extraction; the held-fixed features

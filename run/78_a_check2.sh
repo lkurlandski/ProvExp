@@ -1,5 +1,5 @@
 #!/bin/bash
-# Direction A, go/no-go check 2 (docs/direction-A-mock.md): does Gimenez et al.'s perturbation-vector (PV) feature
+# Direction A, go/no-go check 2 (docs/archive/direction-A/direction-A-mock.md): does Gimenez et al.'s perturbation-vector (PV) feature
 # selection leave a hole that feature provenance (C4) predicts? FOR ACADEMIC SECURITY RESEARCH ONLY: this reproduces
 # published black-box attacks against our own detector, on our own pilot samples, solely to evaluate a defense.
 #
@@ -11,7 +11,7 @@
 #   3. (decisive gain share) train the PV-selected monotone GBDT on the full splits, then re-run a_pv_hole.py against
 #      it. The step-2 read uses the unconstrained GBDT as a preview.
 #
-# Hypothesis (docs/direction-A-threat-model.md): the hole is large and carries well over 5% of the PV GBDT's gain,
+# Hypothesis (docs/evidence/direction-A-threat-model.md): the hole is large and carries well over 5% of the PV GBDT's gain,
 # concentrated in signed section buckets and import features no secml attack lowers. GO if >= 5%.
 set -euo pipefail
 cd "$(dirname "$0")/.."

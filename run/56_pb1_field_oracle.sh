@@ -1,5 +1,5 @@
 #!/bin/bash
-# PB1 pilot, field-occlusion oracle baseline (docs/review-2026-10-14.md, item 1; docs/revision-plan.md B7).
+# PB1 pilot, field-occlusion oracle baseline (docs/review-2026-10-14.md, item 1; docs/archive/explanation-provenance/revision-plan.md B7).
 #
 # Adds one direct baseline to the 100 pilot files: occlude each parsed PE field and section (one extraction each),
 # rank bytes by their region's drop, under the same PE-aware deletion operator. This is the structure-aware upper

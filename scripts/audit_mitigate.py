@@ -1,5 +1,5 @@
 """
-M3, test-time half (docs/experiments/mocks.md, M3; revision plan item 11): does the audit's countermeasure work, and what
+M3, test-time half (docs/archive/explanation-provenance/experiments/mocks.md, M3; revision plan item 11): does the audit's countermeasure work, and what
 does it cost?
 
 The audit (Section 5.3) found header fields MalConv relies on that an attacker can change without breaking the program.

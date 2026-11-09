@@ -1,6 +1,6 @@
-% Section 3: the framework. Rewritten 2026-11-04 from docs/framework-spine.md with the user's decisions and comments
+% Section 3: the framework. Rewritten 2026-11-04 from docs/archive/framework/framework-spine.md with the user's decisions and comments
 % (theory without domain examples, D2; no tables or figures for now, D3/D4, the tables are backed up in
-% backup/framework-tables-2026-11-04.tex). Source of the math: docs/formalization.md (frozen). Proofs: _j_proofs.tex.
+% backup/framework-tables-2026-11-04.tex). Source of the math: docs/archive/framework/formalization.md (frozen). Proofs: _j_proofs.tex.
 % Removed examples are kept in "% EXAMPLE" comments for the user.
 
 The feature mappings we study find pieces of their input, add up what each piece contributes to a set of running
@@ -16,7 +16,7 @@ proofs are in Appendix~\ref{sec:fw:proofs}, and Appendix~\ref{sec:symbols} lists
 \subsection{Sum-then-Readout Extractors}
 \label{sec:fw:model}
 
-% Spine: docs/framework-design.md, Section 11 (approved 2026-11-05). Notation: lowercase Greek for the maps of the
+% Spine: docs/archive/framework/framework-design.md, Section 11 (approved 2026-11-05). Notation: lowercase Greek for the maps of the
 % factorization (pi, sigma, rho, nu); calligraphic for the spaces they connect (Z, V, S, X); tau for kinds. The running
 % example is in purple (runex) while drafted.
 The feature mappings we study compute their features in three stages. They find the pieces of the input they
@@ -215,7 +215,7 @@ coarse items (Remark~\ref{rem:fw:granularity}), and learned representations have
 \subsection{Edits and Their Side Effects}
 \label{sec:fw:side-effects}
 
-% Spine: docs/framework-design.md, Section 12 (approved 2026-11-05); rewritten after the user's second reading.
+% Spine: docs/archive/framework/framework-design.md, Section 12 (approved 2026-11-05); rewritten after the user's second reading.
 An edit applies a transformation $T \in \mathcal{T}$ to an input $z$ and gives $z' = T(z)$. We describe an edit by the
 items it removes and adds, and show that this description, together with the item table of $z$, determines the sums
 and the modeled features of $z'$ exactly, without extracting them. \Cref{sec:fw:directions} applies the same computation to every edit a threat model
@@ -313,7 +313,7 @@ raise $x_4$, since it adds to the length of the input and not to the records.
 \subsection{Edits Given as Writes}
 \label{sec:fw:edits}
 
-% Spine: docs/framework-design.md, Section 13 (approved 2026-11-05 with the recommendations Q1-Q4).
+% Spine: docs/archive/framework/framework-design.md, Section 13 (approved 2026-11-05 with the recommendations Q1-Q4).
 Many transformations are given by the elements they write rather than by the items they change: append bytes to a
 file, overwrite padding or an unused field, change a packet's timestamp. For one such edit the edited input $z'$ is at
 hand, but Proposition~\ref{prop:fw:side-effects} needs its delta. For a family of edits, such as appending any bytes,
@@ -422,7 +422,7 @@ inputs and not over all of them.
 \subsection{Sound Directions}
 \label{sec:fw:directions}
 
-% Spine: docs/framework-design.md, Section 14 (Q1-Q4 as recommended, 2026-11-05).
+% Spine: docs/archive/framework/framework-design.md, Section 14 (Q1-Q4 as recommended, 2026-11-05).
 A detector has to hold against every edit the attacker may make, on every input it will face, and not against one edit
 of one input. We describe the attacker's edits by operations. An \emph{operation} $o$ is a family of edits
 $T_{o,\theta}$, indexed by a parameter $\theta$ from a domain $\Theta_o(z)$ that may depend on the input, such as any

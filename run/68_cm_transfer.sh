@@ -4,7 +4,7 @@
 # the original file predicts how much the GBDT's score also drops. The printed summary is also the feasibility read:
 # the "go" signal is that the GBDT drop exceeds 1 log-odds (--drop_delta) on a non-trivial share of files, and the
 # pullback predicts it better than occlusion over windows or the number of bytes changed. If the GBDT does not move,
-# fall back to option 1 (docs/experiments/specs.md).
+# fall back to option 1 (docs/archive/explanation-provenance/experiments/specs.md).
 #
 # Smoke-tested on 6 files (GPU 3): end to end in ~1 min. The 256-window GBDT occlusion is the temporary stand-in for
 # the best window method of Section 5.1 (run 66). GPU 3, at most 16 workers; ~15-20 min for 100 files.

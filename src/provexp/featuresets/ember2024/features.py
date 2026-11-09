@@ -200,7 +200,7 @@ def hash_indices(n_features: int, items: Sequence[str]) -> np.ndarray:
 
 
 # NOTE: the `items` methods and `readouts` properties were added on top of thrember as well. They record the item layer
-# of feature provenance (docs/item-layer-design.md; provexp.items): each feature type's items (sections, strings,
+# of feature provenance (docs/evidence/item-layer-design.md; provexp.items): each feature type's items (sections, strings,
 # windows, fields, ...), what each contributes to which sums (layer 2), and each feature's formula over the sums, as
 # data (layer 3). `provexp.items.evaluate(items, readouts)` must reproduce `feature_vector` exactly (check G1) and
 # `provexp.items.project(items, readouts)` must reproduce `provenance` (check G2). Like `provenance`, the emitters
@@ -257,7 +257,7 @@ def clipped(num_bytes: int, ranges: Sequence[Optional[Range]]) -> tuple[Range, .
 # directory, and the guard at the end of this module does the same for any other exception (before it, a crash in
 # one directory made the extractor treat the file as not a PE; docs/upstream-issues.md, item 5). Kinds add their own
 # (an import's descriptor and thunks, the overlay's extents). Locating ranges are not clipped to the file: an extent
-# past the end of the file is locating, since appending can bring it inside (docs/item-layer-design.md, the overlay
+# past the end of the file is locating, since appending can bring it inside (docs/evidence/item-layer-design.md, the overlay
 # case and "structures past the end of the file"). Check G5 (`scripts/item_checks.py locating`) flips header and
 # directory bytes and fails on any change of an item not recorded in its ranges.
 _HEADER_LOCATING_FIELDS = [
@@ -1625,7 +1625,7 @@ class ImportsInfoMerged(ImportsInfo):
     list over (`imports[dll_name] = []`) at every descriptor for it, so a second descriptor for an already imported
     DLL (same spelling) erases the first one's functions from the features. That is an implementation quirk, not a
     design choice of the feature set; direction A's experiments use this class (via `merge_import_descriptors`) so
-    that no result depends on it (docs/direction-A-threat-model.md). On files with one descriptor per DLL, which is
+    that no result depends on it (docs/evidence/direction-A-threat-model.md). On files with one descriptor per DLL, which is
     almost every file, the features and provenance equal `ImportsInfo`'s.
     """
 
@@ -2707,7 +2707,7 @@ class PEFeatureExtractor(object):
 
     def item_table(self, bytez: bytes) -> ItemTable:
         """
-        The items of every feature type, parsing the file only once (docs/item-layer-design.md, Section 1).
+        The items of every feature type, parsing the file only once (docs/evidence/item-layer-design.md, Section 1).
         """
         # Mirrors `raw_features`.
         pe = None

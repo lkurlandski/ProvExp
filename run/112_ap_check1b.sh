@@ -1,5 +1,5 @@
 #!/bin/bash
-# A' go/no-go check 1b (docs/direction-A-prime-mock.md, decision 7): does the computed region certify? The exact solver
+# A' go/no-go check 1b (docs/archive/a-prime/direction-A-prime-mock.md, decision 7): does the computed region certify? The exact solver
 # over the edit-choice encoding (scripts/ap_encoding.py: up to 3 added sections, then an append, budget max(5%, 512 KB))
 # on the unconstrained 10% detector, for the detected files the battery (toolkit run 105 + adaptive run 109) does not
 # evade. Go if it certifies at least 20% of them (4 of 20; 7 fail the precondition, so 4 of the 13 covered).

@@ -1,5 +1,5 @@
 #!/bin/bash
-# A' go/no-go check 1 (docs/direction-A-prime-mock.md): constraints learned from the toolkit's adversarial outputs
+# A' go/no-go check 1 (docs/archive/a-prime/direction-A-prime-mock.md): constraints learned from the toolkit's adversarial outputs
 # (per feature, the smallest and largest change seen; a feature no attack moved is fixed) as the exact solver's region,
 # against the battery (per-file union of the toolkit, run 105, and the adaptive search, run 109) on the 10% detectors.
 # Go if, on PV-seen, the learned region certifies at least a third of the files the battery evades.

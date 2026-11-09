@@ -1,5 +1,5 @@
 #!/bin/bash
-# Derivation step 5, check G6 (docs/item-layer-design.md; assumption A3): random in-place writes (offset uniform over
+# Derivation step 5, check G6 (docs/evidence/item-layer-design.md; assumption A3): random in-place writes (offset uniform over
 # the file, 1-64 bytes, random or printable content; 20 per file), predicted by the C1 engine and compared with
 # re-extraction bit for bit. Step 1: the 100 pilot files; step 2: 100 fresh files from the 2,000-file set (seed 1),
 # since the first round of step 1 was used to fix a declaration.

@@ -1,5 +1,5 @@
 """
-Direction A', go/no-go check 1b (docs/direction-A-prime-mock.md, decision 7): does the computed region certify?
+Direction A', go/no-go check 1b (docs/archive/a-prime/direction-A-prime-mock.md, decision 7): does the computed region certify?
 
 For each detected pilot file, the exact solver (Kantchelian's encoding, `scripts/ap_check0_solver.py`) runs over the
 edit-choice encoding of `scripts/ap_encoding.py` (up to K added sections, then an append, within the byte budget), in

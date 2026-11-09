@@ -1,6 +1,6 @@
 """
-What an edit does to the features, computed from the item table (docs/feature-provenance-model.md, Sections 3-4,
-claims C1 and C4; docs/item-layer-design.md, components 4 and 5).
+What an edit does to the features, computed from the item table (docs/archive/framework/feature-provenance-model.md, Sections 3-4,
+claims C1 and C4; docs/evidence/item-layer-design.md, components 4 and 5).
 
 C1, the side effects of one concrete edit: new sums = old sums + what the added items contribute - what the removed
 items contributed, then the readouts. An edit is stated on the elements and translated into item operations:

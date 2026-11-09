@@ -1,5 +1,5 @@
 #!/bin/bash
-# Derivation step 7, prerequisite: per-structure locating ranges (docs/item-layer-design.md, "Build status"). The one
+# Derivation step 7, prerequisite: per-structure locating ranges (docs/evidence/item-layer-design.md, "Build status"). The one
 # shared set (`pe_locating`: every parsed item located through all ten directories' data) is split into header,
 # section, and per-directory levels, sound since the pefile guard (run 94) keeps a directory's crash from ending the
 # parse. Check G5 (assumption A1) again, on header bytes as in run 91 and, new, on bytes past the header region that

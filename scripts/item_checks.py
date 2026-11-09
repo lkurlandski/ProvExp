@@ -1,5 +1,5 @@
 """
-Mechanical checks of the item layer (docs/item-layer-design.md, "Validation and go/no-go checks").
+Mechanical checks of the item layer (docs/evidence/item-layer-design.md, "Validation and go/no-go checks").
 
     exact   G1 and G2 (G1 only with --no_g2). G1: the readouts over the recorded item table reproduce the extractor's feature vector exactly
             (float32, bit for bit) for every modeled feature (all but pefilewarnings), with the import descriptors

@@ -1,5 +1,5 @@
 #!/bin/bash
-# Direction A, Table A1's toolkit columns (docs/direction-A-A1-design.md, build steps 2-3). Run after run 80 (it needs
+# Direction A, Table A1's toolkit columns (docs/evidence/direction-A-A1-design.md, build steps 2-3). Run after run 80 (it needs
 # the 10% sums store and the s10 models). FOR ACADEMIC SECURITY RESEARCH ONLY: Gimenez et al.'s published secml-malware
 # attacks against our own detectors, on our own pilot samples, to evaluate defenses.
 #   1. PV selection from the *seen* attacks only (quick split: padding, gamma_sections, gamma_shift, content_shift;

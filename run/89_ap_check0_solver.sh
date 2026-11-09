@@ -1,5 +1,5 @@
 #!/bin/bash
-# Direction A', go/no-go check 0 (docs/direction-A-prime-mock.md): can an exact solver (Kantchelian et al.'s
+# Direction A', go/no-go check 0 (docs/archive/a-prime/direction-A-prime-mock.md): can an exact solver (Kantchelian et al.'s
 # mixed-integer encoding of the GBDT, HiGHS via scipy) decide "can this file's score go below the 1%-FPR threshold?"
 # at our model sizes? 5 detected pilot malware per detector, decision version, 300 s per solve. No provenance needed.
 # Hypothesis: the encoding reproduces the booster's score exactly; evasions are found in seconds; proofs that no

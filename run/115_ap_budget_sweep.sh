@@ -1,5 +1,5 @@
 #!/bin/bash
-# A' step 1, follow-ups to run 114 (docs/direction-A-prime-plan.md, Section 11), on the files no attack evades, with
+# A' step 1, follow-ups to run 114 (docs/archive/a-prime/direction-A-prime-plan.md, Section 11), on the files no attack evades, with
 # the solver now calling HiGHS directly (the dual bound survives a timeout):
 #   (2) the undefended GBDT, append only, at fixed budgets of 4 KB, 64 KB, and 512 KB (does a small append certify?);
 #   (3) PV-seen and PV-all, one added section instead of three (is the number of sections what blocks the solver?).

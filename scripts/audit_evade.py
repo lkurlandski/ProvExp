@@ -1,5 +1,5 @@
 """
-3-C revised, the combined effect (docs/experiments/audit.md, "Scrambling what detection rests on"): how much of MalConv's
+3-C revised, the combined effect (docs/archive/explanation-provenance/experiments/audit.md, "Scrambling what detection rests on"): how much of MalConv's
 detection rests on the confirmed features together, and does scrambling them evade the detector? The per-feature test
 (scripts/audit_scramble.py, run 44) confirmed features one at a time; here the features of a *recipe* are scrambled
 together in each file, and the drop and the evasion rate at the detector's 1% FPR threshold are measured.
@@ -20,7 +20,7 @@ With `--broad_null` as well, two more nulls draw from every loader-ignored field
 `random_free_broad_nondos`.
 
 With `--realizable`, each confirmed recipe also gets a `*_realizable` version that changes only what the Windows loader
-lets an attacker change (domain knowledge inside the experiment, docs/experiments/audit.md, "Realizability"): `FREE`
+lets an attacker change (domain knowledge inside the experiment, docs/archive/explanation-provenance/experiments/audit.md, "Realizability"): `FREE`
 fields, which the loader ignores, are scrambled; `CONSTRAINED` fields take a valid value drawn from benign training
 files of the same machine type; loader-critical fields are left alone. Its null, `random_free`, scrambles as many
 `FREE` fields of the candidate pool (as `pushforward_realizable` has fields), drawn per file.

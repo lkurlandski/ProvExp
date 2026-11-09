@@ -1,5 +1,5 @@
 """
-M1 (docs/experiments/mocks.md; revision plan item 10): is the pushforward faithful on MalConv, the model the audit
+M1 (docs/archive/explanation-provenance/experiments/mocks.md; revision plan item 10): is the pushforward faithful on MalConv, the model the audit
 (Section 5.3) pushes forward?
 
 MalConv never computes the features, so a feature-space explanation of it cannot be tested by deleting features.

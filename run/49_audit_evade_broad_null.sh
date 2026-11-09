@@ -1,5 +1,5 @@
 #!/bin/bash
-# AU, a broader null for the realizable recipes (docs/experiments/audit.md, "Held-out evasion and realizability"): run
+# AU, a broader null for the realizable recipes (docs/archive/explanation-provenance/experiments/audit.md, "Held-out evasion and realizability"): run
 # 48's setup on the same 1,000 fresh held-out malware, plus --broad_null: random draws from every loader-ignored field
 # of the EMBER header, data-directory, Rich-header, and certificate features that no source confirmed (83 fields in the
 # classification), with and without the DOS region (DOS header, stub, Rich header).

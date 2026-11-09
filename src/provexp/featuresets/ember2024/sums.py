@@ -1,5 +1,5 @@
 """
-The layer-2 re-encodings of EMBER v3 (direction A, docs/direction-A-threat-model.md, Section 2): sums the extractor
+The layer-2 re-encodings of EMBER v3 (direction A, docs/evidence/direction-A-threat-model.md, Section 2): sums the extractor
 computes before its readout normalizes, ratios, or signs them, read so that the attacker's additions can only raise
 them.
 
@@ -19,7 +19,7 @@ region (and may turn the overlay into a gap, which keeps its bytes); appending e
 past a section whose declared raw data overruns the file, that section's region); an insertion adds a run or extends
 one at its end, and moves the other regions without changing their content.
 
-Each group also records its items (derivation step 8, docs/item-layer-design.md: "The re-encodings come for free"):
+Each group also records its items (derivation step 8, docs/evidence/item-layer-design.md: "The re-encodings come for free"):
 the byte runs, windows, and strings of each body region, and the sections with each hashed value split by its sign.
 Their readouts are identities over the sums, so C4 (provexp.reach) derives the re-encodings' directions with no rule of
 their own. The body items are their own kinds, located through what decides the body regions: unlike the whole-file

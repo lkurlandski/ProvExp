@@ -1,5 +1,5 @@
 """
-Witness for the signature case of G3 (docs/item-layer-design.md, "structures past the end of the file"): can appending
+Witness for the signature case of G3 (docs/evidence/item-layer-design.md, "structures past the end of the file"): can appending
 bytes raise the authenticode features, which the hand rules let only fall?
 
 pefile and signify read the certificate table at the file offset the SECURITY directory entry gives. Where that table

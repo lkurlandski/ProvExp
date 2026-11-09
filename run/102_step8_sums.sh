@@ -1,5 +1,5 @@
 #!/bin/bash
-# Derivation step 8 (docs/item-layer-design.md, "The re-encodings come for free"): the four re-encoded groups of
+# Derivation step 8 (docs/evidence/item-layer-design.md, "The re-encodings come for free"): the four re-encoded groups of
 # `SumsFeatureExtractor` (body byte counts, body byte/entropy windows, body strings, the split section buckets) record
 # their items and read them as identity readouts over sums, so C4 derives their directions instead of the hand rules.
 # Two checks, each on the 100 pilot files (run by Claude, 2026-10-29) and on the 2,000-file set (this script):

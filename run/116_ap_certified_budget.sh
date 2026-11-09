@@ -1,5 +1,5 @@
 #!/bin/bash
-# A' under review (docs/direction-A-prime-plan.md, Section 12): evidence for option (a), a certified budget per file
+# A' under review (docs/archive/a-prime/direction-A-prime-plan.md, Section 12): evidence for option (a), a certified budget per file
 # (the largest append, or added-section content, proven not to evade). Run overnight before the decision session.
 # Steps:
 #   (1) containment (run 111) on the solver path changed this session (HiGHS called directly via highspy; a 48-edit

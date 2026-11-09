@@ -1,5 +1,5 @@
 """
-Direction A, go/no-go check 2 (docs/direction-A-mock.md), part 1 of 2: the perturbation vectors.
+Direction A, go/no-go check 2 (docs/archive/direction-A/direction-A-mock.md), part 1 of 2: the perturbation vectors.
 
 FOR ACADEMIC SECURITY RESEARCH ONLY. This reproduces, against our own detector and on our own pilot samples, the
 black-box functionality-preserving transformations of Gimenez et al. ("Certifiably robust malware detectors by
@@ -342,7 +342,7 @@ _W: dict[str, Any] = {}
 def _init_worker(model: Path, section_pop: list[Any], api_calls: list[Any], seed: int) -> None:
     """Build the per-worker extractor, detector wrapper, and donor pools once."""
     lief.logging.disable()
-    extractor = merge_import_descriptors(PEFeatureExtractor())  # quirk-fixed, per docs/direction-A-mock.md check 2
+    extractor = merge_import_descriptors(PEFeatureExtractor())  # quirk-fixed, per docs/archive/direction-A/direction-A-mock.md check 2
     _W.update(extractor=extractor, names=extractor.feature_names, wrapper=make_wrapper(model, extractor),
               section_pop=section_pop, api_calls=api_calls, seed=seed, tmp=tempfile.mkdtemp(prefix="a_pv_w_"))
 

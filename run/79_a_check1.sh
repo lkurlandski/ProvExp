@@ -1,5 +1,5 @@
 #!/bin/bash
-# Direction A, go/no-go check 1 (docs/direction-A-mock.md, Table A0): does C1 predict the edited file's features from
+# Direction A, go/no-go check 1 (docs/archive/direction-A/direction-A-mock.md, Table A0): does C1 predict the edited file's features from
 # the original alone, without extracting the edited file? On the 100 pilot files, apply two loader-safe
 # transformations -- overlay append (Section 6 row 1, item-creating: guard byte + 4 KB attacker bytes) and an in-place
 # DOS-header overwrite (row 3, content: bytes [2,60)) -- predict phi(z') with C1, re-extract z', compare feature by

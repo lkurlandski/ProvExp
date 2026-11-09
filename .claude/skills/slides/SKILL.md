@@ -10,7 +10,7 @@ description: >
 
 The deck is for **communication**: advisors who are sharp but have not read the manuscript. A slide succeeds if its
 point lands in the time it is on screen. The source of the content is the manuscript (`manuscript/_c_background.tex`,
-`_d_framework.tex`, ...) and the design docs (`docs/framework-design.md`); the slides simplify it, they do not copy it.
+`_d_framework.tex`, ...) and the design docs (`docs/archive/framework/framework-design.md`); the slides simplify it, they do not copy it.
 
 ## Lessons from feedback
 

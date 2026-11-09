@@ -1,7 +1,7 @@
 """
 The expert feature set of Gimenez, Sivaprasad & Fritz, "Certifiably robust malware detectors by design" (arXiv
 2508.10038): 40 static features chosen by hand so that the attacker's additions can only raise them, for the
-expert-set row of Table A1 (docs/direction-A-expert-set.md).
+expert-set row of Table A1 (docs/evidence/direction-A-expert-set.md).
 
 Their extractor (`static_features_extraction.py:get_features` in their repository, read 2026-10-27) is built on LIEF;
 this one re-implements it on pefile, the parser of every other row, so that the row shares the parse. Where the two
@@ -180,7 +180,7 @@ class ExpertFeatures(FeatureType):
         return np.asarray([raw_obj[n] for n in _names()], dtype=np.float32)
 
     ############################################################################
-    # The item layer (docs/item-layer-design.md): items, readouts, recognizer, so the derivation (C4) and the C1
+    # The item layer (docs/evidence/item-layer-design.md): items, readouts, recognizer, so the derivation (C4) and the C1
     # engine read the expert set the way they read the instrumented EMBER extractor. `evaluate(items, readouts)` must
     # reproduce `feature_vector` exactly (check G1). The two quirks live in the terms: with `accumulate` the per-library
     # and per-name contributions are additive `add` terms (sound, up under additions); `accumulate=False` makes them

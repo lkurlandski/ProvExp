@@ -1,5 +1,5 @@
 """
-Direction A, step 2 (docs/direction-A-threat-model.md): the provisional direction table. For every EMBER v3 feature and
+Direction A, step 2 (docs/evidence/direction-A-threat-model.md): the provisional direction table. For every EMBER v3 feature and
 every operation of the threat models M_add, M_shift, M_full, the signs the operation can give the feature's change on
 some file; a threat model's direction is the union over its operations (fixed, up, down, both). The same for the
 feature's re-encoding as a layer-2 sum, where one exists.
@@ -26,7 +26,7 @@ Derived with `--extractor sums`, the variant files are written in the sums extra
 `{tm}-pre` and `{tm}-pre-control`, as run 80's `{tm}` and `{tm}-control`.
 
 Derived (the default; `--derive` is accepted for the older run scripts), the directions are computed (derivation
-step 7, C4; docs/item-layer-design.md, component 5): the kinds' term vocabulary and the in-place operations' changes come from the
+step 7, C4; docs/evidence/item-layer-design.md, component 5): the kinds' term vocabulary and the in-place operations' changes come from the
 item tables of the files in --files, the structural operations' changes from the catalogue
 (provexp.featuresets.ember2024.catalogue), and provexp.reach.directions turns them into signs. Two variants: strict
 (appending may complete structures past the end of the file, on any file) and the precondition row's (`-pre`: only

@@ -1,8 +1,8 @@
 """
-Direction A, go/no-go check 1 (docs/direction-A-mock.md, Table A0): does C1 predict the edited file's features from
+Direction A, go/no-go check 1 (docs/archive/direction-A/direction-A-mock.md, Table A0): does C1 predict the edited file's features from
 the item table of the original, without extracting the edited file?
 
-C1 (docs/feature-provenance-model.md): for an edit that adds, removes, modifies, or moves a known set of items,
+C1 (docs/archive/framework/feature-provenance-model.md): for an edit that adds, removes, modifies, or moves a known set of items,
 phi(z') = g(A(z) + sum of the touched items' contribution changes). We test it as the mock specifies: apply a
 transformation to a pilot file, predict phi(z') with C1 from z alone, re-extract z', and compare feature by feature.
 A pair "holds" if the prediction matches re-extraction within tolerance on every feature; mismatches are attributed
@@ -22,7 +22,7 @@ histogram, general, byteentropy, strings, and section (size_ratios + the growing
 touches histogram, general (entropy, start bytes), byteentropy (the overlapping window), strings (the local run), and
 the header DOS fields.
 
-The C1 engine (provexp.reach, derivation step 5; docs/item-layer-design.md, check G4) predicts the same pairs from
+The C1 engine (provexp.reach, derivation step 5; docs/evidence/item-layer-design.md, check G4) predicts the same pairs from
 the instrumented extractor's item table: append and dos_overwrite as byte edits (the engine itself flags writes to
 locating ranges, e.g. an append that reaches a section running past the end of the file), add_section through the
 catalogue's declaration. Its columns (`engine_*`) compare it with re-extraction and with the hand predictors.
@@ -299,7 +299,7 @@ def predict_content_overwrite(extractor: PEFeatureExtractor, z: bytes, lo: int, 
 def predict_add_section(extractor: PEFeatureExtractor, z: bytes, name: str, content: bytes, props: list[str]) -> np.ndarray:
     """C1's prediction of phi(z') for a declared 'add a section (name, content, props)' edit, from z alone.
 
-    This is a *declared structural* edit (docs/feature-provenance-model.md S3): the transformation states the item it
+    This is a *declared structural* edit (docs/archive/framework/feature-provenance-model.md S3): the transformation states the item it
     adds. C1 predicts the delta that item declares -- a new section item, +1 to the section counts and the COFF
     NumberOfSections, and the section content's byte contributions (histogram, strings), treated as added at the end.
     What the declaration does NOT fix is the tool's file layout: the section-table entry bytes, alignment padding, the
@@ -567,7 +567,7 @@ def main() -> None:
     readouts = extractor.readouts
     names = extractor.feature_names
     group = [n.split(":", 1)[0] for n in names]
-    # pefilewarnings has no items (docs/feature-provenance-model.md S7): it is outside the model, so it is excluded
+    # pefilewarnings has no items (docs/archive/framework/feature-provenance-model.md S7): it is outside the model, so it is excluded
     # from the exact-match test and its change is reported separately.
     modeled = np.array([g != "pefilewarnings" for g in group])
 

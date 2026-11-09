@@ -1,5 +1,5 @@
 #!/bin/bash
-# Section 5.2 on MalConv under the shared protocol (docs/experiments/specs.md; implementation plan WP3): besides the
+# Section 5.2 on MalConv under the shared protocol (docs/archive/explanation-provenance/experiments/specs.md; implementation plan WP3): besides the
 # pushforward of Integrated Gradients and the surrogate (run 58), MalConv's own window explanations, which use no
 # gradients (occlusion at 64-4,096 windows, KernelSHAP over 64-1,024 windows, adaptive KernelSHAP at budgets matched
 # to occlusion), each pushed forward and scored by deleting the bytes it points to. Same 100 files and operator.

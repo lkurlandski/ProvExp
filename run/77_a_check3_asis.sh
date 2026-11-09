@@ -1,5 +1,5 @@
 #!/bin/bash
-# Direction A, go/no-go check 3 (docs/direction-A-mock.md), the "features as they are" rows: how much detection a
+# Direction A, go/no-go check 3 (docs/archive/direction-A/direction-A-mock.md), the "features as they are" rows: how much detection a
 # sound monotone GBDT keeps when it may use only the features run 76 found one-directional (fixed: free; up: monotone
 # increasing; down: monotone decreasing; both: zeroed). Full EMBER-2024 splits, seed 0, 16 threads. Compare with the
 # unconstrained GBDT (artifacts/models/gbdt/seed-0, test ROC-AUC 0.99759).

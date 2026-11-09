@@ -1,5 +1,5 @@
 """
-Direction A', go/no-go check 0 (docs/direction-A-prime-mock.md): can an exact solver handle our GBDTs at all?
+Direction A', go/no-go check 0 (docs/archive/a-prime/direction-A-prime-mock.md): can an exact solver handle our GBDTs at all?
 
 Table A'1 asks, per detector and file, for the lowest score any allowed change can reach. For a tree ensemble that is
 a mixed-integer program (Kantchelian et al., ICML 2016): one binary per (feature, split threshold) saying whether the

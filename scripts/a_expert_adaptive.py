@@ -1,11 +1,11 @@
 """
-The adaptive cell and the M_full hole witnesses for the expert-set row (item 11; docs/direction-A-expert-set.md).
+The adaptive cell and the M_full hole witnesses for the expert-set row (item 11; docs/evidence/direction-A-expert-set.md).
 
 FOR ACADEMIC SECURITY RESEARCH ONLY: our own search against our own expert-set detector, on our own pilot malware, to
 evaluate the defense (as runs 100 and 106).
 
 The expert set is instrumented (provexp.featuresets.ember2024.expert), and the C4 derivation marks eleven of its forty
-features as lowerable under M_full (rows 27 and 30-39 of docs/direction-A-expert-set.md): `modified_dos_stub`, lowered by
+features as lowerable under M_full (rows 27 and 30-39 of docs/evidence/direction-A-expert-set.md): `modified_dos_stub`, lowered by
 rewriting the DOS stub to the default one, and the ten section-name features, lowered by renaming a section. This script
 
     witnesses   for each derived hole, one of our own byte edits that lowers the feature (re-extracted), confirming the

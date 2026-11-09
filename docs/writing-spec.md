@@ -16,7 +16,7 @@ The "implied" notes are earlier readings, not instructions; several of them were
   other words" cut from Def 6, "the largest or smallest" instead of "the largest or, in a min pool, the smallest", and
   Prop 1's decompositions numbered. Implied: once the structure is right, the user trims wording by hand; prefer the
   shorter phrasing in leads and statements.
-- **2026-11-07, §3.2 first read of the sprint-revised version (U1-U18 in `docs/sprint-framework-review.md`).** Def 6
+- **2026-11-07, §3.2 first read of the sprint-revised version (U1-U18 in `docs/archive/framework/sprint-framework-review.md`).** Def 6
   "quite good" (the user glossed $\uplus$ by hand). ¶1 "long and unfocussed", references other sections without
   reason, fails to introduce the subsection. The positions paragraph reads as "admitting to a significant limitation
   ... without any consolidation"; "an edit can have several deltas" obvious and its reason unconnected. The example
@@ -245,7 +245,7 @@ The "implied" notes are earlier readings, not instructions; several of them were
   problematic." The comments follow in a new session. Implied so far: the paragraph gate cut length and empty
   paragraphs but did not make the subsection readable; the cause is not yet known (prose, structure, or what the
   mathematics shows).
-- **2026-11-09, Sound Directions round 3, the comments** (verbatim in `docs/sprint-framework-review.md`). Liked: the
+- **2026-11-09, Sound Directions round 3, the comments** (verbatim in `docs/archive/framework/sprint-framework-review.md`). Liked: the
   lead ("quite good", wants only two small clarifications), Def 7 ("an enormous improvement"), the paragraph on where
   signatures come from, the sums paragraph ("pretty well written"). Lost from the sign sets on: "what the fuck are $A$
   and $B$?" (undefined, clashing with Prop 1), "Don't know what you're talking about"; the derived table reusing $D$:

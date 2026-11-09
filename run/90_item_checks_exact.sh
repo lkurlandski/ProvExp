@@ -1,5 +1,5 @@
 #!/bin/bash
-# Derivation steps 2-3, checks G1 and G2 (docs/item-layer-design.md): the item table every feature type records, read
+# Derivation steps 2-3, checks G1 and G2 (docs/evidence/item-layer-design.md): the item table every feature type records, read
 # through its declared readouts, must reproduce the extractor's feature vector bit for bit (G1; every feature but the
 # 88 pefilewarnings, merged imports and thrember's original imports), and the items spread over their bytes must
 # reproduce today's provenance (G2). G1 and G2 on the 100 pilot files; G1 alone on the 2,000-file set (decided by the

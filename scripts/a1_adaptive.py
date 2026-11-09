@@ -1,8 +1,8 @@
 """
-Direction A, Table A1's adaptive column (docs/direction-A-A1-design.md): a soundness test for our monotone detectors.
+Direction A, Table A1's adaptive column (docs/evidence/direction-A-A1-design.md): a soundness test for our monotone detectors.
 
 FOR ACADEMIC SECURITY RESEARCH ONLY. This is a defense-evaluation harness. A sound monotone detector (the C4 rows)
-carries a guarantee: no loader-safe edit in the threat model M (docs/direction-A-threat-model.md, Section 1) can lower
+carries a guarantee: no loader-safe edit in the threat model M (docs/evidence/direction-A-threat-model.md, Section 1) can lower
 its score. This script checks that guarantee on our own pilot samples against our own detectors, by trying the edits M
 allows and recording whether any lowers the score. For a C4 row the expected result is "no edit helps" (0 by
 construction, Gimenez Prop. 1 + C4 + A1-A4); a decrease below -1e-6 is an A1-A4 bug to debug against Table A0, not an
@@ -421,7 +421,7 @@ def menu(donors: Donors, rng: np.random.Generator, candidates: int, preds: Predi
 # The twelve-operation search (item 8): exact predictions, materialized by the catalogue's writers
 #
 # Item 7 made every structural operation's effect predictable exactly (run 118: 0 wrong of the declared edits), so the
-# search can score every operation of the threat model (docs/direction-A-threat-model.md), not just append and
+# search can score every operation of the threat model (docs/evidence/direction-A-threat-model.md), not just append and
 # add-section. Each candidate is scored by the exact prediction of our own byte-level edit -- catalogue.predict_* for
 # the structural operations (add section, add imports, rename, both removals; the two gap insertions are simply
 # extracted, ~5x cheaper than predicting them) and reach.predict for the in-place overwrites (header fields, checksum,

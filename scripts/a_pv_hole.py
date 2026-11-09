@@ -1,9 +1,9 @@
 """
-Direction A, go/no-go check 2 (docs/direction-A-mock.md), part 2 of 2: the hole in PV selection.
+Direction A, go/no-go check 2 (docs/archive/direction-A/direction-A-mock.md), part 2 of 2: the hole in PV selection.
 
 FOR ACADEMIC SECURITY RESEARCH ONLY. From the perturbation vectors of scripts/a_pv_attacks.py, reconstruct Gimenez
 et al.'s perturbation-vector (PV) feature selection and compare it with the directions feature provenance computes
-(C4, docs/direction-A-threat-model.md). The question this answers is defensive: does PV selection, derived from a
+(C4, docs/evidence/direction-A-threat-model.md). The question this answers is defensive: does PV selection, derived from a
 finite sample of attacks, keep features that an attacker *could* push down within the same threat model but that this
 particular sample happened never to decrease? Those features are a hole: a monotone detector built on them is not
 sound, though PV's own attacks never reveal it.
@@ -27,7 +27,7 @@ The gain share is read from --model: pass the PV-selected GBDT (trained from pv.
 the decisive number; the default unconstrained GBDT gives an immediate preview of where the hole sits.
 
 With `--attacks`, PV selection is derived from that subset of the attacks only (Table A1's "PV, seen" row; the quick
-seen/held-out split of docs/direction-A-A1-design.md, with leave-one-out as the formal version), and `--tag` suffixes
+seen/held-out split of docs/evidence/direction-A-A1-design.md, with leave-one-out as the formal version), and `--tag` suffixes
 every output file (e.g. `pv-seen.neutralize.txt`, `report-seen.json`).
 
 Usage:

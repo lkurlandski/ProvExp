@@ -1,5 +1,5 @@
 """
-Go/no-go for the iterated pushforward (docs/theory.md, Pillar B): can the pushforward recover a feature-space
+Go/no-go for the iterated pushforward (docs/archive/explanation-provenance/theory.md, Pillar B): can the pushforward recover a feature-space
 explanation from its pullback better when it is iterated than in one step?
 
 For each file and native explainer a (path and interventional TreeSHAP, KernelSHAP), the byte-level explanation is
@@ -13,7 +13,7 @@ Each recovered explanation is scored by the feature-space deletion test of scrip
 ties, and budgets), against the native explainer's own curve: R = area(recovered) / area(a). Alongside, the relative
 recovery error ||a_att - a_rec||_1 / ||a_att||_1 and the relative residual ||b - P a_rec||_1 / ||b||_1.
 
-Hypothesis (docs/theory.md): R rises from about 0.80 (one step) toward 1, minus what features that cannot be told apart
+Hypothesis (docs/archive/explanation-provenance/theory.md): R rises from about 0.80 (one step) toward 1, minus what features that cannot be told apart
 (linearly dependent provenance columns) hold. No-go if the iteration gains little over one step.
 
 The twins oracle measures the identifiability ceiling (run 62): by Proposition Exact Pushforward (iii), cg is already the

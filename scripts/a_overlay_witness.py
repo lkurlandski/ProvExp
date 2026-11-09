@@ -1,5 +1,5 @@
 """
-Witness for the overlay gap (docs/item-layer-design.md, "First row confirmed"): can appending bytes lower
+Witness for the overlay gap (docs/evidence/item-layer-design.md, "First row confirmed"): can appending bytes lower
 `section:overlay_size` or any `body_*` sum?
 
 pefile's `get_overlay_data_start_offset` skips any section or data-directory extent that runs past the end of the

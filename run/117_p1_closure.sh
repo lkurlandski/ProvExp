@@ -1,5 +1,5 @@
 #!/bin/bash
-# P1, closure of the population (docs/formalization.md Section 9; review R2): G7 (run 107) re-run with the precondition
+# P1, closure of the population (docs/archive/framework/formalization.md Section 9; review R2): G7 (run 107) re-run with the precondition
 # evaluated on every edited file whose original passes it (catalogue_checks.py's `precondition_after` column; report
 # keys `leaving_population` per operation and `closed`). The guarantee covers a file only while it passes the
 # precondition, so an edit that takes a passing file to a failing one would break it.

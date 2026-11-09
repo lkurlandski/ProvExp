@@ -1,5 +1,5 @@
 """
-Direction A', go/no-go check 1 (docs/direction-A-prime-mock.md): do constraints learned from attacks give wrong
+Direction A', go/no-go check 1 (docs/archive/a-prime/direction-A-prime-mock.md): do constraints learned from attacks give wrong
 certificates?
 
 The realistic data-driven way to give an exact solver a region of reachable feature vectors is to learn it from the

@@ -1,5 +1,5 @@
 #!/bin/bash
-# M1: is the pushforward faithful on MalConv, the model the audit pushes forward? (docs/experiments/mocks.md, M1;
+# M1: is the pushforward faithful on MalConv, the model the audit pushes forward? (docs/archive/explanation-provenance/experiments/mocks.md, M1;
 # revision plan item 10; Section 5.1's blue placeholder.)
 #
 # MalConv never computes the features, so each feature-space explanation of it is pulled back through P and its top
@@ -9,7 +9,7 @@
 # Hypothesis: pushforward > surrogate > random features; pushforward < IG itself (grouping into features blurs IG).
 #
 # Smoke-tested on 4 files (32 IG steps, 4 workers): 22 s. Ran: 9 min (IG on GPU 1 262 s, 16 workers 282 s), no
-# failures. Result: pushforward 6.25 vs. surrogate 3.28 (99/100); see docs/experiments/pf1.md.
+# failures. Result: pushforward 6.25 vs. surrogate 3.28 (99/100); see docs/archive/explanation-provenance/experiments/pf1.md.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 source env/bin/activate

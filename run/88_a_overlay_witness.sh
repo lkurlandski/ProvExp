@@ -1,5 +1,5 @@
 #!/bin/bash
-# Overlay gap witness (docs/item-layer-design.md, "First row confirmed"): on the 100 pilot files, append enough bytes
+# Overlay gap witness (docs/evidence/item-layer-design.md, "First row confirmed"): on the 100 pilot files, append enough bytes
 # to bring every section or directory extent pefile skips (because it runs past EOF) inside the file, and check
 # whether overlay_size or any body_* count drops.
 # Hypothesis: overlay_size drops on files with a section past EOF; the body_* sums do not, because sums.body_regions

@@ -1,5 +1,5 @@
 """
-The item layer of feature provenance (docs/feature-provenance-model.md, Sections 2-4; docs/item-layer-design.md).
+The item layer of feature provenance (docs/archive/framework/feature-provenance-model.md, Sections 2-4; docs/evidence/item-layer-design.md).
 
 A feature extractor works in three layers: it finds the items of an object (layer 1: which elements make up each item
 and which decide where it is), adds up what each item contributes to named sums (layer 2), and applies a formula per
@@ -118,7 +118,7 @@ class Term:
     """
     One contribution of an item to a sum (a family of sums, entry `index`).
 
-    The ops, and the sign of the contribution when the item is added (docs/item-layer-design.md, Section 1):
+    The ops, and the sign of the contribution when the item is added (docs/evidence/item-layer-design.md, Section 1):
         count   +1                                                          +
         add     `value`, declared nonnegative                               + or 0
         bins    the count of each bin of `bin_key` over `ranges`, into

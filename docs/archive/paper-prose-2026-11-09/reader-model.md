@@ -2,7 +2,7 @@
 
 # Reader model: how the user reads a draft
 
-Used in the self-review sprint (`docs/sprint-framework-review.md`, step 1): read the rendered subsection as the user
+Used in the self-review sprint (`docs/archive/framework/sprint-framework-review.md`, step 1): read the rendered subsection as the user
 would and write down the comments they would write, then fix them, so that the user's first read is of the improved
 version. Built from the reaction log in
 `docs/writing-spec.md` (2026-11-03 to 2026-11-06). The lessons in `SKILL.md` say how to write; this file predicts how

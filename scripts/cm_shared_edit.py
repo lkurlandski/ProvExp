@@ -1,5 +1,5 @@
 """
-Editing the shared fields (manuscript, Section 6.1; docs/experiments/specs.md, "Part A'"): do loader-safe changes to
+Editing the shared fields (manuscript, Section 6.1; docs/archive/explanation-provenance/experiments/specs.md, "Part A'"): do loader-safe changes to
 the fields that both detectors rely on, found through the GBDT's pullback, weaken both detectors, while the same number
 of fields chosen another way weakens only one?
 

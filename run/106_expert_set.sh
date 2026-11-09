@@ -1,5 +1,5 @@
 #!/bin/bash
-# Direction A, Table A1's expert-set row (docs/direction-A-expert-set.md; decided 2026-10-29): Gimenez et al.'s 40
+# Direction A, Table A1's expert-set row (docs/evidence/direction-A-expert-set.md; decided 2026-10-29): Gimenez et al.'s 40
 # features, re-implemented on pefile with their two assign-instead-of-accumulate quirks patched
 # (provexp.featuresets.ember2024.expert), and the monotone GBDT with all 40 constrained increasing, as they train it.
 # FOR ACADEMIC SECURITY RESEARCH ONLY: their published secml-malware attacks against our own detectors, on our own

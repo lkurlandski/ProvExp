@@ -1,5 +1,5 @@
 #!/bin/bash
-# Direction A, Table A1 prerequisite (docs/direction-A-A1-design.md, build step 1): the layer-2 re-encoding ("sums")
+# Direction A, Table A1 prerequisite (docs/evidence/direction-A-A1-design.md, build step 1): the layer-2 re-encoding ("sums")
 # features on a 10% subsample of every split (every 10th shard; shards are shuffled within a split), and the matched
 # GBDTs trained on that store (seed 0, 16 threads):
 #   1. unconstrained, thrember's features only (merged imports)      the reference on the subsample

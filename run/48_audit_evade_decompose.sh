@@ -1,5 +1,5 @@
 #!/bin/bash
-# AU, where the realizable pushforward recipe loses its evasion (docs/experiments/audit.md, "Held-out evasion and
+# AU, where the realizable pushforward recipe loses its evasion (docs/archive/explanation-provenance/experiments/audit.md, "Held-out evasion and
 # realizability"): run 47's setup on the same 1,000 fresh held-out malware, plus the decomposition (--decompose): the
 # realizable fields with random bytes (abnormal values), the free fields alone, and a null of unconfirmed free fields.
 set -euo pipefail

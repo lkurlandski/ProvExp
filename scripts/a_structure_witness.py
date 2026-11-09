@@ -1,5 +1,5 @@
 """
-Witnesses for the remaining class-1 cases of G3 (docs/item-layer-design.md, "Anticipated disagreements" and
+Witnesses for the remaining class-1 cases of G3 (docs/evidence/item-layer-design.md, "Anticipated disagreements" and
 "structures past the end of the file"): edits under which the hand rules call a feature fixed (or one-sided), but the
 extractor moves it.
 

@@ -259,7 +259,7 @@ contradicts.
    not piecemeal, and point the user first to the passages that are new prose, where the next round is likely. A
    second round of small, concrete fixes is implemented directly and reported per item. Apply the staging scan to
    the plan's own proposed sentences too (an announced count slipped into a proposal, 2026-11-06).
-8. **Simulated review before the user reads** (sprint from 2026-11-06, `docs/sprint-framework-review.md`). For an
+8. **Simulated review before the user reads** (sprint from 2026-11-06, `docs/archive/framework/sprint-framework-review.md`). For an
    existing draft the user has not reviewed, read it as the user would, with `reader-model.md` open: rendered text,
    paragraph by paragraph, each trigger as a question. Write the predicted review in the user's format (numbered,
    Q/F/M, confidence), answer the predicted questions, then propose a plan as in step 7 and implement it once

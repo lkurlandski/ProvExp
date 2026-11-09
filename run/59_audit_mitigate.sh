@@ -1,5 +1,5 @@
 #!/bin/bash
-# M3, test-time half: the audit's countermeasure (docs/experiments/mocks.md, M3; revision plan item 11; Section 5.3's
+# M3, test-time half: the audit's countermeasure (docs/archive/explanation-provenance/experiments/mocks.md, M3; revision plan item 11; Section 5.3's
 # blue mitigation table). Before MalConv scores a file, the audited fields an attacker can change are overwritten with
 # zeros at the bytes the file's own P names. Defenses: none, the pushforward's fields (8), the union with the
 # surrogate's (12). Cost: MalConv's threshold re-set to 1% FPR on 5,000 held-out benign files under each defense, and
@@ -10,7 +10,7 @@
 #
 # Smoke-tested on 20 malware + 20 benign (8 workers, 23 s); the no-defense attack scores reproduce run 49 exactly, file
 # by file. Ran: 8.4 min, 5,997 files ok (3 not PE). Result: detection 91.2 -> 89.2 / 87.7%, strongest attack 16.8 ->
-# 8.2 / 2.9% (docs/experiments/audit.md, "The countermeasure at test time").
+# 8.2 / 2.9% (docs/archive/explanation-provenance/experiments/audit.md, "The countermeasure at test time").
 set -euo pipefail
 cd "$(dirname "$0")/.."
 source env/bin/activate

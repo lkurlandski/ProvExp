@@ -1,11 +1,11 @@
 #!/bin/bash
 # W4 robustness: M1 (run 58) with random fill instead of zeros for the deleted content bytes, so that the pushforward's
-# faithfulness on MalConv does not rest on one deletion operator (docs/experiments/pf1.md, "Pushforward faithfulness on
+# faithfulness on MalConv does not rest on one deletion operator (docs/archive/explanation-provenance/experiments/pf1.md, "Pushforward faithfulness on
 # MalConv"). Same 100 files, rankings, budgets, and seeds as run 58; the fill is seeded per (file, mask).
 # Hypothesis: pushforward > surrogate > random features still holds; IG's own lead may shrink if zeros caused it.
 #
 # Smoke-tested on 4 files (32 IG steps, 4 workers): 21 s. Ran: ~9 min, GPU 1 + 16 workers. Result: pushforward 2.0x the
-# surrogate (99/99), IG overshoot unchanged (docs/experiments/pf1.md).
+# surrogate (99/99), IG overshoot unchanged (docs/archive/explanation-provenance/experiments/pf1.md).
 set -euo pipefail
 cd "$(dirname "$0")/.."
 source env/bin/activate

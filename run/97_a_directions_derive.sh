@@ -1,6 +1,6 @@
 #!/bin/bash
 # Derivation step 7: the directions (C4) computed from the item tables instead of the hand rules of run 76
-# (docs/item-layer-design.md, component 5; scripts/a_directions.py --derive), and the comparison with them (G3).
+# (docs/evidence/item-layer-design.md, component 5; scripts/a_directions.py --derive), and the comparison with them (G3).
 # The kinds' term vocabulary and the in-place operations' changes come from the 100 pilot files; the structural
 # operations' changes are the catalogue's provisional declarations (provexp.featuresets.ember2024.catalogue). Two
 # variants: strict (appending may complete structures past the end of the file, on any file) and the precondition

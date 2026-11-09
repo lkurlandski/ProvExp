@@ -1,6 +1,6 @@
 #!/bin/bash
 # Tier 2, item 11 (review R3c, R8): the C4 derivation, the adaptive cell, and the M_full hole witnesses for the
-# expert-set row (scripts/a_expert_directions.py, scripts/a_expert_adaptive.py; docs/direction-A-expert-set.md). The
+# expert-set row (scripts/a_expert_directions.py, scripts/a_expert_adaptive.py; docs/evidence/direction-A-expert-set.md). The
 # expert set (Gimenez et al.'s 40 features) is now instrumented (provexp.featuresets.ember2024.expert: items() +
 # readouts, G1 bit-exact), so the generic C4 engine reads it like the EMBER extractor and marks eleven of its forty
 # features as lowerable under M_full (rows 27 and 30-39): modified_dos_stub (rewrite the DOS stub) and the ten

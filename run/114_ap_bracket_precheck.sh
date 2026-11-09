@@ -1,5 +1,5 @@
 #!/bin/bash
-# A' step 1, the pre-check (docs/direction-A-prime-plan.md, Section 6; decides G1): the bracket of each detector's
+# A' step 1, the pre-check (docs/archive/a-prime/direction-A-prime-plan.md, Section 6; decides G1): the bracket of each detector's
 # worst case under the edit catalogue, per family (append only; up to 3 added sections only) and combined, on the
 # pilot malware each detector catches and no real attack evades. The floor is the solver's proven bound (it minimizes
 # the score, so a timeout still gives a floor); the ceiling is the lowest real score of the toolkit and the adaptive

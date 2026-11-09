@@ -1,5 +1,5 @@
 #!/bin/bash
-# CM, triage tied to a decision (docs/experiments/cm.md, "Triage tied to a decision"; revision plan B9).
+# CM, triage tied to a decision (docs/archive/explanation-provenance/experiments/cm.md, "Triage tied to a decision"; revision plan B9).
 #
 # Does the disagreement triage distinguish an attack-caused disagreement from an organic one? Two populations of
 # GBDT-only-flagged malware, run through the same blind/oppose/agree split (A = GBDT, B = MalConv):
@@ -7,11 +7,11 @@
 #   evasion   malware both detect, with the shared set S (the bytes both rely on) scrambled loader-safe, kept where
 #             MalConv then falls to/below its 1%-FPR threshold while the GBDT holds.
 # Hypothesis: the evasion population carries more of the GBDT's evidence in "oppose" (bytes both rely on that MalConv
-# now reads the other way) than the organic one. If it does not, fall back to reframing the readout (docs/experiments/cm.md).
+# now reads the other way) than the organic one. If it does not, fall back to reframing the readout (docs/archive/explanation-provenance/experiments/cm.md).
 #
 # Single process, one GPU. 200 candidate malware from the explanation set; IG recomputed per kept file at 256 steps.
 # Ran on GPU 1 (per the user): 36.8 min, 32 organic and 87 evasion files. Result: no separation (oppose 0.26 vs. 0.28,
-# p = 0.14); see docs/experiments/cm.md, "Result (run 57)".
+# p = 0.14); see docs/archive/explanation-provenance/experiments/cm.md, "Result (run 57)".
 set -euo pipefail
 cd "$(dirname "$0")/.."
 source env/bin/activate

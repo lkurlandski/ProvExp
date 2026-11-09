@@ -21,7 +21,7 @@
 # (M_add 9/33 and 16/32, all header_fields, outside M_add). Failing files: every routed row 0/12 seen, 1/12 held-out
 # (one file, header_fields, reference branch) against the reference's own 4/12 (three GAMMA API runs that the routed
 # search does not find). Adaptive: unconstrained 10/49, PV 22/22, both C4 rows 0/45 (0/12 on failing files, where the
-# unconstrained model is also 0/12). Details: docs/direction-A-A1-design.md, "Re-run with derived directions".
+# unconstrained model is also 0/12). Details: docs/evidence/direction-A-A1-design.md, "Re-run with derived directions".
 set -euo pipefail
 cd "$(dirname "$0")/.."
 source env/bin/activate

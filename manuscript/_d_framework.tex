@@ -1,6 +1,6 @@
-% Section 3: the framework. Rewritten 2026-11-04 from docs/framework-spine.md with the user's decisions and comments
+% Section 3: the framework. Rewritten 2026-11-04 from docs/archive/framework/framework-spine.md with the user's decisions and comments
 % (theory without domain examples, D2; no tables or figures for now, D3/D4, the tables are backed up in
-% backup/framework-tables-2026-11-04.tex). Source of the math: docs/formalization.md (frozen). Proofs: _j_proofs.tex.
+% backup/framework-tables-2026-11-04.tex). Source of the math: docs/archive/framework/formalization.md (frozen). Proofs: _j_proofs.tex.
 % 2026-11-05: the toy example and the ties to real feature sets were cut (user); the pre-cut text is in
 % backup/framework-before-cuts-2026-11-05.tex, to refactor into Section 4 where useful. The sign-rule tables moved to
 % the proofs appendix (_j_proofs.tex) the same day, and the prose had a readability pass (math unchanged).
@@ -19,7 +19,7 @@ Appendix~\ref{sec:symbols} lists the notation, Appendix~\ref{sec:types} is a sho
 \subsection{Sum-then-Readout Extractors}
 \label{sec:fw:model}
 
-% Spine: docs/framework-design.md, Section 11 (approved 2026-11-05). Notation: lowercase Greek for the maps of the
+% Spine: docs/archive/framework/framework-design.md, Section 11 (approved 2026-11-05). Notation: lowercase Greek for the maps of the
 % factorization (pi, sigma, rho, nu); calligraphic for the spaces they connect (Z, V, S, X); tau for kinds.
 We call the pieces of the input that a feature mapping analyzes \emph{items}, the running totals to which each item
 contributes \emph{sums}, and the formula that computes a feature from a few sums its \emph{readout}. Each of the three
@@ -194,8 +194,8 @@ contribution. The rest of this section computes from the item table.
 \subsection{Edits and Their Side Effects}
 \label{sec:fw:side-effects}
 
-% Spine: docs/framework-design.md, Section 12 (approved 2026-11-05). Revised in the review sprint
-% (docs/sprint-framework-review.md): round 1 2026-11-07, round 2 2026-11-08 from a six-paragraph spine (no example).
+% Spine: docs/archive/framework/framework-design.md, Section 12 (approved 2026-11-05). Revised in the review sprint
+% (docs/archive/framework/sprint-framework-review.md): round 1 2026-11-07, round 2 2026-11-08 from a six-paragraph spine (no example).
 An edit applies a transformation $T$ to an input $z$ and gives $z' = T(z)$. Its side effects are usually found by
 applying the edit and extracting the features of $z'$. This subsection describes an edit instead by its delta, the
 items it removes and adds, and proves that the delta and the item table of $z$ give $z'$ exactly (before the edit is
@@ -278,8 +278,8 @@ incremental view maintenance~\cite{gupta1995maintenance,koch2014dbtoaster}, and 
 \subsection{Sound Directions}
 \label{sec:fw:directions}
 
-% Spine: docs/framework-design.md, Section 14 (2026-11-05). Review sprint (docs/sprint-framework-review.md),
-% 2026-11-08: round 3 from the gated plan; 2026-11-09: round 4 from docs/sound-directions-math.md, in blocks with the
+% Spine: docs/archive/framework/framework-design.md, Section 14 (2026-11-05). Review sprint (docs/archive/framework/sprint-framework-review.md),
+% 2026-11-08: round 3 from the gated plan; 2026-11-09: round 4 from docs/archive/framework/sound-directions-math.md, in blocks with the
 % user's review after each (block 1: lead, Def 7, Omega).
 Proposition~\ref{prop:fw:side-effects} computes the change of every feature from the delta of one edit. A set of edits
 has one delta per edit. Each delta depends on the content the edit writes and on the input it is applied to, so it

@@ -1,5 +1,5 @@
 """
-ERDALT's hole, computed from the derived direction table before any attack runs (docs/direction-A-mock.md, ERDALT row).
+ERDALT's hole, computed from the derived direction table before any attack runs (docs/archive/direction-A/direction-A-mock.md, ERDALT row).
 
 ERDALT is robust to an edit if its first layer L maps the edit's feature change to a nonnegative vector (the layers
 above are monotone). The derived table says, per feature, which way the threat model's edits can move it: up only,

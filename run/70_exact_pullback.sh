@@ -8,7 +8,7 @@
 #
 # Smoke-tested on 8 files (max diff 3.5e-13). The whole explanation set (2,000 files) is single-threaded; ~20-30 min.
 # NOTE: this is Appendix C's first paragraph only. The data-flow cost (second paragraph) needs a per-feature Shapley
-# sampler for the non-additive features and is not implemented yet (docs/plan-2026-10-19.md, Phase 4).
+# sampler for the non-additive features and is not implemented yet (docs/archive/explanation-provenance/plan-2026-10-19.md, Phase 4).
 set -euo pipefail
 cd "$(dirname "$0")/.."
 source env/bin/activate

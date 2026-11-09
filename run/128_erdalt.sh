@@ -1,5 +1,5 @@
 #!/bin/bash
-# Table 7's ERDALT row (docs/direction-A-mock.md, "ERDALT row"; user decision 2026-11-04): Gimenez et al.'s main
+# Table 7's ERDALT row (docs/archive/direction-A/direction-A-mock.md, "ERDALT row"; user decision 2026-11-04): Gimenez et al.'s main
 # method, an empirically robust detector (a learned linear post-processing L under a monotone network), ported from
 # their public train_model.py following the paper (the output layer is projected too, so the network is monotone;
 # docs/upstream-issues.md item 8). FOR ACADEMIC SECURITY RESEARCH ONLY: published secml-malware attacks and our own
