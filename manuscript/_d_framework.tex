@@ -284,18 +284,20 @@ incremental view maintenance~\cite{gupta1995maintenance,koch2014dbtoaster}, and 
 Proposition~\ref{prop:fw:side-effects} computes the change of every feature from the delta of one edit. A set of edits
 has one delta per edit, and each delta depends on the content the edit writes and on the input it is applied to, so
 the deltas cannot be computed before the content is chosen, and a set that allows any content has too many edits to
-compute them one by one. The attacker may choose any edit of the set, so a defense must hold against all of them.
-This subsection computes, for every feature, the directions in which the edits of such a set can move it, from the
+compute them one by one. Yet an attacker searching for an evasive edit, and a defender who must withstand every edit,
+both need to know what all the edits of the set can do. This subsection computes, for every feature, the directions in which the edits of such a set can move it, from the
 item tables of the inputs and a description of which kinds of item the edits change, without computing any delta, and
 proves that these directions are sound: no edit of the set moves a feature in a direction they exclude. One table of
-directions thus accounts for every edit of the set at once, and a detector whose score cannot fall in the directions
-it allows cannot be evaded by any of them.
+directions thus accounts for every edit of the set at once. It tells an attacker which features the edits can move,
+and which way, and it lets a defender build a detector whose score cannot fall in the directions the table allows, a
+detector that no edit of the set can evade.
 
-\definition[Threat models and direction tables]
+\definition[Threat models and directions]
 \label{def:fw:directions}
 {
-A \emph{threat model} $\mathcal{M}$ is a set of transformations, the edits allowed in one step, and the
-transformations $\mathcal{T}$ of \Cref{sec:background} are their finite sequences. A \emph{population} is a subset
+A \emph{threat model} $\mathcal{M}$ is a set of transformations $T: \mathcal{Z} \to \mathcal{Z}$, the single edits
+the attacker may apply to an input, and the transformations $\mathcal{T}$ of \Cref{sec:background} are their finite
+sequences, the edits applied one after another. A \emph{population} is a subset
 $Z \subseteq \mathcal{Z}$ of inputs, and it is \emph{closed} under $\mathcal{M}$ if no transformation in $\mathcal{M}$
 takes an input of $Z$ outside $Z$. A \emph{direction} is one of four sets of signs that the change of a value can
 have: $\mathsf{fixed} = \{0\}$, $\mathsf{up} = \{0, +\}$, $\mathsf{down} = \{-, 0\}$, and $\mathsf{both} = \{-, 0,
@@ -304,28 +306,41 @@ over $Z$ if, for every transformation in $\mathcal{M}$ and every input of $Z$, t
 sign in $D_j$: no transformation changes a fixed feature, lowers an up feature, or raises a down feature.
 }
 
-\noindent A sound table is a feature-space constraint of the kind $\Omega$ describes (\Cref{sec:background}): every
-vector that an edit of the threat model produces moves each feature within its direction, so a feature-space attack
-that keeps to the table discards only vectors that no such edit produces. Feature-space constraints are usually
-written by hand from knowledge of the input format; a sound table is computed from the extractor and the threat model
-instead. The table bounds the reachable vectors from outside and does not claim that every vector within its
-directions is reachable.
+\noindent A sound table is a feature-space constraint in the sense of \Cref{sec:background}: it limits the ways in
+which the feature vector of an input can change to the ways in which an edit of the threat model can change it. Such
+constraints are usually written by hand, typically with a domain expert~\cite{dyrmishi2023empirical}, and often say
+that some features may only be added and not removed~\cite{pierazzi2020intriguing}. A sound table states constraints
+of this form, but computes them from the extractor and the threat model. It never excludes a vector that an edit
+produces, but it may allow vectors that no edit produces.
 
-By Proposition~\ref{prop:fw:side-effects}(i), an additive sum changes by the contributions of the added items minus
-those of the removed ones, so the sign of its change follows from which kinds of item an edit adds, removes, or
-rewrites in place.
+The directions do not need the delta of every edit. By Proposition~\ref{prop:fw:side-effects}, an edit changes the
+sums only through the contributions of the items it removes and adds, and a contribution depends only on the item's
+kind and content. Knowing which items of each kind the edits may remove, add, or replace is therefore enough to know
+which way each sum can move, whatever content the edits write.
 
-\definition[Signatures]
+\definition[Changes and signatures]
 \label{def:fw:signature}
 {
-The \emph{signature} $\Delta_{\mathcal{M}}(Z)$ of a threat model $\mathcal{M}$ over a population $Z$ lists, for each
-kind, which of three changes the transformations of $\mathcal{M}$ make to items of that kind on inputs of $Z$: they
-\emph{add} items, \emph{remove} items, or \emph{rewrite} items in place, replacing an item by another of the same
-kind. For a rewrite, the signature also records whether the new content is free, keeps the key of the old content,
-has the same length, or \emph{extends} the old content by appending elements. The signature \emph{covers}
-$\mathcal{M}$ if every transformation of $\mathcal{M}$, on every input of $Z$, has a delta made of the changes it
-lists.
+A \emph{change} of kind $\tau$, written $c \to c'$, takes an item of kind $\tau$ with content $c$ to one with content
+$c'$, where either content may be absent, written $\bot$, but not both: $\bot \to c'$ \emph{adds} an item,
+$c \to \bot$ \emph{removes} one, and $c \to c'$ \emph{replaces} one in place. A delta $(I^-, I^+)$ is \emph{made of}
+a multiset $C$ of changes, each with its kind, if
+\begin{equation}
+  \label{eq:fw:made-of}
+  \begin{aligned}
+    I^- &= \mset{(\tau, c) : (\tau, c \to c') \in C,\ c \neq \bot}, \\
+    I^+ &= \mset{(\tau, c') : (\tau, c \to c') \in C,\ c' \neq \bot}.
+  \end{aligned}
+\end{equation}
+A \emph{signature} $\Delta$ assigns each kind $\tau$ a set $\Delta_\tau$ of changes of kind $\tau$. It \emph{covers}
+$\mathcal{M}$ over $Z$ if every transformation in $\mathcal{M}$, applied to any input of $Z$, has a delta made of
+changes in $\Delta$.
 }
+
+\noindent A replacement has the same delta as a removal and an addition of the same kind, but the signature keeps it
+apart. An edit that may remove items of a kind and may add others can move their count either way, while one that
+replaces items, one for one, leaves the count unchanged. The set $\Delta_\tau$ can also restrict the new content of a
+replacement, for instance to contents that extend the old one by appending elements.
 
 \noindent A transformation defined by the items it adds and removes gives these changes directly. One defined by the
 positions it writes, such as appending any content, gets them from the item tables of the inputs in $Z$, which is the

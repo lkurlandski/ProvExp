@@ -1068,6 +1068,19 @@ option (b): a math note first, then blocks with their review after each. Math no
 (directions as the four sign sets, union replaces the sign sum; a change is an (old, new) pair with absent allowed;
 one rule for every sum via the neutral element; $D_{\mathcal{M}}$ defined).
 
+**Round 4, block 1 (commit d362d26) and the user's comments (2026-11-09).** "The lead relies too strongly on the
+defender's perspective ... if we reference the defenders perspective, we should also reference the attacker's.
+Otherwise, its quite strong." "What does 'the edits allowed in one step' mean? ... a slightly more technical
+description ... A few additional words." Name: "Threats and Directions" or "Threat Models"? (left to Claude). The Omega
+paragraph: "jargon-heavy and challenging to understand ... a bit choppy ... make sure that the second sentence has a
+reference." "This feedback is pretty light. You can implement it on your own ... then produce the second block. Try
+to learn from my feedback on the first block." Applied: attacker and defender both in the lead; $T: \mathcal{Z} \to
+\mathcal{Z}$, single edits, sequences "applied one after another"; name "Threat models and directions"; Omega
+paragraph rewritten with Dyrmishi et al. and Pierazzi et al. (checked: "some features in x may only be added but not
+removed"). Block 2: the lead-in to signatures (why deltas are not needed), Def 8 (Changes and signatures: $c \to c'$
+with $\bot$, "made of", covers), the replacement paragraph, the origin paragraph kept. Lessons carried over: motivation
+from both sides, a few precise words over a vague phrase, claims about practice cited.
+
 **The writing skill reset (2026-11-09, before the comments).** The user worried that the skill's rules were doing
 more harm than good: an extensive list of black-and-white rules in place of a nuanced sense of how they write, and
 more than once a pattern they complained about came from an explicit rule (the gloss after every definition from
