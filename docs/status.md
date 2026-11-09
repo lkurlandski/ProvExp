@@ -9,13 +9,18 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
 - **Framework (§2-3):** rewritten; the user is reasonably satisfied. Open: the user's holistic read of Sound
   Directions after round 4 (finetuning only).
 - **§4-5:** drafted against the old §3; to be realigned after the paper mock is rewritten (PLAN.md, decisions 1-4).
-- **Experiments:** Tables 5-7 complete at pilot scale; open items are listed in PLAN.md, next step 4.
+- **Experiments:** Tables 5-7 complete at pilot scale; open items are listed in PLAN.md, next step 5.
 - **Documentation:** reorganized 2026-11-09; index `docs/README.md`.
 
 ## Waiting on the user
 
 - The rewritten paper mock (next session) before any section is rewritten.
 - The holistic read of Sound Directions (any time).
+
+## Scheduled
+
+- **Next full simulated review:** after §4-5 are realigned, before the introduction; update
+  `docs/reviews/review-prompt.md` right before running it (PLAN.md, next step 4).
 
 ## Session log
 
@@ -26,6 +31,7 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
   open; B and C parked. `docs/domain-selection-brainstorming.md` committed (user's). Documentation reorganized: index
   `docs/README.md`, superseded material in `docs/archive/`, evidence records in `docs/evidence/`, parked directions
   in `docs/parked/`, PLAN.md and this file rewritten short, CLAUDE.md trimmed, `scripts/README.md` inventory.
+  Review status assessed against the 2026-11-02 register; the next full review scheduled (PLAN.md, step 4).
   **Next:** rewrite the paper mock (`docs/resume-prompt.md`).
 - **2026-11-09 (session 22): Sound Directions round 4, in blocks** (Defs 7-10, Theorem 1, Corollary 1; ~1,470 words;
   "This session felt very effective"). Drafting in blocks after a math note recorded in `paper-prose` and memory.

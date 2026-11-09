@@ -2,7 +2,10 @@
 
 Simulated reviews of the manuscript and their follow-ups, newest first. Each review is named
 `<YYYY-MM-DD>-<stage>.md`. `review-prompt.md` is the prompt for the next harsh review: run it in a fresh chat, and
-update it when the draft's stage changes. It writes its output here and adds a line to this index.
+update it when the draft's stage changes.
+
+**Next review (scheduled 2026-11-09):** after §4-5 are realigned with the new §3, before the introduction. Update
+`review-prompt.md` right before running it (PLAN.md, next steps). It writes its output here and adds a line to this index.
 
 ## Feature provenance (current direction, since 2026-10-22)
 

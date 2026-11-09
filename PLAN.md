@@ -71,16 +71,22 @@ them (below).
 3. **§4, then §5, rewritten in blocks** with the user's review after each (the way Sound Directions round 4 worked;
    use the `paper-prose` skill). The mechanical vocabulary fixes go with them (R3/R4, "rate", "stated in elements",
    §6's "margins").
-4. **Research-track items**, each agreed before code:
+4. **The next full simulated review, once §4 and §5 are realigned and before the introduction** (decided 2026-11-09).
+   Right before running it, update `docs/reviews/review-prompt.md`: it still targets the 2026-11-02 body draft and
+   points to the archived formalization. The review should re-check the open and partly addressed risks of the
+   2026-11-02 register (R4, R5, R6, R9, R11, R15, R16), the attack-strength concern of the 2026-11-04 strategy review,
+   and what no review has seen: the new §3 (its novelty above all), the §2/§5 alignment, and the corpus-checked
+   signatures. No narrow §2-3 review beforehand (user).
+5. **Research-track items**, each agreed before code:
    - The sums row's adaptive cell: the beam search cannot score the sums detector yet (routing). Expected 0% by
      construction; weigh consistency against cost.
    - The scale-up (seeds 0-2, full splits, more malware; the user decides when): the adaptive budget at 2,000 files
      (~3,000 CPU-h at 5,000 candidates; options: the 1,000-candidate checkpoint, a fixed subset, a cap on the monotone
      rows), and ERDALT's stopping criterion (met only at the last epoch at seed 0).
    - Possibly: MAB-Malware as an independent source of held-out attacks; leave-one-out PV.
-5. **Other domains (later):** ideas in `docs/domain-selection-brainstorming.md`. Not before EMBER is complete; no
+6. **Other domains (later):** ideas in `docs/domain-selection-brainstorming.md`. Not before EMBER is complete; no
    literature or selection work until the user opens it.
-6. **The introduction, discussion, and abstract** last, once the body is settled.
+7. **The introduction, discussion, and abstract** last, once the body is settled.
 
 ## Settled decisions (carried over)
 
