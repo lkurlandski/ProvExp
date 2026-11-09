@@ -66,7 +66,7 @@ items). Harness: `paper-prose` lessons 30-31, procedure steps 7 (revising after 
 
 Sprint progress (2026-11-08, session 18): §3.2 done and accepted in two rounds (round 1 from per-comment patches drew 17 residual
 comments; round 2 rewritten from a paragraph spine). §3.3 halted (session 19, 2026-11-08): two rounds failed and the user questioned whether §3.3 should exist; next: a dedicated analysis session (`docs/resume-prompt-s33-decision.md`) to decide its fate and, if needed, a new structure for §3 after §3.2. Session 20 (2026-11-08): the analysis is `docs/s33-decision.md`; recommended option D (remove §3.3; the footprint of a write as one definition in §3.4's signature paragraph; EMBER's computation of footprints to §4.1; §3 becomes three subsections); approved and applied the same day (cut done, placeholder footprint paragraphs in Sound Directions); Session 21 (2026-11-08): Sound Directions steps 1-4 (review P1-P26, 18-paragraph spine approved, implemented;
-residual features dropped framework-wide); round 1 read stopped before Def 9; round 2 drew an audit and the paragraph gate; round 3 implemented; next: the user's read of Sound Directions.
+residual features dropped framework-wide); round 1 read stopped before Def 9; round 2 drew an audit and the paragraph gate; round 3 implemented; the user's read (2026-11-09): "still extremely problematic"; next: their comments in a new session (`docs/resume-prompt-review.md`).
 
 Next, in order (writing track): **the review sprint** (`docs/sprint-framework-review.md`; resume with
 `docs/resume-prompt-review.md`). For each of §3.2, §3.3, §3.4, one session each: Claude analyzes the draft as the user

@@ -327,3 +327,7 @@ rule it implies (folded into Sections 1-5 if general).
   threat model?; the last sentence repeats the preliminaries. Implied: every paragraph must pass a job test (the
   paragraph gate, `paper-prose`), definitions must be informative and non-redundant, the framework is neutral.
 
+- **2026-11-09, Sound Directions round 3** (13 paragraphs from the gated plan, ~1,040 words): "still extremely
+  problematic." The comments follow in a new session. Implied so far: the paragraph gate cut length and empty
+  paragraphs but did not make the subsection readable; the cause is not yet known (prose, structure, or what the
+  mathematics shows).

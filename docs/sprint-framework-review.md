@@ -1008,6 +1008,9 @@ signatures"; $E_k$ defined in Appendix C. Symbols updated. `make check` clean, n
 least as tight as one signature for the threat model), where write signatures come from (locating positions), and
 corpus-read sign sets as the theorem's hypothesis, checked in §5; §6's "margins" sentence; the paper mock.
 
+**Round 3: the user's read (2026-11-09).** Verdict before the comments: "still extremely problematic." The comments
+are given in a new session (context length); paste them here verbatim, then classify.
+
 ### Retro
 
 ## Sprint retro

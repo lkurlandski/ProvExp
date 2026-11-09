@@ -1,8 +1,8 @@
 # Resume: the §3 review sprint (ProvExp, writing track)
 
 Paste this into a fresh session. It picks up the review sprint over §3.2, §3.3, and §3.4 of the manuscript.
-**Current position: Sound Directions round 3 implemented (2026-11-08, session 21) from a gated plan after the
-user's audit request; next is the user's read, then the retro.** Read the paragraph gate at the top of `paper-prose`
+**Current position: Sound Directions round 3 read by the user (2026-11-09): "still extremely problematic". Next
+session starts with their comments (pasted); see "Start here".** Read the paragraph gate at the top of `paper-prose`
 first. Update the "Current
 position" line and the "Where things stand" list at the end of every session.
 
@@ -25,48 +25,44 @@ unpleasant to read. Instead, for each subsection, one per session:
 The point is for you to learn to do the user's analysis yourself, so that by §3.4 steps 5-8 are unnecessary. The full
 protocol, the formats, and the classification rules are in `docs/sprint-framework-review.md`; read it.
 
-## Start here (this session: §3.3, steps 1-2)
+## Start here (next session: Sound Directions, the user's read of round 3)
 
-1. Invoke `/paper-prose`. Read, in this order:
-   - `.claude/skills/paper-prose/reader-model.md` (how the user reads: comment style, triggers 1-27 with quotes, what
-     they do not comment on, the calibration row from §3.2). This is the main tool of step 1. Triggers 23-27 are new
-     from §3.2: pointers without need, concessions with no consolidation, a statement with no lead-in, remarks inside
-     a statement, paragraphs with several jobs or that jump back.
-   - The lessons in `paper-prose`, above all 32 (plan a revision as a paragraph spine, never as per-comment patches),
-     33 (lead with the subsection; consolidate concessions; statements hold only the result), and 20 as limited
-     (examples only where the reader cannot picture the structure; no worked arithmetic).
-   - `docs/sprint-framework-review.md`: the protocol, the **Ripples** list (two items for §3.3-3.4 and one
-     framework-wide note), and the whole §3.2 record with its retro (what went wrong in round 1 and why round 2
-     worked).
-   - The reaction-log entries of `docs/writing-spec.md` for §3.2 (2026-11-07) and the old 2026-11-05 entries about the
-     §3.2/3.3 material (locating positions, "identity", "honest tools", "unhinged rant"): today's §3.3 descends from
-     that material.
-   - `docs/status.md` (session-18 block).
-2. Read the context §3.3 builds on, as the reader will have it: §2 (`manuscript/_c_background.tex`), and §3's lead,
-   §3.1, and §3.2 in `manuscript/_d_framework.tex`. §3.2 as accepted is the bar for a formal subsection: a short lead
-   about the subsection only, one job per paragraph, a lead-in sentence before the statement, then why it holds part
-   by part, then what it gives.
-3. Read §3.3 (`sec:fw:edits`: the written set, the three ways a write changes items, Def 7 local kinds with structure
-   positions, margins, and fixed layouts, Lemma 1 localization) **in the rendered PDF** (`make` in `manuscript/`,
-   pdftotext and pdftoppm). Read Lemma 1's proof in `manuscript/_j_proofs.tex`; check the math against
-   `docs/formalization.md` (frozen) and the design in `docs/framework-design.md` (Section 13 is §3.3's spine). Check
-   what §3.4 and §5 use from §3.3 (grep for `lem:fw:localization`, `def:fw:local`, margin, fixed layout): give space
-   by later use.
-4. **Step 1, the simulated review**, into the §3.3 section of the log, in the user's format (P1, P2, ..., Q/F/M,
-   confidence H/M/L, predicted questions answered in plain words). Known starting points, not a limit: the Ripples
-   (where a delta comes from: §3.2 no longer says it; §3.3's first sentence used to answer a §3.2 paragraph that is
-   gone); Def 7 is long and stacks new concepts (structure positions, margin, fixed layout), the pattern the user
-   called "wet clay" and "an unhinged rant" in the old §3.2; the paragraph after Def 7 lists margins for fields, runs,
-   and windows (generic, but heavy) and cites incremental parsers; "Every kind is local if all positions are its
-   structure positions ..." reads as a concession; Lemma 1's statement is long, with (a) and (b) and a fixed-layout
-   clause; the proof sketch after it. Ask before anything else whether the reader knows why §3.3 exists (edits given
-   as writes, families of edits with no single $z'$) before the machinery starts.
-5. **Step 2, the plan, as a paragraph spine** (lesson 32): open with the plain-language summary of what §3.3 is for
-   and whether its structure must change, then one line per paragraph of the revised §3.3 with its single job, the
-   predicted comments mapped onto the paragraphs, ripples into §3.4, and open questions last. Copy it into the log.
-   **Do not edit the manuscript until the user approves.**
-6. After approval: implement in one pass; `make` and `make check`; check the PDF for "??"; read the rendered text;
-   rewrap to 120 columns; commit; tell the user which passages are new prose. Then the user's first read (step 5).
+The user has read round 3 of Sound Directions (commit `801a9b4`, `sec:fw:directions` in
+`manuscript/_d_framework.tex`) and will paste their comments in the first message. Their one-line verdict, given at
+the end of session 21: **"still extremely problematic."** This is the third failed round on this subsection (round
+1 "pretty bad", round 2 "paragraphs that don't mean anything", round 3 "still extremely problematic"), after §3.3 also
+failed twice and was cut. Treat the next session as a reset of how this subsection is written, not as round 4 of
+patches.
+
+1. Before the comments arrive, prepare (read, do not write):
+   - Invoke `/paper-prose`. Read **the paragraph gate** at the top of `SKILL.md` and lessons 32-36; then
+     `reader-model.md`, triggers 28-33 and the calibration rows for §3.2 and Sound Directions.
+   - `docs/sprint-framework-review.md`, section "§3.4 Sound Directions": the user's comments U1-U19 on round 1,
+     their reaction to round 2, their comments on the round-2 lead and Def 7, the gated round-3 plan, and what was
+     implemented. These are the patterns the round-3 read is likely to repeat.
+   - The reaction-log entries for Sound Directions in `docs/writing-spec.md`.
+   - Round 3 itself **in the rendered PDF** (`make` in `manuscript/`, then pdftotext), with §3.1-3.2 before it
+     (the reader's context) and the proof of Theorem 1 and the sign-rule tables in `manuscript/_j_proofs.tex`.
+2. When the comments arrive: log them verbatim under a new "Round 3: the user's read" heading in the log. Separate
+   questions from feedback and **answer the questions first**, plainly, in words (a question usually marks a
+   definition that does not stand on its own; name the fix with each answer). Classify each comment (missed / fix fell
+   short / introduced / new taste) with one line on what the gate or the reader model should have caught.
+3. Then, before any plan, step back and say plainly what the comments show about the subsection as a whole: is the
+   problem the prose, the structure (which concepts, in which order), or the mathematics being presented (what
+   Theorem 1 needs, and whether the reader can see why)? Recommend one way of working for the rewrite, and ask the
+   user. Options to offer, with a recommendation: (a) a gated paragraph plan as in round 3; (b) **drafting one
+   paragraph at a time with the user's review after each** (procedure step 2 of `paper-prose`: the unit shrinks when
+   rounds fail; three have); (c) the user writes the passages that keep failing and Claude checks the mathematics
+   and consistency only.
+4. No manuscript edit until the user approves the plan. After implementing: `make`, `make check`, "??" check, read the
+   rendered text, rewrap to 120 columns, commit only own files, report what changed per comment.
+5. Retro at the end of the subsection (counts per class, what failed three times and why), then the reader model's
+   calibration row, `paper-prose`, the reaction log, and the sprint retro at the end of the log.
+
+Open after Sound Directions (research-track proposals, do not edit those files here): §4 defines operations as
+catalogue rows, with one sentence that a table per row, combined, is sound and at least as tight; §4.1 says where the
+signatures of edits defined by where they write come from, and that sign sets read from a corpus are Theorem 1's
+hypothesis, checked in §5; "modeled"/"residual" wording in §4.1 and §5; §6's "margins" sentence; the paper mock.
 
 ## Working rules that matter here
 
@@ -112,4 +108,5 @@ protocol, the formats, and the classification rules are in `docs/sprint-framewor
 - 2026-11-08 (session 21, cont.): round 2 drew "paragraphs that don't mean anything"; audit, the paragraph gate
   added to `paper-prose`; round 3 from a gated 13-paragraph plan (threat model = set of transformations, operations
   and footprint out of §3), ~1,040 words. Next: the user's read.
-
+- 2026-11-09 (session 21, end): the user read round 3, verdict "still extremely problematic"; comments deferred to a
+  new session for context length. "Start here" rewritten for that session.
