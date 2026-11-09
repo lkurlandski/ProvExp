@@ -1081,6 +1081,15 @@ removed"). Block 2: the lead-in to signatures (why deltas are not needed), Def 8
 with $\bot$, "made of", covers), the replacement paragraph, the origin paragraph kept. Lessons carried over: motivation
 from both sides, a few precise words over a vague phrase, claims about practice cited.
 
+**Block 2: the user's comments (2026-11-09).** "'A change of kind $\tau$' makes its sound like the kind is changing
+... make it explicit *earlier* that the definition of a change is constructed to encompass additions, removals, and
+replacements of content (a quick blurb in parentheses)." "This is overall quite good." Applied ("A change (an addition,
+a removal, or a replacement of one item) on the items of kind $\tau$"). Block 3 (commit 731b47d): Def 9 (directions of
+sums: raises/lowers by comparing contributions, $\nu_\tau(\bot) = \mathbf{e}$), why it bounds a sum (additive, max
+pool, min pool by its neutral element), the readout table in the body (cited from §3.1), Def 10 (derived table
+$D_\Delta$; named after the signature it is computed from, not $D_{\mathcal{M}}$ as in the math note); appendix
+contributions table rewritten in directions; readouts table moved out of the appendix.
+
 **The writing skill reset (2026-11-09, before the comments).** The user worried that the skill's rules were doing
 more harm than good: an extensive list of black-and-white rules in place of a nuanced sense of how they write, and
 more than once a pattern they complained about came from an explicit rule (the gloss after every definition from
