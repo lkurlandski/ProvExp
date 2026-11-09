@@ -79,6 +79,18 @@ them (below).
    record the items each position belongs to". *Why:* the code collects changes from item tables only for in-place
    writes; append is declared and checked by re-extraction (audit finding 6).
 
+8. **§4's outline, revised with the user (session 27).** (i) The bit-exact check is one or two sentences. (ii) No
+   "repairs" part: the section-size ratio and the library set are written as sums and readouts in a brief clause
+   (the user may cut it later); the import-overwrite bug is not mentioned in the paper (experiments still run on the
+   patched extractor). Part (b) becomes a qualitative discussion of how strictly EMBER fits the sum-then-readout
+   definition and what to do with features that do not (drop them, or keep them as able to move both ways; a monotone
+   detector must drop them), with the parser warnings as the example: absent from EMBER 2017/2018 (verify in Joyce et
+   al.) and dropping them costs nothing (run 126: +0.1 points TPR at 1% FPR). (iii) Part (c), the threat model, is
+   written literature first: a pass over the PE problem-space attacks and the edits each uses, our catalogue as the
+   functionality-preserving, non-code-rewriting edits among them, exclusions named. (iv) The population stays as is
+   for now; the user finds the 4 MB truncation ugly (most of the 318 non-plain files of 2,000 are truncated; on
+   untruncated files 94.4% are plain). A brainstorm on a cleaner resolution is scheduled around step 4.
+
 ## Next steps, in order
 
 1. **Rewrite `docs/paper-mock.md`** against the new §3 and the decisions above: contributions (no requirements, no
@@ -99,6 +111,10 @@ them (below).
    signatures. No narrow §2-3 review beforehand (user). Include decision 6's revisit (is the problem-space
    defense expected?) with its short literature pass, and the user's judgement of whether §4's template layout works
    on the page.
+   **Brainstorm with the user, just before or just after this review (user, 2026-11-09):** a cleaner way to handle the
+   files our dataset truncates at 4 MB, which make up most of the files outside the plain-layout population (decision
+   8 (iv)). Options raised so far: measure on whole binaries if they exist; state each edit's effect correctly on
+   non-plain files (start with which condition the 94 non-plain untruncated files fail).
 5. **Research-track items**, each agreed before code:
    - The sums row's adaptive cell: the beam search cannot score the sums detector yet (routing). Expected 0% by
      construction; weigh consistency against cost.

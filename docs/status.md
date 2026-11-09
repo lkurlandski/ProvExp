@@ -20,6 +20,8 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
 
 - **Next full simulated review:** after §4-5 are realigned, before the introduction; update
   `docs/reviews/review-prompt.md` right before running it (PLAN.md, next step 4).
+- **Brainstorm on the 4 MB truncation** (the plain-layout population's gap), just before or after that review (PLAN.md,
+  decision 8 (iv) and step 4).
 
 ## Session log
 
