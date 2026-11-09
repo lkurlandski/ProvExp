@@ -1090,6 +1090,15 @@ pool, min pool by its neutral element), the readout table in the body (cited fro
 $D_\Delta$; named after the signature it is computed from, not $D_{\mathcal{M}}$ as in the math note); appendix
 contributions table rewritten in directions; readouts table moved out of the appendix.
 
+**Block 3: the user's comment (2026-11-09).** "The second sentence of the second paragraph is grammatically complex.
+Break this or simplify it another way." Applied (the additive sentence split; the max-pool sentence split too). Block
+4 (commit 5a8683b): Theorem 1 with $D_\Delta$; why it holds (one edit, closure, directions closed under addition);
+the lead-in to Cor 1 defines "monotone with respect to $D$" (Gimenez et al.'s Proposition 1 checked) and names the
+monotone GBDT; Cor 1; the closing paragraph cut (its sums remark kept in the proof). Proofs appendix rewritten in
+directions: one argument for every sum (addition, max, min are nondecreasing in each argument), the table of
+contributions proved from Def 9, readout rules with directions, Theorem 1 by induction. Symbol table updated.
+Subsection ~1,470 words (texcount, from ~1,040 in round 3). Next: the user's read of the whole subsection.
+
 **The writing skill reset (2026-11-09, before the comments).** The user worried that the skill's rules were doing
 more harm than good: an extensive list of black-and-white rules in place of a nuanced sense of how they write, and
 more than once a pattern they complained about came from an explicit rule (the gloss after every definition from
