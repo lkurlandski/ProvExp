@@ -38,14 +38,15 @@
     $(I^-, I^+)$ & Item delta: removed and added items, $\pi(z') = (\pi(z) - I^-) \uplus I^+$. \\
     \midrule
     \multicolumn{2}{@{}l}{\emph{Threat models and directions}} \\
-    $\mathcal{M}$ & Threat model: the set of transformations allowed in one step. \\
-    $F$ & A population of inputs. \\
-    $\Delta_{\mathcal{M}}(F)$ & Signature of $\mathcal{M}$ over $F$: per kind, the changes (add, remove, rewrite) its
-    transformations make. \\
+    $\mathcal{M}$ & Threat model: a set of transformations $T: \mathcal{Z} \to \mathcal{Z}$, the single edits allowed. \\
+    $Z$ & A population: a subset of $\mathcal{Z}$. \\
+    $\mathsf{up}$, $\mathsf{down}$, \dots & Directions: $\mathsf{fixed} = \{0\}$, $\mathsf{up} = \{0, +\}$,
+    $\mathsf{down} = \{-, 0\}$, $\mathsf{both} = \{-, 0, +\}$; $-d$ exchanges up and down. \\
+    $c \to c'$, $\bot$ & A change on the items of one kind (addition, removal, replacement); an absent content. \\
+    $\Delta$, $\Delta_\tau$ & Signature; its changes on the items of kind $\tau$. \\
     $Q$ & A set of keys an edit may choose from (hashed contributions, Appendix~\ref{sec:fw:proofs}). \\
-    $A \boxplus B$ & Sign sum of sign sets $A, B \subseteq \{-, 0, +\}$. \\
-    $E_k$ & The signs the change of sum $k$ can take under a threat model (Appendix~\ref{sec:fw:proofs}). \\
-    $D$, $D_j$ & Direction table; direction of feature $j$. \\
+    $d_k$ & Direction of sum $k$ under a signature. \\
+    $D$, $D_j$; $D_\Delta$ & Direction table; direction of feature $j$; the derived table of $\Delta$. \\
     $h$ & A detector's malware score, $h: \mathcal{X} \to \mathbb{R}$. \\
     \bottomrule
   \end{tabular}

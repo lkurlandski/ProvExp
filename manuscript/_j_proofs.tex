@@ -19,11 +19,14 @@ element to every sum in $K_j$, then $\sigma(I^-)$ and $\sigma(I^+)$ are neutral 
 $\mathbf{s}(z')$ both agree with $\sigma(B)$ on $K_j$. By Definition~\ref{def:fw:readout},
 $\rho_j(\mathbf{s}(z)) = \rho_j(\mathbf{s}(z'))$, and by \eqref{eq:fw:extractor}, $\varphi_j(z) = \varphi_j(z')$.
 
-\paragraph{Sign rules.}
-\Cref{tab:fw:signs,tab:fw:readouts} list the rules that \Cref{sec:fw:directions} applies to sums and readouts: the sign
-sets of common contributions, and the sign rules of the readout forms of \Cref{sec:fw:model}. The paragraphs below prove
-them. In both tables, ``all'' stands for $\{-, 0, +\}$, and $E_k$ is the set of signs that the change of sum $k$ can
-take under the threat model, as bounded by the rules for sums.
+\paragraph{Directions.}
+Write $\operatorname{sgn}(x) \in \{-, 0, +\}$ for the sign of a number. Every direction contains $0$, and each is
+closed under addition: if every term of a finite total has a sign in a direction $d$, so does the total (a total of
+non-negative terms is non-negative, a total of zeros is zero, and $\mathsf{both}$ allows every sign). A total whose
+terms have signs in several directions has a sign in their union, which is again a direction. Below, an edit takes
+$z \in Z$ to $z' = T(z)$ with $T \in \mathcal{M}$, and, since $\Delta$ covers $\mathcal{M}$ over $Z$, it has a delta
+$(I^-, I^+)$ made of a multiset $C$ of changes in $\Delta$. \Cref{tab:fw:signs} lists the directions of common
+contributions, which the next paragraph proves.
 
 \begin{table}[h]
   \caption{Directions that common contributions give their sums under each change: adding, removing, or replacing an
@@ -53,19 +56,27 @@ take under the threat model, as bounded by the rules for sums.
   $^{\dagger}$Only on the buckets that the keys in $Q$ hash to, with the signs those keys give.
 \end{table}
 
-\paragraph{Sums from signatures.}
-Fix an input $z \in F$ and a transformation $T \in \mathcal{M}$, and let $(I^-, I^+)$ be a delta of the edit made of
-changes the signature lists, which exists because the signature covers $\mathcal{M}$. For an additive sum $k$,
-Proposition~\ref{prop:fw:side-effects}(i) writes $s_k(z') - s_k(z)$ as the total, over the listed changes, of what the
-changes of each listed kind give $s_k$, and each such part has a sign in that change's sign set, which by assumption
-contains the signs that any number of such changes can give the sum. Since $\mathrm{sgn}(x + y) \in \mathrm{sgn}(x)
-\boxplus \mathrm{sgn}(y)$, the change has a sign in the sign sum of the sign sets. For a max pool, if the sign set of
-every listed change lies within $\{0, +\}$, every change only adds values or replaces a value by one at least as large,
-so the maximum does not fall; symmetrically, if every set lies within $\{-, 0\}$, it does not rise; and in every other
-case the bound allows every sign. A min pool is the same with the signs flipped. The sign sets of \Cref{tab:fw:signs}
-hold for the forms they name: a count adds 1 per item, so additions can only raise it and a replacement that keeps the
-key leaves it unchanged; a value $\ge 0$ can only be added, and an extension of an item does not shorten it; and a value
-in $[l, u]$ has the sign of a number in that interval.
+\paragraph{Directions of sums (Definition~\ref{def:fw:sum-direction}).}
+Let $B = \pi(z) - I^-$ be the kept items, and list the changes of $C$ as $(\tau_i, c_i \to c'_i)$ for
+$i = 1, \dots, m$. By \eqref{eq:fw:made-of} and \eqref{eq:fw:homomorphism}, and since an absent content contributes the
+neutral element, every sum $k$ satisfies
+\[
+  \begin{aligned}
+    s_k(z) &= \sigma(B)_k \star_k \nu_{\tau_1}(c_1)_k \star_k \dots \star_k \nu_{\tau_m}(c_m)_k, \\
+    s_k(z') &= \sigma(B)_k \star_k \nu_{\tau_1}(c'_1)_k \star_k \dots \star_k \nu_{\tau_m}(c'_m)_k.
+  \end{aligned}
+\]
+The two expressions differ only in that each change contributes its new value in place of its old one. Addition, the maximum, and the minimum are nondecreasing in each argument, so if
+no change in $\Delta$ lowers $k$, that is, $\nu_\tau(c')_k \ge \nu_\tau(c)_k$ for every change, then
+$s_k(z') \ge s_k(z)$; if none raises $k$, then $s_k(z') \le s_k(z)$; and if neither, the two are equal. The change of
+$s_k$ therefore has a sign in $d_k$, for additive sums and pools alike.
+
+The directions of \Cref{tab:fw:signs} follow from Definition~\ref{def:fw:sum-direction}. A count receives 1 from an
+item with its key and the neutral element $0$ otherwise, so an addition raises it, a removal lowers it, a replacement
+that keeps the key leaves it unchanged, and one that may change the key can move it either way. An extension does not
+shorten an item, so it raises or keeps its length, on an additive sum and on a max pool alike, and a replacement of the
+same length keeps it. A value $\ge 0$ is at least the neutral element $0$ of an additive sum, and a value in $[l, u]$
+compared with $0$ has a sign in $d[l, u]$; a replacement keeps it only if $l = u$.
 
 \paragraph{Hashed keys.}
 For a contribution of $\pm$ a value to the bucket its key hashes to, with the key picked from a set $Q$, the
@@ -83,32 +94,35 @@ matches. The same holds on the left for constructs that look before the match. A
 boundary, for example, can gain a match when a string is extended on the right and lose one when it is prefixed with
 a letter.
 
-\paragraph{The readout rules.}
-The identity passes the envelope through. A presence bit changes only if its count changes, and then in the same
-direction or not at all, since a count can rise while its bit stays set, so its sign lies in $E_k \cup \{0\}$. A
-distinct count is the total of the presence bits of its keys, so its sign lies in the sign sum of theirs. For a ratio
-$a/b$ with $a \ge 0$ and $b > 0$ before and after, write $a' = a + \alpha$ and $b' = b + \beta$; then
+\paragraph{The readout rules (\Cref{tab:fw:readouts}).}
+Suppose every sum $k$ that a feature reads changes with a sign in $d_k$. The identity passes the sign through. A
+presence bit $[s_k > 0]$ is a nondecreasing function of $s_k$, so it rises only if $s_k$ rises and falls only if
+$s_k$ falls, and its change has a sign in $d_k$. A distinct count is a total of presence bits, so its change has a
+sign in the union of their directions. For a ratio $a/b$ with $a \ge 0$ and $b > 0$ before and after, write
+$a' = a + \alpha$ and $b' = b + \beta$; then
 \[
   \frac{a'}{b'} - \frac{a}{b} = \frac{\alpha\, b - a\, \beta}{b\, b'}.
 \]
-The denominator is positive, $\alpha b$ has the sign of $\alpha$, which lies in $E_a$, and $-a\beta$ is $0$ if
-$a = 0$ and otherwise has a sign in $-E_b$. A normalized bin is the ratio of a bin to the histogram's total. The last
-rule follows from Definition~\ref{def:fw:readout}: if no sum in $K_j$ can change, $\rho_j$ reads the same values
-before and after, and otherwise every sign is allowed.
+The denominator is positive, $\alpha b$ has the sign of $\alpha$, which lies in $d_a$, and $-a\beta$ is $0$ if
+$a = 0$ and otherwise has the sign of $-\beta$, which lies in $-d_b$; both directions contain $0$, so the change has a
+sign in $d_a \cup (-d_b)$. A normalized bin is the ratio of a bin to the histogram's total. The last rule follows from
+Definition~\ref{def:fw:readout}: if every sum in $K_j$ is fixed, $\rho_j$ reads the same values before and after the
+edit, and otherwise $\mathsf{both}$ allows every sign.
 
 \paragraph{Proof of Theorem~\ref{thm:fw:directions}.}
-For one transformation of $\mathcal{M}$ applied to an input of $F$, the edit has a delta made of changes the signature
-lists, since the signature covers $\mathcal{M}$, so each sum's change has a sign in the bound for sums (above), and by
-the readout rules each feature's change has a sign in the resulting set. Reading the union as a direction is therefore
-sound for single edits. If $F$ is closed under $\mathcal{M}$, every intermediate input of a sequence of edits stays in
-$F$, the single-edit statement applies at every step, and ``does not fall'' and ``does not rise'' are transitive;
-induction on the length of the sequence completes the proof. Without closure, a step can leave $F$, after which the
-signatures say nothing about the next step.
+For one edit, the paragraph on the directions of sums shows that every sum $k$ changes with a sign in $d_k$, and the
+readout rule of feature $j$ then gives its change a sign in $(D_\Delta)_j$, so $D_\Delta$ is sound. Let $Z$ be closed
+under $\mathcal{M}$, and let $\mathbf{x}' = \varphi(T(z))$ for a finite sequence $T = T_m \circ \dots \circ T_1$ of
+transformations in $\mathcal{M}$. The inputs $z_0 = z$ and $z_i = T_i(z_{i-1})$ all lie in $Z$, by closure and
+induction on $i$, so each step changes feature $j$ with a sign in $(D_\Delta)_j$ by the first part. The change
+$x'_j - \varphi_j(z)$ is the total of these steps' changes, and a direction is closed under addition, so it has a sign
+in $(D_\Delta)_j$. Without closure, a step can leave $Z$, and the signature says nothing about the steps after it.
 
 \paragraph{Proof of Corollary~\ref{cor:fw:robustness}.}
-By Theorem~\ref{thm:fw:directions}, the feature vectors of $z$ and of any $z' \in \mathcal{R}(z)$ differ only
-in the allowed directions. The score reads no feature marked both and does not fall in the allowed directions, so
-$h(\varphi(z')) \ge h(\varphi(z))$. This is Gimenez et al.'s Proposition~1~\cite{gimenez2025certifiably}, with the
-preorder ``$z'$ is reachable from $z$'' and a feature map made monotone by $D$. A score that reads sums is the same
-argument with each sum taken as a feature with the identity readout, whose rule in \Cref{tab:fw:readouts} gives the
-sum its envelope.
+The second part of the proof of Theorem~\ref{thm:fw:directions} uses only that the table is sound and that $Z$ is
+closed, so it holds for $D$: for every $z \in Z$ and $\mathbf{x}' \in \mathcal{R}(z)$, the change $x'_j - \varphi_j(z)$
+of every feature $j$ has a sign in $D_j$. Since $h$ is monotone with respect to $D$, $h(\mathbf{x}') \ge
+h(\varphi(z))$. This is Gimenez et al.'s Proposition~1~\cite{gimenez2025certifiably}, with the preorder ``$z'$ is
+reachable from $z$'' and a feature map made monotone by $D$. A score that reads sums instead of features is covered by
+the same argument, since a sum under the identity readout is a feature, and the rule of the identity gives it the
+direction of the sum.
