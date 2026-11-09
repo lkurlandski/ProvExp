@@ -112,6 +112,15 @@ structure before prose exists. But a plan can be too abstract to critique (the ย
 make a draft good: Sound Directions round 3 followed its approved plan exactly. When rounds keep failing, make the
 unit smaller: one paragraph, reviewed, then the next.
 
+What worked (Sound Directions round 4, 2026-11-09, after three failed rounds; the user: "This session felt very
+effective ... drafting things out a few paragraphs at a time is more effective than drafting entire subsections"):
+first a short note settling the mathematics (the objects in order, each with why the main result needs it), which the
+user approved; then the subsection drafted in blocks of a few paragraphs, each shown as rendered text with what
+changed, the user's comments applied before the next block, and what their comments on one block showed carried into
+the next. Their comments per block were short and specific, and they found the blocks easier to judge than a
+paragraph plan, which they said is more useful to Claude than to them. Consider this way of working for any new
+section, not only after failures.
+
 ## Fixed constraints (decisions, not taste)
 
 - No domain (PE) examples in ยง3; examples stay in `% EXAMPLE` comments. No internal IDs in the paper. Pierazzi et

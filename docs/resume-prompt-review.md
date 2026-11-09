@@ -1,10 +1,10 @@
 # Resume: the §3 review sprint (ProvExp, writing track)
 
 Paste this into a fresh session. It picks up the review sprint over §3.2, §3.3, and §3.4 of the manuscript.
-**Current position: Sound Directions round 3 read by the user (2026-11-09): "still extremely problematic". Next
-session starts with their comments (pasted); see "Start here".** The writing skill was reset on 2026-11-09 (no rules;
-taste as judgement, with the user's accepted text as reference): read `paper-prose` first. Update the "Current
-position" line and the "Where things stand" list at the end of every session.
+**Current position: Sound Directions round 4 drafted in four blocks with the user's review after each (session 22,
+2026-11-09; math note `docs/sound-directions-math.md`; log in `docs/sprint-framework-review.md`). Next: the user's
+holistic read of the whole subsection.** The way of working that succeeded: a math note first, then a few paragraphs
+per block (`paper-prose`, "Structure is where the user wants to be consulted").
 
 ## What the sprint is
 
@@ -118,3 +118,6 @@ hypothesis, checked in §5; "modeled"/"residual" wording in §4.1 and §5; §6's
 - 2026-11-09 (session 21, end, cont.): the writing skill reset at the user's request: `paper-prose` rewritten as
   reference texts + taste as judgement + fixed constraints + how to work; old lessons, gate, reader model, and style
   tendencies archived (`docs/archive/paper-prose-2026-11-09/`).
+- 2026-11-09 (session 22): round-3 comments answered; math note approved; round 4 written in four blocks, each
+  reviewed (commits `d362d26`, `772886a`, `731b47d`, `5a8683b`). "This session felt very effective." Next: the user's
+  holistic read.

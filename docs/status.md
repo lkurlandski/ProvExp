@@ -1,3 +1,13 @@
+**2026-11-09 (session 22, writing track): Sound Directions round 4, in blocks.** The user's round-3 comments logged
+verbatim and answered; diagnosis: the mathematics as presented (two vocabularies, the derived table undefined, a §3.3
+leftover in the signature), not the prose. A math note (`docs/sound-directions-math.md`) approved, then four blocks
+with the user's review after each (commits `d362d26`, `772886a`, `731b47d`, `5a8683b`): Def 7 with population $Z$ and
+directions as sign sets; Def 8 changes ($c \to c'$ with $\bot$) and signatures; Def 9 directions of sums (one rule for
+every monoid); the readout table in the body; Def 10 derived table $D_\Delta$; Theorem 1; "monotone with respect to
+$D$" and Cor 1; proofs and symbols rewritten. ~1,470 words. The user: "This session felt very effective"; drafting in
+blocks recorded in `paper-prose` and memory. The user's note on the cut §3.3 kept in the sprint log (revisit if other
+parts suffer). **Next:** the user's holistic read of the whole subsection.
+
 **2026-11-09 (session 21, end, cont.): the writing skill reset.** The user worried the skill's rules did more harm than good (black-and-white rules in place of a feel for their writing; several complained-about patterns came from explicit rules). Agreed and done: `paper-prose` rewritten (~1,600 words: reference texts the user accepted, their taste as judgement with evidence on both sides, fixed constraints, how to work, no numbered rules); old SKILL, reader model, and the writing-spec tendencies archived in `docs/archive/paper-prose-2026-11-09/`; `docs/writing-spec.md` is now the raw reaction log only; CLAUDE.md, the sprint protocol, both resume prompts, and memory updated. **Next:** a new session from `docs/resume-prompt-review.md` with the user's comments on Sound Directions round 3.
 
 **2026-11-09 (session 21, end): Sound Directions round 3 read.** The user's verdict: "still extremely problematic"; the comments come in a new session. `docs/resume-prompt-review.md` "Start here" rewritten for it: prepare from the gate and the round 1-3 record, log and classify the comments, answer questions first, then say whether the problem is prose, structure, or the mathematics presented, and offer a way of working (gated plan; one paragraph at a time with review; or the user writes and Claude checks). Nothing pushed.
