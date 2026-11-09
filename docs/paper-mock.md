@@ -1,4 +1,5 @@
-# Paper mock (rewritten 2026-11-09, after the holistic review; awaiting the user's approval)
+# Paper mock (rewritten 2026-11-09, after the holistic review; layout accepted provisionally by the user, to be judged
+# once §4-5 are written)
 
 At most two pages. It decides what the paper contains; what is not listed here stays out. Written against the
 manuscript's new §3 and PLAN.md's "Decisions of 2026-11-09". "Measured" means a pilot-scale number exists; final
@@ -103,7 +104,8 @@ Options (both allowed by the user, decision 4):
   would bring it down) and adds a row whose expected result (resists the toolkit, still falls to a fresh adaptive
   search, as the toolkit-trained row does) mostly repeats Table 7's point; (ii) is cheap but adds machinery.
 
-**Recommendation: A**, plus the per-candidate cost measurement. The paper's strongest claims (Table 6, Table 7's
+**Decided (2026-11-09): A**, plus the per-candidate cost measurement; revisited at the next full review, which
+also checks how much the literature values problem-space defenses (PLAN.md, decision 6). Reasons: The paper's strongest claims (Table 6, Table 7's
 monotone rows) need no new runs, every line §2 keeps has a table behind it, and adversarial training already serves
 as the defender's alternative. B(ii) is the one addition worth weighing if the review asks for the feature-space
 side; B(i) costs most and argues least.

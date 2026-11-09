@@ -58,6 +58,14 @@ them (below).
 4. **§2's promises and §5's results must align.** Open, to settle in the paper-mock rewrite. Working idea: organize §5
    around §3's two results (side effects, then directions and the detectors they give), and either narrow §2's four
    lines of work or show each one in §5. Adding experiments or trimming the motivation are both allowed (user).
+6. **§2/§5 alignment: option A of the paper mock** (decided by Claude at the user's request, 2026-11-09). §2 keeps the
+   four lines of work as the landscape but promises three evaluated uses (the attack scoring without extraction, the
+   constraints, monotone detectors); adversarial training stays the defender's alternative in Table 7. Plus one cheap
+   measurement: the cost per candidate of scoring by Proposition 1 against extraction. *Why now:* A is a subset of
+   B, so §4 and §5's subsections are written the same either way; only §2's promise and possibly one §5 row change
+   if B is chosen later. *Revisit* at the next full review (step 4): the review prompt asks whether a reviewer would
+   expect the problem-space defense shown, and a short literature pass checks how much that line matters
+   (adversarial training on problem-space examples for malware: Lucas et al., Dyrmishi et al., and their citers).
 5. **Directions B and C are parked**, not dropped: `docs/parked/directions-B-C.md`.
 
 ## Next steps, in order
@@ -76,7 +84,9 @@ them (below).
    points to the archived formalization. The review should re-check the open and partly addressed risks of the
    2026-11-02 register (R4, R5, R6, R9, R11, R15, R16), the attack-strength concern of the 2026-11-04 strategy review,
    and what no review has seen: the new §3 (its novelty above all), the §2/§5 alignment, and the corpus-checked
-   signatures. No narrow §2-3 review beforehand (user).
+   signatures. No narrow §2-3 review beforehand (user). Include decision 6's revisit (is the problem-space
+   defense expected?) with its short literature pass, and the user's judgement of whether §4's template layout works
+   on the page.
 5. **Research-track items**, each agreed before code:
    - The sums row's adaptive cell: the beam search cannot score the sums detector yet (routing). Expected 0% by
      construction; weigh consistency against cost.
