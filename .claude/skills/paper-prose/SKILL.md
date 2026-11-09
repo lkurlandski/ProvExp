@@ -58,7 +58,7 @@ next one.
 
 **Understanding comes before prose.** The failures cluster where Claude had not settled what a passage establishes:
 - the old §3.2 ("a completely unhinged rant");
-- §3.3, cut after two rounds;
+- the old §3.3 (cut after two rounds; today's §3.3 is Sound Directions);
 - Sound Directions, three rounds.
 
 The successes came where the mathematics was settled: Def 2 ("tight and intentional"), Def 6 ("really good"), and Prop
@@ -111,7 +111,7 @@ framework is "gospel"). A described work shows its role in our story in the sent
 contribution is stated concretely and with conviction, never deferentially.
 
 **Structure is where the user wants to be consulted.** A plan of one line per paragraph lets them correct the
-structure before prose exists. But a plan can be too abstract to critique (the §3.3 plan), and passing a plan does not
+structure before prose exists. But a plan can be too abstract to critique (the old §3.3's plan), and passing a plan does not
 make a draft good: Sound Directions round 3 followed its approved plan exactly. When rounds keep failing, make the
 unit smaller: one paragraph, reviewed, then the next.
 

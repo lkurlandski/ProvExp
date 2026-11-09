@@ -16,6 +16,8 @@ conference cycles are not a planning constraint (user).
   archived, with when to open it. Do not read archived material by default; search it when a reason or a record is
   needed. The manuscript (`manuscript/*.tex`) is the authority on the paper's content.
 - `docs/paper-mock.md` decides what goes into the paper; check new work against it.
+- **Paper numbers (sections, definitions, tables) come from the compiled PDF**, never from a document: check
+  `manuscript/main.aux` before naming one, and give the title alongside (table in `docs/README.md`).
 - Writing paper prose: the project skill `.claude/skills/paper-prose/` (the user's accepted text as reference, their
   taste described as judgement, the fixed constraints; rewritten 2026-11-09 after its accumulated rules did harm, so
   never grow it into a rule list) and the raw reaction log `docs/writing-spec.md`.

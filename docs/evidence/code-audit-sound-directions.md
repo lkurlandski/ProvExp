@@ -51,7 +51,7 @@ several of those differences need a sentence in §4.
 
    Decision 1(c)'s "declines to predict a write that lands on one" fits Proposition 1 only. *Paper:* §4's template (c)
    states both behaviours and the three declarations.
-6. **Append's signature is declared, not collected.** The remark after Definition 7 (`_d_framework.tex:343-345`) gives
+6. **Append's signature is declared, not collected.** The remark after Definition 8, Changes and signatures (`_d_framework.tex:346-348`) gives
    "appending any content" as the example of an operation whose changes come from the item tables. In the code, `app`
    is declared by hand, like `sec`, `imp`, `ext`, and `shf` (`declared_changes`, `catalogue.py:325-401`). G7 checks
    these declarations by re-extraction. The strict variant's past-end flags are checked against the corpus
@@ -65,7 +65,7 @@ several of those differences need a sentence in §4.
    two agree exactly. Under the code's rules (1, 2), the union of operation tables is equal or finer, and it is sound
    either way. Once 1 and 2 are fixed, the two agree by construction. Optional for §4/§5: a threat model's table is the
    union of its operations' tables.
-8. **Replacements are kept apart, as Definition 7 requires** (`Change`, `reach.py:668-704`). The kinds of change:
+8. **Replacements are kept apart, as Definition 8 requires** (`Change`, `reach.py:668-704`). The kinds of change:
    - add, remove;
    - modify: a replacement restricted to some families or attributes;
    - rewrite: a replacement of the same length;

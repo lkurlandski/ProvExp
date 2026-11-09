@@ -27,7 +27,7 @@ them (below).
 - **§4-5 (the instance and evaluation):** drafted on 2026-11-02 against the *old* §3 and not yet realigned. They
   still use the old vocabulary (requirements R1-R5, locating positions, margins, scanned kinds, "stated in elements").
 - **§6 (related work):** drafted. **§1, §7, abstract, ethics, open science:** empty (the introduction comes last).
-- **Experiments:** complete at pilot scale for Tables 5-7 (exactness, hand vs derived vs learned directions,
+- **Experiments:** complete at pilot scale for Tables 3-5 (exactness, hand vs derived vs learned directions,
   detectors). Nothing is invalidated by the framework rewrite. Evidence records: `docs/evidence/`.
 
 ## Decisions of 2026-11-09 (the holistic review)
@@ -51,7 +51,7 @@ them (below).
    the population. The paper states this in a sentence and reports the existing check (the 100-file and 2,000-file
    tables are identical); a larger corpus strengthens it at no cost in pages. No new machinery, no new section. The
    same holds for closure (0 of 60,934 edits leave the population). The proof carries the weight (user).
-3. **§5.1 claims what it tests.** Proposition 1 is exact by construction once the delta is right, so Table 5 shows
+3. **§5.2 (side effects) claims what it tests.** Proposition 1 is exact by construction once the delta is right, so Table 3 shows
    that the instrumentation and the operations' changes are correct and that the instance abstains precisely. Adjust
    the claims; weigh, when drafting, what the table is worth to the paper (it answers "does it work on a real
    extractor") and whether the adaptive search's saving (scoring candidates without extraction) belongs there.
@@ -60,13 +60,24 @@ them (below).
    lines of work or show each one in §5. Adding experiments or trimming the motivation are both allowed (user).
 6. **§2/§5 alignment: option A of the paper mock** (decided by Claude at the user's request, 2026-11-09). §2 keeps the
    four lines of work as the landscape but promises three evaluated uses (the attack scoring without extraction, the
-   constraints, monotone detectors); adversarial training stays the defender's alternative in Table 7. Plus one cheap
+   constraints, monotone detectors); adversarial training stays the defender's alternative in Table 5. Plus one cheap
    measurement: the cost per candidate of scoring by Proposition 1 against extraction. *Why now:* A is a subset of
    B, so §4 and §5's subsections are written the same either way; only §2's promise and possibly one §5 row change
    if B is chosen later. *Revisit* at the next full review (step 4): the review prompt asks whether a reviewer would
    expect the problem-space defense shown, and a short literature pass checks how much that line matters
    (adversarial training on problem-space examples for malware: Lucas et al., Dyrmishi et al., and their citers).
 5. **Directions B and C are parked**, not dropped: `docs/parked/directions-B-C.md`.
+7. **Two §3 edits from the code audit, chosen by the user (session 26).** Numbers are the compiled ones.
+   (a) *Table 1 (readout rules, `tab:fw:readouts`): option A.* The row "presence | $[s_k > 0]$ | $d_k$" becomes "monotone
+   | $g(s_k)$, $g$ nondecreasing, e.g. $[s_k > 0]$ | $d_k$": same table, no new rows or columns, only the first two
+   cells of that row change. The list of readout forms in §3.1, the paragraph after the table, and the proof in
+   Appendix C get matching wording. *Why:* three EMBER readouts (a max/min pool with a floor of 0, one item's value
+   with a default, a presence bit scaled by 128) are nondecreasing functions of one sum, and the code gives them
+   $d_k$; the proof already argues presence this way; it also covers capped or log-scaled counts in other domains.
+   (b) *Definition 8 (Changes and signatures, `def:fw:signature`), the second paragraph after it:* "such as appending
+   any content" becomes "such as overwriting a range of positions with any content", and the sentence gains ", which
+   record the items each position belongs to". *Why:* the code collects changes from item tables only for in-place
+   writes; append is declared and checked by re-extraction (audit finding 6).
 
 ## Next steps, in order
 
@@ -74,9 +85,10 @@ them (below).
    Theorems 2-3), §4 as the template plus EMBER, §5 organized by §3's results, the §2/§5 alignment (decision 4). The
    user approves it before any section is rewritten.
 2. **Code audit, read-only:** does the code compute the derived table as Definitions 9-10 now define it (one
-   direction rule for every monoid, replacements as changes, the readout rules of Table 2)? The code predates round 4.
+   direction rule for every monoid, replacements as changes, the readout rules of Table 1)? The code predates round 4.
    Report mismatches; fix only with the user. *Done 2026-11-09:* `docs/evidence/code-audit-sound-directions.md`.
-3. **§4, then §5, rewritten in blocks** with the user's review after each (the way Sound Directions round 4 worked;
+3. **Apply decision 7's two edits** (exact text in `docs/resume-prompt.md`), then `make` and `make check`.
+   **§4, then §5, rewritten in blocks** with the user's review after each (the way Sound Directions round 4 worked;
    use the `paper-prose` skill). The mechanical vocabulary fixes go with them (R3/R4, "rate", "stated in elements",
    §6's "margins").
 4. **The next full simulated review, once §4 and §5 are realigned and before the introduction** (decided 2026-11-09).

@@ -4,6 +4,19 @@ Read `docs/status.md` and `PLAN.md` at the start of a session; everything else o
 Each entry says when it is worth opening. The manuscript (`manuscript/*.tex`) is the authority on the paper's content;
 where a document disagrees with it, the manuscript wins.
 
+## The paper's numbering (compiled 2026-11-09)
+
+Documents written before 2026-11-09 use older numbers; the compiled PDF wins. Before naming a number to the user,
+check `manuscript/main.aux` (`grep newlabel manuscript/main.aux`), and add the title or label alongside it. Adding
+§4's planned "instances at a glance" table will shift Tables 3-7 by one.
+
+| Kind | Compiled numbers |
+|---|---|
+| Sections | 1 Introduction; 2 Background and Motivation; 3 Measuring Edits Across Feature Mappings (3.1 Sum-then-Readout Extractors, 3.2 Edits and Their Side Effects, 3.3 Sound Directions); 4 Instances (4.1-4.4); 5 Evaluation (5.1 Setup, 5.2 Side Effects, 5.3 Directions, 5.4 Detectors); 6 Related Work; 7 Discussion; Appendix A Symbols, B Types, C Proofs |
+| Definitions | 1 Items, 2 Sums, 3 Contributions, 4 Readouts, 5 Sum-then-readout extractor, 6 Item delta, 7 Threat models and directions, 8 Changes and signatures, 9 Directions of sums, 10 Derived table |
+| Results | Proposition 1 (side effects), Theorem 1 (sound directions), Corollary 1 (monotone detectors); Algorithm 1 (the extractor) |
+| Tables | 1 readout rules (§3.3), 2 edit catalogue (§4), 3 side effects, 4 directions, 5 detectors (§5), 6 symbols, 7 sign table (Appendix C) |
+
 ## Active
 
 | Document | What it is | Open it when |
@@ -25,16 +38,16 @@ where a document disagrees with it, the manuscript wins.
 ## Evidence: the records behind §4-5
 
 Design decisions, runs, and results of the EMBER instance and its evaluation. Their vocabulary is the old one (claims
-C1/C4, requirements, Tables A0-A2 for what are now Tables 5-7). Open them to trace a number in the paper to its run,
+C1/C4, requirements, Tables A0-A2, and in places Tables 5-7, for what the compiled paper numbers Tables 3-5). Open them to trace a number in the paper to its run,
 or when changing an experiment. Run scripts are in `run/` (one per step, numbered), outputs under `artifacts/`.
 
 | Document | Covers |
 |---|---|
-| `docs/evidence/item-layer-design.md` | the instrumented extractor: item tables, readouts as data, the edit catalogue, the side-effect and direction engines, checks G1-G7 (§4, Tables 5-6) |
-| `docs/evidence/direction-A-threat-model.md` | the threat models (additions, shifts, full), hand direction table, re-encodings over sums, the first exactness table (§4.3-4.4, Table 6) |
-| `docs/evidence/direction-A-A1-design.md` | the detector table's design, baselines, decisions, and results (Table 7) |
+| `docs/evidence/item-layer-design.md` | the instrumented extractor: item tables, readouts as data, the edit catalogue, the side-effect and direction engines, checks G1-G7 (§4, Tables 3-4) |
+| `docs/evidence/direction-A-threat-model.md` | the threat models (additions, shifts, full), hand direction table, re-encodings over sums, the first exactness table (§4.3-4.4, Table 4) |
+| `docs/evidence/direction-A-A1-design.md` | the detector table's design, baselines, decisions, and results (Table 5) |
 | `docs/evidence/direction-A-expert-set.md` | Gimenez et al.'s 40 features, instrumented: the expert-set row and its holes |
-| `docs/evidence/code-audit-sound-directions.md` | the 2026-11-09 audit of the direction engine against Definitions 7-10 and Tables 2-3: findings, what §4 must say, the readout rule of every EMBER feature |
+| `docs/evidence/code-audit-sound-directions.md` | the 2026-11-09 audit of the direction engine against Definitions 7-10 and Tables 1 and 7 (readout rules, sign table): findings, what §4 must say, the readout rule of every EMBER feature |
 
 ## Archive (superseded; open only to recover a reason or a record)
 
