@@ -30,4 +30,4 @@ in question.
 
 PLAN.md's next steps 2-5: the read-only code audit (does the code compute the derived table as Definitions 9-10
 define it?), then §4 and §5 rewritten in blocks with the user's review after each (`paper-prose` skill), then the
-research-track items.
+scheduled full review (update `docs/reviews/review-prompt.md` first), then the research-track items.
