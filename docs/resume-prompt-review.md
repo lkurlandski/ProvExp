@@ -2,8 +2,8 @@
 
 Paste this into a fresh session. It picks up the review sprint over §3.2, §3.3, and §3.4 of the manuscript.
 **Current position: Sound Directions round 3 read by the user (2026-11-09): "still extremely problematic". Next
-session starts with their comments (pasted); see "Start here".** Read the paragraph gate at the top of `paper-prose`
-first. Update the "Current
+session starts with their comments (pasted); see "Start here".** The writing skill was reset on 2026-11-09 (no rules;
+taste as judgement, with the user's accepted text as reference): read `paper-prose` first. Update the "Current
 position" line and the "Where things stand" list at the end of every session.
 
 ## What the sprint is
@@ -20,7 +20,7 @@ unpleasant to read. Instead, for each subsection, one per session:
 5. The user's **first read** is of the improved version; they write comments.
 6. **You classify each comment** (missed / fix fell short / introduced / new taste) and propose a plan.
 7. The user gives feedback on that plan.
-8. **You implement.** Then a short retro that updates the reader model, the lessons, and the logs.
+8. **You implement.** Then a short retro and the logs.
 
 The point is for you to learn to do the user's analysis yourself, so that by §3.4 steps 5-8 are unnecessary. The full
 protocol, the formats, and the classification rules are in `docs/sprint-framework-review.md`; read it.
@@ -35,29 +35,34 @@ failed twice and was cut. Treat the next session as a reset of how this subsecti
 patches.
 
 1. Before the comments arrive, prepare (read, do not write):
-   - Invoke `/paper-prose`. Read **the paragraph gate** at the top of `SKILL.md` and lessons 32-36; then
-     `reader-model.md`, triggers 28-33 and the calibration rows for §3.2 and Sound Directions.
+   - Invoke `/paper-prose` and read it whole. It was rewritten at the end of session 21 because the user found the
+     old rules were doing harm: 36 lessons, an 8-rule paragraph gate, and 33 reader-model triggers had produced
+     patterns the user complained about (a gloss after every definition, lead-in paragraphs). Do not reach for the
+     archived lessons or triggers (`docs/archive/paper-prose-2026-11-09/`) as a checklist.
+   - The reference texts it names: §3.1 and §3.2 in the rendered PDF, and `git show 5dcb9e7` (the user's hand edits).
    - `docs/sprint-framework-review.md`, section "§3.4 Sound Directions": the user's comments U1-U19 on round 1,
-     their reaction to round 2, their comments on the round-2 lead and Def 7, the gated round-3 plan, and what was
-     implemented. These are the patterns the round-3 read is likely to repeat.
+     their reaction to round 2, their comments on the round-2 lead and Def 7, the round-3 plan, what was
+     implemented, and the skill reset.
    - The reaction-log entries for Sound Directions in `docs/writing-spec.md`.
-   - Round 3 itself **in the rendered PDF** (`make` in `manuscript/`, then pdftotext), with §3.1-3.2 before it
-     (the reader's context) and the proof of Theorem 1 and the sign-rule tables in `manuscript/_j_proofs.tex`.
+   - Round 3 itself **in the rendered PDF** (`make` in `manuscript/`, then pdftotext), with the proof of Theorem 1 and
+     the sign-rule tables in `manuscript/_j_proofs.tex`. Be able to say, in plain words, what the subsection must
+     give the reader and what Theorem 1 needs: the skill says failures cluster where that was not settled.
 2. When the comments arrive: log them verbatim under a new "Round 3: the user's read" heading in the log. Separate
    questions from feedback and **answer the questions first**, plainly, in words (a question usually marks a
    definition that does not stand on its own; name the fix with each answer). Classify each comment (missed / fix fell
-   short / introduced / new taste) with one line on what the gate or the reader model should have caught.
+   short / introduced / new taste), as evidence about the subsection, not as material for new rules.
 3. Then, before any plan, step back and say plainly what the comments show about the subsection as a whole: is the
    problem the prose, the structure (which concepts, in which order), or the mathematics being presented (what
    Theorem 1 needs, and whether the reader can see why)? Recommend one way of working for the rewrite, and ask the
-   user. Options to offer, with a recommendation: (a) a gated paragraph plan as in round 3; (b) **drafting one
+   user. Options to offer, with a recommendation: (a) a paragraph plan as in round 3; (b) **drafting one
    paragraph at a time with the user's review after each** (procedure step 2 of `paper-prose`: the unit shrinks when
    rounds fail; three have); (c) the user writes the passages that keep failing and Claude checks the mathematics
    and consistency only.
 4. No manuscript edit until the user approves the plan. After implementing: `make`, `make check`, "??" check, read the
    rendered text, rewrap to 120 columns, commit only own files, report what changed per comment.
-5. Retro at the end of the subsection (counts per class, what failed three times and why), then the reader model's
-   calibration row, `paper-prose`, the reaction log, and the sprint retro at the end of the log.
+5. Retro at the end of the subsection (counts per class, what failed three times and why) and the sprint retro at the
+   end of the log. Log reactions raw in the reaction log; change `paper-prose` only where its description of the
+   user's taste proved wrong or incomplete, never by adding a rule.
 
 Open after Sound Directions (research-track proposals, do not edit those files here): §4 defines operations as
 catalogue rows, with one sentence that a table per row, combined, is sound and at least as tight; §4.1 says where the
@@ -66,17 +71,17 @@ hypothesis, checked in §5; "modeled"/"residual" wording in §4.1 and §5; §6's
 
 ## Working rules that matter here
 
-- The user's reaction to staging and LLM register is strong (lesson 5, reader-model triggers 17-21); apply the scan
-  to your own plan sentences too.
-- No domain (PE) examples in §3. A generic pseudocode listing helps only for unfamiliar structure (lesson 20 as
-  limited); the user rejected a worked example on Algorithm 1 in §3.2 and numeric max/min examples.
+- The user's reaction to staging and LLM register is strong (`paper-prose`, "A plain, literal, human register"); it
+  applies to the sentences proposed in a plan too.
+- No domain (PE) examples in §3. A generic pseudocode listing helps only for structure the reader cannot
+  picture; the user rejected a worked example on Algorithm 1 in §3.2 and numeric max/min examples.
 - The user prefers terse leads and statements: their final hand edits to §3.2 shortened the lead ("give $z'$ exactly
   (before the edit is applied) and thus the side effects"), cut "In other words", and wrote "the largest or smallest".
 - Be plain in the chat: lead with the plain-language version; define terms (`CLAUDE.md`, "Explain plainly").
 - Do not edit `_e_instances.tex`, `_f_evaluation.tex`, or the research track's files; the research track runs in
   separate sessions (`docs/resume-prompt.md`). Commit only your own files (`git status` first). Do not push.
 - At the end of every session: fill in the log, update `docs/status.md`, `PLAN.md`, this file's "Current position"
-  and "Where things stand", and, after a retro, the reader model's calibration table and `paper-prose`.
+  and "Where things stand", and the reaction log.
 
 ## Where things stand
 
@@ -110,3 +115,6 @@ hypothesis, checked in §5; "modeled"/"residual" wording in §4.1 and §5; §6's
   and footprint out of §3), ~1,040 words. Next: the user's read.
 - 2026-11-09 (session 21, end): the user read round 3, verdict "still extremely problematic"; comments deferred to a
   new session for context length. "Start here" rewritten for that session.
+- 2026-11-09 (session 21, end, cont.): the writing skill reset at the user's request: `paper-prose` rewritten as
+  reference texts + taste as judgement + fixed constraints + how to work; old lessons, gate, reader model, and style
+  tendencies archived (`docs/archive/paper-prose-2026-11-09/`).

@@ -6,8 +6,10 @@ read is of the improved version. Learning signal: whatever the user still finds 
 missed or its revision got wrong. Success: the user's comments on the improved version shrink from §3.2 to §3.4, until
 steps 5-8 are unnecessary. §2 and §3.1 are done (session 17).
 
-**Tools.** The reader model `.claude/skills/paper-prose/reader-model.md` (how the user reads; update after every
-round), the `paper-prose` lessons (how to write), the reaction log in `docs/writing-spec.md` (raw reactions).
+**Tools.** The `paper-prose` skill (rewritten 2026-11-09: the user's taste described as judgement, with their
+accepted text as the reference) and the reaction log in `docs/writing-spec.md` (raw reactions). The reader model and
+the old lessons, used through Sound Directions round 3, are archived in `docs/archive/paper-prose-2026-11-09/`; the
+retro no longer turns comments into triggers or lessons (see the skill, "Learning from a reaction").
 Not `docs/reviews/review-prompt.md`, which simulates a conference reviewer.
 
 ## Protocol (one subsection per session; order 3.2, 3.3, 3.4)
@@ -1010,6 +1012,14 @@ corpus-read sign sets as the theorem's hypothesis, checked in §5; §6's "margin
 
 **Round 3: the user's read (2026-11-09).** Verdict before the comments: "still extremely problematic." The comments
 are given in a new session (context length); paste them here verbatim, then classify.
+
+**The writing skill reset (2026-11-09, before the comments).** The user worried that the skill's rules were doing
+more harm than good: an extensive list of black-and-white rules in place of a nuanced sense of how they write, and
+more than once a pattern they complained about came from an explicit rule (the gloss after every definition from
+lesson 16 and the "definition, gloss, example" technique; lead-in paragraphs from lesson 33). Agreed. `paper-prose`
+rewritten (~1,600 words): reference texts (§3.1, §3.2 with the user's hand edits, §2, §6, the user's own papers), the
+taste as judgement with evidence on both sides, the fixed constraints, and how to work; no numbered rules. The old
+SKILL, the reader model, and the style tendencies archived in `docs/archive/paper-prose-2026-11-09/`.
 
 ### Retro
 

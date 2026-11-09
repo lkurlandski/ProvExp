@@ -1,3 +1,5 @@
+> Archived 2026-11-09. Lookup only: these are past readings of the user's feedback, not instructions. The current skill is `.claude/skills/paper-prose/SKILL.md`.
+
 # Reader model: how the user reads a draft
 
 Used in the self-review sprint (`docs/sprint-framework-review.md`, step 1): read the rendered subsection as the user
