@@ -15,8 +15,8 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
 ## Waiting on the user
 
 - The holistic read of Sound Directions (any time).
-- The code audit's two proposed code changes (ratio and normalized-bin rules to Table 2's; no table changes) and the
-  paper-side items for §4 (`docs/evidence/code-audit-sound-directions.md`).
+- Two §3 edits from the code audit: Table 2's presence row widened to "a nondecreasing function of one sum" (finding
+  3), and Definition 7's example of a write changed from appending to an in-place write (finding 6).
 
 ## Scheduled
 
@@ -26,7 +26,7 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
 ## Session log
 
 - **2026-11-09 (session 25): code audit, read-only** (PLAN.md, step 2). The code gives Definitions 9-10's table on
-  EMBER except one per-operation cell (the ratio rule is coarser); no threat-model direction changes, so Tables 6-7
+  EMBER except two per-operation cells (the ratio rule is coarser; fixed with the user's approval, Tables 6-7 unchanged); no threat-model direction changes, so Tables 6-7
   stand (checked by re-deriving the pilot with Table 2's rules patched in). Paper-side items for §4: the corpus-collected
   vocabulary falls under decision 2 too; writes onto locating positions are flagged or declared in the directions;
   append is declared, not collected (fix Def. 7's example); Table 2 lacks pools and nondecreasing functions of one sum.

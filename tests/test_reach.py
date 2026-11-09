@@ -35,6 +35,7 @@ from provexp.reach import predict
 from provexp.reach import predict_declared
 from provexp.reach import predict_structural
 from provexp.reach import profile_kinds
+from provexp.reach import ratio_signs
 from provexp.reach import readout_signs
 from provexp.reach import region_changes
 from provexp.reach import shift_ranges
@@ -374,9 +375,10 @@ class TestReadoutSigns:
     def test_rules(self, vocab: tuple[dict, dict], changes: list[Change], readout: object, expected: list[frozenset[str]] | None) -> None:  # type: ignore[type-arg]
         signs = readout_signs(readout, envelope(changes, *vocab))  # type: ignore[arg-type]
         if expected is None:
-            # One bucket moves with the key's hash sign: its share moves with it, the others' the other way.
+            # One bucket moves with the key's hash sign (and so does the total): its share either way (the ratio rule),
+            # the others' against the total.
             ((bucket, s),) = hash_image(4, ["x"]).items()
-            expected = [s if i == bucket else (DOWN if s == UP else UP) for i in range(4)]
+            expected = [BOTH if i == bucket else (DOWN if s == UP else UP) for i in range(4)]
         assert signs == expected
 
     def test_directions(self, vocab: tuple[dict, dict]) -> None:  # type: ignore[type-arg]
@@ -385,6 +387,13 @@ class TestReadoutSigns:
 
 
 class TestHelpers:
+
+    @pytest.mark.parametrize(
+        "num,den,expected",
+        [(UP, FIXED, UP), (FIXED, UP, DOWN), (UP, DOWN, UP), (DOWN, UP, DOWN), (UP, UP, BOTH), (FIXED, FIXED, FIXED)],
+    )
+    def test_ratio_signs(self, num: frozenset[str], den: frozenset[str], expected: frozenset[str]) -> None:
+        assert ratio_signs(num, den) == expected
 
     @pytest.mark.parametrize(
         "pattern,expected",

@@ -3,11 +3,11 @@
 Read-only audit of `src/provexp/reach.py`, `items.py`, and `featuresets/ember2024/{catalogue,sums,features}.py` against
 `manuscript/_d_framework.tex` (Definitions 7-10, Table 2) and `_j_proofs.tex` (Table 3). Nothing was changed.
 
-**Verdict.** On EMBER, the code gives the table Definitions 9-10 define, except for one per-operation cell that the code
+**Verdict.** On EMBER, the code gives the table Definitions 9-10 define, except for two per-operation cells that the code
 leaves two-sided where the paper's ratio rule gives one side. No threat model's direction changes, so no number of
 Tables 6-7 changes. Check: the pilot derivation (100 files, sums extractor) was run twice into the scratchpad, once with the
-code as it is and once with Table 2's ratio and normalized-bin rules patched in. The two runs differ in exactly one cell
-(`overlay_size_ratio`, add a section, precondition variant: code both, paper down); the `M_*` columns and every
+code as it is and once with Table 2's ratio and normalized-bin rules patched in. The two runs differ in exactly two cells
+(`overlay_size_ratio` under add-section and add-imports, precondition variant: code both, paper down); the `M_*` columns and every
 monotone/neutralize file are byte-identical. The paper and the code differ more in how they reach the table, and
 several of those differences need a sentence in §4.
 
@@ -15,7 +15,7 @@ several of those differences need a sentence in §4.
 
 1. **Ratio rule coarser than Table 2** (`reach.py:426-430`, also used by `Max`/`Min` with `divide_by`, 916 and 923).
    The code returns both whenever the numerator and the denominator both move, where Table 2 has $d_a \cup (-d_b)$.
-   Effect: the single cell above. *Change the code* to the paper's rule, which is a one-liner and is proven in the appendix.
+   Effect: the two cells above. *Change the code* to the paper's rule, which is a one-liner and is proven in the appendix.
    EMBER's denominators reach 0 only when their numerators are 0 too, so the $b > 0$ condition costs nothing.
 2. **Normalized-bin rule finer than Table 2** (`reach.py:903-910`). When exactly one bin of the family moves, the code
    gives that bin its own direction, where "as the ratio" gives $d \cup -d$ = both. The rule is correct (a single
@@ -90,3 +90,14 @@ several of those differences need a sentence in §4.
 
 `Opaque` matches Table 3's "a value in [l, u]" row if the item is taken to contribute value − default to an additive
 slot. The code uses only declared ranges here, never the corpus fallback.
+
+## Follow-up (same day): findings 1-2 fixed
+
+Fixed with the user's approval: `ratio_signs` is now $d_a \cup (-d_b)$, and `Normalized` uses the ratio rule with the
+family's total, both as Table 2 states them. `tests/test_reach.py` was updated and gained a ratio test. Re-derived
+into the scratchpad with the new code: the pilot tables behind Table 7's detectors (`a_directions_derived_v2`,
+`a_directions_derived_sums_v2`) and the 2,000-file table of runs 117-118 (`a_directions_derived_sums_2000_v3`). Each
+differs from the stored one only in `directions_sums.csv`, in the two cells above. Every threat-model column and every
+monotone/neutralize file is byte-identical, so the detectors' constraints and Tables 6-7 are unchanged. G7 on the pilot
+against the tightened table passes (0 violations; 476 add-section and 424 add-imports edits). The stored artifacts
+were left as they are: they differ only in those two cells, and the scale-up re-derives everything.

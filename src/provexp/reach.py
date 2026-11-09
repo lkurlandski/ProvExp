@@ -75,6 +75,7 @@ __all__ = [
     "DOWN",
     "BOTH",
     "direction",
+    "ratio_signs",
     "KindProfile",
     "Vocabulary",
     "profile_kinds",
@@ -424,10 +425,11 @@ def direction(s: Signs) -> str:
 
 
 def ratio_signs(num: Signs, den: Signs) -> Signs:
-    """The signs of a ratio of nonnegative quantities, from its numerator's and denominator's."""
-    if num and den:
-        return BOTH
-    return num if num else negate(den)
+    """
+    The signs of a ratio a / b with a >= 0 and b > 0 before and after, from its numerator's and denominator's: the
+    numerator's signs and the denominator's flipped (the manuscript's Table 2, proven in its appendix).
+    """
+    return num | negate(den)
 
 
 ################################################################################
@@ -901,13 +903,10 @@ def readout_signs(r: Readout, env: Envelope) -> list[Signs]:
     if isinstance(r, Ratio):
         return [ratio_signs(env.entry(*r.num), env.entry(*r.den))]
     if isinstance(r, Normalized):
+        # A bin over the family's total: the ratio rule, with the total's signs the union of the bins'.
         v = env.family(r.family, 0, r.size)
-        moved = [s for s in v if s]
-        if not moved:
-            return v
-        union = frozenset().union(*moved)
-        # One entry moving carries its share with it; with several, any can lose share to another.
-        return [(s if len(moved) == 1 else BOTH) if s else negate(union) for s in v]
+        total = frozenset().union(*v)
+        return [ratio_signs(s, total) for s in v]
     if isinstance(r, Entropy):
         return [BOTH if any(env.family(r.family)) else FIXED]
     if isinstance(r, Max):
