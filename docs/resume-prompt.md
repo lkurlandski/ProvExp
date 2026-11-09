@@ -1,33 +1,31 @@
-# Resume: rewrite the paper mock (after the 2026-11-09 holistic review)
+# Resume: the read-only code audit (after the paper mock of 2026-11-09)
 
-Read `docs/status.md` and `PLAN.md` (especially "Decisions of 2026-11-09"). Open other documents only as this task
-needs them (index: `docs/README.md`).
+Read `docs/status.md` and `PLAN.md` (especially "Decisions of 2026-11-09", decisions 1-6). Open other documents only
+as this task needs them (index: `docs/README.md`). The paper mock (`docs/paper-mock.md`) is accepted provisionally.
 
 ## The task
 
-Rewrite `docs/paper-mock.md` against the manuscript's new §3 and the decisions of 2026-11-09. The user approves the
-mock before any section of the paper is rewritten. Keep it to at most two pages, as before.
+PLAN.md, next step 2: **does the code compute the derived table as Definitions 9-10 of the manuscript now define
+it?** The code predates Sound Directions round 4. Read-only: report mismatches with file and line, and fix nothing
+without the user.
 
-What it must settle:
+Check, against `manuscript/_d_framework.tex` (Definitions 8-10, Table 2) and the sign table in `_j_proofs.tex`:
 
-1. **Contributions**, restated in §3's terms (sum-then-readout extractors; Proposition 1; signatures, the derived
-   table, Theorem 1; Corollary 1), with no requirements, footprints, or Theorems 2-3.
-2. **§4 as the instantiation template** (decision 1): its general opening (format-free, in §3's terms), the four
-   template parts, EMBER filling them in the body, and the "instances at a glance" table that other domains would
-   extend. A word budget per part.
-3. **§5 organized by §3's results** and aligned with §2 (decision 4): for each of §2's four lines of work (problem-space
-   attacks, feature-space constraints, problem-space defenses, feature-space defenses), say whether §5 shows it, with
-   which table, or whether §2 should narrow. Recommend one option, with the trade-off, for the user to decide.
-4. **What each table claims** (decision 3: Table 5 shows that the instrumentation and the operations' changes are
-   correct; decision 2: the coverage of the write operations' signatures is checked on the corpus, stated in a
-   sentence). Measured vs missing, as before.
+1. One direction rule for every monoid: a change raises sum k if its new contribution exceeds the old one, lowers it
+   if less; a min pool gets no rule of its own (its neutral element is +infinity).
+2. Replacements kept apart from a removal plus an addition (a one-for-one replacement leaves a count unchanged).
+3. The readout rules of Table 2 (identity, presence, distinct count, ratio, normalized bin, any other), and which rule
+   each EMBER feature gets.
+4. The signatures of operations stated as writes, collected from the corpus's item tables, as decision 2 describes.
 
-Inputs: the manuscript (`manuscript/_c_background.tex` through `_g_related_work.tex`), the current mock (stale in
-parts; keep what still holds), and PLAN.md. The evidence records (`docs/evidence/`) only if a table's content is
-in question.
+Where to look: `src/provexp/reach.py` (the direction engine, "C4" in old names), `src/provexp/items.py`,
+`src/provexp/featuresets/ember2024/{catalogue,sums}.py`. If the code differs from the definitions but gives the same
+table, say so and say whether the paper or the code should change. If a mismatch could change a table's numbers,
+say which table and estimate how.
 
-## After the mock is approved
+## After the audit
 
-PLAN.md's next steps 2-5: the read-only code audit (does the code compute the derived table as Definitions 9-10
-define it?), then §4 and §5 rewritten in blocks with the user's review after each (`paper-prose` skill), then the
-scheduled full review (update `docs/reviews/review-prompt.md` first), then the research-track items.
+PLAN.md's next steps 3-5: §4, then §5, rewritten in blocks with the user's review after each (`paper-prose` skill),
+including the one cheap measurement of decision 6 (cost per candidate, Proposition 1 vs extraction); then the full
+simulated review (update `docs/reviews/review-prompt.md` first; it includes decision 6's revisit); then the
+research-track items.
