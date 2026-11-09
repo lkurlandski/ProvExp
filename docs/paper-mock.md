@@ -1,122 +1,123 @@
-# Paper mock (2026-11-02)
+# Paper mock (rewritten 2026-11-09, after the holistic review; awaiting the user's approval)
 
-> **Stale in parts (2026-11-09); rewrite next session** (PLAN.md, next step 1). Written against the old §3: the
-> "requirements", "footprints", Theorems 2-3, and the CTU-13 rows no longer match the manuscript or the plan. §4's new
-> structure (a template that EMBER fills in) and the §2/§5 alignment are in PLAN.md, "Decisions of 2026-11-09".
-
-At most two pages. It decides what the paper contains; everything not listed here stays in `docs/archive/framework/formalization.md`
-or out. "Measured" means a pilot-scale number exists; final numbers need the scale-up (user's decision).
+At most two pages. It decides what the paper contains; what is not listed here stays out. Written against the
+manuscript's new §3 and PLAN.md's "Decisions of 2026-11-09". "Measured" means a pilot-scale number exists; final
+numbers need the scale-up (user's decision). The 2026-11-02 mock is in git history.
 
 ## Thesis
 
-For the feature extractors security classifiers use (find pieces of the input, add up what each contributes, apply a
-formula per feature), the feature-space consequences of an attacker's edits can be *computed* from the instrumented
-extractor: exactly for one edit, soundly for a whole threat model. Pierazzi et al. call this infeasible and observe it
-by re-extraction; others write it by hand or learn it from attacks. The computed answer is correct, more correct than
-hand analysis, more complete than learned constraints, and useful: it yields detectors no in-model edit can evade.
+For sum-then-readout extractors (find the items of the input, fold their contributions into sums, compute each
+feature by a readout over a few sums), the feature-space consequences of an attacker's edits are computed from the
+instrumented extractor: exactly for one edit (Proposition 1), as a sound direction table for a whole threat model
+(Theorem 1), and from that table, monotone detectors no edit in the threat model can evade (Corollary 1). Today this
+knowledge comes from trial, from an analyst's reading of the extractor, or from observed attacks.
 
 ## Contributions
 
-1. A model of sum-then-readout extractors (items, sums, readouts) and the requirements under which an edit's side
-   effects are exact and a threat model's feature directions are sound, with proofs. Format-free; the format enters
-   only through the footprints of edits stated in raw elements.
-2. An instrumented EMBER extractor (2,480 of 2,568 features modeled) and a second instance in traffic (CTU-13 botnet
-   features), checked against re-extraction.
-3. Derived directions and constraints that correct hand analysis on EMBER and replace 360 hand-written constraints on
-   CTU-13.
-4. Monotone detectors built from the derived directions that no in-model attack moves, at a small accuracy cost,
-   where attack-derived feature selection (Gimenez et al.'s PV) falls to an adaptive attacker.
+1. **The class and exact side effects.** Sum-then-readout extractors (items, sums in commutative monoids, readouts
+   with a support), and Proposition 1: an edit's delta and the item table of the input give the features of the
+   edited input exactly, before the edit is applied, re-evaluating only the readouts whose support a changed sum is in.
+2. **Sound directions.** Signatures (the changes a threat model may make to each kind of item), the derived table
+   (direction of each sum from the changes, of each feature from its readout's rule), Theorem 1 (sound over a
+   population, and for sequences of edits when the population is closed), and Corollary 1 (monotone detectors).
+   Format-free, with proofs.
+3. **Instantiation, on EMBER.** A template any instance follows (§4), filled in for EMBER 2024: 2,480 of 2,568
+   features modeled and reproduced bit for bit, three repairs, a catalogue of twelve operations from the public
+   toolkits, and every edit's predicted features checked against extracting them again (0 wrong).
+4. **What the computation buys.** The derived table corrects a careful hand analysis (eight errors, each witnessed by a
+   real edit) and is sound where constraints learned from attacks are not; monotone detectors on it are evaded by no
+   attack on files in the population, adaptive included, at 4-6 points of detection, where the learned defenses fall
+   to the adaptive search.
 
-## Outline and word budget (body about 9,500 words, CCS format)
+## Outline and word budget (body about 11,000 words while drafting; CCS format)
 
 | Section | Content | Words |
 |---|---|---|
-| 1 Introduction | the gap, the three ways people cross it today, our claim, results | 1,000 |
-| 2 Background and Motivation | Pierazzi et al.'s problem space (attacks differ in what they return), constraints, side effects (with nuance), the reachable set as the central object; attacks and defenses in feature and problem space each need part of the reachable set and get it from outside the feature mapping; a short closing on what we derive (written 2026-11-04, revised 2026-11-06, ~950 words) | 800 |
-| 3 Measuring Edits Across Feature Mappings | three subsections since 2026-11-08 (extractors, side effects, sound directions; §3.3 "Edits Given as Writes" removed, its idea is the footprint definition in sound directions: `docs/archive/framework/s33-decision.md`); below (rewritten 2026-11-04: no domain examples, tables, or figures for now; spine in `docs/archive/framework/framework-spine.md`) | 2,500 |
-| 4 Instances | EMBER (what is recorded, the three repairs, the import-overwrite patch); CTU-13 features; the edit catalogues | 1,000 |
-| 5 Evaluation | Tables 1-4 | 3,000 |
-| 6 Related work | problem-space attacks, constraints over features (incl. learned: Sheatsley, Bostani), robust detectors (adversarial training, monotone, verified), incremental computation and provenance (~1,450 words, 2026-11-06) | 700 |
-| 7 Discussion | what does not fit (global analyses, learned features, time decay), honest tools, cost of instrumenting | 500 |
-| Appendix | proofs; lemmas on hashed keys, patterns, single inputs; requirement checks; EMBER caveats | — |
+| 1 Introduction | last | 1,000 |
+| 2 Background and Motivation | as drafted, adjusted to the alignment option the user picks (below) | 950 |
+| 3 Measuring Edits Across Feature Mappings | as drafted (sum-then-readout extractors; edits and side effects; sound directions); finetuning only | 3,500 (now ~4,050) |
+| 4 Instantiating the Framework | the template, EMBER in it (below) | 1,250 |
+| 5 Evaluation | organized by §3's results (below) | 3,200 |
+| 6 Related Work | as drafted; "margins" and old terms fixed | 1,000 (now ~1,470) |
+| 7 Discussion | what does not fit (global analyses, learned features), cost of instrumenting (no effort claims), other domains | 500 |
+| Appendix | symbols, types, proofs; the EMBER details §4 points to; other domains, one section each, if added | — |
 
-**Framework (2,500 words):** the problem and notation, Pierazzi's symbols (300); items, sums, readouts, the term and
-readout tables, a cross-domain table (PE, APK, traffic) (700); edits and item deltas, edit classes (300); the recipe,
-the five requirements as one compact list, Theorem 1 (side effects) (600); sign envelopes, the per-readout rules,
-Theorem 2 (directions) (500); robustness as a corollary of Gimenez et al. (100). One running PE example (append a
-URL), one traffic example where it adds something (the longest gap after an injection). Dropped from the paper:
-projection onto the old provenance matrix, tightness, a cost theorem (cost is a table column), coupling (unless the
-Severi row below is adopted).
+## §4 Instantiating the Framework (1,250 words)
 
-## Tables and figures
+- **Opening, format-free (150).** What an instance supplies to §3: the item map, contributions, and readouts; a
+  threat model whose operations have signatures; a population with a membership check. Then the four parts, each
+  stated in §3's terms before EMBER fills it in. EMBER is one paragraph of introduction here.
+- **(a) Items, sums, readouts (300).** EMBER's kinds, its three monoids, its readout forms (which rows of Table 2
+  occur); the check that the readouts reproduce the extractor bit for bit (2,000 files, 2,480 features; the 88 parser
+  warnings are the features outside the class). The re-encodings over sums (raw counts, signed buckets split, ...)
+  as identity readouts a detector may read instead of the features (shortened from today's §4.3).
+- **(b) Outside the class, and repairs (250).** Contributions that are not self-contained: section size over file
+  size and the library set (value-preserving repairs), the duplicate-descriptor import overwrite (patched as a pure
+  addition; every row runs on the patch).
+- **(c) Threat model and signatures (350, with Table 4, the catalogue).** Twelve operations, three nested threat
+  models. Operations stated in items declare their changes. Operations stated as writes get theirs from the instance's
+  record of the positions the parser reads to find each kind of item; the instance declines to predict a write that
+  lands on one. Their signatures are collected from the corpus's item tables, so Theorem 1's coverage hypothesis is
+  checked on the corpus, not proven: one sentence here, the check in §5.2 (decision 2). Edits written by our own
+  byte-level code.
+- **(d) Population and membership (200).** Plain layouts (1,674 of 2,000 files); the detector checks membership at
+  inference and routes other files to an unconstrained model. Closure is checked (0 of 60,934 edits leave it).
+- **Instances at a glance (table, 0 words of prose; it replaces today's Table 3 slot).** One row per instance (EMBER
+  now; other domains add rows). Columns: features, modeled, kinds, monoids, readout forms, repairs (value-preserving
+  / patched), operations (in items / as writes), population share, bit-exact check.
 
-**Figure 1.** An edit becomes an item delta, adjusted sums, and new features, against re-extraction (one PE example).
+## §5 Evaluation, by §3's results (3,200 words)
 
-**Table 1: the computation is correct** (Theorem 1 vs re-extraction).
-Rows: domain x operation. Columns: edits, exact, flagged by the engine, wrong.
-- EMBER, measured: append, DOS overwrite, add section, every catalogue operation (73,063 edits on 2,000 files);
-  combined edits 1,105/1,105. Wrong: 0.
-- CTU-13, missing: insert connections (per port, TCP/UDP, any packet and byte counts). Expected: exact on all,
-  trivially, since every feature is a total, minimum, or maximum.
+| Subsection | Result | Table | Claims | Status |
+|---|---|---|---|---|
+| 5.1 Setup (300) | | | pilot scale, GBDT, 1% FPR, toolkit (seen / held-out) and adaptive attacks, every attacked file re-extracted | measured |
+| 5.2 Side effects (700) | Prop. 1 | 5 | the instrumentation and the operations' changes are correct (73,063 edits, 0 wrong), and the instance abstains exactly where a write lands on a position the parser reads; combined edits exact. Not "Proposition 1 holds", which is exact by construction (decision 3) | measured |
+| | | — | Prop. 1 used by an attack: the adaptive search scores 5,000 candidates per file without extraction, and evades the undefended model about as often as the best toolkit attack (25/49 vs GAMMA's 24/47, different training subsets; its real strength shows on the defended rows) | evasion measured; **cost per candidate, predicted vs extracted: missing** (cheap, minutes) |
+| 5.3 Directions (900) | Thm. 1 | 6 | every disagreement with the hand table is a hand error, witnessed; the hand detector loses soundness where the derived one keeps it; constraints learned from attacks certify nothing or only themselves; coverage and closure of the write operations' signatures checked on the corpus (100- and 2,000-file tables identical; 0 of 60,934) | measured |
+| 5.4 Detectors (1,300) | Cor. 1 | 7 | 0% evasion on in-population files under every attack on the monotone rows, at 4-6 points of TPR; PV, ERDALT, adversarial training fall to the adaptive search (64-80%, 49%); the expert set is sound under additions but weak (29.1%) and has 11 holes under the full catalogue; what each operation costs (price list); the cost of deriving vs PV | measured, except the sums row's adaptive cell (greedy, not beam) |
 
-**Table 2: more correct than hand analysis, more complete than learned constraints** (Theorem 2).
-- EMBER, measured: derived direction table vs the former hand rules; every disagreement is the hand rules' error,
-  witnessed by a real file and edit. Columns: features compared, agree, hand rule wrong (witnessed), derived wrong (0).
-- CTU-13, missing: derived constraints vs Simonetto et al.'s 360 (326 linear, 34 non-linear). Columns: hand
-  constraints implied by ours, hand constraints violated by a real insertion (a witness), constraints of ours absent
-  from theirs.
-- Learned constraints (from attack outputs), measured on EMBER (run 110): too loose to certify, or certify only on
-  the attacks they were learned from. One row.
+The section headings name the claim, not the method (today: "Side Effects Are Exact" becomes something like "The
+Instance Is Correct").
 
-**Table 3: useful: detectors** (Theorem 3; the measured Table A1).
-Rows: unconstrained; PV-seen; PV-all; ERDALT (Gimenez et al.'s learned post-processing; measured, run 128); expert
-set (Gimenez et al.'s 40 features); adversarial training (measured, run 125); monotone on derived directions (over
-sums; over features as they are). Columns: AUC, TPR at 1% FPR, evasion under
-the toolkit, under held-out attacks (second toolkit: missing), under the adaptive search, smallest score change, cost
-to derive (bookkeeping: missing). Measured at pilot scale: the monotone rows 88-89% TPR, 0 evasions, smallest score
-change exactly 0.0; PV falls to the adaptive search on 21-22/22; expert set AUC 0.844. **Measured (2026-11-05,
-PDF Table 7):** adaptive = the beam search alone (5,000 candidates): unconstrained 51%, adversarial training 49%, PV
-68% (4 attacks) and 64% (8 attacks), ERDALT 80%, monotone 0% (the sums row's cell is still the greedy search's).
+## §2 against §5: the four lines of work
 
-**Table 4 (candidate): the same on CTU-13.** A monotone botnet detector on the derived directions against FENCE and
-MoEvA2. MoEvA2 evades Simonetto et al.'s constraint-augmented model 80% of the time; hypothesis: 0% on ours for
-in-model insertions, at a few points of AUC. Adopt it if Table 1's CTU-13 row passes.
+§2 says four lines of work each need part of the reachable set. What §5 shows for each today:
 
-## What is missing, in order (updated 2026-11-02, after the body was drafted)
+| §2's line | What it needs | §5 shows it? |
+|---|---|---|
+| problem-space attacks | the point each candidate reaches | **Yes, partly**: the adaptive search scores by Prop. 1 (Table 7's adaptive column); its saving is not measured |
+| feature-space attacks (constraints Ω) | constraints over features | **As constraints, not as an attack**: Table 6 and the learned-region check compare constraints; no feature-space attack runs on ours |
+| problem-space defenses (adversarial training) | many points on many training objects | **No**: adversarial training is a baseline in Table 7, trained on toolkit outputs, not on points the framework produced |
+| feature-space defenses (monotone, verified) | which way each feature can move | **Yes**: Table 7 (monotone); verified training only cited |
 
-Sections 3-5 and Appendix A are drafted in `.tex` (`manuscript/`); the mock's Tables 1-3 are Tables 5-7 of the PDF,
-EMBER rows only.
-1. **The synthetic cells** of Section 5's tables (`% SYNTHETIC` in the source): add-section exactness, cost,
-   PV with 8 attacks under the fixed adaptive search, the adversarial-training row (the last two measured
-   2026-11-05; Table 7 has no synthetic cell left).
-2. **A's gaps:** a second toolkit (MAB-Malware) for the held-out column, leave-one-out PV, scale (seeds 0-2, full
-   splits, more malware; user's decision).
-3. **The remaining sections** (background, related work, discussion; introduction and abstract last) and Figure 1.
-4. **A breadth instance, if the review says the paper needs one.** Which domain is unimportant and interchangeable
-   (user, 2026-11-02); the CTU-13 rows above are one option, not a plan. Late.
+Options (both allowed by the user, decision 4):
 
-**After the review (2026-11-02, `docs/reviews/2026-11-02-body.md`; triaged with the user, `PLAN.md` "Next steps").**
-- Table 3 (PDF Table 7), **adopted:** the adaptive search over all twelve operations on the same routed models as the
-  other columns (go/no-go: beats GAMMA API, 24/47, on the unconstrained model); a "still detected after every attack"
-  column; the additions block first (expert set 29.1% vs 92.2%, both sound); a hand-table detector row; the expert set
-  instrumented with an adaptive cell. The adversarial-training row waits for the stronger search. **Changed:** the
-  toolkit split is reported per attack (2 of 8 are LIEF relayouts outside the catalogue), but it is not the
-  independent evidence the review proposed: 284 of 288 toolkit outputs on in-population files stay inside the derived
-  table, so a monotone model could not drop on them anyway. The 0.0 is stated as an implementation check (user); the
-  evidence is the adaptive search, real tools' outputs staying inside the derived table, and "still detected".
-- Table 1 (PDF Table 5), **adopted:** rows for every operation: 8 from G7's existing data (0 wrong; header fields,
-  rename, and the removals all flagged), the item-stated ones once their exactness check exists.
-- Table 2 (PDF Table 6), **adopted:** an in-population column and the add-section/overlay row (in-population, found by
-  G7); the framing "every disagreement is a hand error" stays (user). Gimenez et al.'s 40 features, instrumented, are
-  the independent hand analysis (their two per-name quirks, their M_full holes).
-- Appendix checks, **adopted:** P1 (closure; to run) and P2 (answered: the pilot and 2,000-file direction tables are
-  byte-identical).
-- Second instance, **deferred:** the scope is reduced in the text now (Table 1 shrunk; contributions 2-3 EMBER only,
-  the other domains sketched); reconsidered after tier 2 (user). Theorem 1 becomes Proposition 1 (user).
+- **A. Narrow §2 (no new runs).** Keep the four lines as the landscape, but say plainly that we evaluate three uses:
+  the attack (scoring without extraction), the constraints themselves, and monotone detectors; adversarial training
+  appears as the realistic alternative a defender would use, not as a use. Add the cheap per-candidate cost to §5.2.
+  Cost: §2 promises less; a reviewer may ask why adversarial training on computed points was not tried.
+- **B. Show all four.** A plus two runs: (i) adversarial training on the adaptive search's outputs, produced through
+  Prop. 1 (the problem-space defense made cheap); (ii) a feature-space attack (the exact tree solver already used for
+  the learned region) inside the derived region on the unconstrained detector, against the evasions the problem-space
+  search realizes. Cost: (i) is heavy (the adaptive search on hundreds of training malware; a 1,000-candidate budget
+  would bring it down) and adds a row whose expected result (resists the toolkit, still falls to a fresh adaptive
+  search, as the toolkit-trained row does) mostly repeats Table 7's point; (ii) is cheap but adds machinery.
 
-## Open decisions (user)
+**Recommendation: A**, plus the per-candidate cost measurement. The paper's strongest claims (Table 6, Table 7's
+monotone rows) need no new runs, every line §2 keeps has a table behind it, and adversarial training already serves
+as the defender's alternative. B(ii) is the one addition worth weighing if the review asks for the feature-space
+side; B(i) costs most and argues least.
 
-- **Drebin.** A third instance, as a head-to-head with Pierazzi et al. on side effects of code transplantation.
-  Costs an AndroZoo key and an old reimplementation; its directions are near-trivial. Default: Section 2/3 example
-  only, an instance if CTU-13 goes quickly.
-- **Coupling row** (which of Severi et al.'s hand-excluded features can in fact move separately). Default: out.
+## Measured vs missing
+
+- **Measured (pilot):** Tables 5-7 complete; closure; coverage across corpus sizes; price list; PV and ERDALT holes;
+  expert set's 11 holes; the hand detector's soundness loss.
+- **Missing, small:** the per-candidate cost of scoring by Prop. 1 against extraction (§5.2); the instances-at-a-glance
+  table (assembly only); the sums row's adaptive cell (beam search cannot route to the sums detector yet; expected 0%).
+- **Missing, user's decision:** the scale-up (seeds 0-2, full splits, more malware; the adaptive budget at 2,000
+  files); a second toolkit for held-out attacks (MAB-Malware); other domains (later, appendix plus table rows).
+
+## Dropped from the paper
+
+Requirements R1-R5, footprints, margins, Theorems 2-3, the CTU-13 rows and Drebin as planned instances (any later
+domain goes through the template), coupling, the region's tightness, a cost theorem, effort claims.

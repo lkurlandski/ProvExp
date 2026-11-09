@@ -14,7 +14,8 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
 
 ## Waiting on the user
 
-- The rewritten paper mock (next session) before any section is rewritten.
+- Approval of the rewritten paper mock (`docs/paper-mock.md`, 2026-11-09), including the §2/§5 alignment choice
+  (recommended: option A, narrow §2, plus the per-candidate cost measurement).
 - The holistic read of Sound Directions (any time).
 
 ## Scheduled
@@ -24,6 +25,10 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
 
 ## Session log
 
+- **2026-11-09 (session 24): paper mock rewritten** against the new §3 and the decisions of 2026-11-09:
+  contributions in §3's terms, §4 as the template plus EMBER with word budgets, §5 by §3's results (5.2 Prop. 1,
+  5.3 Thm. 1, 5.4 Cor. 1), what each table claims, the §2/§5 alignment with two options. **Next:** the user's
+  approval, then the code audit (PLAN.md, step 2).
 - **2026-11-09 (session 23): holistic review and cleanup.** Assessment of the whole project after the framework
   rewrite. Decisions with the user (PLAN.md, "Decisions of 2026-11-09"): §4 becomes "instantiating the framework"
   with a fixed template that EMBER fills in the body and other domains in the appendix; the coverage of write
