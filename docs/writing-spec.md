@@ -245,3 +245,11 @@ The "implied" notes are earlier readings, not instructions; several of them were
   problematic." The comments follow in a new session. Implied so far: the paragraph gate cut length and empty
   paragraphs but did not make the subsection readable; the cause is not yet known (prose, structure, or what the
   mathematics shows).
+- **2026-11-09, Sound Directions round 3, the comments** (verbatim in `docs/sprint-framework-review.md`). Liked: the
+  lead ("quite good", wants only two small clarifications), Def 7 ("an enormous improvement"), the paragraph on where
+  signatures come from, the sums paragraph ("pretty well written"). Lost from the sign sets on: "what the fuck are $A$
+  and $B$?" (undefined, clashing with Prop 1), "Don't know what you're talking about"; the derived table reusing $D$:
+  "Are you even paying attention to what you're writing? I'm starting to worry that this entire framework is one
+  massive AI hallucination." The rewrite and its restrictions: "Isn't a rewrite just a remove and an add together?",
+  "way too confusing", "perhaps a leftover". The Omega sentence and the lead-in to Def 8: too brief, "a little more of
+  an explanation", two or three sentences. The last paragraph: delete. Wants Table 7 (readout rules) in the body.

@@ -279,30 +279,37 @@ incremental view maintenance~\cite{gupta1995maintenance,koch2014dbtoaster}, and 
 \label{sec:fw:directions}
 
 % Spine: docs/framework-design.md, Section 14 (2026-11-05). Review sprint (docs/sprint-framework-review.md),
-% 2026-11-08: round 3 from the gated plan (every paragraph with its job and its user); operations moved to Section 4,
-% the footprint dropped (option A of docs/s33-decision.md), hashing and patterns in Appendix C.
+% 2026-11-08: round 3 from the gated plan; 2026-11-09: round 4 from docs/sound-directions-math.md, in blocks with the
+% user's review after each (block 1: lead, Def 7, Omega).
 Proposition~\ref{prop:fw:side-effects} computes the change of every feature from the delta of one edit. A set of edits
 has one delta per edit, and each delta depends on the content the edit writes and on the input it is applied to, so
 the deltas cannot be computed before the content is chosen, and a set that allows any content has too many edits to
-compute them one by one. This subsection computes, for every feature, the directions in which the edits of such a set
-can move it, from the item tables of the inputs and a description of which kinds of item the edits change, without
-computing any delta. It then proves that the computed directions are sound: no edit of the set moves a feature in a
-direction they exclude.
+compute them one by one. The attacker may choose any edit of the set, so a defense must hold against all of them.
+This subsection computes, for every feature, the directions in which the edits of such a set can move it, from the
+item tables of the inputs and a description of which kinds of item the edits change, without computing any delta, and
+proves that these directions are sound: no edit of the set moves a feature in a direction they exclude. One table of
+directions thus accounts for every edit of the set at once, and a detector whose score cannot fall in the directions
+it allows cannot be evaded by any of them.
 
 \definition[Threat models and direction tables]
 \label{def:fw:directions}
 {
 A \emph{threat model} $\mathcal{M}$ is a set of transformations, the edits allowed in one step, and the
-transformations $\mathcal{T}$ of \Cref{sec:background} are their finite sequences. A \emph{population} is a set
-$F \subseteq \mathcal{Z}$ of inputs. A \emph{direction table} $D$ assigns each feature $j$ one of the directions
-$\mathsf{fixed}$, $\mathsf{up}$, $\mathsf{down}$, and $\mathsf{both}$. It is \emph{sound} for $\mathcal{M}$ over $F$
-if no transformation in $\mathcal{M}$, applied to an input of $F$, changes a fixed feature, lowers an up feature, or
-raises a down feature. The population is \emph{closed} under $\mathcal{M}$ if no transformation in $\mathcal{M}$
-takes an input of $F$ outside $F$.
+transformations $\mathcal{T}$ of \Cref{sec:background} are their finite sequences. A \emph{population} is a subset
+$Z \subseteq \mathcal{Z}$ of inputs, and it is \emph{closed} under $\mathcal{M}$ if no transformation in $\mathcal{M}$
+takes an input of $Z$ outside $Z$. A \emph{direction} is one of four sets of signs that the change of a value can
+have: $\mathsf{fixed} = \{0\}$, $\mathsf{up} = \{0, +\}$, $\mathsf{down} = \{-, 0\}$, and $\mathsf{both} = \{-, 0,
++\}$. A \emph{direction table} $D$ assigns each feature $j$ a direction $D_j$. It is \emph{sound} for $\mathcal{M}$
+over $Z$ if, for every transformation in $\mathcal{M}$ and every input of $Z$, the change of every feature $j$ has a
+sign in $D_j$: no transformation changes a fixed feature, lowers an up feature, or raises a down feature.
 }
 
-\noindent A sound table is thus a feature-space constraint of the kind $\Omega$ describes, derived from the extractor
-instead of written by hand.
+\noindent A sound table is a feature-space constraint of the kind $\Omega$ describes (\Cref{sec:background}): every
+vector that an edit of the threat model produces moves each feature within its direction, so a feature-space attack
+that keeps to the table discards only vectors that no such edit produces. Feature-space constraints are usually
+written by hand from knowledge of the input format; a sound table is computed from the extractor and the threat model
+instead. The table bounds the reachable vectors from outside and does not claim that every vector within its
+directions is reachable.
 
 By Proposition~\ref{prop:fw:side-effects}(i), an additive sum changes by the contributions of the added items minus
 those of the removed ones, so the sign of its change follows from which kinds of item an edit adds, removes, or
@@ -311,17 +318,17 @@ rewrites in place.
 \definition[Signatures]
 \label{def:fw:signature}
 {
-The \emph{signature} $\Delta_{\mathcal{M}}(F)$ of a threat model $\mathcal{M}$ over a population $F$ lists, for each
-kind, which of three changes the transformations of $\mathcal{M}$ make to items of that kind on inputs of $F$: they
+The \emph{signature} $\Delta_{\mathcal{M}}(Z)$ of a threat model $\mathcal{M}$ over a population $Z$ lists, for each
+kind, which of three changes the transformations of $\mathcal{M}$ make to items of that kind on inputs of $Z$: they
 \emph{add} items, \emph{remove} items, or \emph{rewrite} items in place, replacing an item by another of the same
 kind. For a rewrite, the signature also records whether the new content is free, keeps the key of the old content,
 has the same length, or \emph{extends} the old content by appending elements. The signature \emph{covers}
-$\mathcal{M}$ if every transformation of $\mathcal{M}$, on every input of $F$, has a delta made of the changes it
+$\mathcal{M}$ if every transformation of $\mathcal{M}$, on every input of $Z$, has a delta made of the changes it
 lists.
 }
 
 \noindent A transformation defined by the items it adds and removes gives these changes directly. One defined by the
-positions it writes, such as appending any content, gets them from the item tables of the inputs in $F$, which is the
+positions it writes, such as appending any content, gets them from the item tables of the inputs in $Z$, which is the
 work of instrumenting a particular extractor (\Cref{sec:instances}).
 
 A \emph{sign set} is a subset of $\{-, 0, +\}$, and $-A$ flips every sign in $A$. The \emph{sign sum} $A \boxplus B$
@@ -351,16 +358,16 @@ $\mathsf{both}$ otherwise.
 \theorem[Sound directions]
 \label{thm:fw:directions}
 {
-Let $\varphi$ be a sum-then-readout extractor, $\mathcal{M}$ a threat model, and $F$ a population. If
-$\Delta_{\mathcal{M}}(F)$ covers $\mathcal{M}$ and every sign set contains the signs that its change gives the sum,
-then the derived table $D$ is sound for $\mathcal{M}$ over $F$. If $F$ is moreover closed under $\mathcal{M}$, then
-for every $z \in F$, every vector in $\mathcal{R}(z)$ differs from $\varphi(z)$ only in the directions $D$ allows.
+Let $\varphi$ be a sum-then-readout extractor, $\mathcal{M}$ a threat model, and $Z$ a population. If
+$\Delta_{\mathcal{M}}(Z)$ covers $\mathcal{M}$ and every sign set contains the signs that its change gives the sum,
+then the derived table $D$ is sound for $\mathcal{M}$ over $Z$. If $Z$ is moreover closed under $\mathcal{M}$, then
+for every $z \in Z$, every vector in $\mathcal{R}(z)$ differs from $\varphi(z)$ only in the directions $D$ allows.
 }
 
 \noindent For one edit, the table is sound because the sign of a total lies in the sign sum of the signs of its parts,
 a maximum over more or larger values is no smaller, and each readout rule holds. A sequence of edits passes through
-intermediate inputs, and closure keeps them in $F$, so the bound applies at every step, and a feature that falls at no
-step does not fall along the sequence. Without closure, an intermediate input can leave $F$, and the table says
+intermediate inputs, and closure keeps them in $Z$, so the bound applies at every step, and a feature that falls at no
+step does not fall along the sequence. Without closure, an intermediate input can leave $Z$, and the table says
 nothing about the steps after it.
 
 A sound table also gives detectors that the threat model cannot evade. Let $h: \mathcal{X} \to \mathbb{R}$ be a
@@ -371,9 +378,9 @@ features~\cite{gimenez2025certifiably}; a feature that can only fall is covered 
 \corollary[Robustness]
 \label{cor:fw:robustness}
 {
-Let $D$ be sound for $\mathcal{M}$ over a population $F$ closed under $\mathcal{M}$, and let $h$ read no feature
+Let $D$ be sound for $\mathcal{M}$ over a population $Z$ closed under $\mathcal{M}$, and let $h$ read no feature
 marked both and never fall when up features rise, down features fall, and fixed features stay. Then
-$h(\mathbf{x}') \ge h(\varphi(z))$ for every $z \in F$ and every $\mathbf{x}' \in \mathcal{R}(z)$.
+$h(\mathbf{x}') \ge h(\varphi(z))$ for every $z \in Z$ and every $\mathbf{x}' \in \mathcal{R}(z)$.
 }
 
 \noindent A gradient-boosted tree trained with monotone constraints is such a score. The corollary also covers a score

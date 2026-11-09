@@ -1013,6 +1013,61 @@ corpus-read sign sets as the theorem's hypothesis, checked in §5; §6's "margin
 **Round 3: the user's read (2026-11-09).** Verdict before the comments: "still extremely problematic." The comments
 are given in a new session (context length); paste them here verbatim, then classify.
 
+**Round 3: the user's read, comments (2026-11-09, session 22), verbatim.**
+
+> ## Edits as Writes
+> - In a previous round of feedback, we removed an entire subsection about defining edits in terms of element-level changes to an input.
+> - The section was overly complex and gnitty-gritty, felt overly-specific to executable file formats, introduced a plethora of verbose defintions, and was overall very long an un-interesting.
+> - Nonetheless, I see now that removing this from the framework does come with some drawbacks. For example, this subsection facilitated a way to re-compute the features of PE files without re-locating all of structures (the components of items). It also leaves some parts of the sound directions section feeling a little incomplete or "hanging", e.g., the bit about signatures feels like it was crafted with this prior part of the framework in mind.
+> - Anyway, I'm bring this up because I think we might need to revisit this idea at a later point. If we're unable to smooth out these issues or limitations in the rest of the work, I would be open-minded to re-introducing some of the concepts from this cut subsection. We would probably have to re-think the structure and narrative of the subsection from scratch to improve its flow and prevent the section from feeling pointless. For example, we could formally define how items are located in section 3.1 (or even refer the reader to the appendix for this "book-keeping" part of the framework) which would let us discuss the important concepts needed in this section more quickly and efficienty, keeping the flow tight.
+> - I am absolutely not telling you to rewrite this section.
+> - I'm just saying that I want you to make a note: if other parts of the research paper feel like they are negatively impacted by cutting this section, we can revist to question of whether or not we want to include it.
+>
+> ## Sound Directions
+> Par 1: Overall, this is quite good. I think we can make it slightly better by clarifiying two concepts which are currently a little ambiguous: (i) why does the large space of possible edits matter (sentence 2); and why does computing directions offer a promising solution to this problem (sentence 3). Note that I am looking for very small modifications, because the paragraph really is quite good already.
+>
+> Def 7: I'm wondering if we might improve this defintion by changing the way we discuss and frame a population. Maybe we should define it as a subspace of the problem space and use a notation like $\mathcal{Z}_F$ or $\mathcal{F}$? What do you think? It could help reduce the cognitive load slightly by using a familliar framing and notation. Determine whether this can be mathematically valid and whether it would improve the framework. Otherwise, this definition of a threat model is an enormous improvement over what we had in previous iterations.
+>
+> Par 2: While I appreciate brevity, I think we need a little more of an explanation for this statement. Explaining the idea in two sentences is probably sufficient. Three sentences, max.
+>
+> Par 3: Similarly to the above, I think this needs a little bit more of an explanation.
+>
+> Def 8: I think we need to clarify the "for each kind" here is referring to the kind of item, e.g., by using the symbol for a kind. Isn't a rewrite just a remove and an add together? Why does this need separate consideration? In the Item delta definition we were able to use just adds and removals. I don't understand this part about recording these particular aspects about the rewrite. Why is this needed? If it is nessecary and important, then we really need to improve the explanation of it because its way too confusing at the moment. Perhaps its a leftover idea from before we cut the "Edits as Writes section" that doesn't make as much sense now.
+>
+> Par 4: Seems fine.
+>
+> Par 5: Whoah dude what the fuck are $A$ and $B$? Are they direction tables? If so, we have a slight notational overlap with Proposition 1 and one part of the algebra appendix, which use these symbols to refer to a differnt object. I'm open-minded to choosing a different symbol for either class of object or using something like $D_1$ and $D_2$ instead. This feels like it should be a definition, I think (new terms, symbols, etc.). Okay, yeah I'm quite lost on this one. Don't know what you're talking about.
+>
+> Par 6: I suspect that if I understood the previous definition this would make more sense. It seems pretty well written.
+>
+> Par 7: Table 7 is small enough and clean enough that it could be included here, instead of in the appendix. It can also be referenced from where we explain the redouts in section 3.1. Dude, what are you on about? Now you're talking about a "derived table" that uses the same symbol as the direction table we just defined? Are you even paying attention to what you're writing? I'm starting to worry that this entire framework is one massive AI hallucination.
+>
+> Theorem 1: I can't understand this due to previous issues with the section.
+>
+> Par 8: Skipping. Cor 1: Skipping.
+>
+> Par 9: If I'm not mistaken, I think we can just delete this paragraph. If we want to say something useful here, we can, but I don't think this is useful.
+
+(Paragraph numbering is the user's: Par 2 = the Omega sentence, Par 3 = the lead-in to Def 8, Par 4 = where
+signatures come from, Par 5 = sign sets, Par 6 = sums, Par 7 = readouts and the derived table, Par 8 = why Theorem 1
+holds, Par 9 = the last paragraph, after Cor 1.)
+
+**Note kept at the user's request (Edits as Writes).** Cutting §3.3 lost (a) a way to recompute features of an edited
+input without locating every item again, and (b) the origin of the signature's rewrite restrictions, which now hang.
+If other parts of the paper suffer from the cut, revisit including it, rethought from scratch (e.g., how items are
+located defined briefly in §3.1 or as bookkeeping in an appendix). Not a request to rewrite it now.
+
+**Answers, classification, and the way of working (session 22).** Questions answered in the chat (population as a
+subset; why a replacement is not a removal plus an addition; the rewrite restrictions a §3.3 leftover; $A$, $B$ were
+sign sets, one idea in two vocabularies; the derived table never defined). Classes: missed 3 (kind symbol, $A$/$B$,
+derived table reusing $D$), fell short 2 (lead, rewrite restrictions), introduced 3 (Omega sentence, lead-in to Def 8,
+closing paragraph), new taste 2 (population notation, readout table in the body). Diagnosis: the mathematics as
+presented, not the prose. The user's replies: population = "subset", symbol $Z$; a very short justification of
+replacements; agreed with the diagnosis; paragraph plans are hard for them to review ("moreso to help guide you");
+option (b): a math note first, then blocks with their review after each. Math note: `docs/sound-directions-math.md`
+(directions as the four sign sets, union replaces the sign sum; a change is an (old, new) pair with absent allowed;
+one rule for every sum via the neutral element; $D_{\mathcal{M}}$ defined).
+
 **The writing skill reset (2026-11-09, before the comments).** The user worried that the skill's rules were doing
 more harm than good: an extensive list of black-and-white rules in place of a nuanced sense of how they write, and
 more than once a pattern they complained about came from an explicit rule (the gloss after every definition from
