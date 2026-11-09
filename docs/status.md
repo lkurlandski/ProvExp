@@ -15,8 +15,9 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
 ## Waiting on the user
 
 - The holistic read of Sound Directions (any time).
-- Two §3 edits from the code audit: Table 2's presence row widened to "a nondecreasing function of one sum" (finding
-  3), and Definition 7's example of a write changed from appending to an in-place write (finding 6).
+- Two §3 edits from the code audit (explained to the user; choices pending, `docs/resume-prompt.md`, step 1): Table 1's
+  presence row widened (option A) or not (B), and Definition 7's example of a write changed from appending to an
+  in-place write. Note: the compiled table numbers differ from the ones PLAN.md uses (see the resume prompt).
 
 ## Scheduled
 
