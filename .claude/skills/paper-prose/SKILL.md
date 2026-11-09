@@ -87,7 +87,10 @@ from the previous paragraph, would stop, and spend words there.
 grates on the user is staging: announced counts, colon reveals, metaphors for what our work does ("supplies the
 translation", "lifts", "opens the box"), anthropomorphic software ("honest tools"), passive distance, and advisory
 closers. These habits are human in small doses. What fails is their frequency, and their use in place of content.
-The user's own edits go toward shorter and plainer, not toward more polish.
+The user's own edits go toward shorter and plainer, not toward more polish. Sentence length follows the same judgement
+(2026-11-09, Sound Directions round 4): a long sentence is welcome now and then, when its structure and transitions
+hold several ideas under one (Def 8's first sentence, which the user praised); about half a dozen sentences that
+chained clauses with "and ... so ... and" made the ideas harder than necessary.
 
 **Every passage is there for the reader of the paper.** Text written to settle a point raised in the chat, to defend a
 decision, or to head off an imagined reviewer reads as "paragraphs that don't mean anything". This is not a ban on

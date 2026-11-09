@@ -253,3 +253,8 @@ The "implied" notes are earlier readings, not instructions; several of them were
   massive AI hallucination." The rewrite and its restrictions: "Isn't a rewrite just a remove and an add together?",
   "way too confusing", "perhaps a leftover". The Omega sentence and the lead-in to Def 8: too brief, "a little more of
   an explanation", two or three sentences. The last paragraph: delete. Wants Table 7 (readout rules) in the body.
+- **2026-11-09, Sound Directions round 4, the holistic read:** "Overall, this is very good. I only have one criticism
+  ... at times, it feels like you try to do too much with a single sentence." About half a dozen uncomfortably long
+  sentences (lead sentences 2 and 4, Def 7 sentence 1); "Definition 8, sentence 1 is a good example of a long sentence
+  that isn't confusing. It has enough structure and transitioning language to cover several concepts nested under a
+  single idea." Six sentences split (commit 528fdbb).

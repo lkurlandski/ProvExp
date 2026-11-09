@@ -1099,6 +1099,11 @@ directions: one argument for every sum (addition, max, min are nondecreasing in 
 contributions proved from Def 9, readout rules with directions, Theorem 1 by induction. Symbol table updated.
 Subsection ~1,470 words (texcount, from ~1,040 in round 3). Next: the user's read of the whole subsection.
 
+**The user's holistic read of round 4 (2026-11-09).** "Overall, this is very good." One criticism across the
+subsection: sentences that do too much (lead sentences 2 and 4, Def 7 sentence 1, others); Def 8's first sentence
+praised as a long sentence that works. Six sentences split (commit 528fdbb). Sound Directions: accepted pending the
+user's next pass.
+
 **The writing skill reset (2026-11-09, before the comments).** The user worried that the skill's rules were doing
 more harm than good: an extensive list of black-and-white rules in place of a nuanced sense of how they write, and
 more than once a pattern they complained about came from an explicit rule (the gloss after every definition from
