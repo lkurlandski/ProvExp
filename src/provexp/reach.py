@@ -427,7 +427,7 @@ def direction(s: Signs) -> str:
 def ratio_signs(num: Signs, den: Signs) -> Signs:
     """
     The signs of a ratio a / b with a >= 0 and b > 0 before and after, from its numerator's and denominator's: the
-    numerator's signs and the denominator's flipped (the manuscript's Table 2, proven in its appendix).
+    numerator's signs and the denominator's flipped (the manuscript's tab:fw:readouts, proven in its appendix).
     """
     return num | negate(den)
 
