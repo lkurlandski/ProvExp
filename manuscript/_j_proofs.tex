@@ -26,49 +26,31 @@ them. In both tables, ``all'' stands for $\{-, 0, +\}$, and $E_k$ is the set of 
 take under the threat model, as bounded by the rules for sums.
 
 \begin{table}[h]
-  \caption{Sign sets of common contributions: the signs that any number of changes of one kind (addition, removal,
-  rewrite) can give a sum. Removing items gives the signs of adding them, flipped, and a min pool follows the max pool
-  with every sign flipped. $\operatorname{sgn}[l, u]$ is the set of signs of the numbers in $[l, u]$.}
+  \caption{Directions that common contributions give their sums under each change: adding, removing, or replacing an
+  item, with any new content or with a restricted one. A min pool follows the max pool with up and down exchanged.}
   \label{tab:fw:signs}
-  \small
-  \begin{tabular}{@{}lccl@{}}
+  \footnotesize
+  \setlength{\tabcolsep}{4pt}
+  \begin{tabular}{@{}lcccl@{}}
     \toprule
-    Each item contributes & Add & \multicolumn{2}{c}{Replace} \\
-    \cmidrule(l){3-4}
-    & & any & restricted \\
+    Each item contributes & Add & Remove & \multicolumn{2}{c}{Replace} \\
+    \cmidrule(l){4-5}
+    & & & any & restricted \\
     \midrule
-    1 to a count & $\{0, +\}$ & all & $\{0\}$, same key \\
-    a value $\ge 0$ & $\{0, +\}$ & all & $\{0, +\}$, extension \\
-    & & & $\{0\}$, same length$^{*}$ \\
-    a value in $[l, u]$ & $\operatorname{sgn}[l, u]$ & all & $\{0\}$ if $l = u$ \\
-    $\pm$ a value to its key's bucket & per key$^{\dagger}$ & all$^{\dagger}$ & \\
-    a value to a max pool & $\{0, +\}$ & all & $\{0, +\}$, extension \\
+    1 to its key's count & up & down & both & fixed, same key \\
+    its length$^{*}$ & up & down & both & up, extension \\
+    & & & & fixed, same length \\
+    a value $\ge 0$ & up & down & both & \\
+    a value in $[l, u]$ & $d[l, u]$ & $-d[l, u]$ & both & fixed if $l = u$ \\
+    $\pm$ a value to a bucket & per key$^{\dagger}$ & per key$^{\dagger}$ & both$^{\dagger}$ & \\
     \bottomrule
   \end{tabular}
 
   \smallskip
   \raggedright\footnotesize
-  $^{*}$When the value is the item's length.
-  $^{\dagger}$Only on the buckets of the keys in $Q$, with the signs those keys give.
-\end{table}
-
-\begin{table}[h]
-  \caption{Sign rules of the readout forms: the signs of a feature's change, from the envelopes $E$ of the sums it
-  reads. The ratio needs $a \ge 0$, and $b > 0$ before and after the edit.}
-  \label{tab:fw:readouts}
-  \small
-  \begin{tabular}{@{}llc@{}}
-    \toprule
-    Readout & Formula & Signs of the change \\
-    \midrule
-    identity & $s_k$ & $E_k$ \\
-    presence & $[s_k > 0]$ & $\subseteq E_k \cup \{0\}$ \\
-    distinct count & $\#\{q : s_q > 0\}$ & $\boxplus_q \, (E_q \cup \{0\})$ \\
-    ratio & $a / b$ & $E_a \boxplus \big((-E_b) \cup \{0\}\big)$ \\
-    normalized bin & bin / total & as the ratio \\
-    any other & a function of $s_{K_j}$ & $\{0\}$ if every $E_k = \{0\}$, else all \\
-    \bottomrule
-  \end{tabular}
+  $^{*}$To an additive sum or to a max pool.
+  $d[l, u]$ is up if $l \ge 0$, down if $u \le 0$, and both otherwise.
+  $^{\dagger}$Only on the buckets that the keys in $Q$ hash to, with the signs those keys give.
 \end{table}
 
 \paragraph{Sums from signatures.}

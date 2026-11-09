@@ -171,7 +171,7 @@ histogram's total; the entropy of a histogram; a standard deviation, from a coun
 and a presence bit, which is 1 when a count is positive. Most read a fixed handful of sums. Some read a whole family,
 such as the number of distinct keys whose count is positive ($x_4$ in \Cref{alg:fw:extractor}).
 \Cref{sec:fw:side-effects} needs nothing of a readout beyond its support, and \Cref{sec:fw:directions} gives each
-of these forms a sign rule.
+of these forms a rule for the direction in which it moves (\Cref{tab:fw:readouts}).
 
 \definition[Sum-then-readout extractor]
 \label{def:fw:extractor}
@@ -321,10 +321,11 @@ which way each sum can move, whatever content the edits write.
 \definition[Changes and signatures]
 \label{def:fw:signature}
 {
-A \emph{change} of kind $\tau$, written $c \to c'$, takes an item of kind $\tau$ with content $c$ to one with content
-$c'$, where either content may be absent, written $\bot$, but not both: $\bot \to c'$ \emph{adds} an item,
-$c \to \bot$ \emph{removes} one, and $c \to c'$ \emph{replaces} one in place. A delta $(I^-, I^+)$ is \emph{made of}
-a multiset $C$ of changes, each with its kind, if
+A \emph{change} (an addition, a removal, or a replacement of one item) on the items of kind $\tau$, written
+$c \to c'$, takes an item of kind $\tau$ with content $c$ to one of the same kind with content $c'$, where either
+content may be absent, written $\bot$, but not both: $\bot \to c'$ \emph{adds} an item, $c \to \bot$ \emph{removes}
+one, and $c \to c'$ \emph{replaces} one in place. A delta $(I^-, I^+)$ is \emph{made of} a multiset $C$ of changes,
+each paired with the kind $\tau$ of its items, if
 \begin{equation}
   \label{eq:fw:made-of}
   \begin{aligned}
@@ -332,7 +333,7 @@ a multiset $C$ of changes, each with its kind, if
     I^+ &= \mset{(\tau, c') : (\tau, c \to c') \in C,\ c' \neq \bot}.
   \end{aligned}
 \end{equation}
-A \emph{signature} $\Delta$ assigns each kind $\tau$ a set $\Delta_\tau$ of changes of kind $\tau$. It \emph{covers}
+A \emph{signature} $\Delta$ assigns each kind $\tau$ a set $\Delta_\tau$ of changes on the items of kind $\tau$. It \emph{covers}
 $\mathcal{M}$ over $Z$ if every transformation in $\mathcal{M}$, applied to any input of $Z$, has a delta made of
 changes in $\Delta$.
 }
@@ -346,29 +347,63 @@ replacement, for instance to contents that extend the old one by appending eleme
 positions it writes, such as appending any content, gets them from the item tables of the inputs in $Z$, which is the
 work of instrumenting a particular extractor (\Cref{sec:instances}).
 
-A \emph{sign set} is a subset of $\{-, 0, +\}$, and $-A$ flips every sign in $A$. The \emph{sign sum} $A \boxplus B$
-is the set of signs that $a + b$ can have when $a$ has a sign in $A$ and $b$ a sign in $B$; for instance,
-$\{0, +\} \boxplus \{0\} = \{0, +\}$, while $\{+\} \boxplus \{-\} = \{-, 0, +\}$, as in the sign domain of abstract
-interpretation~\cite{cousot1977abstract}. Each change a signature lists gives each sum a sign set, the signs that any
-number of such changes can give the sum. The count of the items of a kind gets $\{0, +\}$ from additions,
-$\{-, 0\}$ from removals, and $\{0\}$ from rewrites, which is why a rewrite is listed apart from a removal and an
-addition. \Cref{tab:fw:signs} in Appendix~\ref{sec:fw:proofs} lists the sign sets of the contribution forms common in
-feature sets.
+\definition[Directions of sums]
+\label{def:fw:sum-direction}
+{
+Let $\Delta$ be a signature, and let an absent content contribute the neutral element, $\nu_\tau(\bot) = \mathbf{e}$.
+A change $c \to c'$ on the items of kind $\tau$ \emph{raises} sum $k$ if $\nu_\tau(c')_k > \nu_\tau(c)_k$,
+\emph{lowers} it if $\nu_\tau(c')_k < \nu_\tau(c)_k$, and leaves it unchanged otherwise. The \emph{direction} $d_k$ of
+sum $k$ under $\Delta$ is $\mathsf{fixed}$ if no change in $\Delta$ raises or lowers $k$, $\mathsf{up}$ if none lowers
+it, $\mathsf{down}$ if none raises it, and $\mathsf{both}$ otherwise.
+}
 
-The sign sets bound the change of each sum. An edit's delta is made of changes the signature lists, and the change of
-an additive sum is the total of what these changes give it, so its sign lies in the sign sum of their sign sets. A max
-pool can only rise if the sign set of every listed change on it lies within $\{0, +\}$, since a maximum does not fall
-when values are only added or raised; it can only fall if every sign set lies within $\{-, 0\}$; and otherwise it can
-move either way. A min pool is the same with the signs flipped.
+\noindent The direction of a sum bounds its change under every edit whose delta is made of changes in $\Delta$. On an
+additive sum, the edit changes $s_k$ by the total of $\nu_\tau(c')_k - \nu_\tau(c)_k$ over its changes
+(Proposition~\ref{prop:fw:side-effects}(i)), and a total of terms that are all non-negative is non-negative. On a max
+pool, if no change lowers $k$, no item that contributes to $k$ is removed without being replaced by one that
+contributes at least as much, and added items only add values, so the largest value cannot fall; if no change raises
+$k$, it cannot rise, by the same argument. A min pool needs no rule of its own: its neutral element is $+\infty$, so
+by the definition a removal raises it and an addition lowers it, as removing or adding a value does to a minimum. The direction depends
+on the contribution functions and the changes in $\Delta$, not on any input, and for the contributions common in
+feature sets it follows from their form: the count of a key rises when an item with that key is added, falls when
+one is removed, and stays when an item is replaced by one with the same key. \Cref{tab:fw:signs} in
+Appendix~\ref{sec:fw:proofs} lists these forms.
 
-The readouts turn these bounds into directions. Each readout form of \Cref{sec:fw:model} has a sign rule, which
-\Cref{tab:fw:readouts} lists: the identity passes the signs of its sum through, a presence bit moves with its count or
-not at all, and a ratio can rise only if its numerator can rise or its denominator can fall. A readout of any other
-form gets the rule that holds for every readout, since a readout depends only on its support
-(Definition~\ref{def:fw:readout}): its feature is fixed if no sum in the support can change, and can move either way
-otherwise. The \emph{derived table} reads the resulting signs of each feature as $\mathsf{fixed}$ if they are
-$\{0\}$, $\mathsf{up}$ if they lie within $\{0, +\}$, $\mathsf{down}$ if they lie within $\{-, 0\}$, and
-$\mathsf{both}$ otherwise.
+\begin{table}[t]
+  \caption{Direction rules of the readout forms of \Cref{sec:fw:model}: the direction of a feature from the
+  directions $d$ of the sums it reads. The ratio requires $a \ge 0$, and $b > 0$ before and after the edit.}
+  \label{tab:fw:readouts}
+  \small
+  \begin{tabular}{@{}llc@{}}
+    \toprule
+    Readout & Formula & Direction \\
+    \midrule
+    identity & $s_k$ & $d_k$ \\
+    presence & $[s_k > 0]$ & $d_k$ \\
+    distinct count & $\#\{q : s_q > 0\}$ & $\bigcup_q d_q$ \\
+    ratio & $a / b$ & $d_a \cup (-d_b)$ \\
+    normalized bin & bin / total & as the ratio \\
+    any other & a function of $s_{K_j}$ & $\mathsf{fixed}$ if every $d_k$ is, else $\mathsf{both}$ \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+The readouts turn the directions of sums into directions of features. Flipping a direction, written $-d$, exchanges up
+and down, and the union of two directions is again a direction: $\mathsf{up} \cup \mathsf{down} = \mathsf{both}$, and
+a direction united with itself or with $\mathsf{fixed}$ is unchanged. Each readout form of \Cref{sec:fw:model} has a
+rule that gives its feature a direction from the directions of the sums it reads, and \Cref{tab:fw:readouts} lists
+them. The identity, a presence bit, and a distinct count, which is a total of presence bits, move with the sums they
+read. A ratio can rise only if its numerator can rise or its denominator can fall,
+which is the union of the numerator's direction and the denominator's, flipped. A readout of any other form gets the
+rule that holds for every readout, since a readout depends only on its support (Definition~\ref{def:fw:readout}): its
+feature is fixed if every sum in the support is fixed, and can move either way otherwise.
+
+\definition[Derived table]
+\label{def:fw:derived}
+{
+The \emph{derived table} $D_\Delta$ of a signature $\Delta$ gives each feature $j$ the direction that the rule of its
+readout returns from the directions $d_k$ of the sums $k$ in its support $K_j$.
+}
 
 \theorem[Sound directions]
 \label{thm:fw:directions}
