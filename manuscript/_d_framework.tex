@@ -168,8 +168,8 @@ and count. Sums are distributive aggregates, which is why the extractor can add 
 compute the rest from them, as the last lines of \Cref{alg:fw:extractor} do. Many kinds of features reduce to this
 shape: the identity, which returns a sum or a pool; the ratio of two sums; a bin of a histogram divided by the
 histogram's total; the entropy of a histogram; a standard deviation, from a count, a total, and a total of squares;
-and a presence bit, which is 1 when a count is positive. Most read a fixed handful of sums. Some read a whole family,
-such as the number of distinct keys whose count is positive ($x_4$ in \Cref{alg:fw:extractor}).
+and a nondecreasing function of one sum, such as a presence bit, which is 1 when a count is positive. Most read a
+fixed handful of sums. Some read a whole family, such as the number of distinct keys whose count is positive ($x_4$ in \Cref{alg:fw:extractor}).
 \Cref{sec:fw:side-effects} needs nothing of a readout beyond its support, and \Cref{sec:fw:directions} gives each
 of these forms a rule for the direction in which it moves (\Cref{tab:fw:readouts}).
 
@@ -344,7 +344,8 @@ replaces items, one for one, leaves the count unchanged. The set $\Delta_\tau$ c
 replacement, for instance to contents that extend the old one by appending elements.
 
 \noindent A transformation defined by the items it adds and removes gives these changes directly. One defined by the
-positions it writes, such as appending any content, gets them from the item tables of the inputs in $Z$. Computing them
+positions it writes, such as overwriting a range of positions with any content, gets them from the item tables of the
+inputs in $Z$, which record the items each position belongs to. Computing them
 is the work of instrumenting a particular extractor (\Cref{sec:instances}).
 
 \definition[Directions of sums]
@@ -371,7 +372,8 @@ that key is added, falls when one is removed, and stays when an item is replaced
 
 \begin{table}[t]
   \caption{Direction rules of the readout forms of \Cref{sec:fw:model}: the direction of a feature from the
-  directions $d$ of the sums it reads. The ratio requires $a \ge 0$, and $b > 0$ before and after the edit.}
+  directions $d$ of the sums it reads. A presence bit $[s_k > 0]$ is monotone.
+  The ratio requires $a \ge 0$, and $b > 0$ before and after the edit.}
   \label{tab:fw:readouts}
   \small
   \begin{tabular}{@{}llc@{}}
@@ -379,7 +381,7 @@ that key is added, falls when one is removed, and stays when an item is replaced
     Readout & Formula & Direction \\
     \midrule
     identity & $s_k$ & $d_k$ \\
-    presence & $[s_k > 0]$ & $d_k$ \\
+    monotone & $g(s_k)$, $g$ nondecreasing & $d_k$ \\
     distinct count & $\#\{q : s_q > 0\}$ & $\bigcup_q d_q$ \\
     ratio & $a / b$ & $d_a \cup (-d_b)$ \\
     normalized bin & bin / total & as the ratio \\
@@ -392,8 +394,8 @@ The readouts turn the directions of sums into directions of features. Flipping a
 and down, and the union of two directions is again a direction: $\mathsf{up} \cup \mathsf{down} = \mathsf{both}$, and
 a direction united with itself or with $\mathsf{fixed}$ is unchanged. Each readout form of \Cref{sec:fw:model} has a
 rule that gives its feature a direction from the directions of the sums it reads, and \Cref{tab:fw:readouts} lists
-them. The identity, a presence bit, and a distinct count, which is a total of presence bits, move with the sums they
-read. A ratio can rise only if its numerator can rise or its denominator can fall,
+them. The identity, a nondecreasing function of one sum such as a presence bit, and a distinct count, which is a
+total of presence bits, move with the sums they read. A ratio can rise only if its numerator can rise or its denominator can fall,
 which is the union of the numerator's direction and the denominator's, flipped. A readout of any other form gets the
 rule that holds for every readout, since a readout depends only on its support (Definition~\ref{def:fw:readout}): its
 feature is fixed if every sum in the support is fixed, and can move either way otherwise.

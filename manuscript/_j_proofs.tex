@@ -96,8 +96,8 @@ a letter.
 
 \paragraph{The readout rules (\Cref{tab:fw:readouts}).}
 Suppose every sum $k$ that a feature reads changes with a sign in $d_k$. The identity passes the sign through. A
-presence bit $[s_k > 0]$ is a nondecreasing function of $s_k$, so it rises only if $s_k$ rises and falls only if
-$s_k$ falls, and its change has a sign in $d_k$. A distinct count is a total of presence bits, so its change has a
+nondecreasing function $g(s_k)$, such as a presence bit $[s_k > 0]$, rises only if $s_k$ rises and falls only if
+$s_k$ falls, so its change has a sign in $d_k$. A distinct count is a total of presence bits, so its change has a
 sign in the union of their directions. For a ratio $a/b$ with $a \ge 0$ and $b > 0$ before and after, write
 $a' = a + \alpha$ and $b' = b + \beta$; then
 \[
