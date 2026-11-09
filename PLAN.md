@@ -75,7 +75,7 @@ them (below).
    user approves it before any section is rewritten.
 2. **Code audit, read-only:** does the code compute the derived table as Definitions 9-10 now define it (one
    direction rule for every monoid, replacements as changes, the readout rules of Table 2)? The code predates round 4.
-   Report mismatches; fix only with the user.
+   Report mismatches; fix only with the user. *Done 2026-11-09:* `docs/evidence/code-audit-sound-directions.md`.
 3. **§4, then §5, rewritten in blocks** with the user's review after each (the way Sound Directions round 4 worked;
    use the `paper-prose` skill). The mechanical vocabulary fixes go with them (R3/R4, "rate", "stated in elements",
    §6's "margins").

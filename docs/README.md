@@ -34,6 +34,7 @@ or when changing an experiment. Run scripts are in `run/` (one per step, numbere
 | `docs/evidence/direction-A-threat-model.md` | the threat models (additions, shifts, full), hand direction table, re-encodings over sums, the first exactness table (§4.3-4.4, Table 6) |
 | `docs/evidence/direction-A-A1-design.md` | the detector table's design, baselines, decisions, and results (Table 7) |
 | `docs/evidence/direction-A-expert-set.md` | Gimenez et al.'s 40 features, instrumented: the expert-set row and its holes |
+| `docs/evidence/code-audit-sound-directions.md` | the 2026-11-09 audit of the direction engine against Definitions 7-10 and Tables 2-3: findings, what §4 must say, the readout rule of every EMBER feature |
 
 ## Archive (superseded; open only to recover a reason or a record)
 
