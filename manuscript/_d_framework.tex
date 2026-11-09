@@ -282,21 +282,21 @@ incremental view maintenance~\cite{gupta1995maintenance,koch2014dbtoaster}, and 
 % 2026-11-08: round 3 from the gated plan; 2026-11-09: round 4 from docs/sound-directions-math.md, in blocks with the
 % user's review after each (block 1: lead, Def 7, Omega).
 Proposition~\ref{prop:fw:side-effects} computes the change of every feature from the delta of one edit. A set of edits
-has one delta per edit, and each delta depends on the content the edit writes and on the input it is applied to, so
-the deltas cannot be computed before the content is chosen, and a set that allows any content has too many edits to
-compute them one by one. Yet an attacker searching for an evasive edit, and a defender who must withstand every edit,
-both need to know what all the edits of the set can do. This subsection computes, for every feature, the directions in which the edits of such a set can move it, from the
-item tables of the inputs and a description of which kinds of item the edits change, without computing any delta, and
-proves that these directions are sound: no edit of the set moves a feature in a direction they exclude. One table of
-directions thus accounts for every edit of the set at once. It tells an attacker which features the edits can move,
-and which way, and it lets a defender build a detector whose score cannot fall in the directions the table allows, a
-detector that no edit of the set can evade.
+has one delta per edit. Each delta depends on the content the edit writes and on the input it is applied to, so it
+cannot be computed before the content is chosen. A set that allows any content has too many edits to compute their
+deltas one by one. Yet an attacker searching for an evasive edit, and a defender who must withstand every edit, both
+need to know what all the edits of the set can do. This subsection computes, for every feature, the directions in which
+the edits of such a set can move it. It needs only the item tables of the inputs and a description of which kinds of
+item the edits change, and no delta. It then proves that these directions are sound: no edit of the set moves a feature
+in a direction they exclude. One table of directions thus accounts for every edit of the set at once. It tells an
+attacker which features the edits can move, and which way. It also lets a defender build a detector whose score cannot
+fall in the directions the table allows, and no edit of the set can evade such a detector.
 
 \definition[Threat models and directions]
 \label{def:fw:directions}
 {
 A \emph{threat model} $\mathcal{M}$ is a set of transformations $T: \mathcal{Z} \to \mathcal{Z}$, the single edits
-the attacker may apply to an input, and the transformations $\mathcal{T}$ of \Cref{sec:background} are their finite
+the attacker may apply to an input. The transformations $\mathcal{T}$ of \Cref{sec:background} are their finite
 sequences, the edits applied one after another. A \emph{population} is a subset
 $Z \subseteq \mathcal{Z}$ of inputs, and it is \emph{closed} under $\mathcal{M}$ if no transformation in $\mathcal{M}$
 takes an input of $Z$ outside $Z$. A \emph{direction} is one of four sets of signs that the change of a value can
@@ -333,9 +333,9 @@ each paired with the kind $\tau$ of its items, if
     I^+ &= \mset{(\tau, c') : (\tau, c \to c') \in C,\ c' \neq \bot}.
   \end{aligned}
 \end{equation}
-A \emph{signature} $\Delta$ assigns each kind $\tau$ a set $\Delta_\tau$ of changes on the items of kind $\tau$. It \emph{covers}
-$\mathcal{M}$ over $Z$ if every transformation in $\mathcal{M}$, applied to any input of $Z$, has a delta made of
-changes in $\Delta$.
+A \emph{signature} $\Delta$ assigns each kind $\tau$ a set $\Delta_\tau$ of changes on the items of kind $\tau$. It
+\emph{covers} $\mathcal{M}$ over $Z$ if every transformation in $\mathcal{M}$, applied to any input of $Z$, has a delta
+made of changes in $\Delta$.
 }
 
 \noindent A replacement has the same delta as a removal and an addition of the same kind, but the signature keeps it
@@ -344,8 +344,8 @@ replaces items, one for one, leaves the count unchanged. The set $\Delta_\tau$ c
 replacement, for instance to contents that extend the old one by appending elements.
 
 \noindent A transformation defined by the items it adds and removes gives these changes directly. One defined by the
-positions it writes, such as appending any content, gets them from the item tables of the inputs in $Z$, which is the
-work of instrumenting a particular extractor (\Cref{sec:instances}).
+positions it writes, such as appending any content, gets them from the item tables of the inputs in $Z$. Computing them
+is the work of instrumenting a particular extractor (\Cref{sec:instances}).
 
 \definition[Directions of sums]
 \label{def:fw:sum-direction}
@@ -359,15 +359,15 @@ it, $\mathsf{down}$ if none raises it, and $\mathsf{both}$ otherwise.
 
 \noindent The direction of a sum bounds its change under every edit whose delta is made of changes in $\Delta$. On an
 additive sum, the edit changes $s_k$ by the total of $\nu_\tau(c')_k - \nu_\tau(c)_k$ over its changes
-(Proposition~\ref{prop:fw:side-effects}(i)). If no change lowers the sum, every term of this total is non-negative,
-and so is the total. On a max pool, if no change lowers $k$, every item that contributes to $k$ is either kept or
-replaced by one that contributes at least as much, and added items only bring in more values. The largest value
-therefore cannot fall, and by the same argument it cannot rise if no change raises $k$. A min pool needs no rule of its own: its neutral element is $+\infty$, so
-by the definition a removal raises it and an addition lowers it, as removing or adding a value does to a minimum. The direction depends
-on the contribution functions and the changes in $\Delta$, not on any input, and for the contributions common in
-feature sets it follows from their form: the count of a key rises when an item with that key is added, falls when
-one is removed, and stays when an item is replaced by one with the same key. \Cref{tab:fw:signs} in
-Appendix~\ref{sec:fw:proofs} lists these forms.
+(Proposition~\ref{prop:fw:side-effects}(i)). If no change lowers the sum, every term of this total is non-negative, and
+so is the total. On a max pool, if no change lowers $k$, every item that contributes to $k$ is either kept or replaced
+by one that contributes at least as much, and added items only bring in more values. The largest value therefore cannot
+fall, and by the same argument it cannot rise if no change raises $k$. A min pool needs no rule of its own: its neutral
+element is $+\infty$, so by the definition a removal raises it and an addition lowers it, as removing or adding a value
+does to a minimum. The direction depends on the contribution functions and the changes in $\Delta$, not on any input.
+For the contributions common in feature sets, it follows from their form: the count of a key rises when an item with
+that key is added, falls when one is removed, and stays when an item is replaced by one with the same key.
+\Cref{tab:fw:signs} in Appendix~\ref{sec:fw:proofs} lists these forms.
 
 \begin{table}[t]
   \caption{Direction rules of the readout forms of \Cref{sec:fw:model}: the direction of a feature from the
