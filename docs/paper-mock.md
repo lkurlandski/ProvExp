@@ -80,7 +80,7 @@ the population); the bookkeeping goes to an appendix (user: "Most of this is eng
 |---|---|---|---|---|
 | 5.1 Setup (300) | | | pilot scale, GBDT, 1% FPR, toolkit (seen / held-out) and adaptive attacks, every attacked file re-extracted | measured |
 | 5.2 Side effects (700) | Prop. 1 | 3 | the instrumentation and the operations' changes are correct (73,063 edits, 0 wrong), and the instance abstains exactly where a write lands on a position the parser reads; combined edits exact. Not "Proposition 1 holds", which is exact by construction (decision 3) | measured |
-| | | — | Prop. 1 used by an attack: the adaptive search scores 5,000 candidates per file without extraction, and evades the undefended model about as often as the best toolkit attack (25/49 vs GAMMA's 24/47, different training subsets; its real strength shows on the defended rows) | evasion measured; **cost per candidate, predicted vs extracted: missing** (cheap, minutes) |
+| | | — | Prop. 1 used by an attack: the adaptive search scores 5,000 candidates per file without extraction, and evades the undefended model about as often as the best toolkit attack (25/49 vs GAMMA's 24/47, different training subsets; its real strength shows on the defended rows) | evasion measured; no timing (user, 2026-11-10: say the computation is smaller and can be faster, never measure or compare it) |
 | 5.3 Directions (900) | Thm. 1 | 4 | every disagreement with the hand table is a hand error, witnessed; the hand detector loses soundness where the derived one keeps it; constraints learned from attacks certify nothing or only themselves; coverage and closure of the write operations' signatures checked on the corpus (100- and 2,000-file tables identical; 0 of 60,934) | measured |
 | 5.4 Detectors (1,300) | Cor. 1 | 5 | 0% evasion on in-population files under every attack on the monotone rows, at 4-6 points of TPR; PV, ERDALT, adversarial training fall to the adaptive search (64-80%, 49%); the expert set is sound under additions but weak (29.1%) and has 11 holes under the full catalogue; what each operation costs (price list); the cost of deriving vs PV | measured, except the sums row's adaptive cell (greedy, not beam) |
 
@@ -102,7 +102,7 @@ Options (both allowed by the user, decision 4):
 
 - **A. Narrow §2 (no new runs).** Keep the four lines as the landscape, but say plainly that we evaluate three uses:
   the attack (scoring without extraction), the constraints themselves, and monotone detectors; adversarial training
-  appears as the realistic alternative a defender would use, not as a use. Add the cheap per-candidate cost to §5.2.
+  appears as the realistic alternative a defender would use, not as a use. (The per-candidate cost measurement was dropped, 2026-11-10.)
   Cost: §2 promises less; a reviewer may ask why adversarial training on computed points was not tried.
 - **B. Show all four.** A plus two runs: (i) adversarial training on the adaptive search's outputs, produced through
   Prop. 1 (the problem-space defense made cheap); (ii) a feature-space attack (the exact tree solver already used for
@@ -111,7 +111,7 @@ Options (both allowed by the user, decision 4):
   would bring it down) and adds a row whose expected result (resists the toolkit, still falls to a fresh adaptive
   search, as the toolkit-trained row does) mostly repeats Table 5's point; (ii) is cheap but adds machinery.
 
-**Decided (2026-11-09): A**, plus the per-candidate cost measurement; revisited at the next full review, which
+**Decided (2026-11-09): A** (the per-candidate cost measurement dropped 2026-11-10); revisited at the next full review, which
 also checks how much the literature values problem-space defenses (PLAN.md, decision 6). Reasons: The paper's strongest claims (Table 4, Table 5's
 monotone rows) need no new runs, every line §2 keeps has a table behind it, and adversarial training already serves
 as the defender's alternative. B(ii) is the one addition worth weighing if the review asks for the feature-space
@@ -121,7 +121,7 @@ side; B(i) costs most and argues least.
 
 - **Measured (pilot):** Tables 3-5 complete; closure; coverage across corpus sizes; price list; PV and ERDALT holes;
   expert set's 11 holes; the hand detector's soundness loss.
-- **Missing, small:** the per-candidate cost of scoring by Prop. 1 against extraction (§5.2); the instances-at-a-glance
+- **Missing, small:** the instances-at-a-glance
   table (assembly only); the sums row's adaptive cell (beam search cannot route to the sums detector yet; expected 0%).
 - **Missing, user's decision:** the scale-up (seeds 0-2, full splits, more malware; the adaptive budget at 2,000
   files); a second toolkit for held-out attacks (MAB-Malware); other domains (later, appendix plus table rows).

@@ -61,7 +61,10 @@ them (below).
 6. **§2/§5 alignment: option A of the paper mock** (decided by Claude at the user's request, 2026-11-09). §2 keeps the
    four lines of work as the landscape but promises three evaluated uses (the attack scoring without extraction, the
    constraints, monotone detectors); adversarial training stays the defender's alternative in Table 5. Plus one cheap
-   measurement: the cost per candidate of scoring by Proposition 1 against extraction. *Why now:* A is a subset of
+   measurement: the cost per candidate of scoring by Proposition 1 against extraction. *Superseded (user,
+   2026-11-10):* no timing is measured, reported, or compared; the paper says the computation touches only the items an
+   edit meets and so can be (is likely to be) faster than extracting again, never that it is (the Python implementation
+   is slower than thrember's vectorized extractor, which says nothing about the method). *Why now:* A is a subset of
    B, so §4 and §5's subsections are written the same either way; only §2's promise and possibly one §5 row change
    if B is chosen later. *Revisit* at the next full review (step 4): the review prompt asks whether a reviewer would
    expect the problem-space defense shown, and a short literature pass checks how much that line matters
