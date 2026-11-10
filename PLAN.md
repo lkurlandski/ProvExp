@@ -97,6 +97,18 @@ them (below).
    *Why:* the user found the block-1 bookkeeping good but "boring" and too bulky (about 5% of the paper) for what it
    contributes. Detail: `docs/paper-mock.md`, §4.
 
+9. **Code-level transformations stay out of the threat model for now (user, session 27).** The literature review
+   (`docs/evidence/literature-adversarial-malware.md`) found that our catalogue covers every structural edit of the
+   reputable-venue PE attacks, but not the code-level ones: MAB-Malware's code randomization, IPR and Disp (Lucas et
+   al., AsiaCCS 2021, USENIX Sec. 2023, CCS 2024), MalGuise's call-based redividing (USENIX Sec. 2024). *Why not now
+   (user):* these attacks are much harder to execute, above all in a functionality-preserving way, than the
+   structural edits, and the paper is stronger with them but does not need them yet. *Consequence:* a stated
+   limitation of the threat models and the experiments: §4.3 names code-level transformations among the exclusions
+   (with packing), and the discussion (§7) states it as a limitation. *To add later:* the framework needs no new
+   machinery (an in-place write inside code sections, same length, off the locating positions; Disp and MalGuise add a
+   section too); the cheap first step is the pilot's direction table with that operation, then retraining the
+   detectors if the directions change. Do not re-propose it unless the user reopens it or a reviewer raises it.
+
 ## Next steps, in order
 
 1. **Rewrite `docs/paper-mock.md`** against the new §3 and the decisions above: contributions (no requirements, no

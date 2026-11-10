@@ -35,7 +35,10 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
   checks misplaced, and the EMBER paragraph too thin and in need of its own subsection. New structure (decision 8 (v)):
   lead, 4.1 EMBER and PE files, 4.2 EMBER as a sum-then-readout extractor, 4.3 threat model, 4.4 population, details in
   an appendix. Section retitled "Instantiating the Framework". **Next:** redraft block 1 in the new structure
-  (`docs/resume-prompt.md`).
+  (`docs/resume-prompt.md`). Later the same session: a literature review of adversarial malware
+  (`docs/evidence/literature-adversarial-malware.md`; PDFs in `papers/`, renamed to Google Scholar keys): the
+  catalogue covers every structural edit of the reputable-venue PE attacks; code-level transformations are excluded
+  for now by the user's choice and recorded as a limitation (PLAN.md, decision 9).
 - **2026-11-09 (session 26): the two §3 edits decided, numbering fixed.** The user chose option A for Table 1's
   presence row and the in-place-write example (with the clause) for Definition 8 (PLAN.md, decision 7); not yet
   applied (`docs/resume-prompt.md`, step 1, has the exact text). The session was derailed by a stale "Definition 7"

@@ -52,14 +52,8 @@ the appendix), then the old catalogue subsection and Table 2 (still rendered; §
 - **Block 3, 4.3 Threat model, literature first.** The literature review is done:
   `docs/evidence/literature-adversarial-malware.md` (all PDFs in `papers/`, named by Google Scholar BibTeX key). Our
   twelve operations cover every structural edit of Demetrio et al. 2021 (TOPS), GAMMA (TIFS 2021), and MAB-Malware
-  (AsiaCCS 2022). **Open decision, before this block:** code-level transformations (MAB-Malware's code randomization;
-  IPR/Disp of Lucas et al., AsiaCCS 2021, USENIX Sec. 2023, CCS 2024; MalGuise, USENIX Sec. 2024) are not in the
-  catalogue. Proposed: an in-place operation "rewrite bytes inside code sections, same length, not at locating
-  positions" (Disp and MalGuise = it plus add section), first checked cheaply by deriving the pilot's direction table
-  with it (hypothesis: whole-file features change little under the full model, since slack and DOS writes already
-  make them two-sided; the body-region sums lose their one-sidedness, so the sums detector's advantage shrinks). If
-  the directions change materially, the detectors need retraining (a `run/` script for the user). The alternative is
-  to exclude code transformations with an argument. Replace the Kreuk/Suciu citations with the better-venue ones.
+  (AsiaCCS 2022). **Code-level transformations are excluded for now** (PLAN.md, decision 9): name them among the exclusions with
+  packing (harder to execute in a functionality-preserving way), and keep the limitation for §7. Replace the Kreuk/Suciu citations with the better-venue ones.
   Then audit findings 4-6 (`docs/evidence/code-audit-sound-directions.md`): corpus-collected vocabulary and write
   signatures (checked, not proven; one sentence), writes onto locating positions (Proposition 1 declines; directions
   allow any change unless declared: rename, remove debug, remove signature), append declared.

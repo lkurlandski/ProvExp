@@ -40,7 +40,7 @@ knowledge comes from trial, from an analyst's reading of the extractor, or from 
 | 4 Instantiating the Framework | the template, EMBER in it (below); bookkeeping in an appendix | 1,000 |
 | 5 Evaluation | organized by §3's results (below) | 3,200 |
 | 6 Related Work | as drafted; "margins" and old terms fixed | 1,000 (now ~1,470) |
-| 7 Discussion | what does not fit (global analyses, learned features), cost of instrumenting (no effort claims), other domains | 500 |
+| 7 Discussion | what does not fit (global analyses, learned features), cost of instrumenting (no effort claims), other domains; limitation: code-level transformations are outside the threat models (decision 9) | 500 |
 | Appendix | symbols, types, proofs; the EMBER details §4 points to; other domains, one section each, if added | — |
 
 ## §4 Instantiating the Framework (about 1,000 words; restructured with the user 2026-11-09, session 27)
@@ -63,7 +63,8 @@ the population); the bookkeeping goes to an appendix (user: "Most of this is eng
   mentioned. One sentence on the re-encodings over sums (here or where §5 introduces the sums detector).
 - **4.3 Threat model (~400, with the catalogue table).** Literature first: the edits the PE problem-space attacks use
   (a literature pass before drafting), our catalogue as the functionality-preserving edits that do not rewrite code,
-  exclusions named (code rewriting, packing). Declared changes (operations stated in items, and append) checked by
+  exclusions named (code-level transformations, which are harder to execute without breaking functionality; packing).
+  Code-level transformations are a stated limitation (PLAN.md, decision 9). Declared changes (operations stated in items, and append) checked by
   re-extraction; in-place writes collected from item tables. Writes onto locating positions: Proposition 1 declines;
   the directions allow any change of that kind unless declared (rename, remove debug, remove signature). Corpus-
   collected, so checked rather than proven (decision 2): the writes' changes and the kinds' vocabulary; one sentence,
