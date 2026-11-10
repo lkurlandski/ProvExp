@@ -283,3 +283,8 @@ The "implied" notes are earlier readings, not instructions; several of them were
   discussing the EMBER feature and the PE format which is extremely confusing." Hand edits to the first two sentences
   ("The instance we consider is ...", "(we use the most recent version, EMBER-v3~\cite{joyce2025ember})"). Rewritten
   as the format first, then EMBER's features over those structures.
+- **2026-11-10, §5 block 1** (lead, 5.1, 5.2 realigned with §3-4). "I didn't review this carefully, but it looks
+  reasonable. I have a pretty big concern about the structure and organization of this section ... out of scope for
+  the current section ... finish writing up this section, to bring it up to date with the rest of the manuscript. We can
+  address my structural concerns after that ... I suspect we're going to have to rewrite this anyway." Implied: for
+  now, realign §5's vocabulary and claims quickly; the structural rewrite comes after.
