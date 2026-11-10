@@ -31,6 +31,13 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
 
 ## Session log
 
+- **2026-11-10 (session 31): §5 block 1 drafted; checks C1 and C3 done.** Lead and 5.1 rewritten as three findings
+  (the correctness check is one paragraph in 5.1); the side-effect table and a short paragraph moved to Appendix D
+  (tables renumber: directions 3, detectors 4, side effects 8). C1 held (median 263 features per edit, 4-8 groups);
+  C3 found Severi et al.'s hand classification (all hashed features "extremely difficult" to manipulate; the derived
+  table moves 1,490 of 1,650 under additions). Results in `docs/paper-mock.md`, §5. **Next:** the user's review of
+  block 1, then C2 and block 2 (5.2).
+
 - **2026-11-10 (session 30): §5's structure agreed, no prose.** The user's concern: §5 is organized to show the
   implementation is correct and the proofs hold ("transactional and somewhat lifeless"). Assessment: right; about a
   quarter to a third of §5 checks our own work and comes first, because the mock organized §5 by §3's results. A
