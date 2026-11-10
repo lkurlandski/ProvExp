@@ -60,23 +60,6 @@ completed the record by changing single bytes and checking whether the parse cha
 written. A first round found three parser rules the record had missed. After we recorded them, none of 58,666
 single-byte changes across the headers and the directory data changed the parse without writing a recorded position.
 
-\paragraph{Side effects of single edits.} \Cref{tab:ember:side-effects} compares the side effects that
-Proposition~\ref{prop:fw:side-effects} computes with those of re-extraction, per operation. The upper block holds the
-edits whose side effects follow from the item table alone, each with adversarial contents (random bytes, printable text
-next to existing strings, zeros, a forged Rich header), on all 2,000 files, and twenty random writes of up to 64 bytes
-anywhere in each pilot file. The instance declines an edit that writes a position the parser reads, which it finds by
-comparing the written positions with the recorded ones, with no rule written for any particular case. Most declined
-overwrites of the DOS header and stub write into the range searched for the Rich header, and the declined appends go
-to files whose section table points past their truncated end, where the appended bytes become the content of a section
-instead of extending the overlay. The overwrite of loader-ignored header fields is absent because the instance
-declines all of its edits: three of the fields lie in the Rich header's search range. The lower block holds the
-operations that declare their changes, on files in the population. They decline two kinds of edit by design: a gap
-that holds a forged Rich header on a file without one, and an added section on a file whose entry point lies in no
-section, where the extractor may select the new section as the entry section. Outside the population, on seven
-truncated files whose structures reach past the end, the declared changes of 45 edits are wrong, since the operations
-do not update pointers to content the parser looked for and did not find. Combined edits, up to three added sections
-followed by an append, are exact when the item table is carried forward one edit at a time.
-
 \begin{table}[t]
   \caption{Side effects computed by Proposition~\ref{prop:fw:side-effects} against re-extraction, on the 2,480
   features that have items. Declined: the edit writes a position the parser reads to find other items, and the
@@ -105,6 +88,24 @@ followed by an append, are exact when the item table is carried forward one edit
     \bottomrule
   \end{tabular}
 \end{table}
+
+\paragraph{Side effects of single edits.} \Cref{tab:ember:side-effects} compares the side effects that
+Proposition~\ref{prop:fw:side-effects} computes with those of re-extraction, per operation. The upper block holds the
+edits whose side effects follow from the item table alone, each with adversarial contents (random bytes, printable text
+next to existing strings, zeros, a forged Rich header), on all 2,000 files, and twenty random writes of up to 64 bytes
+anywhere in each pilot file. The instance declines an edit that writes a position the parser reads, which it finds by
+comparing the written positions with the recorded ones, with no rule written for any particular case. Most declined
+overwrites of the DOS header and stub write into the range searched for the Rich header, and the declined appends go
+to files whose section table points past their truncated end, where the appended bytes become the content of a section
+instead of extending the overlay. The overwrite of loader-ignored header fields is absent because the instance
+declines all of its edits: three of the fields lie in the Rich header's search range. The lower block holds the
+operations that declare their changes, on files in the population. They decline two kinds of edit by design: a gap
+that holds a forged Rich header on a file without one, and an added section on a file whose entry point lies in no
+section, where the extractor may select the new section as the entry section. Outside the population, on seven
+truncated files whose structures reach past the end, the declared changes of 45 edits are wrong, since the operations
+do not update pointers to content the parser looked for and did not find. Combined edits, up to three added sections
+followed by an append, are exact when the item table is carried forward one edit at a time.
+
 % MEASURED: the lower block is run/118_item_exactness.sh (catalogue_checks/2000-exact, 2,000 files, read 2026-11-03),
 % counted on the population: 0 wrong of 34,965 declared edits; the declined edits are the two by-design abstentions
 % (section:entry for add section/imports where the entry point is in no section, 726; richheader:rich_pair for a
