@@ -163,6 +163,21 @@ before each, report a failure as such):
   not (possibly Rosenberg et al., 2020: verify before claiming; memory `portray-cited-work-accurately`). Compare with
   the derived table only if the classification is published per feature or per group.
 
+**Extending §5 to other domains (agreed with the user, session 31).** The structure is domain-free: the three findings
+follow §2's three sources of knowledge, and each is a measurement per instance, so a second domain adds a number to
+each finding, rows to the tables, and an appendix section (decision 1), not a new structure. Drafting rules that keep
+it so: (1) each finding states its claim in the framework's terms first, then EMBER's number ("on the EMBER instance");
+PE mechanics (parser facts, section names, hash buckets) stay in the evidence sentences or Appendix D; (2) tables are
+shaped so a second instance adds rows: the audit table and the detector table take an instance grouping later, and the
+hand-table disagreement table (PE witnesses) moves to the instance's appendix, replaced by one summary row per
+instance; no one-row tables now; (3) 5.2 gives published hand analyses (Severi et al., the expert set) as much weight
+as our own hand table, since published ones are what the finding rests on in another domain (candidates there, to
+verify when the user opens domains: additions-only assumptions on Android feature sets, hand-written properties for
+PDF classifiers); (4) 5.1 keeps the shared protocol; each instance's data, toolkit, and budget move to its appendix
+once there are two. *Risk, not structural:* the size of 5.2's finding depends on the extractor's complexity (a
+presence-of-token extractor may leave a hand analysis little to miss), so findings are written as measurements ("how
+far each falls short"), never as "always falls short".
+
 **Results of the checks (session 31, 2026-11-10):**
 
 - **C1: held.** `catalogue_checks/2000-exact/edits.parquet` keeps each edit's moved features (`moves`). On the 60,934

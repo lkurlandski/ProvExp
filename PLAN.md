@@ -141,7 +141,9 @@ them (below).
     one kind of robustness. *Sufficiency:* no new task is needed; three measurements on existing outputs and one
     literature check (the mock's C1-C3) close the gaps a reviewer would hit. Reducing the detectors' cost toward 1%
     is a separate research question about the detector (the per-operation costs point at the import hash buckets and
-    the header fields), not part of the rewrite.
+    the header fields), not part of the rewrite. *Extension (session 31):* the structure is domain-free (findings follow §2's three sources,
+    each a measurement per instance); drafting rules that keep later domains to rows and an appendix are in
+    `docs/paper-mock.md`, §5, "Extending §5 to other domains".
 
 ## Next steps, in order
 
