@@ -91,7 +91,8 @@ and maxima are the rules by which an edit changes our sums and pools. Provenance
 annotate each output of a query with the inputs that produced it, which is what our item table records for each
 feature. Self-adjusting computation~\cite{acar2002adaptive} and incremental parsing~\cite{wagner1998efficient} re-run
 only the part of a program or a parse that a change can reach, and incremental parsing reparses only as far around an
-edit as the parser's lookahead reaches, much as our margins bound where items can change. In all of these settings the
+edit as the parser's lookahead reaches, much as a write to a file can change only the scanned items around it, such as
+the strings and windows it overlaps, unless it lands on a position the parser reads to find other items. In all of these settings the
 change is given in the program's own terms, as rows inserted into a table or tokens edited in a parse tree, and the task
 is to update the output for that one known change. An attacker gives the defender neither. The edit changes bytes of a
 file that has not been parsed, so which items it creates, removes, or alters must be computed first. And the defender
