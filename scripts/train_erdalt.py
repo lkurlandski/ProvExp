@@ -6,8 +6,9 @@ reference and PV-seen rows read them). Its perturbation vectors come from two so
 
     --deltas        a parquet of perturbation vectors with named feature columns (scripts/a_pv_attacks.py: the pilot
                     malware, the same vectors PV-seen is selected from)
-    --adv_dir       a directory of attacked training malware (scripts/a_advtrain.py: X.npy + files.parquet), in the
-                    layout of `--adv_features`, whose training rows of the same names are the clean vectors
+    --adv_dir       one or more directories of attacked training malware (scripts/a_advtrain.py: X.npy +
+                    files.parquet), in the layout of `--adv_features`, whose training rows of the same names are the
+                    clean vectors
 
 Outputs, in `{outdir}/erdalt/seed-{seed}{suffix}/`: model.pt and erdalt.json (provexp.models.erdalt.save_erdalt),
 metrics.json (as train_classic.py, plus the ERDALT training summary and history), ts_predictions.parquet.
@@ -92,7 +93,8 @@ def main() -> None:
     parser.add_argument("--features", type=Path, required=True)
     parser.add_argument("--neutralize", type=Path, default=None, help="Feature names the model does not read.")
     parser.add_argument("--deltas", type=Path, default=None, help="Named-column perturbation vectors (a_pv_attacks).")
-    parser.add_argument("--adv_dir", type=Path, default=None, help="Attacked training malware (a_advtrain).")
+    parser.add_argument("--adv_dir", type=Path, nargs="+", default=None,
+                        help="Directories of attacked training malware (a_advtrain).")
     parser.add_argument("--adv_features", type=Path, default=ROOT / "artifacts" / "features" / "ember2024")
     parser.add_argument("--attacks", nargs="+", required=True, help="The seen attacks whose vectors ERDALT learns.")
     parser.add_argument("--outdir", type=Path, default=ROOT / "artifacts" / "models")
@@ -125,8 +127,9 @@ def main() -> None:
         parts.append(pv_deltas(args.deltas, args.attacks, names))
         sources["deltas"] = int(parts[-1].shape[0])
     if args.adv_dir is not None:
-        parts.append(adv_deltas(args.adv_dir, args.adv_features, args.attacks, names))
-        sources["adv_dir"] = int(parts[-1].shape[0])
+        for adv_dir in args.adv_dir:
+            parts.append(adv_deltas(adv_dir, args.adv_features, args.attacks, names))
+            sources[adv_dir.name] = int(parts[-1].shape[0])
     D = np.concatenate(parts)
     print(f"Perturbation vectors: {sources} ({D.shape[0]} in all).", flush=True)
 
