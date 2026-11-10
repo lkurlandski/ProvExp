@@ -267,3 +267,19 @@ The "implied" notes are earlier readings, not instructions; several of them were
   its contents or writing style", but "concerned about the bulk and volume ... Most of this is engineering and
   book-keeping material ... Its boring and takes up nearly an entire column (about 5% of a manuscript)"; asks to
   reassess the emphasis per part and appendix helpers.
+- **2026-11-10, §4 block 1 redraft** (lead, 4.1 EMBER and PE Files, 4.2 paragraph 1; appendix D). Lead's last sentence
+  ("an instance from another domain supplies the same four") "a little confusing"; wants a separate sentence with a
+  clearer message: a new instance also needs to supply these four aspects. 4.1: header description "can be less
+  specific and a less detailed (~10-20% shorter)"; the point of the headers is to store critical metadata and describe
+  the rest of the file (locations, sizes, executability); "The reader doesn't need to know that a particular structure
+  called the DOS Header exists". EMBER paragraph "good. No complaints right now." 4.2: the first sentence "jumps too
+  quickly into the sum-then-readout perspective of EMBER"; transition "gently and effectively" from the description of
+  EMBER. "Just say, 'our tests confirm that the readouts' instead of 'on 2000 files, the readouts'." General: "sentence-
+  structure in this block is a little repetitive. Consider reducing the number of ':'s."
+- **2026-11-10, §4.1 merged.** Asked to merge the PE paragraph and the EMBER paragraph (~50-100 words shorter):
+  "A lot of the ideas between the two of these are shared: EMBER essentially represents the salient metadata and
+  statistical properties of PE file structures." The merged draft interleaved them sentence by sentence (a PE part,
+  then EMBER's features from it): "some aspects of it are poorly designed. You're bouncing back and forth between
+  discussing the EMBER feature and the PE format which is extremely confusing." Hand edits to the first two sentences
+  ("The instance we consider is ...", "(we use the most recent version, EMBER-v3~\cite{joyce2025ember})"). Rewritten
+  as the format first, then EMBER's features over those structures.

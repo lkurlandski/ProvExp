@@ -1,0 +1,52 @@
+% Appendix: the EMBER instance (PLAN.md, decision 8 (v); docs/paper-mock.md, Section 4). The bookkeeping that Section 4.2
+% summarizes: the item kinds, the readout forms with EMBER's features (from docs/evidence/code-audit-sound-directions.md,
+% "Readout rule per EMBER feature"), the two features written over sums, and the re-encodings. Mostly the accepted text
+% of the old Section 4.1 (session 27). To come: how the positions that locate items are recorded (block 3).
+
+This appendix gives the details of the instance that \Cref{sec:instances:record} summarizes.
+
+\paragraph{Items.} Scanned items are found by reading the bytes in order: single bytes, windows of 2,048 bytes taken
+every 1,024 bytes for the entropy histogram, printable strings, and the Rich header, which the extractor searches for
+within a fixed range of the file. Parsed items are found by following the file's structure: sections, the overlay
+after the last section, header fields, imports, libraries, exports, the certificate table, and the entry section,
+which contains the program's entry point.
+
+\paragraph{Readouts.} \Cref{tab:ember:readouts} lists the features that EMBER reads through each form of
+\Cref{tab:fw:readouts}. The monotone readouts are the presence of exports; the pools, which EMBER reads as 0 for a file
+without sections; and single values that default to 0 when a file lacks the item, such as whether it has
+relocations. EMBER computes two features in a way that the sum-then-readout form does not allow as written, and we
+write them over sums without changing their values. EMBER divides each section's size by the file's size as it visits
+the section, which would make the section's contribution depend on the rest of the file; we let the section
+contribute its raw size and divide in the readout, where the file's size is a sum of its own. EMBER also keeps the
+libraries as a set, so that a second import from a library already present adds nothing; we keep a count per library,
+and the number of libraries becomes a distinct count.
+
+\begin{table}[h]
+  \caption{EMBER's features by the readout forms of \Cref{tab:fw:readouts}.}
+  \label{tab:ember:readouts}
+  \small
+  \begin{tabular}{@{}lp{0.68\columnwidth}@{}}
+    \toprule
+    Readout & EMBER features \\
+    \midrule
+    identity & file size, counts of strings and sections, header fields, data directories, Rich header, overlay size,
+      hashed buckets of sections, imports, and exports \\
+    monotone & exports present, largest and smallest section entropy, has relocations, signature fields \\
+    distinct count & number of libraries \\
+    ratio & average string length, overlay and largest or smallest section size over file size \\
+    normalized bin & byte histogram, byte-entropy histogram, printable characters \\
+    any other & file and string entropy, machine type, subsystem, flag bits \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\paragraph{Re-encodings over sums.}
+\label{sec:instances:sums}
+Since the instrumented extractor records the sums, a detector can read them directly, each through an identity
+readout, instead of the features. Many features move both ways only because of their readout: a normalized bin falls
+when any other bin rises, while every count of the histogram can only rise when bytes are added. Reading the counts
+keeps their directions. We use three such re-encodings: raw byte, string, and character counts in place of their
+normalized frequencies; the same counts taken only over the section bodies and the overlay, where no in-place write of
+our threat model lands; and the hashed section-name buckets, whose entries EMBER adds with a sign, split into their
+positive and negative parts. Theorem~\ref{thm:fw:directions} gives their directions with no rule of their own, and the
+same check covers them.

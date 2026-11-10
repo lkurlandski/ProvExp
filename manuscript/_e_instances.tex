@@ -1,62 +1,49 @@
-% Section 4, Instantiating the Framework (docs/paper-mock.md: about 1,250 words; working note docs/instances-note.md;
-% PLAN.md decisions 1, 2, and 8). Rewritten in blocks with the user's review after each, 2026-11-09 onwards:
-% block 1 = the opening and Section 4.1 (items, sums, readouts). Blocks 2-4 rewrite (b) features outside the class,
-% (c) the threat model and signatures (literature first), and (d) the population; the old text they replace is kept
+% Section 4, Instantiating the Framework (docs/paper-mock.md, Section 4: about 1,000 words; working note
+% docs/instances-note.md; PLAN.md decisions 1, 2, 8, and 9). Rewritten in blocks with the user's review after each,
+% 2026-11-09 onwards. Block 1 (redrafted in the structure of decision 8 (v)): the lead, 4.1 EMBER and PE files, and
+% 4.2's first paragraph; the bookkeeping moved to the appendix (_j2_ember.tex). Blocks 2-4: 4.2's second paragraph (how
+% strictly EMBER fits), 4.3 the threat model (literature first), 4.4 the population. The old text they replace is kept
 % below, commented out where it is superseded.
 
-\Cref{sec:framework} proves its results for any sum-then-readout extractor, threat model, and population, and leaves
-to the instance everything that depends on the format of the input. An instance supplies four things. The first is the
-items of each kind, their contributions, and the readouts, which together must reproduce the extractor
-(Definition~\ref{def:fw:extractor}). The second is a decision about the features that are not of this form. The third
-is a threat model and a signature that covers it (Definition~\ref{def:fw:signature}), the changes that each of its
-transformations can make to the items. The fourth is a population over which the signature holds and which the threat
-model does not leave (Definition~\ref{def:fw:directions}). Two of these rest on checks rather than proofs: that the
-readouts reproduce the extractor, which we check by extracting a corpus both ways, and the part of the signature that
-is collected from the item tables of a corpus instead of declared, which covers the population only if the corpus
-shows every way the transformations meet the items. The rest of this section supplies the four parts for EMBER, in
-this order, and an instance from another domain supplies the same four.
+\Cref{sec:framework} proves its results for any sum-then-readout extractor, and leaves to an instance everything
+that depends on the format of the input. An instance supplies the items, contributions, and readouts, a decision about
+the features of another form, a threat model with a signature that covers it, and the population over which the
+signature holds. This section supplies the four for the EMBER~\cite{anderson2018ember} feature set. Any new instance, in malware detection or in another
+domain, needs to supply the same.
 
-Our instance is EMBER~\cite{anderson2018ember} in its 2024 version~\cite{joyce2025ember}, the standard static feature
-set for Windows executables. Its extractor computes 2,568 features from a PE file: histograms of the bytes and of
-their entropy, statistics of the printable strings, header fields, per-section statistics, the imported libraries and
-functions, exports, data directories, the Rich header, and the Authenticode signature. We instrument it without
-changing what it computes. Each group of features gains a method that returns its items from the same parse, and each
-feature a declared readout.
+\subsection{EMBER and PE Files}
+\label{sec:instances:ember}
 
-\subsection{Items, Sums, and Readouts}
+The instance we consider is static malware detection on Windows, where a classifier decides whether an executable
+file is malicious without running it. Windows executables use the Portable Executable (PE) format. A PE file opens
+with headers, which describe the rest of the file and hold what the operating system needs to load the program.
+Sections follow, which hold the code, the data, and the resources, together with tables such as the import table,
+which lists the functions the program uses from other libraries. Bytes after the last section form the overlay, which
+the loader does not map. EMBER~\cite{anderson2018ember} is the standard benchmark for this task (we use the most
+recent version, EMBER-v3~\cite{joyce2025ember}). Its extractor parses a file and computes 2,568 features that describe
+these structures by their metadata and statistics: the header fields, the size, entropy, and characteristics of each
+section, hashes of the imported and exported names, the Rich header, the signature, and the parser's warnings,
+together with histograms of the bytes and of their local entropy and statistics of the printable strings, taken over
+the whole file. We instrument the extractor without changing what it computes, giving each group of features a method
+that returns its items from the same parse.
+
+\subsection{EMBER as a Sum-then-Readout Extractor}
 \label{sec:instances:record}
 
-EMBER's items come in two families. Scanned items are found by reading the bytes in order: single bytes, windows of
-2,048 bytes taken every 1,024 bytes for the entropy histogram, printable strings, and the Rich header, which the
-extractor searches for within a fixed range of the file. Parsed items are found by following the file's
-structure: sections, the overlay after the last section, header fields, imports, libraries, exports, the certificate
-table, and the entry section, which contains the program's entry point. Most sums are additive. They count bytes of
-each value, strings, or imports, and total quantities such as the length of the strings. Where EMBER hashes names into
-a fixed number of buckets, as it does for section names, libraries, and imported functions, every bucket is a sum of
-its own. A few sums are pools, which keep the largest or smallest value of a section property such as its entropy.
-
-Every form of readout in \Cref{tab:fw:readouts} occurs. Header fields and most counts are read by the identity. The
-monotone readouts are the presence of exports, the pools, which EMBER reads as 0 for a file without
-sections, and single values that default to 0 when a file lacks the item, such as whether it has relocations. The
-number of distinct libraries is a distinct count. The average length of the strings is a ratio, and so is the size of
-the largest or smallest section relative to the file. EMBER divides each section's size by the file's size as it
-visits the section, which would make the section's contribution depend on the rest of the file; we let the section
-contribute its raw size and divide in the readout, where the file's size is a sum of its own. EMBER also keeps the
-libraries as a set, so that a second import from a library already present adds nothing; we keep a count per library,
-and the number of libraries becomes a distinct count. Neither change alters a value. The byte histogram, the entropy
-histogram, and the distribution of printable characters are normalized bins, and the entropies, lookups such as the
-machine type, and tests of single flag bits are of other forms. On 2,000 files, the readouts of the recorded sums give
-every one of the 2,480 modeled features exactly as the extractor does.
-
-\label{sec:instances:sums}
-Since the instrumented extractor records the sums, a detector can read them directly, each through an identity
-readout, instead of the features. Many features move both ways only because of their readout: a normalized bin falls
-when any other bin rises, while every count of the histogram can only rise when bytes are added. Reading the counts
-keeps their directions. We use three such re-encodings: raw byte, string, and character counts in place of their
-normalized frequencies; the same counts taken only over the section bodies and the overlay, where no in-place write of
-our threat model lands; and the hashed section-name buckets, whose entries EMBER adds with a sign, split into their
-positive and negative parts. Theorem~\ref{thm:fw:directions} gives their directions with no rule of their own, and the same
-check covers them.
+Both the metadata and the statistics fit the form of \Cref{sec:fw:model}. A statistic adds up something over parts
+of the file. The byte histogram, for instance, counts the bytes of each value, and the import features count the
+functions imported from each library. A piece of metadata, such as a header field, is the value of a single part.
+These parts are EMBER's items. Some are found by scanning the bytes in order, such as single bytes, the overlapping windows
+behind the entropy histogram, printable strings, and the Rich header. Others are found by parsing the structures
+described above, such as the sections, the overlay, header fields, imports, libraries, exports, the signature, and the
+section that contains the entry point. Most sums are additive, either counts, such as the number of strings or of imports, or
+totals, such as the length of the strings. Where EMBER hashes names into a fixed number of buckets, as it does for
+section names and for imported and exported names, every bucket is a sum of its own. A few sums are pools, which keep
+the largest or smallest value of a section property such as its entropy. Every form of readout in
+\Cref{tab:fw:readouts} occurs, from the identity for header fields and counts to the normalized bins of the
+histograms; Appendix~\ref{sec:ember} lists them, with the two features we write over sums differently from EMBER
+without changing their values. Our tests confirm that the readouts of the recorded sums give every one of the 2,480
+features that have items exactly as the extractor does.
 
 % ---- Superseded by blocks 2-4 (kept for reference until they are written) ----
 % From the old 4.1, for (c): locating positions and the single-byte flip check.
