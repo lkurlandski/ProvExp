@@ -7,67 +7,67 @@
 
 \Cref{sec:background} argued that practitioners learn what an attacker's edits do to the features in one of three
 ways, by trial, by reading the extractor, or from the attacks that have been observed, and that each falls short. This
-section measures how far each falls short on the EMBER instance of \Cref{sec:instances}. Trial
-is exact for the edits it tries, and we use it to check our own computation. A careful reading of the extractor misses
+section measures how far each falls short on the EMBER instance of \Cref{sec:instances}. Trial is exact for the edits
+it tries, and we use it to check our own computation (\Cref{sec:eval:setup}). A careful reading of the extractor misses
 side effects that arise from how the extractor finds its items (\Cref{sec:eval:hand}), and defenses built from
 observed attacks trust features that edits can lower (\Cref{sec:eval:observed}); in both cases an adaptive attack
 confirms on real files the holes the computation points to. Once the directions are known, robustness to every edit
-in the threat model has a measurable cost in detection, which we report last.
+in the threat model has a measurable cost in detection, which we report last (\Cref{sec:eval:detectors}).
 
 \subsection{Setup}
 \label{sec:eval:setup}
 
-All numbers are at pilot scale: one seed, a 10\% subsample of each EMBER~2024 split for training and testing, and a
-pilot set of 100 files, half malware, for the edits and attacks. Detectors are gradient-boosted
-trees~\cite{ke2017lightgbm}, with monotone constraints where a row calls for them. Each detector's threshold is set to
-a 1\% false-positive rate on the benign test files, and an attack counts as an evasion when it drives a detected
-malware sample below that threshold. Every attacked file is written to disk and extracted again, so no reported score
-rests on our own computation. Unless stated otherwise, the threat model is the full one of
+We train gradient-boosted tree detectors~\cite{ke2017lightgbm}, with monotone constraints where a detector calls for
+them, on a 10\% subsample of the EMBER~2024 training split, with one seed, and test them on a 10\% subsample of its
+test split. Edits and attacks run on 100 test files, half of them malware. Each detector's threshold is set to a 1\%
+false-positive rate on the benign test files, and an attack counts as an evasion when it drives a detected malware
+sample below that threshold. Unless stated otherwise, the threat model is the full one of
 \Cref{tab:instances:catalogue}, with a byte budget of 5\% of the file or 512~KB, whichever is larger.
 
-The attacks come from two sources. The \emph{toolkit} attacks are the eight secml-malware
-attacks~\cite{demetrio2021adversarial} that Gimenez et al.\ evaluate against: padding, GAMMA section
-injection~\cite{demetrio2021functionality}, GAMMA import injection, two content shifts, DOS-header extension, header
-fields, and a format exploit, each with a population of 10 for 10 iterations. We split them into four \emph{seen}
-attacks, from which the defenses learned from attacks are built, and four \emph{held-out} ones. The \emph{adaptive}
-attack is ours. It is the instrument that confirms on real files what the computed directions point to: a white-box
-beam search over every operation of the threat model that scores each candidate edit by the features
-Proposition~\ref{prop:fw:side-effects} computes from the item table of the current file, and aims section names at the
-hash buckets the detector relies on most. Each step draws random candidates from the three lowest-scoring files found
-so far and keeps the three lowest-scoring files among parents and children; after three steps without a new best
-score, it restarts from the original file. Every kept file is written to disk with our own byte-level edits and
-extracted again. The search may score 5,000 candidates per file, fifty times the toolkit attacks' budget of 100
-queries.
+We attack each detector in two ways. The toolkit attacks of \Cref{sec:instances:catalogue} query the detector 100
+times per file, the budget under which Gimenez et al.~\cite{gimenez2025certifiably} evaluate their defenses. A defense
+that is learned from attacks is built from seven of the toolkit attacks and tested on the eighth, for each of the eight in turn.
+The adaptive attack is a white-box beam search over the operations of the threat model. At each step it applies random
+candidate edits to the three lowest-scoring files found so far, computes each candidate's features by
+Proposition~\ref{prop:fw:side-effects} instead of extracting them, and keeps the three lowest-scoring files; after three
+steps without improvement it restarts from the original file. When it adds or renames a section, it chooses a name
+whose hash lands in a bucket the detector weighs toward benign. It scores up to 5,000 candidates per file, fifty times
+the toolkit's budget. More queries alone change little: run with the GAMMA paper's budget of about 500
+queries~\cite{demetrio2021functionality}, the strongest toolkit attack evades the undefended detector on one more file
+than with 100.
+% SYNTHETIC: the leave-one-out protocol for the defenses learned from attacks (PV, ERDALT) replaces the fixed split
+% (seen = padding, GAMMA sections, GAMMA shift, content shift); run in another session (PLAN.md, decision 10). Until
+% then the held-out cells below are the fixed split's values.
+% MEASURED: literature budget, run/124_a1_toolkit_literature_budget.sh: import injection 27/47 vs 26/47 at 100 queries.
 
-We checked our own computation by trial. We applied edits of every operation, with adversarial contents, using our
-own byte-level code, extracted the written files again, and compared all 2,480 features that have items with the
-computed ones. Of 62,604 edits, the only wrong features are those of 45 edits on truncated files outside the
-population, and the instance declines exactly the edits that write a position the parser reads to find other items
-(Appendix~\ref{sec:ember}, \Cref{tab:ember:side-effects}). The parts of the signature collected from the corpus
-(\Cref{sec:instances:catalogue}) give the same direction table from the 100 pilot files as from all 2,000, and
-across 73,063 edits of every operation on the 2,000 files, no feature moved in a direction the table excludes.
+Every evasion we report, and every check of our own computation, comes from writing the edited file with our own
+byte-level code and extracting its features again: the extractor, not our computation, decides each result. We checked
+the computation on 73,063 edits, every operation applied several times to each of 2,000 test files with adversarial
+parameters (repeated, colliding, and case-variant names, empty imports, printable content next to existing strings, a
+forged Rich header). On the files in the population, every side effect the instance computes is exact, and it
+declines exactly the edits that write a position the parser reads to find other items (Appendix~\ref{sec:ember}). No
+edit moved a feature in a direction the derived table excludes, and deriving the table from 100 of the files gives the
+same table as deriving it from all 2,000.
 
 \subsection{What Hand Analysis Misses}
 \label{sec:eval:hand}
 
-A hand analysis must anticipate every feature an edit moves, and one edit moves many. Of the 73,063 edits of
-\Cref{sec:eval:setup}, the 60,934 on files in the population move a median of 263 of EMBER's features each, spread
-over four to eight of its feature groups, from 10 features for an overwrite of the checksum to 548 for an added
-section. Most of these are features the edit does not aim at, and some are easy to overlook. Appending to a file
-lowers every section's size ratio, since EMBER divides each section's size by the file's size; it can raise the
-largest section entropy, since the overlay counts as a section there; and when the appended bytes follow printable
-text, it extends the last string rather than adding one. Effects of this kind follow from the content an edit writes,
-and an analyst who reads the code that computes each feature can find them. The errors we found lie elsewhere: in how
-the extractor finds its items.
-% C1 (session 31): catalogue_checks/2000-exact/edits.parquet, column `moves`, applied edits with precondition true,
-% EMBER's 2,568 features only (re-encodings body_*, section_split excluded). Median per operation: chk 10, rdb 11,
-% rsg 16, hdr 25, ren 122, app 362, shf 501, ext 510, imp 539, sec 548; median groups 4-8. Recorded in
-% docs/paper-mock.md, Section 5.
+Can a careful reading of the extractor get the directions right? A hand analysis must anticipate every feature an
+edit moves, and one edit moves many: a median of 263 of EMBER's features, across four to eight of its feature groups,
+on the edits of \Cref{sec:eval:setup}. We compare three hand analyses with the derived table: one we wrote before the
+derivation existed, and two published ones.
+% C1 (session 31): catalogue_checks/2000-exact/edits.parquet, column `moves`, the 60,934 applied edits on files in the
+% population, EMBER's 2,568 features only (re-encodings body_*, section_split excluded). Median per operation: chk 10,
+% rdb 11, rsg 16, hdr 25, ren 122, app 362, shf 501, ext 510, imp 539, sec 548; median groups 4-8.
 
-Before the derivation existed, we wrote the direction table by hand: for each of EMBER's feature groups and each of
-the twelve operations, we read the extractor's code and the operation's declared effects and recorded which way the
-group's features could move. We knew the extractor well and had its source open, which is the realistic setting for
-such an analysis. We then compared the hand table with the table Theorem~\ref{thm:fw:directions} derives.
+\paragraph{Our hand table}
+For each of EMBER's feature groups and each of the twelve operations, we read the extractor's code and the operation's
+declared effects and recorded which way the group's features could move. We knew the extractor well and had its source
+open, the realistic setting for such an analysis. The hand table and the derived one disagree on eight features
+(\Cref{tab:eval:directions}). Each disagreement is an error of the hand table, witnessed by a real edit that moves the
+feature in a direction the hand rule excluded; on every other feature the tables agree, and on one, the size of the
+signature table, the derived direction is tighter. Four of the errors hold on the plain layouts the detectors are built
+for, and four lie outside the population, where a hand table silently stops being sound and a derived one declines.
 
 \begin{table*}[t]
   \caption{Every disagreement between the hand-written direction table and the derived one. In each case the hand rule
@@ -83,15 +83,15 @@ such an analysis. We then compared the hand table with the table Theorem~\ref{th
     overlay size & add a section & fixed $\to$ down & yes & a section added after the overlay takes the overlay as its
       raw data, and the overlay vanishes (650 of 2,000 files) \\
     entry section's name & add a section & fixed $\to$ both & yes & on files whose entry point lies in no section, the
-      added executable section becomes the entry section (8 pilot files) \\
+      added executable section becomes the entry section (8 of the 100 files) \\
     Rich header & insert a gap before the PE header & fixed $\to$ both & yes & the parser searches a range that contains
-      the gap; content written there creates a Rich header (all 39 pilot files without one) \\
+      the gap; content written there creates a Rich header (all 39 of the 100 files without one) \\
     Rich header & overwrite header fields & fixed $\to$ both & yes & three header fields lie in the same search range (8
       of the 39) \\
     overlay size & append & up $\to$ both & no & the appended bytes complete a section that pointed past the truncated
-      end, and the overlay shrinks (4 pilot files; e.g.\ 31,482 to 4,096 bytes) \\
+      end, and the overlay shrinks (4 of the 100 files; e.g.\ 31,482 to 4,096 bytes) \\
     number of certificates & append & down $\to$ both & no & completing a signature table past the end adds a
-      certificate (2 pilot files) \\
+      certificate (2 of the 100 files) \\
     has relocations, exports & append & fixed $\to$ both & no & completing a directory past the end (relocations: 151 of
       2,000 files; exports: 37) \\
     section entropy & overwrite header fields & fixed $\to$ both & no & a section whose raw data starts at offset 0 is
@@ -100,42 +100,39 @@ such an analysis. We then compared the hand table with the table Theorem~\ref{th
   \end{tabular}
 \end{table*}
 
-The two tables disagree on eight features (\Cref{tab:eval:directions}), and each disagreement is an error of the hand
-table, witnessed by a real edit. On every other feature they agree, and on one, the size of the signature table, the
-derived direction is tighter than the hand rule. None of the errors comes from the content an edit writes. They come
-from three facts about how the parser finds structures, visible only in its code: it ignores structures that lie past
-the end of the file, so appending can bring them into existence; it searches a fixed range for the Rich header,
-wherever the PE header happens to start; and it picks the entry section by a rule with a fallback. The derivation needs
-none of these facts stated. Each is a position the parser reads to find items, which the item tables record, and an
-operation that writes such a position is given every change to those items. Four of the errors hold on the plain
-layouts the detectors are built for. The other four lie outside the population, where a hand table silently stops
-being sound and a derived one declines.
+\paragraph{Why it errs}
+None of the errors comes from the content an edit writes. They come from three facts about how the parser finds
+structures, visible only in its code: it ignores structures that lie past the end of the file, so appending can bring
+them into existence; it searches a fixed range for the Rich header, wherever the PE header happens to start; and it
+picks the entry section by a rule with a fallback. The derivation needs none of these facts stated. Each is a position
+the parser reads to find items, which the item tables record, and an operation that writes such a position is given
+every change to those items.
 
-The first error is the one a detector would pay for. A detector built on the hand table trusts that adding a section
-leaves the overlay alone, yet a section added after the overlay takes the overlay as its content. We trained such a
-detector, identical to the derived one in every respect (the same training data and the same 1,305 constrained and
-1,060 dropped features) except the two features the tables disagree on inside the population: the hand table keeps the
-overlay size up-only and leaves the size of the signature table free, where the derivation frees the first and
-constrains the second downward. The adaptive search lowers the hand detector's score on 10 of the 29 files in the
-population it detects, every time by adding one section after the overlay, by up to 1.57 logits, and each drop is
-confirmed by extracting the written file again. The derived detector cannot be moved on any of them. No drop crosses
-the threshold, since these malware score far above it, so the hand detector's error shows as a broken guarantee rather
-than as evasions on this corpus.
+\paragraph{What the error costs}
+A detector built on the hand table trusts that adding a section leaves the overlay alone, yet a section added after the
+overlay takes the overlay as its content. We trained such a detector, identical to the derived one except for the two
+features the tables disagree on inside the population: the hand table keeps the overlay size up-only and leaves the
+size of the signature table free, where the derivation frees the first and constrains the second downward. The
+adaptive search lowers the hand detector's score on 10 of the 29 files in the population it detects, every time by
+adding one section after the overlay, by up to 1.57 logits. The derived detector cannot be moved on any of them. No drop
+crosses the threshold, since these malware score far above it, so the error shows as a broken guarantee rather than as
+evasions on this corpus.
 
-Our hand table is one analysis, written by us. Two published ones show that the problem is not ours alone, and that
-a hand analysis can err in either direction. Gimenez et al.~\cite{gimenez2025certifiably} chose 40 features, the
+\paragraph{Published hand analyses}
+Our hand table is one analysis, written by us. Two published ones show that the problem is not ours alone, and that a
+hand analysis can err in either direction. Gimenez et al.~\cite{gimenez2025certifiably} chose 40 features, the
 \emph{expert set}, to be hard to lower without the malware's source code, and train monotone detectors on them. We
 instrumented their extractor and derived its table: under the full threat model, 11 of the 40 features can be lowered,
 by renaming a section or by rewriting the DOS stub, edits that need no source code. Using those two operations, the
-adaptive search evades the expert-set detector on 2 of the 8 pilot malware it detects. Severi et
-al.~\cite{severi2021explanation} needed features an attacker controls in order to plant a backdoor, and set aside all of
-EMBER's hashed features because, given the hash function's preimage resistance, ``directly manipulating these features
-by tampering with the binary would be extremely difficult''. The derived table shows the opposite: under the additions
-threat model alone, edits can move 1,490 of the 1,650 hashed features of EMBER 2024. EMBER's hashed section features are
-indexed by the hash of the section's name, which picks one of 50 buckets and a sign, so an attacker who chooses a new
-section's name gets the bucket and sign they want within about a hundred tries. This error is on the cautious side, which costs an attacker only options. A defender
-who made the same judgement would trust features an attacker can move, and \Cref{sec:eval:observed} shows a defense
-that does.
+adaptive search evades the expert-set detector on 2 of the 8 malware it detects. Severi
+et al.~\cite{severi2021explanation} needed features an attacker controls in order to plant a backdoor, and set aside all
+of EMBER's hashed features because, given the hash function's preimage resistance, ``directly manipulating these
+features by tampering with the binary would be extremely difficult''. Under the additions threat model alone, edits can
+move 1,490 of the 1,650 hashed features of EMBER 2024. EMBER's hashed section features are indexed by the hash of the
+section's name, which picks one of 50 buckets and a sign, so an attacker who chooses a new section's name gets the
+bucket and sign they want within about a hundred tries. This error is on the cautious side, which costs an attacker
+only options. A defender who made the same judgement would trust features an attacker can move, and
+\Cref{sec:eval:observed} shows a defense that does.
 % Expert set: run 120, scripts/a_expert_adaptive.py; the expert extractor is instrumented
 % (provexp.featuresets.ember2024.expert, bit-exact); 11 M_full holes (rows 27, 30-39 of
 % docs/evidence/direction-A-expert-set.md), each witnessed by one of our own edits. Adaptive: 2/8 via rename on the

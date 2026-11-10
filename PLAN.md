@@ -143,7 +143,9 @@ them (below).
     is a separate research question about the detector (the per-operation costs point at the import hash buckets and
     the header fields), not part of the rewrite. *Extension (session 31):* the structure is domain-free (findings follow §2's three sources,
     each a measurement per instance); drafting rules that keep later domains to rows and an appendix are in
-    `docs/paper-mock.md`, §5, "Extending §5 to other domains".
+    `docs/paper-mock.md`, §5, "Extending §5 to other domains". *Leave-one-out (session 31, user):* the defenses learned from
+    attacks are evaluated leave-one-out over the eight toolkit attacks, adaptive cells on the all-eight models; a
+    separate session implements it (`docs/paper-mock.md`, §5, "Revisions after the user's review").
 
 ## Next steps, in order
 

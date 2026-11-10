@@ -99,7 +99,10 @@ change header fields. Demetrio et al.\ add three that exploit ambiguities of the
 which the loader skips, or by making room for new content in front of the PE header or of the first section.
 GAMMA~\cite{demetrio2021functionality} takes the injected content from benign programs, appended at the end or placed
 in new sections. MAB-Malware~\cite{song2022mab} also renames sections, removes the certificate or the debug
-information, and breaks the checksum.
+information, and breaks the checksum. Eight of these attacks are implemented in the secml-malware
+library~\cite{demetrio2021adversarial}: padding, GAMMA section injection, GAMMA import injection, two content shifts,
+DOS-header extension, header-field changes, and a format exploit. We call them the \emph{toolkit} attacks and run them
+against every detector in \Cref{sec:evaluation}.
 
 Our threat model is the union of these edits, twelve operations in all (\Cref{tab:instances:catalogue}), with all
 content (bytes, section names and properties, imported names) chosen by the attacker within a byte budget. A recent

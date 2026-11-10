@@ -178,6 +178,17 @@ once there are two. *Risk, not structural:* the size of 5.2's finding depends on
 presence-of-token extractor may leave a hand analysis little to miss), so findings are written as measurements ("how
 far each falls short"), never as "always falls short".
 
+**Revisions after the user's review of blocks 1-2 (session 31).** (a) The toolkit attacks are introduced in §4.3 (per
+instance: the published attacks and their implementation, secml-malware), not in 5.1; 5.1 keeps only the shared
+protocol (budgets, leave-one-out, the adaptive search in format-free terms). (b) **Leave-one-out for the defenses
+learned from attacks** (PV, ERDALT): build from seven toolkit attacks, test on the eighth, for each of the eight; the
+fixed split (chosen so the strongest attack was held out) looked like tuning the setup in our favor (user). The
+adaptive cells use the models built from all eight attacks (PV exists, 14/22; ERDALT-8 must be trained). To run in
+another session (coding and analysis); until then the held-out cells are `\synthetic` in block 3. (c) No "pilot
+scale" and no "written to disk" bookkeeping in the prose; re-extraction is stated once in 5.1 with why. (d) 5.2 has an
+opening question and run-in paragraph headings (Our hand table, Why it errs, What the error costs, Published hand
+analyses).
+
 **Results of the checks (session 31, 2026-11-10):**
 
 - **C1: held.** `catalogue_checks/2000-exact/edits.parquet` keeps each edit's moved features (`moves`). On the 60,934
