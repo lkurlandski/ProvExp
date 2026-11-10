@@ -49,6 +49,7 @@ or when changing an experiment. Run scripts are in `run/` (one per step, numbere
 | `docs/evidence/direction-A-A1-design.md` | the detector table's design, baselines, decisions, and results (Table 5) |
 | `docs/evidence/direction-A-expert-set.md` | Gimenez et al.'s 40 features, instrumented: the expert-set row and its holes |
 | `docs/evidence/code-audit-sound-directions.md` | the 2026-11-09 audit of the direction engine against Definitions 7-10 and Tables 1 and 7 (readout rules, sign table): findings, what §4 must say, the readout rule of every EMBER feature |
+| `docs/evidence/literature-adversarial-malware.md` | the 2026-11-09 literature review of adversarial malware (venues, the edits each work uses, defenses) and what it implies for the catalogue | §4.3, §6, the threat model |
 
 ## Archive (superseded; open only to recover a reason or a record)
 
