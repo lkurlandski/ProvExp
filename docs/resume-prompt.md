@@ -11,7 +11,3 @@ Constraints carried over: no timing of Prop. 1 against extraction (memory `no-ti
 
 Then: shorten §4 and §5 together (§4 ~1,540 words against ~1,000; §4.3 first), then PLAN.md step 4 (the review prompt,
 the full simulated review, the truncation brainstorm).
-
-Loose ends: `% VERIFY` in §4.2 (EMBER 2017/2018 had no parser warnings; needs Joyce et al.'s PDF in `papers/`);
-`% VERIFY` on Table 3's "random in-place writes" row (run 93 reports 20 writes per file on 100 + 100 files, 440 and 537
-declined, not 2,000 and 209).

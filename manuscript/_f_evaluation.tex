@@ -51,7 +51,7 @@ result per operation. An edit is exact when every feature matches to the extract
   \caption{Side effects computed by Proposition~\ref{prop:fw:side-effects} against re-extraction, on the 2,480
   features that have items. Declined: the edit writes a position the parser reads to find other items, and the
   operation does not declare what follows. Upper block: edits whose side effects follow from the item table alone,
-  over all 2,000 files. Lower block: operations with declared changes, over the files in the population.}
+  over all 2,000 files (random writes: the 100 pilot files). Lower block: operations with declared changes, over the files in the population.}
   \label{tab:eval:side-effects}
   \small
   \begin{tabular}{@{}lrrrr@{}}
@@ -81,14 +81,14 @@ result per operation. An edit is exact when every feature matches to the extract
 % forged Rich marker in an ext gap on a file without a Rich header, 509). Outside the population, on 7 truncated
 % files, 45 edits are wrong (23 mismatch, 22 a split-range error). The upper block is G7's edits on all 2,000 files
 % (run 107: three adversarial contents per operation and file, plus a forged Rich header in the DOS stub).
-% VERIFY: the source of the "random in-place writes" row (run 93 reports 20 writes per file on 100 + 100 files, with
-% 440 and 537 flagged, not 2,000 and 209).
+% The "random in-place writes" row is run 96 (run/96_item_checks_after_split.sh, item_checks/margins-pilot-split): 20
+% random writes of 1-64 bytes per pilot file, 100 files, 1,791 exact, 209 declined, 0 wrong.
 
 No computed feature is wrong. The upper block of \Cref{tab:eval:side-effects} holds the edits whose side effects
 follow from the item table of the file alone: appending, the overwrites of slack, of the DOS header and stub, and of
 the checksum, each with adversarial contents (random bytes, printable text next to existing strings, zeros, a forged
-Rich header), and random writes of up to 64 bytes anywhere in the file. These run on all 2,000 files, inside the
-population and out. The instance declines exactly the edits that write a position the parser reads, which it finds
+Rich header), run on all 2,000 files, inside the population and out, and twenty random writes of up to 64 bytes
+anywhere in each pilot file. The instance declines exactly the edits that write a position the parser reads, which it finds
 by comparing the written positions with the recorded ones (Appendix~\ref{sec:ember}), with no rule written for any
 particular case. Most declined overwrites of the DOS header and stub write into the range the extractor searches for
 the Rich header, which covers most of the stub. The declined appends go to files whose section table points past

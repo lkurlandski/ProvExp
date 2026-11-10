@@ -9,11 +9,10 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
 - **Framework (§2-3):** rewritten; the user is reasonably satisfied. Open: the user's holistic read of Sound
   Directions after round 4 (finetuning only).
 - **§4:** drafted in the new structure (lead, 4.1-4.4, Appendix D "The EMBER Instance"); blocks 1-2 accepted, 3-4
-  "pretty good". About 1,540 words against ~1,000: shortening deferred (user), §4.3 first. `% VERIFY`: EMBER
-  2017/2018 had no parser warnings (Joyce et al. PDF not in `papers/`).
+  "pretty good". About 1,540 words against ~1,000: shortening deferred (user), §4.3 first.
 - **§5:** realigned with §3-4 in vocabulary and claims (2026-11-10, session 29; ~3,380 words against ~3,200). The user
   read block 1 only lightly: they have a "pretty big concern about the structure and organization" of §5, to address
-  next; expect a rewrite. Open in the text: `% VERIFY` on Table 3's "random in-place writes" row (run 93 counts differ).
+  next; expect a rewrite.
 - **Experiments:** Tables 3-5 (side effects, directions, detectors) complete at pilot scale; open items are listed in PLAN.md, next step 5.
 - **Documentation:** reorganized 2026-11-09; index `docs/README.md`.
 
