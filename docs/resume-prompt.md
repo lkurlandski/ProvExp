@@ -49,13 +49,25 @@ the appendix), then the old catalogue subsection and Table 2 (still rendered; §
   changing a value; no items at all: the 88 parser warnings, drop them or keep them as both, which coincide for a
   monotone detector; absent from EMBER 2017/2018, verify in Joyce et al.; dropping them costs nothing, run 126: +0.1
   points TPR at 1% FPR). Never mention the import-overwrite bug. One sentence on the re-encodings if not placed in 4.2.
-- **Block 3, 4.3 Threat model, literature first.** Before drafting: a literature pass listing the edits each PE
-  problem-space attack uses (local PDFs: Demetrio et al. 2021, Lucas et al. 2023, Rosenberg et al. 2020, Labaca-Castro
-  et al., Gimenez et al. 2025; not local: gym-malware (Anderson et al. 2018), MAB-Malware (Song et al. 2022), Kreuk et
-  al. 2018, Suciu et al. 2019 — ask the user to add them to `papers/` or use the web). Show the user the edits-by-work
-  table before the prose. Then audit findings 4-6 (`docs/evidence/code-audit-sound-directions.md`): corpus-collected
-  vocabulary and write signatures (checked, not proven; one sentence), writes onto locating positions (Proposition 1
-  declines; directions allow any change unless declared: rename, remove debug, remove signature), append declared.
+- **Block 3, 4.3 Threat model, literature first.** First a modern literature review of adversarial malware
+  (user, 2026-11-09: "a more modern, up-to-date literature review ... with an emphasis on works published in reputable
+  venues. The papers you've listed are basically all workshop papers"). Scope: problem-space attacks on, and defenses
+  of, malware detectors, emphasis on Windows PE, roughly 2019 onwards; Android and other formats where they set the
+  standard for threat models (Pierazzi et al.). Venues: IEEE S&P, ACM CCS, USENIX Security, NDSS, EuroS&P, AsiaCCS,
+  ACSAC, RAID, and journals (TOPS, TDSC, TIFS, Computers & Security); preprints and workshops only when heavily used
+  (as the toolkits), and marked as such. Record per work: venue and year, the edits it applies (problem-space
+  operations), what it attacks or defends, and whether it keeps functionality (and how it checks). Output: an
+  evidence record in `docs/evidence/` with the edits-by-work table, verified against the papers (PDFs in `papers/`;
+  ask the user to add what is missing, or read the publisher/arXiv version and mark it), and `main.bib` entries from
+  real records. Show the user the table and what it implies for the catalogue (which edits the literature uses that
+  ours lacks, which of ours it does not use, what we exclude and why) before any prose. The current §4 cites
+  `demetrio2021adversarial` (TOPS), `song2022mab` (AsiaCCS), `kreuk2018deceiving` (arXiv), `suciu2019exploring` (SPW);
+  already in `papers/`: Demetrio et al. 2021, Lucas et al. 2023 (USENIX Sec.), Dyrmishi et al. 2023 (S&P), Pierazzi
+  et al. 2020 (S&P), Rosenberg et al., Labaca-Castro et al., Gimenez et al. 2025 (IFIP SEC), Bostani and Moonsamy, Li
+  et al. (PAD). The review may run as its own session if it is large. Then audit findings 4-6
+  (`docs/evidence/code-audit-sound-directions.md`): corpus-collected vocabulary and write signatures (checked, not
+  proven; one sentence), writes onto locating positions (Proposition 1 declines; directions allow any change unless
+  declared: rename, remove debug, remove signature), append declared.
 - **Block 4, 4.4 Population:** plain layouts, membership at inference, routing, closure (0 of 60,934); the 4 MB
   truncation as is (decision 8 (iv)).
 

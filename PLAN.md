@@ -86,7 +86,8 @@ them (below).
    definition and what to do with features that do not (drop them, or keep them as able to move both ways; a monotone
    detector must drop them), with the parser warnings as the example: absent from EMBER 2017/2018 (verify in Joyce et
    al.) and dropping them costs nothing (run 126: +0.1 points TPR at 1% FPR). (iii) Part (c), the threat model, is
-   written literature first: a pass over the PE problem-space attacks and the edits each uses, our catalogue as the
+   written literature first: a modern review of adversarial malware in reputable venues (user: the toolkit list is
+   "basically all workshop papers"), the edits each work uses, our catalogue as the
    functionality-preserving, non-code-rewriting edits among them, exclusions named. (iv) The population stays as is
    for now; the user finds the 4 MB truncation ugly (most of the 318 non-plain files of 2,000 are truncated; on
    untruncated files 94.4% are plain). A brainstorm on a cleaner resolution is scheduled around step 4.
