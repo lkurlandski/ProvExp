@@ -1,9 +1,8 @@
 % Section 4, Instantiating the Framework (docs/paper-mock.md, Section 4: about 1,000 words; working note
-% docs/instances-note.md; PLAN.md decisions 1, 2, 8, and 9). Rewritten in blocks with the user's review after each,
-% 2026-11-09 onwards. Block 1 (redrafted in the structure of decision 8 (v)): the lead, 4.1 EMBER and PE files, and
-% 4.2's first paragraph; the bookkeeping moved to the appendix (_j2_ember.tex). Blocks 2-4: 4.2's second paragraph (how
-% strictly EMBER fits), 4.3 the threat model (literature first), 4.4 the population. The old text they replace is kept
-% below, commented out where it is superseded.
+% docs/instances-note.md; PLAN.md decisions 1, 2, 8, and 9). Written in blocks with the user's review after each,
+% 2026-11-09/10: block 1 the lead, 4.1, and 4.2's first paragraph (bookkeeping in _j2_ember.tex); block 2 4.2's second
+% paragraph; block 3 4.3 (literature first); block 4 4.4. Next: shortening (the user, 2026-11-10). Old text of the
+% previous structure, kept for reference, is commented out below 4.2.
 
 \Cref{sec:framework} proves its results for any sum-then-readout extractor, and leaves to an instance everything
 that depends on the format of the input. An instance supplies the items, contributions, and readouts, a decision about
@@ -45,6 +44,17 @@ histograms; Appendix~\ref{sec:ember} lists them, with the two features we write 
 without changing their values. Our tests confirm that the readouts of the recorded sums give every one of the 2,480
 features that have items exactly as the extractor does.
 
+EMBER fits the definition closely but not everywhere, and an instance must decide what to do with the features that
+do not fit. Some fit once they are written differently, as the two features above do. Others have no items at all.
+EMBER's 88 parser warnings are flags, each set when the parser reports a particular irregularity in the file, and we
+do not model which parts of the file cause it. A feature without items can be dropped, which leaves a
+sum-then-readout extractor on the remaining features (Definition~\ref{def:fw:extractor}), or kept and given the
+direction $\mathsf{both}$, which is always sound. A monotone detector reads no feature marked $\mathsf{both}$
+(\Cref{sec:fw:directions}), so for a detector the two choices coincide. We drop the warnings. Earlier versions of EMBER did
+not compute them, % VERIFY in Joyce et al. (absent from the 2017/2018 feature set)
+and a detector trained without them detects as much malware as one trained with them, 0.1 points more at a 1\%
+false-positive rate. % run 126 (pilot)
+
 % ---- Superseded by blocks 2-4 (kept for reference until they are written) ----
 % From the old 4.1, for (c): locating positions and the single-byte flip check.
 % Most of the instrumentation effort goes into locating positions. For each kind, they are the header fields and table
@@ -78,50 +88,88 @@ features that have items exactly as the extractor does.
 % EMBER's original behavior, and run every experiment on the patched variant. On natural files the patch rarely
 % matters; for an attacker it is a way to remove features, which no add-only threat model would anticipate.
 
-\subsection{The Edit Catalogue}
+\subsection{Threat Model}
 \label{sec:instances:catalogue}
 
-The threat model is a catalogue of the twelve operations the public attack toolkits apply to PE
-files~\cite{demetrio2021adversarial,song2022mab,kreuk2018deceiving,suciu2019exploring}, with all content (bytes,
-section names and properties, imported names) chosen by the attacker within a byte budget
-(\Cref{tab:instances:catalogue}). They form three nested threat models: \emph{additions}, which monotone detectors
-are designed for; \emph{shifts}, which adds the two insertions that move existing content; and \emph{full}, which adds
-every in-place overwrite and removal the toolkits use. Rewriting code and packing are outside all three: they are
-whole-file rewrites, undeclared structural edits by nature.
+Attacks that turn a malware sample into an evasive file, rather than an evasive feature vector, edit the file only in
+ways that keep the program working. Demetrio et al.~\cite{demetrio2021adversarial} survey these practical,
+functionality-preserving manipulations of PE files. The common ones append bytes at the end of the file, fill the
+slack space that pads each section to its alignment, inject a new section or new entries in the import table, and
+change header fields. Demetrio et al.\ add three that exploit ambiguities of the format, by rewriting the DOS header,
+which the loader skips, or by making room for new content in front of the PE header or of the first section.
+GAMMA~\cite{demetrio2021functionality} takes the injected content from benign programs, appended at the end or placed
+in new sections. MAB-Malware~\cite{song2022mab} also renames sections, removes the certificate or the debug
+information, and breaks the checksum.
+
+Our threat model is the union of these edits, twelve operations in all (\Cref{tab:instances:catalogue}), with all
+content (bytes, section names and properties, imported names) chosen by the attacker within a byte budget. A recent
+comparison of nine such attacks against eight detectors supports this choice: MAB-Malware and the shifting variant of
+GAMMA together evade on about 99\% of the samples that the other attacks evade
+on~\cite{zainab2026breaking}. The operations form three nested threat models. \emph{Additions} only add content, the setting monotone detectors are
+designed for; \emph{shifts} adds the two insertions that move existing content; and \emph{full} adds every overwrite
+and removal. Two kinds of edit from the literature are left out. Packing replaces the file with a different program
+that restores the original at run time~\cite{demetrio2021adversarial}, so no item of the original survives it.
+Code-level transformations replace or move instructions while keeping their meaning~\cite{song2022mab,
+lucas2021malware,lucas2023adversarial,ling2024wolf}, and they are much harder to apply without breaking the program
+than the structural edits above; \Cref{sec:discussion} returns to them.
 
 \begin{table}[t]
-  \caption{The edit catalogue. Operations stated in elements get their signatures per file from the item table;
-  the others declare their item deltas.}
+  \caption{The operations of the threat model. Declared: the operation states its changes to the items. Item tables:
+  the changes of an overwrite are collected from the item tables of the population's files. All content, names, and
+  properties are the attacker's choice.}
   \label{tab:instances:catalogue}
   \small
   \begin{tabular}{@{}lll@{}}
     \toprule
-    Operation & Stated in & Threat model \\
+    Operation & Changes & Threat model \\
     \midrule
-    append bytes at the end & elements & additions \\
-    add a section (any name, properties, content) & items & additions \\
-    add imports (any library and function names) & items & additions \\
-    insert a gap before the PE header & items & shifts \\
-    insert a gap before the first section & items & shifts \\
-    overwrite section slack & elements & full \\
-    overwrite the DOS header and stub & elements & full \\
-    overwrite loader-ignored header fields & elements & full \\
-    overwrite the checksum & elements & full \\
-    rename a section (any 8-byte name) & items & full \\
-    remove the debug directory entry & items & full \\
-    remove the signature directory entry & items & full \\
+    append bytes at the end & declared & additions \\
+    add a section & declared & additions \\
+    add imports & declared & additions \\
+    insert a gap before the PE header & declared & shifts \\
+    insert a gap before the first section & declared & shifts \\
+    overwrite section slack & item tables & full \\
+    overwrite the DOS header and stub & item tables & full \\
+    overwrite loader-ignored header fields & item tables & full \\
+    overwrite the checksum & item tables & full \\
+    rename a section & declared & full \\
+    remove the debug directory entry & declared & full \\
+    remove the signature directory entry & declared & full \\
     \bottomrule
   \end{tabular}
 \end{table}
 
-Each operation stated in items declares its delta, including the fields it must update: adding a section raises the
-section count and the image size and writes a new section table entry. Each operation stated in elements declares only
-the region it writes and its content domain, and the engine derives the rest. All edits are written by our own
-byte-level code, which does exactly what the operation declares. A general editing library such as LIEF~\cite{lief}
-rebuilds the file's layout when it adds a section, which breaks honest tools (R3).
+Each operation needs a signature that covers it (Definition~\ref{def:fw:signature}), and gets one in one of two ways.
+Most operations declare the changes they make to the items. Adding a section adds the section and the bytes of its
+content, and replaces the header fields it must update, such as the number of sections and the size of the image.
+Appending adds bytes and adds or extends the overlay. The four overwrites of slack, of the DOS header and stub, of
+header fields the loader ignores, and of the checksum are defined by the positions they write instead, and their
+changes come from the item tables of the population's files, which record the items each position belongs to.
 
-Directions hold over a population (\Cref{sec:fw:directions}), and ours is the files whose layout is plain: nothing
-the parse locates lies past the end of the file, sections lie within the image, and the headers hold only headers.
-Of 2,000 files, 1,674 qualify; most of the rest are files our dataset truncates at 4~MB. A detector checks the
-condition at inference and sends the other files to an unconstrained model, which carries no guarantee
-(\Cref{sec:evaluation}).
+An overwrite can also land on a position that the parser reads to find other items, such as an entry of the section
+table or a field that gives the location of a table. Such a write can change which items the extractor finds, in a way
+the item table does not record. For a single edit, we then decline to compute the side effects, and
+\Cref{sec:eval:side-effects} counts how often this happens. For the directions, the signature allows any change to
+the items of that kind, unless the operation declares what follows: renaming a section keeps the section and replaces
+its name, and each removal declares the items it removes. Appendix~\ref{sec:ember} describes how we record these
+positions.
+
+Two parts of the signature come from the corpus rather than from a proof: the changes collected from item tables, and
+which sums each kind of item can contribute to, which we read from the items of the corpus. Theorem~\ref{thm:fw:directions}
+then holds if the corpus shows every way in which the operations meet the items, and we check that it does in
+\Cref{sec:eval:directions}. The declared changes are checked by applying edits and extracting the files again.
+
+\subsection{Population}
+\label{sec:instances:population}
+
+The signature covers the threat model only over a population, and Theorem~\ref{thm:fw:directions} needs that
+population closed under the threat model. Ours is the PE files with a plain layout, in which everything the parser
+locates lies within the file, the sections lie within the image that the loader maps, and the headers hold only
+headers. On other files an edit can change items that no operation declares. Appending to a file whose section table
+points past its end, for instance, supplies content the parser looked for and did not find, instead of extending the
+overlay. Whether a file has a plain layout is a property of the file alone, so a detector checks it at inference. A
+file in the population goes to the monotone detector, and any other file to an unconstrained one, which carries no
+guarantee. The population is also closed: none of the 60,934 edits we wrote on files in the population takes a file
+out of it. Of 2,000 files, 1,674 are in the population. Most of the others are files that our copy of the dataset
+truncates at 4~MB, in which something the parser locates lies past the truncated end, and 94\% of the files it does not truncate are
+in the population.
