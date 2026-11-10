@@ -1,16 +1,18 @@
-% Section 5, Evaluation (about 3,200 words; docs/paper-mock.md, Section 5). Realigned with Sections 3-4 in blocks,
-% 2026-11-10: block 1 the lead, 5.1, and 5.2; block 2 5.3; block 3 5.4. A structural rewrite follows (user): the plan,
-% three findings, is in docs/paper-mock.md, Section 5 (PLAN.md, decision 10).
+% Section 5, Evaluation (about 3,200 words; docs/paper-mock.md, Section 5). Rewritten as three findings in blocks
+% (PLAN.md, decision 10; session 31, 2026-11-10): block 1 the lead and 5.1, with the side-effect table moved to
+% Appendix D; blocks 2-4 rewrite 5.2-5.4 (the text below the setup is still the realigned text of session 29).
 % Sources: docs/evidence/direction-A-A1-design.md (runs 99-100, 105, 108), docs/evidence/item-layer-design.md (runs
 % 88-107), docs/evidence/direction-A-expert-set.md (run 106), runs 110, 111, 118, 127. No timing of the computed side
 % effects against extraction is reported (user, 2026-11-10).
 
-We evaluate the EMBER instance of \Cref{sec:instances} against the two results of \Cref{sec:framework}.
-\Cref{sec:eval:side-effects} tests whether the instance computes the side effects of single edits correctly, and
-declines where it should. \Cref{sec:eval:directions} compares the directions Theorem~\ref{thm:fw:directions} derives
-with a careful hand analysis of the extractor and with constraints learned from attacks. \Cref{sec:eval:detectors}
-asks whether the detectors built on these directions hold up, against attacks the guarantee covers and against
-attacks it does not: real tools that rebuild the file, and an adaptive attacker who uses the same machinery.
+\Cref{sec:background} argued that practitioners learn what an attacker's edits do to the features in one of three
+ways, by trial, by reading the extractor, or from the attacks that have been observed, and that each falls short. This
+section measures how far each falls short on EMBER, against what the instance of \Cref{sec:instances} computes. Trial
+is exact for the edits it tries, and we use it to check our own computation. A careful reading of the extractor misses
+side effects that come from how the parser locates structures (\Cref{sec:eval:directions}), and defenses built from
+observed attacks trust features that edits can lower (\Cref{sec:eval:detectors}); in both cases an adaptive attack
+confirms on real files the holes the computation points to. Once the directions are known, robustness to every edit
+in the threat model has a measurable cost in detection, which we report last.
 
 \subsection{Setup}
 \label{sec:eval:setup}
@@ -27,92 +29,23 @@ The attacks come from two sources. The \emph{toolkit} attacks are the eight secm
 attacks~\cite{demetrio2021adversarial} that Gimenez et al.\ evaluate against: padding, GAMMA section
 injection~\cite{demetrio2021functionality}, GAMMA import injection, two content shifts, DOS-header extension, header
 fields, and a format exploit, each with a population of 10 for 10 iterations. We split them into four \emph{seen}
-attacks, from which the baseline below is built, and four \emph{held-out} ones. The \emph{adaptive} attack is ours, a
-white-box beam search over every operation of the threat model. It scores each candidate edit by the features
-Proposition~\ref{prop:fw:side-effects} computes from the item table of the current file, instead of writing the file
-and extracting it, and it aims section names at the hash buckets the detector relies on most. Each step draws random
-candidates from the three lowest-scoring files found so far and keeps the three lowest-scoring files among parents
-and children; after three steps without a new best score, it restarts from the original file. Every kept file is
-written to disk with our own byte-level edits and extracted again. The search may score 5,000 candidates per file,
-fifty times the toolkit attacks' budget of 100 queries.
+attacks, from which the defenses learned from attacks are built, and four \emph{held-out} ones. The \emph{adaptive}
+attack is ours. It is the instrument that confirms on real files what the computed directions point to: a white-box
+beam search over every operation of the threat model that scores each candidate edit by the features
+Proposition~\ref{prop:fw:side-effects} computes from the item table of the current file, and aims section names at the
+hash buckets the detector relies on most. Each step draws random candidates from the three lowest-scoring files found
+so far and keeps the three lowest-scoring files among parents and children; after three steps without a new best
+score, it restarts from the original file. Every kept file is written to disk with our own byte-level edits and
+extracted again. The search may score 5,000 candidates per file, fifty times the toolkit attacks' budget of 100
+queries.
 
-\subsection{The Instance Is Correct}
-\label{sec:eval:side-effects}
-
-Proposition~\ref{prop:fw:side-effects} needs no experiment: given the right delta, the features of the edited file
-follow from the item table by the computation that defines the extractor. What can be wrong is the instance. Its
-instrumentation may record an item or a contribution differently from what the extractor computes, an operation may
-declare changes it does not make, and the instance may miss a write that lands on a position the parser reads to find
-other items, where it must decline to compute (\Cref{sec:instances:catalogue}). We test all three the way side effects
-are usually found: we apply each edit with our own byte-level code, extract the features of the written file again,
-and compare all 2,480 features that have items with the computed ones. \Cref{tab:eval:side-effects} reports the
-result per operation. An edit is exact when every feature matches to the extractor's floating-point precision.
-
-\begin{table}[t]
-  \caption{Side effects computed by Proposition~\ref{prop:fw:side-effects} against re-extraction, on the 2,480
-  features that have items. Declined: the edit writes a position the parser reads to find other items, and the
-  operation does not declare what follows. Upper block: edits whose side effects follow from the item table alone,
-  over all 2,000 files (random writes: the 100 pilot files). Lower block: operations with declared changes, over the files in the population.}
-  \label{tab:eval:side-effects}
-  \small
-  \begin{tabular}{@{}lrrrr@{}}
-    \toprule
-    Operation & Edits & Exact & Declined & Wrong \\
-    \midrule
-    append bytes & 6,000 & 5,133 & 867 & 0 \\
-    overwrite section slack & 5,106 & 5,106 & 0 & 0 \\
-    overwrite the DOS header and stub & 7,428 & 1,689 & 5,739 & 0 \\
-    overwrite the checksum & 6,000 & 6,000 & 0 & 0 \\
-    random in-place writes & 2,000 & 1,791 & 209 & 0 \\
-    \midrule
-    add a section & 7,256 & 6,776 & 480 & 0 \\
-    add imports & 6,954 & 6,708 & 246 & 0 \\
-    insert a gap before the PE header & 5,856 & 5,347 & 509 & 0 \\
-    insert a gap before the first section & 4,995 & 4,995 & 0 & 0 \\
-    rename a section & 8,370 & 8,370 & 0 & 0 \\
-    remove the debug entry & 984 & 984 & 0 & 0 \\
-    remove the signature & 550 & 550 & 0 & 0 \\
-    up to three sections, then append & 1,105 & 1,105 & 0 & 0 \\
-    \bottomrule
-  \end{tabular}
-\end{table}
-% MEASURED: the lower block is run/118_item_exactness.sh (catalogue_checks/2000-exact, 2,000 files, read 2026-11-03),
-% counted on the population: 0 wrong of 34,965 declared edits; the declined edits are the two by-design abstentions
-% (section:entry for add section/imports where the entry point is in no section, 726; richheader:rich_pair for a
-% forged Rich marker in an ext gap on a file without a Rich header, 509). Outside the population, on 7 truncated
-% files, 45 edits are wrong (23 mismatch, 22 a split-range error). The upper block is G7's edits on all 2,000 files
-% (run 107: three adversarial contents per operation and file, plus a forged Rich header in the DOS stub).
-% The "random in-place writes" row is run 96 (run/96_item_checks_after_split.sh, item_checks/margins-pilot-split): 20
-% random writes of 1-64 bytes per pilot file, 100 files, 1,791 exact, 209 declined, 0 wrong.
-
-No computed feature is wrong. The upper block of \Cref{tab:eval:side-effects} holds the edits whose side effects
-follow from the item table of the file alone: appending, the overwrites of slack, of the DOS header and stub, and of
-the checksum, each with adversarial contents (random bytes, printable text next to existing strings, zeros, a forged
-Rich header), run on all 2,000 files, inside the population and out, and twenty random writes of up to 64 bytes
-anywhere in each pilot file. The instance declines exactly the edits that write a position the parser reads, which it finds
-by comparing the written positions with the recorded ones (Appendix~\ref{sec:ember}), with no rule written for any
-particular case. Most declined overwrites of the DOS header and stub write into the range the extractor searches for
-the Rich header, which covers most of the stub. The declined appends go to files whose section table points past
-their truncated end, where the appended bytes become the content of a section instead of extending the overlay. The
-overwrite of loader-ignored header fields is absent from the table because the instance declines all of its edits:
-three of the fields lie in the Rich header's search range. Its directions come from the signature of
-\Cref{sec:instances:catalogue}, which allows any change to the items it can reach.
-
-The operations of the lower block rewrite positions the parser reads by design, such as the number of sections or
-the location of a table, and declare what follows: the items they add, remove, or replace, and the items they keep
-although they move them or rewrite the pointers that locate them. No declared change is wrong on the 34,965 edits in
-the population. The instance declines two kinds of edit, both by design: a gap that holds a forged Rich header on a
-file without one, and an added section on a file whose entry point lies in no section, where the extractor may select
-the new section as the entry section. Outside the population, on seven truncated files whose structures reach past
-the end, the declared changes are wrong for 45 edits, since the operations do not update pointers to content the
-parser looked for and did not find. These are the files the population of \Cref{sec:instances:population} leaves out.
-Combined edits, up to three added sections followed by an append, are exact when the item table is carried forward one
-edit at a time.
-
-Exactness matters most for the side effects that are easy to miss by hand. Appending to a file lowers every section's
-size ratio, since EMBER divides each section's size by the file's size; it can raise the largest section entropy,
-since the overlay counts as a section there; and when the appended bytes follow printable text, it extends the last
-string rather than adding one. Each of these follows from the item table without a rule of its own.
+We checked our own computation by trial. We applied edits of every operation, with adversarial contents, using our
+own byte-level code, extracted the written files again, and compared all 2,480 features that have items with the
+computed ones. Of 62,604 edits, the only wrong features are those of 45 edits on truncated files outside the
+population, and the instance declines exactly the edits that write a position the parser reads to find other items
+(Appendix~\ref{sec:ember}, \Cref{tab:ember:side-effects}). The parts of the signature collected from the corpus
+(\Cref{sec:instances:catalogue}) give the same direction table from the 100 pilot files as from all 2,000, and
+across 73,063 edits of every operation on the 2,000 files, no feature moved in a direction the table excludes.
 
 \subsection{Directions: Correct and Complete}
 \label{sec:eval:directions}
@@ -173,16 +106,6 @@ in-population files it catches, every time by adding a single section after the 
 each drop re-extracts exactly. The derived detector is provably unmoved on all of them. None of the drops crosses the
 one-percent threshold---the detected malware sit far above it---so the correction changes the guarantee rather than the
 measured evasion rate on this corpus: the hand detector is demonstrably unsound exactly where the derived one is sound.
-
-Theorem~\ref{thm:fw:directions} makes the derived table sound if the signature covers the threat model, and two parts
-of the signature come from the corpus (\Cref{sec:instances:catalogue}): the changes of the overwrites, collected from
-item tables, and the sums each kind of item can contribute to. Both would be incomplete if the corpus missed a way in
-which the operations meet the items. Deriving the table from the 100 pilot files and from all 2,000 files gives the
-same table, so the twentyfold larger corpus shows nothing the smaller one missed. We also checked the table against
-the edits themselves. We applied every operation of the threat model, with adversarial parameters (repeated,
-colliding, and case-variant names, empty imports, printable content next to existing strings, a forged Rich header in
-the inserted gap), to the 2,000 files, written by our own byte-level code and extracted again. Across 73,063 edits, no
-feature moved in a direction the derived table excludes.
 
 The other realistic alternative is to learn the constraints from attacks. We let each feature move as far as the eight
 toolkit attacks moved it, and asked an exact solver for tree ensembles~\cite{kantchelian2016evasion} whether any point

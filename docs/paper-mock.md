@@ -163,6 +163,23 @@ before each, report a failure as such):
   not (possibly Rosenberg et al., 2020: verify before claiming; memory `portray-cited-work-accurately`). Compare with
   the derived table only if the classification is published per feature or per group.
 
+**Results of the checks (session 31, 2026-11-10):**
+
+- **C1: held.** `catalogue_checks/2000-exact/edits.parquet` keeps each edit's moved features (`moves`). On the 60,934
+  applied edits in the population, EMBER's own features only (re-encodings `body_*`, `section_split` excluded): median
+  263 features per edit; per operation from 10 (checksum) and 11 (debug removal) through 25 (header fields), 122
+  (rename), 362 (append), 501-510 (gaps), to 539 (imports) and 548 (add a section), spread over 4-8 feature groups.
+  Every operation moves the byte histogram and the general group; rename moves strings and entropy histograms; append
+  moves the section group on every edit (size ratios).
+- **C3: two published hand classifications, one comparable.** Severi et al. (USENIX Sec. 2021, `papers/severi2021explanation.pdf`,
+  Sec. 6.1) discard all hashed EMBER features ("directly manipulating these features by tampering with the binary would
+  be extremely difficult", by the hash's preimage resistance), keeping 35 directly editable non-hashed features, 17
+  controlled by their utility. Derived table (features, population, `a_directions_derived_v2`): of EMBER 2024's 1,650
+  hashed features, edits of the additions threat model can move 1,490 (lower 1,234); only the 128 export buckets and
+  the 32 Rich-header pairs stay fixed (the latter movable under full). Caveat: Severi et al. used the 2018 feature set
+  (same hashed groups, verify) and needed set values for a trigger, not only movement. Rosenberg et al. (IJCNN 2020)
+  name a few "easily modifiable" features in the text; the full list is only in their repository (not comparable).
+
 **Drafting order (blocks, `paper-prose`, `make` and `make check` after each):** (1) lead and 5.1, and Table 3 with a
 short paragraph into Appendix D; (2) 5.2; (3) 5.3 with the audit table; (4) 5.4 with the trimmed detector table. Then
 §2's closing sentence ("uses them to attack malware detectors and to build robust ones") and contribution 4 above,

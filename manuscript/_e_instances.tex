@@ -149,7 +149,7 @@ changes come from the item tables of the population's files, which record the it
 An overwrite can also land on a position that the parser reads to find other items, such as an entry of the section
 table or a field that gives the location of a table. Such a write can change which items the extractor finds, in a way
 the item table does not record. For a single edit, we then decline to compute the side effects, and
-\Cref{sec:eval:side-effects} counts how often this happens. For the directions, the signature allows any change to
+Appendix~\ref{sec:ember} counts how often this happens. For the directions, the signature allows any change to
 the items of that kind, unless the operation declares what follows: renaming a section keeps the section and replaces
 its name, and each removal declares the items it removes. Appendix~\ref{sec:ember} describes how we record these
 positions.
@@ -157,7 +157,7 @@ positions.
 Two parts of the signature come from the corpus rather than from a proof: the changes collected from item tables, and
 which sums each kind of item can contribute to, which we read from the items of the corpus. Theorem~\ref{thm:fw:directions}
 then holds if the corpus shows every way in which the operations meet the items, and we check that it does in
-\Cref{sec:eval:directions}. The declared changes are checked by applying edits and extracting the files again.
+\Cref{sec:eval:setup}. The declared changes are checked by applying edits and extracting the files again.
 
 \subsection{Population}
 \label{sec:instances:population}
