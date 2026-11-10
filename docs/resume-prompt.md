@@ -1,6 +1,6 @@
 # Resume: §4 Instantiating the Framework, block by block in the new structure
 
-Read `docs/status.md` and `PLAN.md` (especially decision 8, (i)-(v)). Then `docs/paper-mock.md`, §4 (the agreed
+Read `docs/status.md` and `PLAN.md` (especially decisions 8, (i)-(v), and 9). Then `docs/paper-mock.md`, §4 (the agreed
 structure and budgets) and `docs/instances-note.md` (what each part must say). Open other documents only as the task
 needs them (index: `docs/README.md`). Use the `paper-prose` skill; read the user's reaction to block 1 at the end of
 `docs/writing-spec.md` before writing.
