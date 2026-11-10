@@ -34,15 +34,15 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
 
 ## Session log
 
-- **2026-11-10 (session 32): leave-one-out scripted, not run.** `run/131_loo_defenses.sh`: eight PV folds (selection
+- **2026-11-10 (session 32): leave-one-out scripted and started (run 131).** `run/131_loo_defenses.sh`: eight PV folds (selection
   from seven attacks, the held-out attack run against the fold's model), nine ERDALT models on two GPUs, the beam
   against ERDALT-8, a summary. Smoke: PV's gamma_api fold in full, 5/21 held out (PV-seen 4/22). The deltas predict
   the user's hypothesis (PV well above 0) fails on the mean: the attacks lower nearly the same features (only
   gamma_sections, 49, and gamma_api, 10, lower many the others don't). ERDALT's folds for the four originally held-out
   attacks would learn from ~50 pilot vectors of them, not ~400 (run 122 generated only the seen four); on the user's
   approval, step 0 now generates the other four on the same 400 training malware (`--adv_dir` takes several
-  directories), and ERDALT trains on one or two GPUs, whichever are visible. **Next:** the user runs 131; then the
-  writing session.
+  directories), and ERDALT trains on one or two GPUs, whichever are visible. Started by the user on GPU 3 (~7 h).
+  **Next:** `docs/resume-prompt.md` (read run 131; C2; block 3).
 
 - **2026-11-10 (session 31): §5 block 1 drafted; checks C1 and C3 done.** Lead and 5.1 rewritten as three findings
   (the correctness check is one paragraph in 5.1); the side-effect table and a short paragraph moved to Appendix D
