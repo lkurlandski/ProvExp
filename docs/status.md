@@ -11,13 +11,15 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
 - **§4:** drafted in the new structure (lead, 4.1-4.4, Appendix D "The EMBER Instance"); blocks 1-2 accepted, 3-4
   "pretty good". About 1,540 words against ~1,000: shortening deferred (user), §4.3 first. `% VERIFY`: EMBER
   2017/2018 had no parser warnings (Joyce et al. PDF not in `papers/`).
-- **§5:** still in the old vocabulary (locating positions, "stated in bytes/items", R3); overlaps §4.4 (closure, 94%)
-  and Appendix D (58,666 flips). Next to realign, in blocks.
+- **§5:** realigned with §3-4 in vocabulary and claims (2026-11-10, session 29; ~3,380 words against ~3,200). The user
+  read block 1 only lightly: they have a "pretty big concern about the structure and organization" of §5, to address
+  next; expect a rewrite. Open in the text: `% VERIFY` on Table 3's "random in-place writes" row (run 93 counts differ).
 - **Experiments:** Tables 3-5 (side effects, directions, detectors) complete at pilot scale; open items are listed in PLAN.md, next step 5.
 - **Documentation:** reorganized 2026-11-09; index `docs/README.md`.
 
 ## Waiting on the user
 
+- Their structural concerns about §5 (next session starts there).
 - The holistic read of Sound Directions (any time).
 
 ## Scheduled
@@ -28,6 +30,13 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
   decision 8 (iv) and step 4).
 
 ## Session log
+
+- **2026-11-10 (session 29): §5 realigned; the per-candidate cost measurement dropped.** A probe showed Prop. 1 scoring
+  in Python is no faster than thrember's (optimized) extraction; the user: never measure or compare it, say the
+  computation is smaller and can be faster; optimization is engineering, out of scope (PLAN.md decision 6, memory).
+  §5 rewritten in three quick blocks (commits after f1d6050): 5.2 claims what it tests ("The Instance Is Correct",
+  Declined instead of Flagged, no speed claim), 5.3 gains the corpus check of the signatures, 5.4 points to §4.4 for
+  closure; §6's "our margins" fixed. **Next:** the user's structural concerns about §5, then shortening §4-5.
 
 - **2026-11-10 (session 28): §4 drafted in four blocks** (commits 556599e, baa1e48). Block 1 took three rounds on
   §4.1 (PE format, then EMBER's features over it, not interleaved); lessons added to `paper-prose` (a08460c) and the
