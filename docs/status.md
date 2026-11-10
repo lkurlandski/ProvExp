@@ -19,6 +19,8 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
 
 ## Waiting on the user
 
+- **Run `run/131_loo_defenses.sh`** (leave-one-out PV and ERDALT, ERDALT-8's adaptive cell; ~3.5 h, two GPUs via
+  `GPUS="0 1"`). Its summary replaces the `\synthetic` held-out cells of §5.3.
 - Nothing blocking: §5's rewrite starts from the agreed plan; the user reviews each block.
 - The holistic read of Sound Directions (any time).
 
@@ -30,6 +32,14 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
   decision 8 (iv) and step 4).
 
 ## Session log
+
+- **2026-11-10 (session 32): leave-one-out scripted, not run.** `run/131_loo_defenses.sh`: eight PV folds (selection
+  from seven attacks, the held-out attack run against the fold's model), nine ERDALT models on two GPUs, the beam
+  against ERDALT-8, a summary. Smoke: PV's gamma_api fold in full, 5/21 held out (PV-seen 4/22). The deltas predict
+  the user's hypothesis (PV well above 0) fails on the mean: the attacks lower nearly the same features (only
+  gamma_sections, 49, and gamma_api, 10, lower many the others don't). ERDALT's folds for the four originally held-out
+  attacks learn from ~50 pilot vectors of them, not ~400 (run 122 generated only the seen four). **Next:** the user
+  runs 131; then the writing session.
 
 - **2026-11-10 (session 31): §5 block 1 drafted; checks C1 and C3 done.** Lead and 5.1 rewritten as three findings
   (the correctness check is one paragraph in 5.1); the side-effect table and a short paragraph moved to Appendix D
