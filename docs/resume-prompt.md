@@ -1,32 +1,44 @@
-# Resume: §5's rewrite as three findings (plan agreed in session 30)
+# Resume: read the leave-one-out run, then §5 blocks 3-4 (5.3, 5.4)
 
-Read `docs/status.md` and `PLAN.md` (decision 10 above all; also 2, 3, 6; next step 3). The plan for §5, one line per
-paragraph, the checks C1-C3, the drafting order, and the framing's known weaknesses are in `docs/paper-mock.md`, §5.
-The structure is agreed with the user: do not reopen it. Write the prose from that plan.
+Read `docs/status.md` and `PLAN.md` (decision 10 above all, with its leave-one-out note; next step 3). The plan for §5,
+one line per paragraph, checks C1-C3, the drafting order, and the revisions after the user's review of blocks 1-2 are
+in `docs/paper-mock.md`, §5. The structure is agreed with the user: do not reopen it.
 
-**The framing in one paragraph.** §5 tests §2's claim that practitioners learn what edits do by trial, by reading the
-extractor, or from observed attacks, and that each falls short. Three findings, each stated with a number: what hand
-analysis misses (5.2), what observed attacks miss (5.3), what robustness costs (5.4). The adaptive search and the
-monotone detectors are instruments, not the contribution. Not a validation section (the correctness check is two or
-three sentences in 5.1; the side-effect table goes to Appendix D) and not a defense paper: no state-of-the-art defense
-claim, and never call the detectors' cost "small" or "cheap" (memory `findings-not-defense-paper`). Claims say "on
-EMBER".
+**Where §5 stands.** Blocks 1-2 (the lead, 5.1, 5.2 *What Hand Analysis Misses*) are drafted and revised after the
+user's review (commit 0069f56). 5.1 already states leave-one-out as the protocol for the defenses learned from attacks;
+the held-out cells are `\synthetic` (`% SYNTHETIC` comment in `manuscript/_f_evaluation.tex`). Still to write: block 3
+(5.3 *What Observed Attacks Miss*, with the new audit table) and block 4 (5.4 *What Robustness Costs*, with the
+detector table trimmed to the undefended, monotone, and additions rows).
 
 **Order of work.**
-1. Block 1: the lead and 5.1, and the side-effect table with a short paragraph moved into Appendix D (`sec:ember`).
-2. Check C1 (side-effect breadth from the correctness runs' outputs) and C3 (published hand classifications of EMBER's
-   features; verify before claiming), then block 2: 5.2.
-3. Check C2 (share of the lowerable features any toolkit output lowered), then block 3: 5.3 with the new audit table.
-4. Block 4: 5.4 with the detector table trimmed to the undefended, monotone, and additions rows.
-5. §2's closing sentence and contribution 4 of the mock, re-read against the findings.
+1. **Run 131, if it has finished** (`run/131_loo_defenses.sh`, started by the user 2026-11-10 on GPU 3, ~7 h; if not,
+   go on with step 2 and come back). Read `artifacts/experiments/a_loo/summary.json` (per-fold and mean held-out
+   evasion for PV and ERDALT, files evaded in any fold) and `a_loo/erdalt-all8-adaptive/adaptive.json` (ERDALT-8's
+   beam cell; run 128's ERDALT gave 20/25), plus `artifacts/experiments/a1/advtrain/generated-heldout/report.json`
+   (step 0: valid outputs per attack). Judge against the hypotheses in the script's header: the user's (PV's
+   held-out evasion well above 0, because each attack lowers features the others don't) and Claude's expectation
+   from the stored perturbation vectors (the eight attacks lower nearly the same features: only gamma_sections, 49,
+   and gamma_api, 10, lower many that no other attack lowers; so PV mostly 0 outside the gamma_api fold, smoke 5/21;
+   ERDALT high on the gamma_api and header_fields folds). Report a failed hypothesis as such. Record the result and
+   runtimes in the script's header (do not edit it while it runs), status, and the mock. Check the logs for `LOST`
+   lines and ERDALT's stopping criterion (`met_criterion` in each model's metrics.json; run 128 met it only at the
+   last epoch). Before changing what the toolkit column claims in 5.3, discuss with the user (memory
+   `dont-reframe-research-claims`): if PV's held-out evasion is near 0, the point that observed attacks miss the hole
+   rests on the adaptive column (PV-all 14/22) and on C2, and MAB-Malware as an independent held-out source becomes
+   more relevant (PLAN.md, step 5).
+2. **Check C2** (mock, §5): of the features the derived table marks down or both, the share any toolkit output lowered,
+   on files in the population (`scripts/a1_toolkit_split.py`, runs 78 and 105; `artifacts/experiments/a_pv/deltas.parquet`).
+   State the hypothesis first; existing outputs only, under ~10 minutes.
+3. **Block 3: 5.3**, with the audit table, the leave-one-out numbers replacing the `\synthetic` cells (remove the
+   `% SYNTHETIC` comment once replaced). Then **block 4: 5.4**.
+4. §2's closing sentence and contribution 4 of the mock, re-read against the findings.
 
-State a hypothesis before each check and report a failed one as such; the checks count existing outputs and must stay
-under ~10 minutes (otherwise estimate and ask). Use the `paper-prose` skill; draft in blocks with `make` and
-`make check`, shown as rendered text, with the user's review after each block.
-
-Constraints carried over: no timing of Prop. 1 against extraction (memory `no-timing-claims`); check
-`manuscript/main.aux` before naming a table or section number (the side-effect table's move renumbers Tables 4-5);
-§5 ~3,200 words (50-75% over allowed while drafting).
+Use the `paper-prose` skill; draft in blocks with `make` and `make check`, shown as rendered text, with the user's
+review after each block. Constraints carried over: §5 is three findings, not a validation section and not a defense
+paper (never call the detectors' cost "small"; memory `findings-not-defense-paper`); claims say "on EMBER"; no timing
+of Prop. 1 against extraction; report each attack separately, never a union across searches unless the table says so
+(memory `report-attacks-separately`); check `manuscript/main.aux` before naming a table or section number; §5 ~3,200
+words (50-75% over allowed while drafting).
 
 Then: shorten §4 and §5 together (§4 ~1,540 words against ~1,000; §4.3 first), then PLAN.md step 4 (the review prompt,
 the full simulated review, the truncation brainstorm).

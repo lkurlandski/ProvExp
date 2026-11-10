@@ -184,7 +184,12 @@ protocol (budgets, leave-one-out, the adaptive search in format-free terms). (b)
 learned from attacks** (PV, ERDALT): build from seven toolkit attacks, test on the eighth, for each of the eight; the
 fixed split (chosen so the strongest attack was held out) looked like tuning the setup in our favor (user). The
 adaptive cells use the models built from all eight attacks (PV exists, 14/22; ERDALT-8 must be trained). To run in
-another session (coding and analysis); until then the held-out cells are `\synthetic` in block 3. (c) No "pilot
+another session (coding and analysis); until then the held-out cells are `\synthetic` in block 3. *Scripted (session
+32): `run/131_loo_defenses.sh`*; the held-out attack runs against each fold's model (same protocol as every cell), and
+ERDALT's training malware covers all eight attacks (its step 0). Outputs: `artifacts/experiments/a_loo/summary.json`
+(per-fold and mean held-out evasion, files evaded in any fold) and `a_loo/erdalt-all8-adaptive/adaptive.json`. Expected
+(header of run 131): PV mostly 0 outside the gamma_api fold (smoke: 5/21) and maybe gamma_sections; ERDALT high on
+the gamma_api and header_fields folds. (c) No "pilot
 scale" and no "written to disk" bookkeeping in the prose; re-extraction is stated once in 5.1 with why. (d) 5.2 has an
 opening question and run-in paragraph headings (Our hand table, Why it errs, What the error costs, Published hand
 analyses).

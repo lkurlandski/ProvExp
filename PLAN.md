@@ -144,8 +144,14 @@ them (below).
     the header fields), not part of the rewrite. *Extension (session 31):* the structure is domain-free (findings follow §2's three sources,
     each a measurement per instance); drafting rules that keep later domains to rows and an appendix are in
     `docs/paper-mock.md`, §5, "Extending §5 to other domains". *Leave-one-out (session 31, user):* the defenses learned from
-    attacks are evaluated leave-one-out over the eight toolkit attacks, adaptive cells on the all-eight models; a
-    separate session implements it (`docs/paper-mock.md`, §5, "Revisions after the user's review").
+    attacks are evaluated leave-one-out over the eight toolkit attacks, adaptive cells on the all-eight models
+    (`docs/paper-mock.md`, §5, "Revisions after the user's review"). *Scripted in session 32* (`run/131_loo_defenses.sh`,
+    started by the user 2026-11-10): each fold's held-out attack is run against that fold's model (the toolkit attacks
+    query the detector they attack; no stored outputs could be re-scored), and ERDALT's training data is balanced over
+    the eight attacks (step 0 attacks run 122's 400 training malware with the four attacks run 122 lacked; user's
+    approval). Expectation from the stored perturbation vectors: the eight attacks lower nearly the same features, so
+    most PV folds should be 0 and the user's hypothesis (PV well above 0) may fail on the mean; if so, 5.3's toolkit
+    column weakens for PV and the adaptive column carries the finding.
 
 ## Next steps, in order
 
@@ -179,7 +185,8 @@ them (below).
    - The scale-up (seeds 0-2, full splits, more malware; the user decides when): the adaptive budget at 2,000 files
      (~3,000 CPU-h at 5,000 candidates; options: the 1,000-candidate checkpoint, a fixed subset, a cap on the monotone
      rows), and ERDALT's stopping criterion (met only at the last epoch at seed 0).
-   - Possibly: MAB-Malware as an independent source of held-out attacks; leave-one-out PV.
+   - Possibly: MAB-Malware as an independent source of held-out attacks (more relevant if the leave-one-out folds
+     show the toolkit's attacks overlap too much to test generalization). Leave-one-out PV and ERDALT: run 131.
 6. **Other domains (later):** ideas in `docs/domain-selection-brainstorming.md`. Not before EMBER is complete; no
    literature or selection work until the user opens it.
 7. **The introduction, discussion, and abstract** last, once the body is settled.

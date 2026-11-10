@@ -22,7 +22,7 @@ make_fixtures (test files).
 - **Witnesses of the hand table's errors (Table 6):** a_overlay_witness, a_signature_witness, a_structure_witness
   (entry section, Rich header, exports and relocations past the end).
 - **Attacks and baselines (Table 7):** a_pv_attacks (secml-malware attacks, PV selection), a_pv_hole, a_erdalt_hole,
-  a_advtrain, a1_evaluate (toolkit columns), a1_toolkit_split, a1_adaptive (the adaptive search: greedy and beam,
+  a_advtrain (attacked training malware: adversarial training and ERDALT's vectors), a1_evaluate (toolkit columns; one held-out attack per fold for leave-one-out, run 131), a1_toolkit_split, a1_adaptive (the adaptive search: greedy and beam,
   scoring candidates by predicted side effects), a_expert_adaptive, a_price_list (per-operation cost of soundness).
 - **From A' (dropped, two pieces used by the paper):** ap_check1_learned (learned constraints, run 110: Table 6's
   learned row), ap_containment (combined edits, run 111: Table 5's last row), with ap_check0_solver (Kantchelian's
