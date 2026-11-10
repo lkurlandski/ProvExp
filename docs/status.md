@@ -4,21 +4,22 @@ Kept short: the current state, what waits on the user, and the last few sessions
 its reasons are in `PLAN.md`. When the session log below grows past about ten entries, move the oldest to
 `docs/archive/` (the log before 2026-11-09 is `docs/archive/status-log-2026-10-to-2026-11-09.md`).
 
-## Current state (2026-11-10)
+## Current state (2026-11-10, session 30)
 
 - **Framework (§2-3):** rewritten; the user is reasonably satisfied. Open: the user's holistic read of Sound
   Directions after round 4 (finetuning only).
 - **§4:** drafted in the new structure (lead, 4.1-4.4, Appendix D "The EMBER Instance"); blocks 1-2 accepted, 3-4
   "pretty good". About 1,540 words against ~1,000: shortening deferred (user), §4.3 first.
-- **§5:** realigned with §3-4 in vocabulary and claims (2026-11-10, session 29; ~3,380 words against ~3,200). The user
-  read block 1 only lightly: they have a "pretty big concern about the structure and organization" of §5, to address
-  next; expect a rewrite.
+- **§5:** realigned with §3-4 in vocabulary and claims (session 29). Structural rewrite agreed in session 30 (PLAN.md,
+  decision 10): three findings (what hand analysis misses, what observed attacks miss, what robustness costs), not a
+  validation section and not a defense paper. Plan, one line per paragraph, and checks C1-C3: `docs/paper-mock.md`,
+  §5. No prose written yet.
 - **Experiments:** Tables 3-5 (side effects, directions, detectors) complete at pilot scale; open items are listed in PLAN.md, next step 5.
 - **Documentation:** reorganized 2026-11-09; index `docs/README.md`.
 
 ## Waiting on the user
 
-- Their structural concerns about §5 (next session starts there).
+- Nothing blocking: §5's rewrite starts from the agreed plan; the user reviews each block.
 - The holistic read of Sound Directions (any time).
 
 ## Scheduled
@@ -29,6 +30,15 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
   decision 8 (iv) and step 4).
 
 ## Session log
+
+- **2026-11-10 (session 30): §5's structure agreed, no prose.** The user's concern: §5 is organized to show the
+  implementation is correct and the proofs hold ("transactional and somewhat lifeless"). Assessment: right; about a
+  quarter to a third of §5 checks our own work and comes first, because the mock organized §5 by §3's results. A
+  defense-first alternative was rejected by the user (4 points of TPR is not small to them, about 1% or less wanted;
+  three baselines too few for a defense claim); the attack alone is too weak to be a task. Agreed: three findings
+  that test §2's claim about trial, hand analysis, and observed attacks; the side-effect table to Appendix D; a new
+  audit table in 5.3. No new task needed; three checks on existing outputs (C1-C3). Recorded: PLAN.md decision 10,
+  `docs/paper-mock.md` §5, memory `findings-not-defense-paper`. **Next:** `docs/resume-prompt.md`.
 
 - **2026-11-10 (session 29): §5 realigned; the per-candidate cost measurement dropped.** A probe showed Prop. 1 scoring
   in Python is no faster than thrember's (optimized) extraction; the user: never measure or compare it, say the
@@ -85,6 +95,3 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
   "This session felt very effective"). Drafting in blocks after a math note recorded in `paper-prose` and memory.
 - **2026-11-09 (session 21): the writing skill reset** (`paper-prose` rewritten as accepted texts plus taste; old rules
   archived in `docs/archive/paper-prose-2026-11-09/`).
-- **2026-11-08 (sessions 19-21): §3.3 removed by decision; Sound Directions rounds 1-3.**
-- **2026-11-05 (session 15): run 130 read; the detector table's (Table 5) adaptive column complete** (the beam search on every row except
-  the sums row, whose cell is the greedy search's).

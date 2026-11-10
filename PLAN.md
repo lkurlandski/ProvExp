@@ -18,14 +18,15 @@ The framework is format-free (§3). PE malware with EMBER is the primary instanc
 planned, implemented, and piloted first. Other domains come later, possibly, and the paper's structure must accommodate
 them (below).
 
-## Where the paper stands (2026-11-09)
+## Where the paper stands (2026-11-10)
 
 - **§2-3 (the framework):** rewritten during the week of 2026-11-02; the user is reasonably satisfied, open to
   finetuning. Three subsections: sum-then-readout extractors, edits and their side effects (Proposition 1), sound
   directions (signatures as sets of changes, the derived table, Theorem 1, Corollary 1). Pending: the user's holistic
   read of Sound Directions after round 4.
-- **§4-5 (the instance and evaluation):** drafted on 2026-11-02 against the *old* §3 and not yet realigned. They
-  still use the old vocabulary (requirements R1-R5, locating positions, margins, scanned kinds, "stated in elements").
+- **§4-5 (the instance and evaluation):** realigned with the new §3 on 2026-11-10 (sessions 28-29). §4 is about
+  1,540 words against ~1,000 (shortening deferred). §5 gets a structural rewrite as three findings (decision 10); its
+  plan is in `docs/paper-mock.md`, §5.
 - **§6 (related work):** drafted. **§1, §7, abstract, ethics, open science:** empty (the introduction comes last).
 - **Experiments:** complete at pilot scale for Tables 3-5 (exactness, hand vs derived vs learned directions,
   detectors). Nothing is invalidated by the framework rewrite. Evidence records: `docs/evidence/`.
@@ -112,6 +113,36 @@ them (below).
    section too); the cheap first step is the pilot's direction table with that operation, then retraining the
    detectors if the directions change. Do not re-propose it unless the user reopens it or a reviewer raises it.
 
+10. **§5 is restructured as three findings, not by §3's results and not as a defense paper (user, session 30,
+    2026-11-10).** The plan, one line per paragraph, and the checks before drafting are in `docs/paper-mock.md`, §5.
+    The lead and 5.1 (with a two-sentence correctness check; the side-effect table moves to Appendix D), then 5.2
+    *What Hand Analysis Misses* (the hand table, the hand detector attacked, the expert set), 5.3 *What Observed
+    Attacks Miss* (the learned region, PV, ERDALT, adversarial training, in a new audit table), 5.4 *What Robustness
+    Costs* (the monotone detectors as a measurement: about four points, attributable per operation; the threat
+    model's width; beyond the guarantee). Supersedes decision 4's working idea and the mock's "by §3's results".
+    *Why (the session's analysis):* (a) organized by results, §5 had become a validation section: §5.2 (640 words and
+    the side-effect table) checked our implementation, the coverage paragraph and §5.4's opening did too (together a
+    quarter to a third of the section, placed first), two titles claimed correctness, and the strongest security
+    findings (published defenses evaded, their holes computed before any attack) sat at the end of §5.4. The user:
+    "transactional and somewhat lifeless", and it reads as showing that the implementation is correct and the proven
+    ideas hold. (b) A defense-first organization was the intermediate proposal; the user objected that it turns the
+    paper into a standard defense paper, judged on clean accuracy and on breadth of baselines and threat model, where
+    we are weak: the user does not consider 93.5% to 89.6% at 1% FPR small (they would like about 1% or less), and
+    three defense baselines are too few for a state-of-the-art defense claim (they would want at least six). The
+    limitations (no code-level transformations, routing outside the population, pilot scale, one extractor) would
+    then read as holes in a defense. (c) The attack is not strong enough to be a task of its own: the adaptive
+    search evades the undefended detector about as often as the held-out toolkit attacks (51% against 53%), and
+    with no timing claim nothing shows Prop. 1 beats the same search with re-extraction; it is strong only when
+    aimed at what a defense trusts (PV: 68% against 18%), so it serves as the instrument of 5.2-5.3. (d) The
+    findings framing tests §2's own claim (knowledge from trial, hand analysis, or observed attacks falls short) and
+    fits the thesis: the computed knowledge is the contribution, the detectors one consequence. *Weaknesses kept in
+    view:* one extractor (claims say "on EMBER"; a second instance would strengthen 5.2-5.3 most, later, the user's
+    call), 5.2 leans on our own hand table (the expert set and check C3 counter the strawman risk), and 5.4 measures
+    one kind of robustness. *Sufficiency:* no new task is needed; three measurements on existing outputs and one
+    literature check (the mock's C1-C3) close the gaps a reviewer would hit. Reducing the detectors' cost toward 1%
+    is a separate research question about the detector (the per-operation costs point at the import hash buckets and
+    the header fields), not part of the rewrite.
+
 ## Next steps, in order
 
 1. **Rewrite `docs/paper-mock.md`** against the new §3 and the decisions above: contributions (no requirements, no
@@ -123,7 +154,9 @@ them (below).
 3. **Apply decision 7's two edits** (exact text in `docs/resume-prompt.md`), then `make` and `make check`.
    **§4, then §5, rewritten in blocks** with the user's review after each (the way Sound Directions round 4 worked;
    use the `paper-prose` skill). The mechanical vocabulary fixes go with them (R3/R4, "rate", "stated in elements",
-   §6's "margins").
+   §6's "margins"). *Done for §4 and §5's realignment (sessions 28-29).* **Now: §5's structural rewrite
+   (decision 10)** in four blocks, with checks C1-C3 of the paper mock before the blocks that need them; then §2's
+   closing sentence and contribution 4 against the findings; then shorten §4 and §5 together (§4.3 first).
 4. **The next full simulated review, once §4 and §5 are realigned and before the introduction** (decided 2026-11-09).
    Right before running it, update `docs/reviews/review-prompt.md`: it still targets the 2026-11-02 body draft and
    points to the archived formalization. The review should re-check the open and partly addressed risks of the

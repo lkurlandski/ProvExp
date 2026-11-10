@@ -25,10 +25,13 @@ knowledge comes from trial, from an analyst's reading of the extractor, or from 
 3. **Instantiation, on EMBER.** A template any instance follows (§4), filled in for EMBER 2024: 2,480 of 2,568
    features modeled and reproduced bit for bit, three repairs, a catalogue of twelve operations from the public
    toolkits, and every edit's predicted features checked against extracting them again (0 wrong).
-4. **What the computation buys.** The derived table corrects a careful hand analysis (eight errors, each witnessed by a
-   real edit) and is sound where constraints learned from attacks are not; monotone detectors on it are evaded by no
-   attack on files in the population, adaptive included, at 4-6 points of detection, where the learned defenses fall
-   to the adaptive search.
+4. **What the computation shows about adversarial examples (on EMBER; §5's three findings, decision 10).** Hand
+   analysis misses the side effects that come from how the parser locates structures (eight errors in a careful hand
+   table, each witnessed by a real edit; 11 lowerable features in a published expert set); defenses learned from
+   observed attacks inherit the attacks' blind spots (PV, ERDALT, learned constraints, adversarial training all fall
+   to a search aimed at what they trust); and with the directions known, robustness against the whole threat model
+   costs a measured four to six points of detection, attributable per operation, with no evasion on files in the
+   population. Not a state-of-the-art defense claim.
 
 ## Outline and word budget (body about 11,000 words while drafting; CCS format)
 
@@ -38,7 +41,7 @@ knowledge comes from trial, from an analyst's reading of the extractor, or from 
 | 2 Background and Motivation | as drafted, adjusted to the alignment option the user picks (below) | 950 |
 | 3 Measuring Edits Across Feature Mappings | as drafted (sum-then-readout extractors; edits and side effects; sound directions); finetuning only | 3,500 (now ~4,050) |
 | 4 Instantiating the Framework | the template, EMBER in it (below); bookkeeping in an appendix | 1,000 |
-| 5 Evaluation | organized by §3's results (below) | 3,200 |
+| 5 Evaluation | three findings: what hand analysis misses, what observed attacks miss, what robustness costs (below) | 3,200 |
 | 6 Related Work | as drafted; "margins" and old terms fixed | 1,000 (now ~1,470) |
 | 7 Discussion | what does not fit (global analyses, learned features), cost of instrumenting (no effort claims), other domains; limitation: code-level transformations are outside the threat models (decision 9) | 500 |
 | Appendix | symbols, types, proofs; the EMBER details §4 points to; other domains, one section each, if added | — |
@@ -74,22 +77,106 @@ the population); the bookkeeping goes to an appendix (user: "Most of this is eng
 - **Appendix, the EMBER instance.** The item kinds; a table mapping each row of Table 1 to EMBER's features; the two
   rewrites; the re-encodings; how the locating positions are recorded (single-byte flip check).
 
-## §5 Evaluation, by §3's results (3,200 words)
+## §5 Evaluation, three findings (3,200 words; restructured with the user 2026-11-10, session 30)
 
-| Subsection | Result | Table | Claims | Status |
-|---|---|---|---|---|
-| 5.1 Setup (300) | | | pilot scale, GBDT, 1% FPR, toolkit (seen / held-out) and adaptive attacks, every attacked file re-extracted | measured |
-| 5.2 Side effects (700) | Prop. 1 | 3 | the instrumentation and the operations' changes are correct (73,063 edits, 0 wrong), and the instance abstains exactly where a write lands on a position the parser reads; combined edits exact. Not "Proposition 1 holds", which is exact by construction (decision 3) | measured |
-| | | — | Prop. 1 used by an attack: the adaptive search scores 5,000 candidates per file without extraction, and evades the undefended model about as often as the best toolkit attack (25/49 vs GAMMA's 24/47, different training subsets; its real strength shows on the defended rows) | evasion measured; no timing (user, 2026-11-10: say the computation is smaller and can be faster, never measure or compare it) |
-| 5.3 Directions (900) | Thm. 1 | 4 | every disagreement with the hand table is a hand error, witnessed; the hand detector loses soundness where the derived one keeps it; constraints learned from attacks certify nothing or only themselves; coverage and closure of the write operations' signatures checked on the corpus (100- and 2,000-file tables identical; 0 of 60,934) | measured |
-| 5.4 Detectors (1,300) | Cor. 1 | 5 | 0% evasion on in-population files under every attack on the monotone rows, at 4-6 points of TPR; PV, ERDALT, adversarial training fall to the adaptive search (64-80%, 49%); the expert set is sound under additions but weak (29.1%) and has 11 holes under the full catalogue; what each operation costs (price list); the cost of deriving vs PV | measured, except the sums row's adaptive cell (greedy, not beam) |
+**Framing (PLAN.md, decision 10).** §5 is not organized by §3's results (that made it a validation section: the
+implementation is correct, the proofs hold) and not as a defense paper. It tests the claim §2 makes about where
+practitioners get their knowledge of what edits do: by trial (exact, but only for the edits tried), by an analyst's
+reading of the extractor (as complete as that reading), or from observed attacks (only what those attacks did). Each
+subsection is one finding about adversarial examples, stated with a number; the adaptive search and the monotone
+detectors are the instruments that confirm each finding on real files. Claims say "on EMBER", not "malware in
+general", until a second instance exists. The detectors' accuracy cost is reported as a measurement of what one kind
+of robustness costs, never as "small" or "cheap" (user: 4 points is not small; they would like about 1% or less).
+No state-of-the-art defense claim (three defense baselines; the user would want at least six for that).
 
-The section headings name the claim, not the method (today: "Side Effects Are Exact" becomes something like "The
-Instance Is Correct").
+**Plan, one line per paragraph.** Numbers are the pilot's, from the current draft; tables are named by content
+(check `manuscript/main.aux` for their compiled numbers).
+
+- **Lead (~120).** A practitioner learns what an attacker's edits do to the features by trial, by reading the
+  extractor, or from observed attacks (§2). We compute it instead; each subsection tests what the computation shows
+  about one of these sources, on EMBER.
+- **5.1 Setup (~400).**
+  1. Data, detectors, threshold, threat model, byte budget (as now).
+  2. The attacks: the toolkit (seen / held-out), and the adaptive search as the instrument that confirms on real files
+     what the directions flag (it scores candidates by Prop. 1 and aims section names at the buckets a detector trusts;
+     every kept file re-extracted). No timing (memory `no-timing-claims`).
+  3. Is our computation right? Two or three sentences: 0 wrong of the ~73,000 checked edits, it declines exactly the
+     writes onto positions the parser reads; the 100- and 2,000-file direction tables are identical and no edit moves
+     a feature in a direction the table excludes (decision 2's one sentence). **The side-effect table (today Table 3)
+     and its two paragraphs move to Appendix D** (user, 2026-11-10).
+- **5.2 What Hand Analysis Misses (~850).**
+  1. The finding: the side effects an analyst misses come from how the parser locates structures, not from the content
+     an edit writes. *If check C1 below succeeds:* open with how far one edit reaches (per operation, how many features
+     one edit moves and how many it does not target; Pierazzi et al.'s side-effect features), with the easy-to-miss
+     content effects (append lowers every section's size ratio, extends the last string).
+  2. The hand-written direction table against the derived one (today Table 4, kept): eight disagreements, each a hand
+     error witnessed by a real edit, from three parser facts (structures past the end, the Rich header's fixed search
+     range, the entry section's fallback rule).
+  3. What the error costs: the detector built on the hand table, attacked; one added section after the overlay lowers
+     its score on 10 of 29 files; the derived detector provably does not move.
+  4. A hand analysis that is not ours: the expert set (Gimenez et al.), 11 of its 40 features lowerable by renaming a
+     section or rewriting the DOS stub, evaded on 2 of 8. *If check C3 finds published hand classifications of EMBER's
+     features:* compare the derived table with them here (no runs).
+- **5.3 What Observed Attacks Miss (~950), with the new audit table.**
+  1. The finding: defenses learned from observed attacks inherit two errors: per-feature ranges contain evasions no
+     edit produces, and the attacks never take some directions edits can take; testing more attacks does not close
+     the gap. *If check C2 succeeds:* the direct number first (of the features edits can lower, the share any toolkit
+     attack lowered).
+  2. The learned region (exact tree solver): certifies none of 47 (or of PV's 22); certifies a defense on its own
+     attacks by construction.
+  3. PV: 44.4% of its gain on lowerable features (section-name buckets no toolkit attack lowered), plus a third on the
+     parser warnings; held-out toolkit 18% against the adaptive search's 68%; 64% with all eight attacks.
+  4. ERDALT: 89.7% of its learned layer's weight on lowerable features; adaptive 20 of 25 (held-out toolkit 23).
+  5. Adversarial training: holds where trained (import injection 22 to 11), adaptive 24 of 49, as the undefended 25.
+  6. **Audit table (new, assembly only; user chose option (b)):** one row per defense, grouped by how its trust was set
+     (by hand: the hand-table detector, the expert set; from attacks: PV with 4 and 8 attacks, ERDALT, adversarial
+     training). Columns: how its trust was set, what the derivation flags, held-out toolkit evasion, adaptive evasion.
+     Risk: the "flags" column mixes units (features, share of gain, share of weight); settle the wording when drafting.
+- **5.4 What Robustness Costs (~900), with the detector table (today Table 5) trimmed** to the undefended rows, the
+  monotone rows, and the additions block (the baselines move to the audit table).
+  1. The finding: with the directions known, robustness against every structural edit in the threat model costs about
+     four points of detection (93.5% to 89.6% at 1% FPR on the sums; 87.2% on the features), with 0% evasion on files
+     in the population; one clause that the adaptive search's largest score drop is exactly 0.
+  2. Where the cost lies, per operation: import addition 2.1 points, the three header overwrites 1.4, the rest at most
+     0.3; dropping the two-sided features costs 0.2; reading the sums recovers about two points.
+  3. The width of the threat model: additions only gives 92.2%, and the header-field attacks then evade on 28%; the
+     expert set under the same threat model detects 29.1%.
+  4. Beyond the guarantee's hypotheses: GAMMA's rebuilding injections move features outside the table and still evade
+     no monotone row on files in the population (0/56, 0/60; also at the literature's budget); 41 of 42 malware still
+     detected after every toolkit attack, against 21 of 47 undefended.
+  5. Scope: the population (38 of 50 pilot malware; 1.5% of untruncated benign files outside it, so leaving it stands
+     out); deriving the table costs one pass per extractor (about 5 minutes), PV repeats its attack runs per attack.
+
+**Checks before drafting 5.2 and 5.3** (new measurements on existing outputs, no new runs; state the hypothesis
+before each, report a failure as such):
+
+- **C1, side-effect breadth (for 5.2.1).** Do the correctness runs (runs 107 and 118, `catalogue_checks`) keep the
+  per-edit feature deltas? If so, count per operation the features one edit moves and those outside the operation's
+  target. Expect most operations to move features they do not target (size ratios, string counts, entropy). If the
+  deltas are not stored, estimate a re-run and ask the user; 5.2 works without it.
+- **C2, how much of the lowerable set observed attacks reach (for 5.3.1).** From the toolkit outputs already compared
+  with the derived table (`scripts/a1_toolkit_split.py`, runs 78 and 105): of the features the derived table marks
+  down or both, the share any toolkit output lowered, on files in the population. Expect a small minority (the PV
+  hole's section-name buckets are untouched).
+- **C3, published hand classifications of EMBER's features (for 5.2.4).** Check
+  `docs/evidence/literature-adversarial-malware.md` and `papers/` for work that labels EMBER features as modifiable or
+  not (possibly Rosenberg et al., 2020: verify before claiming; memory `portray-cited-work-accurately`). Compare with
+  the derived table only if the classification is published per feature or per group.
+
+**Drafting order (blocks, `paper-prose`, `make` and `make check` after each):** (1) lead and 5.1, and Table 3 with a
+short paragraph into Appendix D; (2) 5.2; (3) 5.3 with the audit table; (4) 5.4 with the trimmed detector table. Then
+§2's closing sentence ("uses them to attack malware detectors and to build robust ones") and contribution 4 above,
+re-read against the findings.
+
+**Known weaknesses of this framing (from the session-30 analysis):** findings about adversarial examples rest on one
+extractor (a second instance would strengthen 5.2 and 5.3 most; later, the user's call); 5.2's main evidence is our own
+hand table (strawman risk; the expert set and C3 counter it); 5.4 measures the cost of one kind of robustness
+(monotone over the derived directions), not robustness in general.
 
 ## §2 against §5: the four lines of work
 
-§2 says four lines of work each need part of the reachable set. What §5 shows for each today:
+§2 says four lines of work each need part of the reachable set. What §5 shows for each today (still accurate after
+the 2026-11-10 restructuring, which moves the baselines to 5.3 and the monotone rows to 5.4):
 
 | §2's line | What it needs | §5 shows it? |
 |---|---|---|
@@ -121,6 +208,8 @@ side; B(i) costs most and argues least.
 
 - **Measured (pilot):** Tables 3-5 complete; closure; coverage across corpus sizes; price list; PV and ERDALT holes;
   expert set's 11 holes; the hand detector's soundness loss.
+- **Missing, small (session 30):** checks C1-C3 above (two counts on existing outputs, one literature check); the
+  audit table and the trimmed detector table (assembly only).
 - **Missing, small:** the instances-at-a-glance
   table (assembly only); the sums row's adaptive cell (beam search cannot route to the sums detector yet; expected 0%).
 - **Missing, user's decision:** the scale-up (seeds 0-2, full splits, more malware; the adaptive budget at 2,000
