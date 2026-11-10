@@ -288,3 +288,17 @@ The "implied" notes are earlier readings, not instructions; several of them were
   the current section ... finish writing up this section, to bring it up to date with the rest of the manuscript. We can
   address my structural concerns after that ... I suspect we're going to have to rewrite this anyway." Implied: for
   now, realign §5's vocabulary and claims quickly; the structural rewrite comes after.
+- **2026-11-10 (session 31), §5 rewrite blocks 1-2** (lead, 5.1, 5.2 "What Hand Analysis Misses"). Lead "pretty good";
+  asked for refs to 5.1 and 5.4. Setup: "Don't state that the experiment is at 'pilot scale'. Just state the numbers";
+  cut "Every attacked file is written to disk..." ("it basically suggests that our code is correct ... its assumed that
+  we tested our code thoroughly"); attacks paragraph overlaps §4.3 ("especially awkward if or when we incorporate another
+  domain"); "weird, to state that the toolkit attacks come from Gimenez. Shouldn't we cite the original authors";
+  "I don't know what 'a population of 10 for 10 iterations' means"; the seen/held-out split needs cross-validation
+  ("Otherwise, its going to look like we're manipulating the experimental setup to our favor"); "The description of
+  the adaptive attack is very dramatic. Just state what it is and cut all this decorative fluff out"; the last
+  sentence (5,000 vs 100) "doesn't make sense. If its important, make it clearer"; par 3 is where to say files are
+  re-extracted and briefly why; "a little too much information. Simplify and streamline"; "73063 edits" never
+  explained. 5.2 par 1: "I'm completely lost by this first paragraph" (setup didn't prepare it, or it doesn't
+  introduce the subsection, or both). Rest of 5.2: "written pretty well at the sentence-by-sentence level" but "lack
+  of clear internal narrative and internal structure ... interleaves implemenation/experimentation details, results,
+  and analyses ... challenging to skim"; suggested subsubsections or boldface demarcation.
