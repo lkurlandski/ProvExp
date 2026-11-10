@@ -1,7 +1,7 @@
 % Appendix: the EMBER instance (PLAN.md, decision 8 (v); docs/paper-mock.md, Section 4). The bookkeeping that Section 4.2
 % summarizes: the item kinds, the readout forms with EMBER's features (from docs/evidence/code-audit-sound-directions.md,
 % "Readout rule per EMBER feature"), the two features written over sums, and the re-encodings. Mostly the accepted text
-% of the old Section 4.1 (session 27). To come: how the positions that locate items are recorded (block 3).
+% of the old Section 4.1 (session 27), and how the positions that locate items are recorded (block 3).
 
 This appendix gives the details of the instance that \Cref{sec:instances:record} summarizes.
 
@@ -50,3 +50,12 @@ normalized frequencies; the same counts taken only over the section bodies and t
 our threat model lands; and the hashed section-name buckets, whose entries EMBER adds with a sign, split into their
 positive and negative parts. Theorem~\ref{thm:fw:directions} gives their directions with no rule of their own, and the
 same check covers them.
+
+\paragraph{Positions that locate items.} For each kind, the record lists the positions the parser reads to find its
+items: header fields and table entries, and positions that concern a whole kind, such as the number of sections and
+the bounds of the range in which the extractor searches for the Rich header. Some are easy to miss. The overlay starts
+where the last section or data directory ends, so the extent of every section and directory locates it. Others lie
+past the end of the file, when the section table points to content that a truncated file no longer holds. We
+completed the record by changing single bytes and checking whether the parse changed where no recorded position was
+written. A first round found three parser rules the record had missed. After we recorded them, none of 58,666
+single-byte changes across the headers and the directory data changed the parse without writing a recorded position.

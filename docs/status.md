@@ -4,12 +4,15 @@ Kept short: the current state, what waits on the user, and the last few sessions
 its reasons are in `PLAN.md`. When the session log below grows past about ten entries, move the oldest to
 `docs/archive/` (the log before 2026-11-09 is `docs/archive/status-log-2026-10-to-2026-11-09.md`).
 
-## Current state (2026-11-09)
+## Current state (2026-11-10)
 
 - **Framework (§2-3):** rewritten; the user is reasonably satisfied. Open: the user's holistic read of Sound
   Directions after round 4 (finetuning only).
-- **§4-5:** §4 being rewritten in blocks; block 1 drafted, reviewed, and restructured (PLAN.md, decision 8 (v);
-  `docs/paper-mock.md`, §4). §5 after §4.
+- **§4:** drafted in the new structure (lead, 4.1-4.4, Appendix D "The EMBER Instance"); blocks 1-2 accepted, 3-4
+  "pretty good". About 1,540 words against ~1,000: shortening deferred (user), §4.3 first. `% VERIFY`: EMBER
+  2017/2018 had no parser warnings (Joyce et al. PDF not in `papers/`).
+- **§5:** still in the old vocabulary (locating positions, "stated in bytes/items", R3); overlaps §4.4 (closure, 94%)
+  and Appendix D (58,666 flips). Next to realign, in blocks.
 - **Experiments:** Tables 3-5 (side effects, directions, detectors) complete at pilot scale; open items are listed in PLAN.md, next step 5.
 - **Documentation:** reorganized 2026-11-09; index `docs/README.md`.
 
@@ -25,6 +28,11 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
   decision 8 (iv) and step 4).
 
 ## Session log
+
+- **2026-11-10 (session 28): §4 drafted in four blocks** (commits 556599e, baa1e48). Block 1 took three rounds on
+  §4.1 (PE format, then EMBER's features over it, not interleaved); lessons added to `paper-prose` (a08460c) and the
+  reaction log. §4.3 literature first with Demetrio TOPS, GAMMA, MAB-Malware, and Zainab et al. (preprint, user
+  approved); Table 2's column is now "Changes: declared / item tables". **Next:** see `docs/resume-prompt.md`.
 
 - **2026-11-09 (session 27): decision 7 applied; §4 block 1 drafted and the section restructured.** Table 1's monotone
   row and Definition 8's in-place-write example committed (690cc67; the presence example moved to Table 1's caption to
