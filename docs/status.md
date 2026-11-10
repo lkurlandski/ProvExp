@@ -8,7 +8,8 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
 
 - **Framework (§2-3):** rewritten; the user is reasonably satisfied. Open: the user's holistic read of Sound
   Directions after round 4 (finetuning only).
-- **§4-5:** drafted against the old §3; to be realigned in blocks (PLAN.md, next step 3), after applying decision 7's two §3 edits.
+- **§4-5:** §4 being rewritten in blocks; block 1 drafted, reviewed, and restructured (PLAN.md, decision 8 (v);
+  `docs/paper-mock.md`, §4). §5 after §4.
 - **Experiments:** Tables 3-5 (side effects, directions, detectors) complete at pilot scale; open items are listed in PLAN.md, next step 5.
 - **Documentation:** reorganized 2026-11-09; index `docs/README.md`.
 
@@ -25,6 +26,16 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
 
 ## Session log
 
+- **2026-11-09 (session 27): decision 7 applied; §4 block 1 drafted and the section restructured.** Table 1's monotone
+  row and Definition 8's in-place-write example committed (690cc67; the presence example moved to Table 1's caption to
+  avoid an overfull table). §4 outline revised with the user (PLAN.md, decision 8): no "repairs" part and no mention of
+  the import bug; (a) and (b) merged into a qualitative "how strictly EMBER fits"; the threat model literature first;
+  the 4 MB truncation kept for now, brainstorm scheduled around the next review. Block 1 (lead, EMBER, Items/Sums/
+  Readouts) drafted; the user liked §4.1's content and style but found it bookkeeping-heavy, the lead verbose and its
+  checks misplaced, and the EMBER paragraph too thin and in need of its own subsection. New structure (decision 8 (v)):
+  lead, 4.1 EMBER and PE files, 4.2 EMBER as a sum-then-readout extractor, 4.3 threat model, 4.4 population, details in
+  an appendix. Section retitled "Instantiating the Framework". **Next:** redraft block 1 in the new structure
+  (`docs/resume-prompt.md`).
 - **2026-11-09 (session 26): the two §3 edits decided, numbering fixed.** The user chose option A for Table 1's
   presence row and the in-place-write example (with the clause) for Definition 8 (PLAN.md, decision 7); not yet
   applied (`docs/resume-prompt.md`, step 1, has the exact text). The session was derailed by a stale "Definition 7"

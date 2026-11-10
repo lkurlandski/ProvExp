@@ -258,3 +258,12 @@ The "implied" notes are earlier readings, not instructions; several of them were
   sentences (lead sentences 2 and 4, Def 7 sentence 1); "Definition 8, sentence 1 is a good example of a long sentence
   that isn't confusing. It has enough structure and transitioning language to cover several concepts nested under a
   single idea." Six sentences split (commit 528fdbb).
+- **2026-11-09, §4 block 1** (opening, EMBER paragraph, §4.1 Items, Sums, and Readouts; ~720 words). Opening: "quite
+  verbose", the four parts "more succinctly"; the checks: "misguided. The fact that we tested our code and it works
+  doesn't deserve this much of a spotlight ... one or two sentences, maximum, mentioned in a sensible location (not in
+  the section lead)." EMBER paragraph: "needs to be a little more detailed ... the first time that we're mentioning PE
+  files or malware ... maybe 30% more"; "needs its own subsection. Otherwise, its just a hanging paragraph,
+  documenting some of the most important information in the entire paper." §4.1: "quite good ... no complaints about
+  its contents or writing style", but "concerned about the bulk and volume ... Most of this is engineering and
+  book-keeping material ... Its boring and takes up nearly an entire column (about 5% of a manuscript)"; asks to
+  reassess the emphasis per part and appendix helpers.

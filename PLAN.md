@@ -90,6 +90,11 @@ them (below).
    functionality-preserving, non-code-rewriting edits among them, exclusions named. (iv) The population stays as is
    for now; the user finds the 4 MB truncation ugly (most of the 318 non-plain files of 2,000 are truncated; on
    untruncated files 94.4% are plain). A brainstorm on a cleaner resolution is scheduled around step 4.
+   (v) *After block 1 (session 27):* §4 restructured to about 1,000 words: a short lead (no checks), 4.1 EMBER and PE
+   files (own subsection), 4.2 EMBER as a sum-then-readout extractor ((a) and (b) merged), 4.3 threat model (the
+   weight), 4.4 population, the bookkeeping in a new appendix; no "instances at a glance" table for one instance.
+   *Why:* the user found the block-1 bookkeeping good but "boring" and too bulky (about 5% of the paper) for what it
+   contributes. Detail: `docs/paper-mock.md`, §4.
 
 ## Next steps, in order
 

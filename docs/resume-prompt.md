@@ -1,66 +1,63 @@
-# Resume: apply the two §3 edits the user chose, then §4
+# Resume: §4 Instantiating the Framework, block by block in the new structure
 
-Read `docs/status.md` and `PLAN.md` (especially "Decisions of 2026-11-09", decisions 1, 2, and 7). Open other
-documents only as the task needs them (index: `docs/README.md`).
+Read `docs/status.md` and `PLAN.md` (especially decision 8, (i)-(v)). Then `docs/paper-mock.md`, §4 (the agreed
+structure and budgets) and `docs/instances-note.md` (what each part must say). Open other documents only as the task
+needs them (index: `docs/README.md`). Use the `paper-prose` skill; read the user's reaction to block 1 at the end of
+`docs/writing-spec.md` before writing.
 
-**Numbers.** Every section, definition, and table number below is the compiled one (`docs/README.md` has the full
-table). Before naming any number to the user, check `manuscript/main.aux`, and always give the title or label
-alongside it ("Definition 8, Changes and signatures"). Two earlier sessions were derailed by stale numbers and by
-describing an edit with a figurative word ("widen") instead of the exact text; the user called this unacceptable.
+**Numbers.** Check `manuscript/main.aux` before naming any section, definition, or table number, and give its title
+alongside ("Table 1, Direction rules of the readout forms"). Show concrete old/new text, never a figurative name for
+an edit.
 
-## Step 1: apply decision 7 (both choices made; do not ask again)
+## How we work (as in Sound Directions round 4, which the user found very effective)
 
-Line numbers are approximate; match the text. After both edits: `make` and `make check` in `manuscript/`. Then show
-the user the diff.
+One block of a few paragraphs at a time, written into `manuscript/_e_instances.tex`, then `make` and `make check`,
+then shown to the user as rendered text (pdftotext) with what changed. Apply the user's comments before the next
+block, and log their reactions raw in `docs/writing-spec.md`. Commit after each accepted block. The body is about
+1,000 words (may run 50-75% over while drafting); report the length honestly.
 
-**(a) Table 1, readout rules (`tab:fw:readouts`, §3.3): option A.** The table keeps its rows and columns; only the
-first two cells of the presence row change, and three sentences elsewhere get matching wording.
+## State of `_e_instances.tex`
 
-1. The table row, `_d_framework.tex` ~382:
-   - old: `presence & $[s_k > 0]$ & $d_k$ \\`
-   - new: `monotone & $g(s_k)$, $g$ nondecreasing, e.g.\ $[s_k > 0]$ & $d_k$ \\`
-   (If the cell is too wide, put the example in the caption or the paragraph below; check `make check` for overfull
-   boxes.)
-2. The list of readout forms in §3.1, `_d_framework.tex` ~171:
-   - old: "and a presence bit, which is 1 when a count is positive."
-   - new (draft): "and a nondecreasing function of one sum, such as a presence bit, which is 1 when a count is
-     positive."
-3. The paragraph after the table, `_d_framework.tex` ~395:
-   - old: "The identity, a presence bit, and a distinct count, which is a total of presence bits, move with the sums
-     they read."
-   - new (draft): "The identity, a nondecreasing function of one sum such as a presence bit, and a distinct count,
-     which is a total of presence bits, move with the sums they read."
-4. The proof, `_j_proofs.tex` ~99 (Appendix C, paragraph "The readout rules"):
-   - old: "A presence bit $[s_k > 0]$ is a nondecreasing function of $s_k$, so it rises only if $s_k$ rises and falls
-     only if $s_k$ falls, and its change has a sign in $d_k$."
-   - new (draft): "A nondecreasing function $g(s_k)$, such as a presence bit $[s_k > 0]$, rises only if $s_k$ rises
-     and falls only if $s_k$ falls, so its change has a sign in $d_k$."
+Block 1 of the old structure is in place (lead, the EMBER paragraph, §4.1 Items, Sums, and Readouts, the paragraph
+on reading the sums). The user's verdict: §4.1's content and style are "quite good", but it is bookkeeping and too
+bulky for the body; the lead is verbose and must not spotlight checks; the EMBER paragraph needs ~30% more and its own
+subsection. Below it: the old locating-positions paragraph and the old repairs, commented out (material for 4.3 and
+the appendix), then the old catalogue subsection and Table 2 (still rendered; §5 cites the table).
 
-Why (for answering questions, not to re-ask): three EMBER readouts are not literally in Table 1 but are nondecreasing
-functions of one sum, and the code gives them $d_k$: a max/min pool with a floor of 0 (max/min section entropy), one
-item's value with a default of 0 (`has_relocs` and similar), and a presence bit scaled by 128 (exports present).
+## Block 1 (redraft): the lead, 4.1 EMBER and PE files, 4.2's first paragraph
 
-**(b) Definition 8, Changes and signatures (`def:fw:signature`, §3.3): the second paragraph after it**,
-`_d_framework.tex` ~346-348, just before Definition 9 (Directions of sums):
-- old: "One defined by the positions it writes, such as appending any content, gets them from the item tables of the
-  inputs in $Z$."
-- new: "One defined by the positions it writes, such as overwriting a range of positions with any content, gets them
-  from the item tables of the inputs in $Z$, which record the items each position belongs to."
+1. **Lead (~50 words):** the four parts an instance supplies, in one or two sentences, in §3's terms; another domain
+   supplies the same four. No checks, no tour of the subsections.
+2. **4.1 EMBER and PE files (~170), its own subsection.** The paper's first mention of PE files and malware detection.
+   What a PE file is (headers, section table, sections, import table, the overlay after the last section); EMBER
+   (`anderson2018ember`, `joyce2025ember`) as the standard benchmark for static malware detection, its feature groups;
+   instrumented without changing what it computes (each feature group gains a method returning its items from the
+   same parse). Check §2 (`_c_background.tex`) for what it already says, so as not to repeat it.
+3. **4.2 EMBER as a sum-then-readout extractor, paragraph 1 (~150):** the gist of the accepted §4.1 text: two
+   families of items (scanned, parsed), additive sums with one per hashed bucket, a few pools, and every row of Table 1
+   occurs (details in the appendix). End with the one-sentence bit-exact check (2,000 files, 2,480 features), the
+   only place the code check appears in §4.
+4. **Appendix stub, "The EMBER instance"** (new file after the proofs appendix, `\input` in `main.tex`): move the
+   accepted §4.1 sentences there nearly as they are (the user liked them): the kinds, the readout forms with EMBER's
+   examples (a small table, Table 1 row -> EMBER features, from `docs/evidence/code-audit-sound-directions.md`,
+   "Readout rule per EMBER feature"), the two rewrites, and the re-encodings over sums. Keep the label
+   `sec:instances:sums` resolving (§5 cites it) or update §5's reference.
 
-Why: the code collects changes from item tables only for the seven in-place writes; append is declared by hand, like
-the other structural operations, and checked by re-extraction (audit finding 6,
-`docs/evidence/code-audit-sound-directions.md`).
+## Then, one block each
 
-Commit the two edits once the user has seen them.
+- **Block 2, 4.2 paragraph 2:** how strictly EMBER fits and what to do with features that do not (rewritable without
+  changing a value; no items at all: the 88 parser warnings, drop them or keep them as both, which coincide for a
+  monotone detector; absent from EMBER 2017/2018, verify in Joyce et al.; dropping them costs nothing, run 126: +0.1
+  points TPR at 1% FPR). Never mention the import-overwrite bug. One sentence on the re-encodings if not placed in 4.2.
+- **Block 3, 4.3 Threat model, literature first.** Before drafting: a literature pass listing the edits each PE
+  problem-space attack uses (local PDFs: Demetrio et al. 2021, Lucas et al. 2023, Rosenberg et al. 2020, Labaca-Castro
+  et al., Gimenez et al. 2025; not local: gym-malware (Anderson et al. 2018), MAB-Malware (Song et al. 2022), Kreuk et
+  al. 2018, Suciu et al. 2019 — ask the user to add them to `papers/` or use the web). Show the user the edits-by-work
+  table before the prose. Then audit findings 4-6 (`docs/evidence/code-audit-sound-directions.md`): corpus-collected
+  vocabulary and write signatures (checked, not proven; one sentence), writes onto locating positions (Proposition 1
+  declines; directions allow any change unless declared: rename, remove debug, remove signature), append declared.
+- **Block 4, 4.4 Population:** plain layouts, membership at inference, routing, closure (0 of 60,934); the 4 MB
+  truncation as is (decision 8 (iv)).
 
-## Step 2: §4 Instances, then §5 Evaluation (PLAN.md, next step 3)
-
-Rewrite in blocks with the user's review after each, using the `paper-prose` skill. §4 follows the template of
-decision 1. Read the audit record's findings 3-6 first. From the audit, §4 must also say:
-- **Corpus-collected vocabulary.** Theorem 1's corpus-checked hypothesis (decision 2) covers the kinds' term
-  vocabulary as well as the write signatures: which entries a kind can touch and which counts every item of a kind
-  carries among them (finding 4).
-- **Writes onto locating positions.** In the directions, a write onto a position the parser reads to locate items
-  allows any change of that kind's items, unless the catalogue declares the change (rename, remove debug, remove
-  signature). Proposition 1 declines to predict such a write (finding 5).
-- **Declared operations.** Append is among the declared operations (finding 6).
+After §4: §5 Evaluation in blocks (PLAN.md, next step 3), then the next full simulated review with the truncation
+brainstorm just before or after it (PLAN.md, step 4).

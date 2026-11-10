@@ -37,35 +37,41 @@ knowledge comes from trial, from an analyst's reading of the extractor, or from 
 | 1 Introduction | last | 1,000 |
 | 2 Background and Motivation | as drafted, adjusted to the alignment option the user picks (below) | 950 |
 | 3 Measuring Edits Across Feature Mappings | as drafted (sum-then-readout extractors; edits and side effects; sound directions); finetuning only | 3,500 (now ~4,050) |
-| 4 Instantiating the Framework | the template, EMBER in it (below) | 1,250 |
+| 4 Instantiating the Framework | the template, EMBER in it (below); bookkeeping in an appendix | 1,000 |
 | 5 Evaluation | organized by §3's results (below) | 3,200 |
 | 6 Related Work | as drafted; "margins" and old terms fixed | 1,000 (now ~1,470) |
 | 7 Discussion | what does not fit (global analyses, learned features), cost of instrumenting (no effort claims), other domains | 500 |
 | Appendix | symbols, types, proofs; the EMBER details §4 points to; other domains, one section each, if added | — |
 
-## §4 Instantiating the Framework (1,250 words)
+## §4 Instantiating the Framework (about 1,000 words; restructured with the user 2026-11-09, session 27)
 
-- **Opening, format-free (150).** What an instance supplies to §3: the item map, contributions, and readouts; a
-  threat model whose operations have signatures; a population with a membership check. Then the four parts, each
-  stated in §3's terms before EMBER fills it in. EMBER is one paragraph of introduction here.
-- **(a) Items, sums, readouts (300).** EMBER's kinds, its three monoids, its readout forms (which rows of Table 1
-  occur); the check that the readouts reproduce the extractor bit for bit (2,000 files, 2,480 features; the 88 parser
-  warnings are the features outside the class). The re-encodings over sums (raw counts, signed buckets split, ...)
-  as identity readouts a detector may read instead of the features (shortened from today's §4.3).
-- **(b) Outside the class, and repairs (250).** Contributions that are not self-contained: section size over file
-  size and the library set (value-preserving repairs), the duplicate-descriptor import overwrite (patched as a pure
-  addition; every row runs on the patch).
-- **(c) Threat model and signatures (350, with Table 2, the catalogue).** Twelve operations, three nested threat
-  models. Operations stated in items declare their changes. Operations stated as writes get theirs from the instance's
-  record of the positions the parser reads to find each kind of item; the instance declines to predict a write that
-  lands on one. Their signatures are collected from the corpus's item tables, so Theorem 1's coverage hypothesis is
-  checked on the corpus, not proven: one sentence here, the check in §5.2 (decision 2). Edits written by our own
-  byte-level code.
-- **(d) Population and membership (200).** Plain layouts (1,674 of 2,000 files); the detector checks membership at
-  inference and routes other files to an unconstrained model. Closure is checked (0 of 60,934 edits leave it).
-- **Instances at a glance (table, 0 words of prose; a new table after the catalogue, which shifts every later table's number by one).** One row per instance (EMBER
-  now; other domains add rows). Columns: features, modeled, kinds, monoids, readout forms, repairs (value-preserving
-  / patched), operations (in items / as writes), population share, bit-exact check.
+The body keeps what a reviewer judges (how strictly EMBER fits the class, the threat model against the literature,
+the population); the bookkeeping goes to an appendix (user: "Most of this is engineering and book-keeping material
+... Its boring"). No "instances at a glance" table until a second domain exists.
+
+- **Lead (~50).** The four parts an instance supplies (items, contributions, readouts; the features that do not fit;
+  a threat model with its signature; the population), in one or two sentences. No checks in the lead.
+- **4.1 EMBER and PE files (~170), its own subsection.** The paper's first mention of PE files and malware detection:
+  what a PE file is (headers, section table, sections, import table, overlay), why EMBER (the standard benchmark for
+  static malware detection; 2024 version), its feature groups, instrumented without changing what it computes.
+- **4.2 EMBER as a sum-then-readout extractor (~300), parts (a) and (b) merged.** Paragraph 1: the gist of the
+  accepted block-1 text (two families of items, the sums, every row of Table 1 occurs), closed by the one-sentence
+  bit-exact check. Paragraph 2, qualitative: how strictly EMBER fits and what to do with features that do not:
+  rewritable without changing a value (section size over file size, the library set), or with no items at all (the
+  88 parser warnings: drop them or keep them as both; a monotone detector cannot read "both", so they coincide;
+  absent from EMBER 2017/2018, VERIFY; dropping them costs nothing, run 126). The import-overwrite bug is not
+  mentioned. One sentence on the re-encodings over sums (here or where §5 introduces the sums detector).
+- **4.3 Threat model (~400, with the catalogue table).** Literature first: the edits the PE problem-space attacks use
+  (a literature pass before drafting), our catalogue as the functionality-preserving edits that do not rewrite code,
+  exclusions named (code rewriting, packing). Declared changes (operations stated in items, and append) checked by
+  re-extraction; in-place writes collected from item tables. Writes onto locating positions: Proposition 1 declines;
+  the directions allow any change of that kind unless declared (rename, remove debug, remove signature). Corpus-
+  collected, so checked rather than proven (decision 2): the writes' changes and the kinds' vocabulary; one sentence,
+  the check in §5.
+- **4.4 Population (~150).** Plain layouts, membership checked at inference, routing, closure (0 of 60,934). The 4 MB
+  truncation stays for now (PLAN.md decision 8 (iv)).
+- **Appendix, the EMBER instance.** The item kinds; a table mapping each row of Table 1 to EMBER's features; the two
+  rewrites; the re-encodings; how the locating positions are recorded (single-byte flip check).
 
 ## §5 Evaluation, by §3's results (3,200 words)
 
