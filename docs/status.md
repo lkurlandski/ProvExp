@@ -13,7 +13,8 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
 - **§5:** realigned with §3-4 in vocabulary and claims (session 29). Structural rewrite agreed in session 30 (PLAN.md,
   decision 10): three findings (what hand analysis misses, what observed attacks miss, what robustness costs), not a
   validation section and not a defense paper. Plan, one line per paragraph, and checks C1-C3: `docs/paper-mock.md`,
-  §5. Blocks 1-2 (lead, 5.1, 5.2) drafted and revised after the user's review (0069f56); blocks 3-4 (5.3, 5.4) to do.
+  §5. Blocks 1-2 (lead, 5.1, 5.2) drafted and revised after the user's review (0069f56); the user's second
+  round of feedback on 5.1-5.2 comes 2026-11-11. Blocks 3-4 (5.3, 5.4) to do.
   The held-out cells of 5.3 are `\synthetic` until run 131 is read.
 - **Experiments:** Tables 3-5 (side effects, directions, detectors) complete at pilot scale; open items are listed in
   PLAN.md, next step 5. **Running (user, started 2026-11-10, ~7 h on GPU 3):** run 131, leave-one-out PV and ERDALT.
@@ -21,6 +22,7 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
 
 ## Waiting on the user
 
+- **Feedback on §5.1-5.2** (revised version, commit 0069f56), promised for 2026-11-11.
 - **Run 131's results** (running since 2026-11-10: `CUDA_VISIBLE_DEVICES=3 NUM_WORKERS=16`). Its summary replaces
   the `\synthetic` held-out cells of §5.3; check C2 and block 3 can start before it finishes.
 - The holistic read of Sound Directions (any time).
@@ -44,12 +46,17 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
   directories), and ERDALT trains on one or two GPUs, whichever are visible. Started by the user on GPU 3 (~7 h).
   **Next:** `docs/resume-prompt.md` (read run 131; C2; block 3).
 
-- **2026-11-10 (session 31): §5 block 1 drafted; checks C1 and C3 done.** Lead and 5.1 rewritten as three findings
-  (the correctness check is one paragraph in 5.1); the side-effect table and a short paragraph moved to Appendix D
-  (tables renumber: directions 3, detectors 4, side effects 8). C1 held (median 263 features per edit, 4-8 groups);
-  C3 found Severi et al.'s hand classification (all hashed features "extremely difficult" to manipulate; the derived
-  table moves 1,490 of 1,650 under additions). Results in `docs/paper-mock.md`, §5. **Next:** the user's review of
-  block 1, then C2 and block 2 (5.2).
+- **2026-11-10 (session 31): §5 blocks 1-2 drafted, reviewed, revised; extension strategy and leave-one-out
+  agreed.** Block 1 (lead, 5.1; the side-effect table to Appendix D, tables renumber: directions 3, detectors 4, side
+  effects 8) and block 2 (5.2 *What Hand Analysis Misses*). Checks: C1 held (median 263 features per edit, 4-8 groups);
+  C3 found Severi et al. (all hashed features "extremely difficult" to manipulate; the derived table moves 1,490 of
+  1,650 under additions; EMBER 1.0's hashed groups still to verify). The user asked whether §5's structure suits other
+  domains: yes (findings follow §2's sources, each a measurement per instance); drafting rules recorded in the mock,
+  §5, "Extending §5 to other domains". The user's review of blocks 1-2 (reaction log): toolkit attacks moved into
+  §4.3 and cited to Demetrio et al.; no "pilot scale" or "written to disk" bookkeeping; one edit set (73,063) defined
+  in 5.1; 5.2 opens with its question and has run-in headings; the seen/held-out split replaced by leave-one-out
+  (the fixed split had held out the strongest attack on purpose), implemented by session 32 (run 131). Commits
+  b68edd1 to 0069f56. **Next:** the user's feedback on 5.1-5.2 (2026-11-11), then 5.3 from run 131.
 
 - **2026-11-10 (session 30): §5's structure agreed, no prose.** The user's concern: §5 is organized to show the
   implementation is correct and the proofs hold ("transactional and somewhat lifeless"). Assessment: right; about a

@@ -1,4 +1,4 @@
-# Resume: read the leave-one-out run, then §5 blocks 3-4 (5.3, 5.4)
+# Resume: the user's feedback on §5.1-5.2, the leave-one-out run, then §5 blocks 3-4 (5.3, 5.4)
 
 Read `docs/status.md` and `PLAN.md` (decision 10 above all, with its leave-one-out note; next step 3). The plan for §5,
 one line per paragraph, checks C1-C3, the drafting order, and the revisions after the user's review of blocks 1-2 are
@@ -11,6 +11,17 @@ the held-out cells are `\synthetic` (`% SYNTHETIC` comment in `manuscript/_f_eva
 detector table trimmed to the undefended, monotone, and additions rows).
 
 **Order of work.**
+0. **The user's feedback on 5.1-5.2 first** (they review the revised version, commit 0069f56). Follow memory
+   `review-comments-workflow`: answer their questions plainly first, then a numbered plan with one recommendation per
+   comment; apply after approval, `make` and `make check`, report per item. Log the reactions raw in
+   `docs/writing-spec.md`. What the first review asked for, so as not to regress (reaction log, 2026-11-10, session 31):
+   plain numbers instead of "pilot scale"; no "written to disk" or our-code-is-correct bookkeeping outside 5.1's one
+   sentence on re-extraction; attacks described plainly, no "instrument" staging; every count defined where it is
+   used; each subsection opens with its question, and its parts are marked with run-in headings (5.3 and 5.4 should
+   follow 5.2's pattern: setup sentences first in each part, analysis last). Keep the drafting rules for later domains
+   (mock, §5, "Extending §5 to other domains"): the claim in the framework's terms first, then EMBER's number; PE
+   mechanics in evidence sentences or Appendix D; tables that a second instance extends by rows. Open: verify that
+   EMBER 1.0's hashed groups (Severi et al.) match EMBER 2024's (`% VERIFY` in 5.2).
 1. **Run 131, if it has finished** (`run/131_loo_defenses.sh`, started by the user 2026-11-10 on GPU 3, ~7 h; if not,
    go on with step 2 and come back). Read `artifacts/experiments/a_loo/summary.json` (per-fold and mean held-out
    evasion for PV and ERDALT, files evaded in any fold) and `a_loo/erdalt-all8-adaptive/adaptive.json` (ERDALT-8's
