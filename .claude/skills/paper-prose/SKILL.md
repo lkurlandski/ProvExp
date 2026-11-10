@@ -48,7 +48,7 @@ Text the user accepted, in their own words. Write like these, not like a descrip
 - **§6** (`manuscript/_g_related_work.tex`): "quite good". Each cited work's role is visible in its own sentence. A
   line of work's mechanism comes before its members. Our contribution is stated with conviction.
 - **The user's own papers**, `papers/kurlandski2027dont.pdf` and `papers/kurlandski2022impact.pdf`, are their voice.
-  **Pierazzi et al.**, `papers/pierazzi2020intruiging.pdf`, Section II, is the model for formal sections in a
+  **Pierazzi et al.**, `papers/pierazzi2020intriguing.pdf`, Section II, is the model for formal sections in a
   textbook style. Carlini and Wagner and Arp et al. are also in `papers/`.
 
 The user's hand edits are the best evidence of their taste. When they edit a passage, read the diff before writing the

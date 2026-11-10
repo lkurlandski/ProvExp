@@ -1,7 +1,7 @@
 # Direction A: the expert-set row (Gimenez et al.'s 40 features), for the user to check (2026-10-27)
 
 Source: Gimenez, Sivaprasad & Fritz, "Certifiably robust malware detectors by design" (arXiv 2508.10038,
-`papers/gimenez2025-certifiably-robust.pdf`, Section 3 and Table 1). The paper describes the set in one paragraph and
+`papers/gimenez2025certifiably.pdf`, Section 3 and Table 1). The paper describes the set in one paragraph and
 does not list it; the list below is from their code, `static_features_extraction.py:get_features` in
 github.com/PFGimenez/certifiably-robust-malware-detectors-by-design (read 2026-10-27). Their monotone models
 constrain **all 40 features to be increasing** (`monotonic_cst=[1]*n`); the paper reports AUC 76.2% for the monotone
