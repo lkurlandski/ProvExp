@@ -83,6 +83,14 @@ They have also asked for less:
 No fixed shape decides this. "Definition, then gloss" is not a pattern to follow. Ask where a careful reader, arriving
 from the previous paragraph, would stop, and spend words there.
 
+Domain background is a case of the same judgement (§4.1, 2026-11-10, accepted as "excellent" after three rounds). The
+reader needed what PE structures are *for* (metadata that describes the rest of the file and lets the system load it),
+not their names ("the reader doesn't need to know that a particular structure called the DOS Header exists"). Merging
+two related topics into one paragraph worked when each kept its own run (the format, then the features over "these
+structures"), and failed when the sentences alternated between them ("bouncing back and forth ... extremely
+confusing"). A change of perspective needs its bridge: §4.2 first jumped "too quickly" into the framework's terms, and
+was accepted once it opened from the previous paragraph's own words ("metadata and statistics") and a familiar example.
+
 **A plain, literal, human register.** Say what is computed, with literal verbs and an author who is present. What
 grates on the user is staging: announced counts, colon reveals, metaphors for what our work does ("supplies the
 translation", "lifts", "opens the box"), anthropomorphic software ("honest tools"), passive distance, and advisory
@@ -90,7 +98,9 @@ closers. These habits are human in small doses. What fails is their frequency, a
 The user's own edits go toward shorter and plainer, not toward more polish. Sentence length follows the same judgement
 (2026-11-09, Sound Directions round 4): a long sentence is welcome now and then, when its structure and transitions
 hold several ideas under one (Def 8's first sentence, which the user praised); about half a dozen sentences that
-chained clauses with "and ... so ... and" made the ideas harder than necessary.
+chained clauses with "and ... so ... and" made the ideas harder than necessary. Repetition of one sentence shape is
+noticed too: a block with a colon-list in every other sentence read as "a little repetitive" (§4, 2026-11-10). A
+check stated plainly ("Our tests confirm that ...") was preferred to one staged with its numbers ("On 2,000 files, ...").
 
 **Every passage is there for the reader of the paper.** Text written to settle a point raised in the chat, to defend a
 decision, or to head off an imagined reviewer reads as "paragraphs that don't mean anything". This is not a ban on
