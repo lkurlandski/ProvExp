@@ -39,6 +39,22 @@
 #   checked on run 128's model (4 files). (0) step 0 on 2 training malware: 8 attack runs in 43 s at 8 workers, all
 #   valid; seed 0 draws the same 400 malware as run 122 (checked); training reads both directories (348 pilot + 1,197
 #   + 8 vectors). The GPU choice: no setting -> GPUs 0 and 1; CUDA_VISIBLE_DEVICES=3 or GPUS=3 -> one lane on GPU 3.
+#
+# Ran 2026-11-10/11 (user, one lane on GPU 3, 16 workers): step 0 1,600 attack runs in 1.5 h (gamma_api 399/400,
+# dos_extend 400, header_fields 400, format_exploit 387 valid); step 1 ~50 min for the eight PV folds; step 2 nine
+# ERDALT models in 3.2 h on one GPU (~21 min each); the first step 3 crashed on a model-path bug (training wrote
+# seed-0-loo-*, evaluation read seed-0-s10-loo-*; folders renamed, script fixed); rerun 2026-11-11: the eight folds
+# ~55 min, the beam 24 min.
+# Result (artifacts/experiments/a_loo/summary.json), held-out attack evading the fold's model:
+#   PV: gamma_api 5/21, the other seven 0 (mean 3%; 5 files evaded in any fold). Claude's expectation held; the user's
+#     hypothesis (well above 0) failed.
+#   ERDALT: gamma_api 21/24 (no epoch met the criterion; epoch 181 kept), header_fields 10/25, gamma_shift 5/25,
+#     content_shift 1/28, format_exploit 1/23, gamma_sections 0/24, dos_extend 0/25, padding 0/25 (mean 19%; 26 files
+#     in any fold). Expected high on gamma_api and header_fields, near 0 elsewhere: held, except gamma_shift.
+#   ERDALT-8 (criterion met at epoch 287; test AUC 0.871): the beam evades 17 of 24 (15 at 200, 17 at 1,000, 17 at
+#     5,000; all confirmed on re-extraction). Expected about run 128's 20/25: held.
+#   Caveat found in session 34 (docs/section-5.3-design.md, §3): every model here learns from vectors made with the
+#   RNG reset to seed 0 before each run, and PV's and ERDALT's include the pilot (test) malware's vectors.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 source env/bin/activate

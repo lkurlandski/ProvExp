@@ -25,6 +25,7 @@ Usage (smoke on two malware, one attack):
 from __future__ import annotations
 
 from argparse import ArgumentParser
+import hashlib
 import json
 from multiprocessing import get_context
 from pathlib import Path
@@ -58,7 +59,7 @@ ROOT = Path(__file__).resolve().parent.parent
 # so Table 7's "seen" column is a true seen-attack test and the other four attacks are a held-out generalization test.
 SEEN = ("padding", "gamma_sections", "gamma_shift", "content_shift")
 
-__all__ = ["load_training", "main"]
+__all__ = ["file_seed", "load_training", "main"]
 
 
 ################################################################################
@@ -100,12 +101,20 @@ def load_training(features: Path, db_dir: Path, num_malware: int, num_goodware: 
 _W: dict[str, Any] = {}
 
 
-def _init_worker(model: Path, section_pop: list[Any], api_calls: list[Any], seed: int, iterations: int = 10) -> None:
+def file_seed(seed: int, attack: str, name: str) -> int:
+    """A seed per (attack, file), stable across runs and workers: the base seed plus a hash of both names."""
+    h = hashlib.sha256(f"{attack}:{name}".encode()).digest()
+    return (seed + int.from_bytes(h[:4], "little")) % 2**32
+
+
+def _init_worker(model: Path, section_pop: list[Any], api_calls: list[Any], seed: int, iterations: int = 10,
+                 seed_per_file: bool = False) -> None:
     """Build the per-worker extractor, detector wrapper, and attack donor pools once."""
     lief.logging.disable()
     extractor = merge_import_descriptors(PEFeatureExtractor())  # quirk-fixed, matches artifacts/features/ember2024
     _W.update(extractor=extractor, wrapper=make_wrapper(model, extractor), section_pop=section_pop,
-              api_calls=api_calls, seed=seed, iterations=iterations, tmp=tempfile.mkdtemp(prefix="a_advtrain_w_"))
+              api_calls=api_calls, seed=seed, iterations=iterations, tmp=tempfile.mkdtemp(prefix="a_advtrain_w_"),
+              seed_per_file=seed_per_file)
 
 
 def _work(task: tuple[str, str, bytes]) -> dict[str, Any]:
@@ -117,7 +126,10 @@ def _work(task: tuple[str, str, bytes]) -> dict[str, Any]:
                            "p_clean": float("nan"), "p_adv": float("nan"), "bytes_added": 0, "phi": None}
     try:
         problem = build_attack(atk, wrapper, _W["section_pop"], _W["api_calls"], iterations=_W["iterations"])
-        adv_bytes, p_clean, p_adv = run_attack(problem, wrapper, data, out_path, seed=_W["seed"])
+        # NOTE: by default every run is reseeded with the same seed, as Gimenez et al. do, so GAMMA's random section
+        # names are the same on every file; --seed_per_file draws them anew per (attack, file).
+        seed = file_seed(_W["seed"], atk, name) if _W["seed_per_file"] else _W["seed"]
+        adv_bytes, p_clean, p_adv = run_attack(problem, wrapper, data, out_path, seed=seed)
         phi1 = extractor.feature_vector(adv_bytes)
         row.update(ok=True, evaded=bool(p_adv < 0.5), p_clean=p_clean, p_adv=p_adv,
                    bytes_added=len(adv_bytes) - len(data), phi=phi1.astype(np.float32).tolist())
@@ -154,6 +166,8 @@ def main() -> None:
     parser.add_argument("--num_goodware", type=int, default=50, help="Training goodware donors for the attacks.")
     parser.add_argument("--num_workers", type=int, default=16, help="Processes over (attack, file) tasks.")
     parser.add_argument("--seed", type=int, default=0)
+    parser.add_argument("--seed_per_file", action="store_true",
+                        help="Reseed each attack run with its own seed (file_seed) instead of --seed for every run.")
     parser.add_argument("--stall_timeout", type=float, default=2700.0,
                         help="Seconds with no finished task before the unfinished ones count as lost (a dead worker).")
     args = parser.parse_args()
@@ -176,7 +190,7 @@ def main() -> None:
         t0 = time.time()
         ctx = get_context("spawn")
         with ctx.Pool(args.num_workers, initializer=_init_worker,
-                      initargs=(args.model, section_pop, api_calls, args.seed, iterations)) as pool:
+                      initargs=(args.model, section_pop, api_calls, args.seed, iterations, args.seed_per_file)) as pool:
             results = map_watchdog(pool, _work, tasks, lost=_lost, stall_timeout=args.stall_timeout)
         print(f"{len(tasks)} attack runs in {time.time() - t0:.0f}s on {args.num_workers} workers.", flush=True)
 
@@ -198,7 +212,7 @@ def main() -> None:
                   for atk in args.attacks}
     report = {"num_malware": len(malware), "num_goodware": len(goodware), "attacks": list(args.attacks),
               "budget": args.budget,
-              "seed": args.seed, "model": args.model.resolve().as_posix(), "features": args.features.resolve().as_posix(),
+              "seed": args.seed, "seed_per_file": args.seed_per_file, "model": args.model.resolve().as_posix(), "features": args.features.resolve().as_posix(),
               "total_valid": int(phis.shape[0]), "total_attempted": len(results), "per_attack": per_attack}
     (args.outdir / "report.json").write_text(json.dumps(report, indent=2))
     for atk, d in per_attack.items():

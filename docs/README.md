@@ -25,6 +25,7 @@ check `manuscript/main.aux` (`grep newlabel manuscript/main.aux`), and add the t
 | `docs/status.md` | current state, what waits on the user, short session log | every session; update at the end |
 | `docs/resume-prompt.md` | where the next session starts | starting a session |
 | `docs/instances-note.md` | §4 working note: what an instance supplies, the agreed structure (archive once §4 is accepted) | drafting §4 |
+| `docs/section-5.3-design.md` | §5.3 working design: what it must show, where draft, mock and code disagree, strengths, weaknesses, options, phases, open questions (iterated with the user; archive once §5.3 is written) | planning, running, or drafting §5.3 |
 | `docs/checkpoint-prompt.md` | the user's prompt for ending a session | the user ends a session |
 | `docs/paper-mock.md` | the paper's contributions, outline with word budgets, and tables | planning or writing any section; checking whether new work belongs in the paper |
 | `docs/writing-spec.md` | the user's raw reactions to drafts, newest first | writing paper prose (with the `paper-prose` skill) |

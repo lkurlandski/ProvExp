@@ -15,16 +15,18 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
   validation section and not a defense paper. Plan, one line per paragraph, and checks C1-C3: `docs/paper-mock.md`,
   §5. Blocks 1-2 (lead, 5.1, 5.2) drafted and revised after the user's review (0069f56); the user's second
   round of feedback on 5.1-5.2 comes 2026-11-11. Blocks 3-4 (5.3, 5.4) to do.
-  The held-out cells of 5.3 are `\synthetic`; how to test learned defenses is being rethought (session 34).
+  The held-out cells of 5.3 are `\synthetic`; §5.3's design is being rebuilt in `docs/section-5.3-design.md`
+  (session 34: PV's hole is mostly an artifact of the attack harness's fixed seed; Phase 2 to run).
 - **Experiments:** Tables 3-5 (side effects, directions, detectors) complete at pilot scale; open items are listed in
-  PLAN.md, next step 5. **Running (user, rerun 2026-11-11):** run 131, ERDALT leave-one-out (PV half done: gamma_api 5/21, other folds 0).
+  PLAN.md, next step 5. Run 131 (leave-one-out) finished: PV 5/21 on gamma_api, 0 elsewhere; ERDALT high on
+  gamma_api and header_fields; ERDALT-8 adaptive 17/24. Run 132 (coverage, seed smoke) done.
 - **Documentation:** reorganized 2026-11-09; index `docs/README.md`.
 
 ## Waiting on the user
 
 - **Feedback on §5.1-5.2** (revised version, commit 0069f56), promised for 2026-11-11.
-- **§5.3's methodology** (session 34 restarts it; record: `docs/evidence/held-out-attacks-perspectives.md`).
-- **Run 131's ERDALT half** (rerun 2026-11-11 after the path fix; PV half done). Header to sync once it finishes.
+- **§5.3's methodology:** working design `docs/section-5.3-design.md` (session 34; four open questions in its §9,
+  first: may Claude run Phase 0). Input record: `docs/evidence/held-out-attacks-perspectives.md`.
 - The holistic read of Sound Directions (any time).
 
 ## Scheduled
