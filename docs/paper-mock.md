@@ -117,6 +117,9 @@ No state-of-the-art defense claim (three defense baselines; the user would want 
   4. A hand analysis that is not ours: the expert set (Gimenez et al.), 11 of its 40 features lowerable by renaming a
      section or rewriting the DOS stub, evaded on 2 of 8. *If check C3 finds published hand classifications of EMBER's
      features:* compare the derived table with them here (no runs).
+- *Drafted in session 39 (7a2ceff, 9d0369f, 035d977); the draft supersedes the plan below: items 7 (learned region)
+  and 8 (audit table) dropped by the user, the tables to be remade later; no seed or protocol-hygiene details; PV's
+  published-style 14/22 out (PLAN.md, decision 10, session 39).*
 - **5.3 What Observed Attacks Miss (~950), with the new audit table.** *Rewritten in session 34 after runs 133-134
   (claim agreed with the user; evidence and caveats in `docs/section-5.3-design.md` §10.4-10.5). Every defense
   learned from attacks is built from the same 3,183 outputs of the eight toolkit attacks, a seed per (attack, file),

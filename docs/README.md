@@ -24,7 +24,7 @@ check `manuscript/main.aux` (`grep newlabel manuscript/main.aux`), and add the t
 | `PLAN.md` | thesis, where the paper stands, the decisions of 2026-11-09, next steps, settled decisions | every session |
 | `docs/status.md` | current state, what waits on the user, short session log | every session; update at the end |
 | `docs/resume-prompt.md` | where the next session starts | starting a session |
-| `docs/resume-prompt-5.3.md` | where the §5.3 drafting session starts (parallel to `resume-prompt.md`) | starting §5.3's prose |
+| `docs/resume-prompt-5.3.md` | where the §5.3 session starts (parallel to `resume-prompt.md`): run 135's ERDALT folds, then the user's review of 5.3 | continuing §5.3 |
 | `docs/instances-note.md` | §4 working note: what an instance supplies, the agreed structure (archive once §4 is accepted) | drafting §4 |
 | `docs/section-5.3-design.md` | §5.3 working design: what it must show, where draft, mock and code disagree, strengths, weaknesses, options, phases, open questions (iterated with the user; archive once §5.3 is written) | planning, running, or drafting §5.3 |
 | `docs/checkpoint-prompt.md` | the user's prompt for ending a session | the user ends a session |
@@ -62,6 +62,7 @@ or when changing an experiment. Run scripts are in `run/` (one per step, numbere
 | `docs/archive/status-log-2026-10-to-2026-11-09.md` | the full session log until 2026-11-09 (32k words; search, don't read) |
 | `docs/archive/PLAN-log-2026-10-22-to-2026-11-09.md` | the plan's history, every "Next steps" block |
 | `docs/archive/resume-prompt-2026-11-06.md` | the previous resume prompt (research track details: sums-row routing, scale-up budget) |
+| `docs/archive/resume-prompt-2026-11-11-s39.md` | the resume prompt of session 39 (drafting §5.3: the agreed evidence list, caveats, run 135's predictions) |
 | `docs/archive/resume-prompt-2026-11-11-s34.md` | the resume prompt of session 34 (§5.3 from scratch: overview, analysis, options) |
 | `docs/archive/resume-prompt-2026-11-11-s37.md` | the resume prompt of session 37 (the first humanistic review of §4, the §5 review planned) |
 | `docs/archive/resume-prompt-2026-11-11-s36.md` | the resume prompt of session 36 (the user's review of §5.4, settled points of 5.4) |

@@ -166,8 +166,8 @@ defense that does.
 
 \subsection{What Observed Attacks Miss}
 \label{sec:eval:observed}
-% Block 3 of the rewrite (session 38, 2026-11-11): the finding agreed in session 34 (docs/section-5.3-design.md,
-% §10.5). The learned-region paragraph (exact tree solver on the old seed-0 outputs) was cut (user, session 38).
+% Block 3 of the rewrite (session 39, 2026-11-11): the finding agreed in session 34 (docs/section-5.3-design.md,
+% §10.5). The learned-region paragraph (exact tree solver on the old seed-0 outputs) was cut (user, session 39).
 
 Instead of reading the extractor, a defender can learn which features to trust from attacks: run the attacks at hand,
 see which features they lower, and build a detector that does not trust those features. Gimenez et
@@ -188,7 +188,7 @@ when that section is renamed. MAB-Malware renames sections, but none of the tool
 (\Cref{sec:instances:catalogue}).
 % a_varied/coverage/report.json: train_population all 928/1,070 (toolkit-operation features 913/980, warnings 13/88);
 % witnessed_not_lowered_by_toolkit: 17 toolkit-operation features + 3 warnings = 20 (entry-section-name buckets,
-% a few header fields). Not used (user, session 38: no RNG details in the paper): with the generator reset before
+% a few header fields). Not used (user, session 39: no RNG details in the paper): with the generator reset before
 % every run, the same attacks lower 847 on the same files (a_coverage/report.json).
 
 \paragraph{The operation the attacks lack}
@@ -215,7 +215,8 @@ of the threat model changes it, and the derived table leaves it free where PV fo
 features no attack moved unconstrained raises PV's detection to 50.9\%, but such a detector trusts every feature the
 attacks happened to leave alone, and so falls to any operation they lack.
 % PV-best TPR 26.2% (run 133 header, step 2). Derived detector: Table 4's monotone row on the features, 87.2%
-% (s10-mfull-feat-pre-v2; run 133/134 headers say 87.3%, the same model, rounding of the ROC interpolation).
+% (s10-mfull-feat-pre-v2; ROC interpolation as a_price_list.py gives 87.21, and 26.3 for PV-best; the run 133/134
+% headers' 87.3 and 26.2 come from another TPR computation. Settle one method when the tables are remade).
 % header:characteristics_DLL 24% of the unconstrained model's gain; PV-free (run 134 step 2, pv-free.monotone.tsv on
 % PV-clean's selection; PV-clean = PV-best without the 8 broken shift outputs, 26.7%): 1,035 moved features
 % constrained, 455 never moved left free, TPR 50.9%. Not Gimenez et al.'s rule.
@@ -343,7 +344,7 @@ constraints, still lowers it by 3.0.
 % 5,000 candidates, M_full. Unconstrained full store 25/49 and the monotone features row 0/41 (run 127 step 1,
 % adaptive-beam/mfull); min_delta_logit exactly 0.0 on the monotone rows. The sums row's adaptive cell: greedy union of
 % runs 108/119, 0/43 (the beam has no routing to the sums store yet). The expert set has no adaptive cell: the search
-% predicts with the instrumented extractor only. The PV, ERDALT and adversarial-training rows moved to 5.3 (session 38,
+% predicts with the instrumented extractor only. The PV, ERDALT and adversarial-training rows moved to 5.3 (session 39,
 % rebuilt from run 133's outputs; the old rows of runs 122-131 are retired).
 
 \paragraph{The width of the threat model}

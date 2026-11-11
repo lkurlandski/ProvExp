@@ -18,15 +18,15 @@ The framework is format-free (§3). PE malware with EMBER is the primary instanc
 planned, implemented, and piloted first. Other domains come later, possibly, and the paper's structure must accommodate
 them (below).
 
-## Where the paper stands (2026-11-11, session 36)
+## Where the paper stands (2026-11-11, session 39)
 
 - **§2-3 (the framework):** rewritten during the week of 2026-11-02; the user is reasonably satisfied, open to
   finetuning. Three subsections: sum-then-readout extractors, edits and their side effects (Proposition 1), sound
   directions (signatures as sets of changes, the derived table, Theorem 1, Corollary 1). Pending: the user's holistic
   read of Sound Directions after round 4.
 - **§4-5 (the instance and evaluation):** realigned with the new §3 on 2026-11-10 (sessions 28-29). §4 is about
-  1,540 words against ~1,000 (shortening deferred). §5 gets a structural rewrite as three findings (decision 10); its
-  plan is in `docs/paper-mock.md`, §5.
+  1,540 words against ~1,000 (shortening deferred). §5 is rewritten as three findings (decision 10), all four blocks
+  drafted (5.3 last, session 39); the user's review of 5.3 and 5.4 is pending; plan in `docs/paper-mock.md`, §5.
 - **§6 (related work):** drafted. **§1, §7, abstract, ethics, open science:** empty (the introduction comes last).
 - **Experiments:** complete at pilot scale for Tables 3-5 (exactness, hand vs derived vs learned directions,
   detectors). Nothing is invalidated by the framework rewrite. Evidence records: `docs/evidence/`.
@@ -184,6 +184,17 @@ them (below).
     adaptive cells (never scale a cell down to the pilot protocol; everything scales up later); the derivation-cost
     paragraph is dropped. Practitioners' likely objections, kept in view: the 0.1% cost, the structural-only threat
     model (no packing, no code-level edits), and pilot scale, which matters most for 5.4 because its claim is a number.
+    *Session 39 (2026-11-11): 5.3 drafted* (7a2ceff, 9d0369f, 035d977; unreviewed). User decisions: (i) the
+    learned-region paragraph (exact tree solver) is cut; (ii) no audit table now: Tables 3 and 4 will be remade anyway
+    (user: "incredibly disgusting"), so 5.3 reports its defenses in prose and the tables are redesigned together
+    later; (iii) one sentence on rename (adding it would close PV's hole, but the defender learns which operation to
+    add only after an attacker used it), no new run; (iv) **no random-seed or protocol-hygiene details in the paper**
+    (user: do the obviously correct thing in the experiments and leave it at that), so the seed-reset comparison
+    (847 vs 928 lowered features) and PV-all's 14/22 are out. 5.3 has seven run-in paragraphs: opening (protocol),
+    what the attacks reveal (928 of 1,070), the operation the attacks lack (PV 4/9 by one rename; hole 38.8%), what
+    the attacks did not move (PV 26.2% vs 87.2%; the DLL flag; PV-free 50.9%), what ERDALT learns (24/29 by its own
+    attack, 22/29 adaptive, 90% of its layer's weight), adversarial training (12/50, 23/50), holding one attack out
+    (run 135; per-fold table in Appendix D). The old PV/ERDALT/adversarial-training material is gone from 5.4.
 
 ## Next steps, in order
 
@@ -197,7 +208,7 @@ them (below).
    **§4, then §5, rewritten in blocks** with the user's review after each (the way Sound Directions round 4 worked;
    use the `paper-prose` skill). The mechanical vocabulary fixes go with them (R3/R4, "rate", "stated in elements",
    §6's "margins"). *Done for §4 and §5's realignment (sessions 28-29).* **Now: §5's structural rewrite
-   (decision 10)** in four blocks (1, 2 and 4 drafted; 4 awaits the user's review; 3's claim agreed, its prose waits on run 135), with checks C1-C3 of the paper mock before the blocks that need them; then §2's
+   (decision 10)** in four blocks (all four drafted; 3, *What Observed Attacks Miss*, in session 39 with run 135's ERDALT folds still in blue; 3 and 4 await the user's review), with checks C1-C3 of the paper mock before the blocks that need them; then §2's
    closing sentence and contribution 4 against the findings; then shorten §4 and §5 together (§4.3 first).
 4. **The next full simulated review, once §4 and §5 are realigned and before the introduction** (decided 2026-11-09).
    Right before running it, update `docs/reviews/review-prompt.md`: it still targets the 2026-11-02 body draft and
@@ -218,11 +229,10 @@ them (below).
      do once the write-up is finished): the adaptive budget at 2,000 files (~3,000 CPU-h at 5,000 candidates; options:
      the 1,000-candidate checkpoint, a fixed subset, a cap on the monotone rows), and ERDALT's stopping criterion (met
      only at the last epoch at seed 0).
-   - §5.3: runs 133-134 read and the claim agreed (decision 10, session 34 continued). **Run 135** (leave-one-out
-     from run 133's outputs; launched by the user 2026-11-11) is read by session 34; then the audit table and 5.3's
-     prose (block 3). Open (raise with the user when drafting): the gap that remains is MAB-Malware's operation
-     (rename), so adding it to the pool would close it; the paper's point is that the defender cannot know which
-     operation to add, but a reviewer may ask for that row (design doc, O5).
+   - §5.3: drafted in session 39 (decision 10, session 39 note). **Run 135** (leave-one-out from run 133's
+     outputs): PV folds read (0 evaded in all eight); ERDALT folds still running at the end of session 39. Read them,
+     record the results in the script's header once it has finished, and replace the blue values in 5.3's *Holding one
+     attack out* and Appendix D's leave-one-out table.
 6. **Other domains (later):** ideas in `docs/domain-selection-brainstorming.md`. Not before EMBER is complete; no
    literature or selection work until the user opens it.
 7. **The introduction, discussion, and abstract** last, once the body is settled.

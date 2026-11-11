@@ -5,7 +5,7 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
 `docs/archive/` (the log before 2026-11-09 is `docs/archive/status-log-2026-10-to-2026-11-09.md`; sessions 21-28 are in
 `docs/archive/status-log-2026-11-09.md`).
 
-## Current state (2026-11-11, sessions 34-38)
+## Current state (2026-11-11, sessions 34-39)
 
 - **Framework (§2-3):** rewritten; the user is reasonably satisfied. Open: the user's holistic read of Sound
   Directions after round 4 (finetuning only).
@@ -18,22 +18,21 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
   validation section and not a defense paper. Plan, one line per paragraph, and checks C1-C3: `docs/paper-mock.md`,
   §5. Blocks 1-2 (lead, 5.1, 5.2) drafted and revised twice (session 35: lead and 5.1 after the user's second review,
   up to 5.1's Attacks paragraph; the user has not yet commented on 5.1's last paragraph or on 5.2's second round).
-  Block 3 (5.3): claim agreed (session 34), prose waits on run 135. **Block 4 (5.4 *What Robustness Costs*)** drafted in session 36,
+  **Block 3 (5.3 *What Observed Attacks Miss*)** drafted in session 39 (7a2ceff, 9d0369f, 035d977), unreviewed;
+  run 135's ERDALT folds still in blue. **Block 4 (5.4 *What Robustness Costs*)** drafted in session 36,
   revised in session 37 after Claude's review with the `humanistic-paper-review` skill (reordered so no paragraph
   points forward; commits c49f654, 9113acb, 23ab085); the user has not read the revised text.
-- **§5.3 is being redesigned** in `docs/section-5.3-design.md` (session 34), the working plan until its prose is
-  written; it supersedes the mock's item 5.3 and the session-33 record. PV-all's hole was shaped by the harness's
-  fixed seed, but **run 133** (defenses rebuilt from varied attack runs on training malware) shows the finding
-  survives in a sharper form (design doc §10.4-10.5): PV built the fair way is still evaded, 4 of its 9 files, each by
-  one rename (an operation no toolkit attack has, named in advance by the derived table), and detects only 26.2% at
-  1% FPR (derived detector on the same features 87.3%); ERDALT is evaded 24/29 by its own training attack with other
-  donors; adversarial training 12/50 toolkit, 23/50 search. **The user agreed with the claim (§10.5)**; plan in the
-  mock's 5.3 (rewritten) and PLAN.md decision 10. Leave-one-out kept and redone the fair way: **run 135 running**.
+- **§5.3** is drafted (session 39) from the claim agreed in session 34 (`docs/section-5.3-design.md` §10.5, which
+  stays the record of how the design came about). Learned-region paragraph cut, no audit table for now (tables
+  remade later), no seed or protocol-hygiene details in the paper (user). Every learned defense is built from run 133's
+  3,183 outputs; PV evaded 4/9 by one rename, 26.2% TPR; ERDALT 24/29 by its own attack; adversarial training 12/50
+  and 23/50; leave-one-out per fold in Appendix D.
 - **Experiments:** Tables 3-5 (side effects, directions, detectors) complete at pilot scale; open items are listed in
   PLAN.md, next step 5. Run 131 (leave-one-out) finished: PV 5/21 on gamma_api, 0 elsewhere; ERDALT high on
   gamma_api and header_fields; ERDALT-8 adaptive 17/24. Runs 132 (coverage by source, seed smoke), 133 (§5.3 Phase
   2, ~4.8 h) and 134 (PV-clean, PV-free; Claude, ~3 min) done and read. **Run 135** (leave-one-out from run 133's
-  outputs) launched by the user 2026-11-11.
+  outputs) launched by the user 2026-11-11 at 16:33: PV's eight folds finished by 17:35, 0 evaded in every fold
+  (detected 8-19 per fold); ERDALT folds were still running at the end of session 39. Its header has no results yet.
 - **Documentation:** reorganized 2026-11-09; index `docs/README.md`.
 
 ## Waiting on the user
@@ -41,10 +40,8 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
 - **A lightweight second review of the revised §4, then the holistic review of §5** with the
   `humanistic-paper-review` skill (user, session 38; `docs/resume-prompt.md`). The user's own pending comments on
   5.1's Checking results and 5.2 (9b7d0ba) can join the §5 review.
-- **Run 135** (`run/135_loo_varied.sh`, ~1.5-2 h on four GPUs; launched by the user 2026-11-11): leave-one-out
-  redone from run 133's outputs (PV and ERDALT folds, held-out attack with a seed per file); replaces run 131's
-  folds. **Next unit of work: drafting §5.3** from `docs/resume-prompt-5.3.md` (it reads run 135 first if it has
-  finished, else drafts with its predicted values in blue).
+- **The user's review of §5.3** (session 39's draft; the user had not read it). New session from
+  `docs/resume-prompt-5.3.md`: read run 135's ERDALT folds, replace the blue values, then the review.
 - The holistic read of Sound Directions (any time).
 
 ## Scheduled
@@ -55,6 +52,14 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
   decision 8 (iv) and step 4).
 
 ## Session log
+
+- **2026-11-11 (session 39, parallel to 38): §5.3 drafted in three blocks.** Run 135 had just started, so its
+  ERDALT folds are in blue (its PV folds finished during the session: 0 evaded in all eight). User decisions: cut the
+  learned-region paragraph; no audit table now (Tables 3-4 to be remade); one sentence on rename, no new run; no RNG or
+  protocol-hygiene details in the paper. Found: the planned "745 vs 928" coverage comparison mixed files (pilot vs
+  training); on the same files it is 847 vs 928, and it is out anyway. Old 5.3 material removed from 5.4; §6's ERDALT
+  reference points to 5.3; Appendix D gained the leave-one-out table. ~970 words. The user did not review the blocks
+  (review next session). Commits 7a2ceff, 9d0369f, 035d977. **Next:** `docs/resume-prompt-5.3.md`.
 
 - **2026-11-11 (session 38): §4 reviewed by Claude and revised.** Review with the `humanistic-paper-review` skill
   (eight findings). The user: trimming is good, but moving small snippets to the appendix does more harm than good;

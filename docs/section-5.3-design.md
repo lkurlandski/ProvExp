@@ -425,3 +425,8 @@ PV's accuracy gap, and whether ERDALT's score floor needs a better reproduction 
   recommendation in §10.5, to settle with the user.
 - **2026-11-11 (session 34): leave-one-out kept, redone fairly.** The user agreed with §10.5's framing but not with
   dropping leave-one-out ("still a very powerful and interesting experiment"); run 135 scripted and smoke-tested.
+- **2026-11-11 (session 39): 5.3 drafted** from §10.5 (commits 7a2ceff, 9d0369f, 035d977). The user cut the
+  learned-region paragraph and the audit table (tables to be remade later) and ruled out seed details in the paper,
+  so the 847-vs-928 comparison (same 314 training files; the plan's "745" was the 36 pilot files) and PV-all's 14/22
+  stay in this document only. Run 135's PV folds: 0 evaded in all eight (detected 9, 9, 8, 9, 19, 9, 9, 9; gamma_api
+  0/9, against the predicted 1-2). ERDALT folds pending, in blue in the draft.
