@@ -127,20 +127,30 @@ by renaming a section or by rewriting the DOS stub, edits that need no source co
 adaptive search evades the expert-set detector on 2 of the 8 malware it detects. Severi
 et al.~\cite{severi2021explanation} needed features an attacker controls in order to plant a backdoor, and set aside all
 of EMBER's hashed features because, given the hash function's preimage resistance, ``directly manipulating these
-features by tampering with the binary would be extremely difficult''. Under the additions threat model alone, edits can
-move 1,490 of the 1,650 hashed features of EMBER 2024. EMBER's hashed section features are indexed by the hash of the
-section's name, which picks one of 50 buckets and a sign, so an attacker who chooses a new section's name gets the
-bucket and sign they want within about a hundred tries. This error is on the cautious side, which costs an attacker
-only options. A defender who made the same judgement would trust features an attacker can move, and
-\Cref{sec:eval:observed} shows a defense that does.
+features by tampering with the binary would be extremely difficult''. The version of EMBER they used hashes section
+names, imports, and exports into the same buckets as EMBER 2024. Under the additions threat model alone, edits can move
+1,430 of these 1,558 features, all but the exports. The hash of a section's name picks one of 50 buckets and a sign for
+the section's size, entropy, and virtual size, so an attacker who chooses a new section's name gets the bucket and sign
+they want within about a hundred tries. This error is on the cautious side, which costs an attacker only options. A
+defender who made the same judgement would trust features an attacker can move, and \Cref{sec:eval:observed} shows a
+defense that does.
 % Expert set: run 120, scripts/a_expert_adaptive.py; the expert extractor is instrumented
 % (provexp.featuresets.ember2024.expert, bit-exact); 11 M_full holes (rows 27, 30-39 of
 % docs/evidence/direction-A-expert-set.md), each witnessed by one of our own edits. Adaptive: 2/8 via rename on the
 % run-106 monotone model.
 % Severi et al.: papers/severi2021explanation.pdf, Section 6.1 (quote checked); they use EMBER 1.0 (2,351 features).
-% Derived counts: a_directions_derived_v2/directions.csv, M_add_pre != fixed for names containing "hash": 1,490 of
-% 1,650 (fixed: 128 export buckets; 32 Rich header pairs, movable under the full threat model). VERIFY that EMBER 1.0's
-% hashed groups match (section, imports, exports, entry name).
+% Derived counts: a_directions_derived_v2/directions.csv, M_add_pre != fixed. The prose counts only the groups both
+% versions hash into the same buckets: size_hash, entropy_hash, vsize_hash (150), library_hash (256), import_hash
+% (1,024), export_hash (128): 1,430 of 1,558 movable. All of EMBER 2024's hashed features: 1,490 of 1,650 (fixed: 128
+% export buckets; 32 Rich header pairs, movable under the full threat model).
+% VERIFIED (session 35, elastic/ember features.py on GitHub; 2,351 = feature version 1 = version 2's 2,381 minus the 30
+% unhashed data-directory features). Hashed into the same buckets in both versions (version 1 gives the library and
+% import buckets alternating signs, 2024 does not): section size/entropy/vsize by name (3 x 50),
+% libraries 256, imports 1,024, exports 128 (1,558 features; 1,430 movable under additions, all but the exports).
+% Different: version 1 hashes the entry name into 50 buckets (2024: 10) and only the entry section's characteristics
+% (2024: name:characteristic of every section, 50), hashes five header fields (machine, COFF and DLL characteristics,
+% subsystem, magic; 10 each), which 2024 one-hot encodes, and has no Rich header (2024: 32 pairs). The section-name
+% argument in the prose holds for both versions.
 
 \subsection{What Observed Attacks Miss}
 \label{sec:eval:observed}
