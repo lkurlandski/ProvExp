@@ -166,16 +166,45 @@ defense that does.
 
 \subsection{What Observed Attacks Miss}
 \label{sec:eval:observed}
-% Block 3 rewrites this subsection (with the learned-region paragraph below and the baselines from the next one).
+% Block 3 of the rewrite (session 38, 2026-11-11): the finding agreed in session 34 (docs/section-5.3-design.md,
+% §10.5). The learned-region paragraph (exact tree solver on the old seed-0 outputs) was cut (user, session 38).
 
-The other realistic alternative is to learn the constraints from attacks. We let each feature move as far as the eight
-toolkit attacks moved it, and asked an exact solver for tree ensembles~\cite{kantchelian2016evasion} whether any point
-in that region evades each detector. The learned region certifies none of the 47 files the unconstrained detector
-catches and none of the 22 the baseline below catches: ranges learned per feature ignore that one edit moves many
-features together, and the region they span contains evasions no edit can produce. Learned from the attacks a
-defense was built on, the region certifies that defense by construction, including on files our adaptive attack
-evades. Computed directions avoid both failures, because they come from what each operation can do rather than from
-what a sample of attacks happened to do.
+Instead of reading the extractor, a defender can learn which features to trust from attacks: run the attacks at hand,
+see which features they lower, and build a detector that does not trust those features. Gimenez et
+al.~\cite{gimenez2025certifiably} build one of their defenses this way and compare it with a second, and adversarial
+training also learns from the outputs of attacks. We build all three from the same observations: the outputs of the
+eight toolkit attacks, run against the unconstrained detector on 400 training malware with benign training files as
+the source of added content, 3,183 adversarial examples in all. Each defense is then attacked as in
+\Cref{sec:eval:setup}, on the test malware it detects.
+% Run 133 (run/133_varied_observation.sh, step 1): artifacts/experiments/a1/advtrain/generated-seedperfile, 3,183
+% valid outputs of 3,200 (a seed per attack and file). Evaluation: a1_evaluate --seed_per_file, pilot goodware donors.
+
+\paragraph{What the attacks reveal}
+On the 314 training files in the population, the outputs lower 928 of the 1,070 features that the derived table says
+an edit of the full threat model can lower. To a defender who has only the outputs, the other 142 look the same as the
+features no edit can lower; the table tells them apart before any attack runs. Our own edits of \Cref{sec:eval:setup}
+lower 20 of the 142. Among them are the features of the name of the section that holds the entry point, which change
+when that section is renamed. MAB-Malware renames sections, but none of the toolkit attacks does
+(\Cref{sec:instances:catalogue}).
+% a_varied/coverage/report.json: train_population all 928/1,070 (toolkit-operation features 913/980, warnings 13/88);
+% witnessed_not_lowered_by_toolkit: 17 toolkit-operation features + 3 warnings = 20 (entry-section-name buckets,
+% a few header fields). Not used (user, session 38: no RNG details in the paper): with the generator reset before
+% every run, the same attacks lower 847 on the same files (a_coverage/report.json).
+
+\paragraph{The operation the attacks lack}
+Gimenez et al.\ compare their defenses with a simpler one that selects features from perturbation vectors (PV): it
+keeps the features that no observed attack lowered and trains a detector that is monotone increasing in each of them.
+Built from our 3,183 outputs, PV detects 9 of the 50 test malware, and the toolkit attacks, run on these files, evade
+it on none. The adaptive attack evades it on 4 of the 9, each time with a single edit, a rename of the section that
+holds the entry point, found among the first 50 candidates it scores. The derived table points to this hole before
+any attack runs. Of the features PV trusts, 124 can be lowered by an edit of the threat model, and they carry 38.8\% of
+the split gain of its trees; the largest of them, at 12.8\%, is a bucket of the entry section's name. Adding rename to
+the attacks would close this hole, but a defender learns which operation to add only after an attacker has used it.
+% PV-best (run 133 step 2; a_pv/best, a_pv_hole.py rule: kept = min observed delta >= -tol, monotone +1; 10% sums
+% store, re-encoded groups dropped; TPR 26.2% at 1% FPR). Toolkit 0/9: a_varied/toolkit-pv/table.json. Adaptive 4/9,
+% all at the 200-candidate checkpoint, each one rename (run 133 header: within the first 50):
+% a_varied/adaptive-pv-best/adaptive.json. Hole: a_pv/best/derived-pre/report-best.json, 124 features, 38.8% of gain
+% (entry-section-name bucket 1: 12.8%; section group 19.9%, strings 16.1%, warnings 2.7%).
 
 \subsection{What Robustness Costs}
 \label{sec:eval:detectors}
