@@ -49,6 +49,8 @@ else
   mapfile -t GPU_IDS < <(nvidia-smi --query-gpu=index --format=csv,noheader)
 fi
 if [[ ${#GPU_IDS[@]} -lt 1 ]]; then echo "No visible GPU (CUDA_VISIBLE_DEVICES)." >&2; exit 1; fi
+NUM_LANES=$(( ${#GPU_IDS[@]} < 8 ? ${#GPU_IDS[@]} : 8 ))  # eight folds: never more lanes than that
+LANE_THREADS=$(( NUM_WORKERS / NUM_LANES > 0 ? NUM_WORKERS / NUM_LANES : 1 ))  # the workers shared among the lanes
 
 ATTACKS="gamma_sections gamma_api gamma_shift content_shift dos_extend header_fields padding format_exploit"
 others() { local h=$1 a out=""; for a in $ATTACKS; do [[ $a != "$h" ]] && out="$out $a"; done; echo $out; }
@@ -104,7 +106,7 @@ for h in $ATTACKS; do
   grep "held-out" "$log" | tail -1
 done
 
-echo "(2/4) ERDALT, eight folds on GPUs ${GPU_IDS[*]}. Logs: artifacts/logs/train_erdalt-0-s10-vloo-*.log"
+echo "(2/4) ERDALT, eight folds on GPUs ${GPU_IDS[*]}, $LANE_THREADS threads per lane. Logs: artifacts/logs/train_erdalt-0-s10-vloo-*.log"
 train_erdalt() {  # gpu, held-out attack
   local gpu=$1 h=$2
   local log=artifacts/logs/train_erdalt-0-s10-vloo-$h.log
@@ -113,7 +115,7 @@ train_erdalt() {  # gpu, held-out attack
     return
   fi
   echo "  training erdalt/seed-0-s10-vloo-$h on GPU $gpu. Log: $log"
-  CUDA_VISIBLE_DEVICES=$gpu OMP_NUM_THREADS=8 python scripts/train_erdalt.py \
+  CUDA_VISIBLE_DEVICES=$gpu OMP_NUM_THREADS=$LANE_THREADS python scripts/train_erdalt.py \
     --features $F_ER \
     --neutralize $DS/reencoded.neutralize.txt \
     --adv_dir $GEN \
