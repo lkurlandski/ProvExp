@@ -101,6 +101,8 @@ hold several ideas under one (Def 8's first sentence, which the user praised); a
 chained clauses with "and ... so ... and" made the ideas harder than necessary. Repetition of one sentence shape is
 noticed too: a block with a colon-list in every other sentence read as "a little repetitive" (§4, 2026-11-10). A
 check stated plainly ("Our tests confirm that ...") was preferred to one staged with its numbers ("On 2,000 files, ...").
+In experimental design, a choice with its purpose and then its facts read as "intentional" (§5.1, 2026-11-11); a
+budget argued over three sentences ("just state the number") and a definition true of every attack read as "terrible".
 
 **Every passage is there for the reader of the paper.** Text written to settle a point raised in the chat, to defend a
 decision, or to head off an imagined reviewer reads as "paragraphs that don't mean anything". This is not a ban on

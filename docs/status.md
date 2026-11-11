@@ -2,10 +2,10 @@
 
 Kept short: the current state, what waits on the user, and the last few sessions in a line or two each. The plan and
 its reasons are in `PLAN.md`. When the session log below grows past about ten entries, move the oldest to
-`docs/archive/` (the log before 2026-11-09 is `docs/archive/status-log-2026-10-to-2026-11-09.md`; sessions 21-24 are in
+`docs/archive/` (the log before 2026-11-09 is `docs/archive/status-log-2026-10-to-2026-11-09.md`; sessions 21-25 are in
 `docs/archive/status-log-2026-11-09.md`).
 
-## Current state (2026-11-11, session 34)
+## Current state (2026-11-11, sessions 34-35)
 
 - **Framework (§2-3):** rewritten; the user is reasonably satisfied. Open: the user's holistic read of Sound
   Directions after round 4 (finetuning only).
@@ -14,8 +14,9 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
 - **§5:** realigned with §3-4 in vocabulary and claims (session 29). Structural rewrite agreed in session 30 (PLAN.md,
   decision 10): three findings (what hand analysis misses, what observed attacks miss, what robustness costs), not a
   validation section and not a defense paper. Plan, one line per paragraph, and checks C1-C3: `docs/paper-mock.md`,
-  §5. Blocks 1-2 (lead, 5.1, 5.2) drafted and revised after the user's review (0069f56); the user's second
-  round of feedback on 5.1-5.2 is still to come. Blocks 3-4 (5.3, 5.4) to do.
+  §5. Blocks 1-2 (lead, 5.1, 5.2) drafted and revised twice (session 35: lead and 5.1 after the user's second review,
+  up to 5.1's Attacks paragraph; the user has not yet commented on 5.1's last paragraph or on 5.2's second round).
+  Block 3 (5.3) waits on run 133 in session 34; **block 4 (5.4) next, in a new session** (`docs/resume-prompt.md`).
 - **§5.3 is being redesigned** in `docs/section-5.3-design.md` (session 34), the working plan until its prose is
   written; it supersedes the mock's item 5.3 and the session-33 record. Finding so far, mostly bad news for 5.3 as
   planned (user agrees): PV's hole and its 14/22 adaptive evasion rest mostly on the attack harness resetting the RNG
@@ -31,7 +32,8 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
 
 ## Waiting on the user
 
-- **Feedback on §5.1-5.2** (revised version, commit 0069f56), promised for 2026-11-11.
+- **The rest of the feedback on §5.1-5.2** (5.1's Checking results paragraph and 5.2; current version 9b7d0ba), when
+  the user chooses; §5.4 comes first.
 - **Run 133** (`run/133_varied_observation.sh`, ~7 h, the user launches it): §5.3's Phase 2, the defenses learned
   from attacks rebuilt from varied runs on training malware. Session 34 reads it against its header's hypotheses;
   then §5.3's claim is settled with the user (`docs/section-5.3-design.md`, §10.2), possibly narrowed.
@@ -45,6 +47,18 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
   decision 8 (iv) and step 4).
 
 ## Session log
+
+- **2026-11-11 (session 35): §5 lead and 5.1 revised after the user's second review; §5.4 next.** The `% VERIFY` in
+  5.2 settled (elastic/ember's code): Severi et al.'s EMBER (feature version 1, 2,351 features) hashes section names,
+  imports and exports into the same buckets as EMBER 2024, but not the entry name, the characteristics, five header
+  fields, or a Rich header; the prose now counts only the shared groups (1,430 of 1,558 movable under additions).
+  Lead: §2's three limits instead of "each falls short". 5.1 in three run-in paragraphs (Detectors, Attacks, Checking
+  results); the learned-defense protocol (leave-one-out) removed from 5.1 and left to 5.3; the toolkit attacks are
+  black-box, one kind of edit, 100 queries; the adaptive attack is white-box, in the spirit of Tramèr et al. (added to
+  `papers/` and `main.bib`), each with its reason; the beam's mechanics moved to Appendix D; the 500-query check to a
+  comment. The user's harsh reaction to the first Attacks rewrite logged (`docs/writing-spec.md`); one sentence on
+  purpose-then-facts added to `paper-prose`. Scale-up: the first thing after the write-up (user; PLAN.md step 5).
+  Commits 0b64c9a, e3375ca, 9b7d0ba. **Next:** §5.4 in a new session (`docs/resume-prompt.md`).
 
 - **2026-11-11 (session 34): §5.3 redesigned; PV's hole traced to the attack harness's fixed seed.** An overview,
   harsh analysis and options for §5.3, then re-assessed against the plan, mock and code at the user's request:
@@ -131,9 +145,3 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
   (compiled: 8) and the word "widen"; every active document, the writing skill, and the memory now use compiled
   numbers, `docs/README.md` has the numbering table, and CLAUDE.md requires checking `main.aux`. **Next:** apply the
   edits, then §4.
-- **2026-11-09 (session 25): code audit, read-only** (PLAN.md, step 2). The code gives Definitions 9-10's table on
-  EMBER except two per-operation cells (the ratio rule is coarser; fixed with the user's approval, Tables 4-5 unchanged); no threat-model direction changes, so Tables 4-5
-  stand (checked by re-deriving the pilot with Table 1's rules patched in). Paper-side items for §4: the corpus-collected
-  vocabulary falls under decision 2 too; writes onto locating positions are flagged or declared in the directions;
-  append is declared, not collected (fix Def. 8's example); Table 1 lacks pools and nondecreasing functions of one sum.
-  Record: `docs/evidence/code-audit-sound-directions.md`. **Next:** the user's call on the findings, then §4 (step 3).

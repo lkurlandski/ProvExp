@@ -20,3 +20,9 @@ Moved from `docs/status.md` on 2026-11-11 (session 34).
   "This session felt very effective"). Drafting in blocks after a math note recorded in `paper-prose` and memory.
 - **2026-11-09 (session 21): the writing skill reset** (`paper-prose` rewritten as accepted texts plus taste; old rules
   archived in `docs/archive/paper-prose-2026-11-09/`).
+- **2026-11-09 (session 25): code audit, read-only** (PLAN.md, step 2). The code gives Definitions 9-10's table on
+  EMBER except two per-operation cells (the ratio rule is coarser; fixed with the user's approval, Tables 4-5 unchanged); no threat-model direction changes, so Tables 4-5
+  stand (checked by re-deriving the pilot with Table 1's rules patched in). Paper-side items for §4: the corpus-collected
+  vocabulary falls under decision 2 too; writes onto locating positions are flagged or declared in the directions;
+  append is declared, not collected (fix Def. 8's example); Table 1 lacks pools and nondecreasing functions of one sum.
+  Record: `docs/evidence/code-audit-sound-directions.md`. **Next:** the user's call on the findings, then §4 (step 3).
