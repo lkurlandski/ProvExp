@@ -183,9 +183,9 @@ what a sample of attacks happened to do.
 What does it cost to be robust to every edit in the threat model? Corollary~\ref{cor:fw:robustness} gives a detector
 whose score no such edit can lower: drop the features the derived table marks as moving both ways, and constrain the
 score to be nondecreasing in the features that can only rise and nonincreasing in those that can only fall. We train
-this detector on EMBER's features and on the sums they are read from (Appendix~\ref{sec:ember}), and measure what the
-constraints take from detection (\Cref{tab:eval:detectors}), and how that
-compares with features chosen by hand.
+this detector on EMBER's features and also on the sums they are read from (Appendix~\ref{sec:ember}), because many
+features move both ways only through a readout that normalizes them, while their sums move one way. We measure what the
+constraints take from detection (\Cref{tab:eval:detectors}) and compare it with features chosen by hand.
 
 \paragraph{The price}
 Against the full threat model, the monotone detector on the sums detects 89.6\% of the malware at a 1\%
@@ -215,11 +215,10 @@ loses 0.2 points. With import addition in the threat model, all 1,282 import has
 leaving it out recovers 2.1 points; leaving out the three header overwrites recovers 1.4. No other operation moves
 detection by more than 0.4 points in either direction. Rename makes the most features two-sided, 301, yet leaving it out
 recovers only 0.1 points, so the features it frees carry little detection. Reading the sums instead of the features
-recovers 2.4 points, because the re-encodings keep one-sided features that their normalized readouts made two-sided. At
-0.1\% false positives, dropping the two-sided features costs more, 5.2 points, about as much as all the constraints
-together, and the same two operations each cost about four. At this rate the threshold is set by the few highest-scoring
-benign files, so retraining alone moves detection by a few points: leaving out append, which removes constraints, still
-lowers it by 3.0.
+recovers 2.4 points. At 0.1\% false positives, dropping the two-sided features costs more, 5.2 points, about as much as
+all the constraints together, and the same two operations each cost about four. At this rate the threshold is set by the
+few highest-scoring benign files, so retraining alone moves detection by a few points: leaving out append, which removes
+constraints, still lowers it by 3.0.
 % MEASURED (2026-11-04): run/126_price_list.sh, artifacts/experiments/a_price_list/table.json. TPR at 1% FPR: full
 % catalogue 89.6%; drop-only (no constraints) 93.3%; warnings only dropped 93.6%; reference 93.5%. Leaving out: imp
 % 91.7%, the three overwrites 91.0% (hdr 90.8%, chk 90.3%, dos 89.4%), rdb 90.0%, rsg 90.0%, ren 89.7%, app 89.3%,
@@ -229,7 +228,9 @@ lowers it by 3.0.
 % 12/43 (header fields), expert set 0/8. Full-training-set unconstrained: run 127 header, 27/49.
 
 \begin{table*}[t]
-  \caption{Detectors under the full threat model, and under additions only. Evasion is over the detected pilot
+  \caption{Detectors under the full threat model, and under additions only. No edit in the threat model lowers a
+  monotone detector's score; on the sums, this costs 3.9 points of detection at 1\% FPR and 9.7 at 0.1\%, while
+  features chosen by hand for the same guarantee under additions lose most of it. Evasion is over the detected pilot
   malware. Toolkit: evaded by at least one of the eight toolkit attacks; adaptive: our adaptive attack, with 5,000
   scored candidates. The monotone rows send files outside the population to the unconstrained detector.}
   \label{tab:eval:detectors}
@@ -279,7 +280,7 @@ The guarantee covers exactly the threat model the table was derived from, and a 
 additions threat model, the monotone detector on the sums keeps more features and detects 92.2\% of the malware
 instead of 89.6\%. The edits it leaves out are then open: the header-field attack, which overwrites fields in place and
 so lies outside the additions threat model, evades it on 28\% of the malware it detects. A defender chooses the threat
-model, and with it which edits the detector gives up detection to withstand.
+model, and with it which edits the detector withstands and what that costs in detection.
 
 \paragraph{Against hand-picked features}
 The alternative a practitioner has today is to choose by hand features that an attacker cannot lower, as Gimenez et
