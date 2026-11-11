@@ -184,7 +184,8 @@ What does it cost to be robust to every edit in the threat model? Corollary~\ref
 whose score no such edit can lower: drop the features the derived table marks as moving both ways, and constrain the
 score to be nondecreasing in the features that can only rise and nonincreasing in those that can only fall. We train
 this detector on EMBER's features and on the sums they are read from (Appendix~\ref{sec:ember}), and measure what the
-constraints take from detection (\Cref{tab:eval:detectors}).
+constraints take from detection (\Cref{tab:eval:detectors}), and how that
+compares with features chosen by hand.
 
 \paragraph{The price}
 Against the full threat model, the monotone detector on the sums detects 89.6\% of the malware at a 1\%
@@ -192,18 +193,19 @@ false-positive rate, against 93.5\% for the unconstrained detector, and at a str
 against 84.4\%. The detector on the features does slightly worse (87.2\% and 70.9\%). In return, no
 edit in the threat model lowers its score. The adaptive attack confirms this on every file: its largest score drop on
 either monotone detector is exactly zero. The toolkit attacks evade the unconstrained detector on 55\% of the malware
-it detects, and each monotone detector on a single file, which lies outside the population.
+it detects, and each monotone detector on a single file.
 
-\paragraph{Against hand-picked features}
-The alternative a practitioner has today is to choose by hand features that an attacker cannot lower, as Gimenez et
-al.~\cite{gimenez2025certifiably} do with their expert set of 40 features, and to constrain the detector to be monotone
-in them. Their choice is sound for the edits that only add content (append, add a section, add imports), but not for
-the full threat model, where 11 of the 40 features can be lowered (\Cref{sec:eval:hand}). Under the additions threat
-model, a detector with the same guarantee built from the derived table detects 92.2\% of the malware at 1\% false
-positives, and the expert-set detector 29.1\% (79.8\% against 14.8\% at 0.1\%). Choosing features by hand gives up
-most of the detection; the derived table keeps every feature that additions move in one direction only.
-% MEASURED (session 36): TPR at 0.1% FPR from ts_predictions.parquet (np.interp on the ROC, as a_price_list.py):
-% seed-0 87.0, s10-ref 84.4, mfull-feat-pre-v2 70.9, mfull-sums-pre-v2 74.7, madd-sums-pre-v2 79.8, expert-mono 14.8.
+\paragraph{Where the guarantee holds}
+The guarantee holds on the population (\Cref{sec:instances:population}), which contains 38 of the 50 pilot malware and
+all but 1.5\% of the benign files the dataset does not truncate. A monotone detector sends a file outside the
+population to the unconstrained detector, and that is where the single toolkit evasion of each monotone detector
+happened: a header-field attack on a file with an unusual layout. An attacker can build such a file on purpose, but a
+file outside the population is then rare among benign software, and so stands out.
+% P1 (closure) measured on the 2,000 files: run 117 (run/117_p1_closure.sh), 0 of 60,934 edits on passing files
+% (of 73,063 applied) leave the population, all twelve operations; pilot: 0 of 3,188. The split, outputs inside
+% the table, and still detected: scripts/a1_toolkit_split.py (runs 78, 105). P2: directions_sums.csv of
+% a_directions_derived_sums_v2 vs _2000_v3, every threat-model column and every per-operation precondition column
+% equal. Coverage: catalogue_checks/2000-v3 with explanation_set/ts.parquet (untruncated: 1,576/1,670; benign 924/938).
 
 \paragraph{Where the cost lies}
 The table is derived one operation at a time, so the cost can be split by operation. We retrained the monotone
@@ -279,6 +281,17 @@ instead of 89.6\%. The edits it leaves out are then open: the header-field attac
 so lies outside the additions threat model, evades it on 28\% of the malware it detects. A defender chooses the threat
 model, and with it which edits the detector gives up detection to withstand.
 
+\paragraph{Against hand-picked features}
+The alternative a practitioner has today is to choose by hand features that an attacker cannot lower, as Gimenez et
+al.~\cite{gimenez2025certifiably} do with their expert set of 40 features, and to constrain the detector to be monotone
+in them. Their choice is sound for the additions threat model, but not for the full one, where 11 of the 40 features can
+be lowered (\Cref{sec:eval:hand}). Under additions, the expert-set detector detects 29.1\% of the malware at 1\% false
+positives, against 92.2\% for the detector built from the derived table (14.8\% against 79.8\% at 0.1\%). Choosing
+features by hand gives up most of the detection; the derived table keeps every feature that additions move in one
+direction only.
+% MEASURED (session 36): TPR at 0.1% FPR from ts_predictions.parquet (np.interp on the ROC, as a_price_list.py):
+% seed-0 87.0, s10-ref 84.4, mfull-feat-pre-v2 70.9, mfull-sums-pre-v2 74.7, madd-sums-pre-v2 79.8, expert-mono 14.8.
+
 \paragraph{Beyond the guarantee}
 Real attack tools do not always edit a file the way an operation declares. Six of the eight toolkit attacks write
 byte-level edits of operations in the threat model, but GAMMA's section and import injections go through a library
@@ -293,18 +306,6 @@ detector on 27 of 47 malware and still evades neither monotone detector on a fil
 % artifacts/experiments/a1/toolkit-literature/s10 (10% subsample: ref 27/47 capped, 30 uncapped, low budget 26/47;
 % monotone rows 0/28, 0/30, 0/31 in population; PV-seen 0/22, low budget 4/22) and .../fullstore (unconstrained
 % full set 20/49, advtrain 21/48; sections 0). Sections on ref: >= 870 KB added (median ~1 MB), 4/47 below tau uncapped.
-
-\paragraph{Where the guarantee holds}
-The guarantee holds on the population (\Cref{sec:instances:population}), which contains 38 of the 50 pilot malware and
-all but 1.5\% of the benign files the dataset does not truncate. A monotone detector sends a file outside the
-population to the unconstrained detector, and that is where the toolkit's only evasions of the monotone detectors
-happened: a header-field attack on a file with an unusual layout. An attacker can build such a file on purpose, but a
-file outside the population is then rare among benign software, and so stands out.
-% P1 (closure) measured on the 2,000 files: run 117 (run/117_p1_closure.sh), 0 of 60,934 edits on passing files
-% (of 73,063 applied) leave the population, all twelve operations; pilot: 0 of 3,188. The split, outputs inside
-% the table, and still detected: scripts/a1_toolkit_split.py (runs 78, 105). P2: directions_sums.csv of
-% a_directions_derived_sums_v2 vs _2000_v3, every threat-model column and every per-operation precondition column
-% equal. Coverage: catalogue_checks/2000-v3 with explanation_set/ts.parquet (untruncated: 1,576/1,670; benign 924/938).
 
 
 % 5.3 MATERIAL (session 34 owns it; left untouched):

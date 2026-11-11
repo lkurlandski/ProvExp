@@ -333,3 +333,11 @@ The "implied" notes are earlier readings, not instructions; several of them were
   result; 1% FPR is lenient, 0.1% shows ~10 points) was accepted ("Yes"). Blocks 1-2 of 5.4 drafted (8fd8c9c); no
   feedback on the prose yet: "I am too tired to provide feedback. Our work over the past two days has been exausting
   and quite disappointing."
+- **2026-11-11 (session 37), §5.4 (8fd8c9c) reviewed by Claude with the humanistic-paper-review skill, at the
+  user's request instead of their own review.** The review's headline: three paragraphs relied on something explained
+  later (the population in *The price*, the additions threat model and its 92.2% in *Against hand-picked features*,
+  the sums' advantage before *Where the cost lies*). The user: "I think I agree with the headline points, but less so
+  with the small issues you've pointed out, e.g., the 'recurring patterns' and 'term ledger issues'." Asked why
+  restructuring could work; after the explanation (order the paragraphs by the questions a reader asks in turn, so
+  nothing points forward): "Yeah, I think we can apply the structural shift, then." Applied: price, where the
+  guarantee holds, where the cost lies, width, hand-picked, beyond the guarantee.
