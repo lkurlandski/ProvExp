@@ -168,14 +168,15 @@ describes how we record these positions.
 \subsection{Population}
 \label{sec:instances:population}
 
-The signature covers the threat model only over a population, and Theorem~\ref{thm:fw:directions} needs that
-population closed under the threat model. Ours is the PE files with a plain layout, in which everything the parser
-locates lies within the file, the sections lie within the image that the loader maps, and the headers hold only
-headers. On other files an edit can change items that no operation declares. Appending to a file whose section table
-points past its end, for instance, supplies content the parser looked for and did not find, instead of extending the
-overlay. Whether a file has a plain layout is a property of the file alone, so a detector checks it at inference. A
-file in the population goes to the monotone detector, and any other file to an unconstrained one, which carries no
-guarantee. The population is also closed: none of the 60,934 edits we wrote on files in the population takes a file
-out of it. Of 2,000 files, 1,674 are in the population. Most of the others are files that our copy of the dataset
-truncates at 4~MB, in which something the parser locates lies past the truncated end, and 94\% of the files it does not truncate are
-in the population.
+The signature covers the threat model only over a population, and Theorem~\ref{thm:fw:directions} needs that population
+closed under the threat model. Ours is the PE files with a plain layout, in which everything the parser locates lies
+within the file, the sections lie within the image that the loader maps, and the headers hold only headers. On other
+files an edit can change items that no operation declares. Appending to a file whose section table points past its end,
+for instance, supplies content the parser looked for and did not find, instead of extending the overlay. The population
+is closed: of the 73,063 edits of \Cref{sec:eval:setup}, 60,934 were applied to files in the population, and none of
+them takes a file out of it. Of the 2,000 test files those edits were applied to, 1,674 are in the population. Most of
+the others are files that our copy of the dataset truncates at 4~MB, in which something the parser locates lies past the
+truncated end; of the files it does not truncate, 94\% are in the population.
+
+Whether a file has a plain layout is a property of the file alone, so a detector checks it at inference. A file in the
+population goes to the monotone detector, and any other file to an unconstrained one, which carries no guarantee.
