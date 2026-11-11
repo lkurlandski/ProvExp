@@ -342,6 +342,71 @@ outputs, so every defense learns from the same observations.
 header. It also re-runs the toolkit with a seed per file against the *old* PV-all and ERDALT-8, which shows what
 re-running the very attacks a defense was built from, with other seeds, does to it.
 
+### 10.4 Results of Phase 2 (run 133, ~4.8 h; run 134, Claude, ~3 min)
+
+Per-hypothesis detail in run 133's header. In plain terms:
+
+| Defense (all from the same 3,183 varied outputs on 400 training malware) | TPR at 1% FPR | Toolkit, seed per file | Adaptive beam |
+|---|---|---|---|
+| Undefended GBDT (full store) | 95.6% | 25/49 | (run 127) |
+| Adversarially trained | 95.6% | 12/50 | 23/50 |
+| PV-best (Gimenez et al.'s rule) | 26.2% | 0/9 | **4/9, each one rename** |
+| PV-all (old: seed 0, pilot files) | 53.8% | 1/22 | (14/22, run 127) |
+| ERDALT-best | 62.7% | **24/29, all gamma_api** | 22/29 |
+| ERDALT-8 (old; saw pilot vectors) | 59.7% | 6/24, all header_fields | (17/24, run 131) |
+| Derived monotone detector, same 10% store | 89.7% sums, 87.3% features | 0 in population (§5.4) | 0 |
+
+1. **Coverage (hypothesis held).** Varied runs lower 928 of the 1,070 lowerable features on the training files in the
+   population (seed 0: 847). Of the 90 features our edits lower and the toolkit never did, 20 remain: the
+   entry-section-name buckets (rename only), a few header fields, 3 warnings.
+2. **PV-best is still evaded, and exactly where §10.1 said it would be.** All four of its adaptive evasions are one
+   rename of the entry section, found within the first 50 candidates. Its hole (124 features, 38.8% of its gain) is led
+   by entry-section-name bucket 1 (12.8%); witnessed by our edits 20.6%, nearly all section-name and characteristics
+   buckets. Renaming is not in the toolkit (MAB-Malware has it); the derived table lists those buckets as lowerable
+   before any attack runs. The attacks re-run with a seed per file evade it on none of its 9 files. Caveat: 9 files.
+3. **PV built well detects little (not predicted).** PV-best detects 26.2% at 1% FPR (PV-all 53.8%; the derived
+   detector on the same store and features 87.3%). Not a straw man: leaving out the 8 broken shift outputs (run 134,
+   PV-clean) gives 26.7%. Two causes, both "observation cannot tell the cases apart". (i) PV-all's largest feature (a
+   parser warning, 31% of its gain) is lowerable; the attacks lower it on training files, never did on the pilot
+   files PV-all was built from; PV-best drops it. (ii) PV constrains every feature no attack moved; the largest,
+   `header:characteristics_DLL` (24% of the unconstrained model's gain), cannot be moved by any edit, and the derived
+   table leaves it free. PV-free (never-moved features left unconstrained; not Gimenez et al.'s rule, and unsound
+   against any operation the attacks lack) recovers to 50.9%. The remaining ~36 points to the derived detector are
+   not decomposed (PV drops features only out-of-model side effects lower, e.g. `RELOCS_STRIPPED`, export sizes).
+4. **The old PV-all is not broken by re-randomized attacks:** 1/22. Its weakness was the search (14/22), not the seed
+   of the attacks it saw. This corrects §10.1(1): the fixed seed shaped PV-all's *hole*, but PV-best, built without
+   it, keeps the rename part of the hole and is still evaded.
+5. **ERDALT fails on the attack it was trained against, with other donors.** gamma_api takes its imports from goodware
+   donors; the evaluation uses pilot goodware, ERDALT-best's training used training goodware: 24/29 evaded. ERDALT-8,
+   which saw vectors made with the pilot donors, 0/24 on gamma_api. Its constraint holds on the observed vectors, not
+   on the next ones the same attack makes. Caveat for a reviewer: ERDALT's scores pile at a floor (every evasion ends
+   at p = 0.49966, tau 0.49968; temperature 748), so our reproduction (AUC 0.88, TPR 62.7%) may be weaker than theirs.
+6. **Adversarial training** halves the toolkit's evasion (25 → 12 of ~50) at no cost in detection; the search still
+   evades 23/50 (as predicted).
+
+### 10.5 What §5.3 can claim (recommendation, to settle with the user)
+
+The first case of §10.2 holds, in a sharper form than the draft's. Proposed finding: *a defense learned from
+observed attacks inherits what the attacks did not do, and nothing in the observations says what that is.* Evidence,
+in the order a paragraph would give it:
+
+- **Coverage is invisible to the defender:** the same eight attacks reveal 745 lowerable features under the published
+  protocol and 928 when varied over 400 training files; the derived table lists all 1,070 in one pass.
+- **An operation the attacks lack becomes the hole:** PV built from 3,183 varied outputs is evaded on 4 of 9 files by
+  one rename, through features the derived table names in advance.
+- **Unmoved is not unmovable:** observation cannot separate features the threat model can lower, features it cannot
+  move, and features only out-of-model side effects moved, so PV either trusts what it should not (PV-all: hole, 14/22)
+  or constrains and drops what it need not (PV-best: 26.2% against the derived detector's 87.3% on the same features).
+- **Constraining vectors does not constrain directions:** ERDALT is evaded by its own training attack with other donors
+  (24/29) and by the search (22/29).
+- **Adversarial training** helps against the toolkit and not against the search (12/50 against 23/50).
+
+What it should not claim: that the fixed seed alone made PV evadable (it shaped PV-all's hole, but the rename hole
+survives varied runs), or a number for PV's hole from the seed-0 runs. Audit table: these rows, with run 131's
+leave-one-out folds dropped from the body (they answer a question the varied runs answer better; one sentence or the
+appendix). Open, all optional: more pilot files for PV-best's 9 (the scale-up), decomposing the last ~36 points of
+PV's accuracy gap, and whether ERDALT's score floor needs a better reproduction before a reviewer sees 24/29.
+
 ## 11. Log
 
 - **2026-11-11 (session 34): created.** A first analysis was given in the chat from the draft. At the user's request it
@@ -352,3 +417,8 @@ re-running the very attacks a defense was built from, with other seeds, does to 
 - **2026-11-11 (session 34): Phases 0 and 1 run** (run 132; §10). The PV hole is mostly the harness's fixed seed; the
   gap is not the threat model's breadth (except rename); ERDALT-8 evaded 17/24; Phase 2 revised (§10.3).
   The user agrees this is mostly bad news for §5.3 as planned; Phase 2 scripted as run 133, for the user to run.
+- **2026-11-11 (session 34): Phase 2 read** (run 133, launched by the user; run 134, PV-clean and PV-free, by Claude;
+  §10.4-10.5). PV-best is still evaded, 4/9, each by one rename; PV built from varied runs detects 26.2% (not
+  predicted; not the broken outputs; partly the never-moved features it constrains); ERDALT-best evaded 24/29 by its
+  own gamma_api with other donors; adversarial training 12/50 toolkit, 23/50 search. §10.2's first case holds;
+  recommendation in §10.5, to settle with the user.

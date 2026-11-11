@@ -20,16 +20,16 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
   revised in session 37 after Claude's review with the `humanistic-paper-review` skill (reordered so no paragraph
   points forward; commits c49f654, 9113acb, 23ab085); the user has not read the revised text.
 - **§5.3 is being redesigned** in `docs/section-5.3-design.md` (session 34), the working plan until its prose is
-  written; it supersedes the mock's item 5.3 and the session-33 record. Finding so far, mostly bad news for 5.3 as
-  planned (user agrees): PV's hole and its 14/22 adaptive evasion rest mostly on the attack harness resetting the RNG
-  to seed 0 before every run (GAMMA's section names are the same on every file); with a seed per file one attack
-  covers every section-name bucket. ERDALT (17/24 evaded even when built from all eight attacks) and the
-  completeness argument survive so far. **Run 133** decides how much of the PV result survives; this session (34) is
-  kept alive by the user to read it.
+  written; it supersedes the mock's item 5.3 and the session-33 record. PV-all's hole was shaped by the harness's
+  fixed seed, but **run 133** (defenses rebuilt from varied attack runs on training malware) shows the finding
+  survives in a sharper form (design doc §10.4-10.5): PV built the fair way is still evaded, 4 of its 9 files, each by
+  one rename (an operation no toolkit attack has, named in advance by the derived table), and detects only 26.2% at
+  1% FPR (derived detector on the same features 87.3%); ERDALT is evaded 24/29 by its own training attack with other
+  donors; adversarial training 12/50 toolkit, 23/50 search. **The claim for §5.3 (§10.5) waits on the user.**
 - **Experiments:** Tables 3-5 (side effects, directions, detectors) complete at pilot scale; open items are listed in
   PLAN.md, next step 5. Run 131 (leave-one-out) finished: PV 5/21 on gamma_api, 0 elsewhere; ERDALT high on
-  gamma_api and header_fields; ERDALT-8 adaptive 17/24. Run 132 (coverage by source, seed smoke) done. **Run 133
-  (§5.3 Phase 2, ~7 h) to be launched by the user.**
+  gamma_api and header_fields; ERDALT-8 adaptive 17/24. Runs 132 (coverage by source, seed smoke), 133 (§5.3 Phase
+  2, ~4.8 h) and 134 (PV-clean, PV-free; Claude, ~3 min) done and read.
 - **Documentation:** reorganized 2026-11-09; index `docs/README.md`.
 
 ## Waiting on the user
@@ -37,9 +37,9 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
 - **Holistic reviews with the `humanistic-paper-review` skill, §4 first, then §5** (user, session 37; new session,
   `docs/resume-prompt.md`). The user's own pending comments on 5.1's Checking results and 5.2 (9b7d0ba) can join the
   §5 review.
-- **Run 133** (`run/133_varied_observation.sh`, ~7 h, the user launches it): §5.3's Phase 2, the defenses learned
-  from attacks rebuilt from varied runs on training malware. Session 34 reads it against its header's hypotheses;
-  then §5.3's claim is settled with the user (`docs/section-5.3-design.md`, §10.2), possibly narrowed.
+- **§5.3's claim** (session 34): run 133 read; the recommendation is `docs/section-5.3-design.md` §10.5 (the
+  finding holds, sharpened: coverage invisible to the defender, the missing operation becomes the hole, unmoved is
+  not unmovable, ERDALT constrains vectors not directions). Then block 3 (5.3's prose) can be written.
 - The holistic read of Sound Directions (any time).
 
 ## Scheduled
@@ -50,6 +50,12 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
   decision 8 (iv) and step 4).
 
 ## Session log
+
+- **2026-11-11 (session 34, continued): run 133 read.** Results and hypotheses in its header; design doc §10.4-10.5.
+  PV-best evaded 4/9, each by one rename; it detects 26.2% at 1% FPR. Not the 8 broken shift outputs (run 134,
+  PV-clean: 26.7%; `a_pv_hole.py --drop_import_loss`); partly that PV constrains features no attack moved (PV-free,
+  never-moved left free: 50.9%; `pv-free.monotone.tsv`). ERDALT-best 24/29 by gamma_api with the pilot donors;
+  adversarial training 12/50 and 23/50. **Next:** the user settles §10.5; then 5.3's prose.
 
 - **2026-11-11 (session 37): §5.4 reviewed by Claude and revised.** At the user's request, Claude reviewed §5.4 with
   the `humanistic-paper-review` skill instead of the user reading it. The user agreed with the headline findings,

@@ -22,6 +22,7 @@ Outputs, in `{outdir}/`:
     report.json         per threat model: |PV-kept|, |C4-decreasable|, |hole|, gain shares (hole / PV / all)
     pv.neutralize.txt   features a PV-selected GBDT drops (the complement of PV-kept), for scripts/train_classic.py
     pv.monotone.tsv     PV-kept features as monotone-increasing (+1), matching Gimenez et al.'s PV + monotone model
+    pv-free.monotone.tsv  only the PV-kept features some attack moved (the never-moved ones left free; not Gimenez's)
 
 The gain share is read from --model: pass the PV-selected GBDT (trained from pv.neutralize.txt / pv.monotone.tsv) for
 the decisive number; the default unconstrained GBDT gives an immediate preview of where the hole sits.
@@ -124,6 +125,9 @@ def main() -> None:
     parser.add_argument("--tol", type=float, default=1e-6)
     parser.add_argument("--attacks", nargs="+", default=None, help="Derive PV from these attacks only (default: all).")
     parser.add_argument("--tag", type=str, default="", help="Suffix of the output files, e.g. '-seen'.")
+    parser.add_argument("--drop_import_loss", type=int, default=None,
+                        help="Leave out attacked outputs that lower at least this many `imports:` features (outputs "
+                             "whose import table no longer parses), as a careful defender would.")
     args = parser.parse_args()
 
     args.outdir.mkdir(parents=True, exist_ok=True)
@@ -135,6 +139,17 @@ def main() -> None:
         if unknown:
             raise ValueError(f"Attacks not in the perturbation vectors: {sorted(unknown)}")
         df = df.filter(pl.col("attack").is_in(args.attacks))
+    broken: list[list[str]] = []
+    if args.drop_import_loss is not None:
+        # NOTE: the shift attacks leave a few files with an import table pefile no longer parses; their hundreds of
+        # lowered import buckets come from the breakage, not from any edit in the threat model, and on their own make
+        # PV drop ~400 import features (run 133). Dropping those outputs is the strongest fair PV.
+        imports = [c for c in df.columns if c.startswith("imports:")]
+        lost = (df.select(imports).to_numpy() < -args.tol).sum(axis=1)
+        is_broken = lost >= args.drop_import_loss
+        broken = [[n, a] for n, a in zip(df["name"].filter(is_broken).to_list(), df["attack"].filter(is_broken).to_list())]
+        df = df.filter(~pl.Series(is_broken))
+        print(f"Left out {len(broken)} outputs that lower >= {args.drop_import_loss} import features: {broken}")
     meta = {"name", "attack", "p_clean", "p_adv"}
     names = [c for c in df.columns if c not in meta]
     deltas = df.select(names).to_numpy()
@@ -169,6 +184,8 @@ def main() -> None:
         "directions": f"{args.directions_dir}/*-{args.variant}",
         "features_moved_by_some_attack": len(moved),
         "pv_kept": len(kept),
+        "drop_import_loss": args.drop_import_loss,
+        "outputs_left_out": broken,
     }
     hole_rows: list[dict[str, object]] = []
     for tm in THREAT_MODELS:
@@ -200,6 +217,10 @@ def main() -> None:
     dropped = [n for n in names if n not in kept]
     (args.outdir / f"pv{t}.neutralize.txt").write_text("\n".join(dropped) + "\n")
     (args.outdir / f"pv{t}.monotone.tsv").write_text("".join(f"{n}\t1\n" for n in names if n in kept))
+    # A variant (not Gimenez et al.'s): constrain only the kept features some attack moved, leaving the never-moved
+    # ones free, as a defender would who trusts that what no attack moved cannot be moved.
+    (args.outdir / f"pv{t}-free.monotone.tsv").write_text(
+        "".join(f"{n}\t1\n" for n in names if n in kept and n in moved))
 
     print(json.dumps(report, indent=2))
     print(f"\nWrote hole{t}.csv ({len(hole_rows)} rows) and PV train files to {args.outdir}/", flush=True)

@@ -41,6 +41,27 @@
 # Smoke (Claude, 2026-11-11): PV selection from training-malware vectors (a_pv_hole --adv_dir) on run 132's 100
 # gamma_sections vectors; a1_evaluate --seed_per_file on 6 pilot files with gamma_sections against PV-all (1 detected,
 # not evaded, score 0.958 -> 0.891). a_advtrain --seed_per_file is run 132's step 2.
+#
+# Ran 2026-11-11, ~10:55-15:43 (~4.8 h): (1) 41 min for 3,155 of 3,200 tasks, then a 45-min stall on one file that hung
+# every attack (3,183 valid); (2) ~2 min; (3) ~2 min; (4) ~25 min; (5) ~8 min; (6) 8 + 15 + 16 min; (7) 34, 26, 42 min.
+# Undefended evasion on the training malware (low budget): gamma_api 144/399, gamma_shift 51, header_fields 36,
+# content_shift 17, gamma_sections 7, padding 7, dos_extend 2, format_exploit 1.
+# Results against the hypotheses (read by Claude, 2026-11-11; docs/section-5.3-design.md §10.4):
+#   (1) Held. Coverage on the 314 training files in the population: 928 of 1,070 (847 at seed 0); toolkit-operation
+#       features 913/980. Witnessed by our edits but never lowered by the toolkit: 90 -> 20 (17 section/header, 3
+#       warnings); the entry-section-name buckets stay unlowered.
+#   (2) Partly failed. PV-best keeps 1,137 features (fewer, as predicted) but loses 28 points, not a few: TPR 26.2% at
+#       1% FPR, AUC 0.844 (PV-all 53.8%, 0.944; our monotone detector on the same store 89.7% on the sums, 87.3% on the
+#       features). Its hole: 124 features, 38.8% of its gain; witnessed by our edits 12 features, 20.6% (section 19.9:
+#       entry-section-name buckets 1 and 5, characteristics bucket 5); the rest mostly strings our edits never lowered.
+#       Not <= 10%. (Run 134: leaving out the 8 broken shift outputs changes nothing, 26.7%.)
+#   (6) Mixed. The old PV-all, its own attacks re-run with a seed per file: 1/22 (gamma_sections), not "several". PV-best
+#       0/9 (held). ERDALT-best 24/29, all gamma_api (failed: predicted a few); the evaluation's gamma_api takes its
+#       imports from the pilot goodware, ERDALT-best saw only imports from training goodware. The old ERDALT-8, which
+#       saw pilot-donor vectors: 6/24, all header_fields. Adversarially trained 12/50; undefended 25/49.
+#   (7) Held. Beam against PV-best 4/9, every one a single rename within the first 50 candidates; ERDALT-best 22/29
+#       (mostly one append or one added section; scores sit at ERDALT's floor, p 0.49966 against tau 0.49968);
+#       adversarially trained 23/50 (run 130's model: 24/49). No soundness violation; every evasion re-extracted.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 source env/bin/activate
