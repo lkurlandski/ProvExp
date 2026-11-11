@@ -208,18 +208,18 @@ file outside the population is then rare among benign software, and so stands ou
 % equal. Coverage: catalogue_checks/2000-v3 with explanation_set/ts.parquet (untruncated: 1,576/1,670; benign 924/938).
 
 \paragraph{Where the cost lies}
-The table is derived one operation at a time, so the cost can be split by operation. We retrained the monotone
-detector on the sums with each operation left out of the threat model in turn; each variant only recombines the
-per-operation directions, without another pass over the corpus. At 1\% false positives, dropping the two-sided
-features costs little: a
-detector that drops them and constrains nothing else loses 0.2 points. The loss comes from the constraints, and mostly
-from two operations. With import addition in the threat model, all 1,282 import hash buckets must be nondecreasing,
-and leaving it out recovers 2.1 points; leaving out the three header overwrites recovers 1.4. No other operation moves
-detection by more than 0.4 points in either direction, not even rename, without which 301 more features stay in the
-model. Reading the sums instead of the features recovers 2.4 points, because the re-encodings keep one-sided features
-that their normalized readouts made two-sided. At 0.1\% false positives the picture is less clean: dropping the
-two-sided features alone costs 5.2 points, as much as all the constraints together, the same two operations each cost
-about four points, and the other differences are noisier (leaving out append lowers detection by 3.0 points).
+Most of the cost comes from the constraints of two operations, not from the features the detector drops. The table is
+derived one operation at a time, so we retrained the monotone detector on the sums with each operation left out of the
+threat model in turn. At 1\% false positives, a detector that drops the two-sided features and constrains nothing else
+loses 0.2 points. With import addition in the threat model, all 1,282 import hash buckets must be nondecreasing, and
+leaving it out recovers 2.1 points; leaving out the three header overwrites recovers 1.4. No other operation moves
+detection by more than 0.4 points in either direction. Rename makes the most features two-sided, 301, yet leaving it out
+recovers only 0.1 points, so the features it frees carry little detection. Reading the sums instead of the features
+recovers 2.4 points, because the re-encodings keep one-sided features that their normalized readouts made two-sided. At
+0.1\% false positives, dropping the two-sided features costs more, 5.2 points, about as much as all the constraints
+together, and the same two operations each cost about four. At this rate the threshold is set by the few highest-scoring
+benign files, so retraining alone moves detection by a few points: leaving out append, which removes constraints, still
+lowers it by 3.0.
 % MEASURED (2026-11-04): run/126_price_list.sh, artifacts/experiments/a_price_list/table.json. TPR at 1% FPR: full
 % catalogue 89.6%; drop-only (no constraints) 93.3%; warnings only dropped 93.6%; reference 93.5%. Leaving out: imp
 % 91.7%, the three overwrites 91.0% (hdr 90.8%, chk 90.3%, dos 89.4%), rdb 90.0%, rsg 90.0%, ren 89.7%, app 89.3%,
@@ -294,14 +294,19 @@ direction only.
 
 \paragraph{Beyond the guarantee}
 Real attack tools do not always edit a file the way an operation declares. Six of the eight toolkit attacks write
-byte-level edits of operations in the threat model, but GAMMA's section and import injections go through a library
-that rebuilds the file's layout, which no operation does. Of the 288 toolkit outputs on files in the population, 252
-move every feature within the derived table; the 36 others all come from the two rebuilding attacks, and most of them
-change the size of the resource directory, which the table holds fixed. Corollary~\ref{cor:fw:robustness} says nothing
-about these files, yet none of the rebuilding attacks' outputs evades a monotone detector (0/56 and 0/60), while
-they evade the unconstrained detector on 27 of 70. With the budget of the GAMMA paper~\cite{demetrio2021functionality},
-about 500 queries instead of 100 and a larger pool of donor content, import injection evades the unconstrained
-detector on 27 of 47 malware and still evades neither monotone detector on a file in the population.
+byte-level edits of operations in the threat model, but GAMMA's section and import injections go through a library that
+rebuilds the file's layout, which no operation does. Of the 288 toolkit outputs on files in the population, 252 move
+every feature within the derived table; the 36 others all come from the two rebuilding attacks, and most of them change
+the size of the resource directory, which the table holds fixed. Corollary~\ref{cor:fw:robustness} says nothing about
+these files, yet the two rebuilding attacks evade neither monotone detector on any file in the population that it
+detects, 28 files for the detector on the features and 30 on the sums. On the 35 such files of the unconstrained
+detector, import injection evades it on 21 and section injection on 6. With the budget of the GAMMA
+paper~\cite{demetrio2021functionality}, about 500 queries instead of 100 and a larger pool of donor content, import
+injection evades the unconstrained detector on 27 of the 47 malware it detects and still evades neither monotone
+detector on a file in the population.
+% MEASURED: in-population split, artifacts/experiments/a1/toolkit-split/split.json (evasion_passing: ref gamma_api
+% 21/35, gamma_sections 6/35; mfull-feat 0/28, mfull-sums 0/30 for both). Rename frees 301 features: a_price_list
+% M_full.neutralize.txt 1,464 lines vs M_full-no-ren 1,163; TPR at 1% FPR 89.6 -> 89.7.
 % MEASURED (2026-11-04): run/124_a1_toolkit_literature_budget.sh, budget "literature" (population 10, 51 iterations),
 % artifacts/experiments/a1/toolkit-literature/s10 (10% subsample: ref 27/47 capped, 30 uncapped, low budget 26/47;
 % monotone rows 0/28, 0/30, 0/31 in population; PV-seen 0/22, low budget 4/22) and .../fullstore (unconstrained
