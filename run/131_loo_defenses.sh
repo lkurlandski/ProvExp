@@ -88,6 +88,7 @@ fi
 echo "(1/4) PV, eight folds: selection, training, the held-out attack. Logs: artifacts/logs/*-pv-loo-<attack>.log"
 for h in $ATTACKS; do
   seen=$(others $h)
+  if [[ -f $OUT/pv/$h/table.json ]]; then echo "  fold $h: $OUT/pv/$h exists; skipping."; continue; fi
   log=artifacts/logs/train_classic-gbdt-0-s10-pv-loo-$h.log
   echo "  fold $h: PV selection and training. Log: $log"
   python scripts/a_pv_hole.py \
@@ -124,6 +125,10 @@ echo "(2/4) ERDALT, nine models (eight folds, all eight) on GPUs ${GPU_IDS[*]:0:
 train_erdalt() {  # gpu, suffix, attacks...
   local gpu=$1 suffix=$2; shift 2
   local log=artifacts/logs/train_erdalt-0-s10$suffix.log
+  if [[ -f $M/erdalt/seed-0-s10$suffix/ts_predictions.parquet ]]; then
+    echo "  erdalt/seed-0-s10$suffix exists; skipping."
+    return
+  fi
   echo "  training erdalt/seed-0-s10$suffix on GPU $gpu. Log: $log"
   CUDA_VISIBLE_DEVICES=$gpu OMP_NUM_THREADS=8 python scripts/train_erdalt.py \
     --features $F_ER \
@@ -131,7 +136,7 @@ train_erdalt() {  # gpu, suffix, attacks...
     --deltas $P/deltas.parquet \
     --adv_dir $ADV $ADV2 \
     --attacks "$@" \
-    --suffix="$suffix" \
+    --suffix="-s10$suffix" \
     --epochs 310 \
     --batch_size 256 \
     --seed 0 \

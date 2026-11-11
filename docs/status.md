@@ -4,7 +4,7 @@ Kept short: the current state, what waits on the user, and the last few sessions
 its reasons are in `PLAN.md`. When the session log below grows past about ten entries, move the oldest to
 `docs/archive/` (the log before 2026-11-09 is `docs/archive/status-log-2026-10-to-2026-11-09.md`).
 
-## Current state (2026-11-10, session 32)
+## Current state (2026-11-11, session 33)
 
 - **Framework (§2-3):** rewritten; the user is reasonably satisfied. Open: the user's holistic read of Sound
   Directions after round 4 (finetuning only).
@@ -15,16 +15,16 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
   validation section and not a defense paper. Plan, one line per paragraph, and checks C1-C3: `docs/paper-mock.md`,
   §5. Blocks 1-2 (lead, 5.1, 5.2) drafted and revised after the user's review (0069f56); the user's second
   round of feedback on 5.1-5.2 comes 2026-11-11. Blocks 3-4 (5.3, 5.4) to do.
-  The held-out cells of 5.3 are `\synthetic` until run 131 is read.
+  The held-out cells of 5.3 are `\synthetic`; how to test learned defenses is being rethought (session 34).
 - **Experiments:** Tables 3-5 (side effects, directions, detectors) complete at pilot scale; open items are listed in
-  PLAN.md, next step 5. **Running (user, started 2026-11-10, ~7 h on GPU 3):** run 131, leave-one-out PV and ERDALT.
+  PLAN.md, next step 5. **Running (user, rerun 2026-11-11):** run 131, ERDALT leave-one-out (PV half done: gamma_api 5/21, other folds 0).
 - **Documentation:** reorganized 2026-11-09; index `docs/README.md`.
 
 ## Waiting on the user
 
 - **Feedback on §5.1-5.2** (revised version, commit 0069f56), promised for 2026-11-11.
-- **Run 131's results** (running since 2026-11-10: `CUDA_VISIBLE_DEVICES=3 NUM_WORKERS=16`). Its summary replaces
-  the `\synthetic` held-out cells of §5.3; check C2 and block 3 can start before it finishes.
+- **§5.3's methodology** (session 34 restarts it; record: `docs/evidence/held-out-attacks-perspectives.md`).
+- **Run 131's ERDALT half** (rerun 2026-11-11 after the path fix; PV half done). Header to sync once it finishes.
 - The holistic read of Sound Directions (any time).
 
 ## Scheduled
@@ -35,6 +35,15 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
   decision 8 (iv) and step 4).
 
 ## Session log
+
+- **2026-11-11 (session 33): run 131 partly read, C2 checked; §5.3's methodology to restart.** Run 131's ERDALT
+  evaluation had crashed on a model-path bug (training wrote `seed-0-loo-*`, evaluation read `seed-0-s10-loo-*`);
+  folders renamed, script fixed (finished steps skip), rerun by the user. PV leave-one-out: gamma_api 5/21, other
+  seven folds 0 (user's hypothesis failed, Claude's held). C2: the toolkit lowered 745 of the 1,070 lowerable
+  features (all 512 byte statistics, 233 of the other 558); the mock's "small minority" failed. Discussion of how to
+  test learned defenses (mean vs worst fold, keep-one, MAB-Malware, all subsets) judged low quality by the user;
+  recorded with strengths and weaknesses in `docs/evidence/held-out-attacks-perspectives.md`. **Next:** a fresh
+  overview and analysis of §5.3 (`docs/resume-prompt.md`).
 
 - **2026-11-10 (session 32): leave-one-out scripted and started (run 131).** `run/131_loo_defenses.sh`: eight PV folds (selection
   from seven attacks, the held-out attack run against the fold's model), nine ERDALT models on two GPUs, the beam
