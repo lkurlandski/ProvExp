@@ -5,9 +5,9 @@
 % previous structure, kept for reference, is commented out below 4.2.
 
 \Cref{sec:framework} proves its results for any sum-then-readout extractor, and leaves to an instance everything
-that depends on the format of the input. An instance supplies the items, contributions, and readouts, a decision about
-the features of another form, a threat model with a signature that covers it, and the population over which the
-signature holds. This section supplies the four for the EMBER~\cite{anderson2018ember} feature set. Any new instance, in malware detection or in another
+that depends on the format of the input. An instance supplies the extractor in sum-then-readout form, a decision about
+the features that do not fit this form, a threat model with a signature that covers it, and the population over which
+the signature holds. This section supplies the four for the EMBER~\cite{anderson2018ember} feature set. Any new instance, in malware detection or in another
 domain, needs to supply the same.
 
 \subsection{EMBER and PE Files}
@@ -21,28 +21,26 @@ which lists the functions the program uses from other libraries. Bytes after the
 the loader does not map. EMBER~\cite{anderson2018ember} is the standard benchmark for this task (we use the most
 recent version, EMBER-v3~\cite{joyce2025ember}). Its extractor parses a file and computes 2,568 features that describe
 these structures by their metadata and statistics: the header fields, the size, entropy, and characteristics of each
-section, hashes of the imported and exported names, the Rich header, the signature, and the parser's warnings,
-together with histograms of the bytes and of their local entropy and statistics of the printable strings, taken over
-the whole file. We instrument the extractor without changing what it computes, giving each group of features a method
-that returns its items from the same parse.
+section, hashes of the imported and exported names, the Rich header, the Authenticode signature, and the parser's
+warnings, together with histograms of the bytes and of their local entropy and statistics of the printable strings,
+taken over the whole file.
 
 \subsection{EMBER as a Sum-then-Readout Extractor}
 \label{sec:instances:record}
 
-Both the metadata and the statistics fit the form of \Cref{sec:fw:model}. A statistic adds up something over parts
-of the file. The byte histogram, for instance, counts the bytes of each value, and the import features count the
-functions imported from each library. A piece of metadata, such as a header field, is the value of a single part.
-These parts are EMBER's items. Some are found by scanning the bytes in order, such as single bytes, the overlapping windows
-behind the entropy histogram, printable strings, and the Rich header. Others are found by parsing the structures
-described above, such as the sections, the overlay, header fields, imports, libraries, exports, the signature, and the
-section that contains the entry point. Most sums are additive, either counts, such as the number of strings or of imports, or
-totals, such as the length of the strings. Where EMBER hashes names into a fixed number of buckets, as it does for
-section names and for imported and exported names, every bucket is a sum of its own. A few sums are pools, which keep
-the largest or smallest value of a section property such as its entropy. Every form of readout in
-\Cref{tab:fw:readouts} occurs, from the identity for header fields and counts to the normalized bins of the
-histograms; Appendix~\ref{sec:ember} lists them, with the two features we write over sums differently from EMBER
-without changing their values. Our tests confirm that the readouts of the recorded sums give every one of the 2,480
-features that have items exactly as the extractor does.
+Both the metadata and the statistics fit the form of \Cref{sec:fw:model}. A statistic adds up something over parts of
+the file. The byte histogram, for instance, counts the bytes of each value, and the import features count the functions
+imported from each library. A piece of metadata, such as a header field, is the value of a single part. These parts are
+EMBER's items. Some, such as single bytes and printable strings, are found by scanning the bytes in order, and others,
+such as sections and imports, by parsing the structures described above. Most sums are additive, either counts, such as
+the number of strings or of imports, or totals, such as the length of the strings. Where EMBER hashes names into a fixed
+number of buckets, as it does for section names and for imported and exported names, every bucket is a sum of its own. A
+few sums are pools, which keep the largest or smallest value of a section property such as its entropy. Every form of
+readout in \Cref{tab:fw:readouts} occurs, from the identity for header fields and counts to the normalized bins of the
+histograms. Appendix~\ref{sec:ember} lists the items and the readouts, with the two features we write over sums
+differently from EMBER without changing their values. We instrument the extractor without changing what it computes,
+giving each group of features a method that returns its items from the same parse. Our tests confirm that the readouts
+of the recorded sums give every one of the 2,480 features that have items exactly as the extractor does.
 
 EMBER fits the definition closely but not everywhere, and an instance must decide what to do with the features that
 do not fit. Some fit once they are written differently, as the two features above do. Others have no items at all.
@@ -52,8 +50,7 @@ sum-then-readout extractor on the remaining features (Definition~\ref{def:fw:ext
 direction $\mathsf{both}$, which is always sound. A monotone detector reads no feature marked $\mathsf{both}$
 (\Cref{sec:fw:directions}), so for a detector the two choices coincide. We drop the warnings. Earlier versions of EMBER did
 not compute them~\cite{joyce2025ember},
-and a detector trained without them detects as much malware as one trained with them, 0.1 points more at a 1\%
-false-positive rate. % run 126 (pilot)
+and a detector trained without them loses no detection (0.1 points more at a 1\% false-positive rate). % run 126 (pilot)
 
 % ---- Superseded by blocks 2-4 (kept for reference until they are written) ----
 % From the old 4.1, for (c): locating positions and the single-byte flip check.
@@ -93,22 +90,19 @@ false-positive rate. % run 126 (pilot)
 
 Attacks that turn a malware sample into an evasive file, rather than an evasive feature vector, edit the file only in
 ways that keep the program working. Demetrio et al.~\cite{demetrio2021adversarial} survey these practical,
-functionality-preserving manipulations of PE files. The common ones append bytes at the end of the file, fill the
-slack space that pads each section to its alignment, inject a new section or new entries in the import table, and
-change header fields. Demetrio et al.\ add three that exploit ambiguities of the format, by rewriting the DOS header,
-which the loader skips, or by making room for new content in front of the PE header or of the first section.
-GAMMA~\cite{demetrio2021functionality} takes the injected content from benign programs, appended at the end or placed
-in new sections. MAB-Malware~\cite{song2022mab} also renames sections, removes the certificate or the debug
-information, and breaks the checksum. Eight of these attacks are implemented in the secml-malware
-library~\cite{demetrio2021adversarial}: padding, GAMMA section injection, GAMMA import injection, two content shifts,
-DOS-header extension, header-field changes, and a format exploit. We call them the \emph{toolkit} attacks and run them
-against every detector in \Cref{sec:evaluation}.
+functionality-preserving manipulations of PE files. The common ones append bytes at the end of the file, overwrite the
+slack space that pads each section to its alignment, add a section or imports, and overwrite header fields. Demetrio
+et al.\ add three that exploit ambiguities of the format: overwriting the DOS header and stub, which the loader skips,
+and inserting a gap in front of the PE header or of the first section. GAMMA~\cite{demetrio2021functionality} takes
+the content it adds from benign programs. MAB-Malware~\cite{song2022mab} also renames sections, removes the debug
+directory entry or the certificate table entry, and overwrites the checksum. Eight attacks built from these operations
+are implemented in the secml-malware library~\cite{demetrio2021adversarial}. We call them the \emph{toolkit} attacks,
+list the operations each one uses in \Cref{tab:instances:catalogue}, and run them against every detector in
+\Cref{sec:evaluation}.
 
 Our threat model is the union of these edits, twelve operations in all (\Cref{tab:instances:catalogue}), with all
-content (bytes, section names and properties, imported names) chosen by the attacker within a byte budget. A recent
-comparison of nine such attacks against eight detectors supports this choice: MAB-Malware and the shifting variant of
-GAMMA together evade on about 99\% of the samples that the other attacks evade
-on~\cite{zainab2026breaking}. The operations form three nested threat models. \emph{Additions} only add content, the setting monotone detectors are
+content (bytes, section names and properties, imported names) chosen by the attacker within a byte budget. The
+operations form three nested threat models. \emph{Additions} only add content, the setting monotone detectors are
 designed for; \emph{shifts} adds the two insertions that move existing content; and \emph{full} adds every overwrite
 and removal. Two kinds of edit from the literature are left out. Packing replaces the file with a different program
 that restores the original at run time~\cite{demetrio2021adversarial}, so no item of the original survives it.
@@ -117,27 +111,30 @@ lucas2021malware,lucas2023adversarial,ling2024wolf}, and they are much harder to
 than the structural edits above; \Cref{sec:discussion} returns to them.
 
 \begin{table}[t]
-  \caption{The operations of the threat model. Declared: the operation states its changes to the items. Item tables:
-  the changes of an overwrite are collected from the item tables of the population's files. All content, names, and
+  \caption{The operations of the threat model. Each threat model adds operations to the one above it; the toolkit
+  attacks use six of the twelve. Changes: declared, the operation states its changes to the items; item tables, the
+  changes of an overwrite are collected from the item tables of the population's files. All content, names, and
   properties are the attacker's choice.}
   \label{tab:instances:catalogue}
-  \small
-  \begin{tabular}{@{}lll@{}}
+  \footnotesize
+  \setlength{\tabcolsep}{3pt}
+  \begin{tabular}{@{}lllp{0.22\columnwidth}@{}}
     \toprule
-    Operation & Changes & Threat model \\
+    Operation & Changes & Model & Toolkit attacks \\
     \midrule
-    append bytes at the end & declared & additions \\
-    add a section & declared & additions \\
-    add imports & declared & additions \\
-    insert a gap before the PE header & declared & shifts \\
-    insert a gap before the first section & declared & shifts \\
-    overwrite section slack & item tables & full \\
-    overwrite the DOS header and stub & item tables & full \\
-    overwrite loader-ignored header fields & item tables & full \\
-    overwrite the checksum & item tables & full \\
-    rename a section & declared & full \\
-    remove the debug directory entry & declared & full \\
-    remove the signature directory entry & declared & full \\
+    append bytes at the end & declared & additions & padding \\
+    add a section & declared & additions & GAMMA sections \\
+    add imports & declared & additions & GAMMA imports \\
+    insert a gap before the PE header & declared & shifts & \raggedright DOS extension, format exploit \tabularnewline
+    insert a gap before the first section & declared & shifts &
+      \raggedright content shift, GAMMA shift, format exploit \tabularnewline
+    overwrite section slack & item tables & full & \\
+    overwrite the DOS header and stub & item tables & full & \\
+    overwrite loader-ignored header fields & item tables & full & header fields \\
+    overwrite the checksum & item tables & full & \\
+    rename a section & declared & full & \\
+    remove the debug directory entry & declared & full & \\
+    remove the certificate table entry & declared & full & \\
     \bottomrule
   \end{tabular}
 \end{table}

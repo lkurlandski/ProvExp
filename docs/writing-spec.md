@@ -341,3 +341,17 @@ The "implied" notes are earlier readings, not instructions; several of them were
   restructuring could work; after the explanation (order the paragraphs by the questions a reader asks in turn, so
   nothing points forward): "Yeah, I think we can apply the structural shift, then." Applied: price, where the
   guarantee holds, where the cost lies, width, hand-picked, beyond the guarantee.
+- **2026-11-11 (session 38), §4 reviewed by Claude with the humanistic-paper-review skill (eight findings).** The
+  user: "One of your goals seems to be to cut content and trim. This is good, but I think some of your suggestions are
+  taking things to far. Moving very small snippets to the appendix, for example, is going to do more harm than good."
+  On the Zainab et al. sentence: "It feels like we're stating this finding from the MAB-Malware paper but we aren't
+  nessecarily applying it in our work. I'm not 100% whether we even need this sentence or what its value is." (Deleted
+  after Claude found MAB-Malware uses code randomization, which the threat model excludes.) On signature vs.
+  certificate: "Are the PE signature and PE certificate interchagable terms?" On the signature paragraphs of 4.3: "I
+  don't 100% follow your suggestion." On 4.4: "I have no idea what this paragraph is tring to communicate." On the
+  lead: replace the list "items, contributions, and readouts" with the sum-then-readout noun, "Then the fact that its
+  a list four is clear." The two awkward sentences: "Both of those sentences you picked out are pretty ugly." On
+  process: Claude renumbered the findings in its reply and proposed too large a first pass: "You've applied a new
+  numbering system, which makes things extremely confusing. You're proposed first pass is also too ambitious. The
+  point of breaking this up it to move some of the findings outside of my frontal cortex to allow me to focus on the
+  remaining ones." First pass: findings 1-3 and 6-8; 4 and 5 later.
