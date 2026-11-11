@@ -30,21 +30,20 @@ false-positive rate on the benign test files.
 % finished (PLAN.md, step 5).
 
 \paragraph{Attacks}
-An attack evades a detector when it drives a detected malware sample below the detector's threshold. Unless stated
-otherwise, the attacks may use every operation of the full threat model (\Cref{tab:instances:catalogue}), within a byte
-budget of 5\% of the file or 512~KB, whichever is larger. We run two kinds of attack. The first is the eight toolkit
-attacks of \Cref{sec:instances:catalogue}, each with 100 queries to the detector per file, the budget under which
-Gimenez et al.~\cite{gimenez2025certifiably} evaluate their defenses. With the GAMMA paper's budget of about 500
-queries~\cite{demetrio2021functionality}, the strongest of them evades the undefended detector on one more file. The
-second is an attack of our own, adaptive in the sense of Tramèr et al.~\cite{tramer2020adaptive}: it is designed
-against the detector it attacks. Each toolkit attack optimizes one fixed kind of edit using only the detector's score;
-ours reads the detector's model and searches every operation of the threat model for the edits that lower that
-detector's score. It is a beam search. At each step it applies random candidate edits to the three lowest-scoring files
-found so far, computes each candidate's features by Proposition~\ref{prop:fw:side-effects} instead of extracting them,
-and keeps the three lowest-scoring files; after three steps without improvement it restarts from the original file.
-When it adds or renames a section, it picks a name whose hash lands in a bucket the model weighs toward benign. It
-scores up to 5,000 candidates per file.
-% MEASURED: literature budget, run/124_a1_toolkit_literature_budget.sh: import injection 27/47 vs 26/47 at 100 queries.
+An attack evades a detector when it drives a detected malware sample below the detector's threshold, adding at most
+5\% of the file or 512~KB, whichever is larger. We first run the eight toolkit attacks of
+\Cref{sec:instances:catalogue}, the published attacks a practitioner can run off the shelf, and the ones Gimenez et
+al.~\cite{gimenez2025certifiably} learn their defense from. They are black-box: each applies one kind of edit and tunes
+it with a genetic algorithm that sees only the detector's score, with 100 queries per file, as in Gimenez et al. A
+detector these attacks fail to evade may still fall to an attacker who knows the model and combines edits. In addition,
+we therefore implement a white-box adaptive attack, in the spirit of Tramèr et al.~\cite{tramer2020adaptive}, to test
+on real files whether a detector can be evaded where the computation says it can, and not where it says it cannot. It
+reads the detector's trees, combines any operations of the full threat model (\Cref{tab:instances:catalogue}) unless
+stated otherwise, computes each candidate's features by Proposition~\ref{prop:fw:side-effects} instead of extracting
+them, and scores up to 5,000 candidates per file (Appendix~\ref{sec:ember}).
+% MEASURED: literature budget, run/124_a1_toolkit_literature_budget.sh: with the GAMMA paper's ~500 queries, import
+% injection evades the undefended detector on 27/47 vs 26/47 at 100 queries (cut from the prose, user, session 35).
+% Toolkit attacks: secml-malware's black-box problems, population 10, 10 iterations (scripts/a_pv_attacks.py, "low").
 % Tramer et al.: papers/tramer2020adaptive.pdf, Section 1: "adaptive attacks, i.e., attacks that were specifically
 % designed to target a given defense". The bucket choice: scripts/a1_adaptive.py, target_buckets (reads the booster).
 % REMOVED (session 35, user: the setup covers what the subsections share): the protocol of the defenses learned from
@@ -56,7 +55,7 @@ We count an evasion only after writing the edited file with our own code and run
 features we compute guide the adaptive attack but never decide a result. To test the computation itself, we applied
 each of the twelve operations several times to each of 2,000 test files, 73,063 edits in all, with parameters chosen
 to provoke mistakes (repeated, colliding, and case-variant names, empty imports, printable content next to existing
-strings, a forged Rich header). Our computation declines to predict an edit that overwrites bytes the parser reads to
+strings, a forged Rich header). Our computation declines to predict an edit that writes bytes the parser reads to
 find other structures, and no other edit (Appendix~\ref{sec:ember}). On every other edit to a file in the population
 (\Cref{sec:instances:population}), the features we compute match the extracted ones exactly. No edit moved a feature in
 a direction the derived table (Definition~\ref{def:fw:derived}) rules out, and the table derived from 100 of the files

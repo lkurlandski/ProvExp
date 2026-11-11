@@ -314,3 +314,11 @@ The "implied" notes are earlier readings, not instructions; several of them were
   attack adaptive? The fact that it combines different types of perturbations?"; "If the query budget matters little,
   why are we emphasizing it? All told, this paragraph is a confusing, unstructured mess"; label the paragraphs with
   run-in headings as in the next subsection; "The last paragraph has too much jargon."
+- **2026-11-11 (session 35), the revised 5.1 (e3375ca), stopped in paragraph 2.** "You write that 'Unless stated
+  otherwise, the attacks may use every operation of the full threat model...', but at the same time, we're using
+  toolkit attacks that only apply a single perturbation, I thought? How does this make sense?" On the budgets: "Dude,
+  holy shit, just fucking state the number of queries you're using. Why does it take you multiple sentences to
+  communicate this astronomically simple fact? I had to read this like three times." "'it is designed against the
+  detector it attacks' is completely and utterly inadequate to describe what you mean by 'adaptive'. Every attack in
+  the paper is designed (to some extent or other) against the detector it attacks." The description of the adaptive
+  attack: "completely and utterly autistic." "This is terrible and I didn't even finish the second paragraph."
