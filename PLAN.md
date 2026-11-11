@@ -162,6 +162,20 @@ them (below).
     undermine the results. Run 133 rebuilds PV, ERDALT and adversarial training from varied runs on training malware
     only; §5.3's claim is settled after it (design doc, §10.2), possibly narrowed (ERDALT, and that observations
     cannot certify their own completeness).
+    *Session 34, continued (2026-11-11): run 133 read, §5.3's claim agreed* (design doc §10.4-10.5). The finding
+    survives the fair design, sharpened: a defense learned from observed attacks inherits what the attacks did not
+    do, and nothing in the observations says what that is. (i) Coverage is invisible to the defender (the same eight
+    attacks lower 745 or 928 of the 1,070 lowerable features depending on how they are run; the derivation lists all
+    at once). (ii) The operation the attacks lack becomes the hole: PV rebuilt from 3,183 varied outputs is evaded on
+    4 of its 9 files, each by one rename. (iii) Unmoved is not unmovable: PV either trusts what it should not (PV-all,
+    14/22) or constrains what it need not (PV rebuilt detects 26.2% at 1% FPR against the derived detector's 87.3% on
+    the same features; the DLL flag, which no edit moves, is constrained; run 134: not the broken shift outputs, and
+    leaving never-moved features free gives 50.9%). (iv) ERDALT constrains the vectors it saw, not the next ones: its
+    own training attack with other donors evades it 24/29, the search 22/29. (v) Adversarial training helps against
+    the toolkit (12/50 against 25/49), not the search (23/50). Not claimed: that the fixed seed alone made PV
+    evadable. Leave-one-out stays (user: "still a very powerful and interesting experiment"), redone the fair way as
+    run 135 (folds from run 133's outputs; a sentence in the body, per-fold table in the appendix); run 131's folds
+    are retired.
     *Session 36 (2026-11-11): 5.4 drafted* (8fd8c9c, unreviewed). Changes from the mock's plan, agreed with the user:
     the expert-set comparison comes second, right after the price (it is the result a practitioner can act on: the
     published hand-picked robust detector keeps 29.1% where the derived one keeps 92.2% under the same guarantee);
@@ -183,7 +197,7 @@ them (below).
    **§4, then §5, rewritten in blocks** with the user's review after each (the way Sound Directions round 4 worked;
    use the `paper-prose` skill). The mechanical vocabulary fixes go with them (R3/R4, "rate", "stated in elements",
    §6's "margins"). *Done for §4 and §5's realignment (sessions 28-29).* **Now: §5's structural rewrite
-   (decision 10)** in four blocks (1, 2 and 4 drafted; 4 awaits the user's review; 3 waits on run 133), with checks C1-C3 of the paper mock before the blocks that need them; then §2's
+   (decision 10)** in four blocks (1, 2 and 4 drafted; 4 awaits the user's review; 3's claim agreed, its prose waits on run 135), with checks C1-C3 of the paper mock before the blocks that need them; then §2's
    closing sentence and contribution 4 against the findings; then shorten §4 and §5 together (§4.3 first).
 4. **The next full simulated review, once §4 and §5 are realigned and before the introduction** (decided 2026-11-09).
    Right before running it, update `docs/reviews/review-prompt.md`: it still targets the 2026-11-02 body draft and
@@ -204,9 +218,11 @@ them (below).
      do once the write-up is finished): the adaptive budget at 2,000 files (~3,000 CPU-h at 5,000 candidates; options:
      the 1,000-candidate checkpoint, a fixed subset, a cap on the monotone rows), and ERDALT's stopping criterion (met
      only at the last epoch at seed 0).
-   - §5.3's Phase 2: run 133 (the user launches it; session 34 reads it). Then §5.3's claim, the audit table, and
-     leave-one-out's role (Claude's call, deferred). MAB-Malware as a pool member only if the remaining gap sits in
-     its operations (rename lowers the entry-section-name buckets no toolkit attack lowers; design doc, O5).
+   - §5.3: runs 133-134 read and the claim agreed (decision 10, session 34 continued). **Run 135** (leave-one-out
+     from run 133's outputs; launched by the user 2026-11-11) is read by session 34; then the audit table and 5.3's
+     prose (block 3). Open (raise with the user when drafting): the gap that remains is MAB-Malware's operation
+     (rename), so adding it to the pool would close it; the paper's point is that the defender cannot know which
+     operation to add, but a reviewer may ask for that row (design doc, O5).
 6. **Other domains (later):** ideas in `docs/domain-selection-brainstorming.md`. Not before EMBER is complete; no
    literature or selection work until the user opens it.
 7. **The introduction, discussion, and abstract** last, once the body is settled.

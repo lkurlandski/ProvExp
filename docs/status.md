@@ -16,7 +16,7 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
   validation section and not a defense paper. Plan, one line per paragraph, and checks C1-C3: `docs/paper-mock.md`,
   §5. Blocks 1-2 (lead, 5.1, 5.2) drafted and revised twice (session 35: lead and 5.1 after the user's second review,
   up to 5.1's Attacks paragraph; the user has not yet commented on 5.1's last paragraph or on 5.2's second round).
-  Block 3 (5.3) waits on run 133 in session 34. **Block 4 (5.4 *What Robustness Costs*)** drafted in session 36,
+  Block 3 (5.3): claim agreed (session 34), prose waits on run 135. **Block 4 (5.4 *What Robustness Costs*)** drafted in session 36,
   revised in session 37 after Claude's review with the `humanistic-paper-review` skill (reordered so no paragraph
   points forward; commits c49f654, 9113acb, 23ab085); the user has not read the revised text.
 - **§5.3 is being redesigned** in `docs/section-5.3-design.md` (session 34), the working plan until its prose is
@@ -25,11 +25,13 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
   survives in a sharper form (design doc §10.4-10.5): PV built the fair way is still evaded, 4 of its 9 files, each by
   one rename (an operation no toolkit attack has, named in advance by the derived table), and detects only 26.2% at
   1% FPR (derived detector on the same features 87.3%); ERDALT is evaded 24/29 by its own training attack with other
-  donors; adversarial training 12/50 toolkit, 23/50 search. **The claim for §5.3 (§10.5) waits on the user.**
+  donors; adversarial training 12/50 toolkit, 23/50 search. **The user agreed with the claim (§10.5)**; plan in the
+  mock's 5.3 (rewritten) and PLAN.md decision 10. Leave-one-out kept and redone the fair way: **run 135 running**.
 - **Experiments:** Tables 3-5 (side effects, directions, detectors) complete at pilot scale; open items are listed in
   PLAN.md, next step 5. Run 131 (leave-one-out) finished: PV 5/21 on gamma_api, 0 elsewhere; ERDALT high on
   gamma_api and header_fields; ERDALT-8 adaptive 17/24. Runs 132 (coverage by source, seed smoke), 133 (§5.3 Phase
-  2, ~4.8 h) and 134 (PV-clean, PV-free; Claude, ~3 min) done and read.
+  2, ~4.8 h) and 134 (PV-clean, PV-free; Claude, ~3 min) done and read. **Run 135** (leave-one-out from run 133's
+  outputs) launched by the user 2026-11-11.
 - **Documentation:** reorganized 2026-11-09; index `docs/README.md`.
 
 ## Waiting on the user
@@ -37,11 +39,9 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
 - **Holistic reviews with the `humanistic-paper-review` skill, §4 first, then §5** (user, session 37; new session,
   `docs/resume-prompt.md`). The user's own pending comments on 5.1's Checking results and 5.2 (9b7d0ba) can join the
   §5 review.
-- **§5.3's claim** (session 34): run 133 read; the recommendation is `docs/section-5.3-design.md` §10.5 (the
-  finding holds, sharpened: coverage invisible to the defender, the missing operation becomes the hole, unmoved is
-  not unmovable, ERDALT constrains vectors not directions); the user agreed. Then block 3 (5.3's prose) can be written.
-- **Run 135** (`run/135_loo_varied.sh`, ~2.5-4.5 h, the user launches it): leave-one-out redone from run 133's
-  outputs (PV and ERDALT folds, held-out attack with a seed per file); replaces run 131's folds. Session 34 reads it.
+- **Run 135** (`run/135_loo_varied.sh`, ~1.5-2 h on four GPUs; launched by the user 2026-11-11): leave-one-out
+  redone from run 133's outputs (PV and ERDALT folds, held-out attack with a seed per file); replaces run 131's
+  folds. Session 34 (kept alive by the user) reads it, then the audit table and 5.3's prose (block 3).
 - The holistic read of Sound Directions (any time).
 
 ## Scheduled
@@ -57,7 +57,10 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
   PV-best evaded 4/9, each by one rename; it detects 26.2% at 1% FPR. Not the 8 broken shift outputs (run 134,
   PV-clean: 26.7%; `a_pv_hole.py --drop_import_loss`); partly that PV constrains features no attack moved (PV-free,
   never-moved left free: 50.9%; `pv-free.monotone.tsv`). ERDALT-best 24/29 by gamma_api with the pilot donors;
-  adversarial training 12/50 and 23/50. **Next:** the user settles §10.5; then 5.3's prose.
+  adversarial training 12/50 and 23/50. The user agreed with §10.5's claim, but kept leave-one-out: redone the fair
+  way as run 135 (folds from run 133's outputs; ERDALT on every visible GPU, threads = NUM_WORKERS / lanes; no
+  `GPUS` variable, CLAUDE.md updated). PLAN.md decision 10 and the mock's 5.3 rewritten. **Next:** read run 135;
+  then the audit table and 5.3's prose.
 
 - **2026-11-11 (session 37): §5.4 reviewed by Claude and revised.** At the user's request, Claude reviewed §5.4 with
   the `humanistic-paper-review` skill instead of the user reading it. The user agreed with the headline findings,

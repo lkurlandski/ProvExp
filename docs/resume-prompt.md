@@ -33,7 +33,7 @@ The user then asked for a holistic review of all of §5, and wondered whether to
 §4 first:
 - §5 rests on §4's terms (the toolkit attacks, the catalogue and its operations, the threat model, the population, the
   re-encodings over sums); a §5 review would keep flagging gaps that are §4's to fix.
-- §4 is stable (blocks accepted, no experiment pending), while §5.3 still waits on run 133.
+- §4 is stable (blocks accepted, no experiment pending), while §5.3 still waits on run 133 (since read; run 135 now).
 - §4 is over budget (~1,540 words against ~1,000; shortening deferred, §4.3 first), and the review's "delete" test
   (sentences the reader would not miss) serves that shortening.
 
@@ -52,13 +52,24 @@ The user then asked for a holistic review of all of §5, and wondered whether to
    anything inside §5.3 *What Observed Attacks Miss* that session 34 owns (below). The user's own pending comments on
    5.1's *Checking results* paragraph and on 5.2 *What Hand Analysis Misses* (version 9b7d0ba) can join this review.
 
+## Waiting on an experiment: run 135 (added by session 34, 2026-11-11)
+
+**Run 135 (`run/135_loo_varied.sh`) is running** (launched by the user 2026-11-11; ~1.5-2 h on four GPUs): §5.3's
+leave-one-out redone the fair way, from run 133's varied attack outputs on training malware. Session 34 is kept alive
+by the user to read it; then §5.3's audit table and prose (block 3) follow. Meanwhile run 133 and run 134 are read and
+**§5.3's claim is agreed** (PLAN.md decision 10, "Session 34, continued"; the mock's 5.3, rewritten): a defense
+learned from observed attacks inherits what the attacks did not do (the rebuilt PV is evaded 4/9, each by one rename;
+it detects 26.2% at 1% FPR against the derived detector's 87.3%; ERDALT is evaded 24/29 by its own training attack
+with other donors). Nothing in this session's task depends on run 135; do not start jobs that compete with it for CPU
+or GPU without asking, and do not touch its outputs.
+
 ## Constraints and settled points
 
-- **§5.3 belongs to session 34:** `docs/section-5.3-design.md`, run 133 (`run/133_varied_observation.sh`), the
-  outputs under `artifacts/experiments/a_varied/`, `a_pv/best/`, `a1/advtrain/generated-seedperfile/`, the paragraphs
-  marked `% 5.3 MATERIAL` and the table rows in the `% MOVED TO 5.3` comment. Do not edit them. Check `git log`
-  first: that session may have committed changes to §5.3, `docs/status.md` or `PLAN.md` (re-read those right before
-  editing them, change only your own lines). Do not start jobs that compete with run 133 without asking.
+- **§5.3 belongs to session 34:** `docs/section-5.3-design.md`, runs 133-135 (`run/13[345]_*.sh`), the outputs under
+  `artifacts/experiments/a_varied/`, `a_loo_varied/`, `a_pv/best/`, `a_pv/clean/`, `a_pv/vloo/`,
+  `a1/advtrain/generated-seedperfile/`, the paragraphs marked `% 5.3 MATERIAL` and the table rows in the
+  `% MOVED TO 5.3` comment. Do not edit them. Check `git log` first: that session may have committed changes to §5.3,
+  `docs/status.md` or `PLAN.md` (re-read those right before editing them, change only your own lines).
 - Settled in §5.4 (do not re-raise): the sums row's adaptive cell stays 0% with its footnote; the full-training-set
   adaptive cells keep theirs; never propose scaling a cell down to the pilot protocol (everything scales up later);
   one toolkit column counting any of the eight attacks; no comparison of the adaptive attack's 51% with the toolkit's
@@ -74,7 +85,8 @@ The user then asked for a holistic review of all of §5, and wondered whether to
 
 ## Later (not this session unless the user brings it)
 
-- §5.3 after run 133 (session 34): its claim, the audit table that takes the PV, ERDALT and adversarial-training rows.
+- §5.3 after run 135 (session 34): the audit table that takes the PV, ERDALT and adversarial-training rows, and
+  the prose.
 - After §5 is settled: §2's closing sentence and contribution 4 against the findings; shortening §4 and §5 together;
   the next full simulated review (PLAN.md, step 4) and the 4 MB-truncation brainstorm.
 - The scale-up (seeds 0-2, full splits, more malware): the first thing once the write-up is finished (user).

@@ -117,23 +117,33 @@ No state-of-the-art defense claim (three defense baselines; the user would want 
   4. A hand analysis that is not ours: the expert set (Gimenez et al.), 11 of its 40 features lowerable by renaming a
      section or rewriting the DOS stub, evaded on 2 of 8. *If check C3 finds published hand classifications of EMBER's
      features:* compare the derived table with them here (no runs).
-- **5.3 What Observed Attacks Miss (~950), with the new audit table.** *Superseded for now (session 34) by
-  `docs/section-5.3-design.md`: the items below rest partly on a fixed-seed artifact (its §3, §10); keep them as
-  the old plan until run 133 is read.*
-  1. The finding: defenses learned from observed attacks inherit two errors: per-feature ranges contain evasions no
-     edit produces, and the attacks never take some directions edits can take; testing more attacks does not close
-     the gap. *If check C2 succeeds:* the direct number first (of the features edits can lower, the share any toolkit
-     attack lowered).
-  2. The learned region (exact tree solver): certifies none of 47 (or of PV's 22); certifies a defense on its own
-     attacks by construction.
-  3. PV: 44.4% of its gain on lowerable features (section-name buckets no toolkit attack lowered), plus a third on the
-     parser warnings; held-out toolkit 18% against the adaptive search's 68%; 64% with all eight attacks.
-  4. ERDALT: 89.7% of its learned layer's weight on lowerable features; adaptive 20 of 25 (held-out toolkit 23).
-  5. Adversarial training: holds where trained (import injection 22 to 11), adaptive 24 of 49, as the undefended 25.
-  6. **Audit table (new, assembly only; user chose option (b)):** one row per defense, grouped by how its trust was set
-     (by hand: the hand-table detector, the expert set; from attacks: PV with 4 and 8 attacks, ERDALT, adversarial
-     training). Columns: how its trust was set, what the derivation flags, held-out toolkit evasion, adaptive evasion.
-     Risk: the "flags" column mixes units (features, share of gain, share of weight); settle the wording when drafting.
+- **5.3 What Observed Attacks Miss (~950), with the new audit table.** *Rewritten in session 34 after runs 133-134
+  (claim agreed with the user; evidence and caveats in `docs/section-5.3-design.md` §10.4-10.5). Every defense
+  learned from attacks is built from the same 3,183 outputs of the eight toolkit attacks, a seed per (attack, file),
+  on 400 training malware; tested on the pilot malware with a seed per file. The old seed-0 rows are retired.*
+  1. The finding: a defense learned from observed attacks inherits what the attacks did not do, and nothing in the
+     observations says what that is. Coverage first: the same eight attacks lower 745 of the 1,070 lowerable features
+     under the published protocol and 928 when varied over 400 training files; the derivation lists all 1,070 at once.
+  2. The operation the attacks lack becomes the hole: PV rebuilt from the varied outputs is evaded on 4 of its 9
+     files, each by one rename of the entry section (no toolkit attack renames), through the entry-section-name
+     buckets the derived table marks lowerable before any attack runs; the toolkit itself evades it on none.
+  3. Unmoved is not unmovable: observation cannot tell features the threat model can lower from features no edit can
+     move, so PV trusts what it should not (PV from the published protocol: the search evades 14/22) or constrains
+     what it need not (PV rebuilt: 26.2% at 1% FPR against the derived detector's 87.3% on the same features; the
+     DLL flag, which no edit moves, is forced monotone).
+  4. ERDALT constrains the vectors it saw, not the next ones: its own training attack, with imports from other donor
+     goodware, evades it 24/29; the search 22/29.
+  5. Adversarial training: the toolkit evades it 12/50 (undefended 25/49), the search 23/50.
+  6. Leave-one-out (run 135, `\synthetic{}` until read): each defense built from seven attacks, attacked by the
+     eighth; one sentence in the body (expected: PV's folds near 0, so held-out observed attacks give false
+     confidence while rename gets through; ERDALT high on gamma_api and header_fields), per-fold table in the
+     appendix.
+  7. The learned region (exact tree solver), from the old plan: certifies a defense on its own attacks by
+     construction; whether it keeps a sentence is decided when drafting.
+  8. **Audit table (assembly only; user chose option (b)):** one row per defense, grouped by how its trust was set (by
+     hand: the hand-table detector, the expert set; from attacks: PV, ERDALT, adversarial training; the derived
+     detector for reference). Columns: how its trust was set, what the derivation flags, TPR at 1% FPR, toolkit
+     (seed per file), leave-one-out held-out, adaptive. Risk: the "flags" column mixes units; settle when drafting.
 - *Drafted in session 36 (8fd8c9c); the draft supersedes the plan below: the expert-set comparison moved second,
   TPR at 0.1% FPR added, one any-of-eight toolkit column, no cost paragraph (PLAN.md, decision 10, session 36).*
 - **5.4 What Robustness Costs (~900), with the detector table (today Table 5) trimmed** to the undefended rows, the

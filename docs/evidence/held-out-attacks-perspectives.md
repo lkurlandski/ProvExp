@@ -143,3 +143,11 @@ on a defensible methodology; option B (an independent held-out source on its own
 - One answer contained an unfinished thought in the text ("I'd still report the old split's 18%? No: ...").
 - The analysis started from the experiment rather than from §5.3 as a whole: what the section must show, what it shows
   now, and which measurement serves that best.
+
+## Update, 2026-11-11 (session 34): leave-one-out redone the fair way
+
+Run 131's folds learned from seed-0 vectors that included the pilot (test) malware's (`docs/section-5.3-design.md`,
+§3, §10). Run 133 rebuilt the all-eight defenses from varied runs on training malware only; run 135 redoes the folds
+from the same outputs (the user kept leave-one-out: "still a very powerful and interesting experiment"). Option A's
+claim now has its fair test: the rebuilt PV is evaded by the search through rename, an operation none of the eight
+attacks has (4/9); run 135 shows what holding one of the eight out reveals.
