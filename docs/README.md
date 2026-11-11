@@ -24,6 +24,7 @@ check `manuscript/main.aux` (`grep newlabel manuscript/main.aux`), and add the t
 | `PLAN.md` | thesis, where the paper stands, the decisions of 2026-11-09, next steps, settled decisions | every session |
 | `docs/status.md` | current state, what waits on the user, short session log | every session; update at the end |
 | `docs/resume-prompt.md` | where the next session starts | starting a session |
+| `docs/resume-prompt-5.3.md` | where the §5.3 drafting session starts (parallel to `resume-prompt.md`) | starting §5.3's prose |
 | `docs/instances-note.md` | §4 working note: what an instance supplies, the agreed structure (archive once §4 is accepted) | drafting §4 |
 | `docs/section-5.3-design.md` | §5.3 working design: what it must show, where draft, mock and code disagree, strengths, weaknesses, options, phases, open questions (iterated with the user; archive once §5.3 is written) | planning, running, or drafting §5.3 |
 | `docs/checkpoint-prompt.md` | the user's prompt for ending a session | the user ends a session |

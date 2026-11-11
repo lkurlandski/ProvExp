@@ -41,7 +41,8 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
   §5 review.
 - **Run 135** (`run/135_loo_varied.sh`, ~1.5-2 h on four GPUs; launched by the user 2026-11-11): leave-one-out
   redone from run 133's outputs (PV and ERDALT folds, held-out attack with a seed per file); replaces run 131's
-  folds. Session 34 (kept alive by the user) reads it, then the audit table and 5.3's prose (block 3).
+  folds. **Next unit of work: drafting §5.3** from `docs/resume-prompt-5.3.md` (it reads run 135 first if it has
+  finished, else drafts with its predicted values in blue).
 - The holistic read of Sound Directions (any time).
 
 ## Scheduled
