@@ -13,7 +13,8 @@
 # For each of the eight toolkit attacks h (a fold):
 #   1. PV: Gimenez et al.'s selection from the other seven attacks' vectors (a_pv_hole --attacks), trained as PV-best
 #      (10% sums store, re-encoded groups dropped); then h against the fold's model (a1_evaluate --seed_per_file).
-#   2. ERDALT: trained as ERDALT-best from the other seven attacks' vectors, one model per GPU lane (at most two).
+#   2. ERDALT: trained as ERDALT-best from the other seven attacks' vectors, one training lane per visible GPU
+#      (CUDA_VISIBLE_DEVICES, else every GPU nvidia-smi lists), the folds dealt round-robin.
 #   3. h against each ERDALT fold's model.
 #   4. Summary: per fold, held-out evasion and detection; files evaded in any fold.
 # Every step skips when its output exists, so the script can be rerun after an interruption.
@@ -29,7 +30,7 @@
 #
 # Resources (from runs 131 and 133): (1) per fold ~1 min selection and training + the held-out attack on ~10 files
 # (gamma_api ~100 s per file, the others ~15-35 s) at 16 workers: ~15-25 min for the eight folds. (2) ~21-26 min per
-# model on one GPU, eight models: ~1.7 h on two GPUs, ~3.3 h on one. (3) the held-out attack on ~25-30 files per fold:
+# model on one GPU, eight models: ~3.3 h on one GPU, ~1.7 h on two, ~50 min on four. (3) the held-out attack on ~25-30 files per fold:
 # ~40-60 min for the eight. ~2.5-4.5 h in all.
 # Smoke (Claude, 2026-11-11, outputs in a scratch directory): (1) the gamma_api fold's selection from the other seven
 #   (2,784 vectors = 3,183 - gamma_api's 399; 1,153 features kept), training 20 s, gamma_api on 12 pilot malware with
@@ -40,13 +41,14 @@ cd "$(dirname "$0")/.."
 source env/bin/activate
 export PYTHONHASHSEED=0
 NUM_WORKERS="${NUM_WORKERS:-16}"
-# GPUs for ERDALT training, comma-separated ids: $GPUS, else $CUDA_VISIBLE_DEVICES, else the first two nvidia-smi lists.
-# One training lane per GPU, at most two.
-if [[ -z "${GPUS:-}" ]]; then
-  GPUS="${CUDA_VISIBLE_DEVICES:-$(nvidia-smi --query-gpu=index --format=csv,noheader | head -2 | paste -sd,)}"
+# ERDALT trains one model per visible GPU at a time: the devices in CUDA_VISIBLE_DEVICES, else every GPU nvidia-smi
+# lists.
+if [[ -n "${CUDA_VISIBLE_DEVICES+set}" ]]; then
+  IFS=", " read -r -a GPU_IDS <<< "$CUDA_VISIBLE_DEVICES"
+else
+  mapfile -t GPU_IDS < <(nvidia-smi --query-gpu=index --format=csv,noheader)
 fi
-IFS=", " read -r -a GPU_IDS <<< "$GPUS"
-if [[ ${#GPU_IDS[@]} -lt 1 ]]; then echo "No GPU found (set GPUS)." >&2; exit 1; fi
+if [[ ${#GPU_IDS[@]} -lt 1 ]]; then echo "No visible GPU (CUDA_VISIBLE_DEVICES)." >&2; exit 1; fi
 
 ATTACKS="gamma_sections gamma_api gamma_shift content_shift dos_extend header_fields padding format_exploit"
 others() { local h=$1 a out=""; for a in $ATTACKS; do [[ $a != "$h" ]] && out="$out $a"; done; echo $out; }
@@ -102,7 +104,7 @@ for h in $ATTACKS; do
   grep "held-out" "$log" | tail -1
 done
 
-echo "(2/4) ERDALT, eight folds on GPUs ${GPU_IDS[*]:0:2}. Logs: artifacts/logs/train_erdalt-0-s10-vloo-*.log"
+echo "(2/4) ERDALT, eight folds on GPUs ${GPU_IDS[*]}. Logs: artifacts/logs/train_erdalt-0-s10-vloo-*.log"
 train_erdalt() {  # gpu, held-out attack
   local gpu=$1 h=$2
   local log=artifacts/logs/train_erdalt-0-s10-vloo-$h.log
@@ -127,16 +129,20 @@ lane() {  # gpu, then held-out attacks
   local gpu=$1 h; shift
   for h in "$@"; do train_erdalt "$gpu" "$h"; done
 }
-if [[ ${#GPU_IDS[@]} -ge 2 ]]; then
-  lane "${GPU_IDS[0]}" gamma_sections gamma_api gamma_shift content_shift &
-  lane_a=$!
-  lane "${GPU_IDS[1]}" dos_extend header_fields padding format_exploit &
-  lane_b=$!
-  wait $lane_a  # a failed lane stops the script (set -e)
-  wait $lane_b
-else
-  lane "${GPU_IDS[0]}" $ATTACKS
-fi
+LANES=()
+i=0
+for h in $ATTACKS; do  # the folds dealt round-robin over the visible GPUs
+  LANES[$((i % ${#GPU_IDS[@]}))]+=" $h"
+  i=$((i + 1))
+done
+pids=()
+for k in "${!LANES[@]}"; do
+  lane "${GPU_IDS[$k]}" ${LANES[$k]} &
+  pids+=($!)
+done
+for p in "${pids[@]}"; do
+  wait "$p"  # a failed lane stops the script (set -e)
+done
 
 echo "(3/4) ERDALT: each fold's held-out attack. Logs: artifacts/logs/a1_eval-erdalt-vloo-<attack>.log"
 for h in $ATTACKS; do
