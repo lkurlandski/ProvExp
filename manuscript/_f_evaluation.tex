@@ -247,6 +247,19 @@ did not make.
 % a_varied/toolkit-full/table.json (advtrain-best 12/50; unconstrained 25/49); adaptive: a_varied/adaptive-advtrain-best,
 % 23/50; undefended adaptive 25/49 (run 127, Table 4's 51%).
 
+\paragraph{Holding one attack out}
+A learned defense is usually tested against an attack it did not learn from. We built PV and ERDALT eight more times,
+each from the outputs of seven of the toolkit attacks, and attacked each version with the eighth
+(\Cref{tab:ember:loo}). No held-out attack evades PV on any of the 8 to 19 test malware a version detects, so this test
+vouches for a detector that a single rename evades. The held-out attacks evade ERDALT in \synthetic{two} of the eight
+folds, import injection on \synthetic{25} of the \synthetic{29} files and the header-field attack on \synthetic{10};
+the test shows that ERDALT fails, but not on which features. Whether a learned defense holds depends on attacks the
+defender did not run, and only the derived table shows, before any attack runs, which of the features it trusts an edit
+can lower.
+% SYNTHETIC: run 135 (run/135_loo_varied.sh), ERDALT folds still running on 2026-11-11 17:35; the values in blue are
+% its header's predictions. PV folds read: artifacts/experiments/a_loo_varied/pv/<attack>/table.json, 0 evaded in all
+% eight (detected: 9, 9, 8, 9, 19, 9, 9, 9).
+
 \subsection{What Robustness Costs}
 \label{sec:eval:detectors}
 
@@ -326,24 +339,12 @@ constraints, still lowers it by 3.0.
   model. $^\S$ Trained on the full training set; the other cells use a 10\% subsample. $^\ast$ A simpler search that
   appends and adds sections; the adaptive attack scores only detectors on the features.}
 \end{table*}
-% MOVED TO 5.3 (session 36; session 34 settles them in 5.3's audit table): the rows
-%   adversarial training on the toolkit (full set) & 0.998 & 95.6% & 49/50 & seen 12% & held-out 27% & adaptive 49%
-%   PV, 4 attacks & 0.954 & 56.2% & 22/50 & 0% & 18% & 68%;  PV, 8 attacks & 0.944 & 53.8% & 22/50 & 0% & --- & 64%
-%   ERDALT, learned from 4 attacks & 0.881 & 61.1% & 25/50 & 0% & 92% & 80%
-% with their footnotes (advtrain: GAMMA section and import injections and the header-field attack, PV's split; ERDALT:
-% our port of Gimenez et al.'s code, output layer monotone, batches of 256, epoch selected on a validation split).
 % MEASURED (2026-11-05): adaptive = the beam search alone (user, 2026-11-04: one attack per cell, never a union),
-% 5,000 candidates, M_full. unconstrained full store 25/49 and the monotone features row 0/41 (run 127 step 1,
-% adaptive-beam/mfull); PV 10% 4 attacks 15/22, 8 attacks 14/22 (run 127 step 3, adaptive-beam/pv-s10; the PV rows'
-% adaptive cells now come from the 10% models, like their other columns); adversarial training 24/49 (run 130,
-% adaptive-beam/advtrain-strong); ERDALT 20/25 (run 128). min_delta_logit exactly 0.0 on the monotone rows.
-% The adversarial-training row is run 125 (run/125_adv_training_strong.sh: gamma_api, header_fields, gamma_sections at
-% the literature budget on 400 training malware; AUC 0.9976, TPR 95.6%; toolkit 27 -> 15 of 49), replacing run 122.
-% ERDALT: run/128_erdalt.sh (10% sums store, thrember features; criterion < 5 violations met only at the last epoch,
-% 309; temperature on the logit, no decision changed). The sums row's adaptive cell: greedy union of runs 108/119,
-% 0/43 (the beam has no routing to the sums store yet). The greedy searches (runs 108/119/125/129) evade a subset of
-% the beam's files on every row (checked 2026-11-05). The expert set has no adaptive cell: the search predicts with
-% the instrumented extractor only.
+% 5,000 candidates, M_full. Unconstrained full store 25/49 and the monotone features row 0/41 (run 127 step 1,
+% adaptive-beam/mfull); min_delta_logit exactly 0.0 on the monotone rows. The sums row's adaptive cell: greedy union of
+% runs 108/119, 0/43 (the beam has no routing to the sums store yet). The expert set has no adaptive cell: the search
+% predicts with the instrumented extractor only. The PV, ERDALT and adversarial-training rows moved to 5.3 (session 38,
+% rebuilt from run 133's outputs; the old rows of runs 122-131 are retired).
 
 \paragraph{The width of the threat model}
 The guarantee covers exactly the threat model the table was derived from, and a narrower one costs less. Under the
@@ -383,37 +384,5 @@ detector on a file in the population.
 % monotone rows 0/28, 0/30, 0/31 in population; PV-seen 0/22, low budget 4/22) and .../fullstore (unconstrained
 % full set 20/49, advtrain 21/48; sections 0). Sections on ref: >= 870 KB added (median ~1 MB), 4/47 below tau uncapped.
 
-
-% 5.3 MATERIAL (session 34 owns it; left untouched):
-The closest baseline is the feature selection from perturbation vectors (PV) that Gimenez et al.\ compare against,
-which in their evaluation gave detectors no attack evaded: run attacks on malware, keep the features no attack
-lowered, and train a classifier on them. We run the attacks on the training malware and train a monotone model. It resists the attacks it was built
-from, by construction, and costs over 35 points of detection. It also has a hole that the derivation computes before
-any attack runs: 44.4\% of the PV model's gain lies in features the derived table proves lowerable, most of it in
-section-name hash buckets that no toolkit attack happened to lower. A further third of its gain rests on the
-parser's warning flags, which the derivation cannot vouch for in either direction and the derived detectors drop.
-% Measured with the derived table under the precondition (a_pv_hole.py --variant pre-quirkfixed on
-% a_directions_derived_v2, model seed-0-s10-pv-seen; artifacts/experiments/a_pv/derived-pre): the same hole as the
-% hand rules', group by group. The 44.4% excludes pefile's warning flags, which the table leaves free as residual
-% features rather than proving them lowerable; with them, 77.5% of the gain (one flag alone ~30%; 33.2% from the
-% warnings). Decided (user left it to Claude, 2026-11-02): keep 44.4% as proved, add the warnings as a separate clause.
-The adaptive search finds the hole. Adding a section, it picks section names whose hash lands in buckets the model
-trusts, with the sign that lowers the score; renaming an existing section reaches the same buckets without needing room
-for a new header. It evades PV on 15 of the 22 files it detects, and building PV from all eight attacks does not close
-the hole: the search evades that detector on 14 of 22. ERDALT, which learns its post-processing from the same four
-attacks, behaves the same way. Our port of it resists those attacks on all 25 files it detects, but the held-out
-attacks evade it on 23 and the adaptive search on 20. Checking its learned layer against the derived table shows why:
-89.7\% of the layer's weight lies on features the table shows an edit can lower, almost all of them features that edits
-move both ways, which a derived detector drops.
-% ERDALT hole: run 128 step 2 (scripts/a_erdalt_hole.py): 89.7% of L's weight violates the derived M_full table, 88.7%
-% in the both-ways features (1,060 of 1,060 columns), 0.8% in up features; 48/50 pilot files have an allowed lowering move.
-
-Adversarial training is the usual alternative. We retrained the unconstrained detector with the outputs of the two
-toolkit attacks that evade it, GAMMA's import injection and the header-field attack, and of GAMMA's section injection,
-all run at the GAMMA paper's budget on 400 training malware. Its accuracy does not change, and it holds where it was
-trained: import injection evades it on 11 of the 49 files it detects instead of 22, and the eight attacks together on
-15 instead of 27. The adaptive search evades it on 24 of 49, about as often as the unconstrained detector (25 of 49).
-On every row of the table, a greedy search over the same operations that scores at most 200 candidates evades only
-files the beam search also evades.
 
 % REMOVED (session 36, user): the cost paragraph (derivation ~5 min vs PV attack runs); a timing claim, and PV is 5.3's.

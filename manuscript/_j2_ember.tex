@@ -122,3 +122,32 @@ it restarts from the original file. When it adds or renames a section, it picks 
 detector's trees weigh toward benign. Every file it keeps is written with our own code and its features extracted
 again.
 % scripts/a1_adaptive.py, --search beam (run 127): beam_search; target_buckets reads the booster.
+
+\paragraph{Leave-one-out.} \Cref{tab:ember:loo} gives the folds of \Cref{sec:eval:observed}. Each fold builds PV and
+ERDALT from the outputs of seven toolkit attacks on the 400 training malware and runs the eighth on the test malware the
+fold's detector detects, as in \Cref{sec:eval:setup}.
+
+\begin{table}[h]
+  \caption{Leave-one-out over the toolkit attacks: test malware each fold's detector detects, and how many of them the
+  held-out attack evades.}
+  \label{tab:ember:loo}
+  \small
+  \begin{tabular}{@{}lrrrr@{}}
+    \toprule
+    Held-out attack & \multicolumn{2}{c}{PV} & \multicolumn{2}{c}{ERDALT} \\
+    & detected & evaded & detected & evaded \\
+    \midrule
+    GAMMA sections & 19 & 0 & \synthetic{29} & \synthetic{0} \\
+    GAMMA imports & 9 & 0 & \synthetic{29} & \synthetic{25} \\
+    GAMMA shift & 9 & 0 & \synthetic{29} & \synthetic{0} \\
+    content shift & 9 & 0 & \synthetic{29} & \synthetic{0} \\
+    DOS extension & 9 & 0 & \synthetic{29} & \synthetic{0} \\
+    header fields & 9 & 0 & \synthetic{29} & \synthetic{10} \\
+    padding & 9 & 0 & \synthetic{29} & \synthetic{0} \\
+    format exploit & 8 & 0 & \synthetic{29} & \synthetic{0} \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+% SYNTHETIC: run 135, ERDALT columns (header predictions). PV columns read from a_loo_varied/pv/<attack>/table.json.
+% Attack names as in Table 2 (tab:instances:catalogue).
+
