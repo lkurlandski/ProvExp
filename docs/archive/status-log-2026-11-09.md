@@ -45,3 +45,8 @@ Moved from `docs/status.md` on 2026-11-11 (session 34).
   (`docs/evidence/literature-adversarial-malware.md`; PDFs in `papers/`, renamed to Google Scholar keys): the
   catalogue covers every structural edit of the reputable-venue PE attacks; code-level transformations are excluded
   for now by the user's choice and recorded as a limitation (PLAN.md, decision 9).
+
+- **2026-11-10 (session 28): §4 drafted in four blocks** (commits 556599e, baa1e48). Block 1 took three rounds on
+  §4.1 (PE format, then EMBER's features over it, not interleaved); lessons added to `paper-prose` (a08460c) and the
+  reaction log. §4.3 literature first with Demetrio TOPS, GAMMA, MAB-Malware, and Zainab et al. (preprint, user
+  approved); Table 2's column is now "Changes: declared / item tables". **Next:** see `docs/resume-prompt.md`.

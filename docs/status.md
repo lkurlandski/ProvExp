@@ -2,15 +2,17 @@
 
 Kept short: the current state, what waits on the user, and the last few sessions in a line or two each. The plan and
 its reasons are in `PLAN.md`. When the session log below grows past about ten entries, move the oldest to
-`docs/archive/` (the log before 2026-11-09 is `docs/archive/status-log-2026-10-to-2026-11-09.md`; sessions 21-27 are in
+`docs/archive/` (the log before 2026-11-09 is `docs/archive/status-log-2026-10-to-2026-11-09.md`; sessions 21-28 are in
 `docs/archive/status-log-2026-11-09.md`).
 
-## Current state (2026-11-11, sessions 34-37)
+## Current state (2026-11-11, sessions 34-38)
 
 - **Framework (§2-3):** rewritten; the user is reasonably satisfied. Open: the user's holistic read of Sound
   Directions after round 4 (finetuning only).
-- **§4:** drafted in the new structure (lead, 4.1-4.4, Appendix D "The EMBER Instance"); blocks 1-2 accepted, 3-4
-  "pretty good". About 1,540 words against ~1,000: shortening deferred (user), §4.3 first.
+- **§4:** drafted in the new structure (lead, 4.1-4.4, Appendix D "The EMBER Instance"), then revised in session 38
+  after Claude's review with the `humanistic-paper-review` skill (all eight findings applied; 4.3 split into
+  *Operations* and *Signature*; 4.4 reordered). About 1,500 words against ~1,000; further shortening with §5 later.
+  Next: a lightweight second review of the revised §4 (user), then the §5 review.
 - **§5:** realigned with §3-4 in vocabulary and claims (session 29). Structural rewrite agreed in session 30 (PLAN.md,
   decision 10): three findings (what hand analysis misses, what observed attacks miss, what robustness costs), not a
   validation section and not a defense paper. Plan, one line per paragraph, and checks C1-C3: `docs/paper-mock.md`,
@@ -36,9 +38,9 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
 
 ## Waiting on the user
 
-- **Holistic reviews with the `humanistic-paper-review` skill, §4 first, then §5** (user, session 37; new session,
-  `docs/resume-prompt.md`). The user's own pending comments on 5.1's Checking results and 5.2 (9b7d0ba) can join the
-  §5 review.
+- **A lightweight second review of the revised §4, then the holistic review of §5** with the
+  `humanistic-paper-review` skill (user, session 38; `docs/resume-prompt.md`). The user's own pending comments on
+  5.1's Checking results and 5.2 (9b7d0ba) can join the §5 review.
 - **Run 135** (`run/135_loo_varied.sh`, ~1.5-2 h on four GPUs; launched by the user 2026-11-11): leave-one-out
   redone from run 133's outputs (PV and ERDALT folds, held-out attack with a seed per file); replaces run 131's
   folds. **Next unit of work: drafting §5.3** from `docs/resume-prompt-5.3.md` (it reads run 135 first if it has
@@ -53,6 +55,19 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
   decision 8 (iv) and step 4).
 
 ## Session log
+
+- **2026-11-11 (session 38): §4 reviewed by Claude and revised.** Review with the `humanistic-paper-review` skill
+  (eight findings). The user: trimming is good, but moving small snippets to the appendix does more harm than good;
+  findings applied in two passes (the easy ones first, so the user can focus on the rest). Applied: attack names
+  follow Table 2's operations, with a toolkit-attacks column (from secml-malware's code); the Zainab et al. sentence
+  dropped (MAB-Malware uses code randomization, which the threat model excludes); "certificate table" for the
+  structure, "Authenticode signature" for its content (Table 8's row renamed too); §4.2's item list shortened; the
+  lead names the sum-then-readout form; 4.3 split into subsubsections *Operations* and *Signature*, the latter opening
+  with what is proved and what rests on the files; 4.4 reordered (closure after the definition, counts tied to
+  §5.1's 73,063 edits and 2,000 test files, routing last). Commits c7d0734, cf4f4a4, b8b710c. For §5: it still says
+  "GAMMA's import injection" and "the header-field attack" (Table 2: GAMMA imports, header fields) and Table 3 says
+  "signature table" for the certificate table. **Next:** a lightweight re-review of §4, then §5
+  (`docs/resume-prompt.md`).
 
 - **2026-11-11 (session 34, continued): run 133 read.** Results and hypotheses in its header; design doc §10.4-10.5.
   PV-best evaded 4/9, each by one rename; it detects 26.2% at 1% FPR. Not the 8 broken shift outputs (run 134,
@@ -161,8 +176,3 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
   §5 rewritten in three quick blocks (commits after f1d6050): 5.2 claims what it tests ("The Instance Is Correct",
   Declined instead of Flagged, no speed claim), 5.3 gains the corpus check of the signatures, 5.4 points to §4.4 for
   closure; §6's "our margins" fixed. **Next:** the user's structural concerns about §5, then shortening §4-5.
-
-- **2026-11-10 (session 28): §4 drafted in four blocks** (commits 556599e, baa1e48). Block 1 took three rounds on
-  §4.1 (PE format, then EMBER's features over it, not interleaved); lessons added to `paper-prose` (a08460c) and the
-  reaction log. §4.3 literature first with Demetrio TOPS, GAMMA, MAB-Malware, and Zainab et al. (preprint, user
-  approved); Table 2's column is now "Changes: declared / item tables". **Next:** see `docs/resume-prompt.md`.
