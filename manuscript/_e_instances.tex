@@ -14,7 +14,7 @@ domain, needs to supply the same.
 \label{sec:instances:ember}
 
 The instance we consider is static malware detection on Windows, where a classifier decides whether an executable
-file is malicious without running it. Windows executables use the Portable Executable (PE) format. A PE file opens
+file is malicious without running it. Windows executables use the Portable Executable (PE) format. A PE file starts
 with headers, which describe the rest of the file and hold what the operating system needs to load the program.
 Sections follow, which hold the code, the data, and the resources, together with tables such as the import table,
 which lists the functions the program uses from other libraries. Bytes after the last section form the overlay, which
@@ -28,7 +28,7 @@ taken over the whole file.
 \subsection{EMBER as a Sum-then-Readout Extractor}
 \label{sec:instances:record}
 
-Both the metadata and the statistics fit the form of \Cref{sec:fw:model}. A statistic adds up something over parts of
+Both EMBER's metadata and the statistics fit the form of \Cref{sec:fw:model}. A statistic adds up something over parts of
 the file. The byte histogram, for instance, counts the bytes of each value, and the import features count the functions
 imported from each library. A piece of metadata, such as a header field, is the value of a single part. These parts are
 EMBER's items. Some, such as single bytes and printable strings, are found by scanning the bytes in order, and others,
