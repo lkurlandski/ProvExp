@@ -1,50 +1,77 @@
-# Resume: §5.3 from scratch — an overview, its strengths and weaknesses, and options to improve it
+# Resume: §5.1-5.2 feedback, then §5.4 — while §5.3 waits on run 133 in another session
 
-Read `docs/status.md` and `PLAN.md` (decision 10 above all). The structure of §5 (three findings: what hand analysis
-misses, what observed attacks miss, what robustness costs) is agreed with the user: do not reopen it. **This session
-restarts the analysis and planning of §5.3 (*What Observed Attacks Miss*) from scratch**; the previous session's
-(33) answers were of low quality by the user's judgement. Its perspectives are recorded, with strengths and
-weaknesses, in `docs/evidence/held-out-attacks-perspectives.md`: read it as input, not as a plan. Nothing in it is
-decided.
+**The project, in two sentences.** ProvExp is dissertation research on *sum-then-readout* feature extractors (find the
+pieces of the input, add up what each contributes, compute each feature by a formula over a few totals): the
+feature-space effects of an attacker's edits are computed from the instrumented extractor (exactly for one edit,
+Proposition 1; as sound directions for a whole threat model, Theorem 1), and from those, monotone detectors no edit
+in the threat model can evade (Corollary 1). PE malware with EMBER 2024 is the instance; the paper is written straight
+into `manuscript/*.tex` (ACM `sigconf`), §5 *Evaluation* is in `manuscript/_f_evaluation.tex`.
 
-**Begin the session by giving the user, before any proposal or run:**
+**Read first:** `CLAUDE.md` (rules), `docs/status.md`, and `PLAN.md` (decision 10 above all: §5 is three findings
+about adversarial examples, *What Hand Analysis Misses* (5.2), *What Observed Attacks Miss* (5.3), *What Robustness
+Costs* (5.4); not a validation section and not a defense paper; this structure is agreed, do not reopen it). The paper
+mock's §5 (`docs/paper-mock.md`) has the paragraph-by-paragraph plan for 5.1, 5.2 and 5.4.
 
-1. **An overview of §5.3:** what it must show (its claim in the framework's terms, from `docs/paper-mock.md` §5, item
-   5.3, and §2's claim about observed attacks), what exists today (the subsection in `manuscript/_f_evaluation.tex`:
-   one paragraph on the learned region; the detector table's seen/held-out columns; 5.1's sentence that defenses learned
-   from attacks are tested leave-one-out, with the `% SYNTHETIC` comment), which evidence it has (the learned region,
-   PV, ERDALT, adversarial training, the audit table planned in the mock, C2, run 131), and how the parts connect.
-2. **An analysis of its strengths and weaknesses**, harsh and objective: does the evidence test the claim from a
-   defender's point of view? Which numbers depend on choices we made (the attacks in the toolkit, splits, the
-   adaptive search being ours)? What would a reviewer attack first?
-3. **Options to improve the section**, each with what it measures, what it costs, and what it would let the section
-   claim; then one recommendation. Include the experimental designs (perspectives 2-9 of the record, and any better
-   one), but start from what the section has to show, not from the experiment. Explain plainly (memory
-   `explain-plainly`); examine each proposal critically before presenting it (the previous session proposed a held-out
-   MAB-Malware cell that repeated the very flaw the user had just named: a deliberately chosen split).
+## Another session owns §5.3 and run 133: do not touch them
 
-Facts to carry in (details and sources in the record): PV leave-one-out held-out evasion 5/21 on the gamma_api fold
-and 0 on the other seven; ERDALT leave-one-out partial at the end of session 33 (gamma_api 21/24, gamma_shift 5/25,
-content_shift 1/28, gamma_sections and dos_extend 0); PV built from all eight attacks, adaptive 14/22; C2: the toolkit
-lowered 745 of the 1,070 features edits can lower (70%; all 512 byte statistics, 233 of the other 558); the user's
-hypothesis (PV's held-out evasion well above 0) failed, Claude's held. The user's methodological position: a
-measurement must represent a defender's point of view, avoid any split we choose, and show the idea clearly; the mean
-over leave-one-out folds favors held-out attacks that resemble seen ones; MAB-Malware belongs in the experiments only if
-it manipulates different features, and then as a member of the pool, not held out specially.
+Session 34 is kept open by the user to read **run 133** (`run/133_varied_observation.sh`, ~7 h, launched by the user):
+it rebuilds the defenses learned from attacks (PV, ERDALT, adversarial training) from varied attack runs on training
+malware, because session 34 found that PV's hole, and its 14/22 adaptive evasion, rest mostly on the attack harness
+resetting the RNG to seed 0 before every run (GAMMA's section names are identical on every file). The plan for §5.3
+is `docs/section-5.3-design.md`. In this session:
 
-**Run 131** (`run/131_loo_defenses.sh`) was rerun by the user on 2026-11-11 after a model-path bug was fixed (training
-saved ERDALT models without `-s10`; the folders were renamed, the script fixed, finished steps now skip). If it has
-finished: read `artifacts/experiments/a_loo/summary.json` and `a_loo/erdalt-all8-adaptive/adaptive.json` (run 128's
-ERDALT gave 20/25 adaptive), and record results and runtimes in the script's header (not while it runs), in
-`docs/status.md`, and in the record. The ERDALT gamma_api fold did not meet its stopping criterion (kept epoch 181).
+- Do not edit §5.3's text, `docs/section-5.3-design.md`, `run/133_*`, or anything under `artifacts/experiments/a_varied/`,
+  `artifacts/experiments/a_pv/best/`, `artifacts/experiments/a1/advtrain/generated-seedperfile/`; do not start jobs
+  that compete with run 133 for CPU or GPU without asking.
+- `docs/status.md` and `PLAN.md` are shared with session 34: re-read them right before editing, and change only your
+  own lines (your session's log entry, the 5.1-5.2 and 5.4 state).
+- §5.4's draft still contains the old PV, ERDALT, adversarial-training and cost paragraphs; they belong to 5.3 and wait
+  for run 133. Leave them where they are (or mark them, without rewriting them, if they are in the way).
 
-**Still pending, after §5.3's plan is agreed:** the user's second round of feedback on 5.1-5.2 (commit 0069f56;
-memory `review-comments-workflow`; log reactions in `docs/writing-spec.md`; open `% VERIFY` in 5.2 on EMBER 1.0's
-hashed groups); then block 3 (5.3) and block 4 (5.4, the detector table trimmed to the undefended, monotone, and
-additions rows) with the `paper-prose` skill, in blocks with `make` and `make check` and the user's review after each;
-then §2's closing sentence and contribution 4 against the findings; then shortening §4 and §5 together, and PLAN.md
-step 4. Constraints: §5 is three findings, not a validation section and not a defense paper (memory
-`findings-not-defense-paper`); claims say "on EMBER"; no timing of Prop. 1 against extraction; report each attack
-separately (memory `report-attacks-separately`); ask before changing what a claim is for (memory
-`dont-reframe-research-claims`); check `manuscript/main.aux` before naming a table or section number; jobs over ~10
-minutes go to the user as `run/` scripts.
+## The tasks, in order
+
+1. **The user's second round of feedback on 5.1-5.2** (revised version, commit 0069f56). Follow memory
+   `review-comments-workflow`: answer the user's questions first in plain words, verify claims about cited work in
+   `papers/`, give a numbered plan (one item per comment, one recommendation each, risks flagged), wait for approval,
+   implement, `make` and `make check` in `manuscript/`, read the rendered PDF, report per item. Log the user's raw
+   reactions in `docs/writing-spec.md`. Use the `paper-prose` skill for any prose. Also open: the `% VERIFY` in 5.2
+   (Severi et al. used EMBER 1.0: check that its hashed groups match EMBER 2024's section, imports, exports and
+   entry-name groups; `papers/severi2021explanation.pdf`, Anderson and Roth's EMBER paper, thrember's code in
+   `tests/reference/features.py`, which must never be edited).
+2. **Block 4: §5.4 *What Robustness Costs*** (the subsection is labelled `sec:eval:detectors`; its title in the draft
+   is still "Detectors the Threat Model Cannot Evade"), from the mock's 5.4 plan: the finding (robustness against every
+   structural edit costs about four points of detection, 93.5% to 89.6% at 1% FPR on the sums, 87.2% on the features,
+   with 0% evasion on files in the population; the adaptive search's largest score drop is exactly 0), where the cost
+   lies per operation (import addition 2.1 points, the three header overwrites 1.4), the threat model's width
+   (additions only 92.2%; header-field attacks then evade on 28%; the expert set 29.1%), beyond the guarantee (GAMMA's
+   rebuilding injections evade no monotone row on files in the population: 0/56, 0/60), and the scope (population).
+   The detector table is trimmed to the undefended rows, the monotone rows and the additions block; the baselines
+   (PV, ERDALT, adversarial training) move to 5.3's audit table, which session 34 settles. Write in small blocks with
+   the user's review after each (memory `draft-in-small-blocks`); `make` and `make check` after each.
+3. Then, only if 5.3 is settled by then: §2's closing sentence and contribution 4 against the findings; shortening §4
+   and §5 together (§4.3 first); PLAN.md step 4 (the next full simulated review).
+
+## Facts from session 34 that touch 5.1, 5.2 and 5.4
+
+- PLAN.md decision 10(c) compares the adaptive search on the undefended detector with the toolkit (51% against 53%)
+  as "about as often". Run 127's header shows 14 of the toolkit's 27 evasions come only through GAMMA's LIEF
+  relayouts, outside the threat model; the six in-catalogue toolkit attacks evade 13/49. Do not use the 51%/53%
+  comparison in prose as evidence that the search is no stronger than the toolkit.
+- Our own edits (catalogue_checks, 2,000 test files, re-extracted) lower 915 of the 1,070 features the derived table
+  marks lowerable under the full threat model (`artifacts/experiments/a_coverage/report.json`): the table is fairly
+  tight, which may help 5.4 (the cost is not mostly looseness). The 155 never lowered: 78 parser warnings, 67 strings.
+- The draft's sentence "We run the attacks on the training malware" (in the PV paragraph) is false: PV was built from
+  attacks on the pilot test malware. It belongs to 5.3; leave it to session 34.
+
+## Constraints (from CLAUDE.md, the memory, and the user)
+
+Claims say "on EMBER"; no timing of Proposition 1 against extraction (memory `no-timing-claims`); the detectors'
+accuracy cost is a measurement, never "small" (memory `findings-not-defense-paper`); report each attack separately,
+never a union (memory `report-attacks-separately`); ask before changing what a claim or statistic is for (memory
+`dont-reframe-research-claims`); check `manuscript/main.aux` before naming a table, section or definition number, and
+give its title alongside; exact numbers in the prose matter less than structure and argument at this stage; explain
+plainly (memory `explain-plainly`). Jobs over ~10 minutes go to the user as `run/` scripts (the user launches them);
+a new experiment gets a numbered `run/` script (check the highest number first: 133 is taken). Before committing:
+`env/bin/ruff check src tests scripts` and `env/bin/mypy src tests scripts`. Commit to `main` in logical pieces; do not
+push. At the end, update `docs/status.md` (re-read it first; session 34 may have changed it) and write the next resume
+prompt.

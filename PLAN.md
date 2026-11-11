@@ -18,7 +18,7 @@ The framework is format-free (§3). PE malware with EMBER is the primary instanc
 planned, implemented, and piloted first. Other domains come later, possibly, and the paper's structure must accommodate
 them (below).
 
-## Where the paper stands (2026-11-10)
+## Where the paper stands (2026-11-11)
 
 - **§2-3 (the framework):** rewritten during the week of 2026-11-02; the user is reasonably satisfied, open to
   finetuning. Three subsections: sum-then-readout extractors, edits and their side effects (Proposition 1), sound
@@ -152,6 +152,16 @@ them (below).
     approval). Expectation from the stored perturbation vectors: the eight attacks lower nearly the same features, so
     most PV folds should be 0 and the user's hypothesis (PV well above 0) may fail on the mean; if so, 5.3's toolkit
     column weakens for PV and the adaptive column carries the finding.
+    *Session 34 (2026-11-11): §5.3's design reopened* (the three-finding structure stands). Working plan:
+    `docs/section-5.3-design.md`, which supersedes the mock's item 5.3 until §5.3's prose is written. Run 131 read
+    (PV folds 0 except gamma_api 5/21; ERDALT high on gamma_api and header_fields; ERDALT-8 adaptive 17/24). Found in
+    the code: the attack harness resets the RNG to seed 0 before every run (after Gimenez et al.), so GAMMA's section
+    names are the same on every file, and PV and ERDALT learned from the pilot (test) malware. With a seed per file,
+    one attack covers every section-name bucket (run 132), which is where PV's hole, and so its 14/22, mostly lies.
+    The user: do what is best for the research rather than copy prior protocols, and fix any design gap that would
+    undermine the results. Run 133 rebuilds PV, ERDALT and adversarial training from varied runs on training malware
+    only; §5.3's claim is settled after it (design doc, §10.2), possibly narrowed (ERDALT, and that observations
+    cannot certify their own completeness).
 
 ## Next steps, in order
 
@@ -185,8 +195,9 @@ them (below).
    - The scale-up (seeds 0-2, full splits, more malware; the user decides when): the adaptive budget at 2,000 files
      (~3,000 CPU-h at 5,000 candidates; options: the 1,000-candidate checkpoint, a fixed subset, a cap on the monotone
      rows), and ERDALT's stopping criterion (met only at the last epoch at seed 0).
-   - Possibly: MAB-Malware as an independent source of held-out attacks (more relevant if the leave-one-out folds
-     show the toolkit's attacks overlap too much to test generalization). Leave-one-out PV and ERDALT: run 131.
+   - §5.3's Phase 2: run 133 (the user launches it; session 34 reads it). Then §5.3's claim, the audit table, and
+     leave-one-out's role (Claude's call, deferred). MAB-Malware as a pool member only if the remaining gap sits in
+     its operations (rename lowers the entry-section-name buckets no toolkit attack lowers; design doc, O5).
 6. **Other domains (later):** ideas in `docs/domain-selection-brainstorming.md`. Not before EMBER is complete; no
    literature or selection work until the user opens it.
 7. **The introduction, discussion, and abstract** last, once the body is settled.

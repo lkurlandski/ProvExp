@@ -117,7 +117,9 @@ No state-of-the-art defense claim (three defense baselines; the user would want 
   4. A hand analysis that is not ours: the expert set (Gimenez et al.), 11 of its 40 features lowerable by renaming a
      section or rewriting the DOS stub, evaded on 2 of 8. *If check C3 finds published hand classifications of EMBER's
      features:* compare the derived table with them here (no runs).
-- **5.3 What Observed Attacks Miss (~950), with the new audit table.**
+- **5.3 What Observed Attacks Miss (~950), with the new audit table.** *Superseded for now (session 34) by
+  `docs/section-5.3-design.md`: the items below rest partly on a fixed-seed artifact (its §3, §10); keep them as
+  the old plan until run 133 is read.*
   1. The finding: defenses learned from observed attacks inherit two errors: per-feature ranges contain evasions no
      edit produces, and the attacks never take some directions edits can take; testing more attacks does not close
      the gap. *If check C2 succeeds:* the direct number first (of the features edits can lower, the share any toolkit

@@ -2,9 +2,10 @@
 
 Kept short: the current state, what waits on the user, and the last few sessions in a line or two each. The plan and
 its reasons are in `PLAN.md`. When the session log below grows past about ten entries, move the oldest to
-`docs/archive/` (the log before 2026-11-09 is `docs/archive/status-log-2026-10-to-2026-11-09.md`).
+`docs/archive/` (the log before 2026-11-09 is `docs/archive/status-log-2026-10-to-2026-11-09.md`; sessions 21-24 are in
+`docs/archive/status-log-2026-11-09.md`).
 
-## Current state (2026-11-11, session 33)
+## Current state (2026-11-11, session 34)
 
 - **Framework (§2-3):** rewritten; the user is reasonably satisfied. Open: the user's holistic read of Sound
   Directions after round 4 (finetuning only).
@@ -14,20 +15,26 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
   decision 10): three findings (what hand analysis misses, what observed attacks miss, what robustness costs), not a
   validation section and not a defense paper. Plan, one line per paragraph, and checks C1-C3: `docs/paper-mock.md`,
   §5. Blocks 1-2 (lead, 5.1, 5.2) drafted and revised after the user's review (0069f56); the user's second
-  round of feedback on 5.1-5.2 comes 2026-11-11. Blocks 3-4 (5.3, 5.4) to do.
-  The held-out cells of 5.3 are `\synthetic`; §5.3's design is being rebuilt in `docs/section-5.3-design.md`
-  (session 34: PV's hole is mostly an artifact of the attack harness's fixed seed; Phase 2 to run).
+  round of feedback on 5.1-5.2 is still to come. Blocks 3-4 (5.3, 5.4) to do.
+- **§5.3 is being redesigned** in `docs/section-5.3-design.md` (session 34), the working plan until its prose is
+  written; it supersedes the mock's item 5.3 and the session-33 record. Finding so far, mostly bad news for 5.3 as
+  planned (user agrees): PV's hole and its 14/22 adaptive evasion rest mostly on the attack harness resetting the RNG
+  to seed 0 before every run (GAMMA's section names are the same on every file); with a seed per file one attack
+  covers every section-name bucket. ERDALT (17/24 evaded even when built from all eight attacks) and the
+  completeness argument survive so far. **Run 133** decides how much of the PV result survives; this session (34) is
+  kept alive by the user to read it.
 - **Experiments:** Tables 3-5 (side effects, directions, detectors) complete at pilot scale; open items are listed in
   PLAN.md, next step 5. Run 131 (leave-one-out) finished: PV 5/21 on gamma_api, 0 elsewhere; ERDALT high on
-  gamma_api and header_fields; ERDALT-8 adaptive 17/24. Run 132 (coverage, seed smoke) done.
+  gamma_api and header_fields; ERDALT-8 adaptive 17/24. Run 132 (coverage by source, seed smoke) done. **Run 133
+  (§5.3 Phase 2, ~7 h) to be launched by the user.**
 - **Documentation:** reorganized 2026-11-09; index `docs/README.md`.
 
 ## Waiting on the user
 
 - **Feedback on §5.1-5.2** (revised version, commit 0069f56), promised for 2026-11-11.
-- **Run 133** (`run/133_varied_observation.sh`, ~7 h): §5.3's Phase 2, the defenses learned from attacks rebuilt from
-  varied runs on training malware. Then read it against its header's hypotheses and settle §5.3's claim
-  (`docs/section-5.3-design.md`, §10.2).
+- **Run 133** (`run/133_varied_observation.sh`, ~7 h, the user launches it): §5.3's Phase 2, the defenses learned
+  from attacks rebuilt from varied runs on training malware. Session 34 reads it against its header's hypotheses;
+  then §5.3's claim is settled with the user (`docs/section-5.3-design.md`, §10.2), possibly narrowed.
 - The holistic read of Sound Directions (any time).
 
 ## Scheduled
@@ -38,6 +45,20 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
   decision 8 (iv) and step 4).
 
 ## Session log
+
+- **2026-11-11 (session 34): §5.3 redesigned; PV's hole traced to the attack harness's fixed seed.** An overview,
+  harsh analysis and options for §5.3, then re-assessed against the plan, mock and code at the user's request:
+  `docs/section-5.3-design.md` (nine disagreements between draft, mock and code: PV learned from the test files;
+  GAMMA's names identical on every file; PV's hole not mostly section names for PV-4; the "51% vs 53%" control
+  invalid, the in-catalogue toolkit evades 13/49; the learned region shows nothing beyond PV's hole; ERDALT's 89.7% is
+  a sufficient-rule check). Run 131 read (header, record). Run 132 (`scripts/a_coverage.py`, `a_advtrain.py
+  --seed_per_file`): only 2 of 1,070 lowerable features need operations the toolkit lacks; our own edits lower 915;
+  90 of those the toolkit never lowers, 82 section features; with a seed per file, one attack covers all 50 size,
+  entropy and virtual-size buckets (fixed seed: 13, 21, 33) and closes 71 of the 90. User: do what is best for the
+  research, not what prior work did; fix design gaps; runs over ~10 min go to the user. Phase 2 scripted and
+  smoke-tested: `run/133_varied_observation.sh` (`a1_evaluate.py --seed_per_file`, `a_pv_hole.py --adv_dir`). Commits
+  e176432, c2a117d. **Next:** the user runs 133; this session reads it; another session takes the 5.1-5.2 feedback
+  (`docs/resume-prompt.md`).
 
 - **2026-11-11 (session 33): run 131 partly read, C2 checked; §5.3's methodology to restart.** Run 131's ERDALT
   evaluation had crashed on a model-path bug (training wrote `seed-0-loo-*`, evaluation read `seed-0-s10-loo-*`);
@@ -116,21 +137,3 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
   vocabulary falls under decision 2 too; writes onto locating positions are flagged or declared in the directions;
   append is declared, not collected (fix Def. 8's example); Table 1 lacks pools and nondecreasing functions of one sum.
   Record: `docs/evidence/code-audit-sound-directions.md`. **Next:** the user's call on the findings, then §4 (step 3).
-- **2026-11-09 (session 24): paper mock rewritten** against the new §3 and the decisions of 2026-11-09:
-  contributions in §3's terms, §4 as the template plus EMBER with word budgets, §5 by §3's results (5.2 Prop. 1,
-  5.3 Thm. 1, 5.4 Cor. 1), what each table claims, the §2/§5 alignment with two options. **Next:** the user's
-  approval, then the code audit (PLAN.md, step 2). User: layout accepted provisionally
-  (judge it once written); §2/§5 alignment left to Claude, decided A, revisit at the next review (PLAN.md, decision 6).
-- **2026-11-09 (session 23): holistic review and cleanup.** Assessment of the whole project after the framework
-  rewrite. Decisions with the user (PLAN.md, "Decisions of 2026-11-09"): §4 becomes "instantiating the framework"
-  with a fixed template that EMBER fills in the body and other domains in the appendix; the coverage of write
-  operations' signatures is checked on the corpus, stated in a sentence; §5.2 (side effects) claims what it tests; §2/§5 alignment
-  open; B and C parked. `docs/domain-selection-brainstorming.md` committed (user's). Documentation reorganized: index
-  `docs/README.md`, superseded material in `docs/archive/`, evidence records in `docs/evidence/`, parked directions
-  in `docs/parked/`, PLAN.md and this file rewritten short, CLAUDE.md trimmed, `scripts/README.md` inventory.
-  Review status assessed against the 2026-11-02 register; the next full review scheduled (PLAN.md, step 4).
-  **Next:** rewrite the paper mock (`docs/resume-prompt.md`).
-- **2026-11-09 (session 22): Sound Directions round 4, in blocks** (Defs 7-10, Theorem 1, Corollary 1; ~1,470 words;
-  "This session felt very effective"). Drafting in blocks after a math note recorded in `paper-prose` and memory.
-- **2026-11-09 (session 21): the writing skill reset** (`paper-prose` rewritten as accepted texts plus taste; old rules
-  archived in `docs/archive/paper-prose-2026-11-09/`).
