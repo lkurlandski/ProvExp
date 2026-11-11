@@ -25,8 +25,9 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
 ## Waiting on the user
 
 - **Feedback on §5.1-5.2** (revised version, commit 0069f56), promised for 2026-11-11.
-- **§5.3's methodology:** working design `docs/section-5.3-design.md` (session 34; four open questions in its §9,
-  first: may Claude run Phase 0). Input record: `docs/evidence/held-out-attacks-perspectives.md`.
+- **Run 133** (`run/133_varied_observation.sh`, ~7 h): §5.3's Phase 2, the defenses learned from attacks rebuilt from
+  varied runs on training malware. Then read it against its header's hypotheses and settle §5.3's claim
+  (`docs/section-5.3-design.md`, §10.2).
 - The holistic read of Sound Directions (any time).
 
 ## Scheduled

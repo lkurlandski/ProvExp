@@ -40,14 +40,19 @@ from __future__ import annotations
 from argparse import ArgumentParser
 import json
 from pathlib import Path
+import sys
 
 import lightgbm
 import numpy as np
 import polars as pl
 
+from provexp.data.tabular import load_manifest
 from provexp.featuresets.ember2024.sums import SumsFeatureExtractor
 
-__all__ = ["decreasable_features", "pv_kept"]
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from train_erdalt import adv_deltas  # noqa: E402
+
+__all__ = ["adv_frame", "decreasable_features", "pv_kept"]
 
 ROOT = Path(__file__).resolve().parent.parent
 THREAT_MODELS = ("M_add", "M_full")  # nested; M_full is the decisive one for the mock
@@ -89,9 +94,27 @@ def decreasable_features(directions_dir: Path, tm: str, variant: str = "quirkfix
     return both | down
 
 
+def adv_frame(adv_dirs: list[Path], adv_features: Path) -> pl.DataFrame:
+    """Perturbation vectors of attacked training malware, in the layout of a_pv_attacks.py's deltas.parquet."""
+    names = list(load_manifest(adv_features)["feature_names"])
+    frames = []
+    for d in adv_dirs:
+        files = pl.read_parquet(d / "files.parquet")
+        attacks = sorted(files["attack"].unique().to_list())
+        # adv_deltas keeps files.parquet's row order, filtered to `attacks` (all of them here).
+        X = adv_deltas(d, adv_features, attacks, names)
+        frames.append(pl.concat([files.select("name", "attack", "p_clean", "p_adv"),
+                                 pl.DataFrame(X, schema=names)], how="horizontal"))
+    return pl.concat(frames)
+
+
 def main() -> None:
     parser = ArgumentParser(description=__doc__)
-    parser.add_argument("--deltas", type=Path, required=True)
+    parser.add_argument("--deltas", type=Path, default=None, help="a_pv_attacks.py's perturbation vectors.")
+    parser.add_argument("--adv_dir", type=Path, nargs="+", default=None,
+                        help="Instead of --deltas: directories of attacked training malware (a_advtrain.py), whose "
+                             "clean rows come from --adv_features' training split.")
+    parser.add_argument("--adv_features", type=Path, default=ROOT / "artifacts/features/ember2024")
     parser.add_argument("--directions_dir", type=Path, default=ROOT / "artifacts/experiments/a_directions")
     parser.add_argument("--outdir", type=Path, required=True)
     parser.add_argument("--model", type=Path, default=ROOT / "artifacts/models/gbdt/seed-0/model.txt",
@@ -104,11 +127,13 @@ def main() -> None:
     args = parser.parse_args()
 
     args.outdir.mkdir(parents=True, exist_ok=True)
-    df = pl.read_parquet(args.deltas)
+    if (args.deltas is None) == (args.adv_dir is None):
+        raise ValueError("Pass exactly one of --deltas and --adv_dir.")
+    df = pl.read_parquet(args.deltas) if args.deltas is not None else adv_frame(args.adv_dir, args.adv_features)
     if args.attacks is not None:
         unknown = set(args.attacks) - set(df["attack"].unique().to_list())
         if unknown:
-            raise ValueError(f"Attacks not in {args.deltas.as_posix()}: {sorted(unknown)}")
+            raise ValueError(f"Attacks not in the perturbation vectors: {sorted(unknown)}")
         df = df.filter(pl.col("attack").is_in(args.attacks))
     meta = {"name", "attack", "p_clean", "p_adv"}
     names = [c for c in df.columns if c not in meta]

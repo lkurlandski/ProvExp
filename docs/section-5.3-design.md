@@ -338,6 +338,10 @@ the gap's operations are read from the witnesses instead. Leave-one-out stays ou
 answer what it can (decision deferred, per the user). Adversarial training (O7): retrain on all eight per-file-seed
 outputs, so every defense learns from the same observations.
 
+**Scripted:** `run/133_varied_observation.sh` (2026-11-11; the user launches runs over ~10 minutes). Hypotheses in its
+header. It also re-runs the toolkit with a seed per file against the *old* PV-all and ERDALT-8, which shows what
+re-running the very attacks a defense was built from, with other seeds, does to it.
+
 ## 11. Log
 
 - **2026-11-11 (session 34): created.** A first analysis was given in the chat from the draft. At the user's request it
@@ -347,3 +351,4 @@ outputs, so every defense learns from the same observations.
   the toolkit (the first analysis used the 51% against 53% comparison as a control).
 - **2026-11-11 (session 34): Phases 0 and 1 run** (run 132; §10). The PV hole is mostly the harness's fixed seed; the
   gap is not the threat model's breadth (except rename); ERDALT-8 evaded 17/24; Phase 2 revised (§10.3).
+  The user agrees this is mostly bad news for §5.3 as planned; Phase 2 scripted as run 133, for the user to run.

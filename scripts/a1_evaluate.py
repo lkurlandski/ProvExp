@@ -72,6 +72,7 @@ from a_pv_attacks import make_wrapper  # noqa: E402
 from provexp.models.erdalt import load_detector  # noqa: E402
 from a_pv_attacks import map_watchdog  # noqa: E402
 from a_pv_attacks import run_attack  # noqa: E402
+from a_advtrain import file_seed  # noqa: E402
 
 __all__ = ["calibrate_threshold", "group_evasion", "make_extractor"]
 
@@ -141,7 +142,8 @@ def precondition_holds(bytez: bytes) -> bool:
 
 
 def _init_worker(features: Path, models: dict[str, str], routes: dict[str, tuple[str, float, float]],
-                 section_pop: list[Any], api_calls: list[Any], seed: int, iterations: int = 10) -> None:
+                 section_pop: list[Any], api_calls: list[Any], seed: int, iterations: int = 10,
+                 seed_per_file: bool = False) -> None:
     """Build the extractor and one detector wrapper per defense, once per worker."""
     lief.logging.disable()
     extractor = make_extractor(features)
@@ -153,7 +155,7 @@ def _init_worker(features: Path, models: dict[str, str], routes: dict[str, tuple
         else:
             wrappers[d] = make_wrapper(Path(m), extractor)
     _W.update(wrappers=wrappers, section_pop=section_pop, api_calls=api_calls, seed=seed, iterations=iterations,
-              tmp=tempfile.mkdtemp(prefix="a1_w_"))
+              tmp=tempfile.mkdtemp(prefix="a1_w_"), seed_per_file=seed_per_file)
 
 
 def _work(task: tuple[str, str, str, bytes, float, int, bool]) -> dict[str, Any]:
@@ -166,7 +168,10 @@ def _work(task: tuple[str, str, str, bytes, float, int, bool]) -> dict[str, Any]
     added, ok, valid, error = 0, False, False, ""
     try:
         problem = build_attack(atk, wrapper, _W["section_pop"], _W["api_calls"], iterations=_W["iterations"])
-        adv_bytes, p_clean, p_adv = run_attack(problem, wrapper, data, out_path, seed=_W["seed"])
+        # NOTE: by default every run is reseeded with the same seed (Gimenez et al.'s protocol), so GAMMA's random
+        # section names are the same on every file; --seed_per_file seeds each (attack, file) on its own.
+        seed = file_seed(_W["seed"], atk, name) if _W["seed_per_file"] else _W["seed"]
+        adv_bytes, p_clean, p_adv = run_attack(problem, wrapper, data, out_path, seed=seed)
         added, ok = len(adv_bytes) - len(data), True
         valid = lief.PE.parse(list(adv_bytes)) is not None
     except Exception as e:
@@ -224,6 +229,8 @@ def main() -> None:
     parser.add_argument("--num_malware", type=int, default=None, help="Cap on malware files (for smoke tests).")
     parser.add_argument("--num_workers", type=int, default=8, help="Processes over tasks.")
     parser.add_argument("--seed", type=int, default=0)
+    parser.add_argument("--seed_per_file", action="store_true",
+                        help="Reseed each attack run with its own seed (a_advtrain.file_seed) instead of --seed.")
     parser.add_argument("--stall_timeout", type=float, default=2700.0,
                         help="Seconds with no finished task before the unfinished ones count as lost (a dead worker).")
     args = parser.parse_args()
@@ -279,7 +286,7 @@ def main() -> None:
         models = {d: str(m / "model.txt") for d, m in defenses.items()}
         with get_context("spawn").Pool(args.num_workers, initializer=_init_worker,
                                        initargs=(args.features, models, routes, section_pop, api_calls, args.seed,
-                                                 iterations)) as pool:
+                                                 iterations, args.seed_per_file)) as pool:
             rows = map_watchdog(pool, _work, tasks, lost=_lost, stall_timeout=args.stall_timeout)
         print(f"{len(tasks)} attack runs in {time.time() - t0:.0f}s on {args.num_workers} workers.", flush=True)
 
@@ -291,6 +298,7 @@ def main() -> None:
     seen = [a for a in args.attacks if a in args.seen]
     table: dict[str, Any] = {"protocol": {"fpr": args.fpr, "budget": args.budget, "budget_frac": args.budget_frac,
                                           "budget_min": args.budget_min, "seed": args.seed,
+                                          "seed_per_file": args.seed_per_file,
                                           "features": args.features.resolve().as_posix(), "seen": seen,
                                           "routes": routes_spec,
                                           "held_out": held_out,
