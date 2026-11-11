@@ -206,6 +206,47 @@ the attacks would close this hole, but a defender learns which operation to add 
 % a_varied/adaptive-pv-best/adaptive.json. Hole: a_pv/best/derived-pre/report-best.json, 124 features, 38.8% of gain
 % (entry-section-name bucket 1: 12.8%; section group 19.9%, strings 16.1%, warnings 2.7%).
 
+\paragraph{What the attacks did not move}
+PV pays for the same gap a second time, in detection. It detects 26.2\% of the malware at a 1\% false-positive rate,
+against 87.2\% for the detector built from the derived table on the same features (\Cref{tab:eval:detectors}). A
+feature no attack moved may be one an attacker can lower or one no edit can change, and PV has to constrain both. The
+largest of them records whether the file is a DLL: it carries 24\% of the unconstrained detector's split gain, no edit
+of the threat model changes it, and the derived table leaves it free where PV forces it to be monotone. Leaving the 455
+features no attack moved unconstrained raises PV's detection to 50.9\%, but such a detector trusts every feature the
+attacks happened to leave alone, and so falls to any operation they lack.
+% PV-best TPR 26.2% (run 133 header, step 2). Derived detector: Table 4's monotone row on the features, 87.2%
+% (s10-mfull-feat-pre-v2; run 133/134 headers say 87.3%, the same model, rounding of the ROC interpolation).
+% header:characteristics_DLL 24% of the unconstrained model's gain; PV-free (run 134 step 2, pv-free.monotone.tsv on
+% PV-clean's selection; PV-clean = PV-best without the 8 broken shift outputs, 26.7%): 1,035 moved features
+% constrained, 455 never moved left free, TPR 50.9%. Not Gimenez et al.'s rule.
+
+\paragraph{What ERDALT learns}
+ERDALT, the empirically robust detector of Gimenez et al., learns a linear layer that maps the feature change of every
+observed attack to a nonnegative vector, and feeds the layer's output to a monotone network
+(\Cref{sec:related-work}). Our port of their code, trained on the same 3,183 outputs, detects 62.7\% of the malware at
+a 1\% false-positive rate and 29 of the 50 test malware. Seven of the toolkit attacks evade it on none of these files,
+but GAMMA's import injection, one of the attacks it was trained on, evades it on 24. That attack adds imports taken from
+benign files, and on the test malware it takes them from benign test files, whose imports ERDALT never saw. The layer
+constrains the feature changes it was shown, not the directions in which edits can move the features, and the derived
+table shows how far apart the two are: 90\% of the layer's weight lies on features an edit can lower, nearly all of
+them features that edits move both ways. The adaptive attack evades it on 22 of the 29 files.
+% ERDALT-best (run 133 step 4; our port of their released code, 10% sums store v2, AUC 0.88). Toolkit:
+% a_varied/toolkit-erdalt/table.json, gamma_api 24/29, the other seven 0. Adaptive 22/29:
+% a_varied/adaptive-erdalt-best/adaptive.json. Layer audit: a_varied/erdalt-best-hole/hole.json, 90.5% of the weight
+% violates the derived M_full table, 88.9% in features that move both ways. Caveat (not in the prose): ERDALT's
+% scores pile at a floor; every evasion ends at p = 0.49966 against tau = 0.49968.
+
+\paragraph{Adversarial training}
+Retraining the unconstrained detector on the full training set, with the same 3,183 outputs added to its malware,
+leaves its detection unchanged, 95.6\% at a 1\% false-positive rate, and halves what the toolkit achieves: the eight attacks
+evade it on 12 of the 50 malware it detects, against 25 of 49 before. The adaptive attack, which combines operations
+and uses those no toolkit attack has, still evades it on 23 of the 50, about as often as before retraining (25 of 49).
+The retrained detector has learned the outputs it was given, and those outputs say nothing about the edits the attacks
+did not make.
+% Run 133 step 5 (a_advtrain, full store, outputs appended to the training malware); toolkit, any of the eight:
+% a_varied/toolkit-full/table.json (advtrain-best 12/50; unconstrained 25/49); adaptive: a_varied/adaptive-advtrain-best,
+% 23/50; undefended adaptive 25/49 (run 127, Table 4's 51%).
+
 \subsection{What Robustness Costs}
 \label{sec:eval:detectors}
 
