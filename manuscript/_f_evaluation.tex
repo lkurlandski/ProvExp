@@ -5,49 +5,62 @@
 % 88-107), docs/evidence/direction-A-expert-set.md (run 106), runs 110, 111, 118, 127. No timing of the computed side
 % effects against extraction is reported (user, 2026-11-10).
 
-\Cref{sec:background} argued that practitioners learn what an attacker's edits do to the features in one of three
-ways, by trial, by reading the extractor, or from the attacks that have been observed, and that each falls short. This
-section measures how far each falls short on the EMBER instance of \Cref{sec:instances}. Trial is exact for the edits
-it tries, and we use it to check our own computation (\Cref{sec:eval:setup}). A careful reading of the extractor misses
-side effects that arise from how the extractor finds its items (\Cref{sec:eval:hand}), and defenses built from
-observed attacks trust features that edits can lower (\Cref{sec:eval:observed}); in both cases an adaptive attack
-confirms on real files the holes the computation points to. Once the directions are known, robustness to every edit
-in the threat model has a measurable cost in detection, which we report last (\Cref{sec:eval:detectors}).
+\Cref{sec:background} described three ways in which practitioners learn what an attacker's edits do to the features:
+by trial, by reading the extractor, and from the attacks that have been observed. Each has its own limit. Trial is
+exact but answers only for the edits it tries, a reading of the extractor is as complete as its author's reading of
+thousands of features, and observed attacks show only what those attacks did. This section measures what the last two
+miss on the EMBER instance of \Cref{sec:instances}, with trial as the ground truth: every result below is decided by
+extracting the features of an edited file (\Cref{sec:eval:setup}). A careful reading of the extractor misses side
+effects that arise from how the extractor finds its items (\Cref{sec:eval:hand}), and defenses built from observed
+attacks trust features that edits can lower (\Cref{sec:eval:observed}); in both cases an adaptive attack confirms on
+real files the holes the computation points to. Once the directions are known, robustness to every edit in the threat
+model has a measurable cost in detection, which we report last (\Cref{sec:eval:detectors}).
 
 \subsection{Setup}
 \label{sec:eval:setup}
 
+The three findings share the detectors, files, and attacks described here, and the way every result is checked.
+
+\paragraph{Detectors}
 We train gradient-boosted tree detectors~\cite{ke2017lightgbm}, with monotone constraints where a detector calls for
 them, on a 10\% subsample of the EMBER~2024 training split, with one seed, and test them on a 10\% subsample of its
 test split. Edits and attacks run on 100 test files, half of them malware. Each detector's threshold is set to a 1\%
-false-positive rate on the benign test files, and an attack counts as an evasion when it drives a detected malware
-sample below that threshold. Unless stated otherwise, the threat model is the full one of
-\Cref{tab:instances:catalogue}, with a byte budget of 5\% of the file or 512~KB, whichever is larger.
+false-positive rate on the benign test files.
+% NOTE (user, session 35): the 10% subsamples and the 100 files are the pilot; scale up first once the write-up is
+% finished (PLAN.md, step 5).
 
-We attack each detector in two ways. The toolkit attacks of \Cref{sec:instances:catalogue} query the detector 100
-times per file, the budget under which Gimenez et al.~\cite{gimenez2025certifiably} evaluate their defenses. A defense
-that is learned from attacks is built from seven of the toolkit attacks and tested on the eighth, for each of the eight in turn.
-The adaptive attack is a white-box beam search over the operations of the threat model. At each step it applies random
-candidate edits to the three lowest-scoring files found so far, computes each candidate's features by
-Proposition~\ref{prop:fw:side-effects} instead of extracting them, and keeps the three lowest-scoring files; after three
-steps without improvement it restarts from the original file. When it adds or renames a section, it chooses a name
-whose hash lands in a bucket the detector weighs toward benign. It scores up to 5,000 candidates per file, fifty times
-the toolkit's budget. More queries alone change little: run with the GAMMA paper's budget of about 500
-queries~\cite{demetrio2021functionality}, the strongest toolkit attack evades the undefended detector on one more file
-than with 100.
-% SYNTHETIC: the leave-one-out protocol for the defenses learned from attacks (PV, ERDALT) replaces the fixed split
-% (seen = padding, GAMMA sections, GAMMA shift, content shift); run in another session (PLAN.md, decision 10). Until
-% then the held-out cells below are the fixed split's values.
+\paragraph{Attacks}
+An attack evades a detector when it drives a detected malware sample below the detector's threshold. Unless stated
+otherwise, the attacks may use every operation of the full threat model (\Cref{tab:instances:catalogue}), within a byte
+budget of 5\% of the file or 512~KB, whichever is larger. We run two kinds of attack. The first is the eight toolkit
+attacks of \Cref{sec:instances:catalogue}, each with 100 queries to the detector per file, the budget under which
+Gimenez et al.~\cite{gimenez2025certifiably} evaluate their defenses. With the GAMMA paper's budget of about 500
+queries~\cite{demetrio2021functionality}, the strongest of them evades the undefended detector on one more file. The
+second is an attack of our own, adaptive in the sense of Tramèr et al.~\cite{tramer2020adaptive}: it is designed
+against the detector it attacks. Each toolkit attack optimizes one fixed kind of edit using only the detector's score;
+ours reads the detector's model and searches every operation of the threat model for the edits that lower that
+detector's score. It is a beam search. At each step it applies random candidate edits to the three lowest-scoring files
+found so far, computes each candidate's features by Proposition~\ref{prop:fw:side-effects} instead of extracting them,
+and keeps the three lowest-scoring files; after three steps without improvement it restarts from the original file.
+When it adds or renames a section, it picks a name whose hash lands in a bucket the model weighs toward benign. It
+scores up to 5,000 candidates per file.
 % MEASURED: literature budget, run/124_a1_toolkit_literature_budget.sh: import injection 27/47 vs 26/47 at 100 queries.
+% Tramer et al.: papers/tramer2020adaptive.pdf, Section 1: "adaptive attacks, i.e., attacks that were specifically
+% designed to target a given defense". The bucket choice: scripts/a1_adaptive.py, target_buckets (reads the booster).
+% REMOVED (session 35, user: the setup covers what the subsections share): the protocol of the defenses learned from
+% attacks (PV, ERDALT, adversarial training; leave-one-out over the toolkit attacks) belongs to 5.3, which states it
+% once run 133 settles it.
 
-Every evasion we report, and every check of our own computation, comes from writing the edited file with our own
-byte-level code and extracting its features again: the extractor, not our computation, decides each result. We checked
-the computation on 73,063 edits, every operation applied several times to each of 2,000 test files with adversarial
-parameters (repeated, colliding, and case-variant names, empty imports, printable content next to existing strings, a
-forged Rich header). On the files in the population, every side effect the instance computes is exact, and it
-declines exactly the edits that write a position the parser reads to find other items (Appendix~\ref{sec:ember}). No
-edit moved a feature in a direction the derived table excludes, and deriving the table from 100 of the files gives the
-same table as deriving it from all 2,000.
+\paragraph{Checking results}
+We count an evasion only after writing the edited file with our own code and running EMBER's extractor on it; the
+features we compute guide the adaptive attack but never decide a result. To test the computation itself, we applied
+each of the twelve operations several times to each of 2,000 test files, 73,063 edits in all, with parameters chosen
+to provoke mistakes (repeated, colliding, and case-variant names, empty imports, printable content next to existing
+strings, a forged Rich header). Our computation declines to predict an edit that overwrites bytes the parser reads to
+find other structures, and no other edit (Appendix~\ref{sec:ember}). On every other edit to a file in the population
+(\Cref{sec:instances:population}), the features we compute match the extracted ones exactly. No edit moved a feature in
+a direction the derived table (Definition~\ref{def:fw:derived}) rules out, and the table derived from 100 of the files
+is the same as the one derived from all 2,000.
 
 \subsection{What Hand Analysis Misses}
 \label{sec:eval:hand}

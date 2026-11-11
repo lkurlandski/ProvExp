@@ -302,3 +302,15 @@ The "implied" notes are earlier readings, not instructions; several of them were
   introduce the subsection, or both). Rest of 5.2: "written pretty well at the sentence-by-sentence level" but "lack
   of clear internal narrative and internal structure ... interleaves implemenation/experimentation details, results,
   and analyses ... challenging to skim"; suggested subsubsections or boldface demarcation.
+- **2026-11-11 (session 35), second review of the §5 lead and 5.1 Setup** (revised version, 0069f56). Lead: "Can we
+  clarify what we mean by 'and that each falls short'? I'm not sure if we actually made that claim before, so verify
+  that. I think we could describe the limitation of the three ways people find the reachable set with a tad more
+  nuance." Setup: "add a small transition at the beginning of the first paragraph"; "Why are we using a 10% sample of
+  EMBER-2024? If this is just for the pilot study, ... one of the first things we need to do once we finish this
+  write-up is scale this up"; the last sentence of paragraph 1 (threat model, byte budget) "might belong better in the
+  second paragraph, since its about the attacks"; "What you mean by 'A defense that is learned from attacks' is
+  unclear. Is this talking about adversarial training? If so, its completely vague. Also, use active voice"; "The
+  adaptive attack has not been introduced yet, so the phrasing is not appropriate. Also, what exactly makes this
+  attack adaptive? The fact that it combines different types of perturbations?"; "If the query budget matters little,
+  why are we emphasizing it? All told, this paragraph is a confusing, unstructured mess"; label the paragraphs with
+  run-in headings as in the next subsection; "The last paragraph has too much jargon."

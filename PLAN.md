@@ -192,9 +192,10 @@ them (below).
 5. **Research-track items**, each agreed before code:
    - The sums row's adaptive cell: the beam search cannot score the sums detector yet (routing). Expected 0% by
      construction; weigh consistency against cost.
-   - The scale-up (seeds 0-2, full splits, more malware; the user decides when): the adaptive budget at 2,000 files
-     (~3,000 CPU-h at 5,000 candidates; options: the 1,000-candidate checkpoint, a fixed subset, a cap on the monotone
-     rows), and ERDALT's stopping criterion (met only at the last epoch at seed 0).
+   - The scale-up (seeds 0-2, full splits, more malware; the user decides when; user, 2026-11-11: the first thing to
+     do once the write-up is finished): the adaptive budget at 2,000 files (~3,000 CPU-h at 5,000 candidates; options:
+     the 1,000-candidate checkpoint, a fixed subset, a cap on the monotone rows), and ERDALT's stopping criterion (met
+     only at the last epoch at seed 0).
    - §5.3's Phase 2: run 133 (the user launches it; session 34 reads it). Then §5.3's claim, the audit table, and
      leave-one-out's role (Claude's call, deferred). MAB-Malware as a pool member only if the remaining gap sits in
      its operations (rename lowers the entry-section-name buckets no toolkit attack lowers; design doc, O5).
