@@ -39,7 +39,9 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
   §5 review.
 - **§5.3's claim** (session 34): run 133 read; the recommendation is `docs/section-5.3-design.md` §10.5 (the
   finding holds, sharpened: coverage invisible to the defender, the missing operation becomes the hole, unmoved is
-  not unmovable, ERDALT constrains vectors not directions). Then block 3 (5.3's prose) can be written.
+  not unmovable, ERDALT constrains vectors not directions); the user agreed. Then block 3 (5.3's prose) can be written.
+- **Run 135** (`run/135_loo_varied.sh`, ~2.5-4.5 h, the user launches it): leave-one-out redone from run 133's
+  outputs (PV and ERDALT folds, held-out attack with a seed per file); replaces run 131's folds. Session 34 reads it.
 - The holistic read of Sound Directions (any time).
 
 ## Scheduled

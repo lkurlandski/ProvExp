@@ -402,9 +402,10 @@ in the order a paragraph would give it:
 - **Adversarial training** helps against the toolkit and not against the search (12/50 against 23/50).
 
 What it should not claim: that the fixed seed alone made PV evadable (it shaped PV-all's hole, but the rename hole
-survives varied runs), or a number for PV's hole from the seed-0 runs. Audit table: these rows, with run 131's
-leave-one-out folds dropped from the body (they answer a question the varied runs answer better; one sentence or the
-appendix). Open, all optional: more pilot files for PV-best's 9 (the scale-up), decomposing the last ~36 points of
+survives varied runs), or a number for PV's hole from the seed-0 runs. Audit table: these rows, plus leave-one-out
+redone the fair way (**run 135**, the user agreed 2026-11-11: folds from run 133's outputs minus the held-out attack,
+which then attacks the fold's model with a seed per file; a sentence in the body, the per-fold table in the appendix);
+run 131's seed-0 folds are retired. Open, all optional: more pilot files for PV-best's 9 (the scale-up), decomposing the last ~36 points of
 PV's accuracy gap, and whether ERDALT's score floor needs a better reproduction before a reviewer sees 24/29.
 
 ## 11. Log
@@ -422,3 +423,5 @@ PV's accuracy gap, and whether ERDALT's score floor needs a better reproduction 
   predicted; not the broken outputs; partly the never-moved features it constrains); ERDALT-best evaded 24/29 by its
   own gamma_api with other donors; adversarial training 12/50 toolkit, 23/50 search. §10.2's first case holds;
   recommendation in §10.5, to settle with the user.
+- **2026-11-11 (session 34): leave-one-out kept, redone fairly.** The user agreed with §10.5's framing but not with
+  dropping leave-one-out ("still a very powerful and interesting experiment"); run 135 scripted and smoke-tested.
