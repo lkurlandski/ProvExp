@@ -2,10 +2,10 @@
 
 Kept short: the current state, what waits on the user, and the last few sessions in a line or two each. The plan and
 its reasons are in `PLAN.md`. When the session log below grows past about ten entries, move the oldest to
-`docs/archive/` (the log before 2026-11-09 is `docs/archive/status-log-2026-10-to-2026-11-09.md`; sessions 21-25 are in
+`docs/archive/` (the log before 2026-11-09 is `docs/archive/status-log-2026-10-to-2026-11-09.md`; sessions 21-26 are in
 `docs/archive/status-log-2026-11-09.md`).
 
-## Current state (2026-11-11, sessions 34-35)
+## Current state (2026-11-11, sessions 34-36)
 
 - **Framework (§2-3):** rewritten; the user is reasonably satisfied. Open: the user's holistic read of Sound
   Directions after round 4 (finetuning only).
@@ -16,7 +16,8 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
   validation section and not a defense paper. Plan, one line per paragraph, and checks C1-C3: `docs/paper-mock.md`,
   §5. Blocks 1-2 (lead, 5.1, 5.2) drafted and revised twice (session 35: lead and 5.1 after the user's second review,
   up to 5.1's Attacks paragraph; the user has not yet commented on 5.1's last paragraph or on 5.2's second round).
-  Block 3 (5.3) waits on run 133 in session 34; **block 4 (5.4) next, in a new session** (`docs/resume-prompt.md`).
+  Block 3 (5.3) waits on run 133 in session 34. **Block 4 (5.4 *What Robustness Costs*) drafted in session 36**
+  (8fd8c9c, ~950 words against ~900), not yet reviewed by the user.
 - **§5.3 is being redesigned** in `docs/section-5.3-design.md` (session 34), the working plan until its prose is
   written; it supersedes the mock's item 5.3 and the session-33 record. Finding so far, mostly bad news for 5.3 as
   planned (user agrees): PV's hole and its 14/22 adaptive evasion rest mostly on the attack harness resetting the RNG
@@ -32,8 +33,8 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
 
 ## Waiting on the user
 
-- **The rest of the feedback on §5.1-5.2** (5.1's Checking results paragraph and 5.2; current version 9b7d0ba), when
-  the user chooses; §5.4 comes first.
+- **The user's review of §5.4** (8fd8c9c), first; then the rest of the feedback on §5.1-5.2 (5.1's Checking results
+  paragraph and 5.2; version 9b7d0ba), when the user chooses.
 - **Run 133** (`run/133_varied_observation.sh`, ~7 h, the user launches it): §5.3's Phase 2, the defenses learned
   from attacks rebuilt from varied runs on training malware. Session 34 reads it against its header's hypotheses;
   then §5.3's claim is settled with the user (`docs/section-5.3-design.md`, §10.2), possibly narrowed.
@@ -47,6 +48,23 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
   decision 8 (iv) and step 4).
 
 ## Session log
+
+- **2026-11-11 (session 36): §5.4 *What Robustness Costs* drafted (blocks 1-2, unreviewed).** Numbers checked
+  against their sources (two mismatches: "the rest at most 0.3" is 0.4 for the debug and signature removals; the sums
+  row's adaptive footnote has no matching run, the closest is run 82, append and add-section only; the user judged
+  the latter not worth raising, so the cell stays 0% with an accurate footnote). The user rejected scaling the
+  full-training-set adaptive cells down to the 10% protocol and single-attack toolkit columns (memory
+  `report-attacks-separately` now scoped to stitched searches). Drafted, in order: the price (89.6 vs 93.5% at 1% FPR;
+  74.7 vs 84.4% at 0.1%), against hand-picked features (the expert set 29.1% vs the derived additions detector 92.2%,
+  the practitioner-facing result), where the cost lies (imports 2.1, header overwrites 1.4, others at most 0.4; at
+  0.1% dropping the two-sided features alone costs 5.2), the threat model's width, beyond the guarantee (GAMMA's
+  rebuilding injections, 0/56, 0/60), where the guarantee holds. Table 4 trimmed (undefended and monotone rows,
+  additions block; one toolkit column, any of the eight; new TPR-at-0.1%-FPR column, computed from the models'
+  `ts_predictions.parquet`); the PV/ERDALT/adversarial-training rows kept in a `% MOVED TO 5.3` comment, their
+  paragraphs marked `% 5.3 MATERIAL`; the cost paragraph removed. Found: the coverage check (915 of 1,070 lowered) is
+  about two-sided features the detector drops, so it says nothing about the constraints that carry the cost; not used.
+  The user ended the session tired and disappointed with the last two days. Commit 8fd8c9c. **Next:**
+  `docs/resume-prompt.md`.
 
 - **2026-11-11 (session 35): §5 lead and 5.1 revised after the user's second review; §5.4 next.** The `% VERIFY` in
   5.2 settled (elastic/ember's code): Severi et al.'s EMBER (feature version 1, 2,351 features) hashes section names,
@@ -139,9 +157,3 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
   (`docs/evidence/literature-adversarial-malware.md`; PDFs in `papers/`, renamed to Google Scholar keys): the
   catalogue covers every structural edit of the reputable-venue PE attacks; code-level transformations are excluded
   for now by the user's choice and recorded as a limitation (PLAN.md, decision 9).
-- **2026-11-09 (session 26): the two §3 edits decided, numbering fixed.** The user chose option A for Table 1's
-  presence row and the in-place-write example (with the clause) for Definition 8 (PLAN.md, decision 7); not yet
-  applied (`docs/resume-prompt.md`, step 1, has the exact text). The session was derailed by a stale "Definition 7"
-  (compiled: 8) and the word "widen"; every active document, the writing skill, and the memory now use compiled
-  numbers, `docs/README.md` has the numbering table, and CLAUDE.md requires checking `main.aux`. **Next:** apply the
-  edits, then §4.

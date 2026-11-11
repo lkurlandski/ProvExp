@@ -1,4 +1,4 @@
-# Status log, sessions 21-24 (2026-11-09)
+# Status log, sessions 21-26 (2026-11-09)
 
 Moved from `docs/status.md` on 2026-11-11 (session 34).
 
@@ -26,3 +26,9 @@ Moved from `docs/status.md` on 2026-11-11 (session 34).
   vocabulary falls under decision 2 too; writes onto locating positions are flagged or declared in the directions;
   append is declared, not collected (fix Def. 8's example); Table 1 lacks pools and nondecreasing functions of one sum.
   Record: `docs/evidence/code-audit-sound-directions.md`. **Next:** the user's call on the findings, then §4 (step 3).
+- **2026-11-09 (session 26): the two §3 edits decided, numbering fixed.** The user chose option A for Table 1's
+  presence row and the in-place-write example (with the clause) for Definition 8 (PLAN.md, decision 7); not yet
+  applied (`docs/resume-prompt.md`, step 1, has the exact text). The session was derailed by a stale "Definition 7"
+  (compiled: 8) and the word "widen"; every active document, the writing skill, and the memory now use compiled
+  numbers, `docs/README.md` has the numbering table, and CLAUDE.md requires checking `main.aux`. **Next:** apply the
+  edits, then §4.

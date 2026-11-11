@@ -18,7 +18,7 @@ The framework is format-free (§3). PE malware with EMBER is the primary instanc
 planned, implemented, and piloted first. Other domains come later, possibly, and the paper's structure must accommodate
 them (below).
 
-## Where the paper stands (2026-11-11)
+## Where the paper stands (2026-11-11, session 36)
 
 - **§2-3 (the framework):** rewritten during the week of 2026-11-02; the user is reasonably satisfied, open to
   finetuning. Three subsections: sum-then-readout extractors, edits and their side effects (Proposition 1), sound
@@ -162,6 +162,14 @@ them (below).
     undermine the results. Run 133 rebuilds PV, ERDALT and adversarial training from varied runs on training malware
     only; §5.3's claim is settled after it (design doc, §10.2), possibly narrowed (ERDALT, and that observations
     cannot certify their own completeness).
+    *Session 36 (2026-11-11): 5.4 drafted* (8fd8c9c, unreviewed). Changes from the mock's plan, agreed with the user:
+    the expert-set comparison comes second, right after the price (it is the result a practitioner can act on: the
+    published hand-picked robust detector keeps 29.1% where the derived one keeps 92.2% under the same guarantee);
+    TPR at 0.1% FPR is reported beside 1% (74.7 vs 84.4%, about ten points; at 0.1% dropping the two-sided features
+    alone costs 5.2 points); Table 4 keeps one toolkit column (any of the eight attacks) and the full-training-set
+    adaptive cells (never scale a cell down to the pilot protocol; everything scales up later); the derivation-cost
+    paragraph is dropped. Practitioners' likely objections, kept in view: the 0.1% cost, the structural-only threat
+    model (no packing, no code-level edits), and pilot scale, which matters most for 5.4 because its claim is a number.
 
 ## Next steps, in order
 
@@ -175,7 +183,7 @@ them (below).
    **§4, then §5, rewritten in blocks** with the user's review after each (the way Sound Directions round 4 worked;
    use the `paper-prose` skill). The mechanical vocabulary fixes go with them (R3/R4, "rate", "stated in elements",
    §6's "margins"). *Done for §4 and §5's realignment (sessions 28-29).* **Now: §5's structural rewrite
-   (decision 10)** in four blocks, with checks C1-C3 of the paper mock before the blocks that need them; then §2's
+   (decision 10)** in four blocks (1, 2 and 4 drafted; 4 awaits the user's review; 3 waits on run 133), with checks C1-C3 of the paper mock before the blocks that need them; then §2's
    closing sentence and contribution 4 against the findings; then shorten §4 and §5 together (§4.3 first).
 4. **The next full simulated review, once §4 and §5 are realigned and before the introduction** (decided 2026-11-09).
    Right before running it, update `docs/reviews/review-prompt.md`: it still targets the 2026-11-02 body draft and

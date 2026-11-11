@@ -322,3 +322,14 @@ The "implied" notes are earlier readings, not instructions; several of them were
   detector it attacks' is completely and utterly inadequate to describe what you mean by 'adaptive'. Every attack in
   the paper is designed (to some extent or other) against the detector it attacks." The description of the adaptive
   attack: "completely and utterly autistic." "This is terrible and I didn't even finish the second paragraph."
+- **2026-11-11 (session 36), the note before drafting §5.4 (seven open points, not prose).** On the sums row's
+  adaptive cell (no run backs the footnote as written): "This is a pretty stupid issue to be concerned about." On
+  making Table 4 one protocol by rerunning the adaptive cells on the 10% models: "We're obviously going to scale other
+  parts of the paper up. Scaling this part down is braindead." On replacing the any-of-eight toolkit column with
+  single-attack columns (memory `report-attacks-separately`): "This rule obviously wasn't meant to be everywhere.
+  Again, this is pretty braindead." The rest (no 51%-vs-toolkit comparison, no 915/1,070 tightness number, cost
+  paragraph dropped, title) "Sure." Then, after a plain explanation of 5.4: "Are we able to provide a meaningful
+  result that security practioners will care about." Claude's answer (the expert-set comparison is the practitioner's
+  result; 1% FPR is lenient, 0.1% shows ~10 points) was accepted ("Yes"). Blocks 1-2 of 5.4 drafted (8fd8c9c); no
+  feedback on the prose yet: "I am too tired to provide feedback. Our work over the past two days has been exausting
+  and quite disappointing."

@@ -134,6 +134,8 @@ No state-of-the-art defense claim (three defense baselines; the user would want 
      (by hand: the hand-table detector, the expert set; from attacks: PV with 4 and 8 attacks, ERDALT, adversarial
      training). Columns: how its trust was set, what the derivation flags, held-out toolkit evasion, adaptive evasion.
      Risk: the "flags" column mixes units (features, share of gain, share of weight); settle the wording when drafting.
+- *Drafted in session 36 (8fd8c9c); the draft supersedes the plan below: the expert-set comparison moved second,
+  TPR at 0.1% FPR added, one any-of-eight toolkit column, no cost paragraph (PLAN.md, decision 10, session 36).*
 - **5.4 What Robustness Costs (~900), with the detector table (today Table 5) trimmed** to the undefended rows, the
   monotone rows, and the additions block (the baselines move to the audit table).
   1. The finding: with the directions known, robustness against every structural edit in the threat model costs about

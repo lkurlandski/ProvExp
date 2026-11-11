@@ -61,6 +61,7 @@ or when changing an experiment. Run scripts are in `run/` (one per step, numbere
 | `docs/archive/PLAN-log-2026-10-22-to-2026-11-09.md` | the plan's history, every "Next steps" block |
 | `docs/archive/resume-prompt-2026-11-06.md` | the previous resume prompt (research track details: sums-row routing, scale-up budget) |
 | `docs/archive/resume-prompt-2026-11-11-s34.md` | the resume prompt of session 34 (§5.3 from scratch: overview, analysis, options) |
+| `docs/archive/resume-prompt-2026-11-11-s35.md` | the resume prompt of session 35 (drafting §5.4: open points, numbers to check) |
 | `docs/archive/resume-prompt-2026-11-09-s27.md` | the resume prompt of session 27 (decision 7 edits, the first §4 plan) |
 | `docs/archive/framework/` | the framework's design sources, replaced by `manuscript/_d_framework.tex`: `formalization.md` (no longer the reference; the manuscript diverged from it) and its review log `feedback.md`, `framework-design.md`, `framework-spine.md`, `feature-provenance-model.md` (the original three-layer model, claims C1-C4), `s33-decision.md`, `sound-directions-math.md`, the review sprint log `sprint-framework-review.md` and its resume prompts |
 | `docs/archive/direction-A/` | direction A's original mock and its pilot-scale summary (superseded by `docs/paper-mock.md`) |
