@@ -2,10 +2,10 @@
 
 Kept short: the current state, what waits on the user, and the last few sessions in a line or two each. The plan and
 its reasons are in `PLAN.md`. When the session log below grows past about ten entries, move the oldest to
-`docs/archive/` (the log before 2026-11-09 is `docs/archive/status-log-2026-10-to-2026-11-09.md`; sessions 21-26 are in
+`docs/archive/` (the log before 2026-11-09 is `docs/archive/status-log-2026-10-to-2026-11-09.md`; sessions 21-27 are in
 `docs/archive/status-log-2026-11-09.md`).
 
-## Current state (2026-11-11, sessions 34-36)
+## Current state (2026-11-11, sessions 34-37)
 
 - **Framework (§2-3):** rewritten; the user is reasonably satisfied. Open: the user's holistic read of Sound
   Directions after round 4 (finetuning only).
@@ -16,8 +16,9 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
   validation section and not a defense paper. Plan, one line per paragraph, and checks C1-C3: `docs/paper-mock.md`,
   §5. Blocks 1-2 (lead, 5.1, 5.2) drafted and revised twice (session 35: lead and 5.1 after the user's second review,
   up to 5.1's Attacks paragraph; the user has not yet commented on 5.1's last paragraph or on 5.2's second round).
-  Block 3 (5.3) waits on run 133 in session 34. **Block 4 (5.4 *What Robustness Costs*) drafted in session 36**
-  (8fd8c9c, ~950 words against ~900), not yet reviewed by the user.
+  Block 3 (5.3) waits on run 133 in session 34. **Block 4 (5.4 *What Robustness Costs*)** drafted in session 36,
+  revised in session 37 after Claude's review with the `humanistic-paper-review` skill (reordered so no paragraph
+  points forward; commits c49f654, 9113acb, 23ab085); the user has not read the revised text.
 - **§5.3 is being redesigned** in `docs/section-5.3-design.md` (session 34), the working plan until its prose is
   written; it supersedes the mock's item 5.3 and the session-33 record. Finding so far, mostly bad news for 5.3 as
   planned (user agrees): PV's hole and its 14/22 adaptive evasion rest mostly on the attack harness resetting the RNG
@@ -33,8 +34,9 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
 
 ## Waiting on the user
 
-- **The user's review of §5.4** (8fd8c9c), first; then the rest of the feedback on §5.1-5.2 (5.1's Checking results
-  paragraph and 5.2; version 9b7d0ba), when the user chooses.
+- **Holistic reviews with the `humanistic-paper-review` skill, §4 first, then §5** (user, session 37; new session,
+  `docs/resume-prompt.md`). The user's own pending comments on 5.1's Checking results and 5.2 (9b7d0ba) can join the
+  §5 review.
 - **Run 133** (`run/133_varied_observation.sh`, ~7 h, the user launches it): §5.3's Phase 2, the defenses learned
   from attacks rebuilt from varied runs on training malware. Session 34 reads it against its header's hypotheses;
   then §5.3's claim is settled with the user (`docs/section-5.3-design.md`, §10.2), possibly narrowed.
@@ -48,6 +50,15 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
   decision 8 (iv) and step 4).
 
 ## Session log
+
+- **2026-11-11 (session 37): §5.4 reviewed by Claude and revised.** At the user's request, Claude reviewed §5.4 with
+  the `humanistic-paper-review` skill instead of the user reading it. The user agreed with the headline findings,
+  less with the small ones (recurring patterns, term ledger). Applied: the subsection reordered so no paragraph points
+  forward (price, where the guarantee holds, where the cost lies, width, hand-picked, beyond the guarantee); *Where
+  the cost lies* opens with its finding, explains rename (frees 301 features, recovers 0.1 points) and append at
+  0.1% FPR (retraining variance; Claude's inference); *Beyond the guarantee* counts files per detector and attack
+  (from `a1/toolkit-split/split.json`); the opening says why the sums; Table 4's caption states its takeaway.
+  Commits c49f654, 9113acb, 23ab085. **Next:** a holistic review of §4, then §5 (`docs/resume-prompt.md`).
 
 - **2026-11-11 (session 36): §5.4 *What Robustness Costs* drafted (blocks 1-2, unreviewed).** Numbers checked
   against their sources (two mismatches: "the rest at most 0.3" is 0.4 for the debug and signature removals; the sums
@@ -143,17 +154,3 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
   §4.1 (PE format, then EMBER's features over it, not interleaved); lessons added to `paper-prose` (a08460c) and the
   reaction log. §4.3 literature first with Demetrio TOPS, GAMMA, MAB-Malware, and Zainab et al. (preprint, user
   approved); Table 2's column is now "Changes: declared / item tables". **Next:** see `docs/resume-prompt.md`.
-
-- **2026-11-09 (session 27): decision 7 applied; §4 block 1 drafted and the section restructured.** Table 1's monotone
-  row and Definition 8's in-place-write example committed (690cc67; the presence example moved to Table 1's caption to
-  avoid an overfull table). §4 outline revised with the user (PLAN.md, decision 8): no "repairs" part and no mention of
-  the import bug; (a) and (b) merged into a qualitative "how strictly EMBER fits"; the threat model literature first;
-  the 4 MB truncation kept for now, brainstorm scheduled around the next review. Block 1 (lead, EMBER, Items/Sums/
-  Readouts) drafted; the user liked §4.1's content and style but found it bookkeeping-heavy, the lead verbose and its
-  checks misplaced, and the EMBER paragraph too thin and in need of its own subsection. New structure (decision 8 (v)):
-  lead, 4.1 EMBER and PE files, 4.2 EMBER as a sum-then-readout extractor, 4.3 threat model, 4.4 population, details in
-  an appendix. Section retitled "Instantiating the Framework". **Next:** redraft block 1 in the new structure
-  (`docs/resume-prompt.md`). Later the same session: a literature review of adversarial malware
-  (`docs/evidence/literature-adversarial-malware.md`; PDFs in `papers/`, renamed to Google Scholar keys): the
-  catalogue covers every structural edit of the reputable-venue PE attacks; code-level transformations are excluded
-  for now by the user's choice and recorded as a limitation (PLAN.md, decision 9).

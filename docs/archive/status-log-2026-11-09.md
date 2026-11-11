@@ -1,4 +1,4 @@
-# Status log, sessions 21-26 (2026-11-09)
+# Status log, sessions 21-27 (2026-11-09)
 
 Moved from `docs/status.md` on 2026-11-11 (session 34).
 
@@ -32,3 +32,16 @@ Moved from `docs/status.md` on 2026-11-11 (session 34).
   (compiled: 8) and the word "widen"; every active document, the writing skill, and the memory now use compiled
   numbers, `docs/README.md` has the numbering table, and CLAUDE.md requires checking `main.aux`. **Next:** apply the
   edits, then §4.
+- **2026-11-09 (session 27): decision 7 applied; §4 block 1 drafted and the section restructured.** Table 1's monotone
+  row and Definition 8's in-place-write example committed (690cc67; the presence example moved to Table 1's caption to
+  avoid an overfull table). §4 outline revised with the user (PLAN.md, decision 8): no "repairs" part and no mention of
+  the import bug; (a) and (b) merged into a qualitative "how strictly EMBER fits"; the threat model literature first;
+  the 4 MB truncation kept for now, brainstorm scheduled around the next review. Block 1 (lead, EMBER, Items/Sums/
+  Readouts) drafted; the user liked §4.1's content and style but found it bookkeeping-heavy, the lead verbose and its
+  checks misplaced, and the EMBER paragraph too thin and in need of its own subsection. New structure (decision 8 (v)):
+  lead, 4.1 EMBER and PE files, 4.2 EMBER as a sum-then-readout extractor, 4.3 threat model, 4.4 population, details in
+  an appendix. Section retitled "Instantiating the Framework". **Next:** redraft block 1 in the new structure
+  (`docs/resume-prompt.md`). Later the same session: a literature review of adversarial malware
+  (`docs/evidence/literature-adversarial-malware.md`; PDFs in `papers/`, renamed to Google Scholar keys): the
+  catalogue covers every structural edit of the reputable-venue PE attacks; code-level transformations are excluded
+  for now by the user's choice and recorded as a limitation (PLAN.md, decision 9).
