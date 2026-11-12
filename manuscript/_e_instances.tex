@@ -147,9 +147,13 @@ than the structural edits above; \Cref{sec:discussion} returns to them.
 Theorem~\ref{thm:fw:directions} needs a signature that covers the threat model (Definition~\ref{def:fw:signature}):
 for each kind of item, the changes the operations can make to items of that kind. Ours has two sources. Most
 operations declare their changes, and we check each declaration by applying edits and extracting the files again. The
-rest is read from the item tables of a set of files: the changes of the four overwrites, and which sums each kind of
-item contributes to. This part rests on the files rather than on a proof, so Theorem~\ref{thm:fw:directions} holds if
-the files show every way in which the operations meet the items, and \Cref{sec:eval:setup} checks that they do.
+rest is read from the item tables of a sample of files, which record the items each position belongs to and the sums
+each item contributes to. From them come the changes of the four overwrites and, for each kind of item, the sums its
+items can feed. This part rests on the sample rather than on a proof: Theorem~\ref{thm:fw:directions} holds if every
+kind of item that an overwrite's positions belong to, and every sum that an item of a given kind feeds, on any file
+of the population, already occurs in the sample. \Cref{sec:eval:setup} checks this on the directions the signature
+gives: those derived from 100 files are the same as those derived from 2,000, and no edit moved a feature in a
+direction they rule out.
 
 The declared changes follow from what each operation does to the file. Adding a section adds the section and the bytes
 of its content, and replaces the header fields it must update, such as the number of sections and the size of the image.
@@ -160,10 +164,10 @@ The four overwrites, of slack, of the DOS header and stub, of header fields the 
 are defined by the positions they write instead, and their changes come from the item tables, which record the items
 each position belongs to. An overwrite can also land on a position that the parser reads to find other items, such as
 an entry of the section table or a field that gives the location of a table. Such a write can change which items the
-extractor finds, in a way the item table does not record, and the signature then allows any change to the items of
-that kind. Renaming and the removals also write such positions, but declare what follows. For a single edit, we
-decline to compute the side effects of such a write; Appendix~\ref{sec:ember} counts how often this happens and
-describes how we record these positions.
+extractor finds, in a way the item table does not record. The signature then allows any change to the items of that
+kind, and for a single edit we decline to compute the side effects; Appendix~\ref{sec:ember} counts how often this
+happens and describes how we record these positions. Renaming and the removals also write such positions, but they
+declare the changes that follow.
 
 \subsection{Population}
 \label{sec:instances:population}
@@ -172,9 +176,9 @@ The signature covers the threat model only over a population, and Theorem~\ref{t
 closed under the threat model. Ours is the PE files with a plain layout, in which everything the parser locates lies
 within the file, the sections lie within the image that the loader maps, and the headers hold only headers. On other
 files an edit can change items that no operation declares. Appending to a file whose section table points past its end,
-for instance, supplies content the parser looked for and did not find, instead of extending the overlay. The population
-is closed: of the 73,063 edits of \Cref{sec:eval:setup}, 60,934 were applied to files in the population, and none of
-them takes a file out of it. Of the 2,000 test files those edits were applied to, 1,674 are in the population. Most of
+for instance, supplies content the parser looked for and did not find, instead of extending the overlay. Closure is
+checked rather than proven: of the 73,063 edits of \Cref{sec:eval:setup}, 60,934 were applied to files in the
+population, and none of them took a file out of it. Of the 2,000 test files those edits were applied to, 1,674 are in the population. Most of
 the others are files that our copy of the dataset truncates at 4~MB, in which something the parser locates lies past the
 truncated end; of the files it does not truncate, 94\% are in the population.
 

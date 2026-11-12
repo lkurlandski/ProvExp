@@ -355,3 +355,7 @@ The "implied" notes are earlier readings, not instructions; several of them were
   numbering system, which makes things extremely confusing. You're proposed first pass is also too ambitious. The
   point of breaking this up it to move some of the findings outside of my frontal cortex to allow me to focus on the
   remaining ones." First pass: findings 1-3 and 6-8; 4 and 5 later.
+- **2026-11-12 (session 40), Claude's lightweight second review of §4 (three findings: 4.3.2's sample-based part
+  vague, an interrupting sentence in 4.3.2 ¶3, closure stated flat in 4.4).** The user: "Nice analysis. #2 and #3 seem
+  especially straightforward to fix. #1 might require a bit more care and reasoning, so think deeply about how you
+  might improve this writing weakness and don't make mistakes. Go ahead and address the issues in the paper."
