@@ -383,3 +383,14 @@ The "implied" notes are earlier readings, not instructions; several of them were
 - **2026-11-12 (session 41), humanistic review of 5.4, pass 4** (six findings). "I agree with your recommendation."
   All applied, including #2: the 0.1% per-operation costs ("about four") cut as within retraining noise, the noise
   caveat first.
+- **2026-11-12 (session 42), Claude's holistic review of §5** (seven findings, weighted toward how much a reader will
+  care about the contributions). 1 (no prior claims stated, so the findings read as truisms confirmed): "Agreed and
+  approved. Let's do this carefully and thoughtfully to keep things tight and avoid too overlap with other sections
+  like the background and related work." 2 (the lead gives mechanisms, not consequences): "Agreed and approved, albeit
+  to a lesser extent. Out discussion and analysis of this should be brief." 3 (5.4 names one alternative) and 4 (5.2's
+  cost paragraph concedes rather than states its stake): "Approved." 5 (5.3's topic sentences describe the defenses,
+  outcomes later): "I don't know, I'm worried that this is trying too hard to curtail to a very lazy reader. We need
+  to balance the needs of a fast reader and a deep reader. I'm open-minded, but right now, I'm not convinced." 6 (no
+  table shows 5.3): "Sure, we can consider this when rebuilding the tables. But its needs more thought." 7 (§2
+  promises an attack and a defense): "This is true. We have a weakness here that we can't immedietly fix. Make a note
+  of it and we'll keep it in mind for the rest of the project."

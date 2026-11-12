@@ -204,14 +204,22 @@ Done: the paper mock rewritten, the read-only code audit (`docs/evidence/code-au
 
 1. ~~**The humanistic review of §5, one subsection per pass.**~~ Done in session 41b (2026-11-12): all four passes,
    the user approving each finding (status log).
-1b. **A holistic humanistic review of all of §5** (user, 2026-11-12: the first thing next session), with the same
-   skill, on the section as a whole, with more weight on how important a human reader will judge the contributions
-   (do the three findings matter, are their stakes visible, does the section make a reader care). Then step 2.
+1b. ~~**A holistic humanistic review of all of §5**~~ (contributions' importance). Done in session 42 (2026-11-12):
+   seven findings; 1-4 approved and applied (68f6385: what Gimenez et al. report before our results, the lead names
+   what breaks, 5.4 names both alternatives, the hand detector's cost ends on why a broken guarantee matters); 5 (5.3's
+   topic sentences) not convinced (user); 6 and 7 noted below (step 2 (a), (c)).
 2. **Then, to be considered with the user:** (0) §5's questions and answers given more visual emphasis (user,
    2026-11-12: how each subsection's research question is "asked" and its finding "answered"; a structural change, not
    made in the review); (a) remake the tables (Tables 3 and 4 above all; the user dislikes
    them), before (b) shortening §4 and §5 together (§4 ~1,500 words against ~1,000; §4.3 first), and (c) §2's closing
    sentence and contribution 4 against §5's three findings.
+   *From the holistic review (session 42):* for (a), no table shows 5.3's result (published defenses that withstand
+   their own attacks fall), while the two tables a skimmer sees are our own hand table's errors and the cost; consider
+   it in the remake (user: "needs more thought"). For (c), **a known weakness, not fixable now** (user: "keep it in mind
+   for the rest of the project"): §2 says §5 "uses them to attack malware detectors and to build robust ones", and
+   §2's problem-space-attack line (one extraction per candidate, nothing about the candidates never tried) gets no
+   finding in §5, where the attack is an instrument (no timing claims, decision 6). The mock's contribution 4 is also
+   stale ("four to six points", "learned constraints").
 3. ~~**The ERDALT check.**~~ Done in session 41 (2026-11-12), no run. (a) The "score floor" is not a weak margin: 99%
    of test goodware sit at the network's lowest score (every hidden unit saturated), so the 1% FPR threshold sits at
    the floor's edge; the 29 detected pilot malware start at logits 0 to ~1,000 (median ~60) and GAMMA imports drives
