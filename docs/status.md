@@ -51,9 +51,9 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
 
 ## Waiting on the user
 
-- **Next session:** run the full simulated review (`docs/resume-prompt.md`), then go through its findings together.
-  Before it: a look at `docs/reviews/process/note-to-reviewers.md` (the authors' note the reviewers read, drafted
-  in session 47 and not yet read by the user).
+- **Before the next session, the user** runs `docs/reviews/process/run_review.sh` in tmux (after reading
+  `docs/reviews/process/note-to-reviewers.md`, drafted in session 47). **Next session:** go over its output together
+  (`docs/resume-prompt.md`).
 - The holistic read of Sound Directions (any time).
 
 ## Scheduled (in order; PLAN.md, next steps)
@@ -81,7 +81,7 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
   `docs/reviews/process/` (`config.sh`, `run_review.sh`, `reviewer-brief.md`, `reviewers/{A,B,C,D}-*.md`,
   `note-to-reviewers.md`, `checklist.md`, `meta-brief.md`). Reviewers run as `claude -p` from a scratch folder, so no
   `CLAUDE.md` or memory reaches them; checked with a dry run and a one-reviewer Haiku smoke test (found and fixed: the
-  reviewer copied the brief's example IDs). **Next:** `docs/resume-prompt.md` (run the review).
+  reviewer copied the brief's example IDs). **Next:** the user runs the review; then `docs/resume-prompt.md` (discuss it).
 
 - **2026-11-12 (session 46): the population decided; files below 4 MB in every split.** Claude counted which clause
   each of the 326 non-population files of the 2,000 fails (run 136, ~3 min): 231 incomplete because of our

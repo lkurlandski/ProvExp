@@ -1,4 +1,4 @@
-# Resume: running the full simulated review and discussing it
+# Resume: discussing the full simulated review
 
 Written at the end of session 47 (2026-11-12). Self-contained: everything needed to start is below or in the files it
 names.
@@ -30,19 +30,23 @@ into `manuscript/*.tex`; check `manuscript/main.aux` before naming a number, and
 
 ## The task
 
-1. **Before running:** show the user `docs/reviews/process/note-to-reviewers.md` (drafted by Claude in session 47, not
-   yet read by the user) and the checklist; check the note still matches the manuscript (every `\synthetic{...}`
-   value named; `grep -n 'synthetic{' manuscript/_*.tex`). Commit, so the review names a commit.
-2. **Run** (runbook, "Running it"): `DRY_RUN=1 docs/reviews/process/run_review.sh` to check, then
-   `docs/reviews/process/run_review.sh` in the background (Bash `run_in_background`; the user approved running it,
-   costs are API, not CPU). `TAG` defaults to `<today>-body`. If a reviewer fails, rerun only it (runbook, last
-   paragraph).
-3. **Discuss** the output (`docs/reviews/<TAG>/meta-review.md` and the four reviews) with the user, following memory
-   `review-comments-workflow`: answer questions first, keep the reviewers' IDs (`A-W1`, ...) and the R-numbers, one
+The user ran `docs/reviews/process/run_review.sh` themselves (in tmux, after session 47), so the review's output is
+already there: `docs/reviews/<TAG>/` (`TAG` defaults to `<date>-body`; find the newest folder in `docs/reviews/`), with
+`meta-review.md`, `reviewer-{A,B,C,D}.md`, `run-config.txt` (commit, models, effort), the logs, and the note and
+checklist the run used.
+
+1. **Check the run first:** every reviewer wrote a review (no `reviewer-<ID>.md` missing; the logs end cleanly),
+   `meta-review.md` exists and covers its eight sections, and `docs/reviews/README.md` has the new line. If something
+   failed, tell the user and give the command to redo only that part (runbook, last paragraph: `REVIEWERS=<ID>
+   STEPS=reviewers TAG=<same tag>`, then `STEPS=meta TAG=<same tag>`); do not rerun it yourself unless asked.
+2. **Read** the meta-review and the four reviews in full, and spot-check the meta-reviewer's verdicts on the findings
+   that matter most (a premise marked correct or false that decides a risk) against the manuscript and sources.
+3. **Discuss** them with the user, following memory `review-comments-workflow`: start with the executive summary in
+   plain words, answer the user's questions first, keep the reviewers' IDs (`A-W1`, ...) and the R-numbers, one
    recommendation per item, small passes with approved items first. The output decides what the scale-up (PLAN.md,
-   next step 3) includes.
-4. **Adjust the procedure** if the run shows a flaw (the knobs in `config.sh`; the prompts in `process/`), and note
-   what changed in the runbook.
+   next step 3) includes; record what is agreed in PLAN.md.
+4. **Adjust the procedure** if the run shows a flaw (knobs in `config.sh`; prompts in `process/`), and note what
+   changed in the runbook.
 
 ## Constraints and settled points
 
