@@ -129,3 +129,15 @@ Moved from `docs/status.md` on 2026-11-12. Search, don't read.
   training); on the same files it is 847 vs 928, and it is out anyway. Old 5.3 material removed from 5.4; §6's ERDALT
   reference points to 5.3; Appendix D gained the leave-one-out table. ~970 words. The user did not review the blocks
   (review next session). Commits 7a2ceff, 9d0369f, 035d977. **Next:** `docs/resume-prompt-5.3.md`.
+
+- **2026-11-12 (session 40): §4's second review; run 135 read; docs cleaned up.** Claude's lightweight review of §4
+  (three findings, all applied in 75c1c9c): 4.3.2 names what the sample-read part of the signature rests on and what
+  §5.1 checks (the directions from 100 files equal those from 2,000; no edit moves a feature against them); its two
+  consequences of a write onto a located position sit together; 4.4 says closure is checked rather than proven. Run
+  135 read (held: PV 0 in all folds, ERDALT's GAMMA-imports fold 25/29; failed: header_fields 2, not ~10, and the
+  mean); 5.3's *Holding one attack out* and Table 9 rewritten with the real values, the finding unchanged (b1a544c).
+  The user set the order of what follows (PLAN.md, next steps): §5's humanistic review one subsection at a time; then
+  tables, shortening, §2 alignment; then the ERDALT check and the 4 MB brainstorm; then decide on a simulated review.
+  Cleanup: stale resume prompts and the §4 note archived, the §5.3 design doc moved to `docs/evidence/`, sessions
+  29-33 of this log archived, the README's numbering table updated, §4's commented-out old text removed.
+  **Next:** `docs/resume-prompt.md`.

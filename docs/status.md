@@ -3,9 +3,9 @@
 Kept short: the current state, what waits on the user, and the last few sessions in a line or two each. The plan and
 its reasons are in `PLAN.md`. When the session log below grows past about ten entries, move the oldest to
 `docs/archive/` (the log before 2026-11-09 is `docs/archive/status-log-2026-10-to-2026-11-09.md`; sessions 21-28 are in
-`docs/archive/status-log-2026-11-09.md`, sessions 29-39 in `docs/archive/status-log-2026-11-10-to-11.md`).
+`docs/archive/status-log-2026-11-09.md`, sessions 29-40 in `docs/archive/status-log-2026-11-10-to-11.md`).
 
-## Current state (2026-11-12, sessions 34-48)
+## Current state (2026-11-12, sessions 34-49)
 
 - **Framework (§2-3):** rewritten; the user is reasonably satisfied. Open: the user's holistic read of Sound
   Directions after round 4 (finetuning only).
@@ -54,13 +54,21 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
   raised) take 150 of 150 population files out. Decision (user): no router; one monotone detector scores every file,
   proven on the population and measured outside it. **Run 138** (the escape pilot, ~5-6 h) scripted for the user;
   the paper is not changed until it is read.
+- **R1, attack strength (session 49):** decision 12. MAB-Malware vendored and driven by `scripts/mab_attack.py`
+  (tested equal to upstream's own hand-over); run 139 scripted for the user; §5, Tables 4-5 ("evaded by any attack")
+  and the new per-attack Table 11 carry its predicted values in blue. The adaptive attack scores by extraction at the
+  scale-up (`--score real`); open: whether §2 still promises "the attack scoring without extraction".
 - **Documentation:** reorganized 2026-11-09, cleaned up 2026-11-12 (stale resume prompts, the §4 note archived; the
   §5.3 design doc moved to `docs/evidence/`); index `docs/README.md`.
 
 ## Waiting on the user
 
-- **Run 138** (`run/138_escape_pilot.sh`, ~5-6 h with 16 workers; log `artifacts/logs/escape_pilot.log`). **Next
-  session:** `docs/resume-prompt.md` (read run 138 if done and continue R7; otherwise triage the rest of the review).
+- **Run 138** (`run/138_escape_pilot.sh`, ~5-6 h with 16 workers; started 16:03 on 2026-11-12; log
+  `artifacts/logs/escape_pilot.log`).
+- **Run 139** (`run/139_mab_malware.sh`, MAB-Malware against every detector, ~2-3 h; logs
+  `artifacts/logs/mab_malware-*.log`). Can run alongside run 138 if cores allow.
+- Two questions: §2's "attack scoring without extraction" (PLAN.md, decision 12 (iii)); scale first or widen first
+  (PLAN.md, next step 3; Claude recommends widening first). **Next session:** `docs/resume-prompt.md`.
 - The holistic read of Sound Directions (any time).
 
 ## Scheduled (in order; PLAN.md, next steps)
@@ -76,6 +84,21 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
 7. Introduction, discussion, abstract last.
 
 ## Session log
+
+- **2026-11-12 (session 49): R1 triaged and implemented (MAB-Malware); run 139 scripted.** Run 138 had just started,
+  so the session triaged the review (R1, R2, R18, R6, the writing batch, scale vs widen; one recommendation each).
+  The user took R1 first and corrected two points: "an attack we did not write" is no argument (the toolkit is not
+  ours either), and the adaptive attack is stronger per attack (the review had compared it with a union; Claude's
+  per-attack table: PV 4/9 vs 0/9, adversarial training 23/50 vs 10/50, unconstrained 25/49 vs 24/47, ERDALT 22/29 vs
+  24/29). Agreed: MAB-Malware without code randomization, the authors' code vendored and improved where disruptive
+  (threads and polled folders replaced by a direct hand-over, tested equal to upstream's on a stand-in classifier),
+  same donors as the toolkit; "evaded by any attack" in the body with each attack in an appendix table (the
+  2026-11-04 rule removed); "stronger" dropped. Claude's hybrid scoring for the adaptive attack was approved, then
+  dropped by Claude after a check (prediction 0.17 s vs extraction 0.09 s per candidate). Found and fixed: upstream's
+  section-append action loops forever on an empty donor content (empty sections skipped). Written: §5.1 (MAB-Malware,
+  "any attack"), 5.3 (PV's hole, adversarial training), 5.4 (the price, the width, beyond the guarantee), Tables 4-5,
+  Table 11 (per attack, Appendix D), all MAB values blue. Commits 56410b3, bc0dfae, 468288b, 0b801bb. **Next:**
+  `docs/resume-prompt.md`.
 
 - **2026-11-12 (session 48): the review read; R7 analysed and decided; escape audit and pilot.** The review run was
   complete (the first meta-reviewer at max effort hit the session limit and was resumed at xhigh). Claude read all
@@ -191,15 +214,3 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
   layer, which our port constrains. User (strongly held): implement from the paper where the code breaks the
   guarantee; no "their code exactly" variant. PLAN.md step 3, `docs/upstream-issues.md` item 8 updated.
   **Next:** `docs/resume-prompt.md` (unchanged: §5's humanistic review).
-
-- **2026-11-12 (session 40): §4's second review; run 135 read; docs cleaned up.** Claude's lightweight review of §4
-  (three findings, all applied in 75c1c9c): 4.3.2 names what the sample-read part of the signature rests on and what
-  §5.1 checks (the directions from 100 files equal those from 2,000; no edit moves a feature against them); its two
-  consequences of a write onto a located position sit together; 4.4 says closure is checked rather than proven. Run
-  135 read (held: PV 0 in all folds, ERDALT's GAMMA-imports fold 25/29; failed: header_fields 2, not ~10, and the
-  mean); 5.3's *Holding one attack out* and Table 9 rewritten with the real values, the finding unchanged (b1a544c).
-  The user set the order of what follows (PLAN.md, next steps): §5's humanistic review one subsection at a time; then
-  tables, shortening, §2 alignment; then the ERDALT check and the 4 MB brainstorm; then decide on a simulated review.
-  Cleanup: stale resume prompts and the §4 note archived, the §5.3 design doc moved to `docs/evidence/`, sessions
-  29-33 of this log archived, the README's numbering table updated, §4's commented-out old text removed.
-  **Next:** `docs/resume-prompt.md`.

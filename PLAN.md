@@ -43,7 +43,7 @@ them (below).
   idea new and value the PV hole and the cost result; all four call §3's results known techniques (IVM, sign-domain
   abstract interpretation; R6), the EMBER premises tested rather than proven (R2), and one instance too few for a
   class (R4). B, C and D's "one change" is the same: the routed system end to end (R7). Register R1-R21, the scale-up's
-  content (§7) and the writing actions (§8) in the meta-review. Triaged so far: R7 only (decision 11).
+  content (§7) and the writing actions (§8) in the meta-review. Triaged so far: R7 (decision 11), R1 (decision 12).
 
 ## Decisions of 2026-11-09 (the holistic review)
 
@@ -235,6 +235,25 @@ them (below).
     and §5.4 are rewritten (no routing, the escape result, "stand out" removed); if one escape breaks them, widen the
     population for that clause only. Analysis, options, runs: `docs/evidence/r7-population-escape.md`.
 
+12. **R1: attack strength (user, session 49, 2026-11-12).** (i) *MAB-Malware joins the attacks*, run against every
+    detector, without code randomization (needs IDA Pro; outside the threat model). The authors' code is vendored
+    (`third_party/mab_malware`) and run single-threaded with a direct hand-over to our detectors
+    (`scripts/mab_attack.py`; tested to give the same run as upstream's folder hand-over); donors are the same 50
+    goodware as the toolkit's. Run 139 (`run/139_mab_malware.sh`, for the user); its values are blue in §5 and Tables
+    4, 5, 11 until read. The case for it is strength (the published attack that evades an EMBER-2024 GBDT most often,
+    Zainab et al.) and renaming (PV's hole), **not** "an attack we did not write": the toolkit attacks are not ours
+    either (user). (ii) *Tables:* the body reports "evaded by any attack" (the union over every attack run on a
+    detector); each attack separately in Appendix D's Table 11 (`tab:ember:per-attack`). Replaces the rule of
+    2026-11-04 (user). "Stronger" dropped from §5's lead (the adaptive attack is stronger per attack against PV and
+    adversarial training, level on the undefended detector, weaker on ERDALT; the review had compared it with a union).
+    (iii) *The adaptive attack at the scale-up scores every candidate by extraction* (`--score real`: all twelve
+    operations, header-field overwrites included). The hybrid Claude proposed (predict where possible, extract where
+    declined) was dropped after a check: prediction costs 0.17 s per candidate against 0.09 s for extraction in our
+    implementation (session 49, 6 files, 115 candidates; predictions exact except the parser warnings).
+    **Open (user):** with `--score real`, Proposition 1 no longer scores the attack's candidates, and decision 6 named
+    "the attack scoring without extraction" as one of the three evaluated uses that §2 promises. Either keep the
+    predicted scoring where it applies for that reason (about twice the cost), or drop that use from §2 and §5.1.
+
 ## Next steps, in order
 
 Agreed with the user in session 45 (2026-11-12) after the holistic assessment (above). The previous list, with the
@@ -266,7 +285,8 @@ records of the §5 reviews, the table remake and the ERDALT check, is in
    population. Plus whatever the review adds (meta-review §7: the routed system end to end, now the unrouted one of
    decision 11; MAB-Malware; the adaptive search scoring by extraction where the computation declines, as run 138's
    `--score real`; equal-information learned defenses if decision 6 is revisited; thresholds from the validation split).
-   **Open question for the user (session 49):** scale the existing experiments first (more files, seeds 0-2), or widen
+   **Open question for the user (still open after session 49; Claude recommends widening first, then one scale-up):**
+   scale the existing experiments first (more files, seeds 0-2), or widen
    them first (the review's new experiments: MAB-Malware, the escape attack, equal-information baselines, a trial
    table), then scale everything once. The sums row's adaptive cell stays 0% with its
    footnote (session 36).
