@@ -429,3 +429,9 @@ The "implied" notes are earlier readings, not instructions; several of them were
   more effective for our research as a whole. Then make your decision accordingly." Claude chose page 2 (the finding at
   a glance; PE parser details stay in a float and one sentence; the table's columns carry over to other extractors and
   domains; consistent with the new Table 4).
+- **2026-11-12 (session 44), the check-in on more tables.** Claude laid out what each §5 subsection shows (5.2 and 5.4
+  have tables, 5.3 none) and recommended one table, for 5.3. The user: "So we have a table for 5.2 and 5.4 but not 5.3?
+  If that is the case, then I think a table for 5.3 is warranted, but only if the table can represent that section's
+  question and that section's answer. What do you think?" Claude proposed a shape and named two snags (ERDALT falls to an
+  attack it learned from; the "flagged beforehand" column measures different things per row) and asked which way to
+  go. The user: "I would like for you to analyze the decision yourself and provide a recommendation."

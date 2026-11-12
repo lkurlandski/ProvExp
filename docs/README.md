@@ -14,7 +14,7 @@ check `manuscript/main.aux` (`grep newlabel manuscript/main.aux`), and add the t
 | Sections | 1 Introduction; 2 Background and Motivation; 3 Measuring Edits Across Feature Mappings (3.1 Sum-then-Readout Extractors, 3.2 Edits and Their Side Effects, 3.3 Sound Directions); 4 Instantiating the Framework (4.1 EMBER and PE Files, 4.2 EMBER as a Sum-then-Readout Extractor, 4.3 Threat Model with 4.3.1 Operations and 4.3.2 Signature, 4.4 Population); 5 Evaluation (5.1 Setup, 5.2 What Hand Analysis Misses, 5.3 What Observed Attacks Miss, 5.4 What Robustness Costs); 6 Related Work; 7 Discussion; Appendix A Symbol Table, B Types, Monoids, and Folds, C Proofs for the Framework, D The EMBER Instance |
 | Definitions | 1 Items, 2 Sums, 3 Contributions, 4 Readouts, 5 Sum-then-readout extractor, 6 Item delta, 7 Threat models and directions, 8 Changes and signatures, 9 Directions of sums, 10 Derived table |
 | Results | Proposition 1 (side effects), Theorem 1 (sound directions), Corollary 1 (monotone detectors); Algorithm 1 (the extractor) |
-| Tables | 1 readout rules (§3.3), 2 operations of the threat model (§4.3), 3 hand vs derived directions (§5.2), 4 detectors (§5.4), 5 symbols, 6 sign table (Appendix C), 7 EMBER readouts, 8 side effects, 9 leave-one-out (Appendix D) |
+| Tables | 1 readout rules (§3.3), 2 operations of the threat model (§4.3), 3 hand vs derived directions (§5.2), 4 learned defenses (§5.3, `tab:eval:learned`, added session 44), 5 detectors (§5.4), 6 symbols, 7 sign table (Appendix C), 8 EMBER readouts, 9 side effects, 10 leave-one-out (Appendix D) |
 
 ## Active
 
@@ -37,7 +37,7 @@ check `manuscript/main.aux` (`grep newlabel manuscript/main.aux`), and add the t
 ## Evidence: the records behind §4-5
 
 Design decisions, runs, and results of the EMBER instance and its evaluation. Their vocabulary is the old one (claims
-C1/C4, requirements, Tables A0-A2, and in places Tables 5-7, for what the compiled paper numbers Tables 3-5). Open them to trace a number in the paper to its run,
+C1/C4, requirements, Tables A0-A2, and in places Tables 5-7, for what the compiled paper numbers Tables 3 and 5). Open them to trace a number in the paper to its run,
 or when changing an experiment. Run scripts are in `run/` (one per step, numbered), outputs under `artifacts/`.
 
 | Document | Covers |
