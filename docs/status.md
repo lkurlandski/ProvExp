@@ -38,13 +38,14 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
 
 ## Waiting on the user
 
-- What comes after §5's review (PLAN.md, next step 2): §5's questions and answers given visual emphasis (user), the
+- **Next session, first:** a holistic humanistic review of all of §5, weighing how important a human reader will judge
+  its contributions (user, 2026-11-12; PLAN.md step 1b). Then what comes after (PLAN.md, next step 2): §5's questions and answers given visual emphasis (user), the
   tables remade, §4 and §5 shortened, §2 aligned; `docs/resume-prompt.md`.
 - The holistic read of Sound Directions (any time).
 
 ## Scheduled (in order; PLAN.md, next steps)
 
-- §5's question-and-answer emphasis, the tables remade, §4 and §5 shortened, §2's closing and contribution 4 aligned (to consider
+- The holistic review of §5 (contributions' importance), then §5's question-and-answer emphasis, the tables remade, §4 and §5 shortened, §2's closing and contribution 4 aligned (to consider
   with the user).
 - The 4 MB-truncation brainstorm (the ERDALT check is done, session 41).
 - Then decide with the user whether the paper is ready for the next full simulated review.
@@ -57,7 +58,8 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
   `docs/writing-spec.md`. The user: "serious structural modifications" later to how §5's questions are asked and
   answered, with visual emphasis (PLAN.md step 2); for now each lead answers its question. Open, outside the prose:
   5.1's 73,063 is run 107's direction check, while the exactness counts are Appendix D's (62,604 + run 118's 34,965);
-  fix at scale-up unless the user wants it now. **Next:** `docs/resume-prompt.md`.
+  fix at scale-up unless the user wants it now. **Next:** a holistic review of §5 with weight on the
+  contributions' importance (user), then PLAN.md step 2; `docs/resume-prompt.md`.
 
 - **2026-11-12 (session 41): the ERDALT check (only), no run.** The score floor is not a thin margin: 99% of test
   goodware sit at ERDALT's lowest score, so the 1% FPR threshold sits at its edge; GAMMA imports drives detected

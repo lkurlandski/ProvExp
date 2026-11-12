@@ -204,6 +204,9 @@ Done: the paper mock rewritten, the read-only code audit (`docs/evidence/code-au
 
 1. ~~**The humanistic review of §5, one subsection per pass.**~~ Done in session 41b (2026-11-12): all four passes,
    the user approving each finding (status log).
+1b. **A holistic humanistic review of all of §5** (user, 2026-11-12: the first thing next session), with the same
+   skill, on the section as a whole, with more weight on how important a human reader will judge the contributions
+   (do the three findings matter, are their stakes visible, does the section make a reader care). Then step 2.
 2. **Then, to be considered with the user:** (0) §5's questions and answers given more visual emphasis (user,
    2026-11-12: how each subsection's research question is "asked" and its finding "answered"; a structural change, not
    made in the review); (a) remake the tables (Tables 3 and 4 above all; the user dislikes
