@@ -68,26 +68,28 @@ also the same as the one derived from all 2,000, so the part of the signature re
 
 Can a careful reading of the extractor get the directions right? A hand analysis must anticipate every feature an
 edit moves, and one edit moves many: a median of 263 of EMBER's features, across four to eight of its feature groups,
-on the edits of \Cref{sec:eval:setup}. We compare three hand analyses with the derived table: one we wrote before the
-derivation existed, and two published ones.
+on the edits of \Cref{sec:eval:setup}. We compare three hand analyses with the derived table, one we wrote before the
+derivation existed and two published ones, and all three get directions wrong: ours in eight places, which breaks the
+guarantee of a detector built on it; Gimenez et al.'s on 11 of their 40 features, which lets an attack evade their
+detector; and Severi et al.'s on the cautious side.
 % C1 (session 31): catalogue_checks/2000-exact/edits.parquet, column `moves`, the 60,934 applied edits on files in the
 % population, EMBER's 2,568 features only (re-encodings body_*, section_split excluded). Median per operation: chk 10,
 % rdb 11, rsg 16, hdr 25, ren 122, app 362, shf 501, ext 510, imp 539, sec 548; median groups 4-8.
 
 \paragraph{Our hand table}
-For each of EMBER's feature groups and each of the twelve operations, we read the extractor's code and the operation's
-declared effects and recorded which way the group's features could move. We knew the extractor well and had its source
-open, the realistic setting for such an analysis. The hand table and the derived one disagree on eight features
-(\Cref{tab:eval:directions}). Each disagreement is an error of the hand table, witnessed by a real edit that moves the
-feature in a direction the hand rule excluded; on every other feature the tables agree, and on one, the size of the
-signature table, the derived direction is tighter. Four of the errors hold on the plain layouts the detectors are built
-for, and four lie outside the population, where a hand table silently stops being sound and a derived one declines.
+The hand table we wrote makes eight errors (\Cref{tab:eval:directions}): in each, a real edit, extracted again, moves a
+feature in a direction the hand rule excluded. Four of them hold in the population the detectors are built for, and
+four lie outside it, where a hand table silently stops being sound and the derived one declines. To write it, we read
+the extractor's code and each operation's declared effects, and recorded for each of EMBER's feature groups and each of
+the twelve operations which way the group's features could move. We knew the extractor well and had its source open,
+the realistic setting for such an analysis. Elsewhere the two tables agree, except on the size of the certificate
+table, which the hand table leaves free and the derived one allows only to decrease.
 
 \begin{table*}[t]
-  \caption{Every disagreement between the hand-written direction table and the derived one. In each case the hand rule
-  is wrong, and a real file and edit, extracted again, moves the feature in the direction the hand rule excluded. No
-  disagreement goes the other way. In pop.: the disagreement holds on files with a plain layout, the population the
-  detectors are built for.}
+  \caption{The eight errors of the hand-written direction table. In each, a real file and edit, extracted again, moves
+  the feature in the direction the hand rule excluded. The only other disagreement goes the other way: the hand table
+  leaves the size of the certificate table free, where the derived one allows only decreases. In pop.: the error holds
+  on files in the population, which the detectors are built for.}
   \label{tab:eval:directions}
   \small
   \begin{tabular}{@{}p{0.15\textwidth}p{0.16\textwidth}llp{0.42\textwidth}@{}}
@@ -104,7 +106,7 @@ for, and four lie outside the population, where a hand table silently stops bein
       of the 39) \\
     overlay size & append & up $\to$ both & no & the appended bytes complete a section that pointed past the truncated
       end, and the overlay shrinks (4 of the 100 files; e.g.\ 31,482 to 4,096 bytes) \\
-    number of certificates & append & down $\to$ both & no & completing a signature table past the end adds a
+    number of certificates & append & down $\to$ both & no & completing a certificate table past the end adds a
       certificate (2 of the 100 files) \\
     has relocations, exports & append & fixed $\to$ both & no & completing a directory past the end (relocations: 151 of
       2,000 files; exports: 37) \\
@@ -118,36 +120,35 @@ for, and four lie outside the population, where a hand table silently stops bein
 None of the errors comes from the content an edit writes. They come from three facts about how the parser finds
 structures, visible only in its code: it ignores structures that lie past the end of the file, so appending can bring
 them into existence; it searches a fixed range for the Rich header, wherever the PE header happens to start; and it
-picks the entry section by a rule with a fallback. The derivation needs none of these facts stated. Each is a position
-the parser reads to find items, which the item tables record, and an operation that writes such a position is given
-every change to those items.
+picks the entry section by a rule with a fallback. The derivation needs none of these facts stated. The item tables record
+every position the parser reads to find items, so an edit that writes such a position is allowed to move those items'
+features either way, without anyone knowing why the parser reads there.
 
 \paragraph{What the error costs}
 A detector built on the hand table trusts that adding a section leaves the overlay alone, yet a section added after the
-overlay takes the overlay as its content. We trained such a detector, identical to the derived one except for the two
-features the tables disagree on inside the population: the hand table keeps the overlay size up-only and leaves the
-size of the signature table free, where the derivation frees the first and constrains the second downward. The
-adaptive search lowers the hand detector's score on 10 of the 29 files in the population it detects, every time by
+overlay takes the overlay as its content. We trained such a detector, identical to the derived one except that it allows
+the overlay size only to increase, where the derived one leaves it free; it also leaves the size of the certificate
+table free, where the derived one allows only decreases. The adaptive attack lowers the hand detector's score on 10 of the 29 files in the population it detects, every time by
 adding one section after the overlay, by up to 1.57 logits. The derived detector cannot be moved on any of them. No drop
 crosses the threshold, since these malware score far above it, so the error shows as a broken guarantee rather than as
 evasions on this corpus.
 
-\paragraph{Published hand analyses}
-Our hand table is one analysis, written by us. Two published ones show that the problem is not ours alone, and that a
-hand analysis can err in either direction. Gimenez et al.~\cite{gimenez2025certifiably} chose 40 features, the
-\emph{expert set}, to be hard to lower without the malware's source code, and train monotone detectors on them. We
-instrumented their extractor and derived its table: under the full threat model, 11 of the 40 features can be lowered,
-by renaming a section or by rewriting the DOS stub, edits that need no source code. Using those two operations, the
-adaptive search evades the expert-set detector on 2 of the 8 malware it detects. Severi
-et al.~\cite{severi2021explanation} needed features an attacker controls in order to plant a backdoor, and set aside all
-of EMBER's hashed features because, given the hash function's preimage resistance, ``directly manipulating these
-features by tampering with the binary would be extremely difficult''. The version of EMBER they used hashes section
-names, imports, and exports into the same buckets as EMBER 2024. Under the additions threat model alone, edits can move
-1,430 of these 1,558 features, all but the exports. The hash of a section's name picks one of 50 buckets and a sign for
-the section's size, entropy, and virtual size, so an attacker who chooses a new section's name gets the bucket and sign
-they want within about a hundred tries. This error is on the cautious side, which costs an attacker only options. A
-defender who made the same judgement would trust features an attacker can move, and \Cref{sec:eval:observed} shows a
-defense that does.
+\paragraph{Gimenez et al.'s expert set}
+Gimenez et al.~\cite{gimenez2025certifiably} chose 40 features, the \emph{expert set}, to be hard to lower without the
+malware's source code, and train monotone detectors on them. We instrumented their extractor and derived its table:
+under the full threat model, 11 of the 40 features can be lowered, by renaming a section or by rewriting the DOS stub,
+edits that need no source code. Using those two operations, the adaptive attack evades the expert-set detector on 2 of
+the 8 malware it detects.
+
+\paragraph{Severi et al.'s hashed features}
+A hand analysis can also err on the cautious side. Severi et al.~\cite{severi2021explanation} needed features an
+attacker controls in order to plant a backdoor, and set aside all of EMBER's hashed features because, given the hash
+function's preimage resistance, ``directly manipulating these features by tampering with the binary would be extremely
+difficult''. Of the 1,558 hashed features their version of EMBER shares with EMBER 2024, edits under the additions
+threat model alone can move 1,430, all but the exports' buckets; for a new section's size, entropy, and virtual size,
+an attacker tries names until the hash lands in the bucket and sign they want, within about a hundred tries. This
+error costs an attacker only options. A defender who made the same judgement would trust features an attacker can
+move, and \Cref{sec:eval:observed} shows a defense that does.
 % Expert set: run 120, scripts/a_expert_adaptive.py; the expert extractor is instrumented
 % (provexp.featuresets.ember2024.expert, bit-exact); 11 M_full holes (rows 27, 30-39 of
 % docs/evidence/direction-A-expert-set.md), each witnessed by one of our own edits. Adaptive: 2/8 via rename on the

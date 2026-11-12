@@ -367,3 +367,12 @@ The "implied" notes are earlier readings, not instructions; several of them were
   reader a rough idea of what the section is about and what its purpose is ... I don't want to get into the details
   about the attack. For example, we could state something like '... in both cases a stronger, white-box adaptive
   attack confirms ...' which helps clarify the nature and role of the attack."
+- **2026-11-12 (session 41), humanistic review of 5.2, pass 2** (seven findings). On 1 (the lead asks a question it
+  never answers): "I want to make some serious structural modifications to this section with regard to how the
+  research questions are presented, i.e., 'asked', and how the findings are presented, i.e., 'answered'. For now, we
+  can make the suggested change (answering the question) just to keep the draft smooth, but note that at a later
+  point, I want to apply structural enhancements to provide more visual emphasize to the questions and answers."
+  Approved 2-6 and the two drift items (adaptive search -> attack; plain layouts -> population). On 7 (Rich header
+  undefined): "I'm actually less concerned about this ... its a specific PE construct and the reader can look it up.
+  We could clarify that its the 'PE file's rich header' or something if absolutely nessecary." On the review process:
+  the user does not read the section end to end during the review, but approves or rejects each proposed change.

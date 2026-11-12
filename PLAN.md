@@ -207,7 +207,9 @@ Done: the paper mock rewritten, the read-only code audit (`docs/evidence/code-au
    half a day. The user's own pending comments on 5.1's *Checking results* and 5.2 (9b7d0ba) join their subsection.
    Known vocabulary items: "GAMMA's import injection" and "the header-field attack" (Table 2: GAMMA imports, header
    fields); Table 3 says "signature table" where it means the certificate table.
-2. **Then, to be considered with the user:** (a) remake the tables (Tables 3 and 4 above all; the user dislikes
+2. **Then, to be considered with the user:** (0) §5's questions and answers given more visual emphasis (user,
+   2026-11-12: how each subsection's research question is "asked" and its finding "answered"; a structural change, not
+   made in the review); (a) remake the tables (Tables 3 and 4 above all; the user dislikes
    them), before (b) shortening §4 and §5 together (§4 ~1,500 words against ~1,000; §4.3 first), and (c) §2's closing
    sentence and contribution 4 against §5's three findings.
 3. ~~**The ERDALT check.**~~ Done in session 41 (2026-11-12), no run. (a) The "score floor" is not a weak margin: 99%
