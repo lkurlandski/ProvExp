@@ -13,7 +13,7 @@ miss on the EMBER instance of \Cref{sec:instances}, with trial as the ground tru
 extracting the features of an edited file (\Cref{sec:eval:setup}). Hand analyses get directions wrong, and a published
 detector built on one falls to edits that need no source code (\Cref{sec:eval:hand}); defenses built from observed
 attacks trust features that edits can lower, and fall to edits the attacks never made (\Cref{sec:eval:observed}). In
-both cases, a stronger, white-box adaptive attack confirms on real files what the side effects and directions we
+both cases, a white-box adaptive attack confirms on real files what the side effects and directions we
 compute from the instrumented extractor predict. The
 directions also give detectors that no edit in the threat model can evade, and we report last what that robustness
 costs in detection at a fixed false-positive rate (\Cref{sec:eval:detectors}).
@@ -55,7 +55,21 @@ also implement a white-box adaptive attack, in the spirit of Tramèr et al.~\cit
 on real files whether a detector can be evaded where the directions say it can, and not where they say it cannot. It
 reads the detector's trees, combines any operations of the full threat model (\Cref{tab:instances:catalogue}) unless
 stated otherwise, computes each candidate's features by Proposition~\ref{prop:fw:side-effects} instead of extracting
-them, and scores up to 5,000 candidates per file (Appendix~\ref{sec:ember}).
+them, and scores up to 5,000 candidates per file (Appendix~\ref{sec:ember}). Last, we run MAB-Malware~\cite{song2022mab},
+the published attack that evades a detector on EMBER~2024's features most often~\cite{zainab2026breaking}, and the
+only one we know of that renames sections. It is black-box as well: a multi-armed bandit learns, across the files it
+attacks, which of seven actions and which benign content lead to evasion, applies up to 60 actions to each file, and
+then strips an evasive file down to the actions it needs. We run the authors' code with the same benign files as the
+source of added content, without its code-randomization action, which needs a disassembler and lies outside our
+threat model (\Cref{sec:instances:catalogue}). A detector counts as evaded on a file when any of these attacks evades
+it; Appendix~\ref{sec:ember} reports each attack separately.
+% SYNTHETIC (session 49): MAB-Malware results come from run/139_mab_malware.sh (scripts/mab_attack.py,
+% third_party/mab_malware); every blue value in 5.3-5.4 and Tables 4, 5 and 10 that involves it is a prediction.
+% Zainab et al. (papers/zainab2026breaking.pdf), Table I: MAB-Malware 83.40% on their EMBER-24 GBDT (0.1% FPR, or 1%
+% for models below 70% TPR there), 50 hard-label queries; next best on EMBER-24 30.60%; the most effective of nine attacks (average ASR 93.64% over their detectors). Upstream defaults:
+% max_pull 60, max_length 10. Code randomization needs files randomized with IDA Pro beforehand (song2022mab, Sec. 6).
+% Tables 4 and 5: "evaded" is the union over every attack run on that detector (user, session 49: the worst case over
+% attacks in the body, each attack separately in the appendix); this replaces the rule of 2026-11-04.
 % MEASURED: literature budget, run/124_a1_toolkit_literature_budget.sh: with the GAMMA paper's ~500 queries, import
 % injection evades the undefended detector on 27/47 vs 26/47 at 100 queries (cut from the prose, user, session 35).
 % Toolkit attacks: secml-malware's black-box problems, population 10, 10 iterations (scripts/a_pv_attacks.py, "low").
@@ -205,20 +219,20 @@ the source of added content, 3,183 adversarial examples in all. Each defense is 
 % valid outputs of 3,200 (a seed per attack and file). Evaluation: a1_evaluate --seed_per_file, pilot goodware donors.
 
 \begin{table}[t]
-  \caption{Defenses learned from the outputs of the toolkit attacks. Toolkit: evaded by at least one of the eight.}
+  \caption{Defenses learned from the outputs of the toolkit attacks. Evaded: by any attack.}
   \label{tab:eval:learned}
   \small
-  \begin{tabular*}{\linewidth}{@{}l@{\extracolsep{\fill}}ccccc@{}}
+  \begin{tabular*}{\linewidth}{@{}l@{\extracolsep{\fill}}cccc@{}}
     \toprule
-    & & \multicolumn{2}{c}{TPR at FPR} & \multicolumn{2}{c}{Evaded \dn} \\
-    \cmidrule(lr){3-4} \cmidrule(l){5-6}
-    Detector & AUC \up & 1\% \up & 0.1\% \up & toolkit & adaptive \\
+    & & \multicolumn{2}{c}{TPR at FPR} & \\
+    \cmidrule(lr){3-4}
+    Detector & AUC \up & 1\% \up & 0.1\% \up & Evaded \dn \\
     \midrule
-    Unconstrained        & .998 & 95.6 & 87.0 & 25/49 & 25/49 \\
+    Unconstrained        & .998 & 95.6 & 87.0 & \synthetic{40/49} \\
     \midrule
-    PV                   & .844 & 26.3 & 10.3 & 0/9   & 4/9   \\
-    ERDALT               & .883 & 62.7 & 42.2 & 24/29 & 22/29 \\
-    Adversarial training & .998 & 95.6 & 87.3 & 12/50 & 23/50 \\
+    PV                   & .844 & 26.3 & 10.3 & \synthetic{5/9}   \\
+    ERDALT               & .883 & 62.7 & 42.2 & \synthetic{26/29} \\
+    Adversarial training & .998 & 95.6 & 87.3 & \synthetic{33/50} \\
     \bottomrule
   \end{tabular*}
 \end{table}
@@ -226,7 +240,11 @@ the source of added content, 3,183 adversarial examples in all. Each defense is 
 % gbdt/seed-0 and gbdt/seed-0-advtrain-seedperfile (full training set, full test split); gbdt/seed-0-s10-pv-best and
 % erdalt/seed-0-s10-best (10% subsamples). Toolkit (any of the eight, run 133's seed per file):
 % a_varied/toolkit-{full,pv,erdalt}/table.json. Adaptive: a_varied/adaptive-{pv,erdalt,advtrain}-best/adaptive.json;
-% unconstrained 25/49 from run 127. SCALE-UP: train all four on one training set (PV and ERDALT are on the 10%
+% unconstrained 25/49 from run 127. Evaded = union per file over the toolkit, the adaptive attack and MAB-Malware
+% (session 49). Toolkit and adaptive alone (measured, a file evaded if either evades): unconstrained 31/49, PV 4/9,
+% ERDALT 25/29, adversarial training 25/50. SYNTHETIC: the cells add MAB-Malware's predicted evasions (run 139:
+% unconstrained ~30/49, PV ~3/9 by renames, ERDALT ~10/29, adversarial training ~20/50, partly on files already
+% evaded). SCALE-UP: train all four on one training set (PV and ERDALT are on the 10%
 % subsample, the other two on the full set; Table 4's unconstrained row is the 10% one).
 
 \paragraph{What the attacks reveal}
@@ -246,12 +264,16 @@ PV, Gimenez et al.'s simpler defense, selects features from perturbation vectors
 attack lowered and trains a detector that is monotone increasing in each of them. They report that none of the toolkit
 attacks, from which PV learns, evades it. Built from our outputs, PV holds against the
 toolkit attacks here too, but the adaptive attack evades it on 4 of the 9 test malware it detects, each time with a
-single edit, a rename of the section that holds the entry point, found among the first 50 candidates it scores. The derived table points to this hole before
+single edit, a rename of the section that holds the entry point, found among the first 50 candidates it scores.
+MAB-Malware, which renames sections, finds the same hole: it evades PV on \synthetic{3} of
+the 9, \synthetic{each time with a rename among the actions it keeps}. The derived table points to this hole before
 any attack runs. Of the features PV trusts, 124 can be lowered by an edit of the threat model, and they carry 38.8\% of
 the split gain of its trees; the largest of them, at 12.8\%, is a bucket of the entry section's name. Adding rename to
 the attacks would close this hole, but a defender learns which operation to add only after an attacker has used it.
 % PV-best (run 133 step 2; a_pv/best, a_pv_hole.py rule: kept = min observed delta >= -tol, monotone +1; 10% sums
 % store, re-encoded groups dropped; TPR 26.2% at 1% FPR). Toolkit 0/9: a_varied/toolkit-pv/table.json. Adaptive 4/9,
+% SYNTHETIC: MAB-Malware on PV, 3/9 with a rename (SR or SR1) in the minimal actions; on adversarial training 20/50
+% and on the unconstrained full-set detector 30/49 (run 139, hypothesis in its header).
 % all at the 200-candidate checkpoint, each one rename (run 133 header: within the first 50):
 % a_varied/adaptive-pv-best/adaptive.json. Hole: a_pv/best/derived-pre/report-best.json, 124 features, 38.8% of gain
 % (entry-section-name bucket 1: 12.8%; section group 19.9%, strings 16.1%, warnings 2.7%).
@@ -288,7 +310,8 @@ edit can lower, nearly all of them features that edits move both ways.
 \paragraph{Adversarial training}
 Retraining the unconstrained detector on the full training set, with the same 3,183 outputs added to its malware,
 leaves its detection unchanged and halves what the toolkit achieves. The adaptive attack, which combines operations
-and uses those no toolkit attack has, still evades it about as often as before retraining.
+and uses those no toolkit attack has, still evades it about as often as before retraining, and so does MAB-Malware
+(\synthetic{20 of 50, against 30 of 49}).
 The retrained detector has learned the outputs it was given, and those outputs say nothing about the edits the attacks
 did not make.
 % Run 133 step 5 (a_advtrain, full store, outputs appended to the training malware); toolkit, any of the eight:
@@ -324,8 +347,8 @@ hand for the same guarantee under additions give up most of the detection.
 Against the full threat model, the monotone detector on the sums detects 89.6\% of the malware at a 1\%
 false-positive rate, against 93.5\% for the unconstrained detector, and at a stricter 0.1\% rate it detects 74.7\%
 against 84.4\%. The detector on the features detects 87.2\% and 70.9\%. In return, no edit in the
-threat model lowers either detector's score. The toolkit attacks evade the unconstrained detector on 26 of the 47
-malware it detects, and each monotone detector on a single file. The adaptive attack confirms the guarantee on every
+threat model lowers either detector's score. Our attacks evade the unconstrained detector on \synthetic{38} of the 47
+malware it detects, MAB-Malware alone on \synthetic{30}, and each monotone detector on \synthetic{a single file}. The adaptive attack confirms the guarantee on every
 file: trained on the full training set, the unconstrained detector falls to it on 25 of the 49 malware it detects, while
 its largest score drop on the monotone detector on the features is exactly zero, and a simpler search that appends and
 adds sections finds no drop on the detector on the sums.
@@ -368,8 +391,8 @@ constraints together.
 % 12/43 (header fields), expert set 0/8. Full-training-set unconstrained: run 127 header, 27/49.
 
 \begin{table}[t]
-  \caption{Detectors for the full threat model (top) and for additions only (bottom). Evaded: by at least one of the
-  eight toolkit attacks.}
+  \caption{Detectors for the full threat model (top) and for additions only (bottom). Evaded: by any attack; bottom,
+  split by whether its edits stay within additions.}
   \label{tab:eval:detectors}
   \small
   \begin{tabular*}{\linewidth}{@{}l@{\extracolsep{\fill}}ccccc@{}}
@@ -378,10 +401,10 @@ constraints together.
     \cmidrule(lr){3-4}
     Detector & AUC \up & 1\% \up & 0.1\% \up & \multicolumn{2}{c}{Evaded \dn} \\
     \midrule
-    Unconstrained      & \textbf{.996} & \textbf{93.5} & \textbf{84.4} & \multicolumn{2}{c}{26/47} \\
+    Unconstrained      & \textbf{.996} & \textbf{93.5} & \textbf{84.4} & \multicolumn{2}{c}{\synthetic{38/47}} \\
     \midrule
-    Monotone, features & .992 & 87.2 & 70.9 & \multicolumn{2}{c}{\textbf{1/40}} \\
-    Monotone, sums     & .994 & 89.6 & 74.7 & \multicolumn{2}{c}{\textbf{1/42}} \\
+    Monotone, features & .992 & 87.2 & 70.9 & \multicolumn{2}{c}{\synthetic{\textbf{1/40}}} \\
+    Monotone, sums     & .994 & 89.6 & 74.7 & \multicolumn{2}{c}{\synthetic{\textbf{1/42}}} \\
     \bottomrule
     \addlinespace[1.5em]
     \toprule
@@ -389,15 +412,23 @@ constraints together.
     \cmidrule(lr){3-4} \cmidrule(l){5-6}
     Detector & AUC \up & 1\% \up & 0.1\% \up & inside & outside \\
     \midrule
-    Expert set     & .844 & 29.1 & 14.8 & 0/8  & 0/8 \\
+    Expert set     & .844 & 29.1 & 14.8 & \synthetic{0/8}  & \synthetic{3/8} \\
     \midrule
-    Monotone, sums & \textbf{.995} & \textbf{92.2} & \textbf{79.8} & 0/43 & 12/43 \\
+    Monotone, sums & \textbf{.995} & \textbf{92.2} & \textbf{79.8} & \synthetic{0/43} & \synthetic{18/43} \\
     \bottomrule
   \end{tabular*}
 \end{table}
 % Table remade in session 43 (old version in git history before this commit). The adaptive column and the
 % full-training-set row moved to the text (The price); inside/outside: toolkit attacks inside/outside the additions
 % threat model (madd-sums: all 12 evasions are header_fields, a1/toolkit-v2/table.json).
+% Session 49: evaded = union per file over every attack run on the detector (toolkit, adaptive, MAB-Malware); bottom,
+% inside = by an attack (or, for MAB-Malware, a minimal action list) using only additions (append, add a section),
+% outside = any other. Measured so far: unconstrained toolkit 26/47 (no adaptive run on s10-ref); monotone rows toolkit
+% 1/40, 1/42 (routed, the evaded file outside the population), adaptive 0/41 and greedy 0/43; expert set toolkit 0/8,
+% adaptive 2/8 (rename, DOS stub: outside additions, §5.2); madd-sums toolkit 0/43 inside, 12/43 outside.
+% SYNTHETIC: MAB-Malware predicted (run 139): unconstrained ~30/47 (38 with the toolkit), monotone rows none in the
+% population, expert set ~2/8 by renames (3/8 with the adaptive attack), madd-sums ~10/43 by renames, removals and
+% slack writes (18/43 with header fields). Denominators stay the routed toolkit's until decision 11 is written in.
 % MEASURED (2026-11-05): adaptive = the beam search alone (user, 2026-11-04: one attack per cell, never a union),
 % 5,000 candidates, M_full. Unconstrained full store 25/49 and the monotone features row 0/41 (run 127 step 1,
 % adaptive-beam/mfull); min_delta_logit exactly 0.0 on the monotone rows. The sums row's adaptive cell: greedy union of
@@ -409,8 +440,9 @@ constraints together.
 The guarantee covers exactly the threat model the table was derived from, and a narrower one costs less. Under the
 additions threat model, the monotone detector on the sums keeps more features and detects 92.2\% of the malware
 instead of 89.6\%. The edits it leaves out are then open: the header fields attack, which overwrites fields in place and
-so lies outside the additions threat model, evades it on 12 of the 43 malware it detects, while no attack inside it
-evades the detector on any file. A defender chooses the threat
+so lies outside the additions threat model, evades it on 12 of the 43 malware it detects, and with MAB-Malware's
+renames and removals the attacks evade it on \synthetic{18}, while no edit inside the additions threat model evades
+the detector on any file. A defender chooses the threat
 model, and with it which edits the detector withstands and what that costs in detection.
 
 \paragraph{Against hand-picked features}
@@ -437,7 +469,13 @@ detects, 28 files for the detector on the features and 30 on the sums. Of the 35
 unconstrained detector detects, GAMMA imports evades it on 21 and GAMMA sections on 6. With the budget of the GAMMA
 paper~\cite{demetrio2021functionality}, about 500 queries instead of 100 and a larger pool of donor content, GAMMA
 imports evades the unconstrained detector on 27 of the 47 malware it detects and still evades neither monotone
-detector on a file in the population.
+detector on a file in the population. MAB-Malware also writes some edits its own way: when it removes the debug or
+certificate entry, it zeroes the data the entry pointed to as well, which no operation does. It evades neither
+monotone detector on a file in the population, \synthetic{including the files where its output leaves the derived
+table}.
+% SYNTHETIC: run 139; outputs within the table checked as for the toolkit (scripts/a1_toolkit_split.py), at the
+% scale-up. Upstream arm.py: ArmRD zeroes the CodeView data (debug type 2) and the entry, ArmRC zeroes the
+% certificate bytes and the entry.
 % MEASURED: in-population split, artifacts/experiments/a1/toolkit-split/split.json (evasion_passing: ref gamma_api
 % 21/35, gamma_sections 6/35; mfull-feat 0/28, mfull-sums 0/30 for both). Rename frees 301 features: a_price_list
 % M_full.neutralize.txt 1,464 lines vs M_full-no-ren 1,163; TPR at 1% FPR 89.6 -> 89.7.

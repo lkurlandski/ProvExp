@@ -151,6 +151,48 @@ detector's trees weigh toward benign. Every file it keeps is written with our ow
 again.
 % scripts/a1_adaptive.py, --search beam (run 127): beam_search; target_buckets reads the booster.
 
+\paragraph{MAB-Malware.} We run the authors' code unchanged except for how it hands files to the detector. Upstream,
+the attack, its minimizer and the detector run as three threads that pass files through folders on disk; we call the
+same steps in the same order from one thread and score each file when it is handed over, and we checked on test files
+that this produces the same actions, outputs and bandit state as the original hand-over. One run attacks all the
+malware a detector detects, so the bandit learns from one detector at a time. \Cref{tab:ember:per-attack} gives the
+evasions of every attack separately.
+% scripts/mab_attack.py (MABChannel, run_sync); tests/test_mab_attack.py (same trace as upstream's folder hand-over,
+% stand-in classifier); third_party/mab_malware (upstream 91a518a; patches: unused imports, sorted donor listing).
+
+\begin{table*}[t]
+  \caption{Malware evaded by each attack, per detector. Toolkit attacks as in \Cref{tab:instances:catalogue}.}
+  \label{tab:ember:per-attack}
+  \small
+  \begin{tabular*}{\textwidth}{@{}l@{\extracolsep{\fill}}rrrrrrrrrrr@{}}
+    \toprule
+    Detector & detected & padding & \multicolumn{2}{c}{GAMMA} & GAMMA & content & DOS & header & format & adaptive
+      & MAB- \\
+    & & & sections & imports & shift & shift & ext. & fields & exploit & & Malware \\
+    \midrule
+    \multicolumn{12}{@{}l}{\emph{Learned from attacks (\Cref{tab:eval:learned})}} \\
+    Unconstrained        & 49 & 0 & 2 & 21 & 3 & 1 & 0 & 9 & 0 & 25 & \synthetic{30} \\
+    PV                   & 9  & 0 & 0 & 0  & 0 & 0 & 0 & 0 & 0 & 4  & \synthetic{3} \\
+    ERDALT               & 29 & 0 & 0 & 24 & 0 & 0 & 0 & 0 & 0 & 22 & \synthetic{10} \\
+    Adversarial training & 50 & 0 & 1 & 10 & 4 & 2 & 0 & 2 & 0 & 23 & \synthetic{20} \\
+    \midrule
+    \multicolumn{12}{@{}l}{\emph{Full threat model (\Cref{tab:eval:detectors}, top)}} \\
+    Unconstrained        & 47 & 1 & 6 & 24 & 7 & 0 & 0 & 9 & 0 & --- & \synthetic{30} \\
+    Monotone, features   & 40 & 0 & 0 & 0  & 0 & 0 & 0 & 1 & 0 & 0  & \synthetic{0} \\
+    Monotone, sums       & 42 & 0 & 0 & 0  & 0 & 0 & 0 & 1 & 0 & 0  & \synthetic{0} \\
+    \midrule
+    \multicolumn{12}{@{}l}{\emph{Additions (\Cref{tab:eval:detectors}, bottom)}} \\
+    Expert set           & 8  & 0 & 0 & 0  & 0 & 0 & 0 & 0 & 0 & 2  & \synthetic{2} \\
+    Monotone, sums       & 43 & 0 & 0 & 0  & 0 & 0 & 0 & 12 & 0 & --- & \synthetic{10} \\
+    \bottomrule
+  \end{tabular*}
+\end{table*}
+% Session 49. Toolkit: a_varied/toolkit-{full,pv,erdalt}/table.json (top block; a seed per file) and
+% a1/toolkit-v2/table.json, a1/expert/toolkit/table.json (lower blocks; fixed seed, monotone rows routed). Adaptive:
+% run 127 (unconstrained, mfull-feat 0 of 41 unrouted), a_varied/adaptive-*-best, runs 108/119 greedy for mfull-sums
+% (0 of 43), run 120 for the expert set; no adaptive run on s10-ref or madd-sums (---). SYNTHETIC: the MAB-Malware
+% column, run/139_mab_malware.sh. SCALE-UP: one protocol and one detected count per row (R11).
+
 \paragraph{ERDALT.} We follow Gimenez et al.'s released code with one change: the output layer's weights are kept
 nonnegative, like those of the layers below it, so that the network is monotone as their Proposition~3 requires; the
 released code leaves the output layer unconstrained.
