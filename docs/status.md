@@ -3,9 +3,10 @@
 Kept short: the current state, what waits on the user, and the last few sessions in a line or two each. The plan and
 its reasons are in `PLAN.md`. When the session log below grows past about ten entries, move the oldest to
 `docs/archive/` (the log before 2026-11-09 is `docs/archive/status-log-2026-10-to-2026-11-09.md`; sessions 21-28 are in
-`docs/archive/status-log-2026-11-09.md`, sessions 29-40 in `docs/archive/status-log-2026-11-10-to-11.md`).
+`docs/archive/status-log-2026-11-09.md`, sessions 29-40 in `docs/archive/status-log-2026-11-10-to-11.md`, sessions
+41-41b in `docs/archive/status-log-2026-11-12.md`).
 
-## Current state (2026-11-12, sessions 34-49)
+## Current state (2026-11-12, sessions 34-50)
 
 - **Framework (§2-3):** rewritten; the user is reasonably satisfied. Open: the user's holistic read of Sound
   Directions after round 4 (finetuning only).
@@ -58,18 +59,23 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
   (tested equal to upstream's own hand-over); run 139 scripted for the user; §5, Tables 4-5 ("evaded by any attack")
   and the new per-attack Table 11 carry its predicted values in blue. The adaptive attack scores by extraction at the
   scale-up (`--score real`); §2 unchanged (user). Widen first, then scale (user).
+- **R6, prior work (session 50):** the works behind §3 read and related to Proposition 1, Theorem 1 and Corollary 1
+  (`docs/evidence/r6-prior-work.md`). The user: credit what we build on without conceding each result ("the novelty
+  ... is in putting them together"), one or two seminal works per idea. Applied (660ba90): Gray et al.'s maxima in
+  §3.1, incremental view maintenance carried to features in §3.2, abstract interpretation (Cousot and Cousot) after
+  Theorem 1, §6's wrong contrast with incremental parsing replaced (abstract interpretation, Calzavara et al., the one
+  new bib entry). About 140 words added.
 - **Documentation:** reorganized 2026-11-09, cleaned up 2026-11-12 (stale resume prompts, the §4 note archived; the
   §5.3 design doc moved to `docs/evidence/`); index `docs/README.md`.
 
 ## Waiting on the user
 
-- **Run 138** (`run/138_escape_pilot.sh`, ~5-6 h with 16 workers; started 16:03 on 2026-11-12; log
-  `artifacts/logs/escape_pilot.log`).
-- **Run 139** (`run/139_mab_malware.sh`, MAB-Malware against every detector; the user runs it with `NUM_WORKERS=4`
-  in tmux, ~2 h; logs `artifacts/logs/mab_malware-*.log`). Smoke: 0 of 9 evaded on the undefended detector, so the
-  blue predictions are likely too high.
-- **Next session:** `docs/resume-prompt.md` (whichever of runs 138 and 139 has finished or crashed; if neither, a new
-  weakness from the review, orthogonal to R7 and R1).
+- **Run 138** (`run/138_escape_pilot.sh`, started 16:03 on 2026-11-12; log `artifacts/logs/escape_pilot.log`): step 1
+  (certificate escape) finished, step 2 (SizeOfImage) running at the end of session 50. Not yet read.
+- **Run 139** (`run/139_mab_malware.sh`, `NUM_WORKERS=4` in tmux; logs `artifacts/logs/mab_malware-*.log`): steps
+  `full` and `pv` finished, `sums` running and `expert` to come at the end of session 50. Not yet read.
+- **Next session:** `docs/resume-prompt.md` (read whichever run has finished; otherwise a new weakness from the review,
+  orthogonal to R7 and R1).
 
 ## Scheduled (in order; PLAN.md, next steps)
 
@@ -84,6 +90,17 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
 7. Introduction, discussion, abstract last.
 
 ## Session log
+
+- **2026-11-12 (session 50): R6, the prior work behind §3.** Runs 138 and 139 were still running, so the session
+  took R6 (all four reviewers). Claude's first plan, a paragraph listing what in §3 is classical and what is new, was
+  rejected: it "effectively neuters the entire paper"; the art is to acknowledge the shoulders we stand on without
+  demeaning the contribution (memory `credit-without-diminishing`). Claude then read 16 works (view maintenance:
+  Gupta-Mumick, Mumick et al. 1997, Levy-Sagiv, DBToaster; change calculi: Cai et al.; aggregate provenance:
+  Amsterdamer et al.; abstract interpretation: Cousot and Cousot, Calzavara et al., Zhang et al.; incremental parsing,
+  self-adjusting computation, dependency provenance; Gimenez, Pierazzi, Labaca-Castro rechecked), with quotes, in
+  `docs/evidence/r6-prior-work.md`. The user: cite only one or two seminal works per idea. Applied (660ba90): four
+  small edits in §3.1, §3.2, §3.3 and §6 (see Current state); Calzavara et al. the only new entry. Partial run
+  outputs seen but not read (run 138 step 1; run 139 `full`, `pv`). **Next:** `docs/resume-prompt.md`.
 
 - **2026-11-12 (session 49): R1 triaged and implemented (MAB-Malware); run 139 scripted.** Run 138 had just started,
   so the session triaged the review (R1, R2, R18, R6, the writing batch, scale vs widen; one recommendation each).
@@ -199,21 +216,3 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
   that 5.2's *Why it errs* names three parser facts where the errors need five. `make check`: a 2 pt overfull page box
   among the appendix floats since 68f6385 (harmless). **Next:** `docs/resume-prompt.md` (the tables, restarted from
   what the user dislikes).
-
-- **2026-11-12 (session 41b, parallel to 41): §5's humanistic review, four passes.** Lead and 5.1 (seven findings),
-  5.2 (seven; #7, the Rich header, dropped by the user: a PE construct the reader can look up), 5.3 (five, plus the
-  unconstrained detector in 5.1), 5.4 (six). All others approved and applied; reactions logged raw in
-  `docs/writing-spec.md`. The user: "serious structural modifications" later to how §5's questions are asked and
-  answered, with visual emphasis (PLAN.md step 2); for now each lead answers its question. Open, outside the prose:
-  5.1's 73,063 is run 107's direction check, while the exactness counts are Appendix D's (62,604 + run 118's 34,965);
-  fix at scale-up unless the user wants it now. **Next:** a holistic review of §5 with weight on the
-  contributions' importance (user), then PLAN.md step 2; `docs/resume-prompt.md`.
-
-- **2026-11-12 (session 41): the ERDALT check (only), no run.** The score floor is not a thin margin: 99% of test
-  goodware sit at ERDALT's lowest score, so the 1% FPR threshold sits at its edge; GAMMA imports drives detected
-  malware from logits up to ~1,000 to the floor (24/29; 28 counting over-budget). Detection weaker than their paper
-  (AUC 0.88 vs 93.0% on another dataset), stopping criterion met at one epoch; left to the scale-up. Their code read
-  against their paper: the paper fixes only the abstract architecture and losses; the one conflict is the output
-  layer, which our port constrains. User (strongly held): implement from the paper where the code breaks the
-  guarantee; no "their code exactly" variant. PLAN.md step 3, `docs/upstream-issues.md` item 8 updated.
-  **Next:** `docs/resume-prompt.md` (unchanged: §5's humanistic review).

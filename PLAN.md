@@ -43,7 +43,8 @@ them (below).
   idea new and value the PV hole and the cost result; all four call §3's results known techniques (IVM, sign-domain
   abstract interpretation; R6), the EMBER premises tested rather than proven (R2), and one instance too few for a
   class (R4). B, C and D's "one change" is the same: the routed system end to end (R7). Register R1-R21, the scale-up's
-  content (§7) and the writing actions (§8) in the meta-review. Triaged so far: R7 (decision 11), R1 (decision 12).
+  content (§7) and the writing actions (§8) in the meta-review. Triaged so far: R7 (decision 11), R1 (decision 12),
+  R6 (session 50: four citation edits in §3 and §6, `docs/evidence/r6-prior-work.md`).
 
 ## Decisions of 2026-11-09 (the holistic review)
 
@@ -270,7 +271,7 @@ records of the §5 reviews, the table remake and the ERDALT check, is in
    predates the new §3 and §5). *Designed in session 47* as a reusable procedure (`docs/reviews/review-prompt.md`,
    `docs/reviews/process/`): four independent reviewers who see only the PDF, then a meta-reviewer with full access
    that answers the checklist below; run by the user after session 47, discussed from session 48 (R7 first, decision
-   11; the rest of the register R1-R21 still to triage, one recommendation per item). It should re-check the open risks of the 2026-11-02 register (R4, R5, R6, R9, R11, R15,
+   11; R1, decision 12; R6, session 50; the rest of the register still to triage, one recommendation per item). It should re-check the open risks of the 2026-11-02 register (R4, R5, R6, R9, R11, R15,
    R16) and the 2026-11-04 attack-strength concern, and judge what no review has seen: the new §3 (novelty above all),
    the §2/§5 alignment, Proposition 1's role (no finding of its own), the corpus-checked signatures, §4's template on
    the page, the new population (the prompt's bullet on the 4 MB scope was added in session 46), decision 6's revisit

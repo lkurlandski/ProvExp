@@ -22,7 +22,7 @@ check `manuscript/main.aux` (`grep newlabel manuscript/main.aux`), and add the t
 |---|---|---|
 | `PLAN.md` | thesis, where the paper stands, the decisions of 2026-11-09, next steps, settled decisions | every session |
 | `docs/status.md` | current state, what waits on the user, short session log | every session; update at the end |
-| `docs/resume-prompt.md` | where the next session starts (whichever of runs 138 (R7) and 139 (R1, MAB-Malware) finished; if neither, a new weakness orthogonal to both, R6 and the writing batch first) | starting a session |
+| `docs/resume-prompt.md` | where the next session starts (read runs 138 (R7; step 1 shows a monotone detector evaded on an escaped file) and 139 (R1, MAB-Malware) when finished; if neither, a new weakness orthogonal to both, the cheap writing batch first) | starting a session |
 | `docs/checkpoint-prompt.md` | the user's prompt for ending a session | the user ends a session |
 | `docs/paper-mock.md` | the paper's contributions, outline with word budgets, and tables | planning or writing any section; checking whether new work belongs in the paper |
 | `docs/writing-spec.md` | the user's raw reactions to drafts, newest first | writing paper prose (with the `paper-prose` skill) |
@@ -57,7 +57,9 @@ or when changing an experiment. Run scripts are in `run/` (one per step, numbere
 
 | Folder or file | Contents |
 |---|---|
+| `docs/archive/status-log-2026-11-12.md` | the session log, sessions 41-41b (search, don't read) |
 | `docs/archive/status-log-2026-11-10-to-11.md` | the session log, sessions 29-39 (search, don't read) |
+| `docs/archive/resume-prompt-2026-11-12-s49.md` | the resume prompt of session 50 (written in session 49): runs 138 and 139, or a new weakness (R6 recommended, done in session 50) |
 | `docs/archive/resume-prompt-2026-11-12-s48.md` | the resume prompt of session 49 (written in session 48): reading run 138 and continuing R7, or triaging the review's register; the scale-first-or-widen-first question |
 | `docs/archive/resume-prompt-2026-11-12-s47.md` | the resume prompt of session 48 (written in session 47): checking and discussing the full simulated review's output |
 | `docs/archive/status-log-2026-11-09.md` | the session log, sessions 21-27 (search, don't read) |
