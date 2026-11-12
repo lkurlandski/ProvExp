@@ -60,6 +60,7 @@ from provexp.featuresets.ember2024 import catalogue
 from provexp.featuresets.ember2024.features import PEFeatureExtractor
 from provexp.featuresets.ember2024.features import field_range
 from provexp.featuresets.ember2024.features import merge_import_descriptors
+from provexp.featuresets.ember2024.sums import SumsFeatureExtractor
 from provexp.items import ItemTable
 from provexp.models.erdalt import ERDALTDetector
 from provexp.models.erdalt import is_erdalt
@@ -73,6 +74,7 @@ from a_c1_table0 import has_overrun_section  # noqa: E402
 from a_pv_attacks import load_pilot  # noqa: E402
 from a_pv_attacks import map_watchdog  # noqa: E402
 from catalogue_checks import add_section as write_section  # noqa: E402
+from escape_audit import WRITES as ESCAPES  # noqa: E402
 
 __all__ = ["Donors", "Engine", "HDR_FIELDS", "Operation", "add_imports", "add_section", "engine_predictors",
            "beam_search", "full_menu", "greedy_search", "lief_preserves", "bucket_names", "menu", "rename_section", "section_bucket",
@@ -463,6 +465,15 @@ class Engine:
             y = np.where(missing, self._x, y)
         return y
 
+    @property
+    def dim(self) -> int:
+        """The length of `score`'s vectors."""
+        return int(self.ext.dim)
+
+    def score(self, z: bytes) -> np.ndarray:
+        """The feature vector of a written file, by extraction."""
+        return np.asarray(self.ext.feature_vector(z))  # type: ignore[no-untyped-call]
+
     def append(self, z: bytes, blob: bytes) -> tuple[np.ndarray, bytes, int]:
         """Score and write an append (`reach.predict`; the prediction matches re-extraction, run 107)."""
         p = predict(self.table(z), z, ByteEdit(len(z), len(z), blob), self.ext.recognizers)
@@ -491,6 +502,45 @@ def _apply(z: bytes, edits: list[ByteEdit]) -> bytes:
     for e in edits:
         z = e.apply(z)
     return z
+
+
+class RealEngine(Engine):
+    """
+    Scores every candidate by extracting the file our writer produces, with `vector` (the defenses' store), and never
+    declines one: for files outside the population, where the computed effects do not hold (meta-review 2026-11-12, R7),
+    and for the edits the computation declines (the header-field overwrites, most DOS-region overwrites).
+    The item table is still used, but only to locate the regions the in-place operations write.
+    """
+
+    def __init__(self, extractor: PEFeatureExtractor, vector: PEFeatureExtractor) -> None:
+        super().__init__(extractor)
+        self.vector = vector
+
+    @property
+    def dim(self) -> int:
+        """The length of `score`'s vectors (the defenses' store)."""
+        return int(self.vector.dim)
+
+    def score(self, z: bytes) -> np.ndarray:
+        """The defenses' feature vector of `z`, by extraction."""
+        return np.asarray(self.vector.feature_vector(z))  # type: ignore[no-untyped-call]
+
+    def append(self, z: bytes, blob: bytes) -> tuple[np.ndarray, bytes, int]:
+        """Write and extract an append."""
+        return self.score(z + blob), z + blob, len(blob)
+
+    def declared(self, z: bytes, p: Optional[Prediction]) -> tuple[np.ndarray, bytes, int]:
+        """Write and extract a structural operation, flagged or not (the prediction carries the written file)."""
+        if p is None:
+            raise RuntimeError("the operation does not apply")
+        return self.score(p.new), p.new, max(0, len(p.new) - len(z))
+
+    def inplace(self, z: bytes, edits: list[ByteEdit]) -> tuple[np.ndarray, bytes, int]:
+        """Write and extract a chain of in-place overwrites."""
+        if not edits:
+            raise RuntimeError("no edits")
+        new = _apply(z, edits)
+        return self.score(new), new, 0
 
 
 def _sec_candidate(engine: Engine, name: str, content: bytes) -> Candidate:
@@ -609,8 +659,7 @@ def _gap_candidate(engine: Engine, op: str, at_pe_header: bool, kind: int, donor
         written = catalogue.write_gap(z, at_pe_header, gap)
         if written is None:
             raise RuntimeError("the gap does not apply")
-        phi = np.asarray(engine.ext.feature_vector(written.new))  # type: ignore[no-untyped-call]
-        return phi, written.new, len(gap)
+        return engine.score(written.new), written.new, len(gap)
 
     return (op, 1 << 16, thunk)
 
@@ -694,7 +743,7 @@ def greedy_search(booster: lightgbm.Booster, engine: Engine, z: bytes, tau: floa
     """
     tau_logit = _logit(tau)
     state = z
-    p_state = float(booster.predict(engine.ext.feature_vector(state).reshape(1, -1))[0])  # type: ignore[no-untyped-call]
+    p_state = float(booster.predict(engine.score(state).reshape(1, -1))[0])
     logit_decl = _logit(p_state)
     ops_chosen: list[str] = []
     min_delta = 0.0
@@ -722,7 +771,7 @@ def greedy_search(booster: lightgbm.Booster, engine: Engine, z: bytes, tau: floa
         logit_decl += best[0]
         added += nbytes
         ops_chosen.append(name)
-        p_state = float(booster.predict(engine.ext.feature_vector(state).reshape(1, -1))[0])  # type: ignore[no-untyped-call]
+        p_state = float(booster.predict(engine.score(state).reshape(1, -1))[0])
     return {"evaded": bool(logit_decl <= tau_logit), "p_adv_c1": float(1 / (1 + np.exp(-logit_decl))),
             "p_adv_real": p_state, "evaded_real": bool(p_state <= tau), "queries": used, "ops": ",".join(ops_chosen),
             "num_ops": len(ops_chosen), "bytes_added": added, "min_delta_logit": min_delta, "tau_logit": tau_logit}
@@ -799,7 +848,7 @@ def beam_search(booster: lightgbm.Booster, engine: Engine, z: bytes, tau: float,
     rng = np.random.default_rng(seed)
 
     def real(x: bytes) -> float:
-        return _logit(float(booster.predict(engine.ext.feature_vector(x).reshape(1, -1))[0]))  # type: ignore[no-untyped-call]
+        return _logit(float(booster.predict(engine.score(x).reshape(1, -1))[0]))
 
     start: BeamState = (real(z), z, 0, ())
     kept: list[BeamState] = [start]
@@ -877,8 +926,9 @@ def _init_worker(config: dict[str, Any], malware: Optional[list[tuple[str, bytes
     if goodware is None:
         _, goodware = load_pilot(config["pilot_files"], config["db"])
     extractor = merge_import_descriptors(PEFeatureExtractor())
+    engine = RealEngine(extractor, SumsFeatureExtractor()) if config.get("score") == "real" else Engine(extractor)
     _W.clear()
-    _W.update(config=config, extractor=extractor, engine=Engine(extractor), donors=Donors(goodware),
+    _W.update(config=config, extractor=extractor, engine=engine, donors=Donors(goodware),
               names=bucket_names(), boosters={})
 
 
@@ -892,13 +942,13 @@ def _attack_file(task: tuple[str, str, float, list[tuple[int, int]], str, bytes]
     defense, mdir, tau, targets, name, data = task
     cfg, engine = _W["config"], _W["engine"]
     if mdir not in _W["boosters"]:
-        _W["boosters"][mdir] = padded_booster(Path(mdir), engine.ext.dim)
+        _W["boosters"][mdir] = padded_booster(Path(mdir), engine.dim)
     booster = _W["boosters"][mdir]
 
     def make_menu(rng: np.random.Generator) -> list[Candidate]:
         return full_menu(engine, _W["donors"], rng, targets, _W["names"], cfg["ops"])
 
-    p_clean = float(booster.predict(engine.ext.feature_vector(data).reshape(1, -1))[0])
+    p_clean = float(booster.predict(engine.score(data).reshape(1, -1))[0])
     try:
         overrun = has_overrun_section(pefile.PE(data=data))
     except Exception:
@@ -1001,6 +1051,11 @@ def main() -> None:
                         help="beam: query counts at which evasion is also reported.")
     parser.add_argument("--num_workers", type=int, default=1, help="Processes, one search per (defense, file).")
     parser.add_argument("--stall_timeout", type=float, default=2700.0)
+    parser.add_argument("--score", choices=["predicted", "real"], default="predicted", help="predicted: candidates "
+                        "scored by the computed effects, declined ones skipped (runs 108-133); real: every candidate "
+                        "written and extracted with the sums extractor, none declined (RealEngine; needs a sums store).")
+    parser.add_argument("--escape", choices=["none", *ESCAPES], default="none", help="A field write applied to every "
+                        "malware before the attack, taking it out of the population (scripts/escape_audit.py; R7).")
     args = parser.parse_args()
 
     import lief
@@ -1014,29 +1069,47 @@ def main() -> None:
         raise RuntimeError(f"The store {args.features.as_posix()} ({manifest['feature_set']}) does not start with the "
                            "thrember features: the C1 engine has no recognizers for other layouts.")
     ops = tuple(args.operations) if args.operations else THREAT[args.threat_model]
-    print(f"Scoring in thrember space ({extractor.dim} features); operations {','.join(ops)}.", flush=True)
+    if args.score == "real":
+        vector: PEFeatureExtractor = SumsFeatureExtractor()
+        if manifest["feature_names"] != vector.feature_names:
+            raise RuntimeError(f"--score real needs a store with the sums extractor's layout, not {args.features}.")
+    else:
+        vector = extractor
+    print(f"Scoring {args.score} ({vector.dim} features); operations {','.join(ops)}.", flush=True)
 
     malware, goodware = load_pilot(args.pilot_files, args.db)
     if args.num_malware is not None:
         malware = malware[: args.num_malware]
+    if args.escape != "none":
+        escaped = []
+        for name, data in malware:
+            try:
+                out = ESCAPES[args.escape](pefile.PE(data=data), len(data))
+            except Exception:  # noqa: BLE001
+                out = None
+            if out is not None and not catalogue.passes_precondition(extractor, out):
+                escaped.append((name, out))
+        print(f"Escape {args.escape}: {len(escaped)} of {len(malware)} malware written and out of the population.",
+              flush=True)
+        malware = escaped
     print(f"Pilot: {len(malware)} malware, {len(goodware)} goodware donors; threat model {args.threat_model}.",
           flush=True)
 
     config = {"ops": ops, "pilot_files": args.pilot_files, "db": args.db, "search": args.search,
               "queries": args.queries, "seed": args.seed, "budget_frac": args.budget_frac,
               "budget_min": args.budget_min, "beam": args.beam, "draws": args.draws, "patience": args.patience,
-              "checkpoints": tuple(args.checkpoints)}
+              "checkpoints": tuple(args.checkpoints), "score": args.score}
     tasks: list[tuple[str, str, float, list[tuple[int, int]], str, bytes]] = []
     for d, mdir in defenses.items():
-        booster = padded_booster(mdir, extractor.dim)
+        booster = padded_booster(mdir, vector.dim)
         tau = _threshold(mdir / "ts_predictions.parquet", args.fpr)
-        Xp = (np.stack([extractor.feature_vector(data) for _, data in malware])  # type: ignore[no-untyped-call]
+        Xp = (np.stack([vector.feature_vector(data) for _, data in malware])  # type: ignore[no-untyped-call]
               if isinstance(booster, ERDALTDetector) else None)
         targets = [(b, sign) for b in target_buckets(booster, extractor.feature_names, args.target_buckets, Xp)
                    for sign in (-1, 1)]
         detected = 0
         for name, data in malware:
-            p_clean = float(booster.predict(extractor.feature_vector(data).reshape(1, -1))[0])  # type: ignore[no-untyped-call]
+            p_clean = float(booster.predict(vector.feature_vector(data).reshape(1, -1))[0])  # type: ignore[no-untyped-call]
             if p_clean > tau:  # attack only what this defense detects
                 tasks.append((d, str(mdir), tau, targets, name, data))
                 detected += 1
@@ -1063,6 +1136,7 @@ def main() -> None:
                               "budget_frac": args.budget_frac, "budget_min": args.budget_min, "seed": args.seed,
                               "search": args.search, "beam": args.beam, "draws": args.draws,
                               "patience": args.patience, "checkpoints": args.checkpoints,
+                              "score": args.score, "escape": args.escape,
                               "defenses": {}}
     for d in defenses:
         r = results.filter(pl.col("defense") == d)
