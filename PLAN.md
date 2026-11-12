@@ -202,6 +202,12 @@ Done: the paper mock rewritten, the read-only code audit (`docs/evidence/code-au
 7's edits, §4 rewritten and reviewed twice (sessions 38, 40), §5 rewritten in four blocks with run 135's values filled
 (session 40). The order agreed with the user on 2026-11-12:
 
+0. **First, a holistic assessment of the research's progress and a planning stage (user, session 44).** The user is
+   "not confident" that the items still listed in step 2 ((0), (b), (c)) are the ones to pursue next. Assess where the
+   research stands as a whole (thesis, framework, instance, evaluation, the paper's state, what a reviewer would
+   attack, what the scale-up must settle) and plan the next steps with the user; the steps below are candidates, not
+   an agreed order, until then. Resume prompt: `docs/resume-prompt.md`.
+
 1. ~~**The humanistic review of §5, one subsection per pass.**~~ Done in session 41b (2026-11-12): all four passes,
    the user approving each finding (status log).
 1b. ~~**A holistic humanistic review of all of §5**~~ (contributions' importance). Done in session 42 (2026-11-12):
@@ -223,6 +229,11 @@ Done: the paper mock rewritten, the read-only code audit (`docs/evidence/code-au
    consistent (same detectors in both; may need runs, so at the scale-up). **Open, next session:** whether §5 gets
    more tables at all (5.3's result, finding 6 below; the per-operation cost of *Where the cost lies*), to be thought
    through with the user, not proposed (user, session 43).
+   *(a), session 44, done:* 5.3 got a table (d87603f; Table 4, *Defenses learned from the outputs of the toolkit
+   attacks*: unconstrained, PV, ERDALT, adversarial training; AUC, TPR at 1% / 0.1%, evaded by the toolkit / the
+   adaptive attack); *Where the cost lies* stays prose; no other tables. Finding 6 below is closed. Left for the
+   scale-up: Table 4's unconstrained row (full training set, 25/49) and Table 5's (10% subsample, 26/47) are different
+   detectors with the same label; train every detector on one training set.
    *(a), first attempt (session 42), rejected:* the user's brief: tables "data-dense" rather than "linguistically-dense"
    (exceptions allowed), designed to (i) communicate the findings, (ii) be aesthetically pleasing, (iii) extend to other
    domains (least important). Claude's mock-ups (`docs/archive/table-mockups-2026-11-12/`: Table 3 with Cause and
@@ -272,7 +283,8 @@ Done: the paper mock rewritten, the read-only code audit (`docs/evidence/code-au
 6. **Research-track items**, each agreed before code:
    - The scale-up (seeds 0-2, full splits, more malware; user, 2026-11-11: the first thing to do once the write-up is
      finished): the adaptive budget at 2,000 files (~3,000 CPU-h at 5,000 candidates; options: the 1,000-candidate
-     checkpoint, a fixed subset, a cap on the monotone rows), and ERDALT's stopping criterion (one epoch of 310 met it in
+     checkpoint, a fixed subset, a cap on the monotone rows), one training set and one attack protocol for every
+     detector of §5 (Tables 4 and 5 now show two different unconstrained detectors), and ERDALT's stopping criterion (one epoch of 310 met it in
      run 133; validation AUC still rising at the end; consider more epochs).
    - The sums row's adaptive cell stays 0% with its footnote (settled in session 36; the beam search cannot score
      the sums detector yet).

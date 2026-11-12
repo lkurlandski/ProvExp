@@ -3,9 +3,9 @@
 Kept short: the current state, what waits on the user, and the last few sessions in a line or two each. The plan and
 its reasons are in `PLAN.md`. When the session log below grows past about ten entries, move the oldest to
 `docs/archive/` (the log before 2026-11-09 is `docs/archive/status-log-2026-10-to-2026-11-09.md`; sessions 21-28 are in
-`docs/archive/status-log-2026-11-09.md`, sessions 29-34 in `docs/archive/status-log-2026-11-10-to-11.md`).
+`docs/archive/status-log-2026-11-09.md`, sessions 29-35 in `docs/archive/status-log-2026-11-10-to-11.md`).
 
-## Current state (2026-11-12, sessions 34-43)
+## Current state (2026-11-12, sessions 34-44)
 
 - **Framework (§2-3):** rewritten; the user is reasonably satisfied. Open: the user's holistic read of Sound
   Directions after round 4 (finetuning only).
@@ -22,11 +22,12 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
   marks 142 features as ones an edit *may* lower (20 shown); 5.4's 0.1% breakdown keeps only what clears retraining
   noise; Table 2's attack names and "population" throughout, no "pilot". The user has not read §5 end to end.
   Holistic review in session 42 (findings 1-4 applied, 68f6385, 49d879d). Tables 3 and 4 remade in session 43
-  (7788592, 52e07cc): one column each, data only, one-line captions; the user: "good enough".
+  (7788592, 52e07cc): one column each, data only, one-line captions; the user: "good enough". 5.3 got its own table in
+  session 44 (d87603f): Table 4, the learned defenses; the detectors table is now Table 5.
 - **§5.3** is drafted (session 39) from the claim agreed in session 34 (`docs/evidence/section-5.3-design.md` §10.5, which
   stays the record of how the design came about). Learned-region paragraph cut, no audit table for now (tables
   remade later), no seed or protocol-hygiene details in the paper (user). Every learned defense is built from run 133's
-  3,183 outputs; PV evaded 4/9 by one rename, 26.2% TPR; ERDALT 24/29 by its own attack; adversarial training 12/50
+  3,183 outputs; PV evaded 4/9 by one rename, 26.3% TPR; ERDALT 24/29 by its own attack; adversarial training 12/50
   and 23/50; leave-one-out per fold in Appendix D.
 - **Experiments:** Tables 3-5 (side effects, directions, detectors) complete at pilot scale; open items are listed in
   PLAN.md, next step 5. Run 131 (leave-one-out) finished: PV 5/21 on gamma_api, 0 elsewhere; ERDALT high on
@@ -40,18 +41,32 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
 
 ## Waiting on the user
 
-- **Next session, first:** a check-in with the user on whether §5 should get more tables at all (and which), thought
-  through together; not a proposal from Claude (user, session 43; `docs/resume-prompt.md`).
+- **Next session, first:** a holistic assessment of the research's progress and a planning stage for the next steps,
+  with the user (session 44: the user is "not confident" that PLAN.md step 2's remaining items are the right next
+  steps; `docs/resume-prompt.md`).
 - The holistic read of Sound Directions (any time).
 
 ## Scheduled (in order; PLAN.md, next steps)
 
-- Whether §5 needs more tables (check-in, next session), then §5's question-and-answer emphasis, §4 and §5 shortened, §2's closing and contribution 4
-  aligned (to consider with the user; §2's attack promise is a known weakness, PLAN.md step 2).
-- The 4 MB-truncation brainstorm (the ERDALT check is done, session 41).
-- Then decide with the user whether the paper is ready for the next full simulated review.
+- Nothing is scheduled until the holistic assessment (next session) sets the order. Candidates on record (PLAN.md,
+  steps 2 and 4-6): §5's question-and-answer emphasis; §4 and §5 shortened; §2's closing and contribution 4 aligned
+  with §5 (§2's attack promise is a known weakness); the 4 MB-truncation brainstorm; the next full simulated review;
+  the scale-up (the user, session 44: "we need to scale these experiments up shortly").
 
 ## Session log
+
+- **2026-11-12 (session 44): §5.3 gets a table; the next step is a holistic assessment.** Check-in on more tables:
+  5.2 and 5.4 had one, 5.3 none. The user: a 5.3 table is warranted "only if the table can represent that section's
+  question and that section's answer", then asked Claude to decide. Claude's decision: rows the unconstrained baseline,
+  PV, ERDALT, adversarial training; columns AUC, TPR at 1% / 0.1% FPR, evaded by the toolkit / by the adaptive attack
+  (all from run 133's protocol); ERDALT's failure on GAMMA imports explained in the text, not a split column; no
+  "flagged beforehand" column (no single measure across the three defenses; the audit numbers stay in the prose); our
+  own detector left out (defense-paper framing). Two versions rendered in `manuscript/tmp-tables.tex`; Table 4's
+  detection columns chosen. In the manuscript as Table 4, *Defenses learned from the outputs of the toolkit attacks*
+  (d87603f); 5.3's prose drops the numbers the table carries; PV's TPR settled at 26.3 (ROC interpolation). Consistency
+  pass over §5: fine, except the known one, two "Unconstrained" rows (Table 4: full training set, 25/49; Table 5: 10%,
+  26/47), left for the scale-up (one training set for every detector). *Where the cost lies* stays prose. The user is
+  not confident that step 2's remaining items are the right next steps. **Next:** `docs/resume-prompt.md`.
 
 - **2026-11-12 (session 43): Tables 3 and 4 remade.** Started by asking what the user dislikes (multiple choice, with
   the PDFs): for Table 4 the footnote symbols, the long caption, phrase row labels, and mixed threat models and
@@ -158,16 +173,3 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
   about two-sided features the detector drops, so it says nothing about the constraints that carry the cost; not used.
   The user ended the session tired and disappointed with the last two days. Commit 8fd8c9c. **Next:**
   `docs/resume-prompt.md`.
-
-- **2026-11-11 (session 35): §5 lead and 5.1 revised after the user's second review; §5.4 next.** The `% VERIFY` in
-  5.2 settled (elastic/ember's code): Severi et al.'s EMBER (feature version 1, 2,351 features) hashes section names,
-  imports and exports into the same buckets as EMBER 2024, but not the entry name, the characteristics, five header
-  fields, or a Rich header; the prose now counts only the shared groups (1,430 of 1,558 movable under additions).
-  Lead: §2's three limits instead of "each falls short". 5.1 in three run-in paragraphs (Detectors, Attacks, Checking
-  results); the learned-defense protocol (leave-one-out) removed from 5.1 and left to 5.3; the toolkit attacks are
-  black-box, one kind of edit, 100 queries; the adaptive attack is white-box, in the spirit of Tramèr et al. (added to
-  `papers/` and `main.bib`), each with its reason; the beam's mechanics moved to Appendix D; the 500-query check to a
-  comment. The user's harsh reaction to the first Attacks rewrite logged (`docs/writing-spec.md`); one sentence on
-  purpose-then-facts added to `paper-prose`. Scale-up: the first thing after the write-up (user; PLAN.md step 5).
-  Commits 0b64c9a, e3375ca, 9b7d0ba. **Next:** §5.4 in a new session (`docs/resume-prompt.md`).
-
