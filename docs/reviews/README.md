@@ -13,6 +13,7 @@ output decides what the full-scale run includes (PLAN.md, next steps 2-3).
 
 | File | Date | What it reviews | Outcome |
 |---|---|---|---|
+| [2026-11-12-body/meta-review.md](2026-11-12-body/meta-review.md) | 2026-11-12 | Body-only draft at commit 82eea08 (§2-6, App. A-D): four independent reviewers (A formal methods, B adversarial malware, C robust ML, D systems security), then a meta-review with full access | Weak accept / Weak reject / Weak reject / Weak accept; top risks R7 (routing around the population: one data-directory entry past the end leaves it), R1 (attacks below published strength; header-field edits never used by the adaptive attack), R2 (premises tested, not proven); register R1-R21; what the full-scale run must include |
 | [2026-11-04-strategy.md](2026-11-04-strategy.md) | 2026-11-04 | Strategy, not prose: strongest claim, 2025-26 literature (ERDALT, Zainab et al. 2026), weaknesses W1-W3 | Recommends: diagnose the 1,060 two-sided features, strong attacks (budgeted adaptive search, MAB-Malware), fix the ERDALT portrayal; introduction waits |
 | [2026-11-02-body.md](2026-11-02-body.md) | 2026-11-02 | Body-only draft: Sections 3-5 and Appendix A | Weak reject / Weak reject / Weak accept; risk register R1-R16. Triaged 2026-11-02: three-tier plan in `PLAN.md`; premises checked in `docs/status.md` (2 of 8 toolkit attacks out of catalogue, not 5; P2 answered) |
 

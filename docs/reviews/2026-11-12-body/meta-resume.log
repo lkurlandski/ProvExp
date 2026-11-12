@@ -1,0 +1,20 @@
+I wrote the meta-review to `docs/reviews/2026-11-12-body/meta-review.md` and added its line to `docs/reviews/README.md`. Nothing else changed, no experiments ran, and nothing is committed.
+
+**Executive summary**
+
+1. **Scores:** A Weak accept (confidence 3), B Weak reject (4), C Weak reject (4), D Weak accept (3). The two most confident reviewers are negative, so the likely outcome is reject, or at best a major revision. B, C and D each name the same single change that would raise their score.
+2. **Top risk (R7):** the guarantee covers only the population, and files outside it go to an unconstrained detector that the attacks evade about half the time. Three reviewers make this their one change. The code shows a sharper version none of them could check: one data-directory entry pointing past the end of the file takes any file out of the population (`catalogue.precondition`). The certificate table is such an entry, and the loader does not map it.
+3. **Second and third risks:**
+   - **R1, attack strength.** MAB-Malware evades an EMBER-2024 GBDT on 83% of files in Zainab et al. Our best attacks evade our unconstrained detector on 51–55%. The adaptive attack also never applies the header-field overwrite: every such edit is declined, and no stored run uses one.
+   - **R2 and R18, tested premises and weaker baselines.** "Sound" rests on premises that were tested, not proven. The learned baselines see less than the derivation does: toolkit outputs only, and a single round of adversarial training.
+4. **Cheapest certain fix (R6):** say in §3 which parts are classical. All four reviewers raise it. Abstract interpretation is in `main.bib` but never cited, and one of the two differences §6 claims over incremental parsing does not hold.
+5. **The single most important fix:** evaluate the deployed, routed system end to end. Report the share of all attacked malware still detected, at a fixed false-positive rate for the whole system, including an attacker who first moves the file out of the population. Before that, check which clauses of the population test a loader-safe write can trigger.
+
+**Settled point that may be fatal.** The population decision (files outside it go to an unconstrained detector) is fatal only if a loader-safe one-field write can leave the population. The meta-review says so once, in the risk register. Whether the loader accepts such a file should be settled from documentation, not by running samples.
+
+**Other findings the reviewers missed:**
+- **A-W3(3) rests on a false premise.** EMBER appends a 0 before taking each minimum, so the "smallest" features are constant. But Appendix D's wording invites the mistake and should be fixed.
+- **Some counts include dropped features.** §5.3's 1,070 / 928 / 142 and PV's 124-feature hole count the 88 parser warnings that §4.2 says are dropped. Without them, PV's hole is 56 modeled features carrying 36.2% of the gain.
+- **Robust detection is already computable from Tables 4–5.** The routed monotone detector still detects 41 of 50 attacked malware, against about 21–24 for the unconstrained one.
+
+**On decision 6:** I recommend revisiting it in favour of adversarial training on the adaptive attack's outputs over all twelve operations; that is your call. All four reviewers expect a problem-space defense done properly, and the literature check supports them. It would also give Proposition 1 a finding of its own.
