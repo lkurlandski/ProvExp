@@ -5,7 +5,7 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
 `docs/archive/` (the log before 2026-11-09 is `docs/archive/status-log-2026-10-to-2026-11-09.md`; sessions 21-28 are in
 `docs/archive/status-log-2026-11-09.md`, sessions 29-33 in `docs/archive/status-log-2026-11-10-to-11.md`).
 
-## Current state (2026-11-12, sessions 34-40)
+## Current state (2026-11-12, sessions 34-41)
 
 - **Framework (§2-3):** rewritten; the user is reasonably satisfied. Open: the user's holistic read of Sound
   Directions after round 4 (finetuning only).
@@ -14,15 +14,13 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
   *Operations* and *Signature*; 4.4 reordered). Second, lightweight review in session 40 (three findings, all
   applied: 4.3.2 states what the sample-read signature rests on; closure "checked rather than proven"). §4 is in good
   shape. About 1,500 words against ~1,000; shortening with §5 later.
-- **§5:** realigned with §3-4 in vocabulary and claims (session 29). Structural rewrite agreed in session 30 (PLAN.md,
-  decision 10): three findings (what hand analysis misses, what observed attacks miss, what robustness costs), not a
-  validation section and not a defense paper. Plan, one line per paragraph, and checks C1-C3: `docs/paper-mock.md`,
-  §5. Blocks 1-2 (lead, 5.1, 5.2) drafted and revised twice (session 35: lead and 5.1 after the user's second review,
-  up to 5.1's Attacks paragraph; the user has not yet commented on 5.1's last paragraph or on 5.2's second round).
-  **Block 3 (5.3 *What Observed Attacks Miss*)** drafted in session 39 (7a2ceff, 9d0369f, 035d977), unreviewed;
-  run 135's values filled in session 40, so §5 has no blue values left. **Block 4 (5.4 *What Robustness Costs*)** drafted in session 36,
-  revised in session 37 after Claude's review with the `humanistic-paper-review` skill (reordered so no paragraph
-  points forward; commits c49f654, 9113acb, 23ab085); the user has not read the revised text.
+- **§5:** three findings (PLAN.md, decision 10; plan in `docs/paper-mock.md`, §5), fully drafted, no blue values.
+  Reviewed by Claude with the `humanistic-paper-review` skill in session 41b, one subsection per pass, every finding
+  approved by the user and applied (ce4ba21, f8baea5, 1053bf7, e8b0335): each subsection's lead now answers its
+  question; "the computation" named; 5.1 introduces the unconstrained detector; 5.2's hand table counts eight errors
+  with the certificate table apart, the two published analyses in their own paragraphs; 5.3 says the derived table
+  marks 142 features as ones an edit *may* lower (20 shown); 5.4's 0.1% breakdown keeps only what clears retraining
+  noise; Table 2's attack names and "population" throughout, no "pilot". The user has not read §5 end to end.
 - **§5.3** is drafted (session 39) from the claim agreed in session 34 (`docs/evidence/section-5.3-design.md` §10.5, which
   stays the record of how the design came about). Learned-region paragraph cut, no audit table for now (tables
   remade later), no seed or protocol-hygiene details in the paper (user). Every learned defense is built from run 133's
@@ -40,18 +38,26 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
 
 ## Waiting on the user
 
-- **The humanistic review of §5, one subsection per pass** (agreed 2026-11-12; `docs/resume-prompt.md`). The user has
-  not read 5.3 or the revised 5.4; their pending comments on 5.1's Checking results and 5.2 (9b7d0ba) join.
+- What comes after §5's review (PLAN.md, next step 2): §5's questions and answers given visual emphasis (user), the
+  tables remade, §4 and §5 shortened, §2 aligned; `docs/resume-prompt.md`.
 - The holistic read of Sound Directions (any time).
 
 ## Scheduled (in order; PLAN.md, next steps)
 
-- After §5's review: the tables remade, §4 and §5 shortened, §2's closing and contribution 4 aligned (to consider
+- §5's question-and-answer emphasis, the tables remade, §4 and §5 shortened, §2's closing and contribution 4 aligned (to consider
   with the user).
 - The 4 MB-truncation brainstorm (the ERDALT check is done, session 41).
 - Then decide with the user whether the paper is ready for the next full simulated review.
 
 ## Session log
+
+- **2026-11-12 (session 41b, parallel to 41): §5's humanistic review, four passes.** Lead and 5.1 (seven findings),
+  5.2 (seven; #7, the Rich header, dropped by the user: a PE construct the reader can look up), 5.3 (five, plus the
+  unconstrained detector in 5.1), 5.4 (six). All others approved and applied; reactions logged raw in
+  `docs/writing-spec.md`. The user: "serious structural modifications" later to how §5's questions are asked and
+  answered, with visual emphasis (PLAN.md step 2); for now each lead answers its question. Open, outside the prose:
+  5.1's 73,063 is run 107's direction check, while the exactness counts are Appendix D's (62,604 + run 118's 34,965);
+  fix at scale-up unless the user wants it now. **Next:** `docs/resume-prompt.md`.
 
 - **2026-11-12 (session 41): the ERDALT check (only), no run.** The score floor is not a thin margin: 99% of test
   goodware sit at ERDALT's lowest score, so the 1% FPR threshold sits at its edge; GAMMA imports drives detected

@@ -202,11 +202,8 @@ Done: the paper mock rewritten, the read-only code audit (`docs/evidence/code-au
 7's edits, §4 rewritten and reviewed twice (sessions 38, 40), §5 rewritten in four blocks with run 135's values filled
 (session 40). The order agreed with the user on 2026-11-12:
 
-1. **The humanistic review of §5, one subsection per pass** (lead and 5.1, then 5.2, 5.3, 5.4), with the
-   `anthropic-skills:humanistic-paper-review` skill, the user approving and the findings applied after each. About
-   half a day. The user's own pending comments on 5.1's *Checking results* and 5.2 (9b7d0ba) join their subsection.
-   Known vocabulary items: "GAMMA's import injection" and "the header-field attack" (Table 2: GAMMA imports, header
-   fields); Table 3 says "signature table" where it means the certificate table.
+1. ~~**The humanistic review of §5, one subsection per pass.**~~ Done in session 41b (2026-11-12): all four passes,
+   the user approving each finding (status log).
 2. **Then, to be considered with the user:** (0) §5's questions and answers given more visual emphasis (user,
    2026-11-12: how each subsection's research question is "asked" and its finding "answered"; a structural change, not
    made in the review); (a) remake the tables (Tables 3 and 4 above all; the user dislikes

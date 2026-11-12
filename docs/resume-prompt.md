@@ -1,95 +1,62 @@
-# Resume: the humanistic review of §5 *Evaluation*, one subsection per pass
+# Resume: after §5's review, the structural work on §4-5 (questions and answers, tables, shortening)
 
-Written at the end of session 40 (2026-11-12). Self-contained: everything needed to start is below or in the files it
-names.
+Written at the end of session 41b (2026-11-12, parallel to session 41's ERDALT check). Self-contained: everything
+needed to start is below or in the files it names.
 
 ## The project in brief
 
 ProvExp is dissertation research on *sum-then-readout* feature extractors, the kind security classifiers use: find
 the pieces of the input, add up what each contributes, compute each feature by a formula over a few totals. From the
 instrumented extractor we compute what an attacker's edits do to the features: exactly for one edit (Proposition 1),
-and as sound directions (which way each feature can move) for a whole threat model (Theorem 1). From those directions
-come monotone detectors that no edit in the threat model can evade (Corollary 1). PE malware with the EMBER 2024
-extractor is the instance. The paper is written straight into `manuscript/*.tex` (ACM `sigconf`; `make` and
-`make check` in `manuscript/`). §5 *Evaluation* is `manuscript/_f_evaluation.tex`: 5.1 *Setup*, 5.2 *What Hand
-Analysis Misses*, 5.3 *What Observed Attacks Miss*, 5.4 *What Robustness Costs*; Appendix D *The EMBER Instance* is
-`_j2_ember.tex`. Check `manuscript/main.aux` before naming a section, table or definition number, and give the title
-alongside (`docs/README.md` has the compiled numbering as of 2026-11-12).
+and as sound directions for a whole threat model (Theorem 1). From those directions come monotone detectors that no
+edit in the threat model can evade (Corollary 1). PE malware with the EMBER 2024 extractor is the instance. The paper
+is written straight into `manuscript/*.tex` (ACM `sigconf`; `make` and `make check` in `manuscript/`). Check
+`manuscript/main.aux` before naming a section, table or definition number, and give the title alongside.
 
 **Read first:** `CLAUDE.md`, `docs/status.md`, `PLAN.md` (decision 10: §5 is three findings about adversarial
-examples, not a validation section and not a defense paper; agreed, do not reopen; and "Next steps"). The `paper-prose`
-skill governs any prose you write; the user's raw reactions are in `docs/writing-spec.md` (the latest entries, sessions
-35-40, are the ones on §4-5).
+examples, not a validation section and not a defense paper; "Next steps"). The `paper-prose` skill governs any prose;
+the user's raw reactions are at the end of `docs/writing-spec.md` (sessions 35-41 are the ones on §4-5).
 
 ## Where things stand
 
-§2-4 are in good shape (§4 reviewed twice with the `humanistic-paper-review` skill, sessions 38 and 40). §5 is fully
-drafted with no blue (synthetic) values left: run 135's leave-one-out folds were read and filled in session 40. What
-the user has and has not read:
-- **Lead and 5.1:** revised twice after the user's own reviews (session 35); the user has not commented on 5.1's last
-  paragraph, *Checking results*.
-- **5.2:** revised once; the user's second-round comments are pending (version 9b7d0ba).
-- **5.3:** drafted in session 39; **the user has never read it.**
-- **5.4:** reviewed by Claude with the skill and restructured in session 37; the user has not read the revised text.
+§2-4 are in good shape (§4 reviewed twice). §5 (`manuscript/_f_evaluation.tex`) was reviewed with the
+`humanistic-paper-review` skill in session 41b, one subsection per pass; the user approved every finding they did not
+drop, and all are applied (ce4ba21, f8baea5, 1053bf7, e8b0335). Each subsection's lead now ends by answering its
+question, as a stopgap. The user has not read §5 end to end; they approved changes, not the whole text.
 
-## The task
+## The task: PLAN.md next step 2, to be considered with the user (in this order, one at a time)
 
-The user decided (2026-11-12): apply `anthropic-skills:humanistic-paper-review` to §5 **one subsection per pass**, in
-order: the lead and 5.1, then 5.2, then 5.3, then 5.4. About half a day in all. For each pass:
-1. Read the source and the rendered PDF (`pdftotext`). Review only that subsection (Pass 1's section-level checks may
-   look at how it connects to the lead). Lead with section- and paragraph-level findings; sentence-level patterns
-   only when clearly ugly. Say plainly if a subsection is in good shape. **Do not edit before the user responds.**
-2. When the user responds: answer their questions first, plainly; apply what they approve; `make`, `make check`, read
-   the rendered text; show old and new text per finding; log their reactions raw at the end of `docs/writing-spec.md`
-   (never as rules). Commit each pass.
-3. Before each finding that names a number, check the source (run headers, `artifacts/`, the `%` comments beside the
-   paragraph).
+0. **§5's questions and answers given visual emphasis.** The user (2026-11-12): "serious structural modifications ...
+   with regard to how the research questions are presented, i.e., 'asked', and how the findings are presented, i.e.,
+   'answered' ... more visual emphasize to the questions and answers." Nothing is designed yet. Start by proposing,
+   briefly, two or three concrete ways it could look on the page (e.g., each subsection opens with its question set
+   off, and closes or opens with a boxed or bold-run-in answer), shown as rendered snippets, and let the user choose.
+   Check the closest accepted CCS papers in `papers/` for how they do it, if any. Do not draft before they choose.
+1. **Remake the tables** (Tables 3 and 4 above all; the user dislikes them). Do this before shortening.
+2. **Shorten §4 and §5 together** (§4 ~1,500 words against ~1,000; §4.3 first). Trimming is welcome; moving small
+   snippets to the appendix does more harm than good.
+3. **Align §2's closing sentence and contribution 4** with §5's three findings.
 
-**How the user wants reviews handled** (sessions 38 and 40):
-- Trimming is welcome, but moving very small snippets to the appendix does more harm than good.
-- Keep the review's finding numbers throughout the conversation; never renumber them in a reply.
-- Apply in small passes: first the findings the user understands and approves, so they can focus on the rest. Explain
-  the others plainly, one at a time, when asked.
-- A finding that touches what a claim rests on (proven, checked, or measured) needs care: verify in the code and the
-  run outputs what was actually done before wording it (session 40's finding #1 on §4.3.2).
+Then (PLAN.md): the 4 MB-truncation brainstorm; then decide with the user whether the paper is ready for the next
+full simulated review; the scale-up once the write-up is finished.
 
-**Known items to fold into the right pass:**
-- 5.1 and 5.2: the user's pending comments (5.1's *Checking results*; 5.2's second round, 9b7d0ba).
-- Vocabulary from Table 2 (*The operations of the threat model*): §5 still says "GAMMA's import injection" and "the
-  header-field attack" where Table 2 says "GAMMA imports" and "header fields"; Table 3 (5.2) says "signature table"
-  where it means the certificate table ("signature" means only Definition 8).
-- 5.3, points a careful reader may stop at (have answers ready; do not pre-emptively change them): PV is judged on 9
-  files (counts are given, not rates; the scale-up adds files); "PV pays for the same gap a second time, in detection"
-  ties two paragraphs and may read as staged; *What the attacks reveal* states 928 of 1,070 without a comparison (the
-  seed comparison is out by the user's decision), so its point rests on "the other 142 look the same as features no
-  edit can lower"; ERDALT is "our port of their code", and the paper does not claim their published numbers fail; the
-  toolkit evasions of the GAMMA injections are partly outside the threat model (5.4 *Beyond the guarantee* explains
-  it, 5.3 does not repeat it). Background, only if needed: `docs/evidence/section-5.3-design.md` (§10.4-10.5 and its
-  log).
+## Open items found in the review (outside the prose)
+
+- 5.1 *Checking results* says the computed features match the extracted ones on "73,063 edits"; that is run 107's
+  direction check, while the exactness counts are Appendix D's table (62,604 in its upper block, run 118's 34,965
+  declared edits). Fix with the scale-up's numbers unless the user wants it now.
+- 5.2 says our hand table was written "before the derivation existed" and from "the operation's declared effects".
+  If a reviewer could ask whether the declared effects came with the derivation, check the history before rewording.
 
 ## Constraints and settled points
 
-- §5.3 (user, session 39): no audit table for now (all tables are remade later); no random-seed or protocol-hygiene
-  details in the paper; the learned-region paragraph stays cut; rename gets one sentence, no new run.
-- §5.4 (do not re-raise): the sums row's adaptive cell stays 0% with its footnote; the full-training-set adaptive
-  cells keep theirs; never propose scaling a cell down to the pilot protocol (everything scales up later); one toolkit
-  column counting any of the eight attacks; no comparison of the adaptive attack's 51% with the toolkit's rate; no
-  derivation-cost or timing paragraph.
-- Tables 3 and 4 will be remade after this review (the user dislikes them): do not spend findings on their layout;
-  note only what a table fails to tell the reader.
-- Practitioners' likely objections, kept in view, not to be fixed now: the cost at 0.1% FPR (about ten points), the
-  structural-only threat model (no packing, no code-level edits), pilot scale (10% subsamples, one seed, 50 malware).
-- Explain plainly, no jargon. Claims say "on EMBER"; the detectors' accuracy cost is a measurement, never "small"; no
-  timing of Proposition 1 against extraction; no effort claims. Exact numbers matter less than structure and argument.
-- Keep the session focused and economical: short notes, a recommendation rather than a menu.
-- Commit to `main` in logical pieces; do not push. At the end of the session, re-read and update `docs/status.md` and
-  write the next resume prompt (archive this one under `docs/archive/` and index it in `docs/README.md`).
-
-## After this review (PLAN.md, next steps; not this session unless the user brings it)
-
-1. To consider with the user: remake the tables (before shortening), shorten §4 and §5 together (§4 ~1,500 words
-   against ~1,000), align §2's closing sentence and contribution 4 with §5's three findings.
-2. ~~The ERDALT check~~: done in session 41 (PLAN.md, next step 3); no run, no paper change.
-3. The 4 MB-truncation brainstorm.
-4. Then decide with the user whether the paper is ready for the next full simulated review.
-5. The scale-up (seeds 0-2, full splits, more malware) once the write-up is finished.
+- How the user wants reviews and changes handled: keep finding numbers; small passes, the approved ones first; show
+  old and new text; a finding that touches what a claim rests on is verified in the code and run outputs first.
+- §5.3: no audit table for now; no seed or protocol-hygiene details; the learned-region paragraph stays cut.
+- §5.4: the sums row's adaptive cell stays 0% with its footnote; the full-training-set cells keep theirs; never scale
+  a cell down to the pilot protocol; one toolkit column counting any of the eight attacks; no comparison of the
+  adaptive attack's 51% with the toolkit's rate; no derivation-cost or timing paragraph.
+- Claims say "on EMBER"; the detectors' cost is a measurement, never "small"; no "pilot" in the paper; no effort
+  claims. Exact numbers matter less than structure and argument while drafting.
+- Commit to `main` in logical pieces; do not push. At the end of the session, update `docs/status.md`, write the next
+  resume prompt, archive this one under `docs/archive/` and index it in `docs/README.md`.
