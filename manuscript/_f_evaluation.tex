@@ -271,21 +271,23 @@ whose score no such edit can lower: drop the features the derived table marks as
 score to be nondecreasing in the features that can only rise and nonincreasing in those that can only fall. We train
 this detector on EMBER's features and also on the sums they are read from (Appendix~\ref{sec:ember}), because many
 features move both ways only through a readout that normalizes them, while their sums move one way. We measure what the
-constraints take from detection (\Cref{tab:eval:detectors}) and compare it with features chosen by hand.
+constraints take from detection (\Cref{tab:eval:detectors}) and compare it with features chosen by hand: on the sums,
+the guarantee costs 3.9 points of detection at a 1\% false-positive rate and 9.7 at 0.1\%, while features chosen by
+hand for the same guarantee under additions give up most of the detection.
 
 \paragraph{The price}
 Against the full threat model, the monotone detector on the sums detects 89.6\% of the malware at a 1\%
 false-positive rate, against 93.5\% for the unconstrained detector, and at a stricter 0.1\% rate it detects 74.7\%
-against 84.4\%. The detector on the features does slightly worse (87.2\% and 70.9\%). In return, no
-edit in the threat model lowers its score. The adaptive attack confirms this on every file: its largest score drop on
+against 84.4\%. The detector on the features detects 87.2\% and 70.9\%. In return, no edit in the
+threat model lowers either detector's score. The adaptive attack confirms this on every file: its largest score drop on
 either monotone detector is exactly zero. The toolkit attacks evade the unconstrained detector on 55\% of the malware
 it detects, and each monotone detector on a single file.
 
 \paragraph{Where the guarantee holds}
-The guarantee holds on the population (\Cref{sec:instances:population}), which contains 38 of the 50 pilot malware and
+The guarantee holds on the population (\Cref{sec:instances:population}), which contains 38 of the 50 malware we attack and
 all but 1.5\% of the benign files the dataset does not truncate. A monotone detector sends a file outside the
 population to the unconstrained detector, and that is where the single toolkit evasion of each monotone detector
-happened: a header-field attack on a file with an unusual layout. An attacker can build such a file on purpose, but a
+happened: the header fields attack on a file with an unusual layout. An attacker can build such a file on purpose, but a
 file outside the population is then rare among benign software, and so stands out.
 % P1 (closure) measured on the 2,000 files: run 117 (run/117_p1_closure.sh), 0 of 60,934 edits on passing files
 % (of 73,063 applied) leave the population, all twelve operations; pilot: 0 of 3,188. The split, outputs inside
@@ -301,10 +303,10 @@ loses 0.2 points. With import addition in the threat model, all 1,282 import has
 leaving it out recovers 2.1 points; leaving out the three header overwrites recovers 1.4. No other operation moves
 detection by more than 0.4 points in either direction. Rename makes the most features two-sided, 301, yet leaving it out
 recovers only 0.1 points, so the features it frees carry little detection. Reading the sums instead of the features
-recovers 2.4 points. At 0.1\% false positives, dropping the two-sided features costs more, 5.2 points, about as much as
-all the constraints together, and the same two operations each cost about four. At this rate the threshold is set by the
-few highest-scoring benign files, so retraining alone moves detection by a few points: leaving out append, which removes
-constraints, still lowers it by 3.0.
+recovers 2.4 points. At 0.1\% false positives, the threshold is set by the few highest-scoring benign files, so
+retraining alone moves detection by a few points: leaving out append, which removes constraints, still lowers it by
+3.0. Above that noise, only dropping the two-sided features stands out, at 5.2 points, about as much as all the
+constraints together.
 % MEASURED (2026-11-04): run/126_price_list.sh, artifacts/experiments/a_price_list/table.json. TPR at 1% FPR: full
 % catalogue 89.6%; drop-only (no constraints) 93.3%; warnings only dropped 93.6%; reference 93.5%. Leaving out: imp
 % 91.7%, the three overwrites 91.0% (hdr 90.8%, chk 90.3%, dos 89.4%), rdb 90.0%, rsg 90.0%, ren 89.7%, app 89.3%,
@@ -316,8 +318,8 @@ constraints, still lowers it by 3.0.
 \begin{table*}[t]
   \caption{Detectors under the full threat model, and under additions only. No edit in the threat model lowers a
   monotone detector's score; on the sums, this costs 3.9 points of detection at 1\% FPR and 9.7 at 0.1\%, while
-  features chosen by hand for the same guarantee under additions lose most of it. Evasion is over the detected pilot
-  malware. Toolkit: evaded by at least one of the eight toolkit attacks; adaptive: our adaptive attack, with 5,000
+  features chosen by hand for the same guarantee under additions lose most of it. Evasion is over the detected malware of the 50
+  we attack. Toolkit: evaded by at least one of the eight toolkit attacks; adaptive: our adaptive attack, with 5,000
   scored candidates. The monotone rows send files outside the population to the unconstrained detector.}
   \label{tab:eval:detectors}
   \small
@@ -337,8 +339,8 @@ constraints, still lowers it by 3.0.
     \bottomrule
   \end{tabular}
   \\[2pt]
-  {\footnotesize $^\dagger$ One header-field evasion, on a file outside the population, scored by the unconstrained
-  detector. On files in the population: 0/28 and 0/30. $^\ddagger$ Header-field attacks, outside the additions threat
+  {\footnotesize $^\dagger$ One header fields evasion, on a file outside the population, scored by the unconstrained
+  detector. On files in the population: 0/28 and 0/30. $^\ddagger$ The header fields attack, outside the additions threat
   model. $^\S$ Trained on the full training set; the other cells use a 10\% subsample. $^\ast$ A simpler search that
   appends and adds sections; the adaptive attack scores only detectors on the features.}
 \end{table*}
@@ -352,7 +354,7 @@ constraints, still lowers it by 3.0.
 \paragraph{The width of the threat model}
 The guarantee covers exactly the threat model the table was derived from, and a narrower one costs less. Under the
 additions threat model, the monotone detector on the sums keeps more features and detects 92.2\% of the malware
-instead of 89.6\%. The edits it leaves out are then open: the header-field attack, which overwrites fields in place and
+instead of 89.6\%. The edits it leaves out are then open: the header fields attack, which overwrites fields in place and
 so lies outside the additions threat model, evades it on 28\% of the malware it detects. A defender chooses the threat
 model, and with it which edits the detector withstands and what that costs in detection.
 
@@ -369,15 +371,15 @@ direction only.
 
 \paragraph{Beyond the guarantee}
 Real attack tools do not always edit a file the way an operation declares. Six of the eight toolkit attacks write
-byte-level edits of operations in the threat model, but GAMMA's section and import injections go through a library that
+byte-level edits of operations in the threat model, but GAMMA sections and GAMMA imports go through a library that
 rebuilds the file's layout, which no operation does. Of the 288 toolkit outputs on files in the population, 252 move
 every feature within the derived table; the 36 others all come from the two rebuilding attacks, and most of them change
 the size of the resource directory, which the table holds fixed. Corollary~\ref{cor:fw:robustness} says nothing about
 these files, yet the two rebuilding attacks evade neither monotone detector on any file in the population that it
-detects, 28 files for the detector on the features and 30 on the sums. On the 35 such files of the unconstrained
-detector, import injection evades it on 21 and section injection on 6. With the budget of the GAMMA
-paper~\cite{demetrio2021functionality}, about 500 queries instead of 100 and a larger pool of donor content, import
-injection evades the unconstrained detector on 27 of the 47 malware it detects and still evades neither monotone
+detects, 28 files for the detector on the features and 30 on the sums. Of the 35 malware in the population that the
+unconstrained detector detects, GAMMA imports evades it on 21 and GAMMA sections on 6. With the budget of the GAMMA
+paper~\cite{demetrio2021functionality}, about 500 queries instead of 100 and a larger pool of donor content, GAMMA
+imports evades the unconstrained detector on 27 of the 47 malware it detects and still evades neither monotone
 detector on a file in the population.
 % MEASURED: in-population split, artifacts/experiments/a1/toolkit-split/split.json (evasion_passing: ref gamma_api
 % 21/35, gamma_sections 6/35; mfull-feat 0/28, mfull-sums 0/30 for both). Rename frees 301 features: a_price_list

@@ -380,3 +380,6 @@ The "implied" notes are earlier readings, not instructions; several of them were
   clause in 5.1). "I agree with your recommendation." All applied, including #2's rewording of what the derived table
   shows about the 142 features the attacks did not lower ("marks them as features an edit may lower", not "tells them
   apart").
+- **2026-11-12 (session 41), humanistic review of 5.4, pass 4** (six findings). "I agree with your recommendation."
+  All applied, including #2: the 0.1% per-operation costs ("about four") cut as within retraining noise, the noise
+  caveat first.
