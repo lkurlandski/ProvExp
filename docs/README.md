@@ -22,7 +22,7 @@ check `manuscript/main.aux` (`grep newlabel manuscript/main.aux`), and add the t
 |---|---|---|
 | `PLAN.md` | thesis, where the paper stands, the decisions of 2026-11-09, next steps, settled decisions | every session |
 | `docs/status.md` | current state, what waits on the user, short session log | every session; update at the end |
-| `docs/resume-prompt.md` | where the next session starts (discussing the full simulated review, run by the user) | starting a session |
+| `docs/resume-prompt.md` | where the next session starts (R7 continued if run 138 is done, else the next limitation from the 2026-11-12 review; scale first or widen first) | starting a session |
 | `docs/checkpoint-prompt.md` | the user's prompt for ending a session | the user ends a session |
 | `docs/paper-mock.md` | the paper's contributions, outline with word budgets, and tables | planning or writing any section; checking whether new work belongs in the paper |
 | `docs/writing-spec.md` | the user's raw reactions to drafts, newest first | writing paper prose (with the `paper-prose` skill) |
@@ -31,7 +31,7 @@ check `manuscript/main.aux` (`grep newlabel manuscript/main.aux`), and add the t
 | `docs/design.md` | the `provexp` package's data structures, conventions, thrember quirks | changing code in `src/provexp/` |
 | `docs/literature-2026-10-22.md` | related work for the current direction (and for B, C) | related work, novelty, a new application |
 | `docs/graveyard.md` | ideas that did not pan out and why; directions the user found unproductive | before proposing a new direction or analysis |
-| `docs/reviews/` | simulated reviews (index: `docs/reviews/README.md`); the reusable review procedure: `review-prompt.md` (runbook) and `process/` (config, launcher, prompts, note to reviewers, checklist); latest `2026-11-04-strategy.md`, before it `2026-11-02-body.md` (risk register R1-R16) | before a new review; when weighing what reviewers will miss |
+| `docs/reviews/` | simulated reviews (index: `docs/reviews/README.md`); the reusable review procedure: `review-prompt.md` (runbook) and `process/` (config, launcher, prompts, note to reviewers, checklist); latest `2026-11-12-body/` (four reviewers and a meta-review; risk register R1-R21), before it `2026-11-04-strategy.md` and `2026-11-02-body.md` (R1-R16) | before a new review; when weighing what reviewers will miss |
 | `docs/parked/directions-B-C.md` | the two applications set aside (not failed) | considering a second application |
 
 ## Evidence: the records behind §4-5
@@ -49,13 +49,15 @@ or when changing an experiment. Run scripts are in `run/` (one per step, numbere
 | `docs/evidence/code-audit-sound-directions.md` | the 2026-11-09 audit of the direction engine against Definitions 7-10 and Tables 1 and 7 (readout rules, sign table): findings, what §4 must say, the readout rule of every EMBER feature |
 | `docs/evidence/literature-adversarial-malware.md` | the 2026-11-09 literature review of adversarial malware (venues, the edits each work uses, defenses) and what it implies for the catalogue | §4.3, §6, the threat model |
 | `docs/evidence/section-5.3-design.md` | how §5.3 came about: options, phases, runs 132-135 and their results (§10), the agreed claim (§10.5), the log | tracing a §5.3 number to its run; revisiting PV, ERDALT, adversarial training, leave-one-out |
+| `docs/evidence/r7-population-escape.md` | R7 (session 48): why the population and the router exist, the review's finding, the escape audit (run 137), six options weighed, decision 11 (no router), the escape pilot (run 138), log | anything about files outside the population, the routing, §4.4 or §5.4's *Where the guarantee holds* |
 | `docs/evidence/held-out-attacks-perspectives.md` | session 33: ways to test defenses learned from attacks (fixed split, leave-one-out mean or worst fold, keep-one, MAB-Malware, all subsets, coverage C2), with strengths and weaknesses; run 131's PV results and C2 | §5.3 |
 
 ## Archive (superseded; open only to recover a reason or a record)
 
 | Folder or file | Contents |
 |---|---|
-| `docs/archive/status-log-2026-11-10-to-11.md` | the session log, sessions 29-37 (search, don't read) |
+| `docs/archive/status-log-2026-11-10-to-11.md` | the session log, sessions 29-39 (search, don't read) |
+| `docs/archive/resume-prompt-2026-11-12-s47.md` | the resume prompt of session 48 (written in session 47): checking and discussing the full simulated review's output |
 | `docs/archive/status-log-2026-11-09.md` | the session log, sessions 21-27 (search, don't read) |
 | `docs/archive/status-log-2026-10-to-2026-11-09.md` | the full session log until 2026-11-09 (32k words; search, don't read) |
 | `docs/archive/PLAN-log-2026-10-22-to-2026-11-09.md` | the plan's history, every "Next steps" block |

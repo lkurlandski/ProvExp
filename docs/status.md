@@ -3,9 +3,9 @@
 Kept short: the current state, what waits on the user, and the last few sessions in a line or two each. The plan and
 its reasons are in `PLAN.md`. When the session log below grows past about ten entries, move the oldest to
 `docs/archive/` (the log before 2026-11-09 is `docs/archive/status-log-2026-10-to-2026-11-09.md`; sessions 21-28 are in
-`docs/archive/status-log-2026-11-09.md`, sessions 29-38 in `docs/archive/status-log-2026-11-10-to-11.md`).
+`docs/archive/status-log-2026-11-09.md`, sessions 29-39 in `docs/archive/status-log-2026-11-10-to-11.md`).
 
-## Current state (2026-11-12, sessions 34-47)
+## Current state (2026-11-12, sessions 34-48)
 
 - **Framework (§2-3):** rewritten; the user is reasonably satisfied. Open: the user's holistic read of Sound
   Directions after round 4 (finetuning only).
@@ -43,23 +43,31 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
 - **Simulated review (session 47):** designed and written as a reusable procedure (`docs/reviews/review-prompt.md`,
   `docs/reviews/process/`): four independent reviewers run headless outside the repository (A formal methods, B
   adversarial malware, C robust and certified ML, D systems security; Opus 5.5, high effort), seeing only the PDF, a
-  note to reviewers and `papers/`; then a meta-reviewer with full access (Opus 5.5, max effort) checks their findings,
-  works through the checklist, writes the risk register and what the scale-up must include. Knobs in `config.sh`.
-  Smoke-tested (one Haiku reviewer); not run yet.
+  note to reviewers and `papers/`; then a meta-reviewer with full access checks their findings, works through the
+  checklist, writes the risk register and what the scale-up must include. Knobs in `config.sh`. **Run by the user**
+  after session 47 (`docs/reviews/2026-11-12-body/`): A Weak accept, B Weak reject, C Weak reject, D Weak accept;
+  likely outcome reject or major revision. Register R1-R21; top risks R7 (routing around the population), R1 (attacks
+  below published strength; header-field edits never used by the adaptive attack), R2 (premises tested, not proven).
+  Discussed in session 48 up to R7 only; the rest of the register is untriaged.
+- **R7, leaving the population (session 48):** analysis, options and decision in `docs/evidence/r7-population-escape.md`.
+  Run 137 (escape audit): single loader-ignored field writes (certificate or debug entry past the end, SizeOfImage
+  raised) take 150 of 150 population files out. Decision (user): no router; one monotone detector scores every file,
+  proven on the population and measured outside it. **Run 138** (the escape pilot, ~5-6 h) scripted for the user;
+  the paper is not changed until it is read.
 - **Documentation:** reorganized 2026-11-09, cleaned up 2026-11-12 (stale resume prompts, the §4 note archived; the
   §5.3 design doc moved to `docs/evidence/`); index `docs/README.md`.
 
 ## Waiting on the user
 
-- **Before the next session, the user** runs `docs/reviews/process/run_review.sh` in tmux (after reading
-  `docs/reviews/process/note-to-reviewers.md`, drafted in session 47). **Next session:** go over its output together
-  (`docs/resume-prompt.md`).
+- **Run 138** (`run/138_escape_pilot.sh`, ~5-6 h with 16 workers; log `artifacts/logs/escape_pilot.log`). **Next
+  session:** `docs/resume-prompt.md` (read run 138 if done and continue R7; otherwise triage the rest of the review).
 - The holistic read of Sound Directions (any time).
 
 ## Scheduled (in order; PLAN.md, next steps)
 
 1. ~~The 4 MB-truncation brainstorm and decision~~ (done, session 46: files below 4 MB in every split).
-2. A full simulated review of the manuscript as it then stands; its output decides the scale-up's content.
+2. A full simulated review of the manuscript as it then stands; its output decides the scale-up's content (run;
+   discussion started in session 48 with R7).
 3. The scale-up designed and launched as one protocol (seeds 0-2, full splits, one training set for every detector,
    ERDALT's stopping point, more malware, MAB-Malware as a held-out attack).
 4. While it runs: §2's closing and contribution 4 aligned with §5.
@@ -68,6 +76,19 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
 7. Introduction, discussion, abstract last.
 
 ## Session log
+
+- **2026-11-12 (session 48): the review read; R7 analysed and decided; escape audit and pilot.** The review run was
+  complete (the first meta-reviewer at max effort hit the session limit and was resumed at xhigh). Claude read all
+  five files and spot-checked the deciding verdicts in the code: the one-field escape (`catalogue.py:453-457`), the
+  header-field edits never used by the adaptive attack, A-W3 (3)'s false premise (EMBER appends a 0 before the minima),
+  §5.3's counts including the 88 warnings (68 of the unlowered ones). The user chose to start with R7: Claude explained
+  why the population and the router exist and weighed six options; agreed: escape audit, then no router (option 1)
+  with an end-to-end escape measurement, option 5 only if needed. Run 137 (`scripts/escape_audit.py`, ~1 min): every
+  loader-ignored write tried takes 150/150 files out (documentation quotes for loader safety; no execution).
+  `a1_adaptive.py`: `--score real` and `--escape`; smoke 3 files (monotone drop exactly 0); run 138 scripted for the
+  user. Record: `docs/evidence/r7-population-escape.md`. Procedure fix: a meta-only rerun no longer overwrites the
+  reviewers' commit in `run-config.txt` (runbook note). Commits b3727f5, 1b73273, 80ed765. **Next:**
+  `docs/resume-prompt.md`.
 
 - **2026-11-12 (session 47): the simulated review designed, not run.** Claude proposed the design, one recommendation
   per question; the user approved it whole ("very good") and asked for a re-runnable procedure with configurable
@@ -182,11 +203,3 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
   Cleanup: stale resume prompts and the §4 note archived, the §5.3 design doc moved to `docs/evidence/`, sessions
   29-33 of this log archived, the README's numbering table updated, §4's commented-out old text removed.
   **Next:** `docs/resume-prompt.md`.
-
-- **2026-11-11 (session 39, parallel to 38): §5.3 drafted in three blocks.** Run 135 had just started, so its
-  ERDALT folds are in blue (its PV folds finished during the session: 0 evaded in all eight). User decisions: cut the
-  learned-region paragraph; no audit table now (Tables 3-4 to be remade); one sentence on rename, no new run; no RNG or
-  protocol-hygiene details in the paper. Found: the planned "745 vs 928" coverage comparison mixed files (pilot vs
-  training); on the same files it is 847 vs 928, and it is out anyway. Old 5.3 material removed from 5.4; §6's ERDALT
-  reference points to 5.3; Appendix D gained the leave-one-out table. ~970 words. The user did not review the blocks
-  (review next session). Commits 7a2ceff, 9d0369f, 035d977. **Next:** `docs/resume-prompt-5.3.md`.

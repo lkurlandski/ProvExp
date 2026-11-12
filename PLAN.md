@@ -38,6 +38,12 @@ them (below).
   one domain (the largest acceptance risk; the user's call when); Proposition 1 has no finding of its own (R9, §2's
   attack promise); the 4 MB truncation decides the population the scale-up runs on; the body must eventually shrink,
   but shortening before the scale-up would be redone. So the review and the scale-up come before the remaining polish.
+- **The simulated review of 2026-11-12** (`docs/reviews/2026-11-12-body/meta-review.md`): Weak accept (A, formal
+  methods), Weak reject (B, adversarial malware; C, robust ML), Weak accept (D, systems security). All four find the
+  idea new and value the PV hole and the cost result; all four call §3's results known techniques (IVM, sign-domain
+  abstract interpretation; R6), the EMBER premises tested rather than proven (R2), and one instance too few for a
+  class (R4). B, C and D's "one change" is the same: the routed system end to end (R7). Register R1-R21, the scale-up's
+  content (§7) and the writing actions (§8) in the meta-review. Triaged so far: R7 only (decision 11).
 
 ## Decisions of 2026-11-09 (the holistic review)
 
@@ -220,6 +226,15 @@ them (below).
     attack, 22/29 adaptive, 90% of its layer's weight), adversarial training (12/50, 23/50), holding one attack out
     (run 135; per-fold table in Appendix D). The old PV/ERDALT/adversarial-training material is gone from 5.4.
 
+11. **R7: no router; one monotone detector scores every file (user, session 48, 2026-11-12).** The guarantee is proven
+    on the population and measured outside it. *Why:* the escape audit (run 137) found that single field writes the
+    loader ignores (certificate or debug entry past the end, SizeOfImage raised) take every population file out, so
+    the router handed any attacker the unconstrained detector; patching clause by clause would mean PE special cases
+    without end, and dropping the router removes a component instead of adding one. *Pending run 138* (the escape
+    pilot: escaped malware attacked by a search that extracts every candidate). If the monotone detectors hold, §4.4
+    and §5.4 are rewritten (no routing, the escape result, "stand out" removed); if one escape breaks them, widen the
+    population for that clause only. Analysis, options, runs: `docs/evidence/r7-population-escape.md`.
+
 ## Next steps, in order
 
 Agreed with the user in session 45 (2026-11-12) after the holistic assessment (above). The previous list, with the
@@ -232,7 +247,8 @@ records of the §5 reviews, the table remake and the ERDALT check, is in
 2. **A full simulated review** of the manuscript as it then stands (body only; the last full review, 2026-11-02,
    predates the new §3 and §5). *Designed in session 47* as a reusable procedure (`docs/reviews/review-prompt.md`,
    `docs/reviews/process/`): four independent reviewers who see only the PDF, then a meta-reviewer with full access
-   that answers the checklist below; run by the user after session 47, discussed in session 48. It should re-check the open risks of the 2026-11-02 register (R4, R5, R6, R9, R11, R15,
+   that answers the checklist below; run by the user after session 47, discussed from session 48 (R7 first, decision
+   11; the rest of the register R1-R21 still to triage, one recommendation per item). It should re-check the open risks of the 2026-11-02 register (R4, R5, R6, R9, R11, R15,
    R16) and the 2026-11-04 attack-strength concern, and judge what no review has seen: the new §3 (novelty above all),
    the §2/§5 alignment, Proposition 1's role (no finding of its own), the corpus-checked signatures, §4's template on
    the page, the new population (the prompt's bullet on the 4 MB scope was added in session 46), decision 6's revisit
@@ -247,7 +263,12 @@ records of the §5 reviews, the table remake and the ERDALT check, is in
    scale (~3,000 CPU-h at 5,000 candidates on 2,000 files; options: the 1,000-candidate checkpoint, a fixed subset, a
    cap on the monotone rows); **MAB-Malware as a held-out attack we did not write**. Hypothesis: MAB-Malware finds PV's
    rename hole (support for 5.3 independent of our table-guided attack) and evades no monotone detector on a file in the
-   population. Plus whatever the review and the population decision add. The sums row's adaptive cell stays 0% with its
+   population. Plus whatever the review adds (meta-review §7: the routed system end to end, now the unrouted one of
+   decision 11; MAB-Malware; the adaptive search scoring by extraction where the computation declines, as run 138's
+   `--score real`; equal-information learned defenses if decision 6 is revisited; thresholds from the validation split).
+   **Open question for the user (session 49):** scale the existing experiments first (more files, seeds 0-2), or widen
+   them first (the review's new experiments: MAB-Malware, the escape attack, equal-information baselines, a trial
+   table), then scale everything once. The sums row's adaptive cell stays 0% with its
    footnote (session 36).
 4. **While the scale-up runs: §2's closing and contribution 4 against §5** (old step 2 (c)). §2 says §5 "uses them to
    attack malware detectors and to build robust ones"; in §5 the attack is an instrument. The mock's contribution 4 is

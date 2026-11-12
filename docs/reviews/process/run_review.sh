@@ -62,7 +62,16 @@ if [[ "$STEPS" == "all" || "$STEPS" == "reviewers" ]]; then
     cp -r "$REPO/papers" "$WORK/papers"
     cp "$REPO/manuscript/main.pdf" "$OUT/paper.pdf"
 fi
-# Record what this run used.
+# Record what this run used. A meta-only rerun appends its own record, so the reviewers' commit and date are kept.
+if [[ "$STEPS" == "meta" && -f "$OUT/run-config.txt" ]]; then
+    {
+        echo "# meta step rerun"
+        echo "meta_commit=$COMMIT"
+        echo "meta_date=$(date -Iseconds)"
+        echo "META_MODEL=$META_MODEL"
+        echo "META_EFFORT=$META_EFFORT"
+    } >> "$OUT/run-config.txt"
+else
 {
     echo "commit=$COMMIT"
     echo "date=$(date -Iseconds)"
@@ -72,6 +81,7 @@ fi
         echo "reviewer $id: model=${!m:-$REVIEWER_MODEL} effort=${!e:-$REVIEWER_EFFORT}"
     done
 } > "$OUT/run-config.txt"
+fi
 cp "$PROC/note-to-reviewers.md" "$PROC/checklist.md" "$OUT/"
 
 ################################################################################

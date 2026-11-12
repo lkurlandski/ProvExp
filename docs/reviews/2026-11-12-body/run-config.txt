@@ -1,5 +1,5 @@
-commit=7c6bc63
-date=2026-11-12T15:05:30-05:00
+commit=82eea08
+date=2026-11-12T14:36:20-05:00
 TAG=2026-11-12-body
 VENUE=ACM CCS (reviewers who also serve on IEEE S&P, USENIX Security and NDSS)
 SCALE=Reject / Weak reject / Weak accept / Accept
@@ -17,3 +17,7 @@ reviewer A: model=claude-opus-5-5 effort=high
 reviewer B: model=claude-opus-5-5 effort=high
 reviewer C: model=claude-opus-5-5 effort=high
 reviewer D: model=claude-opus-5-5 effort=high
+# meta step rerun
+meta_commit=7c6bc63
+meta_date=2026-11-12T15:05:30-05:00
+# the meta-reviewer at max stopped (session limit); resumed at xhigh with resume_meta.sh (meta-resume.log)

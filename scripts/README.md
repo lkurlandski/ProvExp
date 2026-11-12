@@ -18,14 +18,16 @@ make_fixtures (test files).
 - **Checks of the instrumentation and the catalogue:** item_checks (G1/G2 bit-exact readouts, G5, G6: single-byte
   flips and locating positions), catalogue_checks (G7: every operation applied by our own byte-level edits, checked
   against re-extraction and the derived directions; Tables 5 and 6, closure), population_clauses (which clause of the
-  population check each file fails: incomplete or unusual layout; §4.4, run 136), a_c1_table0 (the hand side-effect
+  population check each file fails: incomplete or unusual layout; §4.4, run 136), escape_audit (which single field
+  writes outside the threat model take a file out of the population; R7, run 137), a_c1_table0 (the hand side-effect
   predictors, the engine's oracle).
 - **Witnesses of the hand table's errors (Table 6):** a_overlay_witness, a_signature_witness, a_structure_witness
   (entry section, Rich header, exports and relocations past the end).
 - **Attacks and baselines (Table 7):** a_pv_attacks (secml-malware attacks, PV selection), a_pv_hole, a_erdalt_hole,
   a_advtrain (attacked training malware: adversarial training and ERDALT's vectors; `--seed_per_file` for varied runs),
   a_coverage (§5.3: which lowerable features the toolkit's outputs and our own edits lowered, by source; run 132), a1_evaluate (toolkit columns; one held-out attack per fold for leave-one-out, run 131), a1_toolkit_split, a1_adaptive (the adaptive search: greedy and beam,
-  scoring candidates by predicted side effects), a_expert_adaptive, a_price_list (per-operation cost of soundness).
+  scoring candidates by predicted side effects, or with `--score real` by extracting every candidate, nothing
+  declined; `--escape` applies an escape write first, run 138), a_expert_adaptive, a_price_list (per-operation cost of soundness).
 - **From A' (dropped, two pieces used by the paper):** ap_check1_learned (learned constraints, run 110: Table 6's
   learned row), ap_containment (combined edits, run 111: Table 5's last row), with ap_check0_solver (Kantchelian's
   exact GBDT encoding) and ap_encoding underneath. The rest of `ap_*` is source material only.

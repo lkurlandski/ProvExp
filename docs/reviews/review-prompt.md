@@ -71,7 +71,12 @@ Placeholders in the prompt files (`{{VENUE}}`, `{{SCALE}}`, `{{TAG}}`, `{{OUT}}`
    first. The output decides what the full-scale run includes.
 
 If a reviewer fails (no `review-<ID>.md`), rerun only it: `REVIEWERS=C STEPS=reviewers TAG=<same tag> ...`, then
-`STEPS=meta TAG=<same tag> ...`.
+`STEPS=meta TAG=<same tag> ...`. A meta-only rerun appends its commit and date to `run-config.txt` instead of
+overwriting the reviewers' (fixed in session 48, after the first run's record lost the reviewers' commit).
+
+**What the first run (2026-11-12) showed:** the procedure worked end to end; the meta-reviewer at max effort used up the
+session limit and was resumed at xhigh (now the default). Its most valuable output was what only full access can find
+(a premise checked in the code: one field write leaves the population), so keep the meta-reviewer's code access.
 
 **Stopping and resuming the meta-reviewer** (e.g. to change its effort or after a usage limit): stop it (Ctrl-C in its
 pane), then `docs/reviews/process/resume_meta.sh`. It finds the newest meta-review session, resumes it with

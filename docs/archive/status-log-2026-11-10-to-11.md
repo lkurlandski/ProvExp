@@ -1,4 +1,4 @@
-# Session log, sessions 29-37 (2026-11-10 to 2026-11-11)
+# Session log, sessions 29-39 (2026-11-10 to 2026-11-11)
 
 Moved from `docs/status.md` on 2026-11-12. Search, don't read.
 
@@ -121,3 +121,11 @@ Moved from `docs/status.md` on 2026-11-12. Search, don't read.
   "GAMMA's import injection" and "the header-field attack" (Table 2: GAMMA imports, header fields) and Table 3 says
   "signature table" for the certificate table. **Next:** a lightweight re-review of §4, then §5
   (`docs/resume-prompt.md`).
+
+- **2026-11-11 (session 39, parallel to 38): §5.3 drafted in three blocks.** Run 135 had just started, so its
+  ERDALT folds are in blue (its PV folds finished during the session: 0 evaded in all eight). User decisions: cut the
+  learned-region paragraph; no audit table now (Tables 3-4 to be remade); one sentence on rename, no new run; no RNG or
+  protocol-hygiene details in the paper. Found: the planned "745 vs 928" coverage comparison mixed files (pilot vs
+  training); on the same files it is 847 vs 928, and it is out anyway. Old 5.3 material removed from 5.4; §6's ERDALT
+  reference points to 5.3; Appendix D gained the leave-one-out table. ~970 words. The user did not review the blocks
+  (review next session). Commits 7a2ceff, 9d0369f, 035d977. **Next:** `docs/resume-prompt-5.3.md`.
