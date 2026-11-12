@@ -1,4 +1,4 @@
-# Session log, sessions 29-34 (2026-11-10 to 2026-11-11)
+# Session log, sessions 29-36 (2026-11-10 to 2026-11-11)
 
 Moved from `docs/status.md` on 2026-11-12. Search, don't read.
 
@@ -83,3 +83,19 @@ Moved from `docs/status.md` on 2026-11-12. Search, don't read.
   purpose-then-facts added to `paper-prose`. Scale-up: the first thing after the write-up (user; PLAN.md step 5).
   Commits 0b64c9a, e3375ca, 9b7d0ba. **Next:** §5.4 in a new session (`docs/resume-prompt.md`).
 
+- **2026-11-11 (session 36): §5.4 *What Robustness Costs* drafted (blocks 1-2, unreviewed).** Numbers checked
+  against their sources (two mismatches: "the rest at most 0.3" is 0.4 for the debug and signature removals; the sums
+  row's adaptive footnote has no matching run, the closest is run 82, append and add-section only; the user judged
+  the latter not worth raising, so the cell stays 0% with an accurate footnote). The user rejected scaling the
+  full-training-set adaptive cells down to the 10% protocol and single-attack toolkit columns (memory
+  `report-attacks-separately` now scoped to stitched searches). Drafted, in order: the price (89.6 vs 93.5% at 1% FPR;
+  74.7 vs 84.4% at 0.1%), against hand-picked features (the expert set 29.1% vs the derived additions detector 92.2%,
+  the practitioner-facing result), where the cost lies (imports 2.1, header overwrites 1.4, others at most 0.4; at
+  0.1% dropping the two-sided features alone costs 5.2), the threat model's width, beyond the guarantee (GAMMA's
+  rebuilding injections, 0/56, 0/60), where the guarantee holds. Table 4 trimmed (undefended and monotone rows,
+  additions block; one toolkit column, any of the eight; new TPR-at-0.1%-FPR column, computed from the models'
+  `ts_predictions.parquet`); the PV/ERDALT/adversarial-training rows kept in a `% MOVED TO 5.3` comment, their
+  paragraphs marked `% 5.3 MATERIAL`; the cost paragraph removed. Found: the coverage check (915 of 1,070 lowered) is
+  about two-sided features the detector drops, so it says nothing about the constraints that carry the cost; not used.
+  The user ended the session tired and disappointed with the last two days. Commit 8fd8c9c. **Next:**
+  `docs/resume-prompt.md`.

@@ -3,7 +3,7 @@
 Kept short: the current state, what waits on the user, and the last few sessions in a line or two each. The plan and
 its reasons are in `PLAN.md`. When the session log below grows past about ten entries, move the oldest to
 `docs/archive/` (the log before 2026-11-09 is `docs/archive/status-log-2026-10-to-2026-11-09.md`; sessions 21-28 are in
-`docs/archive/status-log-2026-11-09.md`, sessions 29-35 in `docs/archive/status-log-2026-11-10-to-11.md`).
+`docs/archive/status-log-2026-11-09.md`, sessions 29-36 in `docs/archive/status-log-2026-11-10-to-11.md`).
 
 ## Current state (2026-11-12, sessions 34-44)
 
@@ -41,19 +41,34 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
 
 ## Waiting on the user
 
-- **Next session, first:** a holistic assessment of the research's progress and a planning stage for the next steps,
-  with the user (session 44: the user is "not confident" that PLAN.md step 2's remaining items are the right next
-  steps; `docs/resume-prompt.md`).
+- **Next session, first:** the 4 MB-truncation brainstorm, ending in a decision on the population, then the decided
+  population written into §4.4 and what depends on it, before the full simulated review (PLAN.md, next steps 1-2;
+  `docs/resume-prompt.md`).
 - The holistic read of Sound Directions (any time).
 
 ## Scheduled (in order; PLAN.md, next steps)
 
-- Nothing is scheduled until the holistic assessment (next session) sets the order. Candidates on record (PLAN.md,
-  steps 2 and 4-6): §5's question-and-answer emphasis; §4 and §5 shortened; §2's closing and contribution 4 aligned
-  with §5 (§2's attack promise is a known weakness); the 4 MB-truncation brainstorm; the next full simulated review;
-  the scale-up (the user, session 44: "we need to scale these experiments up shortly").
+1. The 4 MB-truncation brainstorm and decision; the manuscript updated to it (blue values if runs are needed).
+2. A full simulated review of the manuscript as it then stands; its output decides the scale-up's content.
+3. The scale-up designed and launched as one protocol (seeds 0-2, full splits, one training set for every detector,
+   ERDALT's stopping point, more malware, MAB-Malware as a held-out attack).
+4. While it runs: §2's closing and contribution 4 aligned with §5.
+5. After reading it: final numbers, then shortening §4-5 and §5's question-and-answer emphasis.
+6. A second domain decided with the scale-up's results in hand (the user's call).
+7. Introduction, discussion, abstract last.
 
 ## Session log
+
+- **2026-11-12 (session 45): holistic assessment; the next steps reordered.** Claude read PLAN.md, the mock, both
+  latest simulated reviews, the graveyard and §2/§5. Assessment (PLAN.md, "Where the paper stands"): the framework is in
+  good shape; §5's evidence is held back by sample size more than prose (PV on 9 files, the expert set on 8, the hand
+  detector's drops never cross the threshold, ERDALT's port weaker than their paper, every evasion from our own
+  table-guided attack, MAB-Malware absent); one domain is the largest acceptance risk; Proposition 1 has no finding of
+  its own; polishing §4-5 now would be redone after the scale-up. The user agreed with the analysis and added that the
+  truncation brainstorm and the review should be coupled, since the population decision could affect the review:
+  brainstorm first, decide, write the decision into §4.4 (blue values if runs are needed), then review. New order in
+  PLAN.md, next steps 1-7; the old list archived (`docs/archive/PLAN-next-steps-2026-11-12-s44.md`). **Next:**
+  `docs/resume-prompt.md` (the truncation brainstorm).
 
 - **2026-11-12 (session 44): §5.3 gets a table; the next step is a holistic assessment.** Check-in on more tables:
   5.2 and 5.4 had one, 5.3 none. The user: a 5.3 table is warranted "only if the table can represent that section's
@@ -156,20 +171,3 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
   0.1% FPR (retraining variance; Claude's inference); *Beyond the guarantee* counts files per detector and attack
   (from `a1/toolkit-split/split.json`); the opening says why the sums; Table 4's caption states its takeaway.
   Commits c49f654, 9113acb, 23ab085. **Next:** a holistic review of §4, then §5 (`docs/resume-prompt.md`).
-
-- **2026-11-11 (session 36): §5.4 *What Robustness Costs* drafted (blocks 1-2, unreviewed).** Numbers checked
-  against their sources (two mismatches: "the rest at most 0.3" is 0.4 for the debug and signature removals; the sums
-  row's adaptive footnote has no matching run, the closest is run 82, append and add-section only; the user judged
-  the latter not worth raising, so the cell stays 0% with an accurate footnote). The user rejected scaling the
-  full-training-set adaptive cells down to the 10% protocol and single-attack toolkit columns (memory
-  `report-attacks-separately` now scoped to stitched searches). Drafted, in order: the price (89.6 vs 93.5% at 1% FPR;
-  74.7 vs 84.4% at 0.1%), against hand-picked features (the expert set 29.1% vs the derived additions detector 92.2%,
-  the practitioner-facing result), where the cost lies (imports 2.1, header overwrites 1.4, others at most 0.4; at
-  0.1% dropping the two-sided features alone costs 5.2), the threat model's width, beyond the guarantee (GAMMA's
-  rebuilding injections, 0/56, 0/60), where the guarantee holds. Table 4 trimmed (undefended and monotone rows,
-  additions block; one toolkit column, any of the eight; new TPR-at-0.1%-FPR column, computed from the models'
-  `ts_predictions.parquet`); the PV/ERDALT/adversarial-training rows kept in a `% MOVED TO 5.3` comment, their
-  paragraphs marked `% 5.3 MATERIAL`; the cost paragraph removed. Found: the coverage check (915 of 1,070 lowered) is
-  about two-sided features the detector drops, so it says nothing about the constraints that carry the cost; not used.
-  The user ended the session tired and disappointed with the last two days. Commit 8fd8c9c. **Next:**
-  `docs/resume-prompt.md`.

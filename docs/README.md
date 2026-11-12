@@ -22,7 +22,7 @@ check `manuscript/main.aux` (`grep newlabel manuscript/main.aux`), and add the t
 |---|---|---|
 | `PLAN.md` | thesis, where the paper stands, the decisions of 2026-11-09, next steps, settled decisions | every session |
 | `docs/status.md` | current state, what waits on the user, short session log | every session; update at the end |
-| `docs/resume-prompt.md` | where the next session starts (a holistic assessment of the research's progress and a plan for the next steps, after §5.3 got its table) | starting a session |
+| `docs/resume-prompt.md` | where the next session starts (the 4 MB-truncation brainstorm and the population decision, before the full simulated review) | starting a session |
 | `docs/checkpoint-prompt.md` | the user's prompt for ending a session | the user ends a session |
 | `docs/paper-mock.md` | the paper's contributions, outline with word budgets, and tables | planning or writing any section; checking whether new work belongs in the paper |
 | `docs/writing-spec.md` | the user's raw reactions to drafts, newest first | writing paper prose (with the `paper-prose` skill) |
@@ -55,11 +55,13 @@ or when changing an experiment. Run scripts are in `run/` (one per step, numbere
 
 | Folder or file | Contents |
 |---|---|
-| `docs/archive/status-log-2026-11-10-to-11.md` | the session log, sessions 29-34 (search, don't read) |
+| `docs/archive/status-log-2026-11-10-to-11.md` | the session log, sessions 29-36 (search, don't read) |
 | `docs/archive/status-log-2026-11-09.md` | the session log, sessions 21-27 (search, don't read) |
 | `docs/archive/status-log-2026-10-to-2026-11-09.md` | the full session log until 2026-11-09 (32k words; search, don't read) |
 | `docs/archive/PLAN-log-2026-10-22-to-2026-11-09.md` | the plan's history, every "Next steps" block |
 | `docs/archive/resume-prompt-2026-11-06.md` | the previous resume prompt (research track details: sums-row routing, scale-up budget) |
+| `docs/archive/resume-prompt-2026-11-12-s44.md` | the resume prompt of session 45 (written in session 44): the holistic assessment of the research and the planning stage; where things stood at the end of session 44 |
+| `docs/archive/PLAN-next-steps-2026-11-12-s44.md` | PLAN.md's "Next steps" before session 45's reordering: the records of the §5 reviews, the table remake's two attempts and the facts they surfaced, the ERDALT check |
 | `docs/archive/resume-prompt-2026-11-12-s43.md` | the resume prompt of session 44 (written in session 43): the check-in on whether §5 needs more tables; the data behind 5.3's defenses and the per-operation cost |
 | `docs/archive/resume-prompt-2026-11-12-s42.md` | the resume prompt of session 43 (written in session 42): the table remake restarted from what the user dislikes; the data behind Tables 3-4, 5.3's defenses and the per-operation cost |
 | `docs/archive/resume-prompt-2026-11-12-s41b.md` | the resume prompt of session 42 (written in session 41b): §5's holistic review weighing the contributions' importance, how the user wants reviews handled, settled points of 5.3-5.4 |
