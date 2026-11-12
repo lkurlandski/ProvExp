@@ -50,6 +50,7 @@ or when changing an experiment. Run scripts are in `run/` (one per step, numbere
 | `docs/evidence/literature-adversarial-malware.md` | the 2026-11-09 literature review of adversarial malware (venues, the edits each work uses, defenses) and what it implies for the catalogue | §4.3, §6, the threat model |
 | `docs/evidence/section-5.3-design.md` | how §5.3 came about: options, phases, runs 132-135 and their results (§10), the agreed claim (§10.5), the log | tracing a §5.3 number to its run; revisiting PV, ERDALT, adversarial training, leave-one-out |
 | `docs/evidence/r7-population-escape.md` | R7 (session 48): why the population and the router exist, the review's finding, the escape audit (run 137), six options weighed, decision 11 (no router), the escape pilot (run 138), log | anything about files outside the population, the routing, §4.4 or §5.4's *Where the guarantee holds* |
+| `docs/evidence/r6-prior-work.md` | R6 (session 50): the prior work §3 builds on (view maintenance, change calculi, aggregate provenance, abstract interpretation, certified defenses, incremental parsing), each read and related to Proposition 1, Theorem 1, Corollary 1; where each is cited | positioning §3 and §6 against prior work; R6, R21 |
 | `docs/evidence/held-out-attacks-perspectives.md` | session 33: ways to test defenses learned from attacks (fixed split, leave-one-out mean or worst fold, keep-one, MAB-Malware, all subsets, coverage C2), with strengths and weaknesses; run 131's PV results and C2 | §5.3 |
 
 ## Archive (superseded; open only to recover a reason or a record)
