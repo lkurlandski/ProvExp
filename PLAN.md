@@ -207,12 +207,32 @@ Done: the paper mock rewritten, the read-only code audit (`docs/evidence/code-au
 1b. ~~**A holistic humanistic review of all of §5**~~ (contributions' importance). Done in session 42 (2026-11-12):
    seven findings; 1-4 approved and applied (68f6385: what Gimenez et al. report before our results, the lead names
    what breaks, 5.4 names both alternatives, the hand detector's cost ends on why a broken guarantee matters); 5 (5.3's
-   topic sentences) not convinced (user); 6 and 7 noted below (step 2 (a), (c)).
-2. **Then, to be considered with the user:** (0) §5's questions and answers given more visual emphasis (user,
+   topic sentences) dropped after Claude's reassessment (the user was not convinced; the leads now carry the outcome
+   for a fast reader); the uncited "usually tested against an attack it did not learn from" fixed (49d879d: Gimenez
+   et al. test against the attacks they learned from; the held-out test is the stricter one); 6 and 7 noted below
+   (step 2 (a), (c)).
+2. **Then, to be considered with the user, in this order (user, session 42: the tables first):** (a) remake the tables
+   (Tables 3 and 4 above all; the user dislikes them); (0) §5's questions and answers given more visual emphasis (user,
    2026-11-12: how each subsection's research question is "asked" and its finding "answered"; a structural change, not
-   made in the review); (a) remake the tables (Tables 3 and 4 above all; the user dislikes
-   them), before (b) shortening §4 and §5 together (§4 ~1,500 words against ~1,000; §4.3 first), and (c) §2's closing
-   sentence and contribution 4 against §5's three findings.
+   made in the review); (b) shortening §4 and §5 together (§4 ~1,500 words against ~1,000; §4.3 first); and (c) §2's
+   closing sentence and contribution 4 against §5's three findings.
+   *(a), first attempt (session 42), rejected:* the user's brief: tables "data-dense" rather than "linguistically-dense"
+   (exceptions allowed), designed to (i) communicate the findings, (ii) be aesthetically pleasing, (iii) extend to other
+   domains (least important). Claude's mock-ups (`docs/archive/table-mockups-2026-11-12/`: Table 3 with Cause and
+   Files columns; a new 5.3 table of the learned defenses with a "weight on lowerable" column; Table 4 in one column; a
+   per-operation cost table; alternatively one detectors table grouped by where the directions come from) were judged
+   "pretty bad, quite possibly as bad if not worse than what we already had", with no specifics. Restart from what the
+   user dislikes, not from a new layout (resume prompt). Facts the attempt surfaced, still valid: (1) 5.2's *Why it
+   errs* says the errors come from three parser facts, but two of the eight come from others (the overlay starts where
+   the last section ends; a section can hold the headers); fix the prose. (2) Table 4's toolkit cells come from the
+   older fixed-seed runs (`a1/toolkit-v2`), 5.3's from run 133's seed per file; for the full-training-set unconstrained
+   detector the paper says 27/49 (Table 4, 55%) and 25/49 (5.3); one protocol at the scale-up, nothing in the paper.
+   (3) New cells, computed as Table 4's (ROC interpolation on `ts_predictions.parquet`): AUC / TPR at 1% / at 0.1% FPR:
+   PV-best 0.844 / 26.3% / 10.3%; ERDALT-best 0.883 / 62.7% / 42.2%; adversarial training (seed per file) 0.998 / 95.6%
+   / 87.3%; the hand detector (full set, `seed-0-a-mfull-mono-qf`) 0.993 / 87.4% / 71.2%, its derived counterpart
+   (`seed-0-a-mfull-pre-qf-v2`) 0.993 / 88.7% / 73.6%. (4) Per operation left out (`a_price_list`), features dropped /
+   constrained: full 1,464 / 1,988; no-imp 1,460 / 706; no-ren 1,163 / 2,289; no-app 1,462 / 1,990; others within a
+   few of the full set; leaving out add a section, the first-section gap or slack changes no direction (not retrained).
    *From the holistic review (session 42):* for (a), no table shows 5.3's result (published defenses that withstand
    their own attacks fall), while the two tables a skimmer sees are our own hand table's errors and the cost; consider
    it in the remake (user: "needs more thought"). For (c), **a known weakness, not fixable now** (user: "keep it in mind

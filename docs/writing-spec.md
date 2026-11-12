@@ -394,3 +394,17 @@ The "implied" notes are earlier readings, not instructions; several of them were
   table shows 5.3): "Sure, we can consider this when rebuilding the tables. But its needs more thought." 7 (§2
   promises an attack and a defense): "This is true. We have a weakness here that we can't immedietly fix. Make a note
   of it and we'll keep it in mind for the rest of the project."
+  On Claude's reassessment of 5 (drop it: after finding 1, PV's paragraph runs from their claim to our replication to
+  the rename; the fast reader has the leads): accepted implicitly ("I agree with that loose end. Please make that fix",
+  on the uncited "usually tested against an attack it did not learn from").
+- **2026-11-12 (session 42), the table remake, first attempt (mock-ups in
+  `docs/archive/table-mockups-2026-11-12/`).** The user's brief before the mock-ups: "My general preference for tables
+  is that they should err on the side of being 'data-dense' as opposed to 'linguistically-dense', although there are
+  absolutely times when exceptions to this rule result in superior outcomes. We should design the table in a way that
+  (i) effectively communicates out findings, (ii) is aesthetically pleasing, and (iii) is extensible if we later choose
+  to add additional domains. Planning for extensibility is the most challenging of these, but also the most flexible;
+  all told, it should be the least important consideration when designing the tables." On the mock-ups (option 1: the
+  hand table's errors with Cause and Files columns; a new 5.3 table of the learned defenses with a "weight on
+  lowerable" column; Table 4 in one column; a per-operation cost table; option 2: one detectors table grouped by where
+  the directions come from): "Okay, these are pretty bad, quite possibly as bad if not worse than what we already had."
+  No specifics given; the session ended there.

@@ -22,7 +22,7 @@ check `manuscript/main.aux` (`grep newlabel manuscript/main.aux`), and add the t
 |---|---|---|
 | `PLAN.md` | thesis, where the paper stands, the decisions of 2026-11-09, next steps, settled decisions | every session |
 | `docs/status.md` | current state, what waits on the user, short session log | every session; update at the end |
-| `docs/resume-prompt.md` | where the next session starts (a holistic review of §5 weighing the contributions' importance; then questions and answers, tables, shortening) | starting a session |
+| `docs/resume-prompt.md` | where the next session starts (§5's tables remade, restarted after the first mock-ups were rejected; then questions and answers, shortening) | starting a session |
 | `docs/checkpoint-prompt.md` | the user's prompt for ending a session | the user ends a session |
 | `docs/paper-mock.md` | the paper's contributions, outline with word budgets, and tables | planning or writing any section; checking whether new work belongs in the paper |
 | `docs/writing-spec.md` | the user's raw reactions to drafts, newest first | writing paper prose (with the `paper-prose` skill) |
@@ -55,11 +55,13 @@ or when changing an experiment. Run scripts are in `run/` (one per step, numbere
 
 | Folder or file | Contents |
 |---|---|
-| `docs/archive/status-log-2026-11-10-to-11.md` | the session log, sessions 29-33 (search, don't read) |
+| `docs/archive/status-log-2026-11-10-to-11.md` | the session log, sessions 29-34 (search, don't read) |
 | `docs/archive/status-log-2026-11-09.md` | the session log, sessions 21-27 (search, don't read) |
 | `docs/archive/status-log-2026-10-to-2026-11-09.md` | the full session log until 2026-11-09 (32k words; search, don't read) |
 | `docs/archive/PLAN-log-2026-10-22-to-2026-11-09.md` | the plan's history, every "Next steps" block |
 | `docs/archive/resume-prompt-2026-11-06.md` | the previous resume prompt (research track details: sums-row routing, scale-up budget) |
+| `docs/archive/resume-prompt-2026-11-12-s41b.md` | the resume prompt of session 42 (written in session 41b): §5's holistic review weighing the contributions' importance, how the user wants reviews handled, settled points of 5.3-5.4 |
+| `docs/archive/table-mockups-2026-11-12/` | Claude's first mock-ups of §5's tables (session 42), rejected by the user ("pretty bad"); `mock.tex` and `mock.pdf`, to know what not to repeat |
 | `docs/archive/resume-prompt-2026-11-12-s40.md` | the resume prompt of session 41b (written in session 40): §5's humanistic review, how the user wants reviews handled, points a careful reader may stop at in §5.3 |
 | `docs/archive/resume-prompt-2026-11-11-s38.md` | the resume prompt of session 40 (written in session 38): the lightweight second review of §4, how the user wants reviews handled, the §5 review's known items |
 | `docs/archive/resume-prompt-2026-11-11-s39b.md` | the second resume prompt of session 39: reading run 135, points a careful reader may stop at in §5.3 |

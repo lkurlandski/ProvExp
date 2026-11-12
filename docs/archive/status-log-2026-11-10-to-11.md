@@ -1,7 +1,29 @@
-# Session log, sessions 29-33 (2026-11-10 to 2026-11-11)
+# Session log, sessions 29-34 (2026-11-10 to 2026-11-11)
 
 Moved from `docs/status.md` on 2026-11-12. Search, don't read.
 
+- **2026-11-11 (session 34, continued): run 133 read.** Results and hypotheses in its header; design doc §10.4-10.5.
+  PV-best evaded 4/9, each by one rename; it detects 26.2% at 1% FPR. Not the 8 broken shift outputs (run 134,
+  PV-clean: 26.7%; `a_pv_hole.py --drop_import_loss`); partly that PV constrains features no attack moved (PV-free,
+  never-moved left free: 50.9%; `pv-free.monotone.tsv`). ERDALT-best 24/29 by gamma_api with the pilot donors;
+  adversarial training 12/50 and 23/50. The user agreed with §10.5's claim, but kept leave-one-out: redone the fair
+  way as run 135 (folds from run 133's outputs; ERDALT on every visible GPU, threads = NUM_WORKERS / lanes; no
+  `GPUS` variable, CLAUDE.md updated). PLAN.md decision 10 and the mock's 5.3 rewritten. **Next:** read run 135;
+  then the audit table and 5.3's prose.
+
+- **2026-11-11 (session 34): §5.3 redesigned; PV's hole traced to the attack harness's fixed seed.** An overview,
+  harsh analysis and options for §5.3, then re-assessed against the plan, mock and code at the user's request:
+  `docs/evidence/section-5.3-design.md` (nine disagreements between draft, mock and code: PV learned from the test files;
+  GAMMA's names identical on every file; PV's hole not mostly section names for PV-4; the "51% vs 53%" control
+  invalid, the in-catalogue toolkit evades 13/49; the learned region shows nothing beyond PV's hole; ERDALT's 89.7% is
+  a sufficient-rule check). Run 131 read (header, record). Run 132 (`scripts/a_coverage.py`, `a_advtrain.py
+  --seed_per_file`): only 2 of 1,070 lowerable features need operations the toolkit lacks; our own edits lower 915;
+  90 of those the toolkit never lowers, 82 section features; with a seed per file, one attack covers all 50 size,
+  entropy and virtual-size buckets (fixed seed: 13, 21, 33) and closes 71 of the 90. User: do what is best for the
+  research, not what prior work did; fix design gaps; runs over ~10 min go to the user. Phase 2 scripted and
+  smoke-tested: `run/133_varied_observation.sh` (`a1_evaluate.py --seed_per_file`, `a_pv_hole.py --adv_dir`). Commits
+  e176432, c2a117d. **Next:** the user runs 133; this session reads it; another session takes the 5.1-5.2 feedback
+  (`docs/resume-prompt.md`).
 - **2026-11-11 (session 33): run 131 partly read, C2 checked; §5.3's methodology to restart.** Run 131's ERDALT
   evaluation had crashed on a model-path bug (training wrote `seed-0-loo-*`, evaluation read `seed-0-s10-loo-*`);
   folders renamed, script fixed (finished steps skip), rerun by the user. PV leave-one-out: gamma_api 5/21, other

@@ -3,9 +3,9 @@
 Kept short: the current state, what waits on the user, and the last few sessions in a line or two each. The plan and
 its reasons are in `PLAN.md`. When the session log below grows past about ten entries, move the oldest to
 `docs/archive/` (the log before 2026-11-09 is `docs/archive/status-log-2026-10-to-2026-11-09.md`; sessions 21-28 are in
-`docs/archive/status-log-2026-11-09.md`, sessions 29-33 in `docs/archive/status-log-2026-11-10-to-11.md`).
+`docs/archive/status-log-2026-11-09.md`, sessions 29-34 in `docs/archive/status-log-2026-11-10-to-11.md`).
 
-## Current state (2026-11-12, sessions 34-41)
+## Current state (2026-11-12, sessions 34-42)
 
 - **Framework (§2-3):** rewritten; the user is reasonably satisfied. Open: the user's holistic read of Sound
   Directions after round 4 (finetuning only).
@@ -21,6 +21,7 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
   with the certificate table apart, the two published analyses in their own paragraphs; 5.3 says the derived table
   marks 142 features as ones an edit *may* lower (20 shown); 5.4's 0.1% breakdown keeps only what clears retraining
   noise; Table 2's attack names and "population" throughout, no "pilot". The user has not read §5 end to end.
+  Holistic review in session 42 (findings 1-4 applied, 68f6385, 49d879d). Tables 3 and 4: to be remade (next).
 - **§5.3** is drafted (session 39) from the claim agreed in session 34 (`docs/evidence/section-5.3-design.md` §10.5, which
   stays the record of how the design came about). Learned-region paragraph cut, no audit table for now (tables
   remade later), no seed or protocol-hygiene details in the paper (user). Every learned defense is built from run 133's
@@ -38,19 +39,32 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
 
 ## Waiting on the user
 
-- **Next session, first:** a holistic humanistic review of all of §5, weighing how important a human reader will judge
-  its contributions (user, 2026-11-12; PLAN.md step 1b). Then what comes after (PLAN.md, next step 2): §5's questions and answers given visual emphasis (user), the
-  tables remade, §4 and §5 shortened, §2 aligned; `docs/resume-prompt.md`.
+- **Next session, first:** the table remake, restarted (user, session 42: the tables before the question-and-answer
+  emphasis). The first mock-ups were rejected without specifics; start from what the user dislikes in the current
+  tables and in the mock-ups (`docs/resume-prompt.md`).
 - The holistic read of Sound Directions (any time).
 
 ## Scheduled (in order; PLAN.md, next steps)
 
-- The holistic review of §5 (contributions' importance), then §5's question-and-answer emphasis, the tables remade, §4 and §5 shortened, §2's closing and contribution 4 aligned (to consider
-  with the user).
+- The tables remade, then §5's question-and-answer emphasis, §4 and §5 shortened, §2's closing and contribution 4
+  aligned (to consider with the user; §2's attack promise is a known weakness, PLAN.md step 2).
 - The 4 MB-truncation brainstorm (the ERDALT check is done, session 41).
 - Then decide with the user whether the paper is ready for the next full simulated review.
 
 ## Session log
+
+- **2026-11-12 (session 42): §5's holistic review (contributions' importance); the table remake's first attempt
+  rejected.** Seven findings; the user approved 1-4, applied in 68f6385: what Gimenez et al. report (the expert set and
+  PV never evaded by the toolkit attacks; detection and robustness a "trade-off regarding features set") stated before
+  our results; the §5 lead names what breaks; 5.4 names both alternatives (learned, hand-picked); 5.2's cost paragraph
+  ends on why a broken guarantee matters. Finding 5 (5.3's topic sentences) dropped; the uncited "usually tested
+  against an attack it did not learn from" fixed (49d879d). Findings 6 (no table shows 5.3) and 7 (§2 promises an
+  attack; a known weakness, not fixable now) noted in PLAN.md step 2. The tables come before the question-and-answer
+  emphasis (user). Claude's table mock-ups (`docs/archive/table-mockups-2026-11-12/`) were judged "pretty bad, quite
+  possibly as bad if not worse than what we already had"; facts they surfaced are in PLAN.md step 2 (a), among them
+  that 5.2's *Why it errs* names three parser facts where the errors need five. `make check`: a 2 pt overfull page box
+  among the appendix floats since 68f6385 (harmless). **Next:** `docs/resume-prompt.md` (the tables, restarted from
+  what the user dislikes).
 
 - **2026-11-12 (session 41b, parallel to 41): §5's humanistic review, four passes.** Lead and 5.1 (seven findings),
   5.2 (seven; #7, the Rich header, dropped by the user: a PE construct the reader can look up), 5.3 (five, plus the
@@ -103,15 +117,6 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
   "signature table" for the certificate table. **Next:** a lightweight re-review of §4, then §5
   (`docs/resume-prompt.md`).
 
-- **2026-11-11 (session 34, continued): run 133 read.** Results and hypotheses in its header; design doc §10.4-10.5.
-  PV-best evaded 4/9, each by one rename; it detects 26.2% at 1% FPR. Not the 8 broken shift outputs (run 134,
-  PV-clean: 26.7%; `a_pv_hole.py --drop_import_loss`); partly that PV constrains features no attack moved (PV-free,
-  never-moved left free: 50.9%; `pv-free.monotone.tsv`). ERDALT-best 24/29 by gamma_api with the pilot donors;
-  adversarial training 12/50 and 23/50. The user agreed with §10.5's claim, but kept leave-one-out: redone the fair
-  way as run 135 (folds from run 133's outputs; ERDALT on every visible GPU, threads = NUM_WORKERS / lanes; no
-  `GPUS` variable, CLAUDE.md updated). PLAN.md decision 10 and the mock's 5.3 rewritten. **Next:** read run 135;
-  then the audit table and 5.3's prose.
-
 - **2026-11-11 (session 37): §5.4 reviewed by Claude and revised.** At the user's request, Claude reviewed §5.4 with
   the `humanistic-paper-review` skill instead of the user reading it. The user agreed with the headline findings,
   less with the small ones (recurring patterns, term ledger). Applied: the subsection reordered so no paragraph points
@@ -150,16 +155,3 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
   purpose-then-facts added to `paper-prose`. Scale-up: the first thing after the write-up (user; PLAN.md step 5).
   Commits 0b64c9a, e3375ca, 9b7d0ba. **Next:** §5.4 in a new session (`docs/resume-prompt.md`).
 
-- **2026-11-11 (session 34): §5.3 redesigned; PV's hole traced to the attack harness's fixed seed.** An overview,
-  harsh analysis and options for §5.3, then re-assessed against the plan, mock and code at the user's request:
-  `docs/evidence/section-5.3-design.md` (nine disagreements between draft, mock and code: PV learned from the test files;
-  GAMMA's names identical on every file; PV's hole not mostly section names for PV-4; the "51% vs 53%" control
-  invalid, the in-catalogue toolkit evades 13/49; the learned region shows nothing beyond PV's hole; ERDALT's 89.7% is
-  a sufficient-rule check). Run 131 read (header, record). Run 132 (`scripts/a_coverage.py`, `a_advtrain.py
-  --seed_per_file`): only 2 of 1,070 lowerable features need operations the toolkit lacks; our own edits lower 915;
-  90 of those the toolkit never lowers, 82 section features; with a seed per file, one attack covers all 50 size,
-  entropy and virtual-size buckets (fixed seed: 13, 21, 33) and closes 71 of the 90. User: do what is best for the
-  research, not what prior work did; fix design gaps; runs over ~10 min go to the user. Phase 2 scripted and
-  smoke-tested: `run/133_varied_observation.sh` (`a1_evaluate.py --seed_per_file`, `a_pv_hole.py --adv_dir`). Commits
-  e176432, c2a117d. **Next:** the user runs 133; this session reads it; another session takes the 5.1-5.2 feedback
-  (`docs/resume-prompt.md`).
