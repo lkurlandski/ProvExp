@@ -208,7 +208,7 @@ them (below).
    **§4, then §5, rewritten in blocks** with the user's review after each (the way Sound Directions round 4 worked;
    use the `paper-prose` skill). The mechanical vocabulary fixes go with them (R3/R4, "rate", "stated in elements",
    §6's "margins"). *Done for §4 and §5's realignment (sessions 28-29).* **Now: §5's structural rewrite
-   (decision 10)** in four blocks (all four drafted; 3, *What Observed Attacks Miss*, in session 39 with run 135's ERDALT folds still in blue; 3 and 4 await the user's review), with checks C1-C3 of the paper mock before the blocks that need them; then §2's
+   (decision 10)** in four blocks (all four drafted; 3, *What Observed Attacks Miss*, in session 39, its run 135 values filled in session 40; 3 and 4 await the user's review), with checks C1-C3 of the paper mock before the blocks that need them; then §2's
    closing sentence and contribution 4 against the findings; then shorten §4 and §5 together (§4.3 first).
 4. **The next full simulated review, once §4 and §5 are realigned and before the introduction** (decided 2026-11-09).
    Right before running it, update `docs/reviews/review-prompt.md`: it still targets the 2026-11-02 body draft and
@@ -230,9 +230,9 @@ them (below).
      the 1,000-candidate checkpoint, a fixed subset, a cap on the monotone rows), and ERDALT's stopping criterion (met
      only at the last epoch at seed 0).
    - §5.3: drafted in session 39 (decision 10, session 39 note). **Run 135** (leave-one-out from run 133's
-     outputs): PV folds read (0 evaded in all eight); ERDALT folds still running at the end of session 39. Read them,
-     record the results in the script's header once it has finished, and replace the blue values in 5.3's *Holding one
-     attack out* and Appendix D's leave-one-out table.
+     outputs) read in session 40: PV 0 evaded in all eight folds; ERDALT 25/29 when GAMMA imports is held out, at
+     most 2 in the other seven folds. 5.3 and Appendix D's leave-one-out table have no blue values left. Open, optional:
+     ERDALT's score floor (every evasion ends just under its threshold), a possible reviewer objection to our port.
 6. **Other domains (later):** ideas in `docs/domain-selection-brainstorming.md`. Not before EMBER is complete; no
    literature or selection work until the user opens it.
 7. **The introduction, discussion, and abstract** last, once the body is settled.

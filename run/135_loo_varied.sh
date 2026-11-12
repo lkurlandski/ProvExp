@@ -36,6 +36,14 @@
 #   (2,784 vectors = 3,183 - gamma_api's 399; 1,153 features kept), training 20 s, gamma_api on 12 pilot malware with
 #   a seed per file (1 detected, counted as held-out, not evaded; 3 min at 4 workers). (2) the padding fold's ERDALT,
 #   2 epochs on 20,000 samples per split: 2,783 vectors (= 3,183 - padding's 400), the seven attacks recorded.
+# Results (the user ran it, 2026-11-11 16:33-19:54, ~3.4 h: PV folds ~45 min; ERDALT training ~1.7 h on two GPUs,
+#   ~25 min per model; the held-out attacks on ERDALT ~1 h). Summary: artifacts/experiments/a_loo_varied/summary.json.
+#   PV: 0 evaded in all eight folds (detected 19 gamma_sections, 8 format_exploit, 9 in the other six). Held,
+#     including gamma_api (0, not the 1-2 guessed).
+#   ERDALT (evaded/detected): gamma_sections 1/27, gamma_api 25/29, gamma_shift 0/30, content_shift 1/30, dos_extend
+#     0/28, header_fields 2/29, padding 1/28, format_exploit 0/29; mean 13.0%, 27 files evaded in some fold.
+#     gamma_api held (25/29, about as often as ERDALT-best trained on all eight: 24/29). header_fields failed (2, not
+#     ~10; run 131, from the seed-0 vectors, had 10/25) and so did the mean (13%, not 20-40%): only one fold is high.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 source env/bin/activate

@@ -252,14 +252,14 @@ did not make.
 A learned defense is usually tested against an attack it did not learn from. We built PV and ERDALT eight more times,
 each from the outputs of seven of the toolkit attacks, and attacked each version with the eighth
 (\Cref{tab:ember:loo}). No held-out attack evades PV on any of the 8 to 19 test malware a version detects, so this test
-vouches for a detector that a single rename evades. The held-out attacks evade ERDALT in \synthetic{two} of the eight
-folds, import injection on \synthetic{25} of the \synthetic{29} files and the header-field attack on \synthetic{10};
-the test shows that ERDALT fails, but not on which features. Whether a learned defense holds depends on attacks the
+vouches for a detector that a single rename evades. The held-out attack evades ERDALT on 25 of 29 test malware when it
+is GAMMA imports, and on at most 2 of 27 to 30 in the other seven folds; the test shows that ERDALT fails, but not on
+which features. Whether a learned defense holds depends on attacks the
 defender did not run, and only the derived table shows, before any attack runs, which of the features it trusts an edit
 can lower.
-% SYNTHETIC: run 135 (run/135_loo_varied.sh), ERDALT folds still running on 2026-11-11 17:35; the values in blue are
-% its header's predictions. PV folds read: artifacts/experiments/a_loo_varied/pv/<attack>/table.json, 0 evaded in all
-% eight (detected: 9, 9, 8, 9, 19, 9, 9, 9).
+% Run 135 (run/135_loo_varied.sh), artifacts/experiments/a_loo_varied/summary.json. PV: 0 evaded in all eight folds
+% (detected 8-19). ERDALT evaded/detected: gamma_sections 1/27, gamma_api 25/29, gamma_shift 0/30, content_shift 1/30,
+% dos_extend 0/28, header_fields 2/29, padding 1/28, format_exploit 0/29.
 
 \subsection{What Robustness Costs}
 \label{sec:eval:detectors}

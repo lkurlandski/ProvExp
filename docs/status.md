@@ -5,21 +5,22 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
 `docs/archive/` (the log before 2026-11-09 is `docs/archive/status-log-2026-10-to-2026-11-09.md`; sessions 21-28 are in
 `docs/archive/status-log-2026-11-09.md`).
 
-## Current state (2026-11-11, sessions 34-39)
+## Current state (2026-11-12, sessions 34-40)
 
 - **Framework (§2-3):** rewritten; the user is reasonably satisfied. Open: the user's holistic read of Sound
   Directions after round 4 (finetuning only).
 - **§4:** drafted in the new structure (lead, 4.1-4.4, Appendix D "The EMBER Instance"), then revised in session 38
   after Claude's review with the `humanistic-paper-review` skill (all eight findings applied; 4.3 split into
-  *Operations* and *Signature*; 4.4 reordered). About 1,500 words against ~1,000; further shortening with §5 later.
-  Next: a lightweight second review of the revised §4 (user), then the §5 review.
+  *Operations* and *Signature*; 4.4 reordered). Second, lightweight review in session 40 (three findings, all
+  applied: 4.3.2 states what the sample-read signature rests on; closure "checked rather than proven"). §4 is in good
+  shape. About 1,500 words against ~1,000; further shortening with §5 later.
 - **§5:** realigned with §3-4 in vocabulary and claims (session 29). Structural rewrite agreed in session 30 (PLAN.md,
   decision 10): three findings (what hand analysis misses, what observed attacks miss, what robustness costs), not a
   validation section and not a defense paper. Plan, one line per paragraph, and checks C1-C3: `docs/paper-mock.md`,
   §5. Blocks 1-2 (lead, 5.1, 5.2) drafted and revised twice (session 35: lead and 5.1 after the user's second review,
   up to 5.1's Attacks paragraph; the user has not yet commented on 5.1's last paragraph or on 5.2's second round).
   **Block 3 (5.3 *What Observed Attacks Miss*)** drafted in session 39 (7a2ceff, 9d0369f, 035d977), unreviewed;
-  run 135's ERDALT folds still in blue. **Block 4 (5.4 *What Robustness Costs*)** drafted in session 36,
+  run 135's values filled in session 40, so §5 has no blue values left. **Block 4 (5.4 *What Robustness Costs*)** drafted in session 36,
   revised in session 37 after Claude's review with the `humanistic-paper-review` skill (reordered so no paragraph
   points forward; commits c49f654, 9113acb, 23ab085); the user has not read the revised text.
 - **§5.3** is drafted (session 39) from the claim agreed in session 34 (`docs/section-5.3-design.md` §10.5, which
@@ -31,17 +32,16 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
   PLAN.md, next step 5. Run 131 (leave-one-out) finished: PV 5/21 on gamma_api, 0 elsewhere; ERDALT high on
   gamma_api and header_fields; ERDALT-8 adaptive 17/24. Runs 132 (coverage by source, seed smoke), 133 (§5.3 Phase
   2, ~4.8 h) and 134 (PV-clean, PV-free; Claude, ~3 min) done and read. **Run 135** (leave-one-out from run 133's
-  outputs) launched by the user 2026-11-11 at 16:33: PV's eight folds finished by 17:35, 0 evaded in every fold
-  (detected 8-19 per fold); ERDALT folds were still running at the end of session 39. Its header has no results yet.
+  outputs) finished 2026-11-11 19:54 (~3.4 h) and read in session 40: PV 0 evaded in all eight folds; ERDALT 25/29
+  when GAMMA imports is held out, 0-2 in the other seven (header_fields 2, not the predicted ~10). Results in its
+  header and in `docs/section-5.3-design.md`'s log.
 - **Documentation:** reorganized 2026-11-09; index `docs/README.md`.
 
 ## Waiting on the user
 
-- **A lightweight second review of the revised §4, then the holistic review of §5** with the
-  `humanistic-paper-review` skill (user, session 38; `docs/resume-prompt.md`). The user's own pending comments on
-  5.1's Checking results and 5.2 (9b7d0ba) can join the §5 review.
-- **The user's review of §5.3** (session 39's draft; the user had not read it). New session from
-  `docs/resume-prompt-5.3.md`: read run 135's ERDALT folds, replace the blue values, then the review.
+- **The review of §5** (lead, 5.1-5.4; the two parallel tracks have merged now that 5.3 is complete). The user
+  has not read 5.3 or the revised 5.4; their own pending comments on 5.1's Checking results and 5.2 (9b7d0ba) can
+  join. The user decides how (their own read, or Claude's `humanistic-paper-review` first).
 - The holistic read of Sound Directions (any time).
 
 ## Scheduled
@@ -52,6 +52,13 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
   decision 8 (iv) and step 4).
 
 ## Session log
+
+- **2026-11-12 (session 40): §4's second review; run 135 read.** Claude's lightweight review of §4 (three findings,
+  all applied in 75c1c9c): 4.3.2 names what the sample-read part of the signature rests on and what §5.1 checks (the
+  directions from 100 files equal those from 2,000; no edit moves a feature against them); its two consequences of a
+  write onto a located position sit together; 4.4 says closure is checked rather than proven. Run 135 read (hypotheses:
+  PV and ERDALT's gamma_api fold held; header_fields and the mean failed); 5.3's *Holding one attack out* and Table 9
+  rewritten with the real values (the finding unchanged). The two resume prompts' tasks are done except the §5 review.
 
 - **2026-11-11 (session 39, parallel to 38): §5.3 drafted in three blocks.** Run 135 had just started, so its
   ERDALT folds are in blue (its PV folds finished during the session: 0 evaded in all eight). User decisions: cut the

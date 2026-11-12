@@ -137,17 +137,17 @@ fold's detector detects, as in \Cref{sec:eval:setup}.
     Held-out attack & \multicolumn{2}{c}{PV} & \multicolumn{2}{c}{ERDALT} \\
     & detected & evaded & detected & evaded \\
     \midrule
-    GAMMA sections & 19 & 0 & \synthetic{29} & \synthetic{0} \\
-    GAMMA imports & 9 & 0 & \synthetic{29} & \synthetic{25} \\
-    GAMMA shift & 9 & 0 & \synthetic{29} & \synthetic{0} \\
-    content shift & 9 & 0 & \synthetic{29} & \synthetic{0} \\
-    DOS extension & 9 & 0 & \synthetic{29} & \synthetic{0} \\
-    header fields & 9 & 0 & \synthetic{29} & \synthetic{10} \\
-    padding & 9 & 0 & \synthetic{29} & \synthetic{0} \\
-    format exploit & 8 & 0 & \synthetic{29} & \synthetic{0} \\
+    GAMMA sections & 19 & 0 & 27 & 1 \\
+    GAMMA imports & 9 & 0 & 29 & 25 \\
+    GAMMA shift & 9 & 0 & 30 & 0 \\
+    content shift & 9 & 0 & 30 & 1 \\
+    DOS extension & 9 & 0 & 28 & 0 \\
+    header fields & 9 & 0 & 29 & 2 \\
+    padding & 9 & 0 & 28 & 1 \\
+    format exploit & 8 & 0 & 29 & 0 \\
     \bottomrule
   \end{tabular}
 \end{table}
-% SYNTHETIC: run 135, ERDALT columns (header predictions). PV columns read from a_loo_varied/pv/<attack>/table.json.
+% Run 135: artifacts/experiments/a_loo_varied/{pv,erdalt}/<attack>/table.json.
 % Attack names as in Table 2 (tab:instances:catalogue).
 

@@ -430,3 +430,9 @@ PV's accuracy gap, and whether ERDALT's score floor needs a better reproduction 
   so the 847-vs-928 comparison (same 314 training files; the plan's "745" was the 36 pilot files) and PV-all's 14/22
   stay in this document only. Run 135's PV folds: 0 evaded in all eight (detected 9, 9, 8, 9, 19, 9, 9, 9; gamma_api
   0/9, against the predicted 1-2). ERDALT folds pending, in blue in the draft.
+- **2026-11-12 (session 40): run 135 read** (finished 2026-11-11 19:54, ~3.4 h). ERDALT folds, evaded/detected:
+  gamma_sections 1/27, gamma_api 25/29, gamma_shift 0/30, content_shift 1/30, dos_extend 0/28, header_fields 2/29,
+  padding 1/28, format_exploit 0/29 (mean 13.0%). Held: gamma_api high (25/29, as ERDALT-best trained on all eight:
+  24/29), near 0 elsewhere. Failed: header_fields (2, not ~10) and the mean (13%, not 20-40%). The finding stands:
+  leave-one-out flags only the fold whose attack already evades the all-eight ERDALT, and vouches for PV in every fold.
+  5.3's blue values and Table 9 replaced.
