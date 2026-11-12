@@ -1,6 +1,7 @@
 % Section 6, Related work (about 700 words; up to ~1,200 while drafting): problem-space attacks, constraints over
 % features, robust and monotone detectors, incremental computation and provenance. Abstract interpretation is cited
-% in the body where it is used, not here. Spine: docs/writing-spec.md reaction log (2026-11-03).
+% here and in Sound Directions (R6, 2026-11-12; notes in docs/evidence/r6-prior-work.md).
+% Spine: docs/writing-spec.md reaction log (2026-11-03).
 
 \paragraph{Problem-space attacks}
 Our work builds on the formalization of problem-space attacks by Pierazzi et al.~\cite{pierazzi2020intriguing}. They
@@ -92,10 +93,12 @@ annotate each output of a query with the inputs that produced it, which is what 
 feature. Self-adjusting computation~\cite{acar2002adaptive} and incremental parsing~\cite{wagner1998efficient} re-run
 only the part of a program or a parse that a change can reach, and incremental parsing reparses only as far around an
 edit as the parser's lookahead reaches, much as a write to a file can change only the scanned items around it, such as
-the strings and windows it overlaps, unless it lands on a position the parser reads to find other items. In all of these settings the
-change is given in the program's own terms, as rows inserted into a table or tokens edited in a parse tree, and the task
-is to update the output for that one known change. An attacker gives the defender neither. The edit changes bytes of a
-file that has not been parsed, so which items it creates, removes, or alters must be computed first. And the defender
-does not ask about one known change but about every edit the threat model allows, on every input of a population. Our
-framework therefore computes two things these techniques do not. It finds the items that an edit of raw elements
-changes, and it bounds which way each feature can move under every edit of a declared set.
+the strings and windows it overlaps, unless it lands on a position the parser reads to find other items. Each of these
+techniques updates the output after one edit that has been made. A defender does not know the attacker's edit, and asks
+instead about every edit the threat model allows, on every input of a population, before any content is chosen.
+Reasoning soundly about all executions of a program at once is the subject of abstract
+interpretation~\cite{cousot1977abstract}. Calzavara et al.~\cite{calzavara2020certifying} use it to certify decision
+trees against an attacker specified as rewriting rules that change individual features. Our framework applies this kind
+of reasoning to the extractor rather than to the model. It bounds which way each feature can move under every edit of a
+declared set, including writes to positions that locate items far from the write, and the bounds it returns are the
+kind of feature-space description that such certification takes as input.
