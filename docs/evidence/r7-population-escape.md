@@ -125,3 +125,6 @@ the header-field overwrites are used too, which also answers part of R1) and `--
 - 2026-11-12 (session 48): R7 explained to the user, options weighed, decision agreed (§5-6). Run 137 (escape audit)
   run and read (§4). `a1_adaptive.py` extended (`--score real`, `--escape`), smoke-tested; run 138 scripted for the
   user.
+- 2026-11-12 (session 49): no change to R7; run 138 still running at the end of the session. The parallel line R1
+  (MAB-Malware, run 139; PLAN.md decision 12) touches 5.4's *The price*, *The width* and *Beyond the guarantee*, not
+  *Where the guarantee holds*.

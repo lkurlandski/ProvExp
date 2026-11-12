@@ -57,7 +57,7 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
 - **R1, attack strength (session 49):** decision 12. MAB-Malware vendored and driven by `scripts/mab_attack.py`
   (tested equal to upstream's own hand-over); run 139 scripted for the user; §5, Tables 4-5 ("evaded by any attack")
   and the new per-attack Table 11 carry its predicted values in blue. The adaptive attack scores by extraction at the
-  scale-up (`--score real`); open: whether §2 still promises "the attack scoring without extraction".
+  scale-up (`--score real`); §2 unchanged (user). Widen first, then scale (user).
 - **Documentation:** reorganized 2026-11-09, cleaned up 2026-11-12 (stale resume prompts, the §4 note archived; the
   §5.3 design doc moved to `docs/evidence/`); index `docs/README.md`.
 
@@ -65,11 +65,11 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
 
 - **Run 138** (`run/138_escape_pilot.sh`, ~5-6 h with 16 workers; started 16:03 on 2026-11-12; log
   `artifacts/logs/escape_pilot.log`).
-- **Run 139** (`run/139_mab_malware.sh`, MAB-Malware against every detector, ~1-1.5 h; smoke: 0 of 9 evaded on the undefended detector, so the blue predictions are likely too high; logs
-  `artifacts/logs/mab_malware-*.log`). Can run alongside run 138 if cores allow.
-- Two questions: §2's "attack scoring without extraction" (PLAN.md, decision 12 (iii)); scale first or widen first
-  (PLAN.md, next step 3; Claude recommends widening first). **Next session:** `docs/resume-prompt.md`.
-- The holistic read of Sound Directions (any time).
+- **Run 139** (`run/139_mab_malware.sh`, MAB-Malware against every detector; the user runs it with `NUM_WORKERS=4`
+  in tmux, ~2 h; logs `artifacts/logs/mab_malware-*.log`). Smoke: 0 of 9 evaded on the undefended detector, so the
+  blue predictions are likely too high.
+- **Next session:** `docs/resume-prompt.md` (whichever of runs 138 and 139 has finished or crashed; if neither, a new
+  weakness from the review, orthogonal to R7 and R1).
 
 ## Scheduled (in order; PLAN.md, next steps)
 
@@ -97,8 +97,11 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
   dropped by Claude after a check (prediction 0.17 s vs extraction 0.09 s per candidate). Found and fixed: upstream's
   section-append action loops forever on an empty donor content (empty sections skipped). Written: §5.1 (MAB-Malware,
   "any attack"), 5.3 (PV's hole, adversarial training), 5.4 (the price, the width, beyond the guarantee), Tables 4-5,
-  Table 11 (per attack, Appendix D), all MAB values blue. Commits 56410b3, bc0dfae, 468288b, 0b801bb. **Next:**
-  `docs/resume-prompt.md`.
+  Table 11 (per attack, Appendix D), all MAB values blue. Smoke of run 139: 0 of 9 evaded on the undefended detector
+  (the toolkit 7 of 9); scores move but stay far above the threshold; recorded in the run header, hypothesis kept.
+  The user settled the last questions: §2 stays (§5 need not show every motivating point; natively written, the
+  partial computation would be far faster; this had been answered before) and widen first, then scale. Commits
+  56410b3 .. f47c1f7. **Next:** `docs/resume-prompt.md`.
 
 - **2026-11-12 (session 48): the review read; R7 analysed and decided; escape audit and pilot.** The review run was
   complete (the first meta-reviewer at max effort hit the session limit and was resumed at xhigh). Claude read all

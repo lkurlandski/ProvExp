@@ -22,7 +22,7 @@ check `manuscript/main.aux` (`grep newlabel manuscript/main.aux`), and add the t
 |---|---|---|
 | `PLAN.md` | thesis, where the paper stands, the decisions of 2026-11-09, next steps, settled decisions | every session |
 | `docs/status.md` | current state, what waits on the user, short session log | every session; update at the end |
-| `docs/resume-prompt.md` | where the next session starts (read runs 138 and 139; R7 and R1 continued; the next limitations R2, R18, R6 and the writing batch; two open questions) | starting a session |
+| `docs/resume-prompt.md` | where the next session starts (whichever of runs 138 (R7) and 139 (R1, MAB-Malware) finished; if neither, a new weakness orthogonal to both, R6 and the writing batch first) | starting a session |
 | `docs/checkpoint-prompt.md` | the user's prompt for ending a session | the user ends a session |
 | `docs/paper-mock.md` | the paper's contributions, outline with word budgets, and tables | planning or writing any section; checking whether new work belongs in the paper |
 | `docs/writing-spec.md` | the user's raw reactions to drafts, newest first | writing paper prose (with the `paper-prose` skill) |

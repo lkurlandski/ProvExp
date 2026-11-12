@@ -250,9 +250,12 @@ them (below).
     operations, header-field overwrites included). The hybrid Claude proposed (predict where possible, extract where
     declined) was dropped after a check: prediction costs 0.17 s per candidate against 0.09 s for extraction in our
     implementation (session 49, 6 files, 115 candidates; predictions exact except the parser warnings).
-    **Open (user):** with `--score real`, Proposition 1 no longer scores the attack's candidates, and decision 6 named
-    "the attack scoring without extraction" as one of the three evaluated uses that §2 promises. Either keep the
-    predicted scoring where it applies for that reason (about twice the cost), or drop that use from §2 and §5.1.
+    *Settled (user, session 49; a repeat of an earlier answer, do not raise it again):* `--score real` at the scale-up,
+    and §2 stays as it is. The paper need not show every motivating point of §2 in §5, and the prediction is slower
+    here only because it is Python while the extractor's work runs in native code; written natively, the partial
+    computation would be far faster (memory `no-timing-claims`). (iv) *Run 139* (`run/139_mab_malware.sh`): the user
+    runs it with `NUM_WORKERS=4`. Smoke (recorded in its header): 0 of 9 files evaded on the undefended detector
+    (the toolkit evades 7 of them), scores moved but far from the threshold; the blue predictions are likely too high.
 
 ## Next steps, in order
 
@@ -285,8 +288,8 @@ records of the §5 reviews, the table remake and the ERDALT check, is in
    population. Plus whatever the review adds (meta-review §7: the routed system end to end, now the unrouted one of
    decision 11; MAB-Malware; the adaptive search scoring by extraction where the computation declines, as run 138's
    `--score real`; equal-information learned defenses if decision 6 is revisited; thresholds from the validation split).
-   **Open question for the user (still open after session 49; Claude recommends widening first, then one scale-up):**
-   scale the existing experiments first (more files, seeds 0-2), or widen
+   **Answered (user, session 49): widen first, for now**, then scale everything once. The question was: scale the
+   existing experiments first (more files, seeds 0-2), or widen
    them first (the review's new experiments: MAB-Malware, the escape attack, equal-information baselines, a trial
    table), then scale everything once. The sums row's adaptive cell stays 0% with its
    footnote (session 36).
