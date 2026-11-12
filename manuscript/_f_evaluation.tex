@@ -224,14 +224,14 @@ attacks happened to leave alone, and so falls to any operation they lack.
 \paragraph{What ERDALT learns}
 ERDALT, the empirically robust detector of Gimenez et al., learns a linear layer that maps the feature change of every
 observed attack to a nonnegative vector, and feeds the layer's output to a monotone network
-(\Cref{sec:related-work}). Our port of their code, trained on the same 3,183 outputs, detects 62.7\% of the malware at
+(\Cref{sec:related-work}). Our implementation of their design (\Cref{sec:ember}), trained on the same 3,183 outputs, detects 62.7\% of the malware at
 a 1\% false-positive rate and 29 of the 50 test malware. Seven of the toolkit attacks evade it on none of these files,
 but GAMMA's import injection, one of the attacks it was trained on, evades it on 24. That attack adds imports taken from
 benign files, and on the test malware it takes them from benign test files, whose imports ERDALT never saw. The layer
 constrains the feature changes it was shown, not the directions in which edits can move the features, and the derived
 table shows how far apart the two are: 90\% of the layer's weight lies on features an edit can lower, nearly all of
 them features that edits move both ways. The adaptive attack evades it on 22 of the 29 files.
-% ERDALT-best (run 133 step 4; our port of their released code, 10% sums store v2, AUC 0.88). Toolkit:
+% ERDALT-best (run 133 step 4; their released code with the output layer constrained, docs/upstream-issues.md item 8; 10% sums store v2, AUC 0.88). Toolkit:
 % a_varied/toolkit-erdalt/table.json, gamma_api 24/29, the other seven 0. Adaptive 22/29:
 % a_varied/adaptive-erdalt-best/adaptive.json. Layer audit: a_varied/erdalt-best-hole/hole.json, 90.5% of the weight
 % violates the derived M_full table, 88.9% in features that move both ways. Caveat (not in the prose): ERDALT's

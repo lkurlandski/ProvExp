@@ -123,6 +123,12 @@ detector's trees weigh toward benign. Every file it keeps is written with our ow
 again.
 % scripts/a1_adaptive.py, --search beam (run 127): beam_search; target_buckets reads the booster.
 
+\paragraph{ERDALT.} We follow Gimenez et al.'s released code with one change: the output layer's weights are kept
+nonnegative, like those of the layers below it, so that the network is monotone as their Proposition~3 requires; the
+released code leaves the output layer unconstrained.
+% src/provexp/models/erdalt.py (project_monotone); docs/upstream-issues.md, item 8. Other differences (batch size,
+% validation-split selection) are left out of the paper on purpose (user, 2026-11-12).
+
 \paragraph{Leave-one-out.} \Cref{tab:ember:loo} gives the folds of \Cref{sec:eval:observed}. Each fold builds PV and
 ERDALT from the outputs of seven toolkit attacks on the 400 training malware and runs the eighth on the test malware the
 fold's detector detects, as in \Cref{sec:eval:setup}.
