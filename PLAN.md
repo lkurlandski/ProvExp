@@ -230,8 +230,9 @@ records of the §5 reviews, the table remake and the ERDALT check, is in
    (decision 8 (iv), with the evidence), written into §4.4, §5.1's Setup, 5.4 and Appendix D before the review, as
    the user asked in session 45. Its one blue value (the attacked malware in the population) joins the scale-up.
 2. **A full simulated review** of the manuscript as it then stands (body only; the last full review, 2026-11-02,
-   predates the new §3 and §5). Update `docs/reviews/review-prompt.md` first (it still targets the 2026-11-02 draft and
-   the archived formalization). It should re-check the open risks of the 2026-11-02 register (R4, R5, R6, R9, R11, R15,
+   predates the new §3 and §5). *Designed in session 47* as a reusable procedure (`docs/reviews/review-prompt.md`,
+   `docs/reviews/process/`): four independent reviewers who see only the PDF, then a meta-reviewer with full access
+   that answers the checklist below; run in session 48. It should re-check the open risks of the 2026-11-02 register (R4, R5, R6, R9, R11, R15,
    R16) and the 2026-11-04 attack-strength concern, and judge what no review has seen: the new §3 (novelty above all),
    the §2/§5 alignment, Proposition 1's role (no finding of its own), the corpus-checked signatures, §4's template on
    the page, the new population (the prompt's bullet on the 4 MB scope was added in session 46), decision 6's revisit

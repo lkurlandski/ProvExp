@@ -22,7 +22,7 @@ check `manuscript/main.aux` (`grep newlabel manuscript/main.aux`), and add the t
 |---|---|---|
 | `PLAN.md` | thesis, where the paper stands, the decisions of 2026-11-09, next steps, settled decisions | every session |
 | `docs/status.md` | current state, what waits on the user, short session log | every session; update at the end |
-| `docs/resume-prompt.md` | where the next session starts (designing the full simulated review and writing its instructions; the run comes in the session after) | starting a session |
+| `docs/resume-prompt.md` | where the next session starts (running the full simulated review and discussing its findings) | starting a session |
 | `docs/checkpoint-prompt.md` | the user's prompt for ending a session | the user ends a session |
 | `docs/paper-mock.md` | the paper's contributions, outline with word budgets, and tables | planning or writing any section; checking whether new work belongs in the paper |
 | `docs/writing-spec.md` | the user's raw reactions to drafts, newest first | writing paper prose (with the `paper-prose` skill) |
@@ -31,7 +31,7 @@ check `manuscript/main.aux` (`grep newlabel manuscript/main.aux`), and add the t
 | `docs/design.md` | the `provexp` package's data structures, conventions, thrember quirks | changing code in `src/provexp/` |
 | `docs/literature-2026-10-22.md` | related work for the current direction (and for B, C) | related work, novelty, a new application |
 | `docs/graveyard.md` | ideas that did not pan out and why; directions the user found unproductive | before proposing a new direction or analysis |
-| `docs/reviews/` | simulated reviews (index: `docs/reviews/README.md`; prompt: `review-prompt.md`); latest `2026-11-04-strategy.md`, before it `2026-11-02-body.md` (risk register R1-R16) | before a new review; when weighing what reviewers will miss |
+| `docs/reviews/` | simulated reviews (index: `docs/reviews/README.md`); the reusable review procedure: `review-prompt.md` (runbook) and `process/` (config, launcher, prompts, note to reviewers, checklist); latest `2026-11-04-strategy.md`, before it `2026-11-02-body.md` (risk register R1-R16) | before a new review; when weighing what reviewers will miss |
 | `docs/parked/directions-B-C.md` | the two applications set aside (not failed) | considering a second application |
 
 ## Evidence: the records behind §4-5
@@ -60,6 +60,8 @@ or when changing an experiment. Run scripts are in `run/` (one per step, numbere
 | `docs/archive/status-log-2026-10-to-2026-11-09.md` | the full session log until 2026-11-09 (32k words; search, don't read) |
 | `docs/archive/PLAN-log-2026-10-22-to-2026-11-09.md` | the plan's history, every "Next steps" block |
 | `docs/archive/resume-prompt-2026-11-06.md` | the previous resume prompt (research track details: sums-row routing, scale-up budget) |
+| `docs/archive/resume-prompt-2026-11-12-s46.md` | the resume prompt of session 47 (written in session 46): the design questions for the full simulated review (reviewers, venue, the incomplete parts, models), what it must cover |
+| `docs/archive/review-prompt-2026-11-02.md` | the prompt of the 2026-11-02 review (one agent, three reviews, the checklist in the prompt), replaced by `docs/reviews/process/` |
 | `docs/archive/resume-prompt-2026-11-12-s45.md` | the resume prompt of session 46 (written in session 45): the 4 MB-truncation brainstorm and the population decision; what was on record about the non-plain files before session 46 counted them |
 | `docs/archive/resume-prompt-2026-11-12-s44.md` | the resume prompt of session 45 (written in session 44): the holistic assessment of the research and the planning stage; where things stood at the end of session 44 |
 | `docs/archive/PLAN-next-steps-2026-11-12-s44.md` | PLAN.md's "Next steps" before session 45's reordering: the records of the §5 reviews, the table remake's two attempts and the facts they surfaced, the ERDALT check |

@@ -1,11 +1,13 @@
 # Reviews
 
 Simulated reviews of the manuscript and their follow-ups, newest first. Each review is named
-`<YYYY-MM-DD>-<stage>.md`. `review-prompt.md` is the prompt for the next harsh review: run it in a fresh chat, and
-update it when the draft's stage changes.
+`<YYYY-MM-DD>-<stage>.md` (from 2026-11-12 on, a folder `<YYYY-MM-DD>-<stage>/` with one file per reviewer and the
+meta-review). `review-prompt.md` is the runbook of the reusable procedure (independent reviewers, then a meta-reviewer;
+configuration, prompts and launcher in `process/`). Update `process/note-to-reviewers.md` and `process/checklist.md`
+before every run.
 
-**Next review (scheduled 2026-11-09):** after §4-5 are realigned with the new §3, before the introduction. Update
-`review-prompt.md` right before running it (PLAN.md, next steps). It writes its output here and adds a line to this index.
+**Next review:** the full review of the body, designed in session 47 (2026-11-12), run in the session after; its
+output decides what the full-scale run includes (PLAN.md, next steps 2-3).
 
 ## Feature provenance (current direction, since 2026-10-22)
 

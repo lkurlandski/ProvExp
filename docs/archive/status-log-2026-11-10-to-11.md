@@ -108,3 +108,16 @@ Moved from `docs/status.md` on 2026-11-12. Search, don't read.
   0.1% FPR (retraining variance; Claude's inference); *Beyond the guarantee* counts files per detector and attack
   (from `a1/toolkit-split/split.json`); the opening says why the sums; Table 4's caption states its takeaway.
   Commits c49f654, 9113acb, 23ab085. **Next:** a holistic review of §4, then §5 (`docs/resume-prompt.md`).
+
+- **2026-11-11 (session 38): §4 reviewed by Claude and revised.** Review with the `humanistic-paper-review` skill
+  (eight findings). The user: trimming is good, but moving small snippets to the appendix does more harm than good;
+  findings applied in two passes (the easy ones first, so the user can focus on the rest). Applied: attack names
+  follow Table 2's operations, with a toolkit-attacks column (from secml-malware's code); the Zainab et al. sentence
+  dropped (MAB-Malware uses code randomization, which the threat model excludes); "certificate table" for the
+  structure, "Authenticode signature" for its content (Table 8's row renamed too); §4.2's item list shortened; the
+  lead names the sum-then-readout form; 4.3 split into subsubsections *Operations* and *Signature*, the latter opening
+  with what is proved and what rests on the files; 4.4 reordered (closure after the definition, counts tied to
+  §5.1's 73,063 edits and 2,000 test files, routing last). Commits c7d0734, cf4f4a4, b8b710c. For §5: it still says
+  "GAMMA's import injection" and "the header-field attack" (Table 2: GAMMA imports, header fields) and Table 3 says
+  "signature table" for the certificate table. **Next:** a lightweight re-review of §4, then §5
+  (`docs/resume-prompt.md`).

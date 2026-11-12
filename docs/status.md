@@ -3,9 +3,9 @@
 Kept short: the current state, what waits on the user, and the last few sessions in a line or two each. The plan and
 its reasons are in `PLAN.md`. When the session log below grows past about ten entries, move the oldest to
 `docs/archive/` (the log before 2026-11-09 is `docs/archive/status-log-2026-10-to-2026-11-09.md`; sessions 21-28 are in
-`docs/archive/status-log-2026-11-09.md`, sessions 29-37 in `docs/archive/status-log-2026-11-10-to-11.md`).
+`docs/archive/status-log-2026-11-09.md`, sessions 29-38 in `docs/archive/status-log-2026-11-10-to-11.md`).
 
-## Current state (2026-11-12, sessions 34-46)
+## Current state (2026-11-12, sessions 34-47)
 
 - **Framework (§2-3):** rewritten; the user is reasonably satisfied. Open: the user's holistic read of Sound
   Directions after round 4 (finetuning only).
@@ -40,13 +40,20 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
   bytes), stated once in §5.1's Setup; §4.4's population is the complete files with a plain layout (PLAN.md, decision
   8 (iv)). Most numbers in §5 and Appendix D are still pilot values on all files (`% PROTOCOL` comments): the scale-up
   replaces the detector results, a recount from stored outputs the checks (PLAN.md, open items).
+- **Simulated review (session 47):** designed and written as a reusable procedure (`docs/reviews/review-prompt.md`,
+  `docs/reviews/process/`): four independent reviewers run headless outside the repository (A formal methods, B
+  adversarial malware, C robust and certified ML, D systems security; Opus 5.5, high effort), seeing only the PDF, a
+  note to reviewers and `papers/`; then a meta-reviewer with full access (Opus 5.5, max effort) checks their findings,
+  works through the checklist, writes the risk register and what the scale-up must include. Knobs in `config.sh`.
+  Smoke-tested (one Haiku reviewer); not run yet.
 - **Documentation:** reorganized 2026-11-09, cleaned up 2026-11-12 (stale resume prompts, the §4 note archived; the
   §5.3 design doc moved to `docs/evidence/`); index `docs/README.md`.
 
 ## Waiting on the user
 
-- **Next session:** design the full simulated review and write its instructions (reviewers, venue, handling of the
-  incomplete parts, models and effort; `docs/resume-prompt.md`); it is run only in the session after (user).
+- **Next session:** run the full simulated review (`docs/resume-prompt.md`), then go through its findings together.
+  Before it: a look at `docs/reviews/process/note-to-reviewers.md` (the authors' note the reviewers read, drafted
+  in session 47 and not yet read by the user).
 - The holistic read of Sound Directions (any time).
 
 ## Scheduled (in order; PLAN.md, next steps)
@@ -61,6 +68,20 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
 7. Introduction, discussion, abstract last.
 
 ## Session log
+
+- **2026-11-12 (session 47): the simulated review designed, not run.** Claude proposed the design, one recommendation
+  per question; the user approved it whole ("very good") and asked for a re-runnable procedure with configurable
+  knobs. Design: four independent reviewers by expertise, no assigned stance (C, robust and certified ML, is new,
+  for §5.3-5.4); ACM CCS kept; reviewers see the PDF (not the `.tex`, whose comments would steer them), an authors'
+  note (the claim while the introduction is empty, the missing sections, preliminary numbers and the 4 MB setup, the
+  one blue value by name) and `papers/` plus web search; our checklist (R4-R16 open risks, attack strength, §3's
+  novelty, §2/§5, Proposition 1, the signatures, §4's template, the population, decision 6's literature pass,
+  MAB-Malware, the ports) goes only to a meta-reviewer with full access, which checks every finding's premise; no
+  drafts of the introduction. Written: `docs/reviews/review-prompt.md` (runbook; the old prompt archived),
+  `docs/reviews/process/` (`config.sh`, `run_review.sh`, `reviewer-brief.md`, `reviewers/{A,B,C,D}-*.md`,
+  `note-to-reviewers.md`, `checklist.md`, `meta-brief.md`). Reviewers run as `claude -p` from a scratch folder, so no
+  `CLAUDE.md` or memory reaches them; checked with a dry run and a one-reviewer Haiku smoke test (found and fixed: the
+  reviewer copied the brief's example IDs). **Next:** `docs/resume-prompt.md` (run the review).
 
 - **2026-11-12 (session 46): the population decided; files below 4 MB in every split.** Claude counted which clause
   each of the 326 non-population files of the 2,000 fails (run 136, ~3 min): 231 incomplete because of our
@@ -169,16 +190,3 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
   training); on the same files it is 847 vs 928, and it is out anyway. Old 5.3 material removed from 5.4; §6's ERDALT
   reference points to 5.3; Appendix D gained the leave-one-out table. ~970 words. The user did not review the blocks
   (review next session). Commits 7a2ceff, 9d0369f, 035d977. **Next:** `docs/resume-prompt-5.3.md`.
-
-- **2026-11-11 (session 38): §4 reviewed by Claude and revised.** Review with the `humanistic-paper-review` skill
-  (eight findings). The user: trimming is good, but moving small snippets to the appendix does more harm than good;
-  findings applied in two passes (the easy ones first, so the user can focus on the rest). Applied: attack names
-  follow Table 2's operations, with a toolkit-attacks column (from secml-malware's code); the Zainab et al. sentence
-  dropped (MAB-Malware uses code randomization, which the threat model excludes); "certificate table" for the
-  structure, "Authenticode signature" for its content (Table 8's row renamed too); §4.2's item list shortened; the
-  lead names the sum-then-readout form; 4.3 split into subsubsections *Operations* and *Signature*, the latter opening
-  with what is proved and what rests on the files; 4.4 reordered (closure after the definition, counts tied to
-  §5.1's 73,063 edits and 2,000 test files, routing last). Commits c7d0734, cf4f4a4, b8b710c. For §5: it still says
-  "GAMMA's import injection" and "the header-field attack" (Table 2: GAMMA imports, header fields) and Table 3 says
-  "signature table" for the certificate table. **Next:** a lightweight re-review of §4, then §5
-  (`docs/resume-prompt.md`).
