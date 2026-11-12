@@ -288,9 +288,11 @@ hand for the same guarantee under additions give up most of the detection.
 Against the full threat model, the monotone detector on the sums detects 89.6\% of the malware at a 1\%
 false-positive rate, against 93.5\% for the unconstrained detector, and at a stricter 0.1\% rate it detects 74.7\%
 against 84.4\%. The detector on the features detects 87.2\% and 70.9\%. In return, no edit in the
-threat model lowers either detector's score. The adaptive attack confirms this on every file: its largest score drop on
-either monotone detector is exactly zero. The toolkit attacks evade the unconstrained detector on 55\% of the malware
-it detects, and each monotone detector on a single file.
+threat model lowers either detector's score. The toolkit attacks evade the unconstrained detector on 26 of the 47
+malware it detects, and each monotone detector on a single file. The adaptive attack confirms the guarantee on every
+file: trained on the full training set, the unconstrained detector falls to it on 25 of the 49 malware it detects, while
+its largest score drop on the monotone detector on the features is exactly zero, and a simpler search that appends and
+adds sections finds no drop on the detector on the sums.
 
 \paragraph{Where the guarantee holds}
 The guarantee holds on the population (\Cref{sec:instances:population}), which contains 38 of the 50 malware we attack and
@@ -324,35 +326,37 @@ constraints together.
 % unconstrained 26/47, mfull-feat 1/40, mfull-sums 1/42 (both a header-field attack on a non-plain file), madd-sums
 % 12/43 (header fields), expert set 0/8. Full-training-set unconstrained: run 127 header, 27/49.
 
-\begin{table*}[t]
-  \caption{Detectors under the full threat model, and under additions only. No edit in the threat model lowers a
-  monotone detector's score; on the sums, this costs 3.9 points of detection at 1\% FPR and 9.7 at 0.1\%, while
-  features chosen by hand for the same guarantee under additions lose most of it. Evasion is over the detected malware of the 50
-  we attack. Toolkit: evaded by at least one of the eight toolkit attacks; adaptive: our adaptive attack, with 5,000
-  scored candidates. The monotone rows send files outside the population to the unconstrained detector.}
+\begin{table}[t]
+  \caption{Detectors for the full threat model (top) and for additions only (bottom). Evaded: by at least one of the
+  eight toolkit attacks.}
   \label{tab:eval:detectors}
   \small
-  \begin{tabular}{@{}lrrrrrr@{}}
+  \begin{tabular*}{\linewidth}{@{}l@{\extracolsep{\fill}}ccccc@{}}
     \toprule
-    Detector & AUC & \multicolumn{2}{c}{TPR at FPR} & Detected & Toolkit & Adaptive \\
-    & & 1\% & 0.1\% & & & \\
+    & & \multicolumn{2}{c}{TPR at FPR} & \multicolumn{2}{c}{} \\
+    \cmidrule(lr){3-4}
+    Detector & AUC \up & 1\% \up & 0.1\% \up & \multicolumn{2}{c}{Evaded \dn} \\
     \midrule
-    unconstrained & 0.996 & 93.5\% & 84.4\% & 47/50 & 55\% & --- \\
-    unconstrained, full training set$^\S$ & 0.998 & 95.6\% & 87.0\% & 49/50 & 55\% & 51\% \\
-    monotone on derived directions, features & 0.992 & 87.2\% & 70.9\% & 40/50 & 3\%$^\dagger$ & 0\%$^\S$ \\
-    monotone on derived directions, sums & 0.994 & 89.6\% & 74.7\% & 42/50 & 2\%$^\dagger$ & 0\%$^\ast$ \\
+    Unconstrained      & \textbf{.996} & \textbf{93.5} & \textbf{84.4} & \multicolumn{2}{c}{26/47} \\
     \midrule
-    \multicolumn{7}{@{}l}{\emph{Additions threat model} (append, add a section, add imports)} \\
-    expert set (40 features), monotone & 0.844 & 29.1\% & 14.8\% & 8/50 & 0\% & --- \\
-    monotone on derived directions, sums & 0.995 & 92.2\% & 79.8\% & 43/50 & 28\%$^\ddagger$ & --- \\
+    Monotone, features & .992 & 87.2 & 70.9 & \multicolumn{2}{c}{\textbf{1/40}} \\
+    Monotone, sums     & .994 & 89.6 & 74.7 & \multicolumn{2}{c}{\textbf{1/42}} \\
     \bottomrule
-  \end{tabular}
-  \\[2pt]
-  {\footnotesize $^\dagger$ One header fields evasion, on a file outside the population, scored by the unconstrained
-  detector. On files in the population: 0/28 and 0/30. $^\ddagger$ The header fields attack, outside the additions threat
-  model. $^\S$ Trained on the full training set; the other cells use a 10\% subsample. $^\ast$ A simpler search that
-  appends and adds sections; the adaptive attack scores only detectors on the features.}
-\end{table*}
+    \addlinespace[1.5em]
+    \toprule
+    & & \multicolumn{2}{c}{TPR at FPR} & \multicolumn{2}{c}{Evaded \dn} \\
+    \cmidrule(lr){3-4} \cmidrule(l){5-6}
+    Detector & AUC \up & 1\% \up & 0.1\% \up & inside & outside \\
+    \midrule
+    Expert set     & .844 & 29.1 & 14.8 & 0/8  & 0/8 \\
+    \midrule
+    Monotone, sums & \textbf{.995} & \textbf{92.2} & \textbf{79.8} & 0/43 & 12/43 \\
+    \bottomrule
+  \end{tabular*}
+\end{table}
+% Table remade in session 43 (old version in git history before this commit). The adaptive column and the
+% full-training-set row moved to the text (The price); inside/outside: toolkit attacks inside/outside the additions
+% threat model (madd-sums: all 12 evasions are header_fields, a1/toolkit-v2/table.json).
 % MEASURED (2026-11-05): adaptive = the beam search alone (user, 2026-11-04: one attack per cell, never a union),
 % 5,000 candidates, M_full. Unconstrained full store 25/49 and the monotone features row 0/41 (run 127 step 1,
 % adaptive-beam/mfull); min_delta_logit exactly 0.0 on the monotone rows. The sums row's adaptive cell: greedy union of
@@ -364,7 +368,8 @@ constraints together.
 The guarantee covers exactly the threat model the table was derived from, and a narrower one costs less. Under the
 additions threat model, the monotone detector on the sums keeps more features and detects 92.2\% of the malware
 instead of 89.6\%. The edits it leaves out are then open: the header fields attack, which overwrites fields in place and
-so lies outside the additions threat model, evades it on 28\% of the malware it detects. A defender chooses the threat
+so lies outside the additions threat model, evades it on 12 of the 43 malware it detects, while no attack inside it
+evades the detector on any file. A defender chooses the threat
 model, and with it which edits the detector withstands and what that costs in detection.
 
 \paragraph{Against hand-picked features}

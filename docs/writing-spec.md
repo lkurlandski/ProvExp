@@ -408,3 +408,18 @@ The "implied" notes are earlier readings, not instructions; several of them were
   lowerable" column; Table 4 in one column; a per-operation cost table; option 2: one detectors table grouped by where
   the directions come from): "Okay, these are pretty bad, quite possibly as bad if not worse than what we already had."
   No specifics given; the session ended there.
+- **2026-11-12 (session 43), the table remake, restarted: what the user dislikes.** Asked with multiple-choice options
+  (Claude's hypotheses). Table 4 and its one-column mock-up: all four picked (the footnote symbols, the long caption that
+  argues the finding, phrase row labels, two threat models and two training sets in one table with empty cells).
+  Table 3: "Prose cells", "Looks/typography", and "I don't know, maybe this shouldn't be a table? Would an enumerate of
+  other structure look better and communicate the same information?" Good models: "My ExeFormer tables", "Lucas et al.
+  Table 2", and "Almost any table in a published paper looks better than these. Seriously, these are the ugliest tables
+  I have ever seen in my life. I'm open minded to figures, but if we can't figure out how to make a good looking table I
+  don't think we'd be able to make a good looking figure." First to remake: Table 4.
+  Shown the current Table 4 next to version A (two one-column tables: short row labels, arrows, bold best, one-line
+  captions, evasion as counts, inside/outside the threat model for additions, adaptive results moved to the text):
+  "Okay, this is not perfect, but its good enough that I can actually look at it, read it, understand it, all while
+  not wanting to throw up. To improve these two tables, the main thing we probably want to do is improve the
+  consistency between them, which might be out of scope right now, as it could involve running extra experiments.
+  Anyway, its a decent improvement. Last thing: can we put the two tabular environments in the same table environment,
+  to keep them together?"
