@@ -23,9 +23,10 @@ costs in detection at a fixed false-positive rate (\Cref{sec:eval:detectors}).
 The three findings share the detectors, files, and attacks described here, and the way every result is checked.
 
 \paragraph{Detectors}
-We train gradient-boosted tree detectors~\cite{ke2017lightgbm}, with monotone constraints for the defenses built on them
-(those of Corollary~\ref{cor:fw:robustness} and of prior work), on a 10\% subsample of the EMBER~2024 training split, with one seed, and test them on a 10\% subsample of its
-test split. Edits and attacks run on 100 test files, half of them malware. Each detector's threshold is set to a 1\%
+We train gradient-boosted tree detectors~\cite{ke2017lightgbm} on a 10\% subsample of the EMBER~2024 training
+split, with one seed, and test them on a 10\% subsample of its test split: an unconstrained detector on all features,
+the baseline, and detectors with monotone constraints for the defenses built on them (those of
+Corollary~\ref{cor:fw:robustness} and of prior work). Edits and attacks run on 100 test files, half of them malware. Each detector's threshold is set to a 1\%
 false-positive rate on the benign test files.
 % NOTE (user, session 35): the 10% subsamples and the 100 files are the pilot; scale up first once the write-up is
 % finished (PLAN.md, step 5).
@@ -174,20 +175,20 @@ move, and \Cref{sec:eval:observed} shows a defense that does.
 
 Instead of reading the extractor, a defender can learn which features to trust from attacks: run the attacks at hand,
 see which features they lower, and build a detector that does not trust those features. Gimenez et
-al.~\cite{gimenez2025certifiably} build one of their defenses this way and compare it with a second, and adversarial
-training also learns from the outputs of attacks. We build all three from the same observations: the outputs of the
+al.~\cite{gimenez2025certifiably} build their empirically robust detector, ERDALT, this way and compare it with a
+simpler defense built the same way, PV; adversarial training also learns from the outputs of attacks. We build all three from the same observations: the outputs of the
 eight toolkit attacks, run against the unconstrained detector on 400 training malware with benign training files as
 the source of added content, 3,183 adversarial examples in all. Each defense is then attacked as in
-\Cref{sec:eval:setup}, on the test malware it detects.
+\Cref{sec:eval:setup}, on the test malware it detects. Each of them falls to edits that the outputs never showed.
 % Run 133 (run/133_varied_observation.sh, step 1): artifacts/experiments/a1/advtrain/generated-seedperfile, 3,183
 % valid outputs of 3,200 (a seed per attack and file). Evaluation: a1_evaluate --seed_per_file, pilot goodware donors.
 
 \paragraph{What the attacks reveal}
 On the 314 training files in the population, the outputs lower 928 of the 1,070 features that the derived table says
 an edit of the full threat model can lower. To a defender who has only the outputs, the other 142 look the same as the
-features no edit can lower; the table tells them apart before any attack runs. Our own edits of \Cref{sec:eval:setup}
-lower 20 of the 142. Among them are the features of the name of the section that holds the entry point, which change
-when that section is renamed. MAB-Malware renames sections, but none of the toolkit attacks does
+features no edit can lower; the table marks them, before any attack runs, as features an edit may lower. For 20 of them,
+our own edits of \Cref{sec:eval:setup} show that an edit does lower them, among them the features of the name of the
+section that holds the entry point, which change when that section is renamed. MAB-Malware renames sections, but none of the toolkit attacks does
 (\Cref{sec:instances:catalogue}).
 % a_varied/coverage/report.json: train_population all 928/1,070 (toolkit-operation features 913/980, warnings 13/88);
 % witnessed_not_lowered_by_toolkit: 17 toolkit-operation features + 3 warnings = 20 (entry-section-name buckets,
@@ -195,8 +196,7 @@ when that section is renamed. MAB-Malware renames sections, but none of the tool
 % every run, the same attacks lower 847 on the same files (a_coverage/report.json).
 
 \paragraph{The operation the attacks lack}
-Gimenez et al.\ compare their defenses with a simpler one that selects features from perturbation vectors (PV): it
-keeps the features that no observed attack lowered and trains a detector that is monotone increasing in each of them.
+PV, Gimenez et al.'s simpler defense, selects features from perturbation vectors: it keeps the features that no observed attack lowered and trains a detector that is monotone increasing in each of them.
 Built from our 3,183 outputs, PV detects 9 of the 50 test malware, and the toolkit attacks, run on these files, evade
 it on none. The adaptive attack evades it on 4 of the 9, each time with a single edit, a rename of the section that
 holds the entry point, found among the first 50 candidates it scores. The derived table points to this hole before
@@ -212,8 +212,8 @@ the attacks would close this hole, but a defender learns which operation to add 
 \paragraph{What the attacks did not move}
 PV pays for the same gap a second time, in detection. It detects 26.2\% of the malware at a 1\% false-positive rate,
 against 87.2\% for the detector built from the derived table on the same features (\Cref{tab:eval:detectors}). A
-feature no attack moved may be one an attacker can lower or one no edit can change, and PV has to constrain both. The
-largest of them records whether the file is a DLL: it carries 24\% of the unconstrained detector's split gain, no edit
+feature no attack moved may be one an attacker can lower or one no edit can change, and PV has to constrain both. The most
+important feature PV constrains needlessly records whether the file is a DLL: it carries 24\% of the unconstrained detector's split gain, no edit
 of the threat model changes it, and the derived table leaves it free where PV forces it to be monotone. Leaving the 455
 features no attack moved unconstrained raises PV's detection to 50.9\%, but such a detector trusts every feature the
 attacks happened to leave alone, and so falls to any operation they lack.
@@ -225,21 +225,20 @@ attacks happened to leave alone, and so falls to any operation they lack.
 % constrained, 455 never moved left free, TPR 50.9%. Not Gimenez et al.'s rule.
 
 \paragraph{What ERDALT learns}
-ERDALT, the empirically robust detector of Gimenez et al., learns a linear layer that maps the feature change of every
-observed attack to a nonnegative vector, and feeds the layer's output to a monotone network
-(\Cref{sec:related-work}). Our implementation of their design (\Cref{sec:ember}), trained on the same 3,183 outputs, detects 62.7\% of the malware at
-a 1\% false-positive rate and 29 of the 50 test malware. Seven of the toolkit attacks evade it on none of these files,
-but GAMMA's import injection, one of the attacks it was trained on, evades it on 24. That attack adds imports taken from
-benign files, and on the test malware it takes them from benign test files, whose imports ERDALT never saw. The layer
-constrains the feature changes it was shown, not the directions in which edits can move the features, and the derived
-table shows how far apart the two are: 90\% of the layer's weight lies on features an edit can lower, nearly all of
-them features that edits move both ways. The adaptive attack evades it on 22 of the 29 files.
-% ERDALT-best (run 133 step 4; their released code with the output layer constrained, docs/upstream-issues.md item 8; 10% sums store v2, AUC 0.88). Toolkit:
-% a_varied/toolkit-erdalt/table.json, gamma_api 24/29, the other seven 0. Adaptive 22/29:
-% a_varied/adaptive-erdalt-best/adaptive.json. Layer audit: a_varied/erdalt-best-hole/hole.json, 90.5% of the weight
-% violates the derived M_full table, 88.9% in features that move both ways. Caveat (not in the prose): ERDALT's
-% scores pile at a floor; every evasion ends at p = 0.49966 against tau = 0.49968.
-
+ERDALT learns a linear layer that maps the feature change of every observed attack to a nonnegative vector, and feeds
+the layer's output to a monotone network (\Cref{sec:related-work}). Our implementation of their design
+(Appendix~\ref{sec:ember}), trained on the same 3,183 outputs, detects 62.7\% of the malware at a 1\% false-positive
+rate; of the 50 test malware we attack, it detects 29. Seven of the toolkit attacks evade it on none of these files,
+but GAMMA imports, one of the attacks it was trained on, evades it on 24, and the adaptive attack on 22. GAMMA imports
+adds imports taken from benign files, and on the test malware it takes them from benign test files, whose imports
+ERDALT never saw. The layer constrains the feature changes it was shown, not the directions in which edits can move
+the features, and the derived table shows how far apart the two are: 90\% of the layer's weight lies on features an
+edit can lower, nearly all of them features that edits move both ways.
+% ERDALT-best (run 133 step 4; their released code with the output layer constrained, docs/upstream-issues.md item 8;
+% 10% sums store v2, AUC 0.88). Toolkit: a_varied/toolkit-erdalt/table.json, gamma_api 24/29, the other seven 0.
+% Adaptive 22/29: a_varied/adaptive-erdalt-best/adaptive.json. Layer audit: a_varied/erdalt-best-hole/hole.json, 90.5%
+% of the weight violates the derived M_full table, 88.9% in features that move both ways. Caveat (not in the prose):
+% ERDALT's scores pile at a floor; every evasion ends at p = 0.49966 against tau = 0.49968.
 \paragraph{Adversarial training}
 Retraining the unconstrained detector on the full training set, with the same 3,183 outputs added to its malware,
 leaves its detection unchanged, 95.6\% at a 1\% false-positive rate, and halves what the toolkit achieves: the eight attacks

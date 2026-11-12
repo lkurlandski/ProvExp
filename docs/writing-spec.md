@@ -376,3 +376,7 @@ The "implied" notes are earlier readings, not instructions; several of them were
   undefined): "I'm actually less concerned about this ... its a specific PE construct and the reader can look it up.
   We could clarify that its the 'PE file's rich header' or something if absolutely nessecary." On the review process:
   the user does not read the section end to end during the review, but approves or rejects each proposed change.
+- **2026-11-12 (session 41), humanistic review of 5.3, pass 3** (five findings plus the "unconstrained detector"
+  clause in 5.1). "I agree with your recommendation." All applied, including #2's rewording of what the derived table
+  shows about the 142 features the attacks did not lower ("marks them as features an edit may lower", not "tells them
+  apart").
