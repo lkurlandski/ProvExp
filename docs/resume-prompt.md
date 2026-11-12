@@ -1,4 +1,4 @@
-# Resume: the full simulated review of the manuscript
+# Resume: designing the full simulated review (not running it yet)
 
 Written at the end of session 46 (2026-11-12). Self-contained: everything needed to start is below or in the files it
 names.
@@ -30,19 +30,28 @@ section, table or definition number, and give the title alongside.
 
 ## The task
 
-1. **Update `docs/reviews/review-prompt.md`** before running it. It still targets the 2026-11-02 draft and the
-   archived formalization (its file list, stage description, sources, settled points). Session 46 already added the
-   bullet on the 4 MB scope (review the setup as written, numbers as pilot values; judge the scope itself) and fixed
-   the population in its settled list. PLAN.md, next step 2, lists what the review must cover: the open risks of the
-   2026-11-02 register (R4, R5, R6, R9, R11, R15, R16), the 2026-11-04 attack-strength concern, the new §3 (novelty
-   above all), the §2/§5 alignment, Proposition 1's role (no finding of its own), the corpus-checked signatures, §4's
-   template on the page, the new population, decision 6's revisit (is a problem-space defense expected? a short
-   literature pass), and MAB-Malware's absence. Body only; no narrow §2-3 review beforehand (user).
-2. **Run the review** as the reviews README says (`docs/reviews/README.md`: a fresh context, output to
-   `docs/reviews/<date>-<stage>.md`, a line in the README's index). Ask the user whether to run it as a subagent from
-   this session or in a fresh chat.
-3. **Discuss its findings with the user** (memory `review-comments-workflow`: answer questions first, keep the
-   review's finding numbers, small passes). Its output decides what the scale-up (next step 3) includes.
+**This session designs the review and writes its instructions; it does not run it** (user, end of session 46: "Only
+after that, will we actually run it"). Brainstorm the design with the user, giving a recommendation per question rather
+than a menu, then write the instructions.
+
+1. **Design questions** (the user's list, "including but not limited to"):
+   - how many reviewers to run, and whether to personalize them (distinct expertise or stance per reviewer);
+   - which conference to simulate (the manuscript uses ACM CCS's format; the old prompt simulated CCS with reviewers
+     who also serve on S&P, USENIX Security and NDSS);
+   - how to handle the obviously incomplete parts of the paper: pilot-scale numbers, the `% PROTOCOL` values (session
+     46: the setup describes files below 4 MB, the numbers are from all files), blue predictions, empty sections
+     (introduction, discussion, abstract, ethics, open science);
+   - which models the reviewers run on and at what effort.
+   Also worth settling: what the review must cover (PLAN.md, next step 2: the open risks R4, R5, R6, R9, R11, R15, R16
+   of the 2026-11-02 register, the 2026-11-04 attack-strength concern, the new §3's novelty, the §2/§5 alignment,
+   Proposition 1's role, the corpus-checked signatures, §4's template, the population, decision 6's revisit with a
+   short literature pass, MAB-Malware's absence), how reviewers see the paper (PDF or `.tex`; whether they read
+   `papers/`), the output format (scores, risk register), and whether a meta-review merges the reviews.
+2. **Write the instructions:** update `docs/reviews/review-prompt.md` (it still targets the 2026-11-02 draft and the
+   archived formalization; session 46 already added the 4 MB scope bullet and fixed the population in its settled
+   list), plus any per-reviewer prompts and how to launch them.
+3. **Next session after that:** run the review and discuss its findings with the user (memory
+   `review-comments-workflow`); its output decides what the scale-up (next step 3) includes.
 
 ## Constraints and settled points
 

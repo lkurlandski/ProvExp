@@ -45,8 +45,8 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
 
 ## Waiting on the user
 
-- **Next session:** the full simulated review (PLAN.md, next step 2; `docs/resume-prompt.md`): the review prompt
-  updated first, then the review run, then its findings discussed with the user before the scale-up is designed.
+- **Next session:** design the full simulated review and write its instructions (reviewers, venue, handling of the
+  incomplete parts, models and effort; `docs/resume-prompt.md`); it is run only in the session after (user).
 - The holistic read of Sound Directions (any time).
 
 ## Scheduled (in order; PLAN.md, next steps)
