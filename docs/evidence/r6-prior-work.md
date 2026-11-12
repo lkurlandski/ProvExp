@@ -238,3 +238,16 @@ the bib cites the VLDB Journal 2014 extension), `acar2002adaptive` (CMU), `wagne
 `reed2010distance` (UPenn), `zhang2020robustness` (arXiv 2002.09579), `zhang2021certified` (arXiv 2102.07818);
 `gupta1995maintenance`, `gupta1993maintaining`, `levy1993queries`, `mumick1997maintenance` are chapters 11, 14, 22
 and 25 of Gupta and Mumick (eds.), *Materialized Views*, MIT Press 1999 (the reprints of the original papers).
+
+## Decision and what was done (session 50)
+
+The user: cite only one or two seminal works per idea, not all of the above. Applied in 660ba90:
+- §3.1 (pools): Gray et al.'s observation that a maximum is easy to maintain under insertions but not deletions.
+- §3.2 (after Proposition 1): writing an extractor as a fold lets incremental view maintenance apply to features;
+  the item table supplies what its rule lacks for maxima and minima (citations unchanged).
+- §3.3 (after Theorem 1's explanation): abstract interpretation (Cousot and Cousot), the rule of signs; what is
+  abstracted here is the change of a feature under every edit of a threat model.
+- §6: the incorrect contrast with incremental parsing replaced; abstract interpretation and Calzavara et al. (the only
+  new bib entry), whose feature-space rewriting rules are the kind of input our bounds provide.
+Not cited, by decision: Mumick et al., Cai et al., Amsterdamer et al., Levy and Sagiv, Zhang et al., Reed and Pierce.
+Deferred to other items: Cheney et al. (R2, the locating record), Labaca-Castro et al. (R21, §6 constraints).
