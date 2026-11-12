@@ -103,6 +103,22 @@ them (below).
    functionality-preserving, non-code-rewriting edits among them, exclusions named. (iv) The population stays as is
    for now; the user finds the 4 MB truncation ugly (most of the 318 non-plain files of 2,000 are truncated; on
    untruncated files 94.4% are plain). A brainstorm on a cleaner resolution is scheduled as next step 1 (session 45).
+   *Settled in session 46 (2026-11-12, user):* every split uses only the files our copy holds in full (below
+   4,000,000 bytes: 85% of the training files; 94% of the benign and 74% of the malicious test files), stated once in
+   §5.1's Setup. Whole binaries cannot be obtained (user). *Why:* Claude counted which clause each of the 326
+   non-population files of the 2,000 fails: 231 are incomplete because of our cut, 87 are incomplete in the dataset
+   itself (the headers locate content past the file's end; 63 lack more than 4 KB of their sections), and only 8 are
+   complete files with an unusual layout. All 12 attacked malware outside the population are incomplete, and so is the
+   one file that evaded the monotone detectors (Table 5; 51 KB long, its headers describe 2 MB of sections), which the
+   text had called an unusual layout. Keeping truncated files would score the detectors on fragments a deployed
+   detector never sees and leave our cut as 70% of the exclusions; extending the signatures to incomplete files gives
+   the strict table (2,559 of 2,568 features lowerable), which leaves a monotone detector nothing to constrain. The
+   user: one concession about the dataset upfront rather than residual side effects in every result; on the files we
+   use, the stock extractor reproduces the released vectors (a note in the open-science stub). Written in: §4.4 (the
+   population is the complete files with a plain layout; 94% of the test files we use, 5% incomplete, 0.4% unusual
+   layouts; closure 0 of 56,902), §5.1's Setup, 5.4's *Where the guarantee holds* (89% of the attacked malware, blue),
+   Appendix D's three truncation sentences. Every other number stays a pilot value, marked by `% PROTOCOL` comments in
+   §5's Setup and Appendix D, until the scale-up (detectors) and the recount (checks).
    (v) *After block 1 (session 27):* §4 restructured to about 1,000 words: a short lead (no checks), 4.1 EMBER and PE
    files (own subsection), 4.2 EMBER as a sum-then-readout extractor ((a) and (b) merged), 4.3 threat model (the
    weight), 4.4 population, the bookkeeping in a new appendix; no "instances at a glance" table for one instance.
@@ -210,32 +226,28 @@ Agreed with the user in session 45 (2026-11-12) after the holistic assessment (a
 records of the §5 reviews, the table remake and the ERDALT check, is in
 `docs/archive/PLAN-next-steps-2026-11-12-s44.md`.
 
-1. **The 4 MB-truncation brainstorm, ending in a decision** (decision 8 (iv)). Our copy of the dataset truncates files
-   at 4 MB; most files outside the plain-layout population are truncated (1,674 of 2,000 test files in the
-   population; of untruncated files, 94% are; 38 of the 50 attacked malware). Options raised so far: measure on whole
-   binaries if they exist; state each edit's effect correctly on non-plain files (start with which condition the 94
-   non-plain untruncated files fail); others welcome. Then **write the decision into the manuscript before the
-   review** (user, session 45: the decision could affect the review): §4.4 *Population* and what depends on it (5.4's
-   *Where the guarantee holds*, Appendix D), with predicted values in blue (`\synthetic`) if the decision needs runs;
-   those runs join the scale-up and do not block the review.
+1. **Done in session 46: files below 4 MB in every split.** The 4 MB-truncation brainstorm ended in a decision
+   (decision 8 (iv), with the evidence), written into §4.4, §5.1's Setup, 5.4 and Appendix D before the review, as
+   the user asked in session 45. Its one blue value (the attacked malware in the population) joins the scale-up.
 2. **A full simulated review** of the manuscript as it then stands (body only; the last full review, 2026-11-02,
    predates the new §3 and §5). Update `docs/reviews/review-prompt.md` first (it still targets the 2026-11-02 draft and
    the archived formalization). It should re-check the open risks of the 2026-11-02 register (R4, R5, R6, R9, R11, R15,
    R16) and the 2026-11-04 attack-strength concern, and judge what no review has seen: the new §3 (novelty above all),
    the §2/§5 alignment, Proposition 1's role (no finding of its own), the corpus-checked signatures, §4's template on
-   the page, the new population (one line in the prompt names the change), decision 6's revisit (is a problem-space
-   defense expected? short literature pass), and MAB-Malware's absence. Its output decides what the scale-up includes.
-   No narrow §2-3 review beforehand (user).
-3. **Design and launch the scale-up as one protocol** (each item agreed before code; long runs as `run/` scripts for
-   the user, possibly on the second server): seeds 0-2, full splits; one training set and one attack protocol for every
-   detector of §5 (Tables 4 and 5 now show two different unconstrained detectors; Table 5's two halves with the same
-   detectors); ERDALT trained to a proper stopping point (one epoch of 310 met the criterion in run 133); enough
-   malware that PV and the expert set are not judged on 8-9 files; the adaptive budget at scale (~3,000 CPU-h at 5,000
-   candidates on 2,000 files; options: the 1,000-candidate checkpoint, a fixed subset, a cap on the monotone rows);
-   **MAB-Malware as a held-out attack we did not write**. Hypothesis: MAB-Malware finds PV's rename hole (support for
-   5.3 independent of our table-guided attack) and evades no monotone detector on a file in the population. Plus
-   whatever the review and the population decision add. The sums row's adaptive cell stays 0% with its footnote
-   (session 36).
+   the page, the new population (the prompt's bullet on the 4 MB scope was added in session 46), decision 6's revisit
+   (is a problem-space defense expected? short literature pass), and MAB-Malware's absence. Its output decides what the
+   scale-up includes. No narrow §2-3 review beforehand (user).
+3. **Design and launch the scale-up as one protocol** (each item agreed before code; long runs as `run/` scripts for the
+   user, possibly on the second server), **on the files our copy holds in full in every split** (the `truncated` flag
+   false: training subsample, test split, attacked malware; decision 8 (iv)): seeds 0-2, full splits; one training set
+   and one attack protocol for every detector of §5 (Tables 4 and 5 now show two different unconstrained detectors;
+   Table 5's two halves with the same detectors); ERDALT trained to a proper stopping point (one epoch of 310 met the
+   criterion in run 133); enough malware that PV and the expert set are not judged on 8-9 files; the adaptive budget at
+   scale (~3,000 CPU-h at 5,000 candidates on 2,000 files; options: the 1,000-candidate checkpoint, a fixed subset, a
+   cap on the monotone rows); **MAB-Malware as a held-out attack we did not write**. Hypothesis: MAB-Malware finds PV's
+   rename hole (support for 5.3 independent of our table-guided attack) and evades no monotone detector on a file in the
+   population. Plus whatever the review and the population decision add. The sums row's adaptive cell stays 0% with its
+   footnote (session 36).
 4. **While the scale-up runs: §2's closing and contribution 4 against §5** (old step 2 (c)). §2 says §5 "uses them to
    attack malware detectors and to build robust ones"; in §5 the attack is an instrument. The mock's contribution 4 is
    stale ("four to six points", "learned constraints"). Writing only.
@@ -246,7 +258,10 @@ records of the §5 reviews, the table remake and the ERDALT check, is in
    instance would strengthen 5.2-5.3 most (decision 10).
 7. **The introduction, discussion, abstract, ethics and open science** last, once the body is settled.
 
-Open items (fix when the affected text is touched): 5.1's "73,063 edits" is run 107's direction check, the exactness
+Open items (fix when the affected text is touched): **the checks recounted on the files below 4 MB** from stored
+outputs, no runs (decision 8 (iv); with the next item): 5.1's edit counts, Table 3's file counts, Appendix D's counts and
+Table 9 (outside the population: 42 wrong edits on 6 files instead of 45 on 7; session 46).
+5.1's "73,063 edits" is run 107's direction check, the exactness
 counts are Appendix D's (62,604 + run 118's 34,965); 5.2's "before the derivation existed" (check the history before
 rewording); Table 5's toolkit cells come from the fixed-seed runs (`a1/toolkit-v2`), Table 4's from run 133's seed per
 file (one protocol at the scale-up, nothing in the paper).

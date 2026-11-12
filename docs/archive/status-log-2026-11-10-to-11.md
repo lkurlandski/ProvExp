@@ -1,4 +1,4 @@
-# Session log, sessions 29-36 (2026-11-10 to 2026-11-11)
+# Session log, sessions 29-37 (2026-11-10 to 2026-11-11)
 
 Moved from `docs/status.md` on 2026-11-12. Search, don't read.
 
@@ -99,3 +99,12 @@ Moved from `docs/status.md` on 2026-11-12. Search, don't read.
   about two-sided features the detector drops, so it says nothing about the constraints that carry the cost; not used.
   The user ended the session tired and disappointed with the last two days. Commit 8fd8c9c. **Next:**
   `docs/resume-prompt.md`.
+
+- **2026-11-11 (session 37): §5.4 reviewed by Claude and revised.** At the user's request, Claude reviewed §5.4 with
+  the `humanistic-paper-review` skill instead of the user reading it. The user agreed with the headline findings,
+  less with the small ones (recurring patterns, term ledger). Applied: the subsection reordered so no paragraph points
+  forward (price, where the guarantee holds, where the cost lies, width, hand-picked, beyond the guarantee); *Where
+  the cost lies* opens with its finding, explains rename (frees 301 features, recovers 0.1 points) and append at
+  0.1% FPR (retraining variance; Claude's inference); *Beyond the guarantee* counts files per detector and attack
+  (from `a1/toolkit-split/split.json`); the opening says why the sums; Table 4's caption states its takeaway.
+  Commits c49f654, 9113acb, 23ab085. **Next:** a holistic review of §4, then §5 (`docs/resume-prompt.md`).

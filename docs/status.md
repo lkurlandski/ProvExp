@@ -3,9 +3,9 @@
 Kept short: the current state, what waits on the user, and the last few sessions in a line or two each. The plan and
 its reasons are in `PLAN.md`. When the session log below grows past about ten entries, move the oldest to
 `docs/archive/` (the log before 2026-11-09 is `docs/archive/status-log-2026-10-to-2026-11-09.md`; sessions 21-28 are in
-`docs/archive/status-log-2026-11-09.md`, sessions 29-36 in `docs/archive/status-log-2026-11-10-to-11.md`).
+`docs/archive/status-log-2026-11-09.md`, sessions 29-37 in `docs/archive/status-log-2026-11-10-to-11.md`).
 
-## Current state (2026-11-12, sessions 34-44)
+## Current state (2026-11-12, sessions 34-46)
 
 - **Framework (§2-3):** rewritten; the user is reasonably satisfied. Open: the user's holistic read of Sound
   Directions after round 4 (finetuning only).
@@ -36,19 +36,22 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
   outputs) finished 2026-11-11 19:54 (~3.4 h) and read in session 40: PV 0 evaded in all eight folds; ERDALT 25/29
   when GAMMA imports is held out, 0-2 in the other seven (header_fields 2, not the predicted ~10). Results in its
   header and in `docs/evidence/section-5.3-design.md`'s log.
+- **Files and population (session 46):** every split uses only the files our copy holds in full (below 4,000,000
+  bytes), stated once in §5.1's Setup; §4.4's population is the complete files with a plain layout (PLAN.md, decision
+  8 (iv)). Most numbers in §5 and Appendix D are still pilot values on all files (`% PROTOCOL` comments): the scale-up
+  replaces the detector results, a recount from stored outputs the checks (PLAN.md, open items).
 - **Documentation:** reorganized 2026-11-09, cleaned up 2026-11-12 (stale resume prompts, the §4 note archived; the
   §5.3 design doc moved to `docs/evidence/`); index `docs/README.md`.
 
 ## Waiting on the user
 
-- **Next session, first:** the 4 MB-truncation brainstorm, ending in a decision on the population, then the decided
-  population written into §4.4 and what depends on it, before the full simulated review (PLAN.md, next steps 1-2;
-  `docs/resume-prompt.md`).
+- **Next session:** the full simulated review (PLAN.md, next step 2; `docs/resume-prompt.md`): the review prompt
+  updated first, then the review run, then its findings discussed with the user before the scale-up is designed.
 - The holistic read of Sound Directions (any time).
 
 ## Scheduled (in order; PLAN.md, next steps)
 
-1. The 4 MB-truncation brainstorm and decision; the manuscript updated to it (blue values if runs are needed).
+1. ~~The 4 MB-truncation brainstorm and decision~~ (done, session 46: files below 4 MB in every split).
 2. A full simulated review of the manuscript as it then stands; its output decides the scale-up's content.
 3. The scale-up designed and launched as one protocol (seeds 0-2, full splits, one training set for every detector,
    ERDALT's stopping point, more malware, MAB-Malware as a held-out attack).
@@ -58,6 +61,23 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
 7. Introduction, discussion, abstract last.
 
 ## Session log
+
+- **2026-11-12 (session 46): the population decided; files below 4 MB in every split.** Claude counted which clause
+  each of the 326 non-population files of the 2,000 fails (run 136, ~3 min): 231 incomplete because of our
+  4 MB cut, 87 incomplete in the dataset itself (headers locate content past the end; 63 lack more than 4 KB of their
+  sections), only 8 complete files with an unusual layout. All 12 attacked malware outside the population are
+  incomplete, and so is the file that evaded the monotone detectors (51 KB, its headers describe 2 MB; the text had
+  called it an unusual layout). Options weighed: whole binaries (unavailable, user), files below 4 MB, keeping all
+  files reworded, extending the signatures to incomplete files (the strict table: 2,559 of 2,568 lowerable, nothing to
+  constrain). The user chose files below 4 MB in every split ("one concession about the dataset upfront rather than
+  ... complex residual side-effects"; reproducibility: the stock extractor matches the released vectors there) and
+  waived block reviews ("full faith"). Written: §4.4 (complete files with a plain layout; 94% of the test files we
+  use, 5% incomplete, 0.4% unusual layouts; closure 0 of 56,902), §5.1's Setup (85% of training files; 94% benign, 74%
+  malicious test files), 5.4 (89% of the attacked malware, blue; the evasion on an incomplete file), Appendix D's three
+  truncation sentences (also a factual fix: only one of the seven files with wrong declared changes is truncated),
+  `% PROTOCOL` comments, a note in the open-science stub, a scope bullet in `docs/reviews/review-prompt.md` (the user's
+  idea: review the setup as written, numbers as pilot values). PLAN.md decision 8 (iv) settled, next steps 1-3 and open
+  items updated; the mock's §4.4 line. **Next:** `docs/resume-prompt.md` (the full simulated review).
 
 - **2026-11-12 (session 45): holistic assessment; the next steps reordered.** Claude read PLAN.md, the mock, both
   latest simulated reviews, the graveyard and §2/§5. Assessment (PLAN.md, "Where the paper stands"): the framework is in
@@ -162,12 +182,3 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
   "GAMMA's import injection" and "the header-field attack" (Table 2: GAMMA imports, header fields) and Table 3 says
   "signature table" for the certificate table. **Next:** a lightweight re-review of §4, then §5
   (`docs/resume-prompt.md`).
-
-- **2026-11-11 (session 37): §5.4 reviewed by Claude and revised.** At the user's request, Claude reviewed §5.4 with
-  the `humanistic-paper-review` skill instead of the user reading it. The user agreed with the headline findings,
-  less with the small ones (recurring patterns, term ledger). Applied: the subsection reordered so no paragraph points
-  forward (price, where the guarantee holds, where the cost lies, width, hand-picked, beyond the guarantee); *Where
-  the cost lies* opens with its finding, explains rename (frees 301 features, recovers 0.1 points) and append at
-  0.1% FPR (retraining variance; Claude's inference); *Beyond the guarantee* counts files per detector and attack
-  (from `a1/toolkit-split/split.json`); the opening says why the sums; Table 4's caption states its takeaway.
-  Commits c49f654, 9113acb, 23ab085. **Next:** a holistic review of §4, then §5 (`docs/resume-prompt.md`).
