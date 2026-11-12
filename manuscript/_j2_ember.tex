@@ -2,6 +2,8 @@
 % summarizes: the item kinds, the readout forms with EMBER's features (from docs/evidence/code-audit-sound-directions.md,
 % "Readout rule per EMBER feature"), the two features written over sums, and the re-encodings. Mostly the accepted text
 % of the old Section 4.1 (session 27), and how the positions that locate items are recorded (block 3).
+% PROTOCOL (session 46, 2026-11-12): the counts below are on all 2,000 files, truncated ones included; recount them on
+% the 1,670 files of at most 4 MB from stored outputs (PLAN.md, open items; see the PROTOCOL note in Section 5's Setup).
 
 This appendix gives the details of the instance that \Cref{sec:instances:record} summarizes.
 
@@ -55,7 +57,7 @@ same check covers them.
 items: header fields and table entries, and positions that concern a whole kind, such as the number of sections and
 the bounds of the range in which the extractor searches for the Rich header. Some are easy to miss. The overlay starts
 where the last section or data directory ends, so the extent of every section and directory locates it. Others lie
-past the end of the file, when the section table points to content that a truncated file no longer holds. We
+past the end of the file, when the headers point to content that an incomplete file does not hold. We
 completed the record by changing single bytes and checking whether the parse changed where no recorded position was
 written. A first round found three parser rules the record had missed. After we recorded them, none of 58,666
 single-byte changes across the headers and the directory data changed the parse without writing a recorded position.
@@ -96,21 +98,23 @@ next to existing strings, zeros, a forged Rich header), on all 2,000 files, and 
 anywhere in each pilot file. The instance declines an edit that writes a position the parser reads, which it finds by
 comparing the written positions with the recorded ones, with no rule written for any particular case. Most declined
 overwrites of the DOS header and stub write into the range searched for the Rich header, and the declined appends go
-to files whose section table points past their truncated end, where the appended bytes become the content of a section
-instead of extending the overlay. The overwrite of loader-ignored header fields is absent because the instance
+to incomplete files, where the appended bytes become the content of a section or table instead of extending the
+overlay. The overwrite of loader-ignored header fields is absent because the instance
 declines all of its edits: three of the fields lie in the Rich header's search range. The lower block holds the
 operations that declare their changes, on files in the population. They decline two kinds of edit by design: a gap
 that holds a forged Rich header on a file without one, and an added section on a file whose entry point lies in no
 section, where the extractor may select the new section as the entry section. Outside the population, on seven
-truncated files whose structures reach past the end, the declared changes of 45 edits are wrong, since the operations
-do not update pointers to content the parser looked for and did not find. Combined edits, up to three added sections
+files, the declared changes of 45 edits are wrong, since on such files an edit can change items that no operation
+declares (\Cref{sec:instances:population}). Combined edits, up to three added sections
 followed by an append, are exact when the item table is carried forward one edit at a time.
 
 % MEASURED: the lower block is run/118_item_exactness.sh (catalogue_checks/2000-exact, 2,000 files, read 2026-11-03),
 % counted on the population: 0 wrong of 34,965 declared edits; the declined edits are the two by-design abstentions
 % (section:entry for add section/imports where the entry point is in no section, 726; richheader:rich_pair for a
-% forged Rich marker in an ext gap on a file without a Rich header, 509). Outside the population, on 7 truncated
-% files, 45 edits are wrong (23 mismatch, 22 a split-range error). The upper block is G7's edits on all 2,000 files
+% forged Rich marker in an ext gap on a file without a Rich header, 509). Outside the population, on 7 files, 45 edits
+% are wrong (23 mismatch, 22 a split-range error). Corrected in session 46: only one of the 7 is truncated by our copy
+% (3 edits); the other six are 3 incomplete files and 3 complete ones with an unusual layout, so on the files of at
+% most 4 MB: 42 wrong edits on 6 files. The upper block is G7's edits on all 2,000 files
 % (run 107: three adversarial contents per operation and file, plus a forged Rich header in the DOS stub).
 % The "random in-place writes" row is run 96 (run/96_item_checks_after_split.sh, item_checks/margins-pilot-split): 20
 % random writes of 1-64 bytes per pilot file, 100 files, 1,791 exact, 209 declined, 0 wrong. Total edits 62,604.

@@ -1,1 +1,6 @@
 % Open science: required by the CCS CfP; every artifact needed to evaluate the paper and how reviewers can access it.
+% NOTE (session 46, 2026-11-12): we use only the files our copy of EMBER 2024 holds in full (at most 4 MB), and on
+% those the stock extractor reproduces the released EMBER 2024 feature vectors (up to float rounding in
+% strings:entropy, with PYTHONHASHSEED=0 for the warnings; docs/design.md), so anyone can check our extraction against
+% the release. The detectors use the patched variant (import descriptors merged, warnings dropped) and the sums, which
+% differ from the released vectors by design on the files those changes affect. Say so here.

@@ -21,7 +21,19 @@ costs in detection at a fixed false-positive rate (\Cref{sec:eval:detectors}).
 \subsection{Setup}
 \label{sec:eval:setup}
 
-The three findings share the detectors, files, and attacks described here, and the way every result is checked.
+The three findings share the detectors, files, and attacks described here, and the way every result is checked. Our
+copy of EMBER~2024 holds only the first 4~MB of each file, so the features computed from a larger file would describe
+a fragment of it. We therefore use, in every split, only the files it holds in full: 85\% of the training files, and
+94\% of the benign and 74\% of the malicious test files.
+% MEASURED (session 46): files below 4,000,000 bytes in our SimpleDB copy (featurize.py: truncated means at least
+% 4,000,000), full splits (general:size of the feature store): training 85.3% (benign 85.7%, malware 84.8%); test
+% benign 94.4%, malware 74.0%. "4 MB" below means these files (the truncated flag false).
+% PROTOCOL (session 46, 2026-11-12; user): every split is limited to the files below 4,000,000 bytes. The numbers of
+% this section still come from the pilot on all files, truncated ones included, except the population figures in 5.4's
+% "Where the guarantee holds" (and in 4.4), which are counted on the files of at most 4 MB. The detector results are
+% replaced by the scale-up (PLAN.md, next step 3); the checks (the 73,063 edits below, Table 3's file counts, Appendix
+% D's counts and Table 9) are recounted on the files of at most 4 MB from stored outputs, with no runs (PLAN.md, open
+% items).
 
 \paragraph{Detectors}
 We train gradient-boosted tree detectors~\cite{ke2017lightgbm} on a 10\% subsample of the EMBER~2024 training
@@ -319,11 +331,16 @@ its largest score drop on the monotone detector on the features is exactly zero,
 adds sections finds no drop on the detector on the sums.
 
 \paragraph{Where the guarantee holds}
-The guarantee holds on the population (\Cref{sec:instances:population}), which contains 38 of the 50 malware we attack and
-all but 1.5\% of the benign files the dataset does not truncate. A monotone detector sends a file outside the
-population to the unconstrained detector, and that is where the single toolkit evasion of each monotone detector
-happened: the header fields attack on a file with an unusual layout. An attacker can build such a file on purpose, but a
-file outside the population is then rare among benign software, and so stands out.
+The guarantee holds on the population (\Cref{sec:instances:population}), which contains \synthetic{89\%} of the
+malware we attack and all but 1.5\% of the benign test files. A monotone detector sends a file outside the population
+to the unconstrained detector, and that is where the single toolkit evasion of each monotone detector happened: the
+header fields attack on an incomplete file, 51~KB long, whose headers describe 2~MB of sections. An attacker can build a
+file outside the population on purpose, but such files are rare among benign software, and so stand out.
+% SYNTHETIC: 89% predicted from the pilot's attacked malware of at most 4 MB (31 of 35 in the population) and from the
+% 2,000-file set's malware of at most 4 MB (652/732); replaced by the scale-up's attacked malware (PLAN.md, next step 3).
+% Pilot, all files: 38 of 50. Benign 1.5%: 14 of the 938 benign test files of at most 4 MB (13 incomplete, 1 with an
+% unusual layout). The evaded file: 480087e22a..., 51,190 bytes, sections to 2,059,264 (Table 5, header_fields;
+% artifacts/experiments/a1/toolkit-v2/results.parquet), not truncated by our copy, so it stays in the new scope.
 % P1 (closure) measured on the 2,000 files: run 117 (run/117_p1_closure.sh), 0 of 60,934 edits on passing files
 % (of 73,063 applied) leave the population, all twelve operations; pilot: 0 of 3,188. The split, outputs inside
 % the table, and still detected: scripts/a1_toolkit_split.py (runs 78, 105). P2: directions_sums.csv of

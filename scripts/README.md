@@ -17,7 +17,8 @@ make_fixtures (test files).
   Gimenez et al.'s 40 features).
 - **Checks of the instrumentation and the catalogue:** item_checks (G1/G2 bit-exact readouts, G5, G6: single-byte
   flips and locating positions), catalogue_checks (G7: every operation applied by our own byte-level edits, checked
-  against re-extraction and the derived directions; Tables 5 and 6, closure), a_c1_table0 (the hand side-effect
+  against re-extraction and the derived directions; Tables 5 and 6, closure), population_clauses (which clause of the
+  population check each file fails: incomplete or unusual layout; §4.4, run 136), a_c1_table0 (the hand side-effect
   predictors, the engine's oracle).
 - **Witnesses of the hand table's errors (Table 6):** a_overlay_witness, a_signature_witness, a_structure_witness
   (entry section, Rich header, exports and relocations past the end).

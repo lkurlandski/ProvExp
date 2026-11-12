@@ -139,14 +139,22 @@ declare the changes that follow.
 \label{sec:instances:population}
 
 The signature covers the threat model only over a population, and Theorem~\ref{thm:fw:directions} needs that population
-closed under the threat model. Ours is the PE files with a plain layout, in which everything the parser locates lies
-within the file, the sections lie within the image that the loader maps, and the headers hold only headers. On other
-files an edit can change items that no operation declares. Appending to a file whose section table points past its end,
-for instance, supplies content the parser looked for and did not find, instead of extending the overlay. Closure is
-checked rather than proven: of the 73,063 edits of \Cref{sec:eval:setup}, 60,934 were applied to files in the
-population, and none of them took a file out of it. Of the 2,000 test files those edits were applied to, 1,674 are in the population. Most of
-the others are files that our copy of the dataset truncates at 4~MB, in which something the parser locates lies past the
-truncated end; of the files it does not truncate, 94\% are in the population.
+closed under the threat model. Ours is the complete PE files with a plain layout. A file is complete when everything
+the parser locates lies within it, and its layout is plain when the sections lie within the image that the loader maps
+and the headers hold only headers. On other files an edit can change items that no operation declares. Appending to an
+incomplete file, for instance, supplies content the parser looked for and did not find, instead of extending the
+overlay. Closure is checked rather than proven: none of the 56,902 edits of \Cref{sec:eval:setup} that were applied to
+files in the population took a file out of it.
 
-Whether a file has a plain layout is a property of the file alone, so a detector checks it at inference. A file in the
-population goes to the monotone detector, and any other file to an unconstrained one, which carries no guarantee.
+Almost every file outside the population is incomplete: its headers locate sections or tables that lie, at least in
+part, past its end. Of the test files we use (\Cref{sec:eval:setup}), 94\% are in the population, 5\% are incomplete,
+and 0.4\% are complete files with an unusual layout. Whether a file is in the population is a property of the file
+alone, so a detector checks it at inference. A file in the population goes to the monotone detector, and any other
+file to an unconstrained one, which carries no guarantee.
+% MEASURED (session 46, 2026-11-12), on the 1,670 files of at most 4 MB among the 2,000 test files of run 117/118
+% (artifacts/explanation_set/ts.parquet): 1,576 in the population (benign 924/938, malware 652/732); outside, 87
+% incomplete (an item, data directory, or section located past the end: benign 13, malware 74; 63 of them lack more than
+% 4 KB of their sections) and 7 complete with an unusual layout (the other clauses of catalogue.plain_layout: benign 1,
+% malware 6). Closure: run 117 (catalogue_checks/2000-p1), 0 of the 56,902 edits on population files of at most 4 MB
+% (all twelve operations) leave it. Before the scope change (all 2,000 files): 1,674 in the population, 0 of 60,934.
+% Clause counts: run/136_population_clauses.sh (artifacts/experiments/population_clauses/2000), one row per file.

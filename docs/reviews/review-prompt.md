@@ -21,6 +21,13 @@ Do not soften findings. A problem found now costs a week; a problem a reviewer f
 - **Pilot scale.** About 100 files, one seed, a 10% subsample of each split; some checks on 2,000 files. Numbers will
   change at scale, so do not nitpick values. Judge whether each experiment's *design* supports its claim, and whether
   the claim survives plausible shifts (a narrower margin, a smaller count).
+- **Files up to 4 MB (decided 2026-11-12).** Our copy of EMBER 2024 holds only the first 4 MB of each file, so every
+  split is limited to the files it holds in full (the Setup of Section 5), and Section 4.4 defines the population as
+  the complete files with a plain layout. Most numbers in Section 5 and Appendix D still come from the pilot on all
+  files, truncated ones included (`% PROTOCOL` comments in the source), and will be re-run or recounted. Review the
+  setup as written: treat each number as a pilot value, and flag a mismatch between the setup and a result only if it
+  would survive a re-run on the files up to 4 MB. Do judge the scope itself: what a reviewer would make of leaving out
+  the larger files (a quarter of the test malware).
 - **Blue text is a placeholder for a pending run.** Values set in blue (`\synthetic{...}`, marked `% SYNTHETIC` in the
   source with the run that replaces them) are predictions. Do not flag them as missing evidence or fabrication. Review
   them as claims: would the design support the claim if the run came out as predicted, and what would a different
@@ -44,9 +51,10 @@ sink the paper), say so once, in the risk register, with the reason; otherwise l
 - **The MLP** is set aside for now; the GBDT is the first classifier.
 - **No sandbox execution:** loader-safe edits plus documentation suffice.
 - **Edits are written by our own byte-level code**, not LIEF; files they cannot edit are skipped.
-- **The population:** files with a plain layout. Files outside it go to an unconstrained detector without a guarantee,
-  and coverage is reported. Files over 4 MB stay in. A detector sound over every possible file is one sentence, not a
-  row.
+- **The population:** complete files with a plain layout. Files outside it go to an unconstrained detector without a
+  guarantee, and coverage is reported. Every split uses only the files our copy holds in full, below 4 MB (decided
+  2026-11-12; whole binaries cannot be obtained); you may judge what a reviewer makes of that scope, but do not propose
+  obtaining the larger files. A detector sound over every possible file is one sentence, not a row.
 - **Dropped:** realizable worst-case evaluation with an exact solver (the former direction A'); the projection onto
   the old provenance matrix; a tightness theorem; a cost theorem (cost is a table column); the coupling row (default:
   out).

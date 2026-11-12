@@ -72,8 +72,9 @@ the population); the bookkeeping goes to an appendix (user: "Most of this is eng
   the directions allow any change of that kind unless declared (rename, remove debug, remove signature). Corpus-
   collected, so checked rather than proven (decision 2): the writes' changes and the kinds' vocabulary; one sentence,
   the check in §5.
-- **4.4 Population (~150).** Plain layouts, membership checked at inference, routing, closure (0 of 60,934). The 4 MB
-  truncation stays for now (PLAN.md decision 8 (iv)).
+- **4.4 Population (~150).** Complete files with a plain layout; almost every file outside it is incomplete (headers
+  locate content past its end); membership checked at inference, routing, closure (0 of 56,902). The files we use are
+  those of at most 4 MB, stated once in §5.1's Setup (PLAN.md decision 8 (iv), settled in session 46).
 - **Appendix, the EMBER instance.** The item kinds; a table mapping each row of Table 1 to EMBER's features; the two
   rewrites; the re-encodings; how the locating positions are recorded (single-byte flip check).
 
@@ -161,8 +162,8 @@ No state-of-the-art defense claim (three defense baselines; the user would want 
   4. Beyond the guarantee's hypotheses: GAMMA's rebuilding injections move features outside the table and still evade
      no monotone row on files in the population (0/56, 0/60; also at the literature's budget); 41 of 42 malware still
      detected after every toolkit attack, against 21 of 47 undefended.
-  5. Scope: the population (38 of 50 pilot malware; 1.5% of untruncated benign files outside it, so leaving it stands
-     out); deriving the table costs one pass per extractor (about 5 minutes), PV repeats its attack runs per attack.
+  5. Scope: the population (89% of the attacked malware, predicted for the files of at most 4 MB; 1.5% of benign test
+     files outside it, so leaving it stands out); deriving the table costs one pass per extractor (about 5 minutes), PV repeats its attack runs per attack.
 
 **Checks before drafting 5.2 and 5.3** (new measurements on existing outputs, no new runs; state the hypothesis
 before each, report a failure as such):
