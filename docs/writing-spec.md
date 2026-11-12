@@ -359,3 +359,11 @@ The "implied" notes are earlier readings, not instructions; several of them were
   vague, an interrupting sentence in 4.3.2 ¶3, closure stated flat in 4.4).** The user: "Nice analysis. #2 and #3 seem
   especially straightforward to fix. #1 might require a bit more care and reasoning, so think deeply about how you
   might improve this writing weakness and don't make mistakes. Go ahead and address the issues in the paper."
+- **2026-11-12 (session 41), humanistic review of the §5 lead and 5.1, pass 1** (Claude's review, seven findings).
+  Approved 1 ("the computation" named), 3 (the cost finding tied to the directions, "measurable" gone), 4-7 (declined
+  edits sentence, the 100-vs-2,000 check with its reason, the parameter list trimmed, which detectors are monotone).
+  On 2 (adaptive attack named in the lead before 5.1 defines it): "I think its okay to mention an 'adaptive attack' in
+  passing in the section's lead. The lead doesn't need to formally define every concept. It just needs to give the
+  reader a rough idea of what the section is about and what its purpose is ... I don't want to get into the details
+  about the attack. For example, we could state something like '... in both cases a stronger, white-box adaptive
+  attack confirms ...' which helps clarify the nature and role of the attack."
