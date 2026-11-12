@@ -1,0 +1,31 @@
+I've written the review to `review-C.md`. My recommendation is **Weak reject, confidence 4**.
+
+**What the paper does well:**
+- It turns the "which way can each feature move" analysis behind monotone detectors into something mechanical and checkable for a full EMBER feature set. It validates this with zero wrong predictions over about 70k edits (Table 9).
+- It names the specific parser behaviours that make hand-written tables wrong (§5.2).
+- Reading the underlying counts instead of the normalized features recovers detection, which is a useful general idea.
+- It reports the cost of robustness honestly: TPR at 1% and 0.1% FPR, broken down by operation.
+
+**Main weaknesses, most severe first:**
+1. **The guarantee can be sidestepped through the routing (C-W1).** Files outside the "population" go to an unconstrained detector that the adaptive attack evades about half the time. A malware author can probably just start from an incomplete file. The paper says such files "stand out", but 1.5% of benign files are outside the population while the operating point is 1% FPR, so flagging them all would break the false-positive budget. Staying inside the population is checked only on edits that weren't trying to escape it.
+2. **"Computed from the extractor's code" overstates what is proven (C-W2).** The instrumentation is written by hand and part of the signature comes from sample files. The record of parser positions needed fuzzing to find three missed rules, so the derivation also needed trial. An attacker who controls the input file can violate these sample-based assumptions.
+3. **The baselines get less information than the method (C-W3).** PV, ERDALT and adversarial training learn from attacks that use 6 of the 12 operations. They are then broken with an operation they never saw (section rename). Every hand-table error was found by trial edits the authors already ran. Of 142 features the table calls lowerable that the attacks never moved, only 20 are confirmed by any edit.
+4. **The remaining weaknesses:**
+   - Real tools leave the threat model: 36 of 288 GAMMA outputs fall outside the guarantee, and code-level rewriting is excluded (C-W4).
+   - The ERDALT reimplementation is not shown to be faithful (C-W5).
+   - Denominators are tiny, and the headline detector is never hit with the full adaptive attack (C-W6).
+   - Only one domain is instantiated (C-W7).
+   - The formal results are modest as theory (C-W8).
+   - The 4 MB exclusion and the 89% placeholder limit what can be claimed (C-W9).
+
+**The one change** that would move me to weak accept is to evaluate the deployed system as a whole. That means specifying the policy for files outside the population and moving the sample-based checks to per-file checks at inference. It also means reporting robustness at a fixed FPR against an attacker who starts outside the population or tries to leave it.
+
+On related work: my web searches found nothing that undercuts the paper's novelty. The review asks it to position against abstract interpretation and two certified defenses in the provided papers that it doesn't cite (RS-Del, DRSM). It should also cover problem-space adversarial training (Lucas et al. 2024, Tsingenopoulos et al. 2024) and the 2026 problem-space evaluation by Dyrmishi, Zainab et al.
+
+Sources:
+- [Bostani et al., arXiv 2205.15128](https://arxiv.org/abs/2205.15128v3)
+- [Data-Driven Constraint Mining for Realizable Adversarial Samples](https://aminer.org/pub/658aaf00939a5f4082ed77b7/data-driven-constraint-mining-for-realizable-adversarial-samples)
+- [Gimenez et al., arXiv 2508.10038](https://arxiv.org/abs/2508.10038)
+- [Towards Certified Malware Detection, arXiv 2604.20495](https://arxiv.org/abs/2604.20495)
+
+**Score: Weak reject (confidence 4).** File written: `review-C.md`.

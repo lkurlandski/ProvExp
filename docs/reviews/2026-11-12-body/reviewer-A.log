@@ -1,0 +1,31 @@
+I wrote the review to `review-A.md`. My score is **Weak accept**, with confidence **3**.
+
+**Why it's an accept:** the security results are useful and every one is checked by re-running EMBER on the edited file.
+- The derived directions show that 11 of Gimenez et al.'s 40 expert-set features can be lowered without source code.
+- A single section rename evades the PV defense on 4 of 9 detected malware.
+- Most of ERDALT's learned layer sits on features an edit can lower.
+- The resulting monotone detector keeps about 92% detection under additions, against 29% for the hand-picked expert set. Under the full threat model it costs about 4 points of detection at a 1% false-positive rate.
+
+**Main weaknesses I raised:**
+- **A-W1, the class is universal.** As defined, any feature mapping fits it (one item holding the whole file). The real assumption is that edits only affect items near the bytes they write. Section 3 never states this, and the EMBER instance checks it only on file samples and with single-byte fuzzing. So "no edit can evade" is conditional on those checks, not proven.
+- **A-W2, the theory isn't new.** Proposition 1 is standard incremental view maintenance. Theorem 1 is a sign-domain abstract interpretation of the change, and Corollary 1 is Gimenez et al.'s Proposition 1 (the paper says so). The paper never mentions abstract interpretation. One of the two differences Section 6 claims over prior techniques is already done by incremental parsing, and the other is just abstract interpretation.
+- **A-W3, the theorem's hypotheses are too loose.**
+  - Theorem 1 is stated for any commutative monoid, but the proof only works for ordered ones whose operation is monotone.
+  - The derived table drops the ratio rule's side conditions.
+  - I infer, but couldn't confirm without the code, that "smallest section entropy" is not monotone as Table 8 claims. EMBER reads it as 0 for a file with no sections, so adding a first section raises the feature while the table says it can only fall.
+- **A-W4, the deployed guarantee is weaker than the corollary.**
+  - Files outside the population go to an unconstrained detector. Rejecting them all isn't an option, because 1.5% of benign files are outside, which already exceeds the 1% false-positive budget.
+  - The 4 MB cutoff drops 26% of the malicious test files.
+  - The GAMMA tools rebuild files in ways the threat model doesn't cover.
+  - The 89% placeholder may be optimistic: only 78.5% of the training malware fell in the population.
+- **A-W5–W7.** The "exact before the edit" claim is overstated: 77% of DOS-header overwrites are declined, and the adaptive attack skips them. Results rest on one seed and very small counts. Certified malware defenses (RS-Del, DRSM, Gibert et al.) and tree-ensemble verification are not discussed.
+
+**The one change that would raise my score:** state the locality property as an explicit hypothesis of Theorem 1. Then derive EMBER's record of which bytes the parser reads to find items with a sound dependency analysis of the parser, not by fuzzing, and prove that the threat model is covered from it.
+
+Web search added a few works to cite: Gibert et al. (AISec 2023), Giri et al. (arXiv 2604.20495, 2026), and Zhang, Albarghouthi and D'Antoni on certified robustness to programmable transformations:
+- [Gibert et al.](https://danielgibert.github.io/publication/2024-AISEC-DeRandomizedSmoothing)
+- [Gibert et al., extended version](https://arxiv.org/abs/2405.00392)
+- [Giri et al.](https://arxiv.org/abs/2604.20495)
+- [Zhang, Albarghouthi and D'Antoni](https://www.arxiv.org/pdf/2102.07818)
+
+**Score: Weak accept (confidence 3). File written: `/scratch/lk3591/provexp/reviews/2026-11-12-body/review-A.md`**

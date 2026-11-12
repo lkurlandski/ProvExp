@@ -1,0 +1,30 @@
+I've written the review to `review-D.md`. My score is **Weak accept, confidence 3**.
+
+**Why it's positive:** the paper works out, from the code of the EMBER malware feature extractor, which way each feature can move under each kind of file edit an attacker is allowed. That idea is new in this area. It finds real holes in a published defense (Gimenez et al.), and the claim holds within their own stated threat model. One defense is evaded on 4 of 9 malware by simply renaming a section, and 11 of their 40 hand-picked "hard to lower" features can in fact be lowered. It also builds a detector that keeps far more detection than earlier detectors of the same "can't be pushed down" kind.
+
+**Main weaknesses, most severe first:**
+- **D-W1:** The guarantee that no edit can evade the detector rests on assumptions the authors checked by testing, not by proof. That partly undercuts the paper's main contrast with finding effects by trial.
+- **D-W2:** Files outside the defined population are sent to an ordinary detector with no guarantee. An attacker can start from such a file on purpose. Simply flagging those files would cost about 1.5% false positives, more than the paper's 1% budget.
+- **D-W3:** The 12 allowed edits exclude packing and code-level rewriting. The paper never tests the robust detector against those attacks.
+- **D-W4:** A claim about a whole class of extractors is supported by a single PE instance, with no estimate of the instrumentation effort.
+- **D-W5:** The evidence that hand analysis fails rests on small counts: 2 evasions out of 8 malware, and the authors' own hand table caused no actual evasion.
+
+There are lesser points on weakened baselines, how much the theory adds, and dropping files over 4 MB.
+
+**The one change:** evaluate the whole deployed system, including the routing of out-of-population files, against an attacker who may choose such a starting file, and report the end-to-end detection rate at 1% false positives.
+
+**What I checked:**
+- Against `papers/`: Gimenez et al.'s expert-set rationale and threat model, the Severi et al. quote, and the Incer et al. comparison.
+- By web search: no prior work derives these feature directions from extractor code, though the search was not exhaustive. Two works to position against: Calzavara et al. (ESORICS'20) and Giri et al. (arXiv 2604.20495, 2026).
+
+**Gaps:**
+- I could not map elements to page numbers with a script (the command needed approval). The page references in the review come from page headers in the extracted text, so a few may be off by one.
+- The 89% placeholder can't be 89% of the 50 attacked malware, since that isn't a whole number. The review asks the authors for the denominator.
+
+Score: **Weak accept (confidence 3)**. File: `/scratch/lk3591/provexp/reviews/2026-11-12-body/review-D.md`
+
+Sources:
+- [Bostani et al., arXiv 2205.15128](https://arxiv.org/abs/2205.15128v3)
+- [Gimenez et al., arXiv 2508.10038](https://arxiv.org/abs/2508.10038)
+- [Giri et al., Towards Certified Malware Detection, arXiv 2604.20495](https://arxiv.org/abs/2604.20495)
+- [Calzavara et al., ESORICS'20](https://www.dais.unive.it/~calzavara/papers/esorics20a.pdf)

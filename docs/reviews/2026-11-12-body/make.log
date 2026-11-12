@@ -1,0 +1,9 @@
+make: Entering directory '/home/lk3591/Documents/code/ProvExp/manuscript'
+latexmk -pdf -interaction=nonstopmode -halt-on-error -file-line-error main.tex
+Rc files read (in order):
+  NONE
+Latexmk: This is Latexmk, John Collins, 9 March 2026. Version 4.88.
+Latexmk: Nothing to do for 'main.tex'.
+Latexmk: All targets (main.pdf) are up-to-date
+
+make: Leaving directory '/home/lk3591/Documents/code/ProvExp/manuscript'

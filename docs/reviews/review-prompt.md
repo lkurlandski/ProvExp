@@ -48,7 +48,7 @@ Placeholders in the prompt files (`{{VENUE}}`, `{{SCALE}}`, `{{TAG}}`, `{{OUT}}`
 | `VENUE`, `SCALE` | ACM CCS; Reject / Weak reject / Weak accept / Accept | the simulated venue |
 | `REVIEWERS` | `A B C D` | which persona files run |
 | `REVIEWER_MODEL`, `REVIEWER_EFFORT` | `claude-opus-5-5`, `high` | every reviewer; `MODEL_<ID>`, `EFFORT_<ID>` override one (e.g. `MODEL_C=claude-fable-5-2`) |
-| `META_MODEL`, `META_EFFORT` | `claude-opus-5-5`, `max` | the meta-reviewer |
+| `META_MODEL`, `META_EFFORT` | `claude-opus-5-5`, `xhigh` | the meta-reviewer (`max` used up the user's session limit in the first run, 2026-11-12) |
 | `REVIEWER_WEB` | `1` | reviewers may search the web |
 | `MAX_BUDGET_USD` | empty | optional cap per agent |
 | `STEPS` | `all` | `reviewers` stops after the reviews; `meta` redoes only the meta-review |
@@ -72,3 +72,9 @@ Placeholders in the prompt files (`{{VENUE}}`, `{{SCALE}}`, `{{TAG}}`, `{{OUT}}`
 
 If a reviewer fails (no `review-<ID>.md`), rerun only it: `REVIEWERS=C STEPS=reviewers TAG=<same tag> ...`, then
 `STEPS=meta TAG=<same tag> ...`.
+
+**Stopping and resuming the meta-reviewer** (e.g. to change its effort or after a usage limit): stop it (Ctrl-C in its
+pane), then `docs/reviews/process/resume_meta.sh`. It finds the newest meta-review session, resumes it with
+`--resume` (everything it has read stays in its context) at `META_MODEL` / `META_EFFORT`, and logs to
+`docs/reviews/<TAG>/meta-resume.log`. On a later day, pass the run's tag (`TAG=2026-11-12-body`); `SESSION=<id>`
+picks a session by hand.

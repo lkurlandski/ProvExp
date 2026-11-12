@@ -1,0 +1,21 @@
+I recommend **Weak reject**, with confidence 4 of 4.
+
+The paper's idea is to compute, from the instrumented EMBER extractor, which way each feature can move under an attacker's edits, instead of having an analyst decide or learning it from observed attacks. That idea is useful, and the counterexamples against Gimenez et al.'s defenses are convincing. Four problems keep me from arguing for acceptance:
+
+- **The guarantee is only as good as its unproven assumptions.** For EMBER, three of its premises were checked by trial, not proven: part of the edit description was read from a 100-file sample, the population's closure under edits was checked on test edits, and the parser's read positions were found by single-byte fuzzing. The paper argues elsewhere that trial cannot give guarantees.
+- **The threat model misses real edits.** 36 of the 288 in-population outputs from the paper's own toolkit attacks move features in directions the derived table rules out. That covers the two GAMMA attacks, which go through LIEF and rebuild the file layout. Code-level edits are left out entirely, which probably hides most of the real cost of robustness.
+- **About a quarter of malware may be unprotected, and the system is never measured end to end.** The 89% in-population figure is a prediction. The paper's own earlier run gives about 74% (35 of 47 detected malware). Also, 1.5% of benign files fall outside the population, which is above the 1% false-positive budget, so out-of-population files cannot simply be flagged.
+- **The attacks are weak.** Budgets are below published ones and MAB-Malware is never run. The "stronger" adaptive attack is no better than the toolkit attacks on the unconstrained detector. It also skips exactly the edits where the paper's computation declines to predict, including all header-field overwrites.
+
+Most of these are verified against the paper's text and the PDFs in `papers/`. I flag the inferred points in the review, mainly the end-to-end evasion estimate and how much the cost would grow under code-level edits. The review also says that the paper misattributes the "100 queries" budget to Gimenez et al., who report a 60-second timeout per attack. It also lists related work the paper should cite, mainly the certified defenses RS-Del, DRSM, and Giri et al. 2026 ([arXiv 2604.20495](https://arxiv.org/abs/2604.20495)).
+
+The one change that would move me to Weak accept is an end-to-end evaluation of the deployed system: the population check, the monotone detector and the fallback detector together. It would need complete files, full scale, and attacks at published strength, including an attacker who tries to leave the population.
+
+Web sources used:
+- [Certifiably robust malware detectors by design (arXiv 2508.10038)](https://arxiv.org/pdf/2508.10038)
+- [Bostani et al., arXiv 2205.15128](https://arxiv.org/abs/2205.15128v4)
+- [Data-Driven Constraint Mining for Realizable Adversarial Samples](https://aminer.org/pub/658aaf00939a5f4082ed77b7/data-driven-constraint-mining-for-realizable-adversarial-samples)
+- [Towards Certified Malware Detection (arXiv 2604.20495)](https://arxiv.org/abs/2604.20495)
+- [Microsoft Security blog, July 2019, on monotonic models](https://www.microsoft.com/en-us/security/blog/2019/07/25/new-machine-learning-model-sifts-through-the-good-to-unearth-the-bad-in-evasive-malware/)
+
+**Score: Weak reject (confidence 4).** File written: `review-B.md`

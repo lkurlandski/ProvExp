@@ -19,7 +19,7 @@ REVIEWER_EFFORT="${REVIEWER_EFFORT:-high}"
 
 # The meta-reviewer: merges the reviews, checks their premises against the project, works through checklist.md.
 META_MODEL="${META_MODEL:-claude-opus-5-5}"
-META_EFFORT="${META_EFFORT:-max}"
+META_EFFORT="${META_EFFORT:-xhigh}"
 
 # Whether reviewers may search the web for related work (1) or only use papers/ (0).
 REVIEWER_WEB="${REVIEWER_WEB:-1}"

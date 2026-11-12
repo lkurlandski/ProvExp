@@ -1,0 +1,19 @@
+commit=82eea08
+date=2026-11-12T14:36:20-05:00
+TAG=2026-11-12-body
+VENUE=ACM CCS (reviewers who also serve on IEEE S&P, USENIX Security and NDSS)
+SCALE=Reject / Weak reject / Weak accept / Accept
+REVIEWERS=A B C D
+REVIEWER_MODEL=claude-opus-5-5
+REVIEWER_EFFORT=high
+META_MODEL=claude-opus-5-5
+META_EFFORT=max
+REVIEWER_WEB=1
+MAX_BUDGET_USD=
+WORK_ROOT=/scratch/lk3591/provexp/reviews
+STEPS=all
+DRY_RUN=0
+reviewer A: model=claude-opus-5-5 effort=high
+reviewer B: model=claude-opus-5-5 effort=high
+reviewer C: model=claude-opus-5-5 effort=high
+reviewer D: model=claude-opus-5-5 effort=high
