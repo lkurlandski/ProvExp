@@ -39,6 +39,15 @@ budget_flag() {
 # Preparation
 ################################################################################
 
+# Refuse to overwrite a finished run: a new run needs a new TAG (or FORCE=1). STEPS=meta and single reviewers pass.
+if [[ "$STEPS" != "meta" && "${FORCE:-0}" != "1" && "$DRY_RUN" != "1" ]]; then
+    for id in $REVIEWERS; do
+        if [[ -f "$OUT/reviewer-$id.md" ]]; then
+            echo "docs/reviews/$TAG/reviewer-$id.md exists: use another TAG, FORCE=1 to redo it, or resume_meta.sh" >&2
+            exit 1
+        fi
+    done
+fi
 mkdir -p "$OUT"
 if [[ "$STEPS" == "all" || "$STEPS" == "reviewers" ]]; then
     echo "Building the PDF (make in manuscript/; log: $OUT/make.log)"
