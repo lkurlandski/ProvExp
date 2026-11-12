@@ -87,42 +87,42 @@ the twelve operations which way the group's features could move. We knew the ext
 the realistic setting for such an analysis. Elsewhere the two tables agree, except on the size of the certificate
 table, which the hand table leaves free and the derived one allows only to decrease.
 
-\begin{table*}[t]
-  \caption{The eight errors of the hand-written direction table. In each, a real file and edit, extracted again, moves
-  the feature in the direction the hand rule excluded. The only other disagreement goes the other way: the hand table
-  leaves the size of the certificate table free, where the derived one allows only decreases. In pop.: the error holds
-  on files in the population, which the detectors are built for.}
+\begin{table}[t]
+  \caption{The eight errors of the hand-written table: the direction each allows and the derived one, and the files on
+  which a real edit moves the feature the excluded way.}
   \label{tab:eval:directions}
   \small
-  \begin{tabular}{@{}p{0.15\textwidth}p{0.16\textwidth}llp{0.42\textwidth}@{}}
+  \setlength{\tabcolsep}{4pt}
+  \begin{tabular*}{\linewidth}{@{}ll@{\extracolsep{\fill}}ccr@{}}
     \toprule
-    Feature & Operation & Hand $\to$ derived & In pop. & Witness \\
+    Feature & Operation & Hand & Derived & Files \\
     \midrule
-    overlay size & add a section & fixed $\to$ down & yes & a section added after the overlay takes the overlay as its
-      raw data, and the overlay vanishes (650 of 2,000 files) \\
-    entry section's name & add a section & fixed $\to$ both & yes & on files whose entry point lies in no section, the
-      added executable section becomes the entry section (8 of the 100 files) \\
-    Rich header & insert a gap before the PE header & fixed $\to$ both & yes & the parser searches a range that contains
-      the gap; content written there creates a Rich header (all 39 of the 100 files without one) \\
-    Rich header & overwrite header fields & fixed $\to$ both & yes & three header fields lie in the same search range (8
-      of the 39) \\
-    overlay size & append & up $\to$ both & no & the appended bytes complete a section that pointed past the truncated
-      end, and the overlay shrinks (4 of the 100 files; e.g.\ 31,482 to 4,096 bytes) \\
-    number of certificates & append & down $\to$ both & no & completing a certificate table past the end adds a
-      certificate (2 of the 100 files) \\
-    has relocations, exports & append & fixed $\to$ both & no & completing a directory past the end (relocations: 151 of
-      2,000 files; exports: 37) \\
-    section entropy & overwrite header fields & fixed $\to$ both & no & a section whose raw data starts at offset 0 is
-      the header (4 of 2,000 files) \\
+    \multicolumn{5}{@{}l}{\emph{In the population}} \\
+    Overlay size     & Add a section        & fixed & down & 650/2,000 \\
+    Entry section    & Add a section        & fixed & both & 8/100 \\
+    Rich header      & Gap before PE header & fixed & both & 39/39 \\
+    Rich header      & Overwrite header     & fixed & both & 8/39 \\
+    \midrule
+    \multicolumn{5}{@{}l}{\emph{Outside the population}} \\
+    Overlay size     & Append               & up    & both & 4/100 \\
+    Certificates     & Append               & down  & both & 2/100 \\
+    Relocs., exports & Append               & fixed & both & 151, 37/2,000 \\
+    Section entropy  & Overwrite header     & fixed & both & 4/2,000 \\
     \bottomrule
-  \end{tabular}
-\end{table*}
+  \end{tabular*}
+\end{table}
+% Table remade in session 43 (old version, with a witness sentence per row, in git history before this commit).
+% Witnesses: run 101 (scripts/a_structure_witness.py) and docs/evidence/item-layer-design.md (2026-10-27, 2026-10-29).
+% Rich header 39/39: all pilot files without one; 8/39: of those same files. Relocations and exports: one hand rule
+% (EMBER's general group under append), witnessed on 151 and 37 of the 2,000 files.
 
 \paragraph{Why it errs}
-None of the errors comes from the content an edit writes. They come from three facts about how the parser finds
-structures, visible only in its code: it ignores structures that lie past the end of the file, so appending can bring
-them into existence; it searches a fixed range for the Rich header, wherever the PE header happens to start; and it
-picks the entry section by a rule with a fallback. The derivation needs none of these facts stated. The item tables record
+None of the errors comes from the content an edit writes. They come from five facts about how the parser finds
+structures, visible only in its code: it takes the overlay to start where the last section ends, so a section added
+after the overlay takes the overlay as its raw data; it picks the entry section by a rule with a fallback; it searches a
+fixed range for the Rich header, wherever the PE header happens to start, so content written into that range can create
+one; it ignores structures that lie past the end of the file, so appending can bring them into existence; and it reads
+a section's raw data wherever the section table points, even at offset 0, where the headers lie. The derivation needs none of these facts stated. The item tables record
 every position the parser reads to find items, so an edit that writes such a position is allowed to move those items'
 features either way, without anyone knowing why the parser reads there.
 

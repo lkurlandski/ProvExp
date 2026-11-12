@@ -423,3 +423,9 @@ The "implied" notes are earlier readings, not instructions; several of them were
   consistency between them, which might be out of scope right now, as it could involve running extra experiments.
   Anyway, its a decent improvement. Last thing: can we put the two tabular environments in the same table environment,
   to keep them together?"
+  Table 3, shown as the current table (page 1), a slim one-column numeric table grouped by population (page 2), and a
+  numbered list by cause replacing the table and "Why it errs" (page 3), with Claude recommending page 3: "Page 2 is a
+  clear winner." Then, before it went in: "I'm undecided between page 2 and page 3. Think deeply about which option is
+  more effective for our research as a whole. Then make your decision accordingly." Claude chose page 2 (the finding at
+  a glance; PE parser details stay in a float and one sentence; the table's columns carry over to other extractors and
+  domains; consistent with the new Table 4).

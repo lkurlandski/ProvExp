@@ -115,24 +115,6 @@ followed by an append, are exact when the item table is carried forward one edit
 % The "random in-place writes" row is run 96 (run/96_item_checks_after_split.sh, item_checks/margins-pilot-split): 20
 % random writes of 1-64 bytes per pilot file, 100 files, 1,791 exact, 209 declined, 0 wrong. Total edits 62,604.
 
-\paragraph{The adaptive attack.} The adaptive attack of \Cref{sec:eval:setup} is a beam search. At each step it applies
-random candidate edits to the three lowest-scoring files found so far, computes each candidate's features by
-Proposition~\ref{prop:fw:side-effects}, and keeps the three lowest-scoring files; after three steps without improvement
-it restarts from the original file. When it adds or renames a section, it picks a name whose hash lands in a bucket the
-detector's trees weigh toward benign. Every file it keeps is written with our own code and its features extracted
-again.
-% scripts/a1_adaptive.py, --search beam (run 127): beam_search; target_buckets reads the booster.
-
-\paragraph{ERDALT.} We follow Gimenez et al.'s released code with one change: the output layer's weights are kept
-nonnegative, like those of the layers below it, so that the network is monotone as their Proposition~3 requires; the
-released code leaves the output layer unconstrained.
-% src/provexp/models/erdalt.py (project_monotone); docs/upstream-issues.md, item 8. Other differences (batch size,
-% validation-split selection) are left out of the paper on purpose (user, 2026-11-12).
-
-\paragraph{Leave-one-out.} \Cref{tab:ember:loo} gives the folds of \Cref{sec:eval:observed}. Each fold builds PV and
-ERDALT from the outputs of seven toolkit attacks on the 400 training malware and runs the eighth on the test malware the
-fold's detector detects, as in \Cref{sec:eval:setup}.
-
 \begin{table}[h]
   \caption{Leave-one-out over the toolkit attacks: test malware each fold's detector detects, and how many of them the
   held-out attack evades.}
@@ -156,4 +138,23 @@ fold's detector detects, as in \Cref{sec:eval:setup}.
 \end{table}
 % Run 135: artifacts/experiments/a_loo_varied/{pv,erdalt}/<attack>/table.json.
 % Attack names as in Table 2 (tab:instances:catalogue).
+
+\paragraph{The adaptive attack.} The adaptive attack of \Cref{sec:eval:setup} is a beam search. At each step it applies
+random candidate edits to the three lowest-scoring files found so far, computes each candidate's features by
+Proposition~\ref{prop:fw:side-effects}, and keeps the three lowest-scoring files; after three steps without improvement
+it restarts from the original file. When it adds or renames a section, it picks a name whose hash lands in a bucket the
+detector's trees weigh toward benign. Every file it keeps is written with our own code and its features extracted
+again.
+% scripts/a1_adaptive.py, --search beam (run 127): beam_search; target_buckets reads the booster.
+
+\paragraph{ERDALT.} We follow Gimenez et al.'s released code with one change: the output layer's weights are kept
+nonnegative, like those of the layers below it, so that the network is monotone as their Proposition~3 requires; the
+released code leaves the output layer unconstrained.
+% src/provexp/models/erdalt.py (project_monotone); docs/upstream-issues.md, item 8. Other differences (batch size,
+% validation-split selection) are left out of the paper on purpose (user, 2026-11-12).
+
+\paragraph{Leave-one-out.} \Cref{tab:ember:loo} gives the folds of \Cref{sec:eval:observed}. Each fold builds PV and
+ERDALT from the outputs of seven toolkit attacks on the 400 training malware and runs the eighth on the test malware the
+fold's detector detects, as in \Cref{sec:eval:setup}.
+
 
