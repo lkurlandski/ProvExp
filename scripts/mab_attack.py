@@ -194,10 +194,12 @@ class MABChannel:
     the classifier thread has seen the file.
     """
 
-    def __init__(self, upstream: dict[str, Any], evasive: Callable[[bytes], bool]) -> None:
+    def __init__(self, upstream: dict[str, Any], score: Callable[[bytes], float], tau: float) -> None:
         self.u = upstream["utils"]
-        self.evasive = evasive
+        self.score = score
+        self.tau = tau
         self.queries: dict[str, dict[str, int]] = {}
+        self.lowest: dict[str, float] = {}  # per sample, the lowest score any query saw (a check against no-ops)
         sample_cls = upstream["sample"].Sample
         channel = self
 
@@ -205,7 +207,9 @@ class MABChannel:
             s.scan_status = channel.u.SCAN_STATUS_WAITING
             s.copy_time = time.time()
             data = Path(s.current_exe_path).read_bytes()
-            s._verdict = channel.u.SCAN_STATUS_PASS if channel.evasive(data) else channel.u.SCAN_STATUS_DELETED
+            p = channel.score(data)
+            channel.lowest[s.path] = min(p, channel.lowest.get(s.path, float("inf")))
+            s._verdict = channel.u.SCAN_STATUS_PASS if p <= channel.tau else channel.u.SCAN_STATUS_DELETED
             kind = "minimizer" if scan_folder == channel.u.minimizer_scan_folder else "rewriter"
             q = channel.queries.setdefault(s.path, {"rewriter": 0, "minimizer": 0})
             q[kind] += 1
@@ -351,7 +355,7 @@ def _run_defense(task: dict[str, Any]) -> list[dict[str, Any]]:
         return float(detector.predict(v.reshape(1, -1))[0])
 
     upstream = import_upstream()
-    channel = MABChannel(upstream, lambda data: score(data) <= tau)
+    channel = MABChannel(upstream, score, tau)
     t0 = time.time()
     sm, _ = run_sync(upstream)
     seconds = time.time() - t0
@@ -361,7 +365,8 @@ def _run_defense(task: dict[str, Any]) -> list[dict[str, Any]]:
         name = Path(s.path).name
         data = originals[name]
         out = final_file(s, u)
-        p_adv, added, ok, valid, pre_adv, error = float("nan"), 0, out is not None, False, False, ""
+        # ok: the attack ran and its output (if any) could be scored; a file it never evaded has no output.
+        p_adv, added, ok, valid, pre_adv, error = float("nan"), 0, True, False, False, ""
         if out is not None:
             adv = out.read_bytes()
             try:
@@ -375,11 +380,12 @@ def _run_defense(task: dict[str, Any]) -> list[dict[str, Any]]:
         q = channel.queries.get(s.path, {"rewriter": 0, "minimizer": 0})
         rows.append({
             "defense": defense, "attack": ATTACK, "name": name, "tau": tau, "p_clean": score(data), "p_adv": p_adv,
-            "evaded": bool(ok and valid and added <= cap and p_adv <= tau), "bytes_added": added,
+            "evaded": bool(out is not None and ok and valid and added <= cap and p_adv <= tau), "bytes_added": added,
             "over_budget": added > cap, "ok": ok, "valid": valid, "truncated": len(data) >= MAX_LENGTH,
             "precondition": precondition_holds(data), "precondition_adv": pre_adv, "error": error,
             "seconds": seconds / max(1, len(sm.list_sample)), "pulls": s.pull_count,
             "queries": q["rewriter"] + q["minimizer"], "queries_minimizer": q["minimizer"],
+            "has_output": out is not None, "p_lowest": channel.lowest.get(s.path, float("nan")),
             "applied": ",".join(a.action for a in s.list_applied_arm),
             "minimal": ",".join(a.action for a in s.list_minimal_arm),
             "minimizer_stuck": bool(getattr(s, "minimizer_stuck", False))})
@@ -423,7 +429,7 @@ def trace_run(task: dict[str, Any]) -> dict[str, Any]:
     upstream = import_upstream()
     modulus = int(task["modulus"])
     if task["mode"] == "channel":
-        MABChannel(upstream, lambda data: hash_evasive(data, modulus))
+        MABChannel(upstream, lambda data: 0.0 if hash_evasive(data, modulus) else 1.0, 0.5)
     elif task["mode"] == "folders":
         sample_cls = upstream["sample"].Sample
         original = sample_cls.copy_to_scan_folder
@@ -515,14 +521,14 @@ def main() -> None:
         if r.height:
             entry["per_attack"][ATTACK] = {
                 "runs": r.height, "evaded": int(r["evaded"].sum()), "failed": int((~r["ok"]).sum()),
-                "over_budget": int(r["over_budget"].sum()), "invalid": int((r["ok"] & ~r["valid"]).sum()),
+                "over_budget": int(r["over_budget"].sum()), "invalid": int((r["has_output"] & r["ok"] & ~r["valid"]).sum()),
                 "evaded_outside_population": int((r["evaded"] & ~r["precondition_adv"]).sum()),
                 "queries_median": float(r["queries"].median() or 0)}  # type: ignore[arg-type]
             entry["groups"]["all"] = {
                 "all": group_evasion(r, [ATTACK]),
                 "precondition": group_evasion(r.filter(pl.col("precondition")), [ATTACK]),
                 "no_precondition": group_evasion(r.filter(~pl.col("precondition")), [ATTACK]),
-                "uncapped": group_evasion(r.with_columns(evaded=pl.col("ok") & pl.col("valid")
+                "uncapped": group_evasion(r.with_columns(evaded=pl.col("has_output") & pl.col("ok") & pl.col("valid")
                                                          & (pl.col("p_adv") <= pl.col("tau"))), [ATTACK])}
         table["defenses"][d] = entry
         print(f"{d:16s} detected {len(detected[d]):2d}  {entry['per_attack'].get(ATTACK)}", flush=True)
