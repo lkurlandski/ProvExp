@@ -5,7 +5,7 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
 `docs/archive/` (the log before 2026-11-09 is `docs/archive/status-log-2026-10-to-2026-11-09.md`; sessions 21-28 are in
 `docs/archive/status-log-2026-11-09.md`, sessions 29-34 in `docs/archive/status-log-2026-11-10-to-11.md`).
 
-## Current state (2026-11-12, sessions 34-42)
+## Current state (2026-11-12, sessions 34-43)
 
 - **Framework (§2-3):** rewritten; the user is reasonably satisfied. Open: the user's holistic read of Sound
   Directions after round 4 (finetuning only).
@@ -21,7 +21,8 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
   with the certificate table apart, the two published analyses in their own paragraphs; 5.3 says the derived table
   marks 142 features as ones an edit *may* lower (20 shown); 5.4's 0.1% breakdown keeps only what clears retraining
   noise; Table 2's attack names and "population" throughout, no "pilot". The user has not read §5 end to end.
-  Holistic review in session 42 (findings 1-4 applied, 68f6385, 49d879d). Tables 3 and 4: to be remade (next).
+  Holistic review in session 42 (findings 1-4 applied, 68f6385, 49d879d). Tables 3 and 4 remade in session 43
+  (7788592, 52e07cc): one column each, data only, one-line captions; the user: "good enough".
 - **§5.3** is drafted (session 39) from the claim agreed in session 34 (`docs/evidence/section-5.3-design.md` §10.5, which
   stays the record of how the design came about). Learned-region paragraph cut, no audit table for now (tables
   remade later), no seed or protocol-hygiene details in the paper (user). Every learned defense is built from run 133's
@@ -39,19 +40,34 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
 
 ## Waiting on the user
 
-- **Next session, first:** the table remake, restarted (user, session 42: the tables before the question-and-answer
-  emphasis). The first mock-ups were rejected without specifics; start from what the user dislikes in the current
-  tables and in the mock-ups (`docs/resume-prompt.md`).
+- **Next session, first:** a check-in with the user on whether §5 should get more tables at all (and which), thought
+  through together; not a proposal from Claude (user, session 43; `docs/resume-prompt.md`).
 - The holistic read of Sound Directions (any time).
 
 ## Scheduled (in order; PLAN.md, next steps)
 
-- The tables remade, then §5's question-and-answer emphasis, §4 and §5 shortened, §2's closing and contribution 4
+- Whether §5 needs more tables (check-in, next session), then §5's question-and-answer emphasis, §4 and §5 shortened, §2's closing and contribution 4
   aligned (to consider with the user; §2's attack promise is a known weakness, PLAN.md step 2).
 - The 4 MB-truncation brainstorm (the ERDALT check is done, session 41).
 - Then decide with the user whether the paper is ready for the next full simulated review.
 
 ## Session log
+
+- **2026-11-12 (session 43): Tables 3 and 4 remade.** Started by asking what the user dislikes (multiple choice, with
+  the PDFs): for Table 4 the footnote symbols, the long caption, phrase row labels, and mixed threat models and
+  training sets; for Table 3 the prose cells and the looks ("maybe this shouldn't be a table?"). Models: their ExeFormer
+  tables and Lucas et al.'s Table 2 ("almost any table in a published paper looks better than these"). Comparisons in
+  `manuscript/tmp-tables.tex` (untracked; old version on page 1, new on page 2, as the user asked). Table 4 (7788592):
+  one column, two halves in one float (full threat model; additions, with toolkit evasion split inside/outside the
+  threat model), short labels, arrows, bold best, evasion as counts; the adaptive results and the full-training-set
+  row moved into 5.4's text (so the paper no longer shows 27/49 against 5.3's 25/49). The user: "not perfect, but its
+  good enough"; the two halves should be more consistent, which may need runs (scale-up). Table 3 (52e07cc): one
+  column, feature / operation / hand / derived / files, grouped by population; the user hesitated between it and a
+  numbered list by cause and asked Claude to decide for the research as a whole (Claude: the table; findings at a
+  glance, PE detail contained, extends to other domains). *Why it errs* now names all five parser facts (open item
+  closed). Table 3 as a one-column float made LaTeX drop Table 9 at the end of the document; fixed by declaring it
+  earlier in Appendix D. The question of more tables (5.3, the per-operation cost) is for the next session.
+  **Next:** `docs/resume-prompt.md`.
 
 - **2026-11-12 (session 42): §5's holistic review (contributions' importance); the table remake's first attempt
   rejected.** Seven findings; the user approved 1-4, applied in 68f6385: what Gimenez et al. report (the expert set and

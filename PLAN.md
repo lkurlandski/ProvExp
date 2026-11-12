@@ -216,6 +216,13 @@ Done: the paper mock rewritten, the read-only code audit (`docs/evidence/code-au
    2026-11-12: how each subsection's research question is "asked" and its finding "answered"; a structural change, not
    made in the review); (b) shortening §4 and §5 together (§4 ~1,500 words against ~1,000; §4.3 first); and (c) §2's
    closing sentence and contribution 4 against §5's three findings.
+   *(a), second attempt (session 43), done for Tables 3 and 4* (7788592, 52e07cc; status log): one column each, data
+   only, short labels, arrows, bold best, one-line captions, no footnotes; the adaptive results moved into 5.4's text;
+   5.2's *Why it errs* names all five parser facts (fact (1) below, fixed); the paper no longer shows the full-set
+   unconstrained detector's 27/49 (fact (2) below no longer visible). The user wants Table 4's two halves more
+   consistent (same detectors in both; may need runs, so at the scale-up). **Open, next session:** whether §5 gets
+   more tables at all (5.3's result, finding 6 below; the per-operation cost of *Where the cost lies*), to be thought
+   through with the user, not proposed (user, session 43).
    *(a), first attempt (session 42), rejected:* the user's brief: tables "data-dense" rather than "linguistically-dense"
    (exceptions allowed), designed to (i) communicate the findings, (ii) be aesthetically pleasing, (iii) extend to other
    domains (least important). Claude's mock-ups (`docs/archive/table-mockups-2026-11-12/`: Table 3 with Cause and
