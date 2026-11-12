@@ -10,10 +10,11 @@ by trial, by reading the extractor, and from the attacks that have been observed
 exact but answers only for the edits it tries, a reading of the extractor is as complete as its author's reading of
 thousands of features, and observed attacks show only what those attacks did. This section measures what the last two
 miss on the EMBER instance of \Cref{sec:instances}, with trial as the ground truth: every result below is decided by
-extracting the features of an edited file (\Cref{sec:eval:setup}). A careful reading of the extractor misses side
-effects that arise from how the extractor finds its items (\Cref{sec:eval:hand}), and defenses built from observed
-attacks trust features that edits can lower (\Cref{sec:eval:observed}); in both cases a stronger, white-box adaptive attack
-confirms on real files what the side effects and directions we compute from the instrumented extractor predict. The
+extracting the features of an edited file (\Cref{sec:eval:setup}). Hand analyses get directions wrong, and a published
+detector built on one falls to edits that need no source code (\Cref{sec:eval:hand}); defenses built from observed
+attacks trust features that edits can lower, and fall to edits the attacks never made (\Cref{sec:eval:observed}). In
+both cases, a stronger, white-box adaptive attack confirms on real files what the side effects and directions we
+compute from the instrumented extractor predict. The
 directions also give detectors that no edit in the threat model can evade, and we report last what that robustness
 costs in detection at a fixed false-positive rate (\Cref{sec:eval:detectors}).
 
@@ -131,15 +132,17 @@ overlay takes the overlay as its content. We trained such a detector, identical 
 the overlay size only to increase, where the derived one leaves it free; it also leaves the size of the certificate
 table free, where the derived one allows only decreases. The adaptive attack lowers the hand detector's score on 10 of the 29 files in the population it detects, every time by
 adding one section after the overlay, by up to 1.57 logits. The derived detector cannot be moved on any of them. No drop
-crosses the threshold, since these malware score far above it, so the error shows as a broken guarantee rather than as
-evasions on this corpus.
+crosses the threshold, since these malware score far above it. Yet the guarantee holds only if every direction is right,
+and with one wrong, whether the hand detector is evaded depends again on the edits an attacker tries and on how close to
+the threshold a sample scores.
 
 \paragraph{Gimenez et al.'s expert set}
 Gimenez et al.~\cite{gimenez2025certifiably} chose 40 features, the \emph{expert set}, to be hard to lower without the
-malware's source code, and train monotone detectors on them. We instrumented their extractor and derived its table:
-under the full threat model, 11 of the 40 features can be lowered, by renaming a section or by rewriting the DOS stub,
-edits that need no source code. Using those two operations, the adaptive attack evades the expert-set detector on 2 of
-the 8 malware it detects.
+malware's source code, and report that none of the eight toolkit attacks evades a monotone detector trained on them. We
+instrumented their extractor and derived its table: under the full threat model, 11 of the 40 features can be lowered,
+by renaming a section or by rewriting the DOS stub, edits that need no source code. On the 8 malware the expert-set
+detector detects, the toolkit attacks evade it on none in our runs as well, but the adaptive attack, using those two
+operations, evades it on 2.
 
 \paragraph{Severi et al.'s hashed features}
 A hand analysis can also err on the cautious side. Severi et al.~\cite{severi2021explanation} needed features an
@@ -150,6 +153,11 @@ threat model alone can move 1,430, all but the exports' buckets; for a new secti
 an attacker tries names until the hash lands in the bucket and sign they want, within about a hundred tries. This
 error costs an attacker only options. A defender who made the same judgement would trust features an attacker can
 move, and \Cref{sec:eval:observed} shows a defense that does.
+% Gimenez et al. (papers/gimenez2025certifiably.pdf), Table 1: manual features, monotone GBT and monotone network, 100%
+% robustness (robustness = share of 200 detected malware no attack evades, 60 s per attack); Table 2: PV feature
+% selection 100% with all three models. Quotes, Section 5.1: "using the manual features with a monotonic model allows
+% for 100% robustness, although the classification performance is much lower"; "detection performances and robustness
+% are in a trade-off regarding features set". Our toolkit on the expert set: 0/8 (Table 4).
 % Expert set: run 120, scripts/a_expert_adaptive.py; the expert extractor is instrumented
 % (provexp.featuresets.ember2024.expert, bit-exact); 11 M_full holes (rows 27, 30-39 of
 % docs/evidence/direction-A-expert-set.md), each witnessed by one of our own edits. Adaptive: 2/8 via rename on the
@@ -196,9 +204,10 @@ section that holds the entry point, which change when that section is renamed. M
 % every run, the same attacks lower 847 on the same files (a_coverage/report.json).
 
 \paragraph{The operation the attacks lack}
-PV, Gimenez et al.'s simpler defense, selects features from perturbation vectors: it keeps the features that no observed attack lowered and trains a detector that is monotone increasing in each of them.
-Built from our 3,183 outputs, PV detects 9 of the 50 test malware, and the toolkit attacks, run on these files, evade
-it on none. The adaptive attack evades it on 4 of the 9, each time with a single edit, a rename of the section that
+PV, Gimenez et al.'s simpler defense, selects features from perturbation vectors: it keeps the features that no observed
+attack lowered and trains a detector that is monotone increasing in each of them. They report that none of the toolkit
+attacks, from which PV learns, evades it. Built from our 3,183 outputs, PV detects 9 of the 50 test malware, and the
+toolkit attacks, run on these files, evade it on none here either. The adaptive attack evades it on 4 of the 9, each time with a single edit, a rename of the section that
 holds the entry point, found among the first 50 candidates it scores. The derived table points to this hole before
 any attack runs. Of the features PV trusts, 124 can be lowered by an edit of the threat model, and they carry 38.8\% of
 the split gain of its trees; the largest of them, at 12.8\%, is a bucket of the entry section's name. Adding rename to
@@ -359,9 +368,11 @@ so lies outside the additions threat model, evades it on 28\% of the malware it 
 model, and with it which edits the detector withstands and what that costs in detection.
 
 \paragraph{Against hand-picked features}
-The alternative a practitioner has today is to choose by hand features that an attacker cannot lower, as Gimenez et
-al.~\cite{gimenez2025certifiably} do with their expert set of 40 features, and to constrain the detector to be monotone
-in them. Their choice is sound for the additions threat model, but not for the full one, where 11 of the 40 features can
+A practitioner today has two other ways to build a detector that edits cannot evade. One learns what to trust from
+attacks, and \Cref{sec:eval:observed} shows the defenses built this way falling to edits the attacks did not make. The
+other chooses by hand features that an attacker cannot lower and constrains the detector to be monotone in them, as
+Gimenez et al.~\cite{gimenez2025certifiably} do with their expert set of 40 features; they find that this detector
+detects much less, and see detection and robustness as a trade-off in the choice of features. Their choice is sound for the additions threat model, but not for the full one, where 11 of the 40 features can
 be lowered (\Cref{sec:eval:hand}). Under additions, the expert-set detector detects 29.1\% of the malware at 1\% false
 positives, against 92.2\% for the detector built from the derived table (14.8\% against 79.8\% at 0.1\%). Choosing
 features by hand gives up most of the detection; the derived table keeps every feature that additions move in one
