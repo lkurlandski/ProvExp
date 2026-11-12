@@ -1,5 +1,5 @@
 """
-§5.3, Phase 0 (docs/section-5.3-design.md, option O1): how much of what the threat model's edits can lower the toolkit
+§5.3, Phase 0 (docs/evidence/section-5.3-design.md, option O1): how much of what the threat model's edits can lower the toolkit
 attacks lowered, split by where the gap comes from.
 
 FOR ACADEMIC SECURITY RESEARCH ONLY. Reads stored outputs of published attacks run against our own detectors; runs

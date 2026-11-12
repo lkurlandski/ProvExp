@@ -1,5 +1,5 @@
 #!/bin/bash
-# §5.3: leave-one-out, done the fair way (docs/section-5.3-design.md, §10.5). FOR ACADEMIC SECURITY RESEARCH ONLY:
+# §5.3: leave-one-out, done the fair way (docs/evidence/section-5.3-design.md, §10.5). FOR ACADEMIC SECURITY RESEARCH ONLY:
 # Gimenez et al.'s published secml-malware attacks against our own detectors, on our own training and pilot samples,
 # to evaluate defenses. Nothing is deployed.
 #

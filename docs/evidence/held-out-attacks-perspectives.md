@@ -35,7 +35,7 @@ grounding and "smells like bad science".
 - **Run 131, finished 2026-11-11 (session 34).** ERDALT folds: gamma_api 21/24, header_fields 10/25, gamma_shift
   5/25, content_shift 1/28, format_exploit 1/23, gamma_sections, dos_extend, padding 0. ERDALT-8 adaptive 17/24.
   Session 34 found that all these vectors were made with the RNG reset to seed 0 before every attack run, so GAMMA's
-  section names are the same on every file; see `docs/section-5.3-design.md`, which supersedes this record as the
+  section names are the same on every file; see `docs/evidence/section-5.3-design.md`, which supersedes this record as the
   working plan.
 - **Step 0 of run 131:** valid attacked training outputs gamma_api 399/400 (one LOST task), dos_extend 400,
   header_fields 400, format_exploit 387.
@@ -146,7 +146,7 @@ on a defensible methodology; option B (an independent held-out source on its own
 
 ## Update, 2026-11-11 (session 34): leave-one-out redone the fair way
 
-Run 131's folds learned from seed-0 vectors that included the pilot (test) malware's (`docs/section-5.3-design.md`,
+Run 131's folds learned from seed-0 vectors that included the pilot (test) malware's (`docs/evidence/section-5.3-design.md`,
 §3, §10). Run 133 rebuilt the all-eight defenses from varied runs on training malware only; run 135 redoes the folds
 from the same outputs (the user kept leave-one-out: "still a very powerful and interesting experiment"). Option A's
 claim now has its fair test: the rebuilt PV is evaded by the search through rename, an operation none of the eight

@@ -153,7 +153,7 @@ them (below).
     most PV folds should be 0 and the user's hypothesis (PV well above 0) may fail on the mean; if so, 5.3's toolkit
     column weakens for PV and the adaptive column carries the finding.
     *Session 34 (2026-11-11): §5.3's design reopened* (the three-finding structure stands). Working plan:
-    `docs/section-5.3-design.md`, which supersedes the mock's item 5.3 until §5.3's prose is written. Run 131 read
+    `docs/evidence/section-5.3-design.md`, which supersedes the mock's item 5.3 until §5.3's prose is written. Run 131 read
     (PV folds 0 except gamma_api 5/21; ERDALT high on gamma_api and header_fields; ERDALT-8 adaptive 17/24). Found in
     the code: the attack harness resets the RNG to seed 0 before every run (after Gimenez et al.), so GAMMA's section
     names are the same on every file, and PV and ERDALT learned from the pilot (test) malware. With a seed per file,
@@ -198,44 +198,42 @@ them (below).
 
 ## Next steps, in order
 
-1. **Rewrite `docs/paper-mock.md`** against the new §3 and the decisions above: contributions (no requirements, no
-   Theorems 2-3), §4 as the template plus EMBER, §5 organized by §3's results, the §2/§5 alignment (decision 4). The
-   user approves it before any section is rewritten.
-2. **Code audit, read-only:** does the code compute the derived table as Definitions 9-10 now define it (one
-   direction rule for every monoid, replacements as changes, the readout rules of Table 1)? The code predates round 4.
-   Report mismatches; fix only with the user. *Done 2026-11-09:* `docs/evidence/code-audit-sound-directions.md`.
-3. **Apply decision 7's two edits** (exact text in `docs/resume-prompt.md`), then `make` and `make check`.
-   **§4, then §5, rewritten in blocks** with the user's review after each (the way Sound Directions round 4 worked;
-   use the `paper-prose` skill). The mechanical vocabulary fixes go with them (R3/R4, "rate", "stated in elements",
-   §6's "margins"). *Done for §4 and §5's realignment (sessions 28-29).* **Now: §5's structural rewrite
-   (decision 10)** in four blocks (all four drafted; 3, *What Observed Attacks Miss*, in session 39, its run 135 values filled in session 40; 3 and 4 await the user's review), with checks C1-C3 of the paper mock before the blocks that need them; then §2's
-   closing sentence and contribution 4 against the findings; then shorten §4 and §5 together (§4.3 first).
-4. **The next full simulated review, once §4 and §5 are realigned and before the introduction** (decided 2026-11-09).
+Done: the paper mock rewritten, the read-only code audit (`docs/evidence/code-audit-sound-directions.md`), decision
+7's edits, §4 rewritten and reviewed twice (sessions 38, 40), §5 rewritten in four blocks with run 135's values filled
+(session 40). The order agreed with the user on 2026-11-12:
+
+1. **The humanistic review of §5, one subsection per pass** (lead and 5.1, then 5.2, 5.3, 5.4), with the
+   `anthropic-skills:humanistic-paper-review` skill, the user approving and the findings applied after each. About
+   half a day. The user's own pending comments on 5.1's *Checking results* and 5.2 (9b7d0ba) join their subsection.
+   Known vocabulary items: "GAMMA's import injection" and "the header-field attack" (Table 2: GAMMA imports, header
+   fields); Table 3 says "signature table" where it means the certificate table.
+2. **Then, to be considered with the user:** (a) remake the tables (Tables 3 and 4 above all; the user dislikes
+   them), before (b) shortening §4 and §5 together (§4 ~1,500 words against ~1,000; §4.3 first), and (c) §2's closing
+   sentence and contribution 4 against §5's three findings.
+3. **The ERDALT check:** in our port every evasion ends just under the threshold (p = 0.49966 against tau =
+   0.49968; temperature 748; AUC 0.88, TPR 62.7%), so a reviewer may call the port weaker than the original, and 5.3's
+   24/29 rests on it. Look at its training (stopping criterion, met only at the last epoch at seed 0) before any run.
+4. **The 4 MB-truncation brainstorm** (decision 8 (iv)): a cleaner way to handle the files our dataset truncates at
+   4 MB, most of the files outside the plain-layout population. Options raised so far: measure on whole binaries if
+   they exist; state each edit's effect correctly on non-plain files (start with which condition the 94 non-plain
+   untruncated files fail).
+5. **Decide with the user whether the paper is ready for the next full simulated review** (before the introduction).
    Right before running it, update `docs/reviews/review-prompt.md`: it still targets the 2026-11-02 body draft and
    points to the archived formalization. The review should re-check the open and partly addressed risks of the
    2026-11-02 register (R4, R5, R6, R9, R11, R15, R16), the attack-strength concern of the 2026-11-04 strategy review,
    and what no review has seen: the new §3 (its novelty above all), the §2/§5 alignment, and the corpus-checked
-   signatures. No narrow §2-3 review beforehand (user). Include decision 6's revisit (is the problem-space
-   defense expected?) with its short literature pass, and the user's judgement of whether §4's template layout works
-   on the page.
-   **Brainstorm with the user, just before or just after this review (user, 2026-11-09):** a cleaner way to handle the
-   files our dataset truncates at 4 MB, which make up most of the files outside the plain-layout population (decision
-   8 (iv)). Options raised so far: measure on whole binaries if they exist; state each edit's effect correctly on
-   non-plain files (start with which condition the 94 non-plain untruncated files fail).
-5. **Research-track items**, each agreed before code:
-   - The sums row's adaptive cell: the beam search cannot score the sums detector yet (routing). Expected 0% by
-     construction; weigh consistency against cost.
-   - The scale-up (seeds 0-2, full splits, more malware; the user decides when; user, 2026-11-11: the first thing to
-     do once the write-up is finished): the adaptive budget at 2,000 files (~3,000 CPU-h at 5,000 candidates; options:
-     the 1,000-candidate checkpoint, a fixed subset, a cap on the monotone rows), and ERDALT's stopping criterion (met
-     only at the last epoch at seed 0).
-   - §5.3: drafted in session 39 (decision 10, session 39 note). **Run 135** (leave-one-out from run 133's
-     outputs) read in session 40: PV 0 evaded in all eight folds; ERDALT 25/29 when GAMMA imports is held out, at
-     most 2 in the other seven folds. 5.3 and Appendix D's leave-one-out table have no blue values left. Open, optional:
-     ERDALT's score floor (every evasion ends just under its threshold), a possible reviewer objection to our port.
-6. **Other domains (later):** ideas in `docs/domain-selection-brainstorming.md`. Not before EMBER is complete; no
+   signatures. No narrow §2-3 review beforehand (user). Include decision 6's revisit (is the problem-space defense
+   expected?) with its short literature pass, and the user's judgement of whether §4's template layout works on the
+   page.
+6. **Research-track items**, each agreed before code:
+   - The scale-up (seeds 0-2, full splits, more malware; user, 2026-11-11: the first thing to do once the write-up is
+     finished): the adaptive budget at 2,000 files (~3,000 CPU-h at 5,000 candidates; options: the 1,000-candidate
+     checkpoint, a fixed subset, a cap on the monotone rows), and ERDALT's stopping criterion.
+   - The sums row's adaptive cell stays 0% with its footnote (settled in session 36; the beam search cannot score
+     the sums detector yet).
+7. **Other domains (later):** ideas in `docs/domain-selection-brainstorming.md`. Not before EMBER is complete; no
    literature or selection work until the user opens it.
-7. **The introduction, discussion, and abstract** last, once the body is settled.
+8. **The introduction, discussion, and abstract** last, once the body is settled.
 
 ## Settled decisions (carried over)
 

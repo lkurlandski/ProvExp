@@ -53,7 +53,7 @@
 #     in any fold). Expected high on gamma_api and header_fields, near 0 elsewhere: held, except gamma_shift.
 #   ERDALT-8 (criterion met at epoch 287; test AUC 0.871): the beam evades 17 of 24 (15 at 200, 17 at 1,000, 17 at
 #     5,000; all confirmed on re-extraction). Expected about run 128's 20/25: held.
-#   Caveat found in session 34 (docs/section-5.3-design.md, §3): every model here learns from vectors made with the
+#   Caveat found in session 34 (docs/evidence/section-5.3-design.md, §3): every model here learns from vectors made with the
 #   RNG reset to seed 0 before each run, and PV's and ERDALT's include the pilot (test) malware's vectors.
 set -euo pipefail
 cd "$(dirname "$0")/.."

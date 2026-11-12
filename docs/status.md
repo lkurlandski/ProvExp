@@ -3,7 +3,7 @@
 Kept short: the current state, what waits on the user, and the last few sessions in a line or two each. The plan and
 its reasons are in `PLAN.md`. When the session log below grows past about ten entries, move the oldest to
 `docs/archive/` (the log before 2026-11-09 is `docs/archive/status-log-2026-10-to-2026-11-09.md`; sessions 21-28 are in
-`docs/archive/status-log-2026-11-09.md`).
+`docs/archive/status-log-2026-11-09.md`, sessions 29-33 in `docs/archive/status-log-2026-11-10-to-11.md`).
 
 ## Current state (2026-11-12, sessions 34-40)
 
@@ -13,7 +13,7 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
   after Claude's review with the `humanistic-paper-review` skill (all eight findings applied; 4.3 split into
   *Operations* and *Signature*; 4.4 reordered). Second, lightweight review in session 40 (three findings, all
   applied: 4.3.2 states what the sample-read signature rests on; closure "checked rather than proven"). §4 is in good
-  shape. About 1,500 words against ~1,000; further shortening with §5 later.
+  shape. About 1,500 words against ~1,000; shortening with §5 later.
 - **§5:** realigned with §3-4 in vocabulary and claims (session 29). Structural rewrite agreed in session 30 (PLAN.md,
   decision 10): three findings (what hand analysis misses, what observed attacks miss, what robustness costs), not a
   validation section and not a defense paper. Plan, one line per paragraph, and checks C1-C3: `docs/paper-mock.md`,
@@ -23,7 +23,7 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
   run 135's values filled in session 40, so §5 has no blue values left. **Block 4 (5.4 *What Robustness Costs*)** drafted in session 36,
   revised in session 37 after Claude's review with the `humanistic-paper-review` skill (reordered so no paragraph
   points forward; commits c49f654, 9113acb, 23ab085); the user has not read the revised text.
-- **§5.3** is drafted (session 39) from the claim agreed in session 34 (`docs/section-5.3-design.md` §10.5, which
+- **§5.3** is drafted (session 39) from the claim agreed in session 34 (`docs/evidence/section-5.3-design.md` §10.5, which
   stays the record of how the design came about). Learned-region paragraph cut, no audit table for now (tables
   remade later), no seed or protocol-hygiene details in the paper (user). Every learned defense is built from run 133's
   3,183 outputs; PV evaded 4/9 by one rename, 26.2% TPR; ERDALT 24/29 by its own attack; adversarial training 12/50
@@ -34,31 +34,36 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
   2, ~4.8 h) and 134 (PV-clean, PV-free; Claude, ~3 min) done and read. **Run 135** (leave-one-out from run 133's
   outputs) finished 2026-11-11 19:54 (~3.4 h) and read in session 40: PV 0 evaded in all eight folds; ERDALT 25/29
   when GAMMA imports is held out, 0-2 in the other seven (header_fields 2, not the predicted ~10). Results in its
-  header and in `docs/section-5.3-design.md`'s log.
-- **Documentation:** reorganized 2026-11-09; index `docs/README.md`.
+  header and in `docs/evidence/section-5.3-design.md`'s log.
+- **Documentation:** reorganized 2026-11-09, cleaned up 2026-11-12 (stale resume prompts, the §4 note archived; the
+  §5.3 design doc moved to `docs/evidence/`); index `docs/README.md`.
 
 ## Waiting on the user
 
-- **The review of §5** (lead, 5.1-5.4; the two parallel tracks have merged now that 5.3 is complete). The user
-  has not read 5.3 or the revised 5.4; their own pending comments on 5.1's Checking results and 5.2 (9b7d0ba) can
-  join. The user decides how (their own read, or Claude's `humanistic-paper-review` first).
+- **The humanistic review of §5, one subsection per pass** (agreed 2026-11-12; `docs/resume-prompt.md`). The user has
+  not read 5.3 or the revised 5.4; their pending comments on 5.1's Checking results and 5.2 (9b7d0ba) join.
 - The holistic read of Sound Directions (any time).
 
-## Scheduled
+## Scheduled (in order; PLAN.md, next steps)
 
-- **Next full simulated review:** after §4-5 are realigned, before the introduction; update
-  `docs/reviews/review-prompt.md` right before running it (PLAN.md, next step 4).
-- **Brainstorm on the 4 MB truncation** (the plain-layout population's gap), just before or after that review (PLAN.md,
-  decision 8 (iv) and step 4).
+- After §5's review: the tables remade, §4 and §5 shortened, §2's closing and contribution 4 aligned (to consider
+  with the user).
+- The ERDALT check (its score floor), then the 4 MB-truncation brainstorm.
+- Then decide with the user whether the paper is ready for the next full simulated review.
 
 ## Session log
 
-- **2026-11-12 (session 40): §4's second review; run 135 read.** Claude's lightweight review of §4 (three findings,
-  all applied in 75c1c9c): 4.3.2 names what the sample-read part of the signature rests on and what §5.1 checks (the
-  directions from 100 files equal those from 2,000; no edit moves a feature against them); its two consequences of a
-  write onto a located position sit together; 4.4 says closure is checked rather than proven. Run 135 read (hypotheses:
-  PV and ERDALT's gamma_api fold held; header_fields and the mean failed); 5.3's *Holding one attack out* and Table 9
-  rewritten with the real values (the finding unchanged). The two resume prompts' tasks are done except the §5 review.
+- **2026-11-12 (session 40): §4's second review; run 135 read; docs cleaned up.** Claude's lightweight review of §4
+  (three findings, all applied in 75c1c9c): 4.3.2 names what the sample-read part of the signature rests on and what
+  §5.1 checks (the directions from 100 files equal those from 2,000; no edit moves a feature against them); its two
+  consequences of a write onto a located position sit together; 4.4 says closure is checked rather than proven. Run
+  135 read (held: PV 0 in all folds, ERDALT's GAMMA-imports fold 25/29; failed: header_fields 2, not ~10, and the
+  mean); 5.3's *Holding one attack out* and Table 9 rewritten with the real values, the finding unchanged (b1a544c).
+  The user set the order of what follows (PLAN.md, next steps): §5's humanistic review one subsection at a time; then
+  tables, shortening, §2 alignment; then the ERDALT check and the 4 MB brainstorm; then decide on a simulated review.
+  Cleanup: stale resume prompts and the §4 note archived, the §5.3 design doc moved to `docs/evidence/`, sessions
+  29-33 of this log archived, the README's numbering table updated, §4's commented-out old text removed.
+  **Next:** `docs/resume-prompt.md`.
 
 - **2026-11-11 (session 39, parallel to 38): §5.3 drafted in three blocks.** Run 135 had just started, so its
   ERDALT folds are in blue (its PV folds finished during the session: 0 evaded in all eight). User decisions: cut the
@@ -130,7 +135,7 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
 
 - **2026-11-11 (session 34): §5.3 redesigned; PV's hole traced to the attack harness's fixed seed.** An overview,
   harsh analysis and options for §5.3, then re-assessed against the plan, mock and code at the user's request:
-  `docs/section-5.3-design.md` (nine disagreements between draft, mock and code: PV learned from the test files;
+  `docs/evidence/section-5.3-design.md` (nine disagreements between draft, mock and code: PV learned from the test files;
   GAMMA's names identical on every file; PV's hole not mostly section names for PV-4; the "51% vs 53%" control
   invalid, the in-catalogue toolkit evades 13/49; the learned region shows nothing beyond PV's hole; ERDALT's 89.7% is
   a sufficient-rule check). Run 131 read (header, record). Run 132 (`scripts/a_coverage.py`, `a_advtrain.py
@@ -141,50 +146,3 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
   smoke-tested: `run/133_varied_observation.sh` (`a1_evaluate.py --seed_per_file`, `a_pv_hole.py --adv_dir`). Commits
   e176432, c2a117d. **Next:** the user runs 133; this session reads it; another session takes the 5.1-5.2 feedback
   (`docs/resume-prompt.md`).
-
-- **2026-11-11 (session 33): run 131 partly read, C2 checked; §5.3's methodology to restart.** Run 131's ERDALT
-  evaluation had crashed on a model-path bug (training wrote `seed-0-loo-*`, evaluation read `seed-0-s10-loo-*`);
-  folders renamed, script fixed (finished steps skip), rerun by the user. PV leave-one-out: gamma_api 5/21, other
-  seven folds 0 (user's hypothesis failed, Claude's held). C2: the toolkit lowered 745 of the 1,070 lowerable
-  features (all 512 byte statistics, 233 of the other 558); the mock's "small minority" failed. Discussion of how to
-  test learned defenses (mean vs worst fold, keep-one, MAB-Malware, all subsets) judged low quality by the user;
-  recorded with strengths and weaknesses in `docs/evidence/held-out-attacks-perspectives.md`. **Next:** a fresh
-  overview and analysis of §5.3 (`docs/resume-prompt.md`).
-
-- **2026-11-10 (session 32): leave-one-out scripted and started (run 131).** `run/131_loo_defenses.sh`: eight PV folds (selection
-  from seven attacks, the held-out attack run against the fold's model), nine ERDALT models on two GPUs, the beam
-  against ERDALT-8, a summary. Smoke: PV's gamma_api fold in full, 5/21 held out (PV-seen 4/22). The deltas predict
-  the user's hypothesis (PV well above 0) fails on the mean: the attacks lower nearly the same features (only
-  gamma_sections, 49, and gamma_api, 10, lower many the others don't). ERDALT's folds for the four originally held-out
-  attacks would learn from ~50 pilot vectors of them, not ~400 (run 122 generated only the seen four); on the user's
-  approval, step 0 now generates the other four on the same 400 training malware (`--adv_dir` takes several
-  directories), and ERDALT trains on one or two GPUs, whichever are visible. Started by the user on GPU 3 (~7 h).
-  **Next:** `docs/resume-prompt.md` (read run 131; C2; block 3).
-
-- **2026-11-10 (session 31): §5 blocks 1-2 drafted, reviewed, revised; extension strategy and leave-one-out
-  agreed.** Block 1 (lead, 5.1; the side-effect table to Appendix D, tables renumber: directions 3, detectors 4, side
-  effects 8) and block 2 (5.2 *What Hand Analysis Misses*). Checks: C1 held (median 263 features per edit, 4-8 groups);
-  C3 found Severi et al. (all hashed features "extremely difficult" to manipulate; the derived table moves 1,490 of
-  1,650 under additions; EMBER 1.0's hashed groups still to verify). The user asked whether §5's structure suits other
-  domains: yes (findings follow §2's sources, each a measurement per instance); drafting rules recorded in the mock,
-  §5, "Extending §5 to other domains". The user's review of blocks 1-2 (reaction log): toolkit attacks moved into
-  §4.3 and cited to Demetrio et al.; no "pilot scale" or "written to disk" bookkeeping; one edit set (73,063) defined
-  in 5.1; 5.2 opens with its question and has run-in headings; the seen/held-out split replaced by leave-one-out
-  (the fixed split had held out the strongest attack on purpose), implemented by session 32 (run 131). Commits
-  b68edd1 to 0069f56. **Next:** the user's feedback on 5.1-5.2 (2026-11-11), then 5.3 from run 131.
-
-- **2026-11-10 (session 30): §5's structure agreed, no prose.** The user's concern: §5 is organized to show the
-  implementation is correct and the proofs hold ("transactional and somewhat lifeless"). Assessment: right; about a
-  quarter to a third of §5 checks our own work and comes first, because the mock organized §5 by §3's results. A
-  defense-first alternative was rejected by the user (4 points of TPR is not small to them, about 1% or less wanted;
-  three baselines too few for a defense claim); the attack alone is too weak to be a task. Agreed: three findings
-  that test §2's claim about trial, hand analysis, and observed attacks; the side-effect table to Appendix D; a new
-  audit table in 5.3. No new task needed; three checks on existing outputs (C1-C3). Recorded: PLAN.md decision 10,
-  `docs/paper-mock.md` §5, memory `findings-not-defense-paper`. **Next:** `docs/resume-prompt.md`.
-
-- **2026-11-10 (session 29): §5 realigned; the per-candidate cost measurement dropped.** A probe showed Prop. 1 scoring
-  in Python is no faster than thrember's (optimized) extraction; the user: never measure or compare it, say the
-  computation is smaller and can be faster; optimization is engineering, out of scope (PLAN.md decision 6, memory).
-  §5 rewritten in three quick blocks (commits after f1d6050): 5.2 claims what it tests ("The Instance Is Correct",
-  Declined instead of Flagged, no speed claim), 5.3 gains the corpus check of the signatures, 5.4 points to §4.4 for
-  closure; §6's "our margins" fixed. **Next:** the user's structural concerns about §5, then shortening §4-5.

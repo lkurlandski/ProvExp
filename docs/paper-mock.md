@@ -121,7 +121,7 @@ No state-of-the-art defense claim (three defense baselines; the user would want 
   and 8 (audit table) dropped by the user, the tables to be remade later; no seed or protocol-hygiene details; PV's
   published-style 14/22 out (PLAN.md, decision 10, session 39).*
 - **5.3 What Observed Attacks Miss (~950), with the new audit table.** *Rewritten in session 34 after runs 133-134
-  (claim agreed with the user; evidence and caveats in `docs/section-5.3-design.md` §10.4-10.5). Every defense
+  (claim agreed with the user; evidence and caveats in `docs/evidence/section-5.3-design.md` §10.4-10.5). Every defense
   learned from attacks is built from the same 3,183 outputs of the eight toolkit attacks, a seed per (attack, file),
   on 400 training malware; tested on the pilot malware with a seed per file. The old seed-0 rows are retired.*
   1. The finding: a defense learned from observed attacks inherits what the attacks did not do, and nothing in the

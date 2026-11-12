@@ -1,5 +1,5 @@
 #!/bin/bash
-# §5.3, Phases 0 and 1 of docs/section-5.3-design.md. FOR ACADEMIC SECURITY RESEARCH ONLY: stored outputs of published
+# §5.3, Phases 0 and 1 of docs/evidence/section-5.3-design.md. FOR ACADEMIC SECURITY RESEARCH ONLY: stored outputs of published
 # secml-malware attacks against our own undefended detector, and one more run of one of them on our own training
 # malware, to measure what observed attacks reveal. Nothing is deployed.
 #

@@ -1,5 +1,5 @@
 #!/bin/bash
-# §5.3, Phase 2b (docs/section-5.3-design.md, §10.4): is PV-best's low detection a straw man? FOR ACADEMIC SECURITY
+# §5.3, Phase 2b (docs/evidence/section-5.3-design.md, §10.4): is PV-best's low detection a straw man? FOR ACADEMIC SECURITY
 # RESEARCH ONLY: defenses built from published attacks on our own training samples. Nothing is deployed.
 #
 # Why: run 133's PV-best detects 26.2% at 1% FPR (PV-all 53.8%). On 4 training files gamma_shift and content_shift

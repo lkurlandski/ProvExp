@@ -1,8 +1,7 @@
-% Section 4, Instantiating the Framework (docs/paper-mock.md, Section 4: about 1,000 words; working note
-% docs/instances-note.md; PLAN.md decisions 1, 2, 8, and 9). Written in blocks with the user's review after each,
-% 2026-11-09/10: block 1 the lead, 4.1, and 4.2's first paragraph (bookkeeping in _j2_ember.tex); block 2 4.2's second
-% paragraph; block 3 4.3 (literature first); block 4 4.4. Next: shortening (the user, 2026-11-10). Old text of the
-% previous structure, kept for reference, is commented out below 4.2.
+% Section 4, Instantiating the Framework (docs/paper-mock.md, Section 4: about 1,000 words; working note, archived:
+% docs/archive/instances-note.md; PLAN.md decisions 1, 2, 8, and 9). Written in blocks with the user's review after
+% each, 2026-11-09/10; revised after Claude's reviews with the humanistic-paper-review skill in sessions 38 and 40.
+% Next: shortening, together with Section 5. The text of the previous structure is in git history (up to b1a544c).
 
 \Cref{sec:framework} proves its results for any sum-then-readout extractor, and leaves to an instance everything
 that depends on the format of the input. An instance supplies the extractor in sum-then-readout form, a decision about
@@ -51,39 +50,6 @@ direction $\mathsf{both}$, which is always sound. A monotone detector reads no f
 (\Cref{sec:fw:directions}), so for a detector the two choices coincide. We drop the warnings. Earlier versions of EMBER did
 not compute them~\cite{joyce2025ember},
 and a detector trained without them loses no detection (0.1 points more at a 1\% false-positive rate). % run 126 (pilot)
-
-% ---- Superseded by blocks 2-4 (kept for reference until they are written) ----
-% From the old 4.1, for (c): locating positions and the single-byte flip check.
-% Most of the instrumentation effort goes into locating positions. For each kind, they are the header fields and table
-% bytes the parser reads to find its items, together with kind-level positions such as the section count and the
-% bounds of the Rich header's search range. Some are easy to miss: the overlay starts where the last section or data
-% directory ends, so every section's and directory's extent locates it. Others lie past the end of the file, when a
-% section table points to raw data that a truncated file no longer contains; on such a file, appending is structural.
-% We completed the record by changing single bytes and checking whether the parse changed where no locating position
-% was recorded. A first round found three parser rules the record had missed; after recording them, no flip among
-% 58,666 across headers and directory data changed the parse unannounced. The margins are those of
-% \Cref{sec:fw:side-effects}: strings reach the nearest non-printable byte, windows reach the windows overlapping the
-% write (and, under appending, the last 1,024 bytes before the old end), and the Rich header's margin is its whole search
-% range.
-%
-% The old 4.2 (repairs), for (b); the import-overwrite bug is not mentioned in the paper (decision 8).
-% \subsection{Three Repairs}
-% \label{sec:instances:repairs}
-%
-% EMBER breaks self-contained contributions (R4) in three places. Two are matters of bookkeeping. Each section's size
-% is divided by the file's size, so a section's contribution would change whenever the file grows; we let the section
-% contribute its raw size and move the division into the readout, where the file's size is itself a sum. The imported
-% libraries are kept as a set; we keep a count per library and read out the number of libraries with a positive count.
-% Both repairs leave every feature value unchanged.
-%
-% The third is a bug. EMBER~2024 stores each library's imported functions under the library's name, so when a file has
-% two import descriptors for the same library, the second replaces the first one's functions. The original EMBER
-% guarded against this, and the reimplementation lost the guard. The effect is not subtle: adding one descriptor that
-% imports \texttt{Sleep} from \texttt{KERNEL32.dll} to a file that already imports 114 functions from it lowers the
-% import count from 116 to 3, and hides the other imports from the model. No model of contributions can repair a
-% contribution that depends on whether another item exists, so we patch the extractor, as a pure addition that restores
-% EMBER's original behavior, and run every experiment on the patched variant. On natural files the patch rarely
-% matters; for an attacker it is a way to remove features, which no add-only threat model would anticipate.
 
 \subsection{Threat Model}
 \label{sec:instances:catalogue}

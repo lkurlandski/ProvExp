@@ -4,18 +4,17 @@ Read `docs/status.md` and `PLAN.md` at the start of a session; everything else o
 Each entry says when it is worth opening. The manuscript (`manuscript/*.tex`) is the authority on the paper's content;
 where a document disagrees with it, the manuscript wins.
 
-## The paper's numbering (compiled 2026-11-09)
+## The paper's numbering (compiled 2026-11-12)
 
-Documents written before 2026-11-09 use older numbers; the compiled PDF wins. Before naming a number to the user,
-check `manuscript/main.aux` (`grep newlabel manuscript/main.aux`), and add the title or label alongside it. Adding
-§4's planned "instances at a glance" table will shift Tables 3-7 by one.
+Documents written before 2026-11-12 may use older numbers; the compiled PDF wins. Before naming a number to the user,
+check `manuscript/main.aux` (`grep newlabel manuscript/main.aux`), and add the title or label alongside it.
 
 | Kind | Compiled numbers |
 |---|---|
-| Sections | 1 Introduction; 2 Background and Motivation; 3 Measuring Edits Across Feature Mappings (3.1 Sum-then-Readout Extractors, 3.2 Edits and Their Side Effects, 3.3 Sound Directions); 4 Instances (4.1-4.4); 5 Evaluation (5.1 Setup, 5.2 Side Effects, 5.3 Directions, 5.4 Detectors); 6 Related Work; 7 Discussion; Appendix A Symbols, B Types, C Proofs |
+| Sections | 1 Introduction; 2 Background and Motivation; 3 Measuring Edits Across Feature Mappings (3.1 Sum-then-Readout Extractors, 3.2 Edits and Their Side Effects, 3.3 Sound Directions); 4 Instantiating the Framework (4.1 EMBER and PE Files, 4.2 EMBER as a Sum-then-Readout Extractor, 4.3 Threat Model with 4.3.1 Operations and 4.3.2 Signature, 4.4 Population); 5 Evaluation (5.1 Setup, 5.2 What Hand Analysis Misses, 5.3 What Observed Attacks Miss, 5.4 What Robustness Costs); 6 Related Work; 7 Discussion; Appendix A Symbol Table, B Types, Monoids, and Folds, C Proofs for the Framework, D The EMBER Instance |
 | Definitions | 1 Items, 2 Sums, 3 Contributions, 4 Readouts, 5 Sum-then-readout extractor, 6 Item delta, 7 Threat models and directions, 8 Changes and signatures, 9 Directions of sums, 10 Derived table |
 | Results | Proposition 1 (side effects), Theorem 1 (sound directions), Corollary 1 (monotone detectors); Algorithm 1 (the extractor) |
-| Tables | 1 readout rules (§3.3), 2 edit catalogue (§4), 3 side effects, 4 directions, 5 detectors (§5), 6 symbols, 7 sign table (Appendix C) |
+| Tables | 1 readout rules (§3.3), 2 operations of the threat model (§4.3), 3 hand vs derived directions (§5.2), 4 detectors (§5.4), 5 symbols, 6 sign table (Appendix C), 7 EMBER readouts, 8 side effects, 9 leave-one-out (Appendix D) |
 
 ## Active
 
@@ -23,10 +22,7 @@ check `manuscript/main.aux` (`grep newlabel manuscript/main.aux`), and add the t
 |---|---|---|
 | `PLAN.md` | thesis, where the paper stands, the decisions of 2026-11-09, next steps, settled decisions | every session |
 | `docs/status.md` | current state, what waits on the user, short session log | every session; update at the end |
-| `docs/resume-prompt.md` | where the next session starts | starting a session |
-| `docs/resume-prompt-5.3.md` | where the §5.3 session starts (parallel to `resume-prompt.md`): run 135's ERDALT folds, then the user's review of 5.3 | continuing §5.3 |
-| `docs/instances-note.md` | §4 working note: what an instance supplies, the agreed structure (archive once §4 is accepted) | drafting §4 |
-| `docs/section-5.3-design.md` | §5.3 working design: what it must show, where draft, mock and code disagree, strengths, weaknesses, options, phases, open questions (iterated with the user; archive once §5.3 is written) | planning, running, or drafting §5.3 |
+| `docs/resume-prompt.md` | where the next session starts (the humanistic review of §5, one subsection per pass) | starting a session |
 | `docs/checkpoint-prompt.md` | the user's prompt for ending a session | the user ends a session |
 | `docs/paper-mock.md` | the paper's contributions, outline with word budgets, and tables | planning or writing any section; checking whether new work belongs in the paper |
 | `docs/writing-spec.md` | the user's raw reactions to drafts, newest first | writing paper prose (with the `paper-prose` skill) |
@@ -52,16 +48,21 @@ or when changing an experiment. Run scripts are in `run/` (one per step, numbere
 | `docs/evidence/direction-A-expert-set.md` | Gimenez et al.'s 40 features, instrumented: the expert-set row and its holes |
 | `docs/evidence/code-audit-sound-directions.md` | the 2026-11-09 audit of the direction engine against Definitions 7-10 and Tables 1 and 7 (readout rules, sign table): findings, what §4 must say, the readout rule of every EMBER feature |
 | `docs/evidence/literature-adversarial-malware.md` | the 2026-11-09 literature review of adversarial malware (venues, the edits each work uses, defenses) and what it implies for the catalogue | §4.3, §6, the threat model |
+| `docs/evidence/section-5.3-design.md` | how §5.3 came about: options, phases, runs 132-135 and their results (§10), the agreed claim (§10.5), the log | tracing a §5.3 number to its run; revisiting PV, ERDALT, adversarial training, leave-one-out |
 | `docs/evidence/held-out-attacks-perspectives.md` | session 33: ways to test defenses learned from attacks (fixed split, leave-one-out mean or worst fold, keep-one, MAB-Malware, all subsets, coverage C2), with strengths and weaknesses; run 131's PV results and C2 | §5.3 |
 
 ## Archive (superseded; open only to recover a reason or a record)
 
 | Folder or file | Contents |
 |---|---|
+| `docs/archive/status-log-2026-11-10-to-11.md` | the session log, sessions 29-33 (search, don't read) |
 | `docs/archive/status-log-2026-11-09.md` | the session log, sessions 21-27 (search, don't read) |
 | `docs/archive/status-log-2026-10-to-2026-11-09.md` | the full session log until 2026-11-09 (32k words; search, don't read) |
 | `docs/archive/PLAN-log-2026-10-22-to-2026-11-09.md` | the plan's history, every "Next steps" block |
 | `docs/archive/resume-prompt-2026-11-06.md` | the previous resume prompt (research track details: sums-row routing, scale-up budget) |
+| `docs/archive/resume-prompt-2026-11-11-s38.md` | the resume prompt of session 40 (written in session 38): the lightweight second review of §4, how the user wants reviews handled, the §5 review's known items |
+| `docs/archive/resume-prompt-2026-11-11-s39b.md` | the second resume prompt of session 39: reading run 135, points a careful reader may stop at in §5.3 |
+| `docs/archive/instances-note.md` | §4's working note: what an instance supplies, the agreed structure |
 | `docs/archive/resume-prompt-2026-11-11-s39.md` | the resume prompt of session 39 (drafting §5.3: the agreed evidence list, caveats, run 135's predictions) |
 | `docs/archive/resume-prompt-2026-11-11-s34.md` | the resume prompt of session 34 (§5.3 from scratch: overview, analysis, options) |
 | `docs/archive/resume-prompt-2026-11-11-s37.md` | the resume prompt of session 37 (the first humanistic review of §4, the §5 review planned) |

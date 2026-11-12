@@ -1,5 +1,5 @@
 #!/bin/bash
-# §5.3, Phase 2 (docs/section-5.3-design.md, §10.3): the defenses learned from attacks, rebuilt the fair way. FOR
+# §5.3, Phase 2 (docs/evidence/section-5.3-design.md, §10.3): the defenses learned from attacks, rebuilt the fair way. FOR
 # ACADEMIC SECURITY RESEARCH ONLY: published secml-malware attacks and our own adaptive search against our own
 # detectors, on our own training and pilot samples, to evaluate defenses. Nothing is deployed.
 #
@@ -46,7 +46,7 @@
 # every attack (3,183 valid); (2) ~2 min; (3) ~2 min; (4) ~25 min; (5) ~8 min; (6) 8 + 15 + 16 min; (7) 34, 26, 42 min.
 # Undefended evasion on the training malware (low budget): gamma_api 144/399, gamma_shift 51, header_fields 36,
 # content_shift 17, gamma_sections 7, padding 7, dos_extend 2, format_exploit 1.
-# Results against the hypotheses (read by Claude, 2026-11-11; docs/section-5.3-design.md §10.4):
+# Results against the hypotheses (read by Claude, 2026-11-11; docs/evidence/section-5.3-design.md §10.4):
 #   (1) Held. Coverage on the 314 training files in the population: 928 of 1,070 (847 at seed 0); toolkit-operation
 #       features 913/980. Witnessed by our edits but never lowered by the toolkit: 90 -> 20 (17 section/header, 3
 #       warnings); the entry-section-name buckets stay unlowered.
