@@ -381,6 +381,8 @@ Per-hypothesis detail in run 133's header. In plain terms:
    which saw vectors made with the pilot donors, 0/24 on gamma_api. Its constraint holds on the observed vectors, not
    on the next ones the same attack makes. Caveat for a reviewer: ERDALT's scores pile at a floor (every evasion ends
    at p = 0.49966, tau 0.49968; temperature 748), so our reproduction (AUC 0.88, TPR 62.7%) may be weaker than theirs.
+   *Checked in session 41:* the floor is where 99% of test goodware sit, so the threshold sits at its edge; the
+   evasions fall from logits up to ~1,000 to the floor, not across a thin margin (PLAN.md, next step 3).
 6. **Adversarial training** halves the toolkit's evasion (25 → 12 of ~50) at no cost in detection; the search still
    evades 23/50 (as predicted).
 

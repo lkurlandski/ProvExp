@@ -118,3 +118,11 @@ output layer) unconstrained, so a negative output weight makes the score decreas
 port (`src/provexp/models/erdalt.py`) follows the paper and applies the same projection to the output layer. A note
 to the authors, not a bug report against their results: their robustness numbers are empirical either way.
 
+Other differences between their code and our port, none of which the paper specifies (checked 2026-11-12): their
+code selects the epoch on the test split (ours: validation); batches of 16 (ours: 256, for compute); the l2 term
+samples up to 152 batches of 16 perturbation vectors per step (ours: all of them); the saved epoch is the last one
+whose test ROC-AUC beats the minimum of recent saves with < 5 violations (ours: the best validation ROC-AUC among
+epochs with < 5 violations). The < 5 rule itself (theirs, kept) tolerates a few negative entries of L(delta), which
+Proposition 3 assumes away; our selected epoch has 2 among 3,183 vectors. Standardization matches (inputs centered and
+scaled; perturbation vectors scaled only).
+

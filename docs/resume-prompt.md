@@ -89,8 +89,7 @@ order: the lead and 5.1, then 5.2, then 5.3, then 5.4. About half a day in all. 
 
 1. To consider with the user: remake the tables (before shortening), shorten §4 and §5 together (§4 ~1,500 words
    against ~1,000), align §2's closing sentence and contribution 4 with §5's three findings.
-2. The ERDALT check: every evasion of our port ends just under its threshold; a reviewer may call the port weak, and
-   5.3's 24/29 rests on it. Look at its training before any run.
+2. ~~The ERDALT check~~: done in session 41 (PLAN.md, next step 3); no run, no paper change.
 3. The 4 MB-truncation brainstorm.
 4. Then decide with the user whether the paper is ready for the next full simulated review.
 5. The scale-up (seeds 0-2, full splits, more malware) once the write-up is finished.

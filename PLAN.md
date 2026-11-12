@@ -210,9 +210,16 @@ Done: the paper mock rewritten, the read-only code audit (`docs/evidence/code-au
 2. **Then, to be considered with the user:** (a) remake the tables (Tables 3 and 4 above all; the user dislikes
    them), before (b) shortening §4 and §5 together (§4 ~1,500 words against ~1,000; §4.3 first), and (c) §2's closing
    sentence and contribution 4 against §5's three findings.
-3. **The ERDALT check:** in our port every evasion ends just under the threshold (p = 0.49966 against tau =
-   0.49968; temperature 748; AUC 0.88, TPR 62.7%), so a reviewer may call the port weaker than the original, and 5.3's
-   24/29 rests on it. Look at its training (stopping criterion, met only at the last epoch at seed 0) before any run.
+3. ~~**The ERDALT check.**~~ Done in session 41 (2026-11-12), no run. (a) The "score floor" is not a weak margin: 99%
+   of test goodware sit at the network's lowest score (every hidden unit saturated), so the 1% FPR threshold sits at
+   the floor's edge; the 29 detected pilot malware start at logits 0 to ~1,000 (median ~60) and GAMMA imports drives
+   24 of them (28 counting 4 over budget) to the floor. (b) Detection is weaker than their paper's (AUC 0.88 against
+   their 93.0% on another dataset; TPR 62.7% at 1% FPR); the stopping criterion (< 5 violations) is met at one epoch
+   of 310 (297). Left to the scale-up's stopping-criterion item. (c) User (decided, strongly held): ERDALT is
+   implemented from the paper's description; their code is not followed where it breaks the guarantee (the
+   unconstrained output layer). The paper fixes only the linear layer without bias, L(delta) >= 0 on the observed
+   vectors through l2, monotone upper layers, l1 and l3; everything else is from their code and does not conflict.
+   Our port is the one implementation considered; no "their code exactly" variant.
 4. **The 4 MB-truncation brainstorm** (decision 8 (iv)): a cleaner way to handle the files our dataset truncates at
    4 MB, most of the files outside the plain-layout population. Options raised so far: measure on whole binaries if
    they exist; state each edit's effect correctly on non-plain files (start with which condition the 94 non-plain
@@ -228,7 +235,8 @@ Done: the paper mock rewritten, the read-only code audit (`docs/evidence/code-au
 6. **Research-track items**, each agreed before code:
    - The scale-up (seeds 0-2, full splits, more malware; user, 2026-11-11: the first thing to do once the write-up is
      finished): the adaptive budget at 2,000 files (~3,000 CPU-h at 5,000 candidates; options: the 1,000-candidate
-     checkpoint, a fixed subset, a cap on the monotone rows), and ERDALT's stopping criterion.
+     checkpoint, a fixed subset, a cap on the monotone rows), and ERDALT's stopping criterion (one epoch of 310 met it in
+     run 133; validation AUC still rising at the end; consider more epochs).
    - The sums row's adaptive cell stays 0% with its footnote (settled in session 36; the beam search cannot score
      the sums detector yet).
 7. **Other domains (later):** ideas in `docs/domain-selection-brainstorming.md`. Not before EMBER is complete; no

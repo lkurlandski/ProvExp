@@ -48,10 +48,19 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
 
 - After §5's review: the tables remade, §4 and §5 shortened, §2's closing and contribution 4 aligned (to consider
   with the user).
-- The ERDALT check (its score floor), then the 4 MB-truncation brainstorm.
+- The 4 MB-truncation brainstorm (the ERDALT check is done, session 41).
 - Then decide with the user whether the paper is ready for the next full simulated review.
 
 ## Session log
+
+- **2026-11-12 (session 41): the ERDALT check (only), no run.** The score floor is not a thin margin: 99% of test
+  goodware sit at ERDALT's lowest score, so the 1% FPR threshold sits at its edge; GAMMA imports drives detected
+  malware from logits up to ~1,000 to the floor (24/29; 28 counting over-budget). Detection weaker than their paper
+  (AUC 0.88 vs 93.0% on another dataset), stopping criterion met at one epoch; left to the scale-up. Their code read
+  against their paper: the paper fixes only the abstract architecture and losses; the one conflict is the output
+  layer, which our port constrains. User (strongly held): implement from the paper where the code breaks the
+  guarantee; no "their code exactly" variant. PLAN.md step 3, `docs/upstream-issues.md` item 8 updated.
+  **Next:** `docs/resume-prompt.md` (unchanged: §5's humanistic review).
 
 - **2026-11-12 (session 40): §4's second review; run 135 read; docs cleaned up.** Claude's lightweight review of §4
   (three findings, all applied in 75c1c9c): 4.3.2 names what the sample-read part of the signature rests on and what
