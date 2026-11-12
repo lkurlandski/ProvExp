@@ -23,7 +23,7 @@ straight into `manuscript/*.tex`; check `manuscript/main.aux` before naming a nu
   extracted. The paper is unchanged for R7 until it is read.
 - **R1 (decision 12, session 49):** MAB-Malware joins the attacks (the authors' code in `third_party/mab_malware`,
   run by `scripts/mab_attack.py` single-threaded with a direct hand-over to our detectors, tested equal to upstream's
-  own hand-over; no code randomization; the toolkit's 50 donors). Run 139 (`run/139_mab_malware.sh`, ~2-3 h, for the
+  own hand-over; no code randomization; the toolkit's 50 donors). Run 139 (`run/139_mab_malware.sh`, ~1-1.5 h, for the
   user) attacks every detector of Tables 4 and 5 and the expert set, unrouted. The manuscript already describes it:
   §5.1, 5.3, 5.4, Tables 4-5 now report "evaded by any attack", and the new Table 11 (`tab:ember:per-attack`,
   Appendix D) reports each attack; every value involving MAB-Malware is a blue prediction (`% SYNTHETIC` comments).

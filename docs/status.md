@@ -65,7 +65,7 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
 
 - **Run 138** (`run/138_escape_pilot.sh`, ~5-6 h with 16 workers; started 16:03 on 2026-11-12; log
   `artifacts/logs/escape_pilot.log`).
-- **Run 139** (`run/139_mab_malware.sh`, MAB-Malware against every detector, ~2-3 h; logs
+- **Run 139** (`run/139_mab_malware.sh`, MAB-Malware against every detector, ~1-1.5 h; smoke: 0 of 9 evaded on the undefended detector, so the blue predictions are likely too high; logs
   `artifacts/logs/mab_malware-*.log`). Can run alongside run 138 if cores allow.
 - Two questions: §2's "attack scoring without extraction" (PLAN.md, decision 12 (iii)); scale first or widen first
   (PLAN.md, next step 3; Claude recommends widening first). **Next session:** `docs/resume-prompt.md`.
