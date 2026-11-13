@@ -1,11 +1,12 @@
 #!/usr/bin/env bash
 # Run the simulated review end to end: build the PDF, run the reviewers in parallel (isolated, outside the repository),
-# then the meta-reviewer (inside the repository). Knobs in config.sh; procedure in docs/reviews/review-prompt.md.
+# then the meta-reviewer (inside the repository), then the rebuttal drafts (run_rebuttal.sh). Knobs in config.sh; procedure in docs/reviews/review-prompt.md.
 #
 # Usage (from the repository root):
 #   docs/reviews/process/run_review.sh
 #   DRY_RUN=1 docs/reviews/process/run_review.sh            # show prompts and commands only
-#   STEPS=meta TAG=2026-11-13-body docs/reviews/process/run_review.sh   # redo the meta-review only
+#   STEPS=meta TAG=2026-11-13-body docs/reviews/process/run_review.sh       # redo the meta-review (and the drafts)
+#   STEPS=rebuttal TAG=2026-11-13-body docs/reviews/process/run_review.sh   # only the rebuttal drafts
 set -euo pipefail
 
 REPO="$(git -C "$(dirname "$0")" rev-parse --show-toplevel)"
@@ -35,6 +36,11 @@ budget_flag() {
     if [[ -n "$MAX_BUDGET_USD" ]]; then echo "--max-budget-usd $MAX_BUDGET_USD"; fi
 }
 
+# The rebuttal drafts alone need none of the preparation below.
+if [[ "$STEPS" == "rebuttal" ]]; then
+    exec "$PROC/run_rebuttal.sh"
+fi
+
 ################################################################################
 # Preparation
 ################################################################################
@@ -48,41 +54,47 @@ if [[ "$STEPS" != "meta" && "${FORCE:-0}" != "1" && "$DRY_RUN" != "1" ]]; then
         fi
     done
 fi
-mkdir -p "$OUT"
-if [[ "$STEPS" == "all" || "$STEPS" == "reviewers" ]]; then
-    echo "Building the PDF (make in manuscript/; log: $OUT/make.log)"
-    if [[ "$DRY_RUN" != "1" ]]; then
-        make -C "$REPO/manuscript" > "$OUT/make.log" 2>&1
-    fi
-    echo "Preparing the reviewers' folder $WORK (paper.pdf, note-to-reviewers.md, papers/)"
-    mkdir -p "$WORK"
-    cp "$REPO/manuscript/main.pdf" "$WORK/paper.pdf"
-    cp "$PROC/note-to-reviewers.md" "$WORK/note-to-reviewers.md"
-    rm -rf "$WORK/papers"
-    cp -r "$REPO/papers" "$WORK/papers"
-    cp "$REPO/manuscript/main.pdf" "$OUT/paper.pdf"
-fi
-# Record what this run used. A meta-only rerun appends its own record, so the reviewers' commit and date are kept.
-if [[ "$STEPS" == "meta" && -f "$OUT/run-config.txt" ]]; then
-    {
-        echo "# meta step rerun"
-        echo "meta_commit=$COMMIT"
-        echo "meta_date=$(date -Iseconds)"
-        echo "META_MODEL=$META_MODEL"
-        echo "META_EFFORT=$META_EFFORT"
-    } >> "$OUT/run-config.txt"
+# A dry run writes nothing: no PDF, no copies, no record (it once overwrote a finished run's paper.pdf and
+# run-config.txt, session 57).
+if [[ "$DRY_RUN" == "1" ]]; then
+    echo "Dry run: would build the PDF, prepare $WORK and record the run in docs/reviews/$TAG/"
 else
-{
-    echo "commit=$COMMIT"
-    echo "date=$(date -Iseconds)"
-    grep -E '^[A-Z_]+=' "$PROC/config.sh" | cut -d= -f1 | while read -r v; do echo "$v=${!v}"; done
-    for id in $REVIEWERS; do
-        m="MODEL_$id"; e="EFFORT_$id"
-        echo "reviewer $id: model=${!m:-$REVIEWER_MODEL} effort=${!e:-$REVIEWER_EFFORT}"
-    done
-} > "$OUT/run-config.txt"
+    mkdir -p "$OUT"
+    if [[ "$STEPS" == "all" || "$STEPS" == "reviewers" ]]; then
+        echo "Building the PDF (make in manuscript/; log: $OUT/make.log)"
+        if [[ "$DRY_RUN" != "1" ]]; then
+            make -C "$REPO/manuscript" > "$OUT/make.log" 2>&1
+        fi
+        echo "Preparing the reviewers' folder $WORK (paper.pdf, note-to-reviewers.md, papers/)"
+        mkdir -p "$WORK"
+        cp "$REPO/manuscript/main.pdf" "$WORK/paper.pdf"
+        cp "$PROC/note-to-reviewers.md" "$WORK/note-to-reviewers.md"
+        rm -rf "$WORK/papers"
+        cp -r "$REPO/papers" "$WORK/papers"
+        cp "$REPO/manuscript/main.pdf" "$OUT/paper.pdf"
+    fi
+    # Record what this run used. A meta-only rerun appends its own record, so the reviewers' commit and date are kept.
+    if [[ "$STEPS" == "meta" && -f "$OUT/run-config.txt" ]]; then
+        {
+            echo "# meta step rerun"
+            echo "meta_commit=$COMMIT"
+            echo "meta_date=$(date -Iseconds)"
+            echo "META_MODEL=$META_MODEL"
+            echo "META_EFFORT=$META_EFFORT"
+        } >> "$OUT/run-config.txt"
+    else
+    {
+        echo "commit=$COMMIT"
+        echo "date=$(date -Iseconds)"
+        grep -E '^[A-Z_]+=' "$PROC/config.sh" | cut -d= -f1 | while read -r v; do echo "$v=${!v}"; done
+        for id in $REVIEWERS; do
+            m="MODEL_$id"; e="EFFORT_$id"
+            echo "reviewer $id: model=${!m:-$REVIEWER_MODEL} effort=${!e:-$REVIEWER_EFFORT}"
+        done
+    } > "$OUT/run-config.txt"
+    fi
+    cp "$PROC/note-to-reviewers.md" "$PROC/checklist.md" "$OUT/"
 fi
-cp "$PROC/note-to-reviewers.md" "$PROC/checklist.md" "$OUT/"
 
 ################################################################################
 # Step 1: the reviewers, in parallel
@@ -137,6 +149,9 @@ if [[ "$STEPS" == "all" || "$STEPS" == "meta" ]]; then
     echo "Meta-reviewer ($META_MODEL, effort $META_EFFORT); log: $OUT/meta.log"
     if [[ "$DRY_RUN" == "1" ]]; then
         echo "----- prompt of the meta-reviewer -----"; echo "$prompt"; echo "-----"
+        if [[ "$REBUTTAL" == "1" ]]; then
+            echo "Then the rebuttal drafts; their prompts: DRY_RUN=1 STEPS=rebuttal (needs the meta-review)"
+        fi
         exit 0
     fi
     # shellcheck disable=SC2046
@@ -151,4 +166,17 @@ if [[ "$STEPS" == "all" || "$STEPS" == "meta" ]]; then
         $(budget_flag) \
         > "$OUT/meta.log" 2>&1)
     echo "Done: docs/reviews/$TAG/ (meta-review.md and the reviews)"
+fi
+
+################################################################################
+# Step 3: the rebuttal drafts, one agent per register item
+################################################################################
+
+if [[ ("$STEPS" == "all" || "$STEPS" == "meta") && "$REBUTTAL" == "1" ]]; then
+    if [[ ! -f "$OUT/meta-review.md" ]]; then
+        echo "No meta-review.md (the meta-reviewer stopped?): finish it with resume_meta.sh, then STEPS=rebuttal" >&2
+        exit 1
+    fi
+    echo "Rebuttal drafts (run_rebuttal.sh; logs: docs/reviews/$TAG/rebuttal/<item>.log)"
+    "$PROC/run_rebuttal.sh"
 fi

@@ -21,6 +21,16 @@ REVIEWER_EFFORT="${REVIEWER_EFFORT:-high}"
 META_MODEL="${META_MODEL:-claude-opus-5-5}"
 META_EFFORT="${META_EFFORT:-xhigh}"
 
+# The rebuttal drafts (run_rebuttal.sh), run after the meta-review: one agent per register item, REBUTTAL_PARALLEL at
+# a time. REBUTTAL=0 stops run_review.sh after the meta-review. REBUTTAL_SKIP: items decided before the run (e.g.
+# "R7 R1"); REBUTTAL_ITEMS: draft only these (default: the whole register).
+REBUTTAL="${REBUTTAL:-1}"
+REBUTTAL_MODEL="${REBUTTAL_MODEL:-claude-opus-5-5}"
+REBUTTAL_EFFORT="${REBUTTAL_EFFORT:-high}"
+REBUTTAL_PARALLEL="${REBUTTAL_PARALLEL:-4}"
+REBUTTAL_SKIP="${REBUTTAL_SKIP:-}"
+REBUTTAL_ITEMS="${REBUTTAL_ITEMS:-}"
+
 # Whether reviewers may search the web for related work (1) or only use papers/ (0).
 REVIEWER_WEB="${REVIEWER_WEB:-1}"
 
@@ -31,7 +41,8 @@ MAX_BUDGET_USD="${MAX_BUDGET_USD:-}"
 # the note to reviewers and a copy of papers/.
 WORK_ROOT="${WORK_ROOT:-/scratch/lk3591/provexp/reviews}"
 
-# Steps to run: all, reviewers (stop after the four reviews), meta (only the meta-review, on existing reviews).
+# Steps to run: all, reviewers (stop after the four reviews), meta (the meta-review on existing reviews, then the
+# rebuttal drafts if REBUTTAL=1), rebuttal (only the rebuttal drafts).
 STEPS="${STEPS:-all}"
 
 # 1: print the composed prompts and commands, run nothing.

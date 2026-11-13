@@ -39,6 +39,13 @@ twin, a criticism of a claim the paper does not make.
 
 ## The procedure, per item
 
+**If a draft exists** (`docs/reviews/<TAG>/rebuttal/<item>.md`, written by `docs/reviews/process/run_rebuttal.sh`
+after the meta-review, procedure in `process/rebuttal-brief.md`), start from it instead of writing parts 1-3 from
+scratch. It was written without the user and without the earlier decisions: re-check with fresh eyes the premises
+the opinion rests on, against the code and the manuscript, and check it against the decisions already recorded. Then
+write the entry in `meta-rebuttal.md` (the draft's text revised where needed; say what changed) and go to part 4.
+Without a draft, the procedure below.
+
 One item per session. Read the register row, every reviewer finding it cites (the W and Q IDs in
 `reviewer-*.md`), the meta-review's §3 verdicts on those findings, and the §5 entries attached to the item (table
 below). Then write the entry in `meta-rebuttal.md` in four parts:
