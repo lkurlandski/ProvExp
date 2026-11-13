@@ -211,3 +211,8 @@ the header-field overwrites are used too, which also answers part of R1) and `--
 - 2026-11-13 (session 56, R7 track): run 142 read: closed, sound, and exact after one fix (16 errors on one file's
   escaped copies, a certificate stretched across the overlay's start split by an insertion; the engine now declines;
   e0fa5b8). Record: `docs/evidence/r7-overlay-rule.md` §7.
+- 2026-11-13 (session 57): session 56's R7 code re-verified (safety-classifier flag) and run 143 cleared for the user.
+  Holds: the engine decline, `ent` in the attack, counting from the unescaped originals. Fixed: the clone's byte bound
+  (padding), and `start_in_population` in escape runs -- the cert/debug escapes keep all 39 pilot originals in the
+  population in it, the image_size escape takes all 39 out, so for image_size a monotone 0 in run 143 is an
+  observation (as in run 138 step 2), not the guarantee.

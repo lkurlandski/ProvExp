@@ -22,7 +22,7 @@ check `manuscript/main.aux` (`grep newlabel manuscript/main.aux`), and add the t
 |---|---|---|
 | `PLAN.md` | thesis, where the paper stands, the decisions of 2026-11-09, next steps, settled decisions | every session |
 | `docs/status.md` | current state, what waits on the user, short session log | every session; update at the end |
-| `docs/resume-prompt.md` | where the next session starts, two tracks (R7's widening, PLAN.md step 2b: read run 142, `ent` in the attacks, run 143, then the paper; in parallel, the meta-review's triage, now the meta-rebuttal: `docs/resume-prompt-rebuttal.md`) | starting a session |
+| `docs/resume-prompt.md` | where the next session starts, two tracks (R7's widening, PLAN.md step 2b: read run 143, then the paper; in parallel, the meta-review's triage, now the meta-rebuttal: `docs/resume-prompt-rebuttal.md`) | starting a session |
 | `docs/resume-prompt-rebuttal.md` | where each meta-rebuttal session starts: the 2026-11-12 review's register, one item per session, most significant first (perspective, neutral analysis, Claude's opinion, the user's decision); record in `docs/reviews/2026-11-12-body/meta-rebuttal.md` | starting a rebuttal session |
 | `docs/checkpoint-prompt.md` | the user's prompt for ending a session | the user ends a session |
 | `docs/paper-mock.md` | the paper's contributions, outline with word budgets, and tables | planning or writing any section; checking whether new work belongs in the paper |
@@ -61,6 +61,7 @@ or when changing an experiment. Run scripts are in `run/` (one per step, numbere
 |---|---|
 | `docs/archive/status-log-2026-11-12.md` | the session log, sessions 41-42 (search, don't read) |
 | `docs/archive/status-log-2026-11-10-to-11.md` | the session log, sessions 29-39 (search, don't read) |
+| `docs/archive/resume-prompt-2026-11-13-s57.md` | the resume prompt of session 57 (written in session 56): verify session 56's R7 code before run 143 (done: holds, two small fixes; run 143 cleared) |
 | `docs/archive/resume-prompt-2026-11-13-s55-56.md` | the resume prompt for sessions 55-56 (two tracks): read run 142, then `ent` in the attacks and run 143 (both done in session 56; run 143 handed to the user) |
 | `docs/archive/resume-prompt-2026-11-13-s54.md` | the resume prompt as of session 55's start (two tracks; written in sessions 53-54): R7's closure check first (done in session 55: failed through pefile's overlay rule; LIEF's rule adopted) |
 | `docs/archive/resume-prompt-2026-11-13-s53.md` | the resume prompt of session 54 (written in session 53): R7's widening (step 2b) and, in parallel, §6 (R21); session 54 replaced the parallel track's next step with the meta-review's triage |

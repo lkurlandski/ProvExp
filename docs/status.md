@@ -89,14 +89,12 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
 
 ## Waiting on the user
 
-- **Run 143 scripted, gated on a verification session** (`run/143_escape_pilot_loose.sh`, ~5-6 h, NUM_WORKERS default
-  16): the escape pilot on the widened population (three escapes against the two `-loose` monotone detectors + the
-  unconstrained one, M_full now with `ent`, evasion from the unescaped originals). Hypothesis: no detected original
-  evaded by either monotone detector. **Session 56 was flagged by a safety classifier**, so the user wants the next
-  session to **review and independently re-verify session 56's four R7 commits (`e0fa5b8`, `868b8b6`, `0949a9c`,
-  `8a058d2`) before the ~5-6 h run.** **Next R7 session:** `docs/resume-prompt.md` ("The task": verify, then clear run
-  143 for the user; the paper and the run 143 reading are deferred behind that). (Run 142 was read in session 56:
-  closed, sound, exact after one engine fix; `ent` added to the attack and smoke-tested -- all to be re-checked.)
+- **Run 143, cleared for the user** (`run/143_escape_pilot_loose.sh`, ~5-6 h, NUM_WORKERS default 16): the escape
+  pilot on the widened population (three escapes against the two `-loose` monotone detectors + the unconstrained one,
+  M_full with `ent`, evasion from the unescaped originals). Session 57 re-verified session 56's code (flagged by a
+  safety classifier): it holds, with two small fixes (77587f5). Hypothesis: no detected original evaded by either
+  monotone detector (guaranteed for the cert/debug escapes; for image_size, whose escaped files leave the population,
+  expected from run 138). **Next R7 session:** `docs/resume-prompt.md` (read run 143, then the paper).
 - **The extractor question** (PLAN.md step 2c): the user's call, before the scale-up's featurization.
 - **Orthogonal track** (sessions parallel to R7; R17 done in session 53b): the meta-review's triage, item by item,
   with the user judging each criticism (wrong / outside the claim / real); procedure in its section of
@@ -115,6 +113,17 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
 7. Introduction, discussion, abstract last.
 
 ## Session log
+
+- **2026-11-13 (session 57, R7 track): session 56's code re-verified; run 143 cleared.** Session 56 had been flagged by a
+  safety classifier, so its four R7 commits were re-checked with fresh eyes. Engine decline (e0fa5b8): holds; it only
+  replaces what used to raise, and on `74aecb25...` exactly the 16 error rows become declines, nothing else moves
+  (the decline fires through the older locating check there, so `splits` is a backstop; tests added, 20bf742).
+  Catalogue tests 228 passed. `ent` in the attack (868b8b6): holds; same 13 operations as the derived table; ent-only,
+  full-menu and debug-escape smokes leave both `-loose` monotone detectors at 0 evaded, `min_delta_logit` 0; the
+  models use none of the 1,474 neutralized features. Fixed (77587f5): the clone's byte bound now covers its padding
+  (undercounted by up to 7 bytes), and escape runs record `start_in_population`, since the image_size escape takes
+  every file out of the loose population (not an M_full operation), so its searches are not covered by the guarantee;
+  run 143's header corrected. Noted, unchanged: the unconstrained `ref` model is from the v1 store (as in runs 105, 138).
 
 - **2026-11-13 (session 56, R7 track): run 142 read; `ent` in the attacks; run 143 scripted.** Run 142 (full pilot,
   LIEF's overlay rule): closed and sound, exact after one fix. 16 declared edits on one file's escaped copies raised an

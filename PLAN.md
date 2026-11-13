@@ -327,6 +327,10 @@ records of the §5 reviews, the table remake and the ERDALT check, is in
    monotone detectors, M_full now including `ent`, evasion counted **from the unescaped originals** (0949a9c; the row
    gains `p_orig`, `in_population`, `evaded_by_escape`). Hypothesis: no detected original evaded by either monotone
    detector. Smoke (debug_entry, M_full): mfull-sums 0/5 (+0.0000), where run 138 saw the debug write evade 4/41.
+   **Verified in session 57** (session 56 had been flagged by a safety classifier): all four commits hold; two fixes
+   (77587f5): the clone's byte bound covers its padding, and the report's `start_in_population` (the image_size escape
+   takes every file out of the loose population, so the guarantee covers only the cert/debug escapes' searches).
+   Cleared for the user.
    (iv) The paper, in small blocks after (i)-(iii): §4's overwrites and population; §5.4's price (robustness to
    signature cloning) and *Where the guarantee holds*; Table 5's monotone rows; no routing in §4.4, §5.1, Appendix D.
 2c. **Before the scale-up's featurization: the extractor question** (raised by the user, session 55; Claude's view and
