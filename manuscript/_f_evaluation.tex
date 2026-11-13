@@ -228,11 +228,11 @@ the source of added content, 3,183 adversarial examples in all. Each defense is 
     \cmidrule(lr){3-4}
     Detector & AUC \up & 1\% \up & 0.1\% \up & Evaded \dn \\
     \midrule
-    Unconstrained        & .998 & 95.6 & 87.0 & \synthetic{40/49} \\
+    Unconstrained        & .998 & 95.6 & 87.0 & 31/49 \\
     \midrule
-    PV                   & .844 & 26.3 & 10.3 & \synthetic{5/9}   \\
-    ERDALT               & .883 & 62.7 & 42.2 & \synthetic{26/29} \\
-    Adversarial training & .998 & 95.6 & 87.3 & \synthetic{33/50} \\
+    PV                   & .844 & 26.3 & 10.3 & 7/9   \\
+    ERDALT               & .883 & 62.7 & 42.2 & 25/29 \\
+    Adversarial training & .998 & 95.6 & 87.3 & 26/50 \\
     \bottomrule
   \end{tabular*}
 \end{table}
@@ -242,9 +242,8 @@ the source of added content, 3,183 adversarial examples in all. Each defense is 
 % a_varied/toolkit-{full,pv,erdalt}/table.json. Adaptive: a_varied/adaptive-{pv,erdalt,advtrain}-best/adaptive.json;
 % unconstrained 25/49 from run 127. Evaded = union per file over the toolkit, the adaptive attack and MAB-Malware
 % (session 49). Toolkit and adaptive alone (measured, a file evaded if either evades): unconstrained 31/49, PV 4/9,
-% ERDALT 25/29, adversarial training 25/50. SYNTHETIC: the cells add MAB-Malware's predicted evasions (run 139:
-% unconstrained ~30/49, PV ~3/9 by renames, ERDALT ~10/29, adversarial training ~20/50, partly on files already
-% evaded). SCALE-UP: train all four on one training set (PV and ERDALT are on the 10%
+% ERDALT 25/29, adversarial training 25/50. MEASURED (run 139, read in session 51; mab_malware/{full,pv,sums}/
+% results.parquet): MAB-Malware alone 0/49, 7/9, 6/29, 4/50; it adds 0, 3, 0 and 1 files to the union. SCALE-UP: train all four on one training set (PV and ERDALT are on the 10%
 % subsample, the other two on the full set; Table 4's unconstrained row is the 10% one).
 
 \paragraph{What the attacks reveal}
@@ -265,15 +264,15 @@ attack lowered and trains a detector that is monotone increasing in each of them
 attacks, from which PV learns, evades it. Built from our outputs, PV holds against the
 toolkit attacks here too, but the adaptive attack evades it on 4 of the 9 test malware it detects, each time with a
 single edit, a rename of the section that holds the entry point, found among the first 50 candidates it scores.
-MAB-Malware, which renames sections, finds the same hole: it evades PV on \synthetic{3} of
-the 9, \synthetic{each time with a rename among the actions it keeps}. The derived table points to this hole before
+MAB-Malware, which renames sections, finds the same hole: it evades PV on 7 of
+the 9, each time with a rename and no other action. The derived table points to this hole before
 any attack runs. Of the features PV trusts, 124 can be lowered by an edit of the threat model, and they carry 38.8\% of
 the split gain of its trees; the largest of them, at 12.8\%, is a bucket of the entry section's name. Adding rename to
 the attacks would close this hole, but a defender learns which operation to add only after an attacker has used it.
 % PV-best (run 133 step 2; a_pv/best, a_pv_hole.py rule: kept = min observed delta >= -tol, monotone +1; 10% sums
 % store, re-encoded groups dropped; TPR 26.2% at 1% FPR). Toolkit 0/9: a_varied/toolkit-pv/table.json. Adaptive 4/9,
-% SYNTHETIC: MAB-Malware on PV, 3/9 with a rename (SR or SR1) in the minimal actions; on adversarial training 20/50
-% and on the unconstrained full-set detector 30/49 (run 139, hypothesis in its header).
+% MEASURED (run 139): MAB-Malware on PV 7/9, minimal actions SR or SR1 only (one file SR,SR), 15-57 queries; on
+% adversarial training 4/50 and on the unconstrained full-set detector 0/49 (16 evasive outputs over the byte budget).
 % all at the 200-candidate checkpoint, each one rename (run 133 header: within the first 50):
 % a_varied/adaptive-pv-best/adaptive.json. Hole: a_pv/best/derived-pre/report-best.json, 124 features, 38.8% of gain
 % (entry-section-name bucket 1: 12.8%; section group 19.9%, strings 16.1%, warnings 2.7%).
@@ -401,10 +400,10 @@ constraints together.
     \cmidrule(lr){3-4}
     Detector & AUC \up & 1\% \up & 0.1\% \up & \multicolumn{2}{c}{Evaded \dn} \\
     \midrule
-    Unconstrained      & \textbf{.996} & \textbf{93.5} & \textbf{84.4} & \multicolumn{2}{c}{\synthetic{38/47}} \\
+    Unconstrained      & \textbf{.996} & \textbf{93.5} & \textbf{84.4} & \multicolumn{2}{c}{28/47} \\
     \midrule
-    Monotone, features & .992 & 87.2 & 70.9 & \multicolumn{2}{c}{\synthetic{\textbf{1/40}}} \\
-    Monotone, sums     & .994 & 89.6 & 74.7 & \multicolumn{2}{c}{\synthetic{\textbf{1/42}}} \\
+    Monotone, features & .992 & 87.2 & 70.9 & \multicolumn{2}{c}{\textbf{1/40}} \\
+    Monotone, sums     & .994 & 89.6 & 74.7 & \multicolumn{2}{c}{\textbf{1/42}} \\
     \bottomrule
     \addlinespace[1.5em]
     \toprule
@@ -412,9 +411,9 @@ constraints together.
     \cmidrule(lr){3-4} \cmidrule(l){5-6}
     Detector & AUC \up & 1\% \up & 0.1\% \up & inside & outside \\
     \midrule
-    Expert set     & .844 & 29.1 & 14.8 & \synthetic{0/8}  & \synthetic{3/8} \\
+    Expert set     & .844 & 29.1 & 14.8 & 0/8  & 4/8 \\
     \midrule
-    Monotone, sums & \textbf{.995} & \textbf{92.2} & \textbf{79.8} & \synthetic{0/43} & \synthetic{18/43} \\
+    Monotone, sums & \textbf{.995} & \textbf{92.2} & \textbf{79.8} & 0/43 & 12/43 \\
     \bottomrule
   \end{tabular*}
 \end{table}
@@ -426,9 +425,10 @@ constraints together.
 % outside = any other. Measured so far: unconstrained toolkit 26/47 (no adaptive run on s10-ref); monotone rows toolkit
 % 1/40, 1/42 (routed, the evaded file outside the population), adaptive 0/41 and greedy 0/43; expert set toolkit 0/8,
 % adaptive 2/8 (rename, DOS stub: outside additions, §5.2); madd-sums toolkit 0/43 inside, 12/43 outside.
-% SYNTHETIC: MAB-Malware predicted (run 139): unconstrained ~30/47 (38 with the toolkit), monotone rows none in the
-% population, expert set ~2/8 by renames (3/8 with the adaptive attack), madd-sums ~10/43 by renames, removals and
-% slack writes (18/43 with header fields). Denominators stay the routed toolkit's until decision 11 is written in.
+% MEASURED (run 139, session 51): MAB-Malware unconstrained 10/47 (union 28/47), monotone rows 0/40 and 0/41 (score
+% never below the clean score, outside the population too), expert set 4/8 by renames (union 4/8, all outside),
+% madd-sums 1/42 by RD, a file header fields already evades (union 12/43). Denominators stay the routed toolkit's
+% until decision 11 is written in (MAB-Malware, unrouted, detects 41 and 42: file 16344ac4 is outside the population).
 % MEASURED (2026-11-05): adaptive = the beam search alone (user, 2026-11-04: one attack per cell, never a union),
 % 5,000 candidates, M_full. Unconstrained full store 25/49 and the monotone features row 0/41 (run 127 step 1,
 % adaptive-beam/mfull); min_delta_logit exactly 0.0 on the monotone rows. The sums row's adaptive cell: greedy union of

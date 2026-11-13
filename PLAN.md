@@ -257,6 +257,12 @@ them (below).
     computation would be far faster (memory `no-timing-claims`). (iv) *Run 139* (`run/139_mab_malware.sh`): the user
     runs it with `NUM_WORKERS=4`. Smoke (recorded in its header): 0 of 9 files evaded on the undefended detector
     (the toolkit evades 7 of them), scores moved but far from the threshold; the blue predictions are likely too high.
+    *Read (session 51; full reading in run 139's header):* no silent no-ops. Unconstrained full set 0/49 (16 evasive
+    outputs over the byte budget), s10-ref 10/47; PV 7/9, every one by a rename alone; adversarial training 4/50;
+    ERDALT 6/29; expert set 4/8 by renames; both monotone full-model detectors 0, their score never below the clean
+    score in ~2,400 actions each, outside the population too; additions detector 1/42 by a debug-entry removal. The
+    gap to Zainab et al.'s 83.4% is mostly their 0.1% FPR operating point and no byte cap. Measured unions: Table 4
+    31/49, 7/9, 25/29, 26/50; Table 5 28/47, 1/40, 1/42, expert 0/8 and 4/8, additions 0/43 and 12/43.
 
 ## Next steps, in order
 
