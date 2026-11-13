@@ -148,6 +148,11 @@ them from real limitations. Cause: Claude leans toward accepting criticism, and 
 the same lean; its "correct" verdicts mostly confirm that a quote is accurate, not that the objection matters. Memory
 `distrust-simulated-reviews`.
 
+**Superseded (session 57, 2026-11-13):** the triage below is replaced by the *meta-rebuttal*, with its own resume
+prompt, `docs/resume-prompt-rebuttal.md`, and record, `docs/reviews/2026-11-12-body/meta-rebuttal.md` (one item per
+session; Claude now gives an opinion after a neutral analysis). Start parallel-track sessions there; the text below
+is kept for reference until this prompt is next rewritten.
+
 **Next on this track (the user's request): triage the meta-review, item by item, with the user judging.** Source:
 `docs/reviews/2026-11-12-body/meta-review.md` (register in §6; per-finding verdicts in §3; the reviews themselves in
 `reviewer-{A,B,C,D}.md`). Already triaged, skip: R7 (decision 11), R1 (decision 12), R6 (session 50), R17 (session
