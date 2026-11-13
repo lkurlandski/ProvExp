@@ -308,6 +308,11 @@ def overlay_extents_locating(pe: pefile.PE) -> tuple[Range, ...]:
     the file, so all of them locate it (the directories through their entries, not their data), and so do the bytes
     past the end of the file that an extent reaches (appending can bring the extent inside; a directory address pefile
     cannot map lies past the end).
+
+    NOTE: written for pefile's own rule. Under the rule installed at the end of this module (LIEF's: the sections only),
+    the directory entries and extents recorded here no longer locate the overlay; the record is kept as a superset,
+    which is sound (an edit that writes them is declined or flagged, never mispredicted), until the extractor's
+    redesign tightens it (R7, docs/evidence/r7-overlay-rule.md).
     """
     n = len(pe.__data__)
     directories = pe.OPTIONAL_HEADER.DATA_DIRECTORY
@@ -2879,3 +2884,35 @@ def _guard(name: str, parse: Callable[..., object]) -> Callable[..., object]:
 
 for _name, _parse in UNGUARDED_PARSERS.items():
     setattr(pefile.PE, _name, _guard(_name, _parse))
+
+
+################################################################################
+# Definition: the overlay starts after the last section, as LIEF defines it (added on top of pefile)
+################################################################################
+
+
+# NOTE: pefile starts the overlay after the furthest extent, within the file, of the optional header, the sections, and
+# every data directory but the certificate's (`get_overlay_data_start_offset`, unchanged since at least 2017). The
+# loader maps only the sections and ignores some of those entries (debug, architecture), so one write to such an entry,
+# which the program never notices, can relabel bytes as overlay or not (R7; docs/evidence/r7-overlay-rule.md). LIEF,
+# the parser of EMBER v1 and v2 and of the attack toolkits, starts the overlay where the furthest section's raw data
+# ends and finds none when that lies at or past the end of the file; we use its rule. On the files of the population
+# the two rules agree; they differ on about 4% of the test files below 4 MB and of the training files, mostly
+# incomplete ones (a section past the end). A file without sections keeps pefile's start (after the optional header).
+# Installed in pefile at import, like the guard above, so every overlay in the process (thrember's features, the item
+# layer, the catalogue, the edits) follows it; pefile's lines stay unchanged.
+PEFILE_OVERLAY_START: Callable[[pefile.PE], Optional[int]] = pefile.PE.get_overlay_data_start_offset
+
+
+def overlay_data_start_offset(pe: pefile.PE) -> Optional[int]:
+    """Where the overlay starts (LIEF's rule): after the furthest section's raw data; None if that is not in the file."""
+    n = len(pe.__data__)
+    ends = [int(s.PointerToRawData) + int(s.SizeOfRawData) for s in pe.sections]
+    if not ends:
+        start: Optional[int] = PEFILE_OVERLAY_START(pe)
+        return start
+    end = max(ends)
+    return end if end < n else None
+
+
+setattr(pefile.PE, "get_overlay_data_start_offset", overlay_data_start_offset)

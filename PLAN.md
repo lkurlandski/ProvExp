@@ -251,6 +251,11 @@ them (below).
     recorded but not taken:* widen for the debug entry only (0.1-0.6 points at 1%), leave the certificate entry and
     signature cloning outside the threat model as a stated limitation, measured by run 138 (no detected original
     evaded).
+    *The overlay rule (user, session 55):* the widened population was not closed under pefile's overlay rule (the
+    debug extent decides where the overlay starts, and `ent` writes it). The extractor now uses LIEF's rule (the
+    overlay starts after the last section's raw data): pefile is not the gold standard for what an overlay is, and the
+    framework should not be tied to one parser's details. It changes no vector in the population and ~4% outside it;
+    masks and models unchanged. Record: `docs/evidence/r7-overlay-rule.md`.
 
 12. **R1: attack strength (user, session 49, 2026-11-12).** (i) *MAB-Malware joins the attacks*, run against every
     detector, without code randomization (needs IDA Pro; outside the threat model). The authors' code is vendored
@@ -304,16 +309,25 @@ records of the §5 reviews, the table remake and the ERDALT check, is in
    (is a problem-space defense expected? short literature pass), and MAB-Malware's absence. Its output decides what the
    scale-up includes. No narrow §2-3 review beforehand (user).
 2b. **Complete R7's widening (agreed with the user in session 53; decision 11's final form)**, before the scale-up:
-   (i) the closure and exactness check on the widened population (Claude, pilot, under 10 minutes): every operation
-   including `ent` applied to files that pass `precondition(..., loose=True)`; none may leave it, and the computed
-   changes must match re-extraction. Watch the debug entry: pefile's overlay rule reads its extent, so an `ent` write
-   pointing inside the file can move the overlay's start and trip `plain_layout`; if so, the smallest fix, no new
-   clauses (memory `elegant-framework-fixes`). (ii) `ent` in the attacks: `a1_adaptive.py`'s menu and
-   `catalogue_checks.py` (zero, past the end, and signature cloning: the certificate entry pointed at an appended
-   certificate from a signed goodware donor), smoke-tested. (iii) Run 141 for the user (~5-6 h): run 138's three
-   escapes (certificate, SizeOfImage, debug) against the `-loose` detectors, counted from the unescaped originals.
+   (i) the closure and exactness check on the widened population. **Done in session 55** (run 141; record
+   `docs/evidence/r7-overlay-rule.md`): it failed through pefile's overlay rule (data-directory extents, the debug
+   entry's among them, decide where the overlay starts, so `ent` moves it). **Decided (user): LIEF's overlay rule** (the
+   overlay starts after the last section's raw data) installed in the extractor at import, a quick patch to keep moving;
+   scratch check on 50 files closed, sound and exact; masks unchanged, the `-loose` models stand. **Run 142** (full
+   pilot, ~30 min) for the user. (ii) `ent` in the attacks: `a1_adaptive.py`'s menu (zero, past the end, and
+   signature cloning: the certificate entry pointed at an appended certificate from a signed goodware donor),
+   smoke-tested; `catalogue_checks.py` already has `ent` (`--loose`). (iii) **Run 143** for the user (~5-6 h): run
+   138's three escapes (certificate, SizeOfImage, debug) against the `-loose` detectors, counted from the unescaped
+   originals.
    (iv) The paper, in small blocks after (i)-(iii): §4's overwrites and population; §5.4's price (robustness to
    signature cloning) and *Where the guarantee holds*; Table 5's monotone rows; no routing in §4.4, §5.1, Appendix D.
+2c. **Before the scale-up's featurization: the extractor question** (raised by the user, session 55; Claude's view and
+   the criteria in `docs/evidence/r7-overlay-rule.md` §6). We use the EMBER2024 corpus below 4 MB, drop the warnings,
+   patch thrember's quirks, and now change pefile's overlay rule: design the extractor deliberately (principles stated
+   once, one audit pass, a deviations table) rather than patching reactively, and weigh moving the parser to LIEF once a
+   1.x release fixes 1.0.0's bugs (cost: rebuilding the record of the positions the parser reads, which pefile's Python
+   gave us). Cheapest before the scale-up featurizes everything; a short LIEF spike (structures vs pefile, timing,
+   exposed offsets) would inform it. The user decides.
 3. **Design and launch the scale-up as one protocol** (each item agreed before code; long runs as `run/` scripts for the
    user, possibly on the second server), **on the files our copy holds in full in every split** (the `truncated` flag
    false: training subsample, test split, attacked malware; decision 8 (iv)): seeds 0-2, full splits; one training set

@@ -202,3 +202,9 @@ the header-field overwrites are used too, which also answers part of R1) and `--
 - 2026-11-13 (session 53): option 5's final form chosen by the user: the full widening (`ent` + loose population),
   cost measured by run 140 (about 4 points at 1% FPR, almost all from the certificate entry); the debug-only
   alternative recorded (§7).
+- 2026-11-13 (session 55, R7 track): step 2b (i), the closure check on the widened population (`catalogue_checks.py
+  --loose`, run 141). A session-53 bug fixed (the loose precondition exempted only the certificate's items). Closure
+  failed through pefile's overlay rule (data-directory extents decide the overlay's start; `ent` moves it). The user
+  chose LIEF's overlay rule (the overlay starts after the last section) installed in the extractor; scratch check on 50
+  files closed, sound, exact; masks unchanged. Record and options: `docs/evidence/r7-overlay-rule.md`. Run 142 (full
+  pilot) for the user; the attack run becomes 143.

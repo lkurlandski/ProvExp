@@ -375,6 +375,53 @@ class TestDirectoryGuard:
 
 
 ################################################################################
+# Overlay Rule
+################################################################################
+
+
+class TestOverlayRule:
+
+    @staticmethod
+    def _with_overlay(debug_size: int) -> pefile.PE:
+        """The minimal PE (one section ending at 0x400) with 0x100 bytes appended and the debug extent set to
+        `debug_size` (it starts at file offset 0x200)."""
+        pe = pefile.PE(data=_pe_with_debug_entry(2, 0, 0) + bytes(range(256)))
+        pe.OPTIONAL_HEADER.DATA_DIRECTORY[6].Size = debug_size
+        return pe
+
+    def test_installed(self) -> None:
+        assert pefile.PE.get_overlay_data_start_offset is features.overlay_data_start_offset
+
+    def test_overlay_after_the_last_section(self) -> None:
+        pe = self._with_overlay(28)
+        assert pe.get_overlay_data_start_offset() == 0x400
+        assert pe.get_overlay() == bytes(range(256))
+
+    @pytest.mark.parametrize("debug_size", [0x201, 0x2F0, 0x2FF])
+    def test_debug_extent_does_not_move_the_overlay(self, debug_size: int) -> None:
+        pe = self._with_overlay(debug_size)
+        assert features.PEFILE_OVERLAY_START(pe) == 0x200 + debug_size
+        assert pe.get_overlay_data_start_offset() == 0x400
+
+    def test_section_past_the_end_leaves_no_overlay(self) -> None:
+        pe = self._with_overlay(28)
+        pe.sections[0].SizeOfRawData = 0x400
+        assert features.PEFILE_OVERLAY_START(pe) is not None
+        assert pe.get_overlay_data_start_offset() is None
+
+    @pytest.mark.parametrize("path", FILES, ids=[f.name[:16] for f in FILES])
+    def test_matches_lief(self, path: Path) -> None:
+        lief = pytest.importorskip("lief")
+        lief.logging.disable()
+        data = path.read_bytes()
+        pe, binary = _parse(data), lief.PE.parse(list(data))
+        if pe is None or binary is None or not pe.sections:
+            pytest.skip("Not a PE file with sections.")
+        overlay = len(binary.overlay)
+        assert pe.get_overlay_data_start_offset() == (len(data) - overlay if overlay else None)
+
+
+################################################################################
 # Merged Import Descriptors
 ################################################################################
 

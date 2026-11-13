@@ -24,7 +24,8 @@
 # raise on 17 files. Everything else held: no violation and no wrong declaration on `orig`, `far`, `near` (one 4 MB
 # file's declarations raise there); `ent` 0 violations in 1,834 edits. Root cause: pefile's overlay rule reads
 # loader-ignored entries (debug; also the architecture entry, run 137's overlay_entry). Decision pending (user).
-# The run below is the state after the revert (closure is expected to fail).
+# Decided (user, 2026-11-13): LIEF's overlay rule in the extractor (docs/evidence/r7-overlay-rule.md); run 142 repeats
+# this check with it. The command below now runs with that rule installed; run 142 supersedes it.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 source env/bin/activate

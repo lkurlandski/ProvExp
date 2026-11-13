@@ -15,6 +15,7 @@ import numpy as np
 import pefile
 import pytest
 
+from provexp.featuresets.ember2024 import features
 from provexp.featuresets.ember2024.catalogue import DATA_CHARACTERISTICS
 from provexp.featuresets.ember2024.catalogue import DEBUG_ENTRY
 from provexp.featuresets.ember2024.catalogue import SECURITY_ENTRY
@@ -93,14 +94,20 @@ class TestPlainLayout:
         last = max(pe.sections, key=lambda s: s.PointerToRawData + s.SizeOfRawData)
         if last.PointerToRawData + last.SizeOfRawData != max(ends) or len(pe.OPTIONAL_HEADER.DATA_DIRECTORY) < 3:
             pytest.skip("The furthest raw data is not a section's within the file.")
-        # Point the (unused) third directory entry's extent past the last raw data, inside the file: pefile's overlay
-        # rule then starts the overlay there.
+        # Point the (unused) third directory entry's extent past the last raw data, inside the file: pefile's own
+        # overlay rule then starts the overlay there, which the layout clause excludes, monkeypatched back below. Under
+        # the rule installed by `features` (LIEF's, R7), the overlay still starts after the last section, and the
+        # file stays plain.
         z = sample + b"\x00" * 0x400
         entry = pe.OPTIONAL_HEADER.DATA_DIRECTORY[2]
         rva = last.VirtualAddress + max(last.SizeOfRawData - 0x10, 0)
         z = _put(_put(z, entry.get_file_offset(), rva), entry.get_file_offset() + 4, 0x200)
-        assert _pe(z).get_overlay_data_start_offset() is not None
-        assert not plain_layout(_pe(z))
+        assert _pe(z).get_overlay_data_start_offset() == max(ends)
+        assert plain_layout(_pe(z)) == plain_layout(_pe(sample + b"\x00" * 0x400))
+        with pytest.MonkeyPatch.context() as m:
+            m.setattr(pefile.PE, "get_overlay_data_start_offset", features.PEFILE_OVERLAY_START)
+            assert _pe(z).get_overlay_data_start_offset() > max(ends)
+            assert not plain_layout(_pe(z))
 
 
 ################################################################################

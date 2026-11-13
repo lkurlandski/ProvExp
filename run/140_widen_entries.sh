@@ -24,6 +24,10 @@
 # point it at an appended certificate (signature cloning), so the signature features must become two-sided, and
 # signatures are a strong benign signal. One seed, pilot-scale table.
 #
+# Refreshed (Claude, 2026-11-13, run 142 step 0): the table in $S re-derived with LIEF's overlay rule
+# (docs/evidence/r7-overlay-rule.md); three cells of the strict `ren` column change, every mask is byte-identical, so
+# the -loose models trained here stand.
+#
 # Resources: NUM_WORKERS sets the derivation's workers and LightGBM's threads; ~1 min per model with 16.
 set -euo pipefail
 cd "$(dirname "$0")/.."

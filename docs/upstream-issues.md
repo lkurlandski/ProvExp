@@ -126,3 +126,22 @@ epochs with < 5 violations). The < 5 rule itself (theirs, kept) tolerates a few 
 Proposition 3 assumes away; our selected epoch has 2 among 3,183 vectors. Standardization matches (inputs centered and
 scaled; perturbation vectors scaled only).
 
+
+## 9. pefile (design note, optional): data-directory entries the loader ignores decide where the overlay starts (found 2026-11-13)
+
+`PE.get_overlay_data_start_offset` (pefile 2024.8.26; the same rule since at least 2016.3.28, the certificate entry
+skipped since 2017.11.5) starts the overlay after the furthest extent, within the file, of the optional header, the
+sections, and every data directory except the certificate's. The loader maps only the sections and does not read some of
+those entries (debug, the reserved architecture entry), so an 8-byte write to such an entry, which the program never
+notices, moves where the overlay starts: pointing the debug extent to one byte before the end of the file leaves a
+one-byte overlay. thrember's overlay features (`section:overlay_*`, the `max_*` pools) inherit the rule. LIEF starts the
+overlay where the furthest section's raw data ends (none if that lies at or past the end of the file) and ignores the
+directories; on 54 pilot files with the debug extent pointed into the overlay, pefile's start moved on all 54 and
+LIEF's on none. This is a deliberate design, not a bug: PR #670 (merged 2026-11-13) says "Directory data appended past
+the section data is deliberately not treated as overlay". A note for thrember rather than pefile: an overlay feature
+meant as "bytes the loader does not map" is better served by the sections-only rule.
+
+Our copy: LIEF's rule installed in pefile at import (`features.overlay_data_start_offset`, the original kept as
+`PEFILE_OVERLAY_START`; tests in `tests/test_ember2024.py`, `TestOverlayRule`). On the files of the population the two
+rules agree; they differ on 67 of the 1,670 test files below 4 MB and ~3.7% of training files, mostly incomplete
+ones. Record: `docs/evidence/r7-overlay-rule.md`.
