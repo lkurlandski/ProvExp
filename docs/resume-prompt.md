@@ -1,4 +1,4 @@
-# Resume: read run 142, then `ent` in the attacks, run 143 and the paper (R7); in parallel, the meta-review's triage
+# Resume: read run 143, then the paper (R7, step 2b (iv)); in parallel, the meta-review's triage
 
 **Two lines of work share this prompt.** The R7 track (below, through "The task") and a parallel track orthogonal to
 it ("A parallel track", further down). The user says which one a session takes; if unsaid, ask. A session on one track
@@ -6,7 +6,7 @@ does not edit the other's passages or files, commits only the files it changed (
 rewrites this prompt at its end, keeps the other track's section, updated only where its own work changed something.
 
 Written at the end of session 53 (2026-11-13); the parallel track's section rewritten in session 54, the R7 track's at
-the end of session 55, for the session that starts once run 142 has finished. Self-contained: everything needed to
+the end of session 56, for the session that starts once run 143 has finished. Self-contained: everything needed to
 start is below or in the files it names.
 
 ## The project in brief
@@ -25,7 +25,7 @@ attacks miss (5.3), what robustness costs (5.4). The paper is written straight i
 `docs/evidence/r7-population-escape.md` (§7 from "Step 2 read" on, and the log) and `docs/evidence/r7-overlay-rule.md`
 (session 55: the overlay rule, the options, the extractor question).
 
-## Where R7 stands (end of session 55)
+## Where R7 stands (end of session 56)
 
 - **The widening (session 53, settled).** Run 138's end-to-end check showed that loader-ignored writes to the
   certificate and debug entries, outside the threat model, moved those entries' own features against the table (the
@@ -36,24 +36,30 @@ attacks miss (5.3), what robustness costs (5.4). The paper is written straight i
   security_size, debug_size, debug_virtual_address}`); pilot population 88 -> 89 of 100; TPR at 1% / 0.1% FPR: sums
   89.6/74.8 -> 85.7/68.1, features 87.2/71.0 -> 83.4/65.1 (one seed), almost all from the certificate entry (signature
   cloning). The user pays it: a §5.4 finding, never "small" or "weak". Debug-only alternative recorded, not taken.
-- **The closure check and LIEF's overlay rule (session 55).** `catalogue_checks.py --loose` applies every operation,
-  `ent` included, to the pilot files and to escaped copies of each: both entries far past the end (`far`), one byte
-  past it (`near`), and the debug extent ending inside the overlay (`inside`). A session-53 bug was fixed (the loose
-  precondition exempted only the certificate's items; aeeace0; run 140 unchanged). Under pefile's overlay rule closure
-  failed (run 141): pefile starts the overlay after the furthest section *or data-directory* extent, so `ent` moved
-  it. The user chose **LIEF's rule** (after the furthest section's raw data; none if that lies past the end),
-  installed in pefile at import by `features.py` (`overlay_data_start_offset`; pefile's kept as
-  `PEFILE_OVERLAY_START`; f0d2bb1). On the population the two rules agree; ~4% of rows outside it change (re-featurized
-  with the scale-up). Run 140's table re-derived: masks byte-identical, the `-loose` models stand. A scratch check on
-  50 pilot files with the rule: closed (0 of 6,812 edits on passing files leave), sound (0 violations), exact (1,767
-  exact, 1,618 declined, 0 wrong); the declines are almost all on the `far`/`near` copies (locating ranges past the
-  end), where the directions still hold.
-- **Run 142 is the full-pilot version of that check** (`run/142_overlay_rule_closure.sh`, started by the user
-  2026-11-13 at 11:55, ~30 min; log `artifacts/logs/catalogue_checks_pilot_loose_lief.log`; outputs
-  `artifacts/experiments/catalogue_checks/pilot-loose-lief/`). Its step 0 re-derived the loose table in place again;
-  it should equal session 55's, so the `-loose` models still match it (the models record only the mask's path; their
-  `model.txt` holds the constraints as `monotone_constraints`, to compare with `M_full-pre*.monotone.tsv` if in doubt).
-  Hypothesis in its header: closed, sound, exact on all 100 files.
+- **The closure check and LIEF's overlay rule (session 55-56).** `catalogue_checks.py --loose` applies every
+  operation, `ent` included, to the pilot files and to escaped copies of each: both entries far past the end (`far`),
+  one byte past it (`near`), and the debug extent ending inside the overlay (`inside`). The user chose **LIEF's overlay
+  rule** (after the furthest section's raw data; none if that lies past the end), installed in pefile at import by
+  `features.py` (`overlay_data_start_offset`; pefile's kept as `PEFILE_OVERLAY_START`; f0d2bb1). On the population the
+  two rules agree; ~4% of rows outside it change (re-featurized with the scale-up). **Run 142 (full pilot, read in
+  session 56):** closed (0 of 13,326 edits on files in the population leave it; the 89 originals in it, all 89 `far`,
+  89 `near`, 46 `inside` copies too), sound (0 violations), exact after one engine fix (3,583 exact, 3,217 declined, 0
+  wrong). 16 declared edits on one file's `far`/`near` copies raised an error -- a certificate inside `.rsrc`,
+  stretched past the end, that an insertion before the overlay splits; the engine now **declines an insertion that
+  splits an item's members** (e0fa5b8, re-checked on that file). Step 0's re-derived loose table matches the `-loose`
+  models' `monotone_constraints` feature by feature, so the models stand.
+- **`ent` in the attacks (session 56, done).** `a1_adaptive.py`'s menu and M_full now have `ent`: zero both entries,
+  point each past the end (`_past_end`), and signature cloning (a signed goodware donor's certificate appended, the
+  security entry pointed at it; 23/50 pilot donors are signed, blobs collected in `Donors.certificates`). Byte edits
+  via `catalogue_checks`'s `_entry_write`/`_past_end`, never LIEF. The inplace growth accounting was fixed so the
+  clone's append counts against the byte budget (868b8b6). Smoke: the loose monotone detector holds under the full
+  menu; signature cloning rebuilds the authenticode chain (num_certs, chain_max_depth, signing times).
+- **Run 143 scripted, waiting on the user** (`run/143_escape_pilot_loose.sh`, ~5-6 h, `NUM_WORKERS` default 16).
+  Evasion counted **from the unescaped originals** (0949a9c; each row gains `p_orig`, `in_population`,
+  `evaded_by_escape`, `evaded_outside_population`). Smoke (debug_entry, M_full): `mfull-sums-loose` 0/5 (+0.0000), 0
+  by escape alone, where run 138 saw the debug write evade 4/41. Outputs
+  `artifacts/experiments/escape_pilot_loose/{cert_entry,image_size,debug_entry}/adaptive.json`; log
+  `artifacts/logs/escape_pilot_loose.log`.
 - **Raised by the user (PLAN.md step 2c, not now):** we no longer use EMBER-2024 as is (files below 4 MB, warnings
   dropped, thrember quirks patched, pefile's overlay rule replaced). Design the extractor deliberately rather than
   patch it reactively, perhaps on LIEF once a 1.x release fixes 1.0.0's bugs; decide before the scale-up's
@@ -61,32 +67,19 @@ attacks miss (5.3), what robustness costs (5.4). The paper is written straight i
   `may-deviate-from-ember` and CLAUDE.md: parser, feature and sample choices are first-class options, weighed on merit,
   not against earlier decisions.
 
-## The task (PLAN.md step 2b, approved by the user)
+## The task (PLAN.md step 2b (iv), approved by the user)
 
-1. **Read run 142.** Check it finished (`tail` of the log: `pass: ..., closed: ..., exact: ...`). Then from
-   `report.json` and `edits.parquet`: `closed`, `pass`, `exact`; per base (`orig`, `far`, `near`, `inside`) the files,
-   the share passing the precondition and the edits; `<op>.leaving_population_instances`; the violations under each
-   variant; the declared tally (exact / flagged / mismatch / error) on passing files, and where the declines fall.
-   Compare with the scratch run (50 files, above) and with run 141 (pefile's rule). Look for silent no-ops: `ent`
-   applied on every passing file, `debug_into_overlay` applied wherever there is an overlay, the `inside` base present.
-   Write the reading into run 142's header (it has finished, so editing it is safe), `docs/evidence/r7-overlay-rule.md`
-   §7, the R7 record's log, PLAN.md step 2b (i) and `docs/status.md`. A failure: report it as such, with the edits
-   that fail, and bring the user the cause and the options weighed on merit (parser, features, population, threat
-   model), one recommendation, not only the smallest local patch.
-2. **`ent` in the attacks** (code, then smoke test on 2-3 files). `scripts/a1_adaptive.py`: add `ent` to `OVERWRITE`
-   and to the menu (zeroing, past the end as `escape_audit.cert_entry`/`debug_entry` write, and signature cloning:
-   the certificate entry pointed at an appended certificate taken from a signed goodware donor; check the donors
-   include signed files). Byte-level writes with our own functions, never LIEF (memory `own-edits-over-lief`);
-   `catalogue_checks.py`'s `_entry_write`, `_past_end` and `ent_instances` already write the entries this way. The
-   adaptive attack's own section placement now follows LIEF's overlay (as the toolkits and MAB-Malware place sections).
-3. **Run 143** (a `run/` script for the user, ~5-6 h, `NUM_WORKERS` default 16): run 138's protocol with three escapes
-   (`cert_entry`, `image_size`, `debug_entry`) against `unconstrained`, `mfull-feat-loose`, `mfull-sums-loose`, with
-   `--threat_model M_full` now including `ent`, and the evasion counted **from the unescaped originals** (detected
-   original, undetected end file; add this to `a1_adaptive.py`'s report, e.g. score the original before escaping).
-   Note: the certificate and debug writes no longer take a file out of the widened population (only `image_size`
-   does); they stay in run 143 as the writes to test end to end. Hypothesis to fix in the header: no detected original
-   evaded by either monotone detector, since every escape write is now in the threat model.
-4. **After run 143 is read: the paper** (draft in small blocks with the user, `paper-prose` skill): §4's overwrites
+1. **Read run 143** (if it has finished; else ask the user, or take the parallel track). From each escape's
+   `adaptive.json` and `adaptive.parquet`: per detector `detected`, `evaded`, `rate`, `min_delta_logit`,
+   `evaded_by_escape`, `in_population`, `evaded_outside_population`. The hypothesis (run 143's header): no detected
+   original evaded by either monotone `-loose` detector, for any of the three escapes (evaded 0, min_delta_logit 0,
+   evaded_by_escape 0). Read any non-zero monotone cell against `in_population` and `evaded_by_escape` -- a miss on a
+   file outside the loose population is not a guarantee violation, but report it either way. Look for silent no-ops
+   (each escape applied, `ent` candidates firing). Compare with run 138 (certificate 1/41 and 1/43, SizeOfImage 0/40
+   and 0/41 from the escaped files; the debug write 3/40 and 4/41 end to end, now expected 0). Write the reading into
+   run 143's header, `docs/evidence/r7-population-escape.md` §7 and its log, PLAN.md step 2b (iii), and
+   `docs/status.md`. A failure: report it as such, with the cause and options weighed on merit, one recommendation.
+2. **The paper** (draft in small blocks with the user, `paper-prose` skill): §4's overwrites
    (add the entry write) and §4.4's population (the two entries' data may lie past the end; no routing: one detector
    scores every file); §5.4's *The price* (new numbers; signature cloning as the reason) and *Where the guarantee
    holds* (the escape result; drop "such files are rare among benign software, and so stand out"; population share as

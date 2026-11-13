@@ -13,6 +13,16 @@
 # wrong), including 26 files whose debug extent was pointed into the overlay.
 # Hypothesis: the same on all 100 pilot files: closed, pass, exact.
 # Estimate: ~30 min at 16 workers (the scratch run: 15 min for 50 files).
+# Result (read in session 56; 17 min): closed and pass as predicted, exact NOT, through 16 errors (0 wrong). Bases: orig
+# 100 files (89 in the population), far 89, near 89, inside 46 (every file with an overlay), all copies in the population;
+# 0 of 13,326 edits on passing files leave it; 0 violations; `ent` applied on every passing file and base,
+# debug_into_overlay on all 46 overlay files. Declared on passing files: 3,583 exact, 3,201 declined, 16 errors, 0 wrong
+# (declines: far 1,557, near 1,557, orig 58, inside 29). The errors: one file (74aecb25...), far/near copies, `sec`/`imp`
+# before the overlay. Its certificate table lies inside .rsrc; stretched past the end, it crosses the overlay's start,
+# where the insertion lands; the catalogue declared it moved and moving it raised ValueError. Fixed (e0fa5b8): the engine
+# declines an insertion that splits an item's members. Re-run on that file: exactly those 16 rows become declines, the
+# rest unchanged, so the corrected tally is 3,583 exact, 3,217 declined, 0 wrong. Step 0's table matches the -loose
+# models' monotone_constraints feature by feature.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 source env/bin/activate

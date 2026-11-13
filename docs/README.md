@@ -60,6 +60,7 @@ or when changing an experiment. Run scripts are in `run/` (one per step, numbere
 |---|---|
 | `docs/archive/status-log-2026-11-12.md` | the session log, sessions 41-42 (search, don't read) |
 | `docs/archive/status-log-2026-11-10-to-11.md` | the session log, sessions 29-39 (search, don't read) |
+| `docs/archive/resume-prompt-2026-11-13-s55-56.md` | the resume prompt for sessions 55-56 (two tracks): read run 142, then `ent` in the attacks and run 143 (both done in session 56; run 143 handed to the user) |
 | `docs/archive/resume-prompt-2026-11-13-s54.md` | the resume prompt as of session 55's start (two tracks; written in sessions 53-54): R7's closure check first (done in session 55: failed through pefile's overlay rule; LIEF's rule adopted) |
 | `docs/archive/resume-prompt-2026-11-13-s53.md` | the resume prompt of session 54 (written in session 53): R7's widening (step 2b) and, in parallel, §6 (R21); session 54 replaced the parallel track's next step with the meta-review's triage |
 | `docs/archive/resume-prompt-2026-11-12-s52.md` | the resume prompt of session 53 (written in session 52): step 2 of run 138 and option 5's final form, otherwise R17 (run 138 read, widening chosen and costed in session 53) |

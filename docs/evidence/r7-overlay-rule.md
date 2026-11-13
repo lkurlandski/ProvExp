@@ -139,10 +139,15 @@ Claude's view, recorded for the decision:
   reruns. Decide on (b) or a redesign before launching the scale-up. A short spike would inform it: parse the pilot
   with LIEF, compare structures with pefile, time both, list which locating positions LIEF exposes.
 
-## 7. Open
+## 7. Run 142, and what stays open
 
-- Run 142 (full pilot, ~30 min): started by the user 2026-11-13 11:55; its reading goes into the script's header,
-  this section and the R7 record's log.
+- **Run 142 read (session 56).** On all 100 pilot files with LIEF's rule: closed (0 of 13,326 edits on files in the
+  population leave it; the 89 originals in it and all 89 `far`, 89 `near` and 46 `inside` copies), sound (0
+  violations), and exact after one fix: 3,583 exact, 3,217 declined, 0 wrong. Before the fix 16 declared edits raised
+  an error instead of declining, all on one file's `far`/`near` copies inserting a section or imports before the
+  overlay: its certificate table lies inside `.rsrc`, and the escape stretches it past the end, across the overlay's
+  start, where the insertion lands. The catalogue declared the table moved; the engine now declines an insertion that
+  splits an item's members (e0fa5b8; re-run on that file: only those 16 rows change). Details in the script's header.
 - Mechanism 2 for entries no feature reads: the population requires every directory within the file; requiring it
   only of directories whose data a feature reads would close the architecture (and reserved) past-the-end exits. A
   separate, checkable refinement.

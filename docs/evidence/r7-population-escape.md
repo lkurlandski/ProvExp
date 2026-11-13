@@ -208,3 +208,6 @@ the header-field overwrites are used too, which also answers part of R1) and `--
   chose LIEF's overlay rule (the overlay starts after the last section) installed in the extractor; scratch check on 50
   files closed, sound, exact; masks unchanged. Record and options: `docs/evidence/r7-overlay-rule.md`. Run 142 (full
   pilot) started by the user at 11:55; the attack run becomes 143.
+- 2026-11-13 (session 56, R7 track): run 142 read: closed, sound, and exact after one fix (16 errors on one file's
+  escaped copies, a certificate stretched across the overlay's start split by an insertion; the engine now declines;
+  e0fa5b8). Record: `docs/evidence/r7-overlay-rule.md` §7.

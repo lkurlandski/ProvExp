@@ -89,10 +89,11 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
 
 ## Waiting on the user
 
-- **Run 142 running** (`run/142_overlay_rule_closure.sh`, started by the user 2026-11-13 11:55, ~30 min; log
-  `artifacts/logs/catalogue_checks_pilot_loose_lief.log`): the closure check on all pilot files with LIEF's overlay
-  rule; hypothesis closed, sound, exact. **Next R7 session:** `docs/resume-prompt.md` (read run 142, then PLAN.md step
-  2b (ii): `ent` in the attacks, then run 143).
+- **Run 143 scripted, waiting to be run** (`run/143_escape_pilot_loose.sh`, ~5-6 h, NUM_WORKERS default 16): the
+  escape pilot on the widened population (three escapes against the two `-loose` monotone detectors + the unconstrained
+  one, M_full now with `ent`, evasion from the unescaped originals). Hypothesis: no detected original evaded by either
+  monotone detector. **Next R7 session:** `docs/resume-prompt.md` (read run 143, then PLAN.md step 2b (iv): the paper).
+  (Run 142 read in session 56: closed, sound, exact after one engine fix; `ent` added to the attack and smoke-tested.)
 - **The extractor question** (PLAN.md step 2c): the user's call, before the scale-up's featurization.
 - **Orthogonal track** (sessions parallel to R7; R17 done in session 53b): the meta-review's triage, item by item,
   with the user judging each criticism (wrong / outside the claim / real); procedure in its section of
@@ -111,6 +112,16 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
 7. Introduction, discussion, abstract last.
 
 ## Session log
+
+- **2026-11-13 (session 56, R7 track): run 142 read; `ent` in the attacks; run 143 scripted.** Run 142 (full pilot,
+  LIEF's overlay rule): closed and sound, exact after one fix. 16 declared edits on one file's escaped copies raised an
+  error -- a certificate inside `.rsrc`, stretched past the end, that an insertion before the overlay splits; the engine
+  now declines an insertion that splits an item's members (e0fa5b8), re-checked on that file. Step 0's re-derived loose
+  table matches the `-loose` models feature by feature. Then `ent` added to `a1_adaptive.py`'s menu and M_full (zero,
+  past the end, signature cloning from signed goodware donors; 868b8b6), run 143 counts evasion from the unescaped
+  originals (0949a9c), and `run/143_escape_pilot_loose.sh` written for the user (8a058d2). Smokes held: the loose
+  monotone detector is not evaded under the full menu or by the debug-entry escape (where run 138 saw 4/41). Records:
+  `docs/evidence/r7-overlay-rule.md` §7, PLAN.md step 2b.
 
 - **2026-11-13 (session 55, R7 track): the closure check; LIEF's overlay rule.** `catalogue_checks.py --loose` (`ent`,
   escaped copies far past, just past and inside the overlay; run 141). A session-53 bug fixed (the loose precondition

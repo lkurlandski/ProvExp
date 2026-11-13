@@ -313,12 +313,20 @@ records of the §5 reviews, the table remake and the ERDALT check, is in
    `docs/evidence/r7-overlay-rule.md`): it failed through pefile's overlay rule (data-directory extents, the debug
    entry's among them, decide where the overlay starts, so `ent` moves it). **Decided (user): LIEF's overlay rule** (the
    overlay starts after the last section's raw data) installed in the extractor at import, a quick patch to keep moving;
-   scratch check on 50 files closed, sound and exact; masks unchanged, the `-loose` models stand. **Run 142** (full
-   pilot, ~30 min) started by the user 2026-11-13 11:55. (ii) `ent` in the attacks: `a1_adaptive.py`'s menu (zero, past the end, and
-   signature cloning: the certificate entry pointed at an appended certificate from a signed goodware donor),
-   smoke-tested; `catalogue_checks.py` already has `ent` (`--loose`). (iii) **Run 143** for the user (~5-6 h): run
-   138's three escapes (certificate, SizeOfImage, debug) against the `-loose` detectors, counted from the unescaped
-   originals.
+   scratch check on 50 files closed, sound and exact; masks unchanged, the `-loose` models stand. Run 142 (full pilot, read in session 56): closed (0 of 13,326 edits on passing files leave), sound (0
+   violations), exact after one fix (3,583 exact, 3,217 declined, 0 wrong): 16 declared edits on one file's `far`/`near`
+   copies raised an error (its certificate table, inside `.rsrc` and stretched past the end, crosses the overlay's start
+   where `sec`/`imp` insert); the engine now declines an insertion that splits an item's members (e0fa5b8; re-checked
+   on that file). (ii) **`ent` in the attacks: done (session 56).** `a1_adaptive.py`'s menu now has `ent` (zero both
+   entries, point each past the end, and signature cloning: a signed goodware donor's certificate appended and the
+   security entry pointed at it; 23/50 pilot donors are signed), byte edits via `catalogue_checks`'s `_entry_write`/
+   `_past_end`; `ent` in `OVERWRITE`/M_full; the inplace growth accounting fixed so the clone's append counts against
+   the budget (868b8b6). Smoke: the loose monotone detector holds under the full menu, the unconstrained one is evaded.
+   (iii) **Run 143 scripted for the user (session 56):** `run/143_escape_pilot_loose.sh` (~5-6 h, NUM_WORKERS default
+   16). Run 138's three escapes (cert_entry, image_size, debug_entry) against `unconstrained` and the two `-loose`
+   monotone detectors, M_full now including `ent`, evasion counted **from the unescaped originals** (0949a9c; the row
+   gains `p_orig`, `in_population`, `evaded_by_escape`). Hypothesis: no detected original evaded by either monotone
+   detector. Smoke (debug_entry, M_full): mfull-sums 0/5 (+0.0000), where run 138 saw the debug write evade 4/41.
    (iv) The paper, in small blocks after (i)-(iii): §4's overwrites and population; §5.4's price (robustness to
    signature cloning) and *Where the guarantee holds*; Table 5's monotone rows; no routing in §4.4, §5.1, Appendix D.
 2c. **Before the scale-up's featurization: the extractor question** (raised by the user, session 55; Claude's view and
