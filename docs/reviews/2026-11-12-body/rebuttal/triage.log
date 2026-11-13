@@ -1,0 +1,36 @@
+I wrote the triage to `docs/reviews/2026-11-12-body/rebuttal/triage.md`. It is about 3,250 words, a little over the target. I edited no other file and committed nothing. No item was decided before this run, so none is marked "decided". Five items had a decision recorded in PLAN.md (R7, R1, R6, R17, R9/R14), and each of those entries ends with an "Earlier decision" line.
+
+| Item | Risk (short) | Verdict | Group | Decision |
+|---|---|---|---|---|
+| R7 | routed system is a bypass | investigate | population | |
+| R1 | attacks weaker than published; adaptive attack misses an operation | investigate | attacks | |
+| R2 | "sound" rests on tested premises | investigate | trust | |
+| R18 | learned baselines get less information | investigate | baselines | |
+| R6 | formal results are known techniques | cheap fix | | |
+| R4 | one instance for a class claim | cheap fix | | |
+| R20 | statistics cannot rank defenses | cheap fix | | |
+| R11 | table cells from different detectors | dismiss | | |
+| R19 | ERDALT port may be weak | investigate | baselines | |
+| R3 | hand-analysis evidence thin | cheap fix | | |
+| R17 | Theorem 1 beyond its proof; class universal | cheap fix | | |
+| R15 | threat model scope; no named attacker | cheap fix | | |
+| R9 | what Proposition 1 enables | dismiss | | |
+| R5 | Pierazzi et al. portrayed loosely | cheap fix | | |
+| R21 | prior work misattributed or missing | cheap fix | | |
+| R12 | counts include unmodeled features | cheap fix | | |
+| R14 | header-field overwrite never validated or used | investigate | attacks | |
+| R8 | expert-set comparison | cheap fix | | |
+| R13 | instrumentation effort | cheap fix | | |
+| R16 | PE minutiae | dismiss | | |
+
+**What to look at first:**
+- **How I judged the earlier decisions:**
+  - I agree with decisions 11 (R7), 12 (R1, R9, R14) and session 50 (R6).
+  - I partly differ with session 53b (R17). Locality is not a gap in the proof. But Reviewer A's main objection is that "broad class" is meaningless, because one item holding the whole input makes any mapping fit. One sentence answers it.
+  - Decision 12 has one gap. It explains the distance from Zainab et al.'s 83% evasion rate by an argument (their stricter false-positive rate and no byte cap), not by a run at their setting.
+- **The investigate groups that turn on cheap checks:**
+  - **baselines (R18):** a "trial table" built from the existing 73,063 catalogue edits marks a feature lowerable if some edit lowered it. Build it, then attack a monotone detector built on it. This is the competitor a practitioner who knows the twelve operations would actually use, and §5 never builds it. If it matches the derived table, the paper's contrast between computation and trial must be reframed.
+  - **trust (R2):** two short checks. A multi-byte probe of the parser (write markers like MZ and Rich at every header position) would show whether the record of positions the parser reads is missing rules. A count of test files whose item kinds were never seen in the 2,000-file sample would show whether the sample-based part of the guarantee could be checked per file for free.
+- **Two text fixes due regardless of any run:**
+  - "such files are rare among benign software, and so stand out" (`_f_evaluation.tex:363`) contradicts the paper's own numbers and must go.
+  - "The adaptive attack confirms the guarantee" (`_f_evaluation.tex:350`) should become "a check of the implementation", because a zero score drop follows from Corollary 1.

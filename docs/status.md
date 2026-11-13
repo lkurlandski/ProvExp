@@ -117,6 +117,11 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
 
 ## Session log
 
+- **2026-11-13 (session 58, rebuttal track): the triage table decided.** The four calibration items (R7, R1, R6, R17)
+  match the earlier decisions; the triage leans slightly toward doing more than needed. Before the scale-up, in order:
+  groups trust (R2) and erdalt (R19, split from baselines), then trial (R18), then a last look, then the scale-up;
+  text fixes after it. Decisions and actions in `rebuttal/triage.md`. **Next:** `TAG=2026-11-12-body
+  REBUTTAL_GROUPS="trust erdalt" docs/reviews/process/run_rebuttal.sh`.
 - **2026-11-13 (session 57, R7 track): session 56's code re-verified; run 143 cleared.** Session 56 had been flagged by a
   safety classifier, so its four R7 commits were re-checked with fresh eyes. Engine decline (e0fa5b8): holds; it only
   replaces what used to raise, and on `74aecb25...` exactly the 16 error rows become declines, nothing else moves

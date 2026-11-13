@@ -1,0 +1,29 @@
+I've written the R7 draft at `docs/reviews/2026-11-12-body/rebuttal/R7.md`. I edited no other file, ran no job and committed nothing.
+
+The criticism was correct when the reviewers made it, and the authors have already acted on it:
+
+- **What the reviewers attack is in the text.** §4.4 "Population" sends files outside the population to the unconstrained detector (`_e_instances.tex:151-153`). §5.4 "What Robustness Costs" says such files "stand out" (`_f_evaluation.tex:359-363`), yet the same paragraph puts 1.5% of benign test files outside the population, above the 1% budget. Both passages are unchanged at 1bb86f2.
+- **I confirmed the key premises in stored outputs:**
+  - The benign share outside is 14 of 938; for malware it is 80 of 732.
+  - Run 137 found that a single write of at most 8 bytes takes 150 of 150 population files out: to the certificate entry, the debug entry or the architecture entry, or a raised SizeOfImage.
+  - Run 138's SizeOfImage step left both monotone detectors unevaded (0 of 40 and 0 of 41), while the unconstrained one was evaded on 35 of 47.
+  - Run 140's script header records the cost of the widening: about 4 points of detection at 1% FPR.
+  - Run 143 is still running.
+- **Two parts of the criticism are wrong:**
+  - Reviewer B's 10–13% end-to-end estimate and the doubts about the 89% rest on counts that include truncated files. Below 4 MB, 89.1% of malware is in the population.
+  - Reviewer C's claim that files in the dataset are shown to run is a false premise.
+- **What remains real:**
+  - Nothing is proven outside the widened population; it is only measured there.
+  - The one mechanism that has broken a monotone detector so far has not been searched for systematically: a file made incomplete so that an append completes a hidden structure.
+
+The smallest remaining change is mostly text, about 150–250 words:
+- Write the no-router design into §4.4 and §4.3.1 (the new entry write).
+- Rewrite §5.4's "Where the guarantee holds" with the population share as a count over a total and the escape result.
+- Add one sentence on who chooses the starting file.
+- Show Table 5 without routing, so the table itself is the end-to-end evaluation.
+
+Two side effects follow:
+- §5.4's price roughly doubles, from 3.9 to about 7.8 points at 1% FPR.
+- The other tables' monotone cells need the widened models, or blue values until the scale-up. That is your decision, already listed in PLAN.md step 2b (v).
+
+**Opinion:** change the methodology (already done in decision 11: no router, and the two entries the loader ignores added to the threat model; what remains is writing it into §4.4 and §5.4 and counting end to end at scale)
