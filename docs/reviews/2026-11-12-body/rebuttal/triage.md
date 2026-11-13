@@ -5,7 +5,7 @@ Commit 2e4c350. Verdicts: decided, dismiss, cheap fix, investigate.
 | Item | Risk (short) | Verdict | Group | Decision |
 |---|---|---|---|---|
 | R7 | routed system is a bypass | investigate | population | methodology: decision 11 stands; end-to-end number after run 143 |
-| R1 | attacks weaker than published; adaptive attack misses an operation | investigate | attacks | methodology: decision 12 stands; one wording fix; MAB rerun optional |
+| R1 | attacks weaker than published; adaptive attack misses an operation | investigate | attacks | methodology: decision 12 stands; one wording fix; MAB rerun at their setting: yes (session 58) |
 | R2 | "sound" rests on tested premises | investigate | trust | argument + 4-byte record fix: draft confirmed (session 58); probe and vocabulary check not needed |
 | R18 | learned baselines get less information | investigate | trial | investigate (before scale-up, step 2) |
 | R6 | formal results are known techniques | cheap fix | | argument: session 50 stands; name self-maintainability |
@@ -106,7 +106,8 @@ the undefended detector under the byte budget, 7/9 on PV by renames, 0 on the mo
 the body, "stronger" dropped, `--score real` at the scale-up; agrees, with one gap: the distance to Zainab et al.'s
 83% is explained by an argument (operating point, byte cap) rather than measured at their setting, and B will ask.
 - [ ] Wording: the monotone rows' zero score drop is a check of the implementation, not a confirmation of the guarantee (`_f_evaluation.tex:350`).
-- [ ] Decide before the scale-up: MAB-Malware also at Zainab et al.'s setting (0.1% FPR, no byte cap)? Optional.
+- [ ] Scale-up: MAB-Malware also at Zainab et al.'s setting (0.1% FPR, no byte cap) against the unconstrained
+  detector (decided session 58; in PLAN.md step 3).
 
 ### R2: "sound" rests on tested premises
 **Verdict:** investigate. All four reviewers raise it, and it is A's one change. The writing part is a cheap fix that

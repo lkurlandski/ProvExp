@@ -121,7 +121,10 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
   match the earlier decisions; the triage leans slightly toward doing more than needed. Before the scale-up, in order:
   groups trust (R2) and erdalt (R19, split from baselines), then trial (R18), then a last look, then the scale-up;
   text fixes after it. Decisions and actions in `rebuttal/triage.md`. **Next:** `TAG=2026-11-12-body
-  REBUTTAL_GROUPS="trust erdalt" docs/reviews/process/run_rebuttal.sh`.
+  REBUTTAL_GROUPS="trust erdalt" docs/reviews/process/run_rebuttal.sh`. *Later:* trust and erdalt read and decided
+  (R2: paragraph + 4-byte Rich-range fix; R19: training sound, finding stands, donor control); MAB rerun at Zainab et
+  al.'s setting: yes. Before-scale-up items in PLAN.md step 3. **Next:** the 4-byte fix (own session); R18 runs
+  elsewhere (`docs/resume-prompt-R18.md`).
 - **2026-11-13 (session 57, R7 track): session 56's code re-verified; run 143 cleared.** Session 56 had been flagged by a
   safety classifier, so its four R7 commits were re-checked with fresh eyes. Engine decline (e0fa5b8): holds; it only
   replaces what used to raise, and on `74aecb25...` exactly the 16 error rows become declines, nothing else moves

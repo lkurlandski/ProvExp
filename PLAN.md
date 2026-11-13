@@ -350,8 +350,8 @@ records of the §5 reviews, the table remake and the ERDALT check, is in
    user, possibly on the second server), **on the files our copy holds in full in every split** (the `truncated` flag
    false: training subsample, test split, attacked malware; decision 8 (iv)): seeds 0-2, full splits; one training set
    and one attack protocol for every detector of §5 (Tables 4 and 5 now show two different unconstrained detectors;
-   Table 5's two halves with the same detectors); ERDALT trained to a proper stopping point (one epoch of 310 met the
-   criterion in run 133); enough malware that PV and the expert set are not judged on 8-9 files; the adaptive budget at
+   Table 5's two halves with the same detectors); ERDALT trained as in run 133 (their full 310-epoch schedule, epoch
+   chosen by their criterion; R19's check found the training sound, so no change); enough malware that PV and the expert set are not judged on 8-9 files; the adaptive budget at
    scale (~3,000 CPU-h at 5,000 candidates on 2,000 files; options: the 1,000-candidate checkpoint, a fixed subset, a
    cap on the monotone rows); **MAB-Malware as a held-out attack we did not write**. Hypothesis: MAB-Malware finds PV's
    rename hole (support for 5.3 independent of our table-guided attack) and evades no monotone detector on a file in the
@@ -361,6 +361,11 @@ records of the §5 reviews, the table remake and the ERDALT check, is in
    From R7: the escape attacks at scale (look actively for further escapes), the toolkit attacks on escaped files, the
    population share of attacked malware with its denominator, the files outside the population re-featurized with
    LIEF's overlay rule, and the unconstrained detector trained on the same store as the others.
+   From the rebuttal (session 58, `docs/reviews/2026-11-12-body/rebuttal/triage.md`): **before the recount**, the
+   recorded Rich search range extended by the 4 key bytes past the marker (R2; a short code session of its own); at
+   the scale-up, MAB-Malware also at Zainab et al.'s setting (0.1% FPR, no byte cap) against the unconstrained
+   detector (R1), and the ERDALT donor-overlap control (GAMMA imports with the training donors; R19). Waiting on: run
+   143 (R7 track) and R18 (the trial competitor; decides whether iterated adversarial training joins).
    **Answered (user, session 49): widen first, for now**, then scale everything once. The question was: scale the
    existing experiments first (more files, seeds 0-2), or widen
    them first (the review's new experiments: MAB-Malware, the escape attack, equal-information baselines, a trial
