@@ -11,6 +11,13 @@ extractor (thrember's features with merged imports, plus the four re-encoded gro
 moved against the derived signs of that operation: a move the derived table rules out is a violation. The strict
 variant must hold on every file; the precondition variant on the files that pass the precondition check.
 
+With `--loose` (the widened population, R7): the precondition is `precondition(..., loose=True)`, the operations
+include `ent` (the certificate and debug entries set to any value: zeroed, past the end, into the overlay, at a
+section, random), and every operation is also applied to two escaped copies of each file in the population, both
+entries made to end far past the end of the file (`far`) and one byte past it (`near`, so that an append brings their
+extents back inside), and, on files with an overlay, a third with the debug extent ending inside the overlay
+(`inside`). The escaped copies are in the widened population; closure is checked on them as on the originals.
+
 The edits do exactly the declared operation and nothing else, unlike LIEF's writer, which relays out the file
 (assumption A4, scripts/a1_adaptive.py): an added section's header goes into zero bytes after the section table, its
 data at the end of the file or before the overlay (the attacker's choice; both layouts are tried on files with an
@@ -58,6 +65,7 @@ from tqdm import tqdm
 from provexp.data.simpledb import SimpleDB
 from provexp.data.simpledb import SimpleDBReader
 from provexp.featuresets.ember2024.catalogue import DEBUG_ENTRY
+from provexp.featuresets.ember2024.catalogue import LOOSE_ENTRIES
 from provexp.featuresets.ember2024.catalogue import HDR_FIELDS
 from provexp.featuresets.ember2024.catalogue import SECURITY_ENTRY
 from provexp.featuresets.ember2024.catalogue import PAGE
@@ -82,7 +90,9 @@ from provexp.reach import predict
 from provexp.data.paths import EMBER2024_DATA
 
 __all__ = [
+    "LOOSE_OPS",
     "OPS",
+    "escaped",
     "add_imports",
     "add_section",
     "forged_rich",
@@ -92,6 +102,7 @@ __all__ = [
 ]
 
 OPS = ("app", "sec", "imp", "ext", "shf", "slk", "dos", "hdr", "chk", "ren", "rdb", "rsg")
+LOOSE_OPS = OPS + ("ent",)
 
 SCN_CODE, SCN_DATA = 0x00000020, 0x00000040
 SCN_EXECUTE, SCN_READ, SCN_WRITE = 0x20000000, 0x40000000, 0x80000000
@@ -276,6 +287,97 @@ def instances(z: bytes, pe: pefile.PE, table: ItemTable, rng: np.random.Generato
     return out
 
 
+def _entry_write(pe: pefile.PE, index: int, va: int, size: int) -> ByteEdit:
+    """The in-place write of data directory entry `index` as (va, size)."""
+    lo = pe.OPTIONAL_HEADER.DATA_DIRECTORY[index].get_file_offset()
+    return ByteEdit(lo, lo + 8, struct.pack("<II", va, size))
+
+
+def _in_section(pe: pefile.PE, rva: int) -> bool:
+    return any(s.VirtualAddress <= rva < s.VirtualAddress + max(s.Misc_VirtualSize, s.SizeOfRawData) for s in pe.sections)
+
+
+def _past_end(pe: pefile.PE, index: int, n: int, by: int) -> Optional[ByteEdit]:
+    """
+    Entry `index` made to end `by` bytes past the end of the file: its extent lengthened if it has one, else placed at
+    an address that maps to the file's last bytes (outside every section, so pefile maps it one to one); None if
+    neither applies.
+    """
+    d = pe.OPTIONAL_HEADER.DATA_DIRECTORY[index]
+    if d.VirtualAddress and d.Size:
+        try:
+            start = d.VirtualAddress if index == SECURITY_ENTRY else pe.get_offset_from_rva(d.VirtualAddress)
+        except pefile.PEFormatError:
+            return None
+        if start is None or start >= n:
+            return None
+        return _entry_write(pe, index, d.VirtualAddress, n + by - start)
+    va = max(n - 8, 0)
+    if index != SECURITY_ENTRY and _in_section(pe, va):
+        return None
+    return _entry_write(pe, index, va, n + by - va)
+
+
+def _into_overlay(pe: pefile.PE, n: int) -> Optional[ByteEdit]:
+    """
+    The debug extent lengthened (from its address, or the first section's) to end one byte before the end of a file
+    with an overlay: pefile's overlay rule then starts the overlay at the file's last byte. None without an overlay.
+    """
+    start = pe.get_overlay_data_start_offset()
+    d = pe.OPTIONAL_HEADER.DATA_DIRECTORY[DEBUG_ENTRY]
+    va = d.VirtualAddress if d.VirtualAddress else (pe.sections[0].VirtualAddress if pe.sections else 0)
+    try:
+        lo = pe.get_offset_from_rva(va)
+    except pefile.PEFormatError:
+        return None
+    if start is None or n - start < 2 or lo is None or lo >= n - 1:
+        return None
+    return _entry_write(pe, DEBUG_ENTRY, va, n - 1 - lo)
+
+
+def escaped(z: bytes, pe: pefile.PE) -> list[tuple[str, bytes]]:
+    """
+    The escaped copies of a file (`--loose`): both loose entries ending far past the end (`far`) and one byte past it
+    (`near`), and the debug extent ending inside the overlay (`inside`, files with an overlay).
+    """
+    n = len(z)
+    out = []
+    for label, by in (("far", 2 * n), ("near", 1)):
+        edits = [e for i in LOOSE_ENTRIES if (e := _past_end(pe, i, n, by)) is not None]
+        if edits:
+            out.append((label, _in_place("ent", label, z, edits)[2] or z))
+    e = _into_overlay(pe, n)
+    if e is not None:
+        out.append(("inside", e.apply(z)))
+    return out
+
+
+def ent_instances(z: bytes, pe: pefile.PE, rng: np.random.Generator) -> list[Instance]:
+    """
+    `ent` (`--loose`): the certificate and debug entries zeroed; each past the end; the debug entry over the overlay
+    and at the first section; the certificate entry over the overlay (the shape of signature cloning); random values.
+    """
+    n = len(z)
+    if len(pe.OPTIONAL_HEADER.DATA_DIRECTORY) <= max(LOOSE_ENTRIES):
+        return [("ent", "no_entries", None, None, None)]
+    out: list[Instance] = [_in_place("ent", "zero_both", z, [_entry_write(pe, i, 0, 0) for i in LOOSE_ENTRIES])]
+    for index, name in ((SECURITY_ENTRY, "cert"), (DEBUG_ENTRY, "debug")):
+        e = _past_end(pe, index, n, n)
+        out.append(_in_place("ent", f"{name}_past_end", z, [e]) if e else ("ent", f"{name}_past_end", None, None, None))
+    start = pe.get_overlay_data_start_offset()
+    if start is not None and n - start > 1:
+        out.append(_in_place("ent", "cert_over_overlay", z, [_entry_write(pe, SECURITY_ENTRY, start, n - start)]))
+        e = _into_overlay(pe, n)
+        if e is not None:
+            out.append(_in_place("ent", "debug_into_overlay", z, [e]))
+    if pe.sections:
+        out.append(_in_place("ent", "debug_at_section", z, [_entry_write(pe, DEBUG_ENTRY, pe.sections[0].VirtualAddress, 28)]))
+    lo = pe.OPTIONAL_HEADER.DATA_DIRECTORY[SECURITY_ENTRY].get_file_offset()
+    hi = pe.OPTIONAL_HEADER.DATA_DIRECTORY[DEBUG_ENTRY].get_file_offset()
+    out.append(_in_place("ent", "random", z, [ByteEdit(lo, lo + 8, _random(8, rng)), ByteEdit(hi, hi + 8, _random(8, rng))]))
+    return out
+
+
 ################################################################################
 # The comparison
 ################################################################################
@@ -297,16 +399,18 @@ def _violations(moves: dict[int, str], allowed: list[str]) -> list[tuple[int, st
 _STATE: dict[str, Any] = {}
 
 
-def _init_worker(db: Path, directions: Path) -> None:
+def _init_worker(db: Path, directions: Path, loose: bool) -> None:
     warnings.filterwarnings("ignore")
     sums = SumsFeatureExtractor()
     d = pl.read_csv(directions, infer_schema=False).sort(pl.col("index").cast(pl.Int64))
     if d["name"].to_list() != [n.split(":", 1)[1] for n in sums.feature_names]:
         raise RuntimeError(f"{directions} does not list the sums extractor's features in order.")
+    ops = LOOSE_OPS if loose else OPS
     _STATE.update(
         reader=SimpleDBReader(SimpleDB(db, check=False)), sums=sums, merged=merge_import_descriptors(PEFeatureExtractor()),
-        strict={op: [s or "" for s in d[f"op_{op}"].to_list()] for op in OPS},
-        pre={op: [s or "" for s in d[f"op_{op}_pre"].to_list()] for op in OPS},
+        strict={op: [s or "" for s in d[f"op_{op}"].to_list()] for op in ops},
+        pre={op: [s or "" for s in d[f"op_{op}_pre"].to_list()] for op in ops},
+        loose=loose,
     )
 
 
@@ -348,22 +452,38 @@ def _declared(merged: PEFeatureExtractor, declared: Callable[[PEFeatureExtractor
 
 
 def _check_file(task: tuple[str, int]) -> list[dict[str, Any]]:
-    """Every instance on one file."""
+    """Every instance on one file (and, with `--loose`, on its escaped copies in the population)."""
     name, seed = task
-    sums: SumsFeatureExtractor = _STATE["sums"]
     merged: PEFeatureExtractor = _STATE["merged"]
+    loose: bool = _STATE["loose"]
     z = _STATE["reader"].get(name).data
     pe = _parse(z)
     if pe is None:
         return []
+    rows = _check_base(name, "orig", z, pe, seed)
+    if loose and passes_precondition(merged, z, loose=True):
+        for base, e in escaped(z, pe):
+            q = _parse(e)
+            if q is not None:
+                rows += _check_base(name, base, e, q, seed)
+    return rows
+
+
+def _check_base(name: str, base: str, z: bytes, pe: pefile.PE, seed: int) -> list[dict[str, Any]]:
+    """Every instance on one file `z` (the original or an escaped copy, `base`)."""
+    sums: SumsFeatureExtractor = _STATE["sums"]
+    merged: PEFeatureExtractor = _STATE["merged"]
+    loose: bool = _STATE["loose"]
     names = sums.feature_names
     table = merged.item_table(z)
-    pre = passes_precondition(merged, z)
+    pre = passes_precondition(merged, z, loose=loose)
     before = np.asarray(sums.feature_vector(z))  # type: ignore[no-untyped-call]
     rows: list[dict[str, Any]] = []
     modeled = ~np.array([n.startswith("pefilewarnings:") for n in merged.feature_names])
-    for op, label, edited, edits, declared in instances(z, pe, table, np.random.default_rng([seed, int(name[:8], 16)])):
-        row: dict[str, Any] = {"name": name, "op": op, "instance": label, "applies": edited is not None,
+    rng = np.random.default_rng([seed, int(name[:8], 16)])
+    todo = instances(z, pe, table, rng) + (ent_instances(z, pe, rng) if loose else [])
+    for op, label, edited, edits, declared in todo:
+        row: dict[str, Any] = {"name": name, "base": base, "op": op, "instance": label, "applies": edited is not None,
                                "precondition": pre, "parses": False, "changed": 0, "violations_strict": [],
                                "violations_pre": [], "c1": "", "c1_mismatches": 0, "precondition_after": None,
                                "declared": "", "declared_detail": [], "declared_seconds": 0.0, "extract_seconds": 0.0,
@@ -372,7 +492,7 @@ def _check_file(task: tuple[str, int]) -> list[dict[str, Any]]:
             t0 = time.perf_counter()
             row["parses"] = _parse(edited) is not None
             # P1, closure: the edited file passes the precondition whenever the original did.
-            row["precondition_after"] = passes_precondition(merged, edited) if pre else None
+            row["precondition_after"] = passes_precondition(merged, edited, loose=loose) if pre else None
             moves = observed_signs(before, np.asarray(sums.feature_vector(edited)))  # type: ignore[no-untyped-call]
             row["changed"] = len(moves)
             row["moves"] = [f"{names[i]} {s}" for i, s in sorted(moves.items())]
@@ -407,7 +527,10 @@ def main() -> None:
     parser.add_argument("--num_files", type=int, default=0, help="Only the first N files (0: all).")
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--workers", type=int, default=16)
+    parser.add_argument("--loose", action="store_true",
+                        help="The widened population (R7): loose precondition, `ent`, escaped copies of each file.")
     args = parser.parse_args()
+    ops = LOOSE_OPS if args.loose else OPS
 
     df = pl.read_parquet(args.files)
     if "status" in df.columns:
@@ -419,17 +542,17 @@ def main() -> None:
 
     rows: list[dict[str, Any]] = []
     t0 = time.perf_counter()
-    with get_context("forkserver").Pool(args.workers, initializer=_init_worker, initargs=(args.db, args.directions)) as pool:
+    with get_context("forkserver").Pool(args.workers, initializer=_init_worker, initargs=(args.db, args.directions, args.loose)) as pool:
         tasks = [(f, args.seed) for f in files]
         for r in tqdm(pool.imap_unordered(_check_file, tasks), total=len(files), mininterval=30, file=sys.stdout):
             rows += r
             for row in r:
                 for v in row["violations_strict"][:3] + row["violations_pre"][:3]:
-                    print(f"{row['op']}/{row['instance']} {row['name'][:12]}: {v}", flush=True)
-    rows.sort(key=lambda r: (OPS.index(r["op"]), r["name"], r["instance"]))
+                    print(f"{row['op']}/{row['base']}/{row['instance']} {row['name'][:12]}: {v}", flush=True)
+    rows.sort(key=lambda r: (ops.index(r["op"]), r["name"], r["base"], r["instance"]))
 
     report: dict[str, Any] = {"files": len(files), "seconds": time.perf_counter() - t0}
-    for op in OPS:
+    for op in ops:
         mine = [r for r in rows if r["op"] == op]
         done = [r for r in mine if r["applies"]]
         # The item-stated guarantee (Table 5) is scoped to the population: a declaration may be wrong on a file that
@@ -457,21 +580,21 @@ def main() -> None:
             "extract_median_ms": float(np.median([1e3 * r["extract_seconds"] for r in done if r["declared"]] or [0.0])),
             "applied_on_passing": len(passing),
             "leaving_population": sum(r["precondition_after"] is False for r in done),
-            "leaving_population_instances": Counter(r["instance"] for r in done if r["precondition_after"] is False).most_common(),
+            "leaving_population_instances": Counter(f"{r['base']}/{r['instance']}" for r in done if r["precondition_after"] is False).most_common(),
             "observed_cells": len(cells),
         }
-    report["pass"] = all(report[op]["edits_violating_strict"] == 0 and report[op]["edits_violating_pre"] == 0 for op in OPS)
-    report["closed"] = all(report[op]["leaving_population"] == 0 for op in OPS)
+    report["pass"] = all(report[op]["edits_violating_strict"] == 0 and report[op]["edits_violating_pre"] == 0 for op in ops)
+    report["closed"] = all(report[op]["leaving_population"] == 0 for op in ops)
     # Table 5: no declared prediction of an item-stated operation is wrong on the population (flagged allowed, reported).
-    report["exact"] = all(dict(report[op]["declared"]).get("mismatch", 0) == 0 and dict(report[op]["declared"]).get("error", 0) == 0 for op in OPS)
-    report["exact_all_files"] = all(dict(report[op]["declared_all"]).get("mismatch", 0) == 0 and dict(report[op]["declared_all"]).get("error", 0) == 0 for op in OPS)
+    report["exact"] = all(dict(report[op]["declared"]).get("mismatch", 0) == 0 and dict(report[op]["declared"]).get("error", 0) == 0 for op in ops)
+    report["exact_all_files"] = all(dict(report[op]["declared_all"]).get("mismatch", 0) == 0 and dict(report[op]["declared_all"]).get("error", 0) == 0 for op in ops)
 
     args.outdir.mkdir(parents=True, exist_ok=True)
     pl.DataFrame(rows, infer_schema_length=None).write_parquet(args.outdir / "edits.parquet")
     (args.outdir / "report.json").write_text(json.dumps(report, indent=2))
     print(json.dumps({op: {k: report[op][k] for k in ("applied", "not_parsing", "edits_violating_strict", "edits_violating_pre", "c1",
                                                "applied_on_passing", "leaving_population", "declared", "declared_mismatches",
-                                               "declared_flags")} for op in OPS}, indent=1))
+                                               "declared_flags")} for op in ops}, indent=1))
     print(f"pass: {report['pass']}, closed: {report['closed']}, exact: {report['exact']}")
 
 

@@ -465,7 +465,7 @@ def precondition(pe: pefile.PE, table: ItemTable, loose: bool = False) -> bool:
     if not plain_layout(pe):
         return False
     n = len(pe.__data__)
-    exempt = {k for _, k in LOOSE_PAST_END_KINDS[:1]} if loose else set()
+    exempt = {k for _, k in LOOSE_PAST_END_KINDS} if loose else set()
     if any(hi > n for item in table.items if item.kind not in exempt for _, hi in item.locating):
         return False
     for i, d in enumerate(pe.OPTIONAL_HEADER.DATA_DIRECTORY):
