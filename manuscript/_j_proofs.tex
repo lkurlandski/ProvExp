@@ -66,10 +66,12 @@ neutral element, every sum $k$ satisfies
     s_k(z') &= \sigma(B)_k \star_k \nu_{\tau_1}(c'_1)_k \star_k \dots \star_k \nu_{\tau_m}(c'_m)_k.
   \end{aligned}
 \]
-The two expressions differ only in that each change contributes its new value in place of its old one. Addition, the maximum, and the minimum are nondecreasing in each argument, so if
-no change in $\Delta$ lowers $k$, that is, $\nu_\tau(c')_k \ge \nu_\tau(c)_k$ for every change, then
-$s_k(z') \ge s_k(z)$; if none raises $k$, then $s_k(z') \le s_k(z)$; and if neither, the two are equal. The change of
-$s_k$ therefore has a sign in $d_k$, for additive sums and pools alike.
+The two expressions differ only in that each change contributes its new value in place of its old one. The sum's
+monoid is totally ordered, and its operation is commutative, so replacing any one of the values it combines by a larger
+one never makes the result smaller. If no change in $\Delta$ lowers $k$, that is, $\nu_\tau(c')_k \ge \nu_\tau(c)_k$
+for every change, then replacing the old values by the new ones, one at a time, gives $s_k(z') \ge s_k(z)$; if none
+raises $k$, then $s_k(z') \le s_k(z)$; and if neither, the two are equal. The change of
+$s_k$ therefore has a sign in $d_k$, for every totally ordered sum.
 
 The directions of \Cref{tab:fw:signs} follow from Definition~\ref{def:fw:sum-direction}. A count receives 1 from an
 item with its key and the neutral element $0$ otherwise, so an addition raises it, a removal lowers it, a replacement

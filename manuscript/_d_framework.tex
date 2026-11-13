@@ -108,9 +108,9 @@ Max and min pools are together called \emph{pools}, and each keeps the largest o
 operation $\oplus$ is how the extractor updates its running totals: combining the sums with an item's contribution adds
 the contribution to every additive sum and keeps the larger or the smaller value in every pool. In
 \Cref{alg:fw:extractor}, \textit{largest} is a max pool and the other sums are additive. Other monoids fit the framework
-too. \Cref{sec:fw:side-effects} would recompute such a sum as it recomputes a pool, and \Cref{sec:fw:directions} would
-need a rule for how its operation moves a sum up or down, a rule we give for the three monoids above. The set $K$ may be
-large, since an extractor can keep one count for every key of an open vocabulary, as the token loop of
+too: \Cref{sec:fw:side-effects} recomputes such a sum as it recomputes a pool, and \Cref{sec:fw:directions} applies to
+it when a larger value never makes its total smaller. The set $K$ may be large, since an extractor can keep one count
+for every key of an open vocabulary, as the token loop of
 \Cref{alg:fw:extractor} does.
 
 \definition[Contributions]
@@ -362,14 +362,21 @@ sum $k$ under $\Delta$ is $\mathsf{fixed}$ if no change in $\Delta$ raises or lo
 it, $\mathsf{down}$ if none raises it, and $\mathsf{both}$ otherwise.
 }
 
-\noindent The direction of a sum bounds its change under every edit whose delta is made of changes in $\Delta$. On an
-additive sum, the edit changes $s_k$ by the total of $\nu_\tau(c')_k - \nu_\tau(c)_k$ over its changes
+\noindent The direction of a sum bounds its change under every edit whose delta is made of changes in $\Delta$, as long
+as a larger contribution never makes the sum's total smaller. On an additive sum, the edit changes $s_k$ by the total of
+$\nu_\tau(c')_k - \nu_\tau(c)_k$ over its changes
 (Proposition~\ref{prop:fw:side-effects}(i)). If no change lowers the sum, every term of this total is non-negative, and
 so is the total. On a max pool, if no change lowers $k$, every item that contributes to $k$ is either kept or replaced
 by one that contributes at least as much, and added items only bring in more values. The largest value therefore cannot
 fall, and by the same argument it cannot rise if no change raises $k$. A min pool needs no rule of its own: its neutral
 element is $+\infty$, so by the definition a removal raises it and an addition lowers it, as removing or adding a value
-does to a minimum. The direction depends on the contribution functions and the changes in $\Delta$, not on any input.
+does to a minimum. Not every monoid behaves this way. If a sum were a product of signed values, a change that raised
+an item's contribution from 1 to 2 would take a total of $-3$ to $-6$, and the direction would say up while the sum
+fell. The directions need a \emph{totally ordered} monoid~\cite{fuchs1963partially}, in which any two values can be
+compared and a larger value never makes the result smaller ($a \le b$ implies $a \star_k c \le b \star_k c$).
+Additive sums and pools are totally ordered, and Theorem~\ref{thm:fw:directions} below holds for every extractor whose
+sums are. The direction depends on the contribution functions and the changes in $\Delta$, not on any
+input.
 For the contributions common in feature sets, it follows from their form: the count of a key rises when an item with
 that key is added, falls when one is removed, and stays when an item is replaced by one with the same key.
 \Cref{tab:fw:signs} in Appendix~\ref{sec:fw:proofs} lists these forms.
@@ -414,14 +421,16 @@ readout returns from the directions $d_k$ of the sums $k$ in its support $K_j$.
 \theorem[Sound directions]
 \label{thm:fw:directions}
 {
-Let $\varphi$ be a sum-then-readout extractor, $\mathcal{M}$ a threat model, $Z$ a population, and $\Delta$ a
+Let $\varphi$ be a sum-then-readout extractor whose sums are totally ordered, $\mathcal{M}$ a threat model, $Z$ a
+population, and $\Delta$ a
 signature that covers $\mathcal{M}$ over $Z$. Then the derived table $D_\Delta$ is sound for $\mathcal{M}$ over $Z$.
 If $Z$ is moreover closed under $\mathcal{M}$, then for every $z \in Z$ and every $\mathbf{x}' \in \mathcal{R}(z)$,
 the change $x'_j - \varphi_j(z)$ of every feature $j$ has a sign in $(D_\Delta)_j$.
 }
 
 \noindent For one edit, the signature gives the edit a delta made of changes in $\Delta$, the direction of each sum
-bounds the sum's change, and the rule of each readout turns these bounds into a bound on the feature. A sequence of
+bounds the sum's change because the sum is totally ordered, and the rule of each readout turns these bounds into a
+bound on the feature. A sequence of
 edits passes through intermediate inputs, and closure keeps each of them in $Z$, so the bound holds at every step. It
 also holds for the sequence as a whole, because adding up changes keeps them within a direction: two rises make a
 rise, and a rise followed by no change is a rise. Without closure, an intermediate input can leave $Z$, and the table
