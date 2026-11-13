@@ -303,6 +303,17 @@ records of the §5 reviews, the table remake and the ERDALT check, is in
    the page, the new population (the prompt's bullet on the 4 MB scope was added in session 46), decision 6's revisit
    (is a problem-space defense expected? short literature pass), and MAB-Malware's absence. Its output decides what the
    scale-up includes. No narrow §2-3 review beforehand (user).
+2b. **Complete R7's widening (agreed with the user in session 53; decision 11's final form)**, before the scale-up:
+   (i) the closure and exactness check on the widened population (Claude, pilot, under 10 minutes): every operation
+   including `ent` applied to files that pass `precondition(..., loose=True)`; none may leave it, and the computed
+   changes must match re-extraction. Watch the debug entry: pefile's overlay rule reads its extent, so an `ent` write
+   pointing inside the file can move the overlay's start and trip `plain_layout`; if so, the smallest fix, no new
+   clauses (memory `elegant-framework-fixes`). (ii) `ent` in the attacks: `a1_adaptive.py`'s menu and
+   `catalogue_checks.py` (zero, past the end, and signature cloning: the certificate entry pointed at an appended
+   certificate from a signed goodware donor), smoke-tested. (iii) Run 141 for the user (~5-6 h): run 138's three
+   escapes (certificate, SizeOfImage, debug) against the `-loose` detectors, counted from the unescaped originals.
+   (iv) The paper, in small blocks after (i)-(iii): §4's overwrites and population; §5.4's price (robustness to
+   signature cloning) and *Where the guarantee holds*; Table 5's monotone rows; no routing in §4.4, §5.1, Appendix D.
 3. **Design and launch the scale-up as one protocol** (each item agreed before code; long runs as `run/` scripts for the
    user, possibly on the second server), **on the files our copy holds in full in every split** (the `truncated` flag
    false: training subsample, test split, attacked malware; decision 8 (iv)): seeds 0-2, full splits; one training set

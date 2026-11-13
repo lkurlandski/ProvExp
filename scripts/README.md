@@ -13,7 +13,8 @@ make_fixtures (test files).
 ## The paper: the EMBER instance and evaluation (direction A)
 
 - **Directions:** a_directions (the direction table per threat model; derived from the item tables by default,
-  `--hand` for the hand rules; `--extractor sums` for the re-encoding over sums), a_expert_directions (the same for
+  `--hand` for the hand rules; `--extractor sums` for the re-encoding over sums; `--loose` for R7's widening: the
+  certificate and debug entries writable (`ent`) and their data allowed past the end), a_expert_directions (the same for
   Gimenez et al.'s 40 features).
 - **Checks of the instrumentation and the catalogue:** item_checks (G1/G2 bit-exact readouts, G5, G6: single-byte
   flips and locating positions), catalogue_checks (G7: every operation applied by our own byte-level edits, checked

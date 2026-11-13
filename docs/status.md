@@ -6,7 +6,7 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
 `docs/archive/status-log-2026-11-09.md`, sessions 29-40 in `docs/archive/status-log-2026-11-10-to-11.md`, sessions
 41-42 in `docs/archive/status-log-2026-11-12.md`).
 
-## Current state (2026-11-12, sessions 34-52)
+## Current state (2026-11-13, sessions 34-53)
 
 - **Framework (§2-3):** rewritten; the user is reasonably satisfied. Open: the user's holistic read of Sound
   Directions after round 4 (finetuning only).
@@ -75,14 +75,18 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
 - **Documentation:** reorganized 2026-11-09, cleaned up 2026-11-12 (stale resume prompts, the §4 note archived; the
   §5.3 design doc moved to `docs/evidence/`); index `docs/README.md`.
 
+- **R7 final form (session 53):** run 138 finished (step 2 held, 0/40 and 0/41); an end-to-end check from the
+  unescaped originals showed the escape writes themselves are the hole (the debug write alone evades 3/40 and 4/41).
+  The user chose the full widening: `ent` (certificate and debug entries, any value) in the threat model, their data
+  allowed past the end (`a_directions.py --loose`); ten features two-sided; run 140: TPR at 1% FPR 89.6 -> 85.7 (sums),
+  87.2 -> 83.4 (features), nearly all from the certificate entry (signature cloning). Debug-only alternative recorded.
+  Next: PLAN.md step 2b (closure check, `ent` in the attacks, run 141, then the paper).
+
 ## Waiting on the user
 
-- **Run 138** (`run/138_escape_pilot.sh`, started 16:03 on 2026-11-12; log `artifacts/logs/escape_pilot.log`): step 1
-  (certificate escape) read in session 52; step 2 (SizeOfImage) still running at the end of session 52 (100 of 128
-  tasks in the log). Its reading goes in the script's header once it has finished.
-- **R17** (Theorem 1's hypothesis, Definition 10's side condition, a locality sentence; §3 only) recommended in
-  session 52 as the next orthogonal item; not yet approved.
-- **Next session:** `docs/resume-prompt.md` (step 2 of run 138 and option 5's final form; otherwise R17).
+- Nothing running. **Next session:** `docs/resume-prompt.md` (PLAN.md step 2b: R7's widening, closure check first).
+- **R17:** discussed in a separate session (memory `elegant-framework-fixes`): the locality "fix" rejected; small,
+  readable patches only for real gaps.
 
 ## Scheduled (in order; PLAN.md, next steps)
 
@@ -97,6 +101,17 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
 7. Introduction, discussion, abstract last.
 
 ## Session log
+
+- **2026-11-13 (session 53): run 138 read; R7's widening chosen and costed.** Step 2 (SizeOfImage) held: monotone
+  0/40 and 0/41, no silent no-ops (every search ran 2,000 candidates; unconstrained 35/47). An end-to-end check from
+  the unescaped originals over four escape writes (scratch, no search): the certificate write lowers scores slightly
+  (security_size against the table) but evades no detected original; step 1's evasion was of an undetected original;
+  the unpiloted debug write alone evades 3/40 and 4/41 (debug_size, debug_virtual_address against the table). Cause:
+  loader-ignored directory-entry writes outside the threat model. The user approved putting them in (`ent`) and
+  widening the population (`--loose`, e0f5158): ten features two-sided; run 140 (Claude, ~2.5 min): about -4 points at
+  1% FPR, -6 to -7 at 0.1%, the hypothesis (0.3-1) failed; the certificate entry carries it (signature cloning). The
+  user chose to pay it; the debug-only alternative is recorded (PLAN.md decision 11, R7 record §7). Commits 9efb0a7,
+  e0f5158, e85ad48. **Next:** `docs/resume-prompt.md`.
 
 - **2026-11-12 (session 52): run 138 step 1 read; option 5 accepted for the certificate clause; three §5 fixes.**
   Run 138 was on step 2, so Claude read the finished step 1 (certificate escape): unconstrained 40/48; each monotone

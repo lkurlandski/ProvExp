@@ -22,7 +22,7 @@ check `manuscript/main.aux` (`grep newlabel manuscript/main.aux`), and add the t
 |---|---|---|
 | `PLAN.md` | thesis, where the paper stands, the decisions of 2026-11-09, next steps, settled decisions | every session |
 | `docs/status.md` | current state, what waits on the user, short session log | every session; update at the end |
-| `docs/resume-prompt.md` | where the next session starts (read step 2 of run 138 and settle option 5's form for R7, then plan the paper's R7 changes; otherwise R17, §3 only) | starting a session |
+| `docs/resume-prompt.md` | where the next session starts (R7's widening, PLAN.md step 2b: closure check on the widened population, `ent` in the attacks, run 141, then the paper) | starting a session |
 | `docs/checkpoint-prompt.md` | the user's prompt for ending a session | the user ends a session |
 | `docs/paper-mock.md` | the paper's contributions, outline with word budgets, and tables | planning or writing any section; checking whether new work belongs in the paper |
 | `docs/writing-spec.md` | the user's raw reactions to drafts, newest first | writing paper prose (with the `paper-prose` skill) |
@@ -59,6 +59,7 @@ or when changing an experiment. Run scripts are in `run/` (one per step, numbere
 |---|---|
 | `docs/archive/status-log-2026-11-12.md` | the session log, sessions 41-42 (search, don't read) |
 | `docs/archive/status-log-2026-11-10-to-11.md` | the session log, sessions 29-39 (search, don't read) |
+| `docs/archive/resume-prompt-2026-11-12-s52.md` | the resume prompt of session 53 (written in session 52): step 2 of run 138 and option 5's final form, otherwise R17 (run 138 read, widening chosen and costed in session 53) |
 | `docs/archive/resume-prompt-2026-11-12-s51.md` | the resume prompt of session 52 (written in session 51): run 138 for R7, or the next weakness; three small §5 fixes (applied in session 52; step 1 of run 138 read) |
 | `docs/archive/resume-prompt-2026-11-12-s50.md` | the resume prompt of session 51 (written in session 50): runs 138 and 139, or a new weakness (run 139 read and written in during session 51) |
 | `docs/archive/resume-prompt-2026-11-12-s49.md` | the resume prompt of session 50 (written in session 49): runs 138 and 139, or a new weakness (R6 recommended, done in session 50) |
