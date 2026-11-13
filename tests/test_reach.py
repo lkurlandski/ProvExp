@@ -39,6 +39,7 @@ from provexp.reach import ratio_signs
 from provexp.reach import readout_signs
 from provexp.reach import region_changes
 from provexp.reach import shift_ranges
+from provexp.reach import splits
 
 
 ################################################################################
@@ -162,6 +163,14 @@ class TestShift:
             shift_ranges([(2, 6)], edit)
         assert shift_ranges([(2, 6)], edit, stretch=True) == ((2, 9),)
 
+    def test_splits(self) -> None:
+        item = Item("run", terms=(Term("count", "n", ranges=((2, 6),)),), attr_ranges={"a": (((8, 10),),)}, locating=((0, 12),))
+        assert splits(item, ByteEdit(4, 4, b"x")) and splits(item, ByteEdit(9, 9, b"x"))  # strictly inside a member
+        assert not splits(item, ByteEdit(2, 2, b"x")) and not splits(item, ByteEdit(6, 6, b"x"))  # at a member's edge
+        assert not splits(item, ByteEdit(7, 7, b"x")) and not splits(item, ByteEdit(11, 11, b"x"))  # locating only
+        assert not splits(item, ByteEdit(3, 5, b"xy"))  # an in-place write moves nothing
+        assert splits(item, ByteEdit(5, 7, b""))  # a deletion that takes member elements
+
     def test_hits(self) -> None:
         z = b"0123456789"
         insertion = ByteEdit(4, 4, b"xy")
@@ -205,6 +214,18 @@ class TestPredictStructural:
             p = predict_structural(table, z, [edit], [], [], [], {"toy": ToyShift()})
             assert p.table is None and [i.kind for i in p.flagged] == ["header"] and p.new == edit.apply(z)
             assert predict_structural(table, z, [edit], [], [], table.of_kind("header"), {"toy": ToyShift()}).table is not None
+
+    def test_declines_split(self) -> None:
+        # An insertion inside a run that no recognizer re-reads: the engine declines rather than guess the run.
+        class Blind:
+            def recognize(self, items: Sequence[Item], old: bytes, new: bytes, edit: ByteEdit) -> tuple[list[Item], list[Item]]:
+                return [], []
+
+        z = b"H\x00aaa"
+        table = _table(z)
+        p = predict_structural(table, z, [ByteEdit(3, 3, b"a")], [], [], table.of_kind("header"), {"toy": Blind()})
+        assert p.table is None and [i.kind for i in p.flagged] == ["run"] and "splits" in p.reason
+        assert predict_structural(table, z, [ByteEdit(5, 5, b"x")], [], [], table.of_kind("header"), {"toy": Blind()}).table is not None
 
     def test_declared(self) -> None:
         z = b"H\x00aaa"
