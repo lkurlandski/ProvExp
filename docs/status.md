@@ -4,9 +4,9 @@ Kept short: the current state, what waits on the user, and the last few sessions
 its reasons are in `PLAN.md`. When the session log below grows past about ten entries, move the oldest to
 `docs/archive/` (the log before 2026-11-09 is `docs/archive/status-log-2026-10-to-2026-11-09.md`; sessions 21-28 are in
 `docs/archive/status-log-2026-11-09.md`, sessions 29-40 in `docs/archive/status-log-2026-11-10-to-11.md`, sessions
-41-41b in `docs/archive/status-log-2026-11-12.md`).
+41-42 in `docs/archive/status-log-2026-11-12.md`).
 
-## Current state (2026-11-12, sessions 34-51)
+## Current state (2026-11-12, sessions 34-52)
 
 - **Framework (§2-3):** rewritten; the user is reasonably satisfied. Open: the user's holistic read of Sound
   Directions after round 4 (finetuning only).
@@ -54,7 +54,9 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
   Run 137 (escape audit): single loader-ignored field writes (certificate or debug entry past the end, SizeOfImage
   raised) take 150 of 150 population files out. Decision (user): no router; one monotone detector scores every file,
   proven on the population and measured outside it. **Run 138** (the escape pilot, ~5-6 h) scripted for the user;
-  the paper is not changed until it is read.
+  the paper is not changed until it is read. **Step 1 read in session 52** (R7 record §7): one signed file evades
+  both monotone detectors (an append restores the signature the certificate escape had broken); option 5 for the
+  certificate clause accepted by the user, with caution (more holes may surface at the scale-up).
 - **R1, attack strength (session 49):** decision 12. MAB-Malware vendored and driven by `scripts/mab_attack.py`
   (tested equal to upstream's own hand-over); run 139 scripted for the user; §5, Tables 4-5 ("evaded by any attack")
   and the new per-attack Table 11 carry its predicted values in blue. The adaptive attack scores by extraction at the
@@ -76,12 +78,11 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
 ## Waiting on the user
 
 - **Run 138** (`run/138_escape_pilot.sh`, started 16:03 on 2026-11-12; log `artifacts/logs/escape_pilot.log`): step 1
-  (certificate escape) finished; step 2 (SizeOfImage) still running at the end of session 51 (100 of 128 tasks).
-  Not yet read.
-- **Three small §5 fixes proposed in session 51, not yet answered** (resume prompt, line B): 5.2's expert-set
-  sentence (adaptive 2/8, Table 5 now 4/8 with MAB-Malware); the repeated "never lowers" in 5.4; "which of seven
-  actions" in 5.1. The two "Unconstrained" training sets: at the scale-up (user).
-- **Next session:** `docs/resume-prompt.md` (run 138 if finished; otherwise the next weakness of the review).
+  (certificate escape) read in session 52; step 2 (SizeOfImage) still running at the end of session 52 (100 of 128
+  tasks in the log). Its reading goes in the script's header once it has finished.
+- **R17** (Theorem 1's hypothesis, Definition 10's side condition, a locality sentence; §3 only) recommended in
+  session 52 as the next orthogonal item; not yet approved.
+- **Next session:** `docs/resume-prompt.md` (step 2 of run 138 and option 5's final form; otherwise R17).
 
 ## Scheduled (in order; PLAN.md, next steps)
 
@@ -96,6 +97,18 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
 7. Introduction, discussion, abstract last.
 
 ## Session log
+
+- **2026-11-12 (session 52): run 138 step 1 read; option 5 accepted for the certificate clause; three §5 fixes.**
+  Run 138 was on step 2, so Claude read the finished step 1 (certificate escape): unconstrained 40/48; each monotone
+  detector 1/41 and 1/43, the same signed file, by one append or added section, drops -3.1 and -3.2 logits (the count
+  held, the size did not). Rebuilt and extracted: the escape pushes the certificate entry past the end, the signature
+  no longer parses and its features fall to 0 (the score rises); the append brings the entry back inside the file and
+  the features rise again, which the table excludes. The end file is ~1.4 logits below the unescaped original
+  (the escape's larger certificate size); the original was not detected by either monotone detector. The user
+  accepted option 5 for this clause, with caution ("additional issues and holes" may surface at the scale-up; memory
+  `widen-population-cautiously`); final form after step 2. The three small §5 fixes applied on Claude's judgement
+  (user): 5.2 expert set "and MAB-Malware, by renaming sections, on 4"; 5.1 "which of its actions"; 5.4's two
+  "never lowers" sentences kept (different points). Commits 4ebd3e6, 6479a14. **Next:** `docs/resume-prompt.md`.
 
 - **2026-11-12 (session 51): run 139 read (R1); MAB-Malware's claims rewritten.** Run 139 had finished, run 138 was
   on step 2. Checks for silent no-ops first (`p_lowest` against `p_clean`, the bandit's alpha/beta, the minimal
@@ -223,16 +236,3 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
   closed). Table 3 as a one-column float made LaTeX drop Table 9 at the end of the document; fixed by declaring it
   earlier in Appendix D. The question of more tables (5.3, the per-operation cost) is for the next session.
   **Next:** `docs/resume-prompt.md`.
-
-- **2026-11-12 (session 42): §5's holistic review (contributions' importance); the table remake's first attempt
-  rejected.** Seven findings; the user approved 1-4, applied in 68f6385: what Gimenez et al. report (the expert set and
-  PV never evaded by the toolkit attacks; detection and robustness a "trade-off regarding features set") stated before
-  our results; the §5 lead names what breaks; 5.4 names both alternatives (learned, hand-picked); 5.2's cost paragraph
-  ends on why a broken guarantee matters. Finding 5 (5.3's topic sentences) dropped; the uncited "usually tested
-  against an attack it did not learn from" fixed (49d879d). Findings 6 (no table shows 5.3) and 7 (§2 promises an
-  attack; a known weakness, not fixable now) noted in PLAN.md step 2. The tables come before the question-and-answer
-  emphasis (user). Claude's table mock-ups (`docs/archive/table-mockups-2026-11-12/`) were judged "pretty bad, quite
-  possibly as bad if not worse than what we already had"; facts they surfaced are in PLAN.md step 2 (a), among them
-  that 5.2's *Why it errs* names three parser facts where the errors need five. `make check`: a 2 pt overfull page box
-  among the appendix floats since 68f6385 (harmless). **Next:** `docs/resume-prompt.md` (the tables, restarted from
-  what the user dislikes).

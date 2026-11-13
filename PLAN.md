@@ -235,6 +235,12 @@ them (below).
     pilot: escaped malware attacked by a search that extracts every candidate). If the monotone detectors hold, §4.4
     and §5.4 are rewritten (no routing, the escape result, "stand out" removed); if one escape breaks them, widen the
     population for that clause only. Analysis, options, runs: `docs/evidence/r7-population-escape.md`.
+    *Run 138 step 1 read (session 52):* one signed file evades both monotone detectors: the certificate escape breaks
+    the signature parse, an append restores it, and the signature features rise, which the table excludes (clause:
+    the certificate table lies inside the file). *Option 5 accepted for this clause (user, session 52), with
+    caution:* the signature features and the certificate size become two-sided under appends and added sections, with
+    the detection cost checked; the final form waits for step 2 (SizeOfImage). The user expects more holes may
+    surface at the scale-up; each widening is a separate, careful decision (memory `widen-population-cautiously`).
 
 12. **R1: attack strength (user, session 49, 2026-11-12).** (i) *MAB-Malware joins the attacks*, run against every
     detector, without code randomization (needs IDA Pro; outside the threat model). The authors' code is vendored
