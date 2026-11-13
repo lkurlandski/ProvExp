@@ -241,6 +241,16 @@ them (below).
     caution:* the signature features and the certificate size become two-sided under appends and added sections, with
     the detection cost checked; the final form waits for step 2 (SizeOfImage). The user expects more holes may
     surface at the scale-up; each widening is a separate, careful decision (memory `widen-population-cautiously`).
+    *Final form (user, session 53):* run 138's step 2 held, but an end-to-end check from the unescaped originals showed
+    the escape writes themselves are the hole (loader-ignored writes to the certificate and debug entries, outside the
+    threat model; the debug write alone evades 3/40 and 4/41). So the threat model gains `ent` (both entries set to
+    any value) and the population lets their data lie past the end (`a_directions.py --loose`). Ten features become
+    two-sided (`authenticode:*`, `datadirectories:{security_size, debug_size, debug_virtual_address}`). Cost (run 140,
+    one seed): TPR at 1% FPR 89.6 -> 85.7 (sums), 87.2 -> 83.4 (features); at 0.1% 74.8 -> 68.1, 71.0 -> 65.1; almost
+    all from the certificate entry (writable entry = signature cloning). The user chose to pay it. *Alternative,
+    recorded but not taken:* widen for the debug entry only (0.1-0.6 points at 1%), leave the certificate entry and
+    signature cloning outside the threat model as a stated limitation, measured by run 138 (no detected original
+    evaded).
 
 12. **R1: attack strength (user, session 49, 2026-11-12).** (i) *MAB-Malware joins the attacks*, run against every
     detector, without code randomization (needs IDA Pro; outside the threat model). The authors' code is vendored

@@ -161,6 +161,19 @@ the header-field overwrites are used too, which also answers part of R1) and `--
   Widening the population (option 5) alone would not cover them, since the writes are not operations of the threat
   model. This is a pattern across the certificate and debug entries (the two entries the loader does not map), not a
   single clause.
+- **Final form of option 5 (user, session 53): the full widening.** The threat model gains `ent`, the certificate and
+  debug entries set to any value (the loader maps neither directory's data), and the population lets the data located
+  through them lie past the end (`catalogue.precondition(..., loose=True)`, `a_directions.py --loose`). Derived table
+  (run 140): exactly ten features become two-sided, the seven `authenticode:*` and
+  `datadirectories:{security_size, debug_size, debug_virtual_address}`; the pilot population grows from 88 to 89 of
+  100. Detection cost (run 140, one seed; hypothesis 0.3-1 point failed): TPR at 1% FPR 89.6% -> 85.7% (sums), 87.2%
+  -> 83.4% (features); at 0.1% 74.8% -> 68.1%, 71.0% -> 65.1%. Freeing only the debug features costs 0.1-0.6 points
+  at 1% (1-2 at 0.1%): the certificate entry carries the cost, because a writable entry pointed at an appended
+  certificate is signature cloning, and signatures are a strong benign signal. The user chose to pay it (a finding
+  for §5.4: robustness to signature cloning has a measured price).
+- **Alternative recorded, not taken.** Widen for the debug entry only (nearly free) and leave the certificate entry,
+  and with it signature cloning, outside the threat model as a stated limitation, measured by run 138 step 1 (no
+  detected original evaded end to end; the write can lower the score by up to ~1 logit through `security_size`).
 - **Left for the scale-up.** The toolkit attacks on escaped files (their harness needs its own escape support);
   the end-to-end share "still detected out of all attacked" per attack column; the population share of attacked
   malware with its denominator (the blue 89%).
@@ -186,3 +199,6 @@ the header-field overwrites are used too, which also answers part of R1) and `--
   check from the unescaped originals over four escape writes (§7): the debug-entry write alone evades 3/40 and 4/41;
   the cause is the writes themselves (loader-ignored directory-entry writes outside the threat model). Recommendation
   to the user pending.
+- 2026-11-13 (session 53): option 5's final form chosen by the user: the full widening (`ent` + loose population),
+  cost measured by run 140 (about 4 points at 1% FPR, almost all from the certificate entry); the debug-only
+  alternative recorded (§7).
