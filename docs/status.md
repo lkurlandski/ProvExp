@@ -80,11 +80,19 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
   The user chose the full widening: `ent` (certificate and debug entries, any value) in the threat model, their data
   allowed past the end (`a_directions.py --loose`); ten features two-sided; run 140: TPR at 1% FPR 89.6 -> 85.7 (sums),
   87.2 -> 83.4 (features), nearly all from the certificate entry (signature cloning). Debug-only alternative recorded.
-  Next: PLAN.md step 2b (closure check, `ent` in the attacks, run 141, then the paper).
+- **R7, the overlay rule (session 55):** the closure check (run 141) failed through pefile's overlay rule (data-directory
+  extents decide where the overlay starts; `ent` moves it). The user chose LIEF's rule (the overlay starts after the
+  last section), installed in the extractor (f0d2bb1); scratch check on 50 files closed, sound, exact; masks
+  unchanged, the `-loose` models stand. Raised by the user: design the extractor deliberately rather than patch it,
+  and perhaps move to LIEF (PLAN.md step 2c, before the scale-up). Record `docs/evidence/r7-overlay-rule.md`.
+  Next: run 142 (user), then step 2b (ii)-(iv): `ent` in the attacks, run 143, the paper.
 
 ## Waiting on the user
 
-- Nothing running. **Next session:** `docs/resume-prompt.md` (PLAN.md step 2b: R7's widening, closure check first).
+- **Run 142** (`run/142_overlay_rule_closure.sh`, ~30 min): the closure check on all pilot files with LIEF's overlay
+  rule; hypothesis closed, sound, exact. **Next R7 session:** `docs/resume-prompt.md` (PLAN.md step 2b (ii): `ent` in
+  the attacks, then run 143).
+- **The extractor question** (PLAN.md step 2c): the user's call, before the scale-up's featurization.
 - **Orthogonal track** (sessions parallel to R7; R17 done in session 53b): the meta-review's triage, item by item,
   with the user judging each criticism (wrong / outside the claim / real); procedure in its section of
   `docs/resume-prompt.md`. R21's §6 paragraph waits for it.
@@ -102,6 +110,18 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
 7. Introduction, discussion, abstract last.
 
 ## Session log
+
+- **2026-11-13 (session 55, R7 track): the closure check; LIEF's overlay rule.** `catalogue_checks.py --loose` (`ent`,
+  escaped copies far past, just past and inside the overlay; run 141). A session-53 bug fixed (the loose precondition
+  exempted only the certificate's items; run 140's table unchanged). Closure failed through pefile's overlay rule; a
+  trial fix (the overlay clause without the debug entry) closed the population but broke soundness (reverted). Claude
+  first recommended modelling pefile's rule on our side; the user: pefile is not the gold standard for what an overlay
+  is, findings should not hang on one parser's details, the options were not weighed equally (memory
+  `may-deviate-from-ember`, rewritten). Reweighed with evidence: LIEF starts the overlay after the last section (54 of
+  54 test copies unmoved); EMBER v2 has no overlay features; pefile's rule is deliberate (since 2016; PR #670). Scratch
+  check with LIEF's rule on 50 files: closed, sound, exact; masks unchanged. The user chose it as a quick patch (f0d2bb1;
+  `docs/upstream-issues.md` item 9), and raised designing the extractor deliberately, perhaps on LIEF (PLAN.md step
+  2c). Commits aeeace0, f0d2bb1. **Next (R7 track):** run 142, then step 2b (ii).
 
 - **2026-11-13 (session 54, parallel track): no edits; the meta-review's triage set up.** Asked for directions
   orthogonal to R7, Claude listed R18, R12, R19, R2 and others from the register, relaying reviewer C's "the learned
