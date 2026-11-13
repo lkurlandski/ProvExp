@@ -23,6 +23,7 @@ check `manuscript/main.aux` (`grep newlabel manuscript/main.aux`), and add the t
 | `PLAN.md` | thesis, where the paper stands, the decisions of 2026-11-09, next steps, settled decisions | every session |
 | `docs/status.md` | current state, what waits on the user, short session log | every session; update at the end |
 | `docs/resume-prompt.md` | where the next session starts (R7's widening, PLAN.md step 2b: closure check on the widened population, `ent` in the attacks, run 141, then the paper) | starting a session |
+| `docs/resume-prompt-orthogonal.md` | where a session parallel to R7 starts: writing items that do not touch R7's text (R21 in §6 recommended), after R17 (session 53b) | starting a session while R7 runs elsewhere |
 | `docs/checkpoint-prompt.md` | the user's prompt for ending a session | the user ends a session |
 | `docs/paper-mock.md` | the paper's contributions, outline with word budgets, and tables | planning or writing any section; checking whether new work belongs in the paper |
 | `docs/writing-spec.md` | the user's raw reactions to drafts, newest first | writing paper prose (with the `paper-prose` skill) |
