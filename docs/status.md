@@ -117,6 +117,12 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
 
 ## Session log
 
+- **2026-11-13 (session 59, rebuttal track): R2's 4-byte Rich fix.** When pefile finds the "Rich" marker it reads a
+  4-byte key just past it, which can be the optional header's first four bytes; `RichHeader.items` now records them
+  for files with pairs (pure addition; the empty case reads no key and is unchanged). Test `TestRichKey` (a synthetic
+  file whose COFF header ends in "Rich") failed before the fix on the two linker-version bytes. As predicted, the pilot
+  direction tables (`--loose` and without) are byte-identical before and after. **Next:** erdalt/trial items, then the
+  last look before the scale-up.
 - **2026-11-13 (session 58, rebuttal track): the triage table decided.** The four calibration items (R7, R1, R6, R17)
   match the earlier decisions; the triage leans slightly toward doing more than needed. Before the scale-up, in order:
   groups trust (R2) and erdalt (R19, split from baselines), then trial (R18), then a last look, then the scale-up;

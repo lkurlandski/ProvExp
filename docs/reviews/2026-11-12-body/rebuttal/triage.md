@@ -121,8 +121,11 @@ rule, and the per-file vocabulary check (C-Q5) is free only if no test file need
 outcomes that change what the paragraph can say.
 - [x] Group trust: drafted (`rebuttal/trust.md`); the probe and the vocabulary check are not needed (code reading;
   attacked files are in the sample by construction).
-- [ ] Before the scale-up's recount: extend the recorded Rich search range by the 4 key bytes past the marker (pure
-  addition; `trust.md`, question 1). Expect no direction to change.
+- [x] Before the scale-up's recount: extend the recorded Rich search range by the 4 key bytes past the marker (pure
+  addition; `trust.md`, question 1). Expect no direction to change. Done (session 59): `RichHeader.items` records
+  [optional header, +4) for files with pairs (pefile reads no key when it finds none); test `TestRichKey` on a
+  synthetic file whose COFF header ends in "Rich". The pilot direction tables (`--loose` and without) are
+  byte-identical before and after.
 - [ ] After the scale-up: one paragraph (~120 words) at the end of §4.4 listing what the EMBER guarantee trusts, how
   each part is checked (with R13's counts), and the three facts of `trust.md`; §5's lead conditioned on it.
 

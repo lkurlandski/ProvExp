@@ -2378,6 +2378,10 @@ class RichHeader(FeatureType):
         num_pairs = len(values) // 2
         # pefile searches for the "Rich" marker in [0x80, optional header), so the whole range locates every pair.
         located = header_locating(pe) + ((0x80, pe.OPTIONAL_HEADER.get_file_offset()),)
+        # The marker may end where the optional header starts; pefile then reads the 4-byte key past it (the decoding
+        # key of every pair), so those bytes locate the pairs too.
+        key_at = pe.OPTIONAL_HEADER.get_file_offset()
+        located = located + clipped(n, [(key_at, key_at + 4)])
         buckets, signs = feature_hash(32, [str(values[2 * i]) for i in range(num_pairs)])
         items = []
         for i in range(num_pairs):

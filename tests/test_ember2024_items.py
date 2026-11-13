@@ -5,6 +5,7 @@ The real-file tests need executables in tests/data/ (see scripts/make_fixtures.p
 """
 
 from pathlib import Path
+import struct
 import warnings
 
 import numpy as np
@@ -13,6 +14,7 @@ import pytest
 
 from provexp.featuresets.ember2024.features import ImportsInfo
 from provexp.featuresets.ember2024.features import PEFeatureExtractor
+from provexp.featuresets.ember2024.features import RichHeader
 from provexp.featuresets.ember2024.features import clipped
 from provexp.featuresets.ember2024.features import field_range
 from provexp.featuresets.ember2024.features import header_locating
@@ -123,6 +125,48 @@ class TestRealFiles:
 
 
 ################################################################################
+# Synthetic file: the Rich key past the optional header
+################################################################################
+
+
+def _rich_at_optional_header(major: int) -> bytes:
+    """A PE header whose COFF header ends in "Rich", so the Rich key is the optional header's first four bytes."""
+    lfanew = 0xA4  # the marker's dword (lfanew + 20) is a footer position, two dwords per pair after DanS
+    key = struct.unpack("<I", struct.pack("<HBB", 0x10B, major, 0))[0]
+    out = bytearray(0x400)
+    out[0:2] = b"MZ"
+    struct.pack_into("<I", out, 0x3C, lfanew)
+    struct.pack_into("<4I", out, 0x80, 0x536E6144 ^ key, key, key, key)
+    struct.pack_into("<2I", out, 0x90, 0x00FF0001 ^ key, 3 ^ key)
+    out[lfanew:lfanew + 4] = b"PE\0\0"
+    # SizeOfOptionalHeader and Characteristics spell "Rich"; the optional header starts with Magic and the linker version.
+    struct.pack_into("<HHIIIHH", out, lfanew + 4, 0x14C, 0, 0, 0, 0, 0x6952, 0x6863)
+    struct.pack_into("<HBB", out, lfanew + 24, 0x10B, major, 0)
+    return bytes(out)
+
+
+class TestRichKey:
+
+    def test_key_is_read_past_optional_header(self) -> None:
+        a, b = (pefile.PE(data=_rich_at_optional_header(m)) for m in (14, 15))
+        offset = a.OPTIONAL_HEADER.get_file_offset()
+        assert _rich_at_optional_header(14).find(b"Rich") + 4 == offset
+        assert a.RICH_HEADER is not None and b.RICH_HEADER is not None
+        assert a.RICH_HEADER.values != b.RICH_HEADER.values
+
+    def test_key_is_located(self) -> None:
+        # pefile reads [0x80, marker + 8): the marker may end at the optional header, and the key follows it.
+        bytez = _rich_at_optional_header(14)
+        pe = pefile.PE(data=bytez)
+        read = range(0x80, bytez.find(b"Rich") + 8)
+        items = RichHeader().items(bytez, pe).items  # type: ignore[no-untyped-call]
+        assert items
+        for item in items:
+            missing = [i for i in read if not any(lo <= i < hi for lo, hi in item.locating)]
+            assert not missing, missing
+
+
+################################################################################
 # Real files: locating ranges (a small G5)
 ################################################################################
 
@@ -160,7 +204,10 @@ class TestLocating:
             if item.kind == "field" and item.attrs.get("field") in ("Machine", "SizeOfCode", "e_cblp"):
                 assert set(item.locating) == base, item.attrs
             if item.kind == "rich_pair":
-                assert set(item.locating) - base == {(0x80, pe.OPTIONAL_HEADER.get_file_offset())}
+                # With pairs, pefile also read the key past the marker, which may reach 4 bytes past the search range.
+                opt = pe.OPTIONAL_HEADER.get_file_offset()
+                key = {(opt, opt + 4)} if item.terms else set()
+                assert set(item.locating) - base == {(0x80, opt)} | key
 
     def test_unmapped_address_past_end(self, sample: bytes) -> None:
         # pefile reads an address in no section at that file offset once the file reaches it.
