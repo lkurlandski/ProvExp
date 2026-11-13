@@ -57,6 +57,8 @@ __all__ = [
     "BODY_KINDS",
     "PAST_END_KINDS",
     "REGION_OPS",
+    "LOOSE_ENTRIES",
+    "LOOSE_PAST_END_KINDS",
     "regions",
     "file_region_changes",
     "declared_changes",
@@ -227,7 +229,16 @@ REGION_OPS: dict[str, tuple[bool, dict[str, ChangeHow], bool, tuple[Change, ...]
     "rdb": (True, {"overlay": "grow", "file": "rewrite"}, False, (Change("add", "overlay"),)),
     # Removing the signature removes the certificate table.
     "rsg": (True, {"certificate_table": "remove"}, False, ()),
+    # The certificate and debug entries set to any value (R7): the loader maps neither directory's data, so it ignores
+    # both entries. Everything located through them (the signature; pefile's overlay rule) is flagged.
+    "ent": (False, {}, False, ()),
 }
+
+# The data directories whose entries `ent` writes, and whose data the widened population lets lie past the end.
+LOOSE_ENTRIES = (4, 6)  # SECURITY_ENTRY, DEBUG_ENTRY
+# The kinds located through those entries that may then lie past the end (pefile's overlay rule ignores an extent past
+# the end, so an operation that lengthens the file can bring one back into it and move the overlay's start).
+LOOSE_PAST_END_KINDS = (("authenticode", "certificate_table"), ("section", "overlay"), ("section", "file"))
 
 
 # The kinds whose bytes the loader reads wherever they lie (import, export, and relocation data, the signature).
@@ -273,6 +284,7 @@ def regions(pe: pefile.PE, z: bytes, table: ItemTable) -> dict[str, tuple[Range,
         "ren": tuple(field_range(s, "Name") for s in pe.sections),
         "rdb": (structure_range(directories[DEBUG_ENTRY]),) if len(directories) > DEBUG_ENTRY else (),
         "rsg": (structure_range(directories[SECURITY_ENTRY]),) if len(directories) > SECURITY_ENTRY else (),
+        "ent": tuple(structure_range(directories[i]) for i in LOOSE_ENTRIES if len(directories) > i),
     }
 
 
@@ -322,7 +334,8 @@ def _fields(profiles: Mapping[tuple[str, str], KindProfile], group: str, names: 
     return tuple((e, signs) for f in names for e in sorted(p.fields[f]))
 
 
-def declared_changes(profiles: Mapping[tuple[str, str], KindProfile], regex_monotone: Sequence[bool], strict: bool) -> dict[str, list[Change]]:
+def declared_changes(profiles: Mapping[tuple[str, str], KindProfile], regex_monotone: Sequence[bool], strict: bool,
+                     loose: bool = False) -> dict[str, list[Change]]:
     """
     The declared operations (append, add a section, add imports, the two insertions) as item changes.
 
@@ -355,7 +368,8 @@ def declared_changes(profiles: Mapping[tuple[str, str], KindProfile], regex_mono
     # The certificate table's offset is a file offset: content inserted before it raises it.
     security_up = Change("modify", "field", group="datadirectories", families=frozenset(), entries=_fields(profiles, "datadirectories", ["IMAGE_DIRECTORY_ENTRY_SECURITY.VirtualAddress"], UP))
     # Every operation that lengthens the file can complete a structure located past its old end (strict only; G7).
-    past_end = [Change("flag", kind, group=group) for group, kind in PAST_END_KINDS if group in groups] if strict else []
+    kinds = PAST_END_KINDS if strict else LOOSE_PAST_END_KINDS if loose else ()
+    past_end = [Change("flag", kind, group=group) for group, kind in kinds if group in groups]
     insertion = content + in_place + past_end + [
         # The gap's content joins the file; every window after it is re-tiled, and strings can merge across it.
         Change("flag", "window"),
@@ -438,19 +452,25 @@ def plain_layout(pe: pefile.PE) -> bool:
     return True
 
 
-def precondition(pe: pefile.PE, table: ItemTable) -> bool:
+def precondition(pe: pefile.PE, table: ItemTable, loose: bool = False) -> bool:
     """
     The precondition row's check, made at inference: nothing the parse is located through lies past the end of the
     file, so appending cannot complete any structure. No item has a locating range past the end, and no data directory
     (including one whose data pefile could not read, which has no items) or section extends past it. And the layout is
     plain (`plain_layout`).
+
+    With `loose` (the widened population, R7), the certificate and debug entries are exempt: their data, and the
+    signature located through the certificate entry, may lie past the end (`LOOSE_ENTRIES`).
     """
     if not plain_layout(pe):
         return False
     n = len(pe.__data__)
-    if any(hi > n for item in table.items for _, hi in item.locating):
+    exempt = {k for _, k in LOOSE_PAST_END_KINDS[:1]} if loose else set()
+    if any(hi > n for item in table.items if item.kind not in exempt for _, hi in item.locating):
         return False
     for i, d in enumerate(pe.OPTIONAL_HEADER.DATA_DIRECTORY):
+        if loose and i in LOOSE_ENTRIES:
+            continue
         if d.VirtualAddress and d.Size:
             data = ((d.VirtualAddress, d.VirtualAddress + d.Size),) if i == SECURITY_ENTRY else rva_ranges(pe, d.VirtualAddress, d.Size)
             if any(hi > n for _, hi in data):
@@ -458,13 +478,13 @@ def precondition(pe: pefile.PE, table: ItemTable) -> bool:
     return all(s.PointerToRawData + s.SizeOfRawData <= n for s in pe.sections)
 
 
-def passes_precondition(extractor: PEFeatureExtractor, z: bytes) -> bool:
+def passes_precondition(extractor: PEFeatureExtractor, z: bytes, loose: bool = False) -> bool:
     """`precondition` from the bytes: False for a file that does not parse as a PE (it has no guarantee either)."""
     try:
         pe = pefile.PE(data=z)
     except (pefile.PEFormatError, AttributeError):
         return False
-    return precondition(pe, extractor.item_table(z))
+    return precondition(pe, extractor.item_table(z), loose=loose)
 
 
 ################################################################################

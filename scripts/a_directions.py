@@ -94,10 +94,11 @@ __all__ = [
 # Operations and threat models
 ################################################################################
 
-OPS = ("app", "sec", "imp", "ext", "shf", "slk", "dos", "hdr", "chk", "ren", "rdb", "rsg")
+# `ent` (the certificate and debug entries set to any value; R7) changes nothing unless --loose derives it.
+OPS = ("app", "sec", "imp", "ext", "shf", "slk", "dos", "hdr", "chk", "ren", "rdb", "rsg", "ent")
 ADD = ("app", "sec", "imp")
 INSERT = ("ext", "shf")
-OVERWRITE = ("slk", "dos", "hdr", "chk", "ren", "rdb", "rsg")
+OVERWRITE = ("slk", "dos", "hdr", "chk", "ren", "rdb", "rsg", "ent")
 THREAT_MODELS: dict[str, tuple[str, ...]] = {
     "M_add": ADD,
     "M_shift": ADD + INSERT,
@@ -106,7 +107,7 @@ THREAT_MODELS: dict[str, tuple[str, ...]] = {
 
 # Operations that write bytes in place inside the header region (an added section's table entry and counts, an
 # insertion's pointer updates, and the overwrites other than slack).
-HEADER_WRITES = ("sec", "imp", "ext", "shf", "dos", "hdr", "chk", "ren", "rdb", "rsg")
+HEADER_WRITES = ("sec", "imp", "ext", "shf", "dos", "hdr", "chk", "ren", "rdb", "rsg", "ent")
 
 Signs = dict[str, str]  # op -> "", "+", "-", or "+-"
 
@@ -290,13 +291,15 @@ def feature_rule(group: str, name: str, regexes: dict[str, str]) -> Rule:
 ################################################################################
 
 _READER: Optional[SimpleDBReader] = None
+_LOOSE = False
 # The merged variant is the sums extractor: its features start with the merged extractor's, in the same layout.
 _EXTRACTORS: dict[str, PEFeatureExtractor] = {"original": PEFeatureExtractor(), "merged": SumsFeatureExtractor()}
 
 
-def _init(db: str) -> None:
-    global _READER
+def _init(db: str, loose: bool = False) -> None:
+    global _READER, _LOOSE
     _READER = SimpleDBReader(SimpleDB(Path(db), check=False))
+    _LOOSE = loose
 
 
 def _past_end(table: Any) -> list[tuple[str, str]]:
@@ -320,7 +323,7 @@ def collect(name: str) -> dict[str, Any]:
         v.add(table)
         out[variant] = {"vocabulary": v, "changes": file_region_changes(pe, bytez, table) if pe is not None else {}}
         out["past_end"] = _past_end(table)
-        out["precondition"] = pe is not None and precondition(pe, table)
+        out["precondition"] = pe is not None and precondition(pe, table, loose=_LOOSE)
     return out
 
 
@@ -388,7 +391,7 @@ def main_derive(args: Any) -> None:
     past_end_files: Counter[tuple[str, str]] = Counter()
     num_pe = num_pre = 0
     failing: list[dict[str, Any]] = []
-    with Pool(args.workers, initializer=_init, initargs=(str(args.db),)) as pool:
+    with Pool(args.workers, initializer=_init, initargs=(str(args.db), args.loose)) as pool:
         for i, rec in enumerate(pool.imap_unordered(collect, names, chunksize=1)):
             num_pe += rec["is_pe"]
             pre = rec["precondition"]
@@ -412,8 +415,8 @@ def main_derive(args: Any) -> None:
     for variant, extractor in _EXTRACTORS.items():
         profiles, sizes = vocab[variant].finish()
         for pre in (False, True):
-            ops = {op: sorted(cs, key=repr) for op, cs in changes[(variant, pre)].items()}
-            ops.update(declared_changes(profiles, monotone, strict=not pre))
+            ops = {op: sorted(cs, key=repr) if args.loose or op != "ent" else [] for op, cs in changes[(variant, pre)].items()}
+            ops.update(declared_changes(profiles, monotone, strict=not pre, loose=args.loose))
             derived[(variant, pre)] = derive_directions(extractor.readouts, ops, profiles, sizes)
 
     # The features of the sums extractor (the merged variant), by (group, name).
@@ -552,6 +555,8 @@ def main() -> None:
     parser.add_argument("--db", type=Path, default=EMBER2024_DATA / "ts")
     parser.add_argument("--workers", type=int, default=1)
     parser.add_argument("--limit", type=int, default=0, help="derive: only the first N files (0: all).")
+    parser.add_argument("--loose", action="store_true", help="derive: the widened population and threat model (R7): the "
+                        "certificate and debug entries set to any value (`ent`), their data allowed past the end.")
     args = parser.parse_args()
     if args.hand and args.derive:
         raise ValueError("Pass at most one of --hand and --derive.")
