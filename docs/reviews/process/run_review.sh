@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 # Run the simulated review end to end: build the PDF, run the reviewers in parallel (isolated, outside the repository),
-# then the meta-reviewer (inside the repository), then the rebuttal drafts (run_rebuttal.sh). Knobs in config.sh; procedure in docs/reviews/review-prompt.md.
+# then the meta-reviewer (inside the repository), then the rebuttal triage (run_rebuttal.sh). Knobs in config.sh; procedure in docs/reviews/review-prompt.md.
 #
 # Usage (from the repository root):
 #   docs/reviews/process/run_review.sh
 #   DRY_RUN=1 docs/reviews/process/run_review.sh            # show prompts and commands only
-#   STEPS=meta TAG=2026-11-13-body docs/reviews/process/run_review.sh       # redo the meta-review (and the drafts)
-#   STEPS=rebuttal TAG=2026-11-13-body docs/reviews/process/run_review.sh   # only the rebuttal drafts
+#   STEPS=meta TAG=2026-11-13-body docs/reviews/process/run_review.sh       # redo the meta-review (and the triage)
+#   STEPS=rebuttal TAG=2026-11-13-body docs/reviews/process/run_review.sh   # only the rebuttal (triage, or REBUTTAL_GROUPS drafts)
 set -euo pipefail
 
 REPO="$(git -C "$(dirname "$0")" rev-parse --show-toplevel)"
@@ -36,7 +36,7 @@ budget_flag() {
     if [[ -n "$MAX_BUDGET_USD" ]]; then echo "--max-budget-usd $MAX_BUDGET_USD"; fi
 }
 
-# The rebuttal drafts alone need none of the preparation below.
+# The rebuttal alone needs none of the preparation below.
 if [[ "$STEPS" == "rebuttal" ]]; then
     exec "$PROC/run_rebuttal.sh"
 fi
@@ -150,7 +150,7 @@ if [[ "$STEPS" == "all" || "$STEPS" == "meta" ]]; then
     if [[ "$DRY_RUN" == "1" ]]; then
         echo "----- prompt of the meta-reviewer -----"; echo "$prompt"; echo "-----"
         if [[ "$REBUTTAL" == "1" ]]; then
-            echo "Then the rebuttal drafts; their prompts: DRY_RUN=1 STEPS=rebuttal (needs the meta-review)"
+            echo "Then the rebuttal triage; its prompt: DRY_RUN=1 STEPS=rebuttal (needs the meta-review)"
         fi
         exit 0
     fi
@@ -169,7 +169,7 @@ if [[ "$STEPS" == "all" || "$STEPS" == "meta" ]]; then
 fi
 
 ################################################################################
-# Step 3: the rebuttal drafts, one agent per register item
+# Step 3: the rebuttal triage, one agent over the whole register
 ################################################################################
 
 if [[ ("$STEPS" == "all" || "$STEPS" == "meta") && "$REBUTTAL" == "1" ]]; then
@@ -177,6 +177,6 @@ if [[ ("$STEPS" == "all" || "$STEPS" == "meta") && "$REBUTTAL" == "1" ]]; then
         echo "No meta-review.md (the meta-reviewer stopped?): finish it with resume_meta.sh, then STEPS=rebuttal" >&2
         exit 1
     fi
-    echo "Rebuttal drafts (run_rebuttal.sh; logs: docs/reviews/$TAG/rebuttal/<item>.log)"
+    echo "Rebuttal triage (run_rebuttal.sh; log: docs/reviews/$TAG/rebuttal/triage.log)"
     "$PROC/run_rebuttal.sh"
 fi

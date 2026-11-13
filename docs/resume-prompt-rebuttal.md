@@ -1,11 +1,14 @@
-# Resume: the rebuttal of a simulated review, from the drafts to the user's decisions
+# Resume: the rebuttal of a simulated review, from the triage to the user's decisions
 
-This prompt starts each rebuttal session. Use it once `docs/reviews/process/run_review.sh` has finished, including
-its last step, the rebuttal drafts (`docs/reviews/process/run_rebuttal.sh`). The current review is
-**`TAG=2026-11-12-body`**: its folder is `docs/reviews/2026-11-12-body/`, the drafts are in its `rebuttal/`. Four
-register items were decided before the drafts and have none: R7 (PLAN.md decision 11, the R7 track), R1 (session 49,
-MAB-Malware), R6 (session 50, known techniques credited), R17 (session 53b, the ratio rule and ordered monoids).
-This prompt stays fixed between sessions. The index `rebuttal/README.md` says where the pass stands.
+This prompt starts each rebuttal session. The current review is **`TAG=2026-11-12-body`**: its folder is
+`docs/reviews/2026-11-12-body/`, the rebuttal files are in its `rebuttal/`. Four register items were decided before
+the rebuttal: R7 (PLAN.md decision 11, the R7 track; it also has a full draft, `rebuttal/R7.md`, from the first design),
+R1 (session 49, MAB-Malware), R6 (session 50, known techniques credited), R17 (session 53b, the ratio rule and ordered
+monoids). This prompt stays fixed between sessions; `rebuttal/triage.md`'s Decision column says where the pass stands.
+
+**If `rebuttal/triage.md` does not exist yet**, the user runs the triage first (one agent, about the token cost of one
+of the first design's drafts):
+`TAG=2026-11-12-body REBUTTAL_SKIP="R7 R1 R6 R17" docs/reviews/process/run_rebuttal.sh`.
 
 ## The project in brief
 
@@ -19,64 +22,45 @@ costs (5.4). Before naming a section, table or theorem number, check `manuscript
 alongside.
 
 **Read first:** `CLAUDE.md`, `PLAN.md` (the decisions, so that settled points are recognised), `docs/status.md`
-(skim; the R7 track runs in another session), then `rebuttal/README.md` and the drafts of the items already decided
-(their decisions are precedent).
+(skim; the R7 track runs in another session), then `rebuttal/triage.md` (the decisions already in its table are
+precedent) and, when deciding a group, its draft `rebuttal/<group>.md`.
 
-## What the drafts are, and why they need checking
+## How the rebuttal works, and why
 
 The review pipeline ran four reviewers who saw only the PDF, then a meta-reviewer with full access that checked their
-findings and ranked the risks in a register (`meta-review.md`, §6). Then one agent per register item wrote
-`rebuttal/<item>.md`. Each draft holds the reviewers' perspective (their words, at their strongest), a neutral analysis
-(the claim attacked, every premise checked, merits, the strongest rebuttal) and an opinion. The opinion is one of:
-change the methodology, change the argument or description, or no change. The drafting procedure is
-`docs/reviews/process/rebuttal-brief.md`.
+findings and ranked the risks in a register (`meta-review.md`, §6). Then:
+1. **The triage** (`docs/reviews/process/triage-brief.md`): one agent gave every item a verdict, *decided*, *dismiss*,
+   *cheap fix* or *investigate*, and grouped the items to investigate with the two or three questions that decide them
+   (`rebuttal/triage.md`).
+2. **The decisions on the table** (these sessions).
+3. **Drafts for the chosen groups** (`docs/reviews/process/rebuttal-brief.md`): one agent per group reads a dossier of
+   its items (`rebuttal/<group>.dossier.md`), checks only the deciding questions, and writes `rebuttal/<group>.md`.
+   The user runs them: `TAG=2026-11-12-body REBUTTAL_GROUPS="<names>" docs/reviews/process/run_rebuttal.sh`.
 
-The drafts are a starting point, not a verdict, for three reasons:
-- **The same lean, at every stage.** The reviewers, the meta-reviewer and the drafting agents are all the same kind of
-  model, and that model leans toward accepting criticism (memory `distrust-simulated-reviews`). Example (session 54):
-  "the learned defenses get less information, so the outcome is built in" restates §5.3's finding as a flaw.
-- **The drafts ran in parallel**, each without the others, without the user, and without earlier decisions. Two
-  drafts may contradict each other on the same premise, propose overlapping fixes, or each propose a fix that only
-  makes sense once.
-- **An agent's "verified" is a claim**, not a check you have made.
+The meta-review's [verified] facts are trusted throughout (user, 2026-11-13); what is not trusted is its judgement.
+The reviewers, the meta-reviewer, the triage and the drafting agents are all the same kind of model, which leans
+toward accepting criticism (memory `distrust-simulated-reviews`). Two patterns to watch: a criticism that restates one
+of our findings as a flaw (session 54: "the learned defenses get less information, so the outcome is built in"), and a
+criticism of a claim the paper does not make. The triage can be wrong in both directions: a "dismiss" may hide a real
+problem, an "investigate" may be pedantry.
 
-## Session 1: check the output (no decisions)
+## The sessions
 
-1. **Completeness.** Every register item except the four decided earlier has a draft with the form of
-   `rebuttal-brief.md` (an `**Opinion:**` line, the three sections). For each missing or broken draft, read its log
-   (`rebuttal/<item>.log`) and say what went wrong; to redraft, delete the draft and run
-   `TAG=2026-11-12-body REBUTTAL_ITEMS="<items>" STEPS=rebuttal docs/reviews/process/run_review.sh` (the user's call;
-   it costs agent time, not CPU).
-2. **Across the drafts.** Read them all once and list: contradictions between drafts (the same premise judged
-   differently); fixes proposed in more than one item (one fix may answer several); opinions that would reopen a
-   settled decision (PLAN.md, `checklist.md`, the memories); drafts that restate a finding as a flaw or answer a claim
-   the paper does not make without saying so; and drafts whose analysis is thin (premises asserted, not checked).
-3. **Report to the user**, plainly and in one screen: the index's table (item, opinion), then the list from step 2,
-   then the order for the decisions. The order is the register's (most significant first), unless step 2 shows items
-   that should be decided together. Write that report as `rebuttal/check.md`, so later sessions can read it.
+**On the triage table** (the first session or two). Go down the table in the register's order (most significant
+first). Per item, present the verdict and its reason plainly in a few sentences (memory `explain-plainly`), with your
+own view where you disagree with the triage. Spend almost nothing on *decided* items. For a *dismiss* or *cheap fix*
+you doubt, a quick look at the `.tex` is fine; do not open code or outputs to re-check the meta-review's facts. Ask
+for the decision; several clear items may be decided in one question. Record each in the table's Decision column:
+`methodology`, `argument`, `no change`, or `investigate`, with a few words of the user's reason; append any action to
+the item's entry under `## The items` as a `- [ ]` line naming what it depends on (e.g., the R7 track, the full run).
+When the investigate groups are settled (the user may merge, split, drop or rename them; edit the `GROUP` lines to
+match), give the user the drafting command.
 
-## Later sessions: the decisions, item by item
-
-Take the first undecided item in the agreed order (the index's "Decision" column). Per item:
-
-1. **Re-check the draft.** Check the premises the opinion rests on yourself, against the code, the stored outputs
-   (`artifacts/`), the manuscript or `papers/`. Spot-check the rest. Check the draft against the decisions already
-   recorded and against `rebuttal/check.md`. A small check on stored outputs (about ten minutes at most, hypothesis
-   stated first) is fine; anything larger becomes a proposed `run/` script.
-2. **Present it to the user**, plainly (memory `explain-plainly`). Give the reviewers' perspective, the analysis and
-   the opinion in a few paragraphs, not the draft verbatim. Say where your check changed the draft, and why. Before
-   giving the opinion, answer the two calibration questions: *Would I propose this if no reviewer had raised it?* *Does
-   the criticism restate one of our findings, or attack a claim we do not make?* One recommendation, not a menu.
-3. **Ask the user for the decision**, and discuss it if they want. Then record it in the draft:
-   - under the `**Opinion:**` line, a line `**Decision:** <methodology | argument | no change> (<the user's reason, in
-     their words>)`;
-   - at the end, a section `## The user's decision` with the decision, what the discussion changed in the analysis
-     (one line each), and the actions it creates as `- [ ]` items, each naming what it depends on (e.g., the R7 track,
-     the full run).
-   Then rewrite the index: `INDEX_ONLY=1 TAG=2026-11-12-body docs/reviews/process/run_rebuttal.sh`.
-
-As many items per session as the user wants. Start a fresh session when the context grows long; the index and the
-recorded decisions carry everything over.
+**On a group's draft.** Read `rebuttal/<group>.md`. Check the premises its opinions rest on, where the draft's check
+looks thin; a small check on stored outputs (about ten minutes at most, hypothesis stated first) is fine, anything
+larger becomes a proposed `run/` script. Present each item plainly, with the two calibration questions answered
+(*Would I propose this if no reviewer had raised it?* *Does it restate a finding or attack a claim we do not make?*),
+one recommendation, then ask for the decision and record it in the triage table and the item's entry as above.
 
 **Actions are recorded, not done.** A rebuttal session edits only the files in `rebuttal/` (and the status line
 below). It does not edit the manuscript, the code or `run/` scripts, and runs no long jobs. Once the pass is done (or a

@@ -23,7 +23,7 @@ check `manuscript/main.aux` (`grep newlabel manuscript/main.aux`), and add the t
 | `PLAN.md` | thesis, where the paper stands, the decisions of 2026-11-09, next steps, settled decisions | every session |
 | `docs/status.md` | current state, what waits on the user, short session log | every session; update at the end |
 | `docs/resume-prompt.md` | where the next R7 session starts: read run 143, R7's paper changes, and the decisions before the scale-up (PLAN.md steps 2b-3); the review's rebuttal starts from `docs/resume-prompt-rebuttal.md` | starting an R7 session |
-| `docs/resume-prompt-rebuttal.md` | where each rebuttal session starts, once `run_review.sh` has written the rebuttal drafts (`docs/reviews/<TAG>/rebuttal/`): check the drafts, then the user decides item by item, most significant first; decisions recorded in the drafts | starting a rebuttal session |
+| `docs/resume-prompt-rebuttal.md` | where each rebuttal session starts, once `run_rebuttal.sh` has written the triage (`docs/reviews/<TAG>/rebuttal/triage.md`): the user decides on the triage table, then on drafts of the groups worth investigating; decisions recorded in the table | starting a rebuttal session |
 | `docs/checkpoint-prompt.md` | the user's prompt for ending a session | the user ends a session |
 | `docs/paper-mock.md` | the paper's contributions, outline with word budgets, and tables | planning or writing any section; checking whether new work belongs in the paper |
 | `docs/writing-spec.md` | the user's raw reactions to drafts, newest first | writing paper prose (with the `paper-prose` skill) |

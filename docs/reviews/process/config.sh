@@ -21,15 +21,17 @@ REVIEWER_EFFORT="${REVIEWER_EFFORT:-high}"
 META_MODEL="${META_MODEL:-claude-opus-5-5}"
 META_EFFORT="${META_EFFORT:-xhigh}"
 
-# The rebuttal drafts (run_rebuttal.sh), run after the meta-review: one agent per register item, REBUTTAL_PARALLEL at
-# a time. REBUTTAL=0 stops run_review.sh after the meta-review. REBUTTAL_SKIP: items decided before the run (e.g.
-# "R7 R1"); REBUTTAL_ITEMS: draft only these (default: the whole register).
+# The rebuttal (run_rebuttal.sh), run after the meta-review: first ONE triage agent over the whole register
+# (TRIAGE_EFFORT), then, for the groups the user picks from the triage (REBUTTAL_GROUPS="trust baselines"), one
+# drafting agent per group, REBUTTAL_PARALLEL at a time. REBUTTAL=0 stops run_review.sh after the meta-review.
+# REBUTTAL_SKIP: items decided before the run (e.g. "R7 R1"), passed to the triage as decided.
 REBUTTAL="${REBUTTAL:-1}"
 REBUTTAL_MODEL="${REBUTTAL_MODEL:-claude-opus-5-5}"
+TRIAGE_EFFORT="${TRIAGE_EFFORT:-high}"
 REBUTTAL_EFFORT="${REBUTTAL_EFFORT:-high}"
-REBUTTAL_PARALLEL="${REBUTTAL_PARALLEL:-4}"
+REBUTTAL_PARALLEL="${REBUTTAL_PARALLEL:-1}"
 REBUTTAL_SKIP="${REBUTTAL_SKIP:-}"
-REBUTTAL_ITEMS="${REBUTTAL_ITEMS:-}"
+REBUTTAL_GROUPS="${REBUTTAL_GROUPS:-}"
 
 # Whether reviewers may search the web for related work (1) or only use papers/ (0).
 REVIEWER_WEB="${REVIEWER_WEB:-1}"
@@ -42,7 +44,7 @@ MAX_BUDGET_USD="${MAX_BUDGET_USD:-}"
 WORK_ROOT="${WORK_ROOT:-/scratch/lk3591/provexp/reviews}"
 
 # Steps to run: all, reviewers (stop after the four reviews), meta (the meta-review on existing reviews, then the
-# rebuttal drafts if REBUTTAL=1), rebuttal (only the rebuttal drafts).
+# rebuttal triage if REBUTTAL=1), rebuttal (only the rebuttal: the triage, or the drafts of REBUTTAL_GROUPS).
 STEPS="${STEPS:-all}"
 
 # 1: print the composed prompts and commands, run nothing.
