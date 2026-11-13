@@ -302,7 +302,7 @@ records of the §5 reviews, the table remake and the ERDALT check, is in
    predates the new §3 and §5). *Designed in session 47* as a reusable procedure (`docs/reviews/review-prompt.md`,
    `docs/reviews/process/`): four independent reviewers who see only the PDF, then a meta-reviewer with full access
    that answers the checklist below; run by the user after session 47, discussed from session 48 (R7 first, decision
-   11; R1, decision 12; R6, session 50; R17, session 53b: the ratio's zero case and totally ordered monoids, locality not a gap; the rest of the register still to triage, one recommendation per item). It should re-check the open risks of the 2026-11-02 register (R4, R5, R6, R9, R11, R15,
+   11; R1, decision 12; R6, session 50; R17, session 53b: the ratio's zero case and totally ordered monoids, locality not a gap; the rest of the register goes through the meta-rebuttal, `docs/resume-prompt-rebuttal.md`). It should re-check the open risks of the 2026-11-02 register (R4, R5, R6, R9, R11, R15,
    R16) and the 2026-11-04 attack-strength concern, and judge what no review has seen: the new §3 (novelty above all),
    the §2/§5 alignment, Proposition 1's role (no finding of its own), the corpus-checked signatures, §4's template on
    the page, the new population (the prompt's bullet on the 4 MB scope was added in session 46), decision 6's revisit
@@ -330,9 +330,15 @@ records of the §5 reviews, the table remake and the ERDALT check, is in
    **Verified in session 57** (session 56 had been flagged by a safety classifier): all four commits hold; two fixes
    (77587f5): the clone's byte bound covers its padding, and the report's `start_in_population` (the image_size escape
    takes every file out of the loose population, so the guarantee covers only the cert/debug escapes' searches).
-   Cleared for the user.
-   (iv) The paper, in small blocks after (i)-(iii): §4's overwrites and population; §5.4's price (robustness to
-   signature cloning) and *Where the guarantee holds*; Table 5's monotone rows; no routing in §4.4, §5.1, Appendix D.
+   Cleared for the user. **Running** (user, started 2026-11-13, 8 workers: ~10-12 h); R7's last pilot experiment.
+   Next: read it (hypothesis in the script's header).
+   (iv) The paper, in small blocks: §4's overwrites (the entry write) and population (the entries' data past the end);
+   §5.4's price (robustness to signature cloning); Table 5's monotone rows from the `-loose` models, denominators
+   unrouted; no routing in §4.4, §5.1, Appendix D; Appendix D's overlay rule and one sentence on the deviation. All of
+   it can start before run 143 is read, except §5.4's *Where the guarantee holds*, which carries its result.
+   (v) **Decision for the user:** the other tables' monotone cells (toolkit attacks, MAB-Malware) still use the
+   `-pre-v2` detectors: re-run them on the `-loose` models now, or blue values until the scale-up (Claude recommends
+   blue values; the scale-up redoes every detector result). Then the scale-up's R7 items into step 3.
 2c. **Before the scale-up's featurization: the extractor question** (raised by the user, session 55; Claude's view and
    the criteria in `docs/evidence/r7-overlay-rule.md` §6). We use the EMBER2024 corpus below 4 MB, drop the warnings,
    patch thrember's quirks, and now change pefile's overlay rule: design the extractor deliberately (principles stated
@@ -352,6 +358,9 @@ records of the §5 reviews, the table remake and the ERDALT check, is in
    population. Plus whatever the review adds (meta-review §7: the routed system end to end, now the unrouted one of
    decision 11; MAB-Malware; the adaptive search scoring by extraction where the computation declines, as run 138's
    `--score real`; equal-information learned defenses if decision 6 is revisited; thresholds from the validation split).
+   From R7: the escape attacks at scale (look actively for further escapes), the toolkit attacks on escaped files, the
+   population share of attacked malware with its denominator, the files outside the population re-featurized with
+   LIEF's overlay rule, and the unconstrained detector trained on the same store as the others.
    **Answered (user, session 49): widen first, for now**, then scale everything once. The question was: scale the
    existing experiments first (more files, seeds 0-2), or widen
    them first (the review's new experiments: MAB-Malware, the escape attack, equal-information baselines, a trial

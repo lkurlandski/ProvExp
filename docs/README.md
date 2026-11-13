@@ -22,7 +22,7 @@ check `manuscript/main.aux` (`grep newlabel manuscript/main.aux`), and add the t
 |---|---|---|
 | `PLAN.md` | thesis, where the paper stands, the decisions of 2026-11-09, next steps, settled decisions | every session |
 | `docs/status.md` | current state, what waits on the user, short session log | every session; update at the end |
-| `docs/resume-prompt.md` | where the next session starts, two tracks (R7's widening, PLAN.md step 2b: read run 143, then the paper; in parallel, the meta-review's triage, now the meta-rebuttal: `docs/resume-prompt-rebuttal.md`) | starting a session |
+| `docs/resume-prompt.md` | where the next R7 session starts: read run 143, R7's paper changes, and the decisions before the scale-up (PLAN.md steps 2b-3); the review's rebuttal starts from `docs/resume-prompt-rebuttal.md` | starting an R7 session |
 | `docs/resume-prompt-rebuttal.md` | where each meta-rebuttal session starts: the 2026-11-12 review's register, one item per session, most significant first (perspective, neutral analysis, Claude's opinion, the user's decision); record in `docs/reviews/2026-11-12-body/meta-rebuttal.md` | starting a rebuttal session |
 | `docs/checkpoint-prompt.md` | the user's prompt for ending a session | the user ends a session |
 | `docs/paper-mock.md` | the paper's contributions, outline with word budgets, and tables | planning or writing any section; checking whether new work belongs in the paper |

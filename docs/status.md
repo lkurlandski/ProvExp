@@ -89,16 +89,18 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
 
 ## Waiting on the user
 
-- **Run 143, cleared for the user** (`run/143_escape_pilot_loose.sh`, ~5-6 h, NUM_WORKERS default 16): the escape
-  pilot on the widened population (three escapes against the two `-loose` monotone detectors + the unconstrained one,
-  M_full with `ent`, evasion from the unescaped originals). Session 57 re-verified session 56's code (flagged by a
-  safety classifier): it holds, with two small fixes (77587f5). Hypothesis: no detected original evaded by either
-  monotone detector (guaranteed for the cert/debug escapes; for image_size, whose escaped files leave the population,
-  expected from run 138). **Next R7 session:** `docs/resume-prompt.md` (read run 143, then the paper).
+- **Run 143 running** (user, started 2026-11-13, 8 workers: ~10-12 h; `run/143_escape_pilot_loose.sh`, log
+  `artifacts/logs/escape_pilot_loose.log`): the escape pilot on the widened population, R7's last pilot experiment.
+  Session 57 re-verified session 56's code first (flagged by a safety classifier): it holds, with two small fixes
+  (77587f5). Hypothesis: no detected original evaded by either monotone detector (guaranteed for the cert/debug
+  escapes; for image_size, whose escaped files leave the population, expected from run 138). **Next R7 session:**
+  `docs/resume-prompt.md` (read run 143; R7's paper changes, most of which can start before it is read).
+- **The other tables' monotone cells** (PLAN.md step 2b (v)): re-run on the `-loose` models now, or blue values until
+  the scale-up (Claude recommends blue values).
 - **The extractor question** (PLAN.md step 2c): the user's call, before the scale-up's featurization.
-- **Orthogonal track** (sessions parallel to R7; R17 done in session 53b): the meta-review's triage, item by item,
-  with the user judging each criticism (wrong / outside the claim / real); procedure in its section of
-  `docs/resume-prompt.md`. R21's §6 paragraph waits for it.
+- **The review's rebuttal** (parallel to R7): the meta-rebuttal, one item per session, from
+  `docs/resume-prompt-rebuttal.md`; record `docs/reviews/2026-11-12-body/meta-rebuttal.md`. R21's §6 paragraph waits
+  for it.
 
 ## Scheduled (in order; PLAN.md, next steps)
 
@@ -124,6 +126,9 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
   (undercounted by up to 7 bytes), and escape runs record `start_in_population`, since the image_size escape takes
   every file out of the loose population (not an M_full operation), so its searches are not covered by the guarantee;
   run 143's header corrected. Noted, unchanged: the unconstrained `ref` model is from the v1 store (as in runs 105, 138).
+  The user then started run 143 (8 workers). The resume prompt was rewritten for R7 and the decisions before the
+  scale-up only (the review's triage now lives in `docs/resume-prompt-rebuttal.md`); PLAN.md step 2b gained (v), the
+  decision on the other tables' monotone cells, and step 3 the scale-up's R7 items.
 
 - **2026-11-13 (session 56, R7 track): run 142 read; `ent` in the attacks; run 143 scripted.** Run 142 (full pilot,
   LIEF's overlay rule): closed and sound, exact after one fix. 16 declared edits on one file's escaped copies raised an
