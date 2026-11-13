@@ -63,7 +63,10 @@ the population); the bookkeeping goes to an appendix (user: "Most of this is eng
   rewritable without changing a value (section size over file size, the library set), or with no items at all (the
   88 parser warnings: drop them or keep them as both; a monotone detector cannot read "both", so they coincide;
   absent from EMBER 2017/2018, VERIFY; dropping them costs nothing, run 126). The import-overwrite bug is not
-  mentioned. One sentence on the re-encodings over sums (here or where §5 introduces the sums detector).
+  mentioned. The overlay is taken as LIEF takes it (after the last section; pefile's rule lets entries the loader
+  ignores move it; R7, `docs/evidence/r7-overlay-rule.md`): one sentence by the warnings, Appendix D's locating
+  sentence follows. How the extractor is framed (EMBER2024's corpus with an extractor derived from EMBER-v3, its
+  deviations stated once by principle) waits on PLAN.md step 2c. One sentence on the re-encodings over sums (here or where §5 introduces the sums detector).
 - **4.3 Threat model (~400, with the catalogue table).** Literature first: the edits the PE problem-space attacks use
   (a literature pass before drafting), our catalogue as the functionality-preserving edits that do not rewrite code,
   exclusions named (code-level transformations, which are harder to execute without breaking functionality; packing).

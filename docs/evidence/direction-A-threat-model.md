@@ -52,7 +52,8 @@ security_size (tighter). Over every possible file (strict), almost nothing stays
 `docs/evidence/item-layer-design.md`, Build status. Since step 9 (2026-10-29) the derived directions are the default (`--hand` gives these
 rules, kept as the test oracle), and the precondition also requires a plain layout (`catalogue.plain_layout`: sections
 within SizeOfImage, SizeOfImage at most what the sections need, headers that hold only headers, pefile's overlay
-starting at a section's raw end; run 104, decided by the user), which 8 of the 1,682 passing files of the 2,000-file set
+starting at a section's raw end, a clause that always holds under LIEF's overlay rule, used since 2026-11-13; run 104,
+decided by the user), which 8 of the 1,682 passing files of the 2,000-file set
 fail. Low-alignment images (mapped flat) admit no shift or stub extension, and an added section's raw offset equals its
 virtual address.
 

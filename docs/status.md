@@ -89,9 +89,10 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
 
 ## Waiting on the user
 
-- **Run 142** (`run/142_overlay_rule_closure.sh`, ~30 min): the closure check on all pilot files with LIEF's overlay
-  rule; hypothesis closed, sound, exact. **Next R7 session:** `docs/resume-prompt.md` (PLAN.md step 2b (ii): `ent` in
-  the attacks, then run 143).
+- **Run 142 running** (`run/142_overlay_rule_closure.sh`, started by the user 2026-11-13 11:55, ~30 min; log
+  `artifacts/logs/catalogue_checks_pilot_loose_lief.log`): the closure check on all pilot files with LIEF's overlay
+  rule; hypothesis closed, sound, exact. **Next R7 session:** `docs/resume-prompt.md` (read run 142, then PLAN.md step
+  2b (ii): `ent` in the attacks, then run 143).
 - **The extractor question** (PLAN.md step 2c): the user's call, before the scale-up's featurization.
 - **Orthogonal track** (sessions parallel to R7; R17 done in session 53b): the meta-review's triage, item by item,
   with the user judging each criticism (wrong / outside the claim / real); procedure in its section of
@@ -121,7 +122,11 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
   54 test copies unmoved); EMBER v2 has no overlay features; pefile's rule is deliberate (since 2016; PR #670). Scratch
   check with LIEF's rule on 50 files: closed, sound, exact; masks unchanged. The user chose it as a quick patch (f0d2bb1;
   `docs/upstream-issues.md` item 9), and raised designing the extractor deliberately, perhaps on LIEF (PLAN.md step
-  2c). Commits aeeace0, f0d2bb1. **Next (R7 track):** run 142, then step 2b (ii).
+  2c). Documentation brought in line: CLAUDE.md (the principle "the parser is not the gold standard"; the code line),
+  `docs/design.md`, the paper mock (the overlay sentence; the extractor's framing waits on step 2c), notes in the
+  item-layer and threat-model records, code comments in `catalogue.py` and `catalogue_checks.py`, `scripts/README.md`.
+  Commits aeeace0, f0d2bb1, 6173335 and the documentation commit. **Next (R7 track):** read run 142 (the user started
+  it at 11:55), then step 2b (ii).
 
 - **2026-11-13 (session 54, parallel track): no edits; the meta-review's triage set up.** Asked for directions
   orthogonal to R7, Claude listed R18, R12, R19, R2 and others from the register, relaying reviewer C's "the learned

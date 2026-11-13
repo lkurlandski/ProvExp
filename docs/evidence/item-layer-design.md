@@ -48,7 +48,7 @@ matters to the design:
 | `size_ratio = SizeOfRawData / len(bytez)` | contribution depends on the file length (A2) | item contributes SizeOfRawData; division in the readout (model doc, A2) |
 | `imports[dll_name] = []` per descriptor | a later item erases earlier ones (A2, the quirk) | flagged in `ImportsInfo`; `ImportsInfoMerged` is local |
 | entry section chosen by a rule over AddressOfEntryPoint and all sections | a selection, not a sum | a selection readout with declared locating elements |
-| overlay start chosen by pefile from all section and directory extents | the overlay item's existence and extent depend on many fields | overlay item with those fields as locating elements |
+| overlay start chosen by pefile from all section and directory extents (since 2026-11-13: LIEF's rule, the sections only) | the overlay item's existence and extent depend on many fields | overlay item with those fields as locating elements |
 
 C4 needs the readout as data, because it reasons about the formula's shape (ratio, entropy, max) and not only its
 value. So the design defines the readout explicitly rather than reusing `process_raw_features`, and the exactness
@@ -239,7 +239,9 @@ section at the end of the file and starts the overlay region only after every se
 extends that section's region instead of shrinking the overlay's. The one case left open in principle is a data
 directory past EOF while no section is; the pilot has none (all 11 overrun files overrun through a section). Of the
 11, 7 are files truncated at the dataset's 4,000,000-byte cap, so the overrun is mostly a truncation artifact.
-Decided (user, 2026-10-27): treat pefile's rule as the extractor's real behavior (no patch); `overlay_size`
+(Superseded 2026-11-13: the extractor now uses LIEF's overlay rule, after the furthest section's raw data, none if
+that lies past the end; `docs/evidence/r7-overlay-rule.md`.) Decided (user, 2026-10-27): treat pefile's rule as the
+extractor's real behavior (no patch); `overlay_size`
 becomes two-sided under appending, the only feature whose direction changes (`overlay_size_ratio`, `overlay_entropy`,
 and `max_entropy` are two-sided already). The hand rule in `scripts/a_directions.py` changes with the next retraining of the C4
 models, so that code and artifacts stay in step.

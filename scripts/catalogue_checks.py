@@ -16,7 +16,8 @@ include `ent` (the certificate and debug entries set to any value: zeroed, past 
 section, random), and every operation is also applied to two escaped copies of each file in the population, both
 entries made to end far past the end of the file (`far`) and one byte past it (`near`, so that an append brings their
 extents back inside), and, on files with an overlay, a third with the debug extent ending inside the overlay
-(`inside`). The escaped copies are in the widened population; closure is checked on them as on the originals.
+(`inside`). The escaped copies are in the widened population; closure is checked on them as on the originals. Under
+pefile's own overlay rule closure failed (run 141); under LIEF's, installed by `features`, it is checked by run 142.
 
 The edits do exactly the declared operation and nothing else, unlike LIEF's writer, which relays out the file
 (assumption A4, scripts/a1_adaptive.py): an added section's header goes into zero bytes after the section table, its
@@ -321,7 +322,8 @@ def _past_end(pe: pefile.PE, index: int, n: int, by: int) -> Optional[ByteEdit]:
 def _into_overlay(pe: pefile.PE, n: int) -> Optional[ByteEdit]:
     """
     The debug extent lengthened (from its address, or the first section's) to end one byte before the end of a file
-    with an overlay: pefile's overlay rule then starts the overlay at the file's last byte. None without an overlay.
+    with an overlay: pefile's own overlay rule would then start the overlay at the file's last byte (LIEF's, installed
+    by `features` since 2026-11-13, leaves it where it was; R7). None without an overlay.
     """
     start = pe.get_overlay_data_start_offset()
     d = pe.OPTIONAL_HEADER.DATA_DIRECTORY[DEBUG_ENTRY]

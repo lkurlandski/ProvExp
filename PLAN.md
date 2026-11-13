@@ -314,7 +314,7 @@ records of the §5 reviews, the table remake and the ERDALT check, is in
    entry's among them, decide where the overlay starts, so `ent` moves it). **Decided (user): LIEF's overlay rule** (the
    overlay starts after the last section's raw data) installed in the extractor at import, a quick patch to keep moving;
    scratch check on 50 files closed, sound and exact; masks unchanged, the `-loose` models stand. **Run 142** (full
-   pilot, ~30 min) for the user. (ii) `ent` in the attacks: `a1_adaptive.py`'s menu (zero, past the end, and
+   pilot, ~30 min) started by the user 2026-11-13 11:55. (ii) `ent` in the attacks: `a1_adaptive.py`'s menu (zero, past the end, and
    signature cloning: the certificate entry pointed at an appended certificate from a signed goodware donor),
    smoke-tested; `catalogue_checks.py` already has `ent` (`--loose`). (iii) **Run 143** for the user (~5-6 h): run
    138's three escapes (certificate, SizeOfImage, debug) against the `-loose` detectors, counted from the unescaped

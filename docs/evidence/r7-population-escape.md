@@ -207,4 +207,4 @@ the header-field overwrites are used too, which also answers part of R1) and `--
   failed through pefile's overlay rule (data-directory extents decide the overlay's start; `ent` moves it). The user
   chose LIEF's overlay rule (the overlay starts after the last section) installed in the extractor; scratch check on 50
   files closed, sound, exact; masks unchanged. Record and options: `docs/evidence/r7-overlay-rule.md`. Run 142 (full
-  pilot) for the user; the attack run becomes 143.
+  pilot) started by the user at 11:55; the attack run becomes 143.

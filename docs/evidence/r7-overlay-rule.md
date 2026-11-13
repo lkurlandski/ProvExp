@@ -141,7 +141,8 @@ Claude's view, recorded for the decision:
 
 ## 7. Open
 
-- Run 142 (full pilot, ~30 min, user).
+- Run 142 (full pilot, ~30 min): started by the user 2026-11-13 11:55; its reading goes into the script's header,
+  this section and the R7 record's log.
 - Mechanism 2 for entries no feature reads: the population requires every directory within the file; requiring it
   only of directories whose data a feature reads would close the architecture (and reserved) past-the-end exits. A
   separate, checkable refinement.

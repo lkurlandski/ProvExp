@@ -143,6 +143,12 @@ for M. The earlier numba sweep computed the previous, pairwise overlap; it was r
   EMBER v2, which extended the list). Fixed as an option by pure addition: `ImportsInfoMerged` /
   `merge_import_descriptors(extractor)`; direction A uses it so that no result depends on the quirk. Upstream report
   drafted in `docs/upstream-issues.md`.
+- `section:overlay_*` (and the `max_*` pools) inherit **pefile's overlay rule**: the overlay starts after the furthest
+  extent of the sections *and of every data directory but the certificate's*, so a write to an entry the loader
+  ignores (debug, architecture) moves it. Since 2026-11-13 (R7) `features.py` installs LIEF's rule in pefile at
+  import (`overlay_data_start_offset`: after the furthest section's raw data, none if that lies past the end; pefile's
+  kept as `PEFILE_OVERLAY_START`); it changes no vector in the population, ~4% outside it. Record:
+  `docs/evidence/r7-overlay-rule.md`; upstream note `docs/upstream-issues.md` item 9.
 - Files in the EMBER-2024 SimpleDB are truncated at **4,000,000 bytes**, not 4 MiB.
 - **Nondeterminism:** `PEFormatWarnings` maps each warning to the first matching pattern while iterating over a `set`
   of strings, so for warnings matching two overlapping patterns the feature depends on the interpreter's hash seed

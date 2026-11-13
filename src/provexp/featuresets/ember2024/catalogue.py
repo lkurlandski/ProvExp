@@ -225,19 +225,22 @@ REGION_OPS: dict[str, tuple[bool, dict[str, ChangeHow], bool, tuple[Change, ...]
     "ren": (False, {}, True, ()),
     # Removing debug removes one extent from pefile's overlay rule, so the overlay can only start earlier: it grows,
     # or one appears; the file's length stays. On a file where the debug directory is not the extent the overlay starts
-    # after, nothing moves (`file_region_changes`).
+    # after, nothing moves (`file_region_changes`). NOTE (R7): under LIEF's overlay rule, installed by `features` since
+    # 2026-11-13, no directory decides the overlay's start, so nothing moves on any file; kept for pefile's own rule.
     "rdb": (True, {"overlay": "grow", "file": "rewrite"}, False, (Change("add", "overlay"),)),
     # Removing the signature removes the certificate table.
     "rsg": (True, {"certificate_table": "remove"}, False, ()),
     # The certificate and debug entries set to any value (R7): the loader maps neither directory's data, so it ignores
-    # both entries. Everything located through them (the signature; pefile's overlay rule) is flagged.
+    # both entries. Everything located through them (the signature; under pefile's own rule, the overlay) is flagged.
     "ent": (False, {}, False, ()),
 }
 
 # The data directories whose entries `ent` writes, and whose data the widened population lets lie past the end.
 LOOSE_ENTRIES = (4, 6)  # SECURITY_ENTRY, DEBUG_ENTRY
 # The kinds located through those entries that may then lie past the end (pefile's overlay rule ignores an extent past
-# the end, so an operation that lengthens the file can bring one back into it and move the overlay's start).
+# the end, so an operation that lengthens the file can bring one back into it and move the overlay's start). NOTE (R7):
+# under LIEF's overlay rule (installed by `features` since 2026-11-13) only the certificate table is located through
+# them; the overlay and file kinds are kept as a sound superset (more flags, never a wrong direction).
 LOOSE_PAST_END_KINDS = (("authenticode", "certificate_table"), ("section", "overlay"), ("section", "file"))
 
 
@@ -297,7 +300,7 @@ def cut(ranges: Sequence[Range], holes: Sequence[Range]) -> list[Range]:
 
 
 def overlay_start_without(pe: pefile.PE, entry: int) -> Optional[int]:
-    """Where pefile's overlay would start with one data directory entry zeroed (`get_overlay_data_start_offset`)."""
+    """Where the overlay would start with one data directory entry zeroed (unchanged under LIEF's rule, R7)."""
     directory = pe.OPTIONAL_HEADER.DATA_DIRECTORY[entry]
     saved = directory.VirtualAddress, directory.Size
     directory.VirtualAddress, directory.Size = 0, 0
@@ -430,7 +433,8 @@ def plain_layout(pe: pefile.PE) -> bool:
         - the headers hold only the headers: the PE header starts past the DOS header, and no section's raw data starts
           before the PE header (writing or moving header fields would otherwise move DOS fields or that section);
         - pefile's overlay starts where a section's raw data (or the optional header) ends, not at the end of a data
-          directory's declared extent (a section inserted there would split an unclaimed body run).
+          directory's declared extent (a section inserted there would split an unclaimed body run). Under LIEF's
+          overlay rule (installed by `features` since 2026-11-13, R7) this clause always holds.
     """
     oh = pe.OPTIONAL_HEADER
     sa = oh.SectionAlignment or 0x1000

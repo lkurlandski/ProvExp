@@ -33,10 +33,10 @@ conference cycles are not a planning constraint (user).
 ## Code
 
 - `src/provexp/`: `items.py` (the item layer: items, terms, readouts as data), `reach.py` (the side-effect and
-  direction engines; "C1" and "C4" in old names), `featuresets/ember2024/` (`features.py`: thrember + instrumentation;
-  `catalogue.py`: the edit catalogue and the population check; `sums.py`: the re-encoding over sums; `expert.py`:
-  Gimenez et al.'s 40 features), `data/` (SimpleDB, feature store, TLSH), `models/` (GBDT, MLP, MalConv, ERDALT),
-  `metrics.py`. From the old direction: `boxmatrix.py`, `provenance.py`, `explain/`, `ablation.py`. Design notes:
+  direction engines; "C1" and "C4" in old names), `featuresets/ember2024/` (`features.py`: thrember + instrumentation,
+  with LIEF's overlay rule installed in pefile; `catalogue.py`: the edit catalogue and the population check; `sums.py`:
+  the re-encoding over sums; `expert.py`: Gimenez et al.'s 40 features), `data/` (SimpleDB, feature store, TLSH),
+  `models/` (GBDT, MLP, MalConv, ERDALT), `metrics.py`. From the old direction: `boxmatrix.py`, `provenance.py`, `explain/`, `ablation.py`. Design notes:
   `docs/design.md`.
 - `scripts/`: inventory in `scripts/README.md`, grouped by what the paper uses. Dropped experiments are under
   `scripts/archive/`.
@@ -98,6 +98,13 @@ conference cycles are not a planning constraint (user).
 - **No result may rest on an implementation quirk of the extractor** (user, 2026-10-22). Patch the quirk as a pure
   addition (e.g., `merge_import_descriptors` for the duplicate-DLL import overwrite), run every row on the patched
   variant, and note it in `docs/upstream-issues.md`.
+- **The parser is not the gold standard** (user, 2026-11-13). What a structure is (e.g., the overlay) must not hang on
+  one parser's implementation (pefile's, thrember's). Changes to parsing, the feature set, and sample selection are
+  options weighed on merit against literature practice, not against earlier decisions; when a problem traces to a
+  parser's definition, compare parsers (LIEF, pefile), EMBER v2 and v3, and the loader's view before modelling it on
+  our side. Current deviations from EMBER-v3: files below 4 MB, warnings dropped, thrember quirks patched, LIEF's
+  overlay rule (`docs/evidence/r7-overlay-rule.md`). Designing the extractor deliberately (perhaps on LIEF) is open,
+  PLAN.md step 2c.
 
 ## Code style
 
