@@ -116,6 +116,24 @@ the header-field overwrites are used too, which also answers part of R1) and `--
   above; the unconstrained row is the routed system under escape. If the monotone rows evade on several files, look at
   which out-of-table side effect did it (the certificate range filled by an append; SizeOfImage lowered by adding a
   section) and weigh option 5 for that clause.
+- **Step 1 read (session 52; certificate escape).** Unconstrained 40/48 (held); `mfull-feat` 1/41, `mfull-sums` 1/43
+  (count held, size failed: drops -3.1 and -3.2 logits, not small). Both evasions are the same file
+  (`396eb6ec...e6d7`, 18 KB, signed), each by one operation at query 50 (`sec` against the features, `app` against
+  the sums). Mechanism, from rebuilding and extracting the file: (1) the escape extends the certificate entry past the
+  end of the file; the signature no longer parses, the `authenticode:*` features fall to 0, and the score *rises* by
+  1.5-1.7 logits; (2) an append (or an added section) brings the entry back inside the file, the signature parses
+  again and the `authenticode:*` features return to their values: a rise the table excludes (the monotone detectors
+  hold these features at -1, "can only fall"), so the score falls. Clause broken: **the certificate table lies inside
+  the file**. Relative to the unescaped original the end file is still ~1.4 logits lower, from the escape write
+  itself raising `datadirectories:security_size` (also -1). Caveat: the unescaped original was not detected by either
+  monotone detector (0.84 vs tau 1.45; 0.71 vs 1.29 logits); the escape made it detected and the append undid that.
+  Scratch reproduction: `escape_diff.py` (session scratchpad, not kept).
+- **Option 5 for the certificate clause: accepted by the user (session 52), with caution.** Widen the population for
+  this clause: the `authenticode:*` features and `security_size` become two-sided under appends and added sections
+  (they leave the monotone constraints); check the detection cost (signatures are a strong benign signal). The
+  user's concern, to carry forward: widening clause by clause is acceptable for limited features and one kind of
+  edit, but further holes may surface at the scale-up; each widening is a decision to take carefully, not a routine
+  patch (this is the whack-a-mole risk of §4's conclusion). Decide the final form after step 2 (SizeOfImage) is read.
 - **Left for the scale-up.** The toolkit attacks on escaped files (their harness needs its own escape support);
   the end-to-end share "still detected out of all attacked" per attack column; the population share of attacked
   malware with its denominator (the blue 89%).
@@ -134,3 +152,6 @@ the header-field overwrites are used too, which also answers part of R1) and `--
   files outside the population, in ~2,400 actions each, among them its removals of the debug and certificate entries
   (which also zero the data the entry pointed to). It shows that unrouted files outside the population are not evaded
   by these actions; it does not cover the deliberate escapes of run 138.
+- 2026-11-12 (session 52): step 1 of run 138 read (§7): one file evades both monotone detectors, by the certificate
+  clause; option 5 for that clause accepted with caution (user: more holes may surface at the scale-up). Step 2 still
+  running.
