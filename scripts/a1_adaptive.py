@@ -74,6 +74,8 @@ from a_c1_table0 import has_overrun_section  # noqa: E402
 from a_pv_attacks import load_pilot  # noqa: E402
 from a_pv_attacks import map_watchdog  # noqa: E402
 from catalogue_checks import add_section as write_section  # noqa: E402
+from catalogue_checks import _entry_write as entry_write  # noqa: E402
+from catalogue_checks import _past_end as past_end_edit  # noqa: E402
 from escape_audit import WRITES as ESCAPES  # noqa: E402
 
 __all__ = ["Donors", "Engine", "HDR_FIELDS", "Operation", "add_imports", "add_section", "engine_predictors",
@@ -83,7 +85,7 @@ __all__ = ["Donors", "Engine", "HDR_FIELDS", "Operation", "add_imports", "add_se
 ROOT = Path(__file__).resolve().parent.parent
 
 # The threat models' operation sets (scripts/a_directions.py): additions, gap insertions, in-place overwrites.
-ADD, INSERT, OVERWRITE = ("app", "sec", "imp"), ("ext", "shf"), ("slk", "dos", "hdr", "chk", "ren", "rdb", "rsg")
+ADD, INSERT, OVERWRITE = ("app", "sec", "imp"), ("ext", "shf"), ("slk", "dos", "hdr", "chk", "ren", "rdb", "rsg", "ent")
 THREAT = {"M_add": ADD, "M_shift": ADD + INSERT, "M_full": ADD + INSERT + OVERWRITE}
 
 # The loader-ignored header fields (the threat model's `hdr`, matching scripts/a_directions.py's `header` group).
@@ -108,6 +110,7 @@ class Donors:
         self.fields: list[dict[str, int]] = []
         self.checksums: list[int] = []
         self.imports: list[tuple[str, list[str]]] = []
+        self.certificates: list[bytes] = []  # WIN_CERTIFICATE blobs from signed donors (for signature cloning, `ent`)
         for _, data in goodware:
             try:
                 pe = pefile.PE(data=data)
@@ -120,6 +123,11 @@ class Donors:
             self.stubs.append(data[2:pe.DOS_HEADER.e_lfanew])
             self.fields.append({f"{h}.{f}": int(getattr(getattr(pe, h), f)) for h, f in HDR_FIELDS})
             self.checksums.append(int(pe.OPTIONAL_HEADER.CheckSum))
+            dd = pe.OPTIONAL_HEADER.DATA_DIRECTORY
+            if len(dd) > SECURITY_ENTRY and dd[SECURITY_ENTRY].VirtualAddress and dd[SECURITY_ENTRY].Size:
+                cert = data[dd[SECURITY_ENTRY].VirtualAddress: dd[SECURITY_ENTRY].VirtualAddress + dd[SECURITY_ENTRY].Size]
+                if cert:
+                    self.certificates.append(cert)
             for entry in getattr(pe, "DIRECTORY_ENTRY_IMPORT", []):
                 names = [i.name.decode() for i in entry.imports if i.name]
                 if names:
@@ -495,7 +503,7 @@ class Engine:
             old, table = p.new, p.table
         if p is None:
             raise RuntimeError("no edits")
-        return self._fill(z, p.features(self.ext.readouts)), old, 0
+        return self._fill(z, p.features(self.ext.readouts)), old, max(0, len(old) - len(z))
 
 
 def _apply(z: bytes, edits: list[ByteEdit]) -> bytes:
@@ -540,7 +548,7 @@ class RealEngine(Engine):
         if not edits:
             raise RuntimeError("no edits")
         new = _apply(z, edits)
-        return self.score(new), new, 0
+        return self.score(new), new, max(0, len(new) - len(z))
 
 
 def _sec_candidate(engine: Engine, name: str, content: bytes) -> Candidate:
@@ -581,6 +589,51 @@ def _rm_candidate(engine: Engine, op: str, index: int) -> Candidate:
         return engine.declared(z, catalogue.predict_zero_entry(engine.ext, engine.table(z), z, index))
 
     return (op, 0, thunk)
+
+
+def _ent_zero_candidate(engine: Engine) -> Candidate:
+    """Zero the certificate and debug data-directory entries (`catalogue_checks._entry_write`; in place, 16 bytes)."""
+
+    def thunk(z: bytes) -> tuple[np.ndarray, bytes, int]:
+        pe = pefile.PE(data=z, fast_load=True)
+        if len(pe.OPTIONAL_HEADER.DATA_DIRECTORY) <= max(DEBUG_ENTRY, SECURITY_ENTRY):
+            raise RuntimeError("no certificate or debug entry")
+        edits = [entry_write(pe, i, 0, 0) for i in (SECURITY_ENTRY, DEBUG_ENTRY)]
+        return engine.inplace(z, edits)
+
+    return ("ent", 0, thunk)
+
+
+def _ent_past_end_candidate(engine: Engine, index: int) -> Candidate:
+    """Point the certificate (`index` 4) or debug (6) entry past the end of the file (`_past_end`; in place, 8 bytes)."""
+
+    def thunk(z: bytes) -> tuple[np.ndarray, bytes, int]:
+        pe = pefile.PE(data=z, fast_load=True)
+        e = past_end_edit(pe, index, len(z), len(z))
+        if e is None:
+            raise RuntimeError("the entry cannot be pointed past the end")
+        return engine.inplace(z, [e])
+
+    return ("ent", 0, thunk)
+
+
+def _ent_clone_candidate(engine: Engine, cert: bytes) -> Candidate:
+    """
+    Signature cloning (`ent`): append a signed donor's certificate (8-byte aligned) and point the security entry at it,
+    so the file parses as signed (the certificate table is located by a file offset, not an RVA). An append then an
+    in-place entry write, both our own byte edits (`entry_write`).
+    """
+
+    def thunk(z: bytes) -> tuple[np.ndarray, bytes, int]:
+        pe = pefile.PE(data=z, fast_load=True)
+        if len(pe.OPTIONAL_HEADER.DATA_DIRECTORY) <= SECURITY_ENTRY:
+            raise RuntimeError("no security entry")
+        pad = (8 - len(z) % 8) % 8
+        appended = b"\x00" * pad + cert
+        edits = [ByteEdit(len(z), len(z), appended), entry_write(pe, SECURITY_ENTRY, len(z) + pad, len(cert))]
+        return engine.inplace(z, edits)
+
+    return ("ent", len(cert), thunk)
 
 
 def _hdr_candidate(engine: Engine, values: dict[str, int]) -> Candidate:
@@ -716,6 +769,12 @@ def full_menu(engine: Engine, donors: Donors, rng: np.random.Generator, targets:
     for op, index in (("rdb", DEBUG_ENTRY), ("rsg", SECURITY_ENTRY)):
         if op in ops:
             out.append(_rm_candidate(engine, op, index))
+    if "ent" in ops:
+        out.append(_ent_zero_candidate(engine))
+        for index in (SECURITY_ENTRY, DEBUG_ENTRY):
+            out.append(_ent_past_end_candidate(engine, index))
+        if donors.certificates:
+            out.append(_ent_clone_candidate(engine, donors.certificates[int(rng.integers(len(donors.certificates)))]))
     return out
 
 
