@@ -134,6 +134,33 @@ the header-field overwrites are used too, which also answers part of R1) and `--
   user's concern, to carry forward: widening clause by clause is acceptable for limited features and one kind of
   edit, but further holes may surface at the scale-up; each widening is a decision to take carefully, not a routine
   patch (this is the whack-a-mole risk of §4's conclusion). Decide the final form after step 2 (SizeOfImage) is read.
+- **Step 2 read (session 53; SizeOfImage escape).** Unconstrained 35/47 (held); `mfull-feat` 0/40, `mfull-sums` 0/41
+  (held). No silent no-op: every monotone search ran its 2,000 candidates (median ~3 min per file), mismatches 0, and
+  the unconstrained detector was evaded on 35, so the edits take effect; on every monotone file the best candidate was
+  the unedited escaped file. Why it holds: the write raises only `header:optional_header_SizeOfImage`, which both
+  detectors already hold "can only rise" (an added section raises it), and an added section afterwards recomputes it
+  from the sections, never below the original's value.
+- **End to end from the originals (session 53, scratch check, no search).** Run 138 counts only files detected after
+  the escape, so an escape write that itself evades is invisible to it. Each write applied to the 50 pilot malware,
+  originals and escaped files extracted with `SumsFeatureExtractor` and scored at the detectors' 1% thresholds;
+  every constrained feature the write moves against the constraint counted (scratch `escape_scores.py`, not kept):
+
+  | Write | Monotone features moved against the table | mfull-feat: evaded by the write alone | mfull-sums | Score change (feat; sums), median |
+  |---|---|---|---|---|
+  | certificate entry | `datadirectories:security_size` up (50/50) | 0/40 | 0/41 | -0.11; -0.25 (min -0.68; -1.09) |
+  | SizeOfImage | none | 0/40 | 0/41 | 0; 0 (never lower) |
+  | debug entry | `datadirectories:debug_size` up (50/50), `debug_virtual_address` up (37/50) | **3/40** | **4/41** | -0.96; -1.00 (min -3.08; -4.14) |
+  | architecture entry | none | 0/40 | 0/41 | +0.77; +0.56 (always higher) |
+
+  (One file's `body_*` features move under every write: pefile's rewrite of that file, not the escape.) End to end,
+  step 1's only evasion was of a file whose original neither detector detected, so steps 1 and 2 have no evasion of a
+  detected original; the debug write, which run 138 did not pilot, evades 3 and 4 by itself.
+- **What this says.** The failures do not come from the population clauses as such but from the escape writes
+  themselves: they are loader-ignored writes to data-directory entries, which the threat model leaves out (its `hdr`
+  covers nine header fields, not the directory entries), and they move the entry's own features against the table.
+  Widening the population (option 5) alone would not cover them, since the writes are not operations of the threat
+  model. This is a pattern across the certificate and debug entries (the two entries the loader does not map), not a
+  single clause.
 - **Left for the scale-up.** The toolkit attacks on escaped files (their harness needs its own escape support);
   the end-to-end share "still detected out of all attacked" per attack column; the population share of attacked
   malware with its denominator (the blue 89%).
@@ -155,3 +182,7 @@ the header-field overwrites are used too, which also answers part of R1) and `--
 - 2026-11-12 (session 52): step 1 of run 138 read (§7): one file evades both monotone detectors, by the certificate
   clause; option 5 for that clause accepted with caution (user: more holes may surface at the scale-up). Step 2 still
   running.
+- 2026-11-13 (session 53): run 138 finished (step 2 7786 s). Step 2 read: monotone 0/40 and 0/41, held. End-to-end
+  check from the unescaped originals over four escape writes (§7): the debug-entry write alone evades 3/40 and 4/41;
+  the cause is the writes themselves (loader-ignored directory-entry writes outside the threat model). Recommendation
+  to the user pending.

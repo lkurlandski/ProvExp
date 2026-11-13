@@ -20,6 +20,22 @@
 # Reference points: smoke (Claude, 3 files, cert entry, 300 candidates): unconstrained 1/2, both monotone 0/2 with
 # largest drop exactly 0.
 #
+# Reading (sessions 52-53; R7 record, docs/evidence/r7-population-escape.md §7). Denominators below are the files
+# detected *after* the escape write, as the script counts them.
+#   Step 1, certificate entry: unconstrained 40/48 (held); mfull-feat 1/41, mfull-sums 1/43 (count held, size failed:
+#     -3.1 and -3.2 logits). Both are one signed file whose unescaped original neither detector detected: the escape
+#     breaks the signature parse, an append restores it and the authenticode:* features rise (held "can only fall").
+#   Step 2, SizeOfImage: unconstrained 35/47 (held); mfull-feat 0/40, mfull-sums 0/41 (held), every monotone search ran
+#     its 2,000 candidates and its best was the unedited file (no candidate lowered the score). The write raises only
+#     SizeOfImage, which the table already allows to rise (added sections); 7786 s.
+#   End to end, from the unescaped originals (session 53, scratch check, no search): no write alone evades a detected
+#     original for cert_entry (but it lowers the score on most files: security_size rises, held "can only fall";
+#     median -0.11 / -0.25 logits), image_size (never lowers it) or arch_entry (raises it); the untested debug_entry
+#     write alone evades 3/40 (mfull-feat) and 4/41 (mfull-sums), drops up to -3.1 / -4.1, median -1.0 logits, by
+#     raising datadirectories:debug_size (all 50) and debug_virtual_address (37), both held "can only fall".
+#   So the failures come from the escape writes themselves: loader-ignored writes to data-directory entries that the
+#   threat model leaves out, moving the entry's own features against the table.
+#
 # Resources: one search per (detector, file), NUM_WORKERS processes (spawn; ~1 GB each). Real extraction costs ~0.6 s
 # per candidate (smoke), so a file the search does not evade takes ~20 min at 2,000 candidates; ~130 (detector, file)
 # pairs per step, most of them monotone pairs that run the full budget: ~40 CPU-h per step, ~2.5-3 h per step with 16
