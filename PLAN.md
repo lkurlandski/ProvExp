@@ -262,7 +262,11 @@ them (below).
     ERDALT 6/29; expert set 4/8 by renames; both monotone full-model detectors 0, their score never below the clean
     score in ~2,400 actions each, outside the population too; additions detector 1/42 by a debug-entry removal. The
     gap to Zainab et al.'s 83.4% is mostly their 0.1% FPR operating point and no byte cap. Measured unions: Table 4
-    31/49, 7/9, 25/29, 26/50; Table 5 28/47, 1/40, 1/42, expert 0/8 and 4/8, additions 0/43 and 12/43.
+    31/49, 7/9, 25/29, 26/50; Table 5 28/47, 1/40, 1/42, expert 0/8 and 4/8, additions 0/43 and 12/43. *Its role in §5, changed with the
+    user's approval (session 51, 5dc17b5):* evidence that the monotone detectors' score never falls (5.4's *The
+    price* and *Beyond the guarantee*) and the second attack to find PV's rename hole (5.3); no longer an attack
+    that breaks the undefended or the adversarially trained detector. Appendix D's MAB-Malware paragraph compares the
+    rate with Zainab et al.'s operating point and byte limit.
 
 ## Next steps, in order
 

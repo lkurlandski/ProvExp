@@ -128,3 +128,9 @@ the header-field overwrites are used too, which also answers part of R1) and `--
 - 2026-11-12 (session 49): no change to R7; run 138 still running at the end of the session. The parallel line R1
   (MAB-Malware, run 139; PLAN.md decision 12) touches 5.4's *The price*, *The width* and *Beyond the guarantee*, not
   *Where the guarantee holds*.
+- 2026-11-12 (session 51): run 138 still on step 2 (step 1's summary as in the resume prompt: monotone 1/41 and 1/43
+  with drops of about 3 logits; not yet read). Evidence from run 139 for decision 11 (no router): MAB-Malware never
+  lowered either monotone full-model detector's score on any file, including the 12 (features) and 11 (sums) detected
+  files outside the population, in ~2,400 actions each, among them its removals of the debug and certificate entries
+  (which also zero the data the entry pointed to). It shows that unrouted files outside the population are not evaded
+  by these actions; it does not cover the deliberate escapes of run 138.

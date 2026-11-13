@@ -6,7 +6,7 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
 `docs/archive/status-log-2026-11-09.md`, sessions 29-40 in `docs/archive/status-log-2026-11-10-to-11.md`, sessions
 41-41b in `docs/archive/status-log-2026-11-12.md`).
 
-## Current state (2026-11-12, sessions 34-50)
+## Current state (2026-11-12, sessions 34-51)
 
 - **Framework (§2-3):** rewritten; the user is reasonably satisfied. Open: the user's holistic read of Sound
   Directions after round 4 (finetuning only).
@@ -58,7 +58,12 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
 - **R1, attack strength (session 49):** decision 12. MAB-Malware vendored and driven by `scripts/mab_attack.py`
   (tested equal to upstream's own hand-over); run 139 scripted for the user; §5, Tables 4-5 ("evaded by any attack")
   and the new per-attack Table 11 carry its predicted values in blue. The adaptive attack scores by extraction at the
-  scale-up (`--score real`); §2 unchanged (user). Widen first, then scale (user).
+  scale-up (`--score real`); §2 unchanged (user). Widen first, then scale (user). **Run 139 read in session 51**
+  (reading in its header and PLAN.md, decision 12): no silent no-ops; unconstrained full set 0/49 (16 evasive outputs
+  over the byte budget), PV 7/9 by renames alone, both monotone full-model detectors 0 with their score never below
+  the clean score (outside the population too). Measured values in Tables 4, 5 and 11; MAB-Malware's role in §5
+  changed with the user's approval (5dc17b5): evidence that the monotone scores never fall, no longer an attack that
+  breaks the undefended detector; Appendix D compares its rate with Zainab et al.'s (0.1% FPR, no byte limit).
 - **R6, prior work (session 50):** the works behind §3 read and related to Proposition 1, Theorem 1 and Corollary 1
   (`docs/evidence/r6-prior-work.md`). The user: credit what we build on without conceding each result ("the novelty
   ... is in putting them together"), one or two seminal works per idea. Applied (660ba90): Gray et al.'s maxima in
@@ -71,11 +76,12 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
 ## Waiting on the user
 
 - **Run 138** (`run/138_escape_pilot.sh`, started 16:03 on 2026-11-12; log `artifacts/logs/escape_pilot.log`): step 1
-  (certificate escape) finished, step 2 (SizeOfImage) running at the end of session 50. Not yet read.
-- **Run 139** (`run/139_mab_malware.sh`, `NUM_WORKERS=4` in tmux; logs `artifacts/logs/mab_malware-*.log`): steps
-  `full` and `pv` finished, `sums` running and `expert` to come at the end of session 50. Not yet read.
-- **Next session:** `docs/resume-prompt.md` (read whichever run has finished; otherwise a new weakness from the review,
-  orthogonal to R7 and R1).
+  (certificate escape) finished; step 2 (SizeOfImage) still running at the end of session 51 (100 of 128 tasks).
+  Not yet read.
+- **Three small §5 fixes proposed in session 51, not yet answered** (resume prompt, line B): 5.2's expert-set
+  sentence (adaptive 2/8, Table 5 now 4/8 with MAB-Malware); the repeated "never lowers" in 5.4; "which of seven
+  actions" in 5.1. The two "Unconstrained" training sets: at the scale-up (user).
+- **Next session:** `docs/resume-prompt.md` (run 138 if finished; otherwise the next weakness of the review).
 
 ## Scheduled (in order; PLAN.md, next steps)
 
@@ -90,6 +96,20 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
 7. Introduction, discussion, abstract last.
 
 ## Session log
+
+- **2026-11-12 (session 51): run 139 read (R1); MAB-Malware's claims rewritten.** Run 139 had finished, run 138 was
+  on step 2. Checks for silent no-ops first (`p_lowest` against `p_clean`, the bandit's alpha/beta, the minimal
+  actions, errors, outputs over budget): none; every non-counting output is evasive but over the byte budget, all by
+  appended sections. Read against the hypothesis (run 139 header): the unconstrained part failed (0/49; s10 10/47),
+  adversarial training 4/50 failed, PV 7/9 by renames alone, expert set 4/8 by renames, additions detector 1/42 by a
+  debug-entry removal, monotone full-model detectors 0 in ~2,400 actions each with the score never below the clean
+  score. Against Zainab et al.: their 83.4% is at 0.1% FPR (their Table IX) with no byte limit; at our detector's
+  0.1% threshold the search's lowest scores were under it on 22 of 40 files. Unions computed per file (scratch
+  script); blue cells replaced (52a46ec). The user approved Claude's five rewordings (5dc17b5): 5.3 drops MAB-Malware
+  from adversarial training; 5.4's *The price* gains "never lowers its score", *The width* loses the MAB clause,
+  *Beyond the guarantee* says it never lowers either monotone score; Appendix D compares with Zainab et al. A
+  consistency pass over §5 found one error of Claude's (fixed) and three small points (open). **Next:**
+  `docs/resume-prompt.md`.
 
 - **2026-11-12 (session 50): R6, the prior work behind §3.** Runs 138 and 139 were still running, so the session
   took R6 (all four reviewers). Claude's first plan, a paragraph listing what in §3 is classical and what is new, was
