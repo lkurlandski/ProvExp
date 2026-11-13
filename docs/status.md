@@ -89,11 +89,14 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
 
 ## Waiting on the user
 
-- **Run 143 scripted, waiting to be run** (`run/143_escape_pilot_loose.sh`, ~5-6 h, NUM_WORKERS default 16): the
-  escape pilot on the widened population (three escapes against the two `-loose` monotone detectors + the unconstrained
-  one, M_full now with `ent`, evasion from the unescaped originals). Hypothesis: no detected original evaded by either
-  monotone detector. **Next R7 session:** `docs/resume-prompt.md` (read run 143, then PLAN.md step 2b (iv): the paper).
-  (Run 142 read in session 56: closed, sound, exact after one engine fix; `ent` added to the attack and smoke-tested.)
+- **Run 143 scripted, gated on a verification session** (`run/143_escape_pilot_loose.sh`, ~5-6 h, NUM_WORKERS default
+  16): the escape pilot on the widened population (three escapes against the two `-loose` monotone detectors + the
+  unconstrained one, M_full now with `ent`, evasion from the unescaped originals). Hypothesis: no detected original
+  evaded by either monotone detector. **Session 56 was flagged by a safety classifier**, so the user wants the next
+  session to **review and independently re-verify session 56's four R7 commits (`e0fa5b8`, `868b8b6`, `0949a9c`,
+  `8a058d2`) before the ~5-6 h run.** **Next R7 session:** `docs/resume-prompt.md` ("The task": verify, then clear run
+  143 for the user; the paper and the run 143 reading are deferred behind that). (Run 142 was read in session 56:
+  closed, sound, exact after one engine fix; `ent` added to the attack and smoke-tested -- all to be re-checked.)
 - **The extractor question** (PLAN.md step 2c): the user's call, before the scale-up's featurization.
 - **Orthogonal track** (sessions parallel to R7; R17 done in session 53b): the meta-review's triage, item by item,
   with the user judging each criticism (wrong / outside the claim / real); procedure in its section of
@@ -121,7 +124,8 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
   past the end, signature cloning from signed goodware donors; 868b8b6), run 143 counts evasion from the unescaped
   originals (0949a9c), and `run/143_escape_pilot_loose.sh` written for the user (8a058d2). Smokes held: the loose
   monotone detector is not evaded under the full menu or by the debug-entry escape (where run 138 saw 4/41). Records:
-  `docs/evidence/r7-overlay-rule.md` §7, PLAN.md step 2b.
+  `docs/evidence/r7-overlay-rule.md` §7, PLAN.md step 2b. **This session was flagged by a safety classifier; the user
+  therefore gated run 143 on a verification session that re-checks these four commits first (resume prompt).**
 
 - **2026-11-13 (session 55, R7 track): the closure check; LIEF's overlay rule.** `catalogue_checks.py --loose` (`ent`,
   escaped copies far past, just past and inside the overlay; run 141). A session-53 bug fixed (the loose precondition

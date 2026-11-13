@@ -1,4 +1,10 @@
-# Resume: read run 143, then the paper (R7, step 2b (iv)); in parallel, the meta-review's triage
+# Resume: verify session 56's R7 code before run 143, then the paper; in parallel, the meta-review's triage
+
+**Why this session verifies first.** Session 56 (which produced the four R7 commits below and `run/143`) was flagged
+by a safety classifier, which may have degraded the work. Nothing in the research is in doubt because of the flag; it
+is a reason to re-check session 56's output with fresh eyes before spending ~5-6 h on run 143. The user will run run
+143 only once this session clears the code. So the task is: **review and independently re-verify session 56's R7
+changes**, report what holds and what does not, and only then hand run 143 back. Do not launch run 143 yourself.
 
 **Two lines of work share this prompt.** The R7 track (below, through "The task") and a parallel track orthogonal to
 it ("A parallel track", further down). The user says which one a session takes; if unsaid, ask. A session on one track
@@ -67,30 +73,63 @@ attacks miss (5.3), what robustness costs (5.4). The paper is written straight i
   `may-deviate-from-ember` and CLAUDE.md: parser, feature and sample choices are first-class options, weighed on merit,
   not against earlier decisions.
 
-## The task (PLAN.md step 2b (iv), approved by the user)
+## The task: verify session 56, then clear run 143 (PLAN.md step 2b, approved by the user)
 
-1. **Read run 143** (if it has finished; else ask the user, or take the parallel track). From each escape's
-   `adaptive.json` and `adaptive.parquet`: per detector `detected`, `evaded`, `rate`, `min_delta_logit`,
-   `evaded_by_escape`, `in_population`, `evaded_outside_population`. The hypothesis (run 143's header): no detected
-   original evaded by either monotone `-loose` detector, for any of the three escapes (evaded 0, min_delta_logit 0,
-   evaded_by_escape 0). Read any non-zero monotone cell against `in_population` and `evaded_by_escape` -- a miss on a
-   file outside the loose population is not a guarantee violation, but report it either way. Look for silent no-ops
-   (each escape applied, `ent` candidates firing). Compare with run 138 (certificate 1/41 and 1/43, SizeOfImage 0/40
-   and 0/41 from the escaped files; the debug write 3/40 and 4/41 end to end, now expected 0). Write the reading into
-   run 143's header, `docs/evidence/r7-population-escape.md` §7 and its log, PLAN.md step 2b (iii), and
-   `docs/status.md`. A failure: report it as such, with the cause and options weighed on merit, one recommendation.
-2. **The paper** (draft in small blocks with the user, `paper-prose` skill): §4's overwrites
-   (add the entry write) and §4.4's population (the two entries' data may lie past the end; no routing: one detector
-   scores every file); §5.4's *The price* (new numbers; signature cloning as the reason) and *Where the guarantee
-   holds* (the escape result; drop "such files are rare among benign software, and so stand out"; population share as
-   n/N); Table 5's monotone rows retrained on the loose table; routing removed from §5.1 and Appendix D; Table 5's
-   denominators unrouted. The `-loose` models replace `-pre-v2` wherever the paper's monotone detectors appear: other
-   tables' monotone cells (toolkit attacks, MAB-Malware) need reruns or blue values with `% SYNTHETIC` comments;
-   decide with the user which, and list what the scale-up must redo. The overlay rule: Appendix D's "The overlay starts
-   where the last section or data directory ends, so the extent of every section and directory locates it" becomes
-   "... where the last section ends, so the extent of every section locates it", and one sentence by "We drop the
-   warnings" on the deviation and why (`docs/evidence/r7-overlay-rule.md` §5; the paper mock's §4.2 line). How the
-   extractor is framed overall waits on step 2c.
+Session 56's four R7 commits are on `main` (from `2f6087c`): `e0fa5b8` (the engine decline + the two catalogue
+filters), `868b8b6` (`ent` in the attack), `0949a9c` (count from the unescaped originals), `8a058d2`
+(`run/143_escape_pilot_loose.sh`), `933faba` (docs). Read each `git show`, check it against the claims in "Where R7
+stands", and re-run the quick checks yourself. Report per item: **holds**, **wrong** (with the fix), or **unsure**
+(what to resolve). State a hypothesis before each re-run. All checks below are quick (≤ a few minutes); the one that
+is not (re-running run 142 fully, ~17 min) is optional and goes to the user if wanted.
+
+1. **The engine decline (`e0fa5b8`), the one change that could silently corrupt results.** `reach.predict_structural`
+   now declines "an edit splits the members of items" (via the new `reach.splits`, which tests terms' and attributes'
+   ranges, not locating ranges), and `catalogue._declare_section` / `predict_insert_gap` drop a certificate the
+   insertion splits so the engine declines it. Verify: (a) `splits` is correct and the decline fires only when an
+   insertion lands strictly inside a member range; (b) it did not turn any *previously exact* prediction into a
+   decline beyond the 16 intended rows -- re-run the single-file check on `74aecb25...` (the scratch command is in
+   run 142's header; ~1 min) and confirm exactly 16 rows flip exact→flagged and nothing else moves; the surer check is
+   a full re-run of run 142 (~17 min, step 0 then the checker) and confirming `pass/closed` hold and the exact tally is
+   3,583/3,217/0 -- offer this to the user. (c) catalogue tests pass
+   (`OMP_NUM_THREADS=2 nice -n 10 env/bin/pytest -q -p no:xdist tests/test_ember2024_catalogue.py`, ~2 min).
+2. **`ent` in the attack (`868b8b6`).** (a) The attack's M_full ops must match the ops the `-loose` directions were
+   derived with -- if the attack carries an op the detector was not constrained on, a "hole" would be spurious, and if
+   it omits one the test is incomplete. Confirm `THREAT["M_full"]` now contains `ent` and that `a_directions.py
+   --loose` (run 140) derived the `-loose` masks over the same op set (`LOOSE_OPS` in `catalogue_checks.py`; the
+   models' `monotone_constraints` already matched the table in session 56). (b) Re-run the `ent`-only and the full-menu
+   smokes (2-3 files, `--score real`, `mfull-sums-loose` with `--sound`) and confirm the monotone detector is not
+   evaded (`min_delta_logit` 0). (c) Spot-check the three `ent` thunks on one file (zero / past-end / clone) move the
+   expected `datadirectories:*` and `authenticode:*` features and that `Donors.certificates` is non-empty. (d) The
+   clone appends a certificate: confirm the growth now counts against the byte budget (the `inplace` fix).
+3. **Count from the unescaped originals (`0949a9c`).** Re-run the `debug_entry` escape smoke (~6 files) and check the
+   report: `detected` is gated on the *original's* score, the search starts from the *escaped* file, `evaded` is the
+   end file, and `evaded_by_escape` flags an escape that alone crossed the threshold. Confirm `mfull-sums-loose` is
+   0-evaded (run 138 saw the debug write evade 4/41), and that the new columns are populated.
+4. **The run 143 script (`8a058d2`).** Re-read it: the three model paths exist with `ts_predictions.parquet`, the
+   feature store matches session 56's (`ember2024-sums-10-v2`), both monotone detectors are under `--sound`,
+   `--threat_model M_full`, `NUM_WORKERS`/`OMP_NUM_THREADS` wired, the hypothesis stated, resources honest
+   (`bash -n` passes). Fix anything off; do **not** run it.
+
+**When the code is cleared,** tell the user plainly what holds, and hand run 143 back for them to run. The sessions
+after that (deferred here, unchanged from session 56's plan):
+
+- **Read run 143.** Per escape, per detector: `detected`, `evaded`, `rate`, `min_delta_logit`, `evaded_by_escape`,
+  `in_population`, `evaded_outside_population`. Hypothesis: no detected original evaded by either monotone `-loose`
+  detector (evaded 0, min_delta_logit 0, evaded_by_escape 0). A non-zero monotone cell read against `in_population`
+  (a miss outside the loose population is not a guarantee violation; report it either way). Write the reading into run
+  143's header, `docs/evidence/r7-population-escape.md` §7 and its log, PLAN.md step 2b (iii), `docs/status.md`.
+- **The paper** (draft in small blocks with the user, `paper-prose` skill): §4's overwrites
+  (add the entry write) and §4.4's population (the two entries' data may lie past the end; no routing: one detector
+  scores every file); §5.4's *The price* (new numbers; signature cloning as the reason) and *Where the guarantee
+  holds* (the escape result; drop "such files are rare among benign software, and so stand out"; population share as
+  n/N); Table 5's monotone rows retrained on the loose table; routing removed from §5.1 and Appendix D; Table 5's
+  denominators unrouted. The `-loose` models replace `-pre-v2` wherever the paper's monotone detectors appear: other
+  tables' monotone cells (toolkit attacks, MAB-Malware) need reruns or blue values with `% SYNTHETIC` comments;
+  decide with the user which, and list what the scale-up must redo. The overlay rule: Appendix D's "The overlay starts
+  where the last section or data directory ends, so the extent of every section and directory locates it" becomes
+  "... where the last section ends, so the extent of every section locates it", and one sentence by "We drop the
+  warnings" on the deviation and why (`docs/evidence/r7-overlay-rule.md` §5; the paper mock's §4.2 line). How the
+  extractor is framed overall waits on step 2c.
 
 ## A parallel track (orthogonal to R7)
 
