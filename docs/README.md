@@ -23,7 +23,7 @@ check `manuscript/main.aux` (`grep newlabel manuscript/main.aux`), and add the t
 | `PLAN.md` | thesis, where the paper stands, the decisions of 2026-11-09, next steps, settled decisions | every session |
 | `docs/status.md` | current state, what waits on the user, short session log | every session; update at the end |
 | `docs/resume-prompt.md` | where the next R7 session starts: read run 143, R7's paper changes, and the decisions before the scale-up (PLAN.md steps 2b-3); the review's rebuttal starts from `docs/resume-prompt-rebuttal.md` | starting an R7 session |
-| `docs/resume-prompt-rebuttal.md` | where each meta-rebuttal session starts: the 2026-11-12 review's register, one item per session, most significant first (perspective, neutral analysis, Claude's opinion, the user's decision); record in `docs/reviews/2026-11-12-body/meta-rebuttal.md` | starting a rebuttal session |
+| `docs/resume-prompt-rebuttal.md` | where each rebuttal session starts, once `run_review.sh` has written the rebuttal drafts (`docs/reviews/<TAG>/rebuttal/`): check the drafts, then the user decides item by item, most significant first; decisions recorded in the drafts | starting a rebuttal session |
 | `docs/checkpoint-prompt.md` | the user's prompt for ending a session | the user ends a session |
 | `docs/paper-mock.md` | the paper's contributions, outline with word budgets, and tables | planning or writing any section; checking whether new work belongs in the paper |
 | `docs/writing-spec.md` | the user's raw reactions to drafts, newest first | writing paper prose (with the `paper-prose` skill) |
@@ -32,7 +32,7 @@ check `manuscript/main.aux` (`grep newlabel manuscript/main.aux`), and add the t
 | `docs/design.md` | the `provexp` package's data structures, conventions, thrember quirks | changing code in `src/provexp/` |
 | `docs/literature-2026-10-22.md` | related work for the current direction (and for B, C) | related work, novelty, a new application |
 | `docs/graveyard.md` | ideas that did not pan out and why; directions the user found unproductive | before proposing a new direction or analysis |
-| `docs/reviews/` | simulated reviews (index: `docs/reviews/README.md`); the reusable review procedure: `review-prompt.md` (runbook) and `process/` (config, launcher, prompts, note to reviewers, checklist); latest `2026-11-12-body/` (four reviewers and a meta-review; risk register R1-R21; `meta-rebuttal.md`, the item-by-item rebuttal), before it `2026-11-04-strategy.md` and `2026-11-02-body.md` (R1-R16) | before a new review; when weighing what reviewers will miss |
+| `docs/reviews/` | simulated reviews (index: `docs/reviews/README.md`); the reusable review procedure: `review-prompt.md` (runbook) and `process/` (config, launcher, prompts, note to reviewers, checklist); latest `2026-11-12-body/` (four reviewers and a meta-review; risk register R1-R21; `rebuttal/`, one draft per register item with the user's decision, once run), before it `2026-11-04-strategy.md` and `2026-11-02-body.md` (R1-R16) | before a new review; when weighing what reviewers will miss |
 | `docs/parked/directions-B-C.md` | the two applications set aside (not failed) | considering a second application |
 
 ## Evidence: the records behind §4-5

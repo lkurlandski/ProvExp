@@ -1,14 +1,15 @@
 #!/usr/bin/env bash
 # Draft the rebuttal of every risk in a meta-review's register: one headless agent per item (rebuttal-brief.md), each
 # writing docs/reviews/<TAG>/rebuttal/<R#>.md (the reviewers' perspective, a neutral analysis, an opinion), then an
-# index of the opinions. The user's decisions are taken afterwards, one item per interactive session
-# (docs/resume-prompt-rebuttal.md), and recorded in docs/reviews/<TAG>/meta-rebuttal.md. Run by run_review.sh after the
-# meta-review (REBUTTAL=1), or alone. Knobs in config.sh; procedure in docs/reviews/review-prompt.md.
+# index of the opinions and decisions. The user's decisions are taken afterwards, item by item in interactive sessions
+# (docs/resume-prompt-rebuttal.md), and recorded in each draft. Run by run_review.sh after the meta-review
+# (REBUTTAL=1), or alone. Knobs in config.sh; procedure in docs/reviews/review-prompt.md.
 #
 # Usage (from the repository root):
 #   TAG=2026-11-12-body docs/reviews/process/run_rebuttal.sh
 #   TAG=2026-11-12-body REBUTTAL_ITEMS="R2 R18" docs/reviews/process/run_rebuttal.sh   # only these items
 #   DRY_RUN=1 TAG=2026-11-12-body docs/reviews/process/run_rebuttal.sh                # show prompts only
+#   INDEX_ONLY=1 TAG=2026-11-12-body docs/reviews/process/run_rebuttal.sh             # only rewrite the index
 set -euo pipefail
 
 REPO="$(git -C "$(dirname "$0")" rev-parse --show-toplevel)"
@@ -18,7 +19,6 @@ source "$PROC/config.sh"
 
 OUT="$REPO/docs/reviews/$TAG"
 DRAFTS="$OUT/rebuttal"
-RECORD="$OUT/meta-rebuttal.md"
 COMMIT="$(git -C "$REPO" rev-parse --short HEAD)"
 
 if [[ ! -f "$OUT/meta-review.md" ]]; then
@@ -27,7 +27,7 @@ if [[ ! -f "$OUT/meta-review.md" ]]; then
 fi
 
 ################################################################################
-# The items: the register's order (§6 of the meta-review), minus what is drafted, decided or skipped
+# The items: the register's order (§6 of the meta-review), minus what is drafted or skipped
 ################################################################################
 
 register_items() {
@@ -36,14 +36,13 @@ register_items() {
 }
 
 items="${REBUTTAL_ITEMS:-$(register_items | tr '\n' ' ')}"
+if [[ "${INDEX_ONLY:-0}" == "1" ]]; then items=""; fi
 todo=()
 for item in $items; do
     if [[ " $REBUTTAL_SKIP " == *" $item "* ]]; then
         echo "$item: skipped (REBUTTAL_SKIP)"
     elif [[ -f "$DRAFTS/$item.md" ]]; then
         echo "$item: draft exists (rebuttal/$item.md); delete it to redraft"
-    elif [[ -f "$RECORD" ]] && grep -q "^## $item:" "$RECORD"; then
-        echo "$item: already decided in meta-rebuttal.md"
     else
         todo+=("$item")
     fi
@@ -92,24 +91,25 @@ wait || true
 if [[ "$DRY_RUN" == "1" ]]; then exit 0; fi
 
 ################################################################################
-# The index: each draft's opinion line, in the register's order
+# The index: each draft's opinion and decision lines, in the register's order
 ################################################################################
 
 {
     echo "# Rebuttal drafts of the $TAG review"
     echo
-    echo "Written by \`docs/reviews/process/run_rebuttal.sh\` (commit $COMMIT, $(date +%F)); regenerated on every run."
-    echo "One draft per register item, in the register's order. Drafts are Claude's analysis only: the user's"
-    echo "decisions are in \`../meta-rebuttal.md\` (procedure: \`docs/resume-prompt-rebuttal.md\`)."
+    echo "Written by \`docs/reviews/process/run_rebuttal.sh\` (commit $COMMIT, $(date +%F)); regenerated on every run"
+    echo "(\`INDEX_ONLY=1\` rewrites only this index). One draft per register item, in the register's order: Claude's"
+    echo "analysis and opinion, then the user's decision, added in the sessions of \`docs/resume-prompt-rebuttal.md\`."
     echo
-    echo "| Item | Draft's opinion |"
-    echo "|---|---|"
+    echo "| Item | Opinion | Decision |"
+    echo "|---|---|---|"
     for item in $(register_items); do
         if [[ -f "$DRAFTS/$item.md" ]]; then
             opinion="$(sed -n 's/^\*\*Opinion:\*\* *//p' "$DRAFTS/$item.md" | head -1)"
-            echo "| [$item]($item.md) | ${opinion:-(no opinion line)} |"
+            decision="$(sed -n 's/^\*\*Decision:\*\* *//p' "$DRAFTS/$item.md" | head -1)"
+            echo "| [$item]($item.md) | ${opinion:-(no opinion line)} | ${decision:-undecided} |"
         else
-            echo "| $item | no draft |"
+            echo "| $item | no draft | |"
         fi
     done
 } > "$DRAFTS/README.md"

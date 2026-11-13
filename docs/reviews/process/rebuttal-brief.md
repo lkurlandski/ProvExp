@@ -3,7 +3,7 @@
 You are drafting the authors' side of one item of a simulated program-committee review of this project's paper. Four
 independent reviewers reviewed the paper and a meta-reviewer checked their findings and ranked the risks in a
 register. You take **one risk, {{ITEM}}**, and write a careful, neutral analysis of it and an opinion on what, if
-anything, the authors should change. The authors decide later, one item at a time, in `{{OUT}}/meta-rebuttal.md`; your draft is what they start from.
+anything, the authors should change. The authors decide later, item by item, and add their decision to your draft; your draft is what they start from.
 
 Commit reviewed: {{COMMIT}}. Review folder: `{{OUT}}/`.
 

@@ -98,9 +98,10 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
 - **The other tables' monotone cells** (PLAN.md step 2b (v)): re-run on the `-loose` models now, or blue values until
   the scale-up (Claude recommends blue values).
 - **The extractor question** (PLAN.md step 2c): the user's call, before the scale-up's featurization.
-- **The review's rebuttal** (parallel to R7): the meta-rebuttal, one item per session, from
-  `docs/resume-prompt-rebuttal.md`; record `docs/reviews/2026-11-12-body/meta-rebuttal.md`. R21's §6 paragraph waits
-  for it.
+- **The review's rebuttal** (parallel to R7): `run_review.sh` drafts one rebuttal per register item
+  (`STEPS=rebuttal TAG=2026-11-12-body REBUTTAL_SKIP="R7 R1 R6 R17"`, the user runs it); then the user decides item by
+  item from `docs/resume-prompt-rebuttal.md`, recorded in `docs/reviews/2026-11-12-body/rebuttal/`. R21's §6 paragraph
+  waits for it.
 
 ## Scheduled (in order; PLAN.md, next steps)
 

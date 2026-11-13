@@ -81,7 +81,7 @@ Placeholders in the prompt files (`{{VENUE}}`, `{{SCALE}}`, `{{TAG}}`, `{{OUT}}`
    indexed with each draft's opinion in `rebuttal/README.md`; logs beside them. Rerun only the drafts with
    `STEPS=rebuttal TAG=<tag>`; an existing draft is kept (delete it to redraft).
 6. **Afterwards:** the user decides each item in a fresh session, most significant first, starting from its draft
-   (`docs/resume-prompt-rebuttal.md`); decisions and queued actions go to `docs/reviews/<TAG>/meta-rebuttal.md`. The
+   (`docs/resume-prompt-rebuttal.md`); each decision is added to its draft, and the index shows them. The
    output decides what the full-scale run includes.
 
 If a reviewer fails (no `review-<ID>.md`), rerun only it: `REVIEWERS=C STEPS=reviewers TAG=<same tag> ...`, then
