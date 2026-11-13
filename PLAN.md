@@ -362,7 +362,8 @@ records of the §5 reviews, the table remake and the ERDALT check, is in
    population share of attacked malware with its denominator, the files outside the population re-featurized with
    LIEF's overlay rule, and the unconstrained detector trained on the same store as the others.
    From the rebuttal (session 58, `docs/reviews/2026-11-12-body/rebuttal/triage.md`): **before the recount**, the
-   recorded Rich search range extended by the 4 key bytes past the marker (R2; a short code session of its own); at
+   recorded Rich search range extended by the 4 key bytes past the marker (R2; done in session 59, d806b84, no
+   direction changed); at
    the scale-up, MAB-Malware also at Zainab et al.'s setting (0.1% FPR, no byte cap) against the unconstrained
    detector (R1), and the ERDALT donor-overlap control (GAMMA imports with the training donors; R19). Waiting on: run
    143 (R7 track) and R18 (the trial competitor; decides whether iterated adversarial training joins).

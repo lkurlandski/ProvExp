@@ -98,10 +98,10 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
 - **The other tables' monotone cells** (PLAN.md step 2b (v)): re-run on the `-loose` models now, or blue values until
   the scale-up (Claude recommends blue values).
 - **The extractor question** (PLAN.md step 2c): the user's call, before the scale-up's featurization.
-- **The review's rebuttal** (parallel to R7): `run_review.sh` drafts one rebuttal per register item
-  (`STEPS=rebuttal TAG=2026-11-12-body REBUTTAL_SKIP="R7 R1 R6 R17"`, the user runs it); then the user decides item by
-  item from `docs/resume-prompt-rebuttal.md`, recorded in `docs/reviews/2026-11-12-body/rebuttal/`. R21's §6 paragraph
-  waits for it.
+- **The review's rebuttal** (parallel to R7): triage decided (session 58, `docs/reviews/2026-11-12-body/rebuttal/
+  triage.md`); trust (R2) and erdalt (R19) decided, R2's code fix done (session 59). Before the scale-up: R18, the
+  trial competitor (running in its own session, `docs/resume-prompt-R18.md`), then a last look. Text fixes (R2's
+  paragraph, R21's §6 paragraph and the rest) come after the scale-up.
 
 ## Scheduled (in order; PLAN.md, next steps)
 
@@ -121,8 +121,11 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
   4-byte key just past it, which can be the optional header's first four bytes; `RichHeader.items` now records them
   for files with pairs (pure addition; the empty case reads no key and is unchanged). Test `TestRichKey` (a synthetic
   file whose COFF header ends in "Rich") failed before the fix on the two linker-version bytes. As predicted, the pilot
-  direction tables (`--loose` and without) are byte-identical before and after. **Next:** erdalt/trial items, then the
-  last look before the scale-up.
+  direction tables (`--loose` and without) are byte-identical before and after. Side note: the stored
+  `a_directions_derived_sums_v2` no longer matches a fresh derivation without `--loose` (it lacks the `op_ent` column,
+  and 3 `op_ren` cells differ: max_entropy, max_size_ratio, overlay_entropy); the M_* rows are identical, and the
+  difference comes from the R7 commits of sessions 55-57, not this fix. Run 140's header claim "reproduces v2
+  exactly" was true when written. **Next:** R18 (own session), then the last look before the scale-up.
 - **2026-11-13 (session 58, rebuttal track): the triage table decided.** The four calibration items (R7, R1, R6, R17)
   match the earlier decisions; the triage leans slightly toward doing more than needed. Before the scale-up, in order:
   groups trust (R2) and erdalt (R19, split from baselines), then trial (R18), then a last look, then the scale-up;
