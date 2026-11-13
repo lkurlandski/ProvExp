@@ -991,14 +991,14 @@ def _init_worker(config: dict[str, Any], malware: Optional[list[tuple[str, bytes
               names=bucket_names(), boosters={})
 
 
-def _lost(task: tuple[str, str, float, list[tuple[int, int]], str, bytes]) -> None:
+def _lost(task: tuple[str, str, float, list[tuple[int, int]], str, bytes, float, bool]) -> None:
     """A task whose worker died: dropped from the results (map_watchdog logs it as LOST)."""
     return None
 
 
-def _attack_file(task: tuple[str, str, float, list[tuple[int, int]], str, bytes]) -> dict[str, Any]:
+def _attack_file(task: tuple[str, str, float, list[tuple[int, int]], str, bytes, float, bool]) -> dict[str, Any]:
     """Run the configured search on one detected file against one defense."""
-    defense, mdir, tau, targets, name, data = task
+    defense, mdir, tau, targets, name, data, p_orig, in_pop = task
     cfg, engine = _W["config"], _W["engine"]
     if mdir not in _W["boosters"]:
         _W["boosters"][mdir] = padded_booster(Path(mdir), engine.dim)
@@ -1019,7 +1019,8 @@ def _attack_file(task: tuple[str, str, float, list[tuple[int, int]], str, bytes]
                         draws=cfg["draws"], patience=cfg["patience"], checkpoints=cfg["checkpoints"])
     else:
         r = greedy_search(booster, engine, data, tau, make_menu, cfg["queries"], cfg["seed"], cap)
-    r.update(defense=defense, name=name, tau=tau, p_clean=p_clean, truncated=len(data) >= MAX_LENGTH,
+    r.update(defense=defense, name=name, tau=tau, p_clean=p_clean, p_orig=p_orig, in_population=in_pop,
+             evaded_by_escape=bool(p_clean <= tau), truncated=len(data) >= MAX_LENGTH,
              overrun_section=overrun, seconds=time.time() - t0)
     return r
 
@@ -1139,40 +1140,45 @@ def main() -> None:
     malware, goodware = load_pilot(args.pilot_files, args.db)
     if args.num_malware is not None:
         malware = malware[: args.num_malware]
+    # (name, the file the search starts from, the unescaped original). With an escape the start is the escaped file --
+    # the escape write is the attack's fixed first move, now an `ent` edit in the threat model -- and detection and
+    # evasion are counted from the unescaped original (detected original, undetected end file; R7, run 143).
+    attacks: list[tuple[str, bytes, bytes]] = []
     if args.escape != "none":
-        escaped = []
         for name, data in malware:
             try:
                 out = ESCAPES[args.escape](pefile.PE(data=data), len(data))
             except Exception:  # noqa: BLE001
                 out = None
             if out is not None and not catalogue.passes_precondition(extractor, out):
-                escaped.append((name, out))
-        print(f"Escape {args.escape}: {len(escaped)} of {len(malware)} malware written and out of the population.",
-              flush=True)
-        malware = escaped
-    print(f"Pilot: {len(malware)} malware, {len(goodware)} goodware donors; threat model {args.threat_model}.",
+                attacks.append((name, out, data))
+        print(f"Escape {args.escape}: {len(attacks)} of {len(malware)} malware written and out of the strict "
+              "population; detection and evasion counted from the unescaped originals.", flush=True)
+    else:
+        attacks = [(name, data, data) for name, data in malware]
+    print(f"Pilot: {len(attacks)} malware, {len(goodware)} goodware donors; threat model {args.threat_model}.",
           flush=True)
 
     config = {"ops": ops, "pilot_files": args.pilot_files, "db": args.db, "search": args.search,
               "queries": args.queries, "seed": args.seed, "budget_frac": args.budget_frac,
               "budget_min": args.budget_min, "beam": args.beam, "draws": args.draws, "patience": args.patience,
               "checkpoints": tuple(args.checkpoints), "score": args.score}
-    tasks: list[tuple[str, str, float, list[tuple[int, int]], str, bytes]] = []
+    tasks: list[tuple[str, str, float, list[tuple[int, int]], str, bytes, float, bool]] = []
     for d, mdir in defenses.items():
         booster = padded_booster(mdir, vector.dim)
         tau = _threshold(mdir / "ts_predictions.parquet", args.fpr)
-        Xp = (np.stack([vector.feature_vector(data) for _, data in malware])  # type: ignore[no-untyped-call]
+        Xp = (np.stack([vector.feature_vector(start) for _, start, _ in attacks])  # type: ignore[no-untyped-call]
               if isinstance(booster, ERDALTDetector) else None)
         targets = [(b, sign) for b in target_buckets(booster, extractor.feature_names, args.target_buckets, Xp)
                    for sign in (-1, 1)]
         detected = 0
-        for name, data in malware:
-            p_clean = float(booster.predict(vector.feature_vector(data).reshape(1, -1))[0])  # type: ignore[no-untyped-call]
-            if p_clean > tau:  # attack only what this defense detects
-                tasks.append((d, str(mdir), tau, targets, name, data))
+        for name, start, original in attacks:
+            p_orig = float(booster.predict(vector.feature_vector(original).reshape(1, -1))[0])  # type: ignore[no-untyped-call]
+            if p_orig > tau:  # attack only what this defense detects on the unescaped original
+                in_pop = catalogue.passes_precondition(extractor, original, loose=True)
+                tasks.append((d, str(mdir), tau, targets, name, start, p_orig, in_pop))
                 detected += 1
-        print(f"  {d}: tau={tau:.4f}, {detected} detected", flush=True)
+        print(f"  {d}: tau={tau:.4f}, {detected} detected (unescaped original)", flush=True)
 
     t0 = time.time()
     if args.num_workers > 1:
@@ -1211,6 +1217,13 @@ def main() -> None:
             "rate_truncated": _rate(r.filter(pl.col("truncated"))),
             "rate_untruncated": _rate(r.filter(~pl.col("truncated"))),
         }
+        if args.escape != "none" and detected:
+            # Detection and evasion count from the unescaped original (R7, run 143): how many detected originals the
+            # escape write alone already evaded, and how many detected originals were in the (loose) population.
+            report["defenses"][d]["evaded_by_escape"] = int(r["evaded_by_escape"].sum())
+            report["defenses"][d]["in_population"] = int(r["in_population"].sum())
+            out_pop = r.filter(~pl.col("in_population"))
+            report["defenses"][d]["evaded_outside_population"] = int(out_pop["evaded"].sum()) if out_pop.height else 0
         if args.search == "beam" and detected:
             report["defenses"][d]["evaded_at"] = {str(q): int(r[f"evaded_at_{q}"].sum()) for q in args.checkpoints}
             report["defenses"][d]["mismatches"] = int(r["mismatches"].sum())
