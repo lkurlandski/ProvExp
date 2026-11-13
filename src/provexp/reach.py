@@ -69,6 +69,7 @@ __all__ = [
     "predict_structural",
     "moved",
     "shift_ranges",
+    "splits",
     "Signs",
     "FIXED",
     "UP",
@@ -276,6 +277,14 @@ def shift_ranges(ranges: Sequence[Range], edit: ByteEdit, stretch: bool = False)
     return tuple(out)
 
 
+def splits(item: Item, edit: ByteEdit) -> bool:
+    """Whether an edit that moves elements splits one of the item's member ranges (its terms' or attributes' ranges)."""
+    if edit.shift == 0:
+        return False
+    ranges = [r for t in item.terms for r in t.ranges] + [r for units in item.attr_ranges.values() for unit in units for r in unit]
+    return any(not (a >= edit.hi or b <= edit.lo) for a, b in ranges)
+
+
 def moved(item: Item, edit: ByteEdit, old: bytes, keys: Optional[dict[int, npt.NDArray[np.integer]]] = None) -> Item:
     """
     An item moved by an edit that shifts the elements after it: its terms', attributes', and locating ranges follow
@@ -378,6 +387,13 @@ def predict_structural(table: ItemTable, old: bytes, edits: Sequence[ByteEdit], 
                 item.group = item.group or group
             recognized |= {id(item) for item in r}
             joined += a
+        if shifts:
+            # An insertion or deletion inside an item's members that no recognizer re-read changes the item in a way
+            # the engine cannot state (a kept certificate table stretched across the insertion point, R7): decline.
+            split = [item for _, item, _ in current if id(item) not in recognized and splits(item, edit)]
+            if split:
+                kinds = sorted({f"{i.group}:{i.kind}" for i in split})
+                return Prediction(final, None, flagged=split, reason=f"structural: an edit splits the members of items {kinds}")
         keys: dict[int, npt.NDArray[np.integer]] = {}
         nxt: list[tuple[Optional[Item], Item, bool]] = []
         for orig, item, k in current:

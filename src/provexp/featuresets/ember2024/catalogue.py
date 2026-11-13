@@ -50,6 +50,7 @@ from provexp.reach import moved
 from provexp.reach import predict_declared
 from provexp.reach import predict_structural
 from provexp.reach import region_changes
+from provexp.reach import splits
 
 __all__ = [
     "add_section",
@@ -828,7 +829,9 @@ def _declare_section(extractor: PEFeatureExtractor, table: ItemTable, z: bytes, 
         added += _tagged([section._file_item(len(new), i.locating) for i in file_items], "section")
     certificates = [i for i in table.of_group("authenticode") if i.kind == "certificate_table"]
     if insertion is not None and written.layout["shift"]:
-        # The certificate table moves with its bytes (its offset is rewritten; it is otherwise the same table).
+        # The certificate table moves with its bytes (its offset is rewritten; it is otherwise the same table). One the
+        # insertion splits (its extent runs across the overlay's start, R7) is left to the engine, which declines.
+        certificates = [i for i in certificates if not splits(i, insertion)]
         removed += certificates
         added += _move(extractor, certificates, insertion, z)
     aoep = pe.OPTIONAL_HEADER.AddressOfEntryPoint
@@ -900,6 +903,8 @@ def predict_insert_gap(extractor: PEFeatureExtractor, table: ItemTable, z: bytes
         return None
     insertion = written.edits[0]
     moving = [i for i in table.of_group("section") if i.kind == "section"] + [i for i in table.of_group("authenticode") if i.kind == "certificate_table"]
+    # NOTE: an item the gap splits is left to the engine, which declines (as in `_declare_section`).
+    moving = [i for i in moving if not splits(i, insertion)]
     removed, added = moving, _move(extractor, moving, insertion, z)
     excluded: list[Item] = []
     if pe.RICH_HEADER is None:
