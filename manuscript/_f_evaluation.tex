@@ -58,7 +58,7 @@ stated otherwise, computes each candidate's features by Proposition~\ref{prop:fw
 them, and scores up to 5,000 candidates per file (Appendix~\ref{sec:ember}). Last, we run MAB-Malware~\cite{song2022mab},
 the published attack that evades a detector on EMBER~2024's features most often~\cite{zainab2026breaking}, and the
 only one we know of that renames sections. It is black-box as well: a multi-armed bandit learns, across the files it
-attacks, which of seven actions and which benign content lead to evasion, applies up to 60 actions to each file, and
+attacks, which of its actions and which benign content lead to evasion, applies up to 60 actions to each file, and
 then strips an evasive file down to the actions it needs. We run the authors' code with the same benign files as the
 source of added content, without its code-randomization action, which needs a disassembler and lies outside our
 threat model (\Cref{sec:instances:catalogue}). A detector counts as evaded on a file when any of these attacks evades
@@ -168,7 +168,7 @@ malware's source code, and report that none of the eight toolkit attacks evades 
 instrumented their extractor and derived its table: under the full threat model, 11 of the 40 features can be lowered,
 by renaming a section or by rewriting the DOS stub, edits that need no source code. On the 8 malware the expert-set
 detector detects, the toolkit attacks evade it on none in our runs as well, but the adaptive attack, using those two
-operations, evades it on 2.
+operations, evades it on 2, and MAB-Malware, by renaming sections, on 4.
 
 \paragraph{Severi et al.'s hashed features}
 A hand analysis can also err on the cautious side. Severi et al.~\cite{severi2021explanation} needed features an
