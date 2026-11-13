@@ -5,7 +5,7 @@ it ("A parallel track", further down). The user says which one a session takes; 
 does not edit the other's passages or files, commits only the files it changed (`git add <paths>`), and, when it
 rewrites this prompt at its end, keeps the other track's section, updated only where its own work changed something.
 
-Written at the end of session 53 (2026-11-13). Self-contained: everything needed to start is below or in the files it
+Written at the end of session 53 (2026-11-13); the parallel track's section rewritten in session 54. Self-contained: everything needed to start is below or in the files it
 names.
 
 ## The project in brief
@@ -83,21 +83,33 @@ showing why (b1060e8). Rejected by the user: the universality/locality "gap" (it
 stays well-defined at its limit, a strength; a deeper look at how item size and locality matter is welcome as an idea,
 not as a fix). Dropped: Appendix D's minima sentence. How to handle framework gaps: memory `elegant-framework-fixes`.
 
-**Next on this track:** recommend one item and get approval before editing. Recommended: **§6, the meta-review's writing
-action 4 (R21 and R6's leftovers)**, all in `manuscript/_g_related_work.tex`:
-- a paragraph on certified malware defenses: bounded byte edits or a feature-space radius (RS-Del, DRSM, Gibert et al.,
-  Giri et al.) against our unbounded but typed edits (`papers/saha2024drsm.pdf`; `gibert2025assessing` in `main.bib`;
-  RS-Del and Giri et al. to find and read, entries from real records);
-- Kantchelian et al. and Calzavara et al. as verification of the *model*, not the extractor (`kantchelian2016evasion`
-  in `main.bib`, uncited);
-- problem-space adversarial training: Lucas et al. 2023 and 2024 (`lucas2024training` uncited), Tsingenopoulos et al.
-  (`papers/tsingenopoulos2024train.pdf`, not in `main.bib`);
-- cite Cortellazzi et al. (`cortellazzi2025intriguing`, uncited).
+**Session 54 (parallel track): no edits; the next session triages the meta-review.** Asked for directions orthogonal
+to R7, Claude relayed reviewer C's R18 ("the learned defenses get less information, so the outcome is built in") as a
+flaw. The user pointed out that failing on unseen edits *is* §5.3's finding, and then said they no longer trust
+Claude's reading of the meta-review: many reviewer comments are misguided or flat out wrong, and Claude cannot tell
+them from real limitations. Cause: Claude leans toward accepting criticism, and the meta-review is the same model with
+the same lean; its "correct" verdicts mostly confirm that a quote is accurate, not that the objection matters. Memory
+`distrust-simulated-reviews`.
 
-Claims about cited work checked against `papers/` in the authors' terms; `paper-prose` skill, small blocks. Later
-candidates: §5.3's writing action 6 (budget attributed to Gimenez et al.'s *released code*; R12's counts without the
-88 warnings; R19's ERDALT constraint check) and §5.2's action 7. §2 is settled (R5 needs the user's go-ahead); R2's
-trust paragraph sits in §4.3.2 next to R7's text, so ask first.
+**Next on this track (the user's request): triage the meta-review, item by item, with the user judging.** Source:
+`docs/reviews/2026-11-12-body/meta-review.md` (register in §6; per-finding verdicts in §3; the reviews themselves in
+`reviewer-{A,B,C,D}.md`). Already triaged, skip: R7 (decision 11), R1 (decision 12), R6 (session 50), R17 (session
+53b). To triage: R2, R3, R4, R5, R8, R9, R11, R12, R13, R14, R15, R16, R18, R19, R20, R21, plus the meta-review's §5
+items ("what the reviewers missed") not covered by these. Procedure, per item, in batches of four to six:
+- **The claim attacked:** the sentence of the `.tex` the criticism targets, quoted (or "no claim of ours": then the
+  item is likely about scope).
+- **The criticism:** the reviewer's own words, quoted, with the finding ID; check every factual premise against the
+  manuscript, the code, stored outputs or `papers/` (the meta-review's checks are not evidence).
+- **The strongest rebuttal**, written as the authors' advocate; settled points (PLAN.md, the review's checklist) count.
+- No recommendation, no proposed work. The user marks each: **wrong** (drop), **outside the claim** (nothing, or one
+  sentence), or **real** (needs work). Only after the verdict: for "real" items, the smallest fix, one recommendation.
+
+Record the verdicts with the user's one-line reasons in a new `docs/reviews/2026-11-12-body/triage.md` (also the R7,
+R1, R6, R17 outcomes, one line each, pointing to their records), and index it in `docs/reviews/README.md`. Watch for
+the R18 pattern: a criticism that attacks a claim the paper does not make, or that restates the finding as a flaw.
+Session 54's sketch of orthogonal directions (R18's trial table, R12's recount without the 88 warnings, R19's ERDALT
+checks, R2's multi-byte probe) is **not** an input: it was written before the user's verdicts and is to be rebuilt
+from them. The earlier recommendation (§6, R21) waits for the triage too.
 
 **R7 owns (this track leaves alone):** §4.3.1 and Table 2, §4.4, §5.1's setup and routing, §5.4, Table 5, Appendix
 D's population and routing text, and `catalogue.py`, `a_directions.py`, `a1_adaptive.py`, `catalogue_checks.py`.

@@ -59,6 +59,7 @@ or when changing an experiment. Run scripts are in `run/` (one per step, numbere
 |---|---|
 | `docs/archive/status-log-2026-11-12.md` | the session log, sessions 41-42 (search, don't read) |
 | `docs/archive/status-log-2026-11-10-to-11.md` | the session log, sessions 29-39 (search, don't read) |
+| `docs/archive/resume-prompt-2026-11-13-s53.md` | the resume prompt of session 54 (written in session 53): R7's widening (step 2b) and, in parallel, §6 (R21); session 54 replaced the parallel track's next step with the meta-review's triage |
 | `docs/archive/resume-prompt-2026-11-12-s52.md` | the resume prompt of session 53 (written in session 52): step 2 of run 138 and option 5's final form, otherwise R17 (run 138 read, widening chosen and costed in session 53) |
 | `docs/archive/resume-prompt-2026-11-12-s51.md` | the resume prompt of session 52 (written in session 51): run 138 for R7, or the next weakness; three small §5 fixes (applied in session 52; step 1 of run 138 read) |
 | `docs/archive/resume-prompt-2026-11-12-s50.md` | the resume prompt of session 51 (written in session 50): runs 138 and 139, or a new weakness (run 139 read and written in during session 51) |

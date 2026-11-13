@@ -85,8 +85,9 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
 ## Waiting on the user
 
 - Nothing running. **Next session:** `docs/resume-prompt.md` (PLAN.md step 2b: R7's widening, closure check first).
-- **Orthogonal track** (sessions parallel to R7; R17 done in session 53b): its section
-  of `docs/resume-prompt.md` (R21's certified-defense paragraph and missing citations in §6, recommended).
+- **Orthogonal track** (sessions parallel to R7; R17 done in session 53b): the meta-review's triage, item by item,
+  with the user judging each criticism (wrong / outside the claim / real); procedure in its section of
+  `docs/resume-prompt.md`. R21's §6 paragraph waits for it.
 
 ## Scheduled (in order; PLAN.md, next steps)
 
@@ -101,6 +102,14 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
 7. Introduction, discussion, abstract last.
 
 ## Session log
+
+- **2026-11-13 (session 54, parallel track): no edits; the meta-review's triage set up.** Asked for directions
+  orthogonal to R7, Claude listed R18, R12, R19, R2 and others from the register, relaying reviewer C's "the learned
+  defenses get less information, so the outcome is built in" as a flaw; the user pointed out that failing on unseen
+  edits is §5.3's finding, and said they no longer trust Claude's reading of the meta-review (many comments misguided
+  or wrong). Agreed: a dedicated session triages every untriaged register item, Claude quoting our claim, the
+  criticism and the strongest rebuttal, the user giving the verdict; recorded in
+  `docs/reviews/2026-11-12-body/triage.md`. Memory `distrust-simulated-reviews`. **Next (parallel track):** the triage.
 
 - **2026-11-13 (session 53b, parallel to session 53's R7 work): R17 applied.** Reviewer A's W1/W3 triaged with the
   user: the universality/locality "gap" rejected (items are hierarchical; well-defined at the limit is a strength; a
