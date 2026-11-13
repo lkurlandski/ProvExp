@@ -4,11 +4,15 @@ This prompt starts each rebuttal session. The current review is **`TAG=2026-11-1
 `docs/reviews/2026-11-12-body/`, the rebuttal files are in its `rebuttal/`. Four register items were decided before
 the rebuttal: R7 (PLAN.md decision 11, the R7 track; it also has a full draft, `rebuttal/R7.md`, from the first design),
 R1 (session 49, MAB-Malware), R6 (session 50, known techniques credited), R17 (session 53b, the ratio rule and ordered
-monoids). This prompt stays fixed between sessions; `rebuttal/triage.md`'s Decision column says where the pass stands.
+monoids). They go through the triage like every other item, on purpose (user, 2026-11-13): the triage judges them on
+their merits and ends each entry with an `**Earlier decision:**` line saying whether it agrees. That checks those
+decisions and calibrates the agents: where the triage agrees with a decision the user took with full context, its
+other verdicts earn some trust; where it differs, the reason shows which way it leans. This prompt stays fixed between
+sessions; `rebuttal/triage.md`'s Decision column says where the pass stands.
 
 **If `rebuttal/triage.md` does not exist yet**, the user runs the triage first (one agent, about the token cost of one
 of the first design's drafts):
-`TAG=2026-11-12-body REBUTTAL_SKIP="R7 R1 R6 R17" docs/reviews/process/run_rebuttal.sh`.
+`TAG=2026-11-12-body docs/reviews/process/run_rebuttal.sh`.
 
 ## The project in brief
 
@@ -48,7 +52,11 @@ problem, an "investigate" may be pedantry.
 
 **On the triage table** (the first session or two). Go down the table in the register's order (most significant
 first). Per item, present the verdict and its reason plainly in a few sentences (memory `explain-plainly`), with your
-own view where you disagree with the triage. Spend almost nothing on *decided* items. For a *dismiss* or *cheap fix*
+own view where you disagree with the triage. **Start with R7, R1, R6 and R17**, the calibration items: for each, set the triage's verdict beside the earlier
+decision, and where they differ, say whether the triage's reason holds (it may have found something, or it may show
+the lean toward accepting criticism). The user confirms or revisits each decision; then summarise in two or three
+sentences what the four comparisons say about how far to trust the rest of the table, and go on in the register's
+order. For a *dismiss* or *cheap fix*
 you doubt, a quick look at the `.tex` is fine; do not open code or outputs to re-check the meta-review's facts. Ask
 for the decision; several clear items may be decided in one question. Record each in the table's Decision column:
 `methodology`, `argument`, `no change`, or `investigate`, with a few words of the user's reason; append any action to

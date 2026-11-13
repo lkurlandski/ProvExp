@@ -27,7 +27,7 @@ on.
 ## The verdicts
 
 For each register item, one of:
-- **decided**: decided before this run (the list above, or a PLAN.md decision that answers it). Name the decision.
+- **decided**: only for the items listed above as decided before this run. Name the decision.
 - **dismiss**: the criticism restates one of our findings as a flaw, attacks a claim the paper does not make, reopens a
   settled decision (name it and its reason; do not argue for reopening it), or asks for something no reader at the
   venue would miss. Give the one-paragraph answer the authors would write in a rebuttal.
@@ -41,6 +41,13 @@ Before each verdict, answer for yourself: *Would I propose this if no reviewer h
 restate one of our findings, or attack a claim we do not make?* How many reviewers raised it counts: one reviewer's
 objection weighs differently from four. Equally, do not dismiss a real problem because rebutting it is comfortable; a
 risk the meta-review rates fatal or major needs a stated reason to be dismissed.
+
+**Earlier decisions on an item.** PLAN.md may record a decision the authors took on an item in
+response to this review (it names the item or the review, or dates from after it). Do not let it decide your verdict:
+judge the item on its merits as if undecided, then end its entry with a line `**Earlier decision:** <what was
+decided, where recorded>; <agrees | differs>: <why, one sentence>`. These comparisons calibrate the triage, so a
+plain disagreement is more useful than a reconciliation. Decisions that predate the review (scope, threat model,
+settled points in `checklist.md`) remain settled and count as described under *dismiss*.
 
 A register row often bundles several objections. Judge the row by its parts: a row may be "dismiss" except for one
 cheap fix; say so in the reason.
