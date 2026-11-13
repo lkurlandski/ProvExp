@@ -85,8 +85,8 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
 ## Waiting on the user
 
 - Nothing running. **Next session:** `docs/resume-prompt.md` (PLAN.md step 2b: R7's widening, closure check first).
-- **Orthogonal track** (sessions parallel to R7; R17 done in session 53b): next session
-  `docs/resume-prompt-orthogonal.md` (R21's certified-defense paragraph and missing citations in §6, recommended).
+- **Orthogonal track** (sessions parallel to R7; R17 done in session 53b): its section
+  of `docs/resume-prompt.md` (R21's certified-defense paragraph and missing citations in §6, recommended).
 
 ## Scheduled (in order; PLAN.md, next steps)
 
@@ -108,8 +108,8 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
   Applied: the ratio rule needs only a = 0 whenever b = 0 (weaker than b > 0, which failed on EMBER's files without
   strings; Table 1, Appendix C's zero cases, one sentence in Appendix D; 11ff54d); Theorem 1 holds for sums in
   *totally ordered* monoids (Fuchs 1963, new bib entry), with the −3 product example in §3.3 showing why (b1060e8).
-  §3 +95 words. Memory `elegant-framework-fixes`; reactions in `docs/writing-spec.md`. **Next (orthogonal):**
-  `docs/resume-prompt-orthogonal.md`.
+  §3 +95 words. Memory `elegant-framework-fixes`; reactions in `docs/writing-spec.md`. **Next (orthogonal):** the
+  parallel track's section of `docs/resume-prompt.md`.
 
 - **2026-11-13 (session 53): run 138 read; R7's widening chosen and costed.** Step 2 (SizeOfImage) held: monotone
   0/40 and 0/41, no silent no-ops (every search ran 2,000 candidates; unconstrained 35/47). An end-to-end check from

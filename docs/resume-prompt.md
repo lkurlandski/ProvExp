@@ -1,4 +1,9 @@
-# Resume: complete R7's widening (closure check, `ent` in the attacks, run 141, then the paper)
+# Resume: complete R7's widening (closure check, `ent` in the attacks, run 141, then the paper); in parallel, §6 (R21)
+
+**Two lines of work share this prompt.** The R7 track (below, through "The task") and a parallel track orthogonal to
+it ("A parallel track", further down). The user says which one a session takes; if unsaid, ask. A session on one track
+does not edit the other's passages or files, commits only the files it changed (`git add <paths>`), and, when it
+rewrites this prompt at its end, keeps the other track's section, updated only where its own work changed something.
 
 Written at the end of session 53 (2026-11-13). Self-contained: everything needed to start is below or in the files it
 names.
@@ -69,6 +74,34 @@ next step 2b). The R7 record: `docs/evidence/r7-population-escape.md` (§7 from 
    tables' monotone cells (toolkit attacks, MAB-Malware) need reruns or blue values with `% SYNTHETIC` comments;
    decide with the user which, and list what the scale-up must redo.
 
+## A parallel track (orthogonal to R7)
+
+**Done in session 53b (parallel to session 53): R17** (Reviewer A, W1 and W3). The ratio rule needs only *a = 0
+whenever b = 0*, weaker than the old *b > 0*, which EMBER's files without strings violated (Table 1, Appendix C,
+Appendix D; 11ff54d). Theorem 1 holds for sums in *totally ordered* monoids (Fuchs 1963), with §3.3's −3 example
+showing why (b1060e8). Rejected by the user: the universality/locality "gap" (items are hierarchical, so the framework
+stays well-defined at its limit, a strength; a deeper look at how item size and locality matter is welcome as an idea,
+not as a fix). Dropped: Appendix D's minima sentence. How to handle framework gaps: memory `elegant-framework-fixes`.
+
+**Next on this track:** recommend one item and get approval before editing. Recommended: **§6, the meta-review's writing
+action 4 (R21 and R6's leftovers)**, all in `manuscript/_g_related_work.tex`:
+- a paragraph on certified malware defenses: bounded byte edits or a feature-space radius (RS-Del, DRSM, Gibert et al.,
+  Giri et al.) against our unbounded but typed edits (`papers/saha2024drsm.pdf`; `gibert2025assessing` in `main.bib`;
+  RS-Del and Giri et al. to find and read, entries from real records);
+- Kantchelian et al. and Calzavara et al. as verification of the *model*, not the extractor (`kantchelian2016evasion`
+  in `main.bib`, uncited);
+- problem-space adversarial training: Lucas et al. 2023 and 2024 (`lucas2024training` uncited), Tsingenopoulos et al.
+  (`papers/tsingenopoulos2024train.pdf`, not in `main.bib`);
+- cite Cortellazzi et al. (`cortellazzi2025intriguing`, uncited).
+
+Claims about cited work checked against `papers/` in the authors' terms; `paper-prose` skill, small blocks. Later
+candidates: §5.3's writing action 6 (budget attributed to Gimenez et al.'s *released code*; R12's counts without the
+88 warnings; R19's ERDALT constraint check) and §5.2's action 7. §2 is settled (R5 needs the user's go-ahead); R2's
+trust paragraph sits in §4.3.2 next to R7's text, so ask first.
+
+**R7 owns (this track leaves alone):** §4.3.1 and Table 2, §4.4, §5.1's setup and routing, §5.4, Table 5, Appendix
+D's population and routing text, and `catalogue.py`, `a_directions.py`, `a1_adaptive.py`, `catalogue_checks.py`.
+
 ## Constraints and settled points
 
 - Explain plainly; one recommendation, not a menu. State a hypothesis before any run; report a failed check as such.
@@ -82,5 +115,6 @@ next step 2b). The R7 record: `docs/evidence/r7-population-escape.md` (§7 from 
   (`OMP_NUM_THREADS=2 nice -n 10 env/bin/pytest -q -p no:xdist tests/test_ember2024_catalogue.py`, ~2 min) after
   touching `catalogue.py`; after manuscript edits, `make` and `make check` in `manuscript/`. Commit to `main` in
   logical pieces; do not push.
-- At the end of the session: update `docs/status.md`, PLAN.md and the R7 record; write the next resume prompt (archive
+- At the end of the session: update `docs/status.md` (its own log entry), PLAN.md and, on the R7 track, the R7 record;
+  write the next resume prompt, keeping the other track's section (archive
   this one under `docs/archive/` and index it in `docs/README.md`).
