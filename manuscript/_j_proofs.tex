@@ -98,14 +98,18 @@ a letter.
 Suppose every sum $k$ that a feature reads changes with a sign in $d_k$. The identity passes the sign through. A
 nondecreasing function $g(s_k)$, such as a presence bit $[s_k > 0]$, rises only if $s_k$ rises and falls only if
 $s_k$ falls, so its change has a sign in $d_k$. A distinct count is a total of presence bits, so its change has a
-sign in the union of their directions. For a ratio $a/b$ with $a \ge 0$ and $b > 0$ before and after, write
-$a' = a + \alpha$ and $b' = b + \beta$; then
+sign in the union of their directions. For a ratio $a/b$, with $a \ge 0$ and $a = 0$ whenever $b = 0$, suppose
+first that $b > 0$ before and after, and write $a' = a + \alpha$ and $b' = b + \beta$; then
 \[
   \frac{a'}{b'} - \frac{a}{b} = \frac{\alpha\, b - a\, \beta}{b\, b'}.
 \]
 The denominator is positive, $\alpha b$ has the sign of $\alpha$, which lies in $d_a$, and $-a\beta$ is $0$ if
 $a = 0$ and otherwise has the sign of $-\beta$, which lies in $-d_b$; both directions contain $0$, so the change has a
-sign in $d_a \cup (-d_b)$. A normalized bin is the ratio of a bin to the histogram's total. The last rule follows from
+sign in $d_a \cup (-d_b)$. If $b' = 0$, then $a' = 0$ and the ratio becomes 0; it falls only if it was positive,
+and then $a > 0 = a'$, so $d_a$ contains the fall. If $b = 0$, then $a = 0$ and the ratio was 0; it rises only if
+$a' > 0 = a$, and then $d_a$ contains the rise. A normalized bin is the ratio of a bin to the histogram's total, and
+the total is 0 only when every bin is.
+The last rule follows from
 Definition~\ref{def:fw:readout}: if every sum in $K_j$ is fixed, $\rho_j$ reads the same values before and after the
 edit, and otherwise $\mathsf{both}$ allows every sign.
 

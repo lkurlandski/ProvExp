@@ -377,7 +377,7 @@ that key is added, falls when one is removed, and stays when an item is replaced
 \begin{table}[t]
   \caption{Direction rules of the readout forms of \Cref{sec:fw:model}: the direction of a feature from the
   directions $d$ of the sums it reads. A presence bit $[s_k > 0]$ is monotone.
-  The ratio requires $a \ge 0$, and $b > 0$ before and after the edit.}
+  A ratio reads 0 when $b = 0$; it requires $a \ge 0$, and $a = 0$ whenever $b = 0$.}
   \label{tab:fw:readouts}
   \small
   \begin{tabular}{@{}llc@{}}
@@ -387,7 +387,7 @@ that key is added, falls when one is removed, and stays when an item is replaced
     identity & $s_k$ & $d_k$ \\
     monotone & $g(s_k)$, $g$ nondecreasing & $d_k$ \\
     distinct count & $\#\{q : s_q > 0\}$ & $\bigcup_q d_q$ \\
-    ratio & $a / b$ & $d_a \cup (-d_b)$ \\
+    ratio & $a / b$, or 0 if $b = 0$ & $d_a \cup (-d_b)$ \\
     normalized bin & bin / total & as the ratio \\
     any other & a function of $s_{K_j}$ & $\mathsf{fixed}$ if every $d_k$ is, else $\mathsf{both}$ \\
     \bottomrule

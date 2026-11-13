@@ -16,8 +16,10 @@ which contains the program's entry point.
 \paragraph{Readouts.} \Cref{tab:ember:readouts} lists the features that EMBER reads through each form of
 \Cref{tab:fw:readouts}. The monotone readouts are the presence of exports; the pools, which EMBER reads as 0 for a file
 without sections; and single values that default to 0 when a file lacks the item, such as whether it has
-relocations. EMBER computes two features in a way that the sum-then-readout form does not allow as written, and we
-write them over sums without changing their values. EMBER divides each section's size by the file's size as it visits
+relocations. Each ratio divides by a total that counts its numerator's items, the strings or the file's bytes, so the
+denominator is 0 only when the numerator is, as \Cref{tab:fw:readouts} requires. EMBER computes two features in a way
+that the sum-then-readout form does not allow as written, and we write them over sums
+without changing their values. EMBER divides each section's size by the file's size as it visits
 the section, which would make the section's contribution depend on the rest of the file; we let the section
 contribute its raw size and divide in the readout, where the file's size is a sum of its own. EMBER also keeps the
 libraries as a set, so that a second import from a library already present adds nothing; we keep a count per library,
