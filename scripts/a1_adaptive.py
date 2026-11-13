@@ -633,7 +633,7 @@ def _ent_clone_candidate(engine: Engine, cert: bytes) -> Candidate:
         edits = [ByteEdit(len(z), len(z), appended), entry_write(pe, SECURITY_ENTRY, len(z) + pad, len(cert))]
         return engine.inplace(z, edits)
 
-    return ("ent", len(cert), thunk)
+    return ("ent", len(cert) + 7, thunk)  # the bound covers the alignment padding (at most 7 bytes)
 
 
 def _hdr_candidate(engine: Engine, values: dict[str, int]) -> Candidate:
@@ -991,14 +991,14 @@ def _init_worker(config: dict[str, Any], malware: Optional[list[tuple[str, bytes
               names=bucket_names(), boosters={})
 
 
-def _lost(task: tuple[str, str, float, list[tuple[int, int]], str, bytes, float, bool]) -> None:
+def _lost(task: tuple[str, str, float, list[tuple[int, int]], str, bytes, float, bool, bool]) -> None:
     """A task whose worker died: dropped from the results (map_watchdog logs it as LOST)."""
     return None
 
 
-def _attack_file(task: tuple[str, str, float, list[tuple[int, int]], str, bytes, float, bool]) -> dict[str, Any]:
+def _attack_file(task: tuple[str, str, float, list[tuple[int, int]], str, bytes, float, bool, bool]) -> dict[str, Any]:
     """Run the configured search on one detected file against one defense."""
-    defense, mdir, tau, targets, name, data, p_orig, in_pop = task
+    defense, mdir, tau, targets, name, data, p_orig, in_pop, start_in_pop = task
     cfg, engine = _W["config"], _W["engine"]
     if mdir not in _W["boosters"]:
         _W["boosters"][mdir] = padded_booster(Path(mdir), engine.dim)
@@ -1020,7 +1020,7 @@ def _attack_file(task: tuple[str, str, float, list[tuple[int, int]], str, bytes,
     else:
         r = greedy_search(booster, engine, data, tau, make_menu, cfg["queries"], cfg["seed"], cap)
     r.update(defense=defense, name=name, tau=tau, p_clean=p_clean, p_orig=p_orig, in_population=in_pop,
-             evaded_by_escape=bool(p_clean <= tau), truncated=len(data) >= MAX_LENGTH,
+             start_in_population=start_in_pop, evaded_by_escape=bool(p_clean <= tau), truncated=len(data) >= MAX_LENGTH,
              overrun_section=overrun, seconds=time.time() - t0)
     return r
 
@@ -1163,7 +1163,7 @@ def main() -> None:
               "queries": args.queries, "seed": args.seed, "budget_frac": args.budget_frac,
               "budget_min": args.budget_min, "beam": args.beam, "draws": args.draws, "patience": args.patience,
               "checkpoints": tuple(args.checkpoints), "score": args.score}
-    tasks: list[tuple[str, str, float, list[tuple[int, int]], str, bytes, float, bool]] = []
+    tasks: list[tuple[str, str, float, list[tuple[int, int]], str, bytes, float, bool, bool]] = []
     for d, mdir in defenses.items():
         booster = padded_booster(mdir, vector.dim)
         tau = _threshold(mdir / "ts_predictions.parquet", args.fpr)
@@ -1175,8 +1175,13 @@ def main() -> None:
         for name, start, original in attacks:
             p_orig = float(booster.predict(vector.feature_vector(original).reshape(1, -1))[0])  # type: ignore[no-untyped-call]
             if p_orig > tau:  # attack only what this defense detects on the unescaped original
+                # The guarantee covers a search only if the original and the file it starts from are both in the
+                # (loose) population: an `ent` escape keeps an original in it (run 142's closure check), SizeOfImage
+                # raised alone (image_size, not an operation of M_full) takes it out.
                 in_pop = catalogue.passes_precondition(extractor, original, loose=True)
-                tasks.append((d, str(mdir), tau, targets, name, start, p_orig, in_pop))
+                start_in_pop = in_pop if start is original else catalogue.passes_precondition(extractor, start,
+                                                                                              loose=True)
+                tasks.append((d, str(mdir), tau, targets, name, start, p_orig, in_pop, start_in_pop))
                 detected += 1
         print(f"  {d}: tau={tau:.4f}, {detected} detected (unescaped original)", flush=True)
 
@@ -1219,10 +1224,13 @@ def main() -> None:
         }
         if args.escape != "none" and detected:
             # Detection and evasion count from the unescaped original (R7, run 143): how many detected originals the
-            # escape write alone already evaded, and how many detected originals were in the (loose) population.
+            # escape write alone already evaded, how many detected originals were in the (loose) population, how many
+            # escaped files the search started from were, and the evasions the guarantee does not cover (original or
+            # start outside the population).
             report["defenses"][d]["evaded_by_escape"] = int(r["evaded_by_escape"].sum())
             report["defenses"][d]["in_population"] = int(r["in_population"].sum())
-            out_pop = r.filter(~pl.col("in_population"))
+            report["defenses"][d]["start_in_population"] = int(r["start_in_population"].sum())
+            out_pop = r.filter(~(pl.col("in_population") & pl.col("start_in_population")))
             report["defenses"][d]["evaded_outside_population"] = int(out_pop["evaded"].sum()) if out_pop.height else 0
         if args.search == "beam" and detected:
             report["defenses"][d]["evaded_at"] = {str(q): int(r[f"evaded_at_{q}"].sum()) for q in args.checkpoints}

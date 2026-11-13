@@ -18,15 +18,20 @@
 #   mfull-sums     seed-0-s10-mfull-sums-loose  (the monotone detector on the sums, widened population)
 #
 # Hypothesis (fixed before the run): no detected original is evaded by either monotone `-loose` detector, by any of the
-# three escape writes (evaded 0, min_delta_logit 0, evaded_by_escape 0), since every escape write is now a threat-model
-# edit and the detector is sound on the widened population the escaped files lie in. The unconstrained detector ~40-60%,
+# three escape writes (evaded 0, min_delta_logit 0, evaded_by_escape 0). For cert_entry and debug_entry this is the
+# guarantee: the write is an `ent` edit, and the escaped file stays in the widened population (39/39 pilot originals in
+# it, checked in session 57). image_size is NOT covered: raising SizeOfImage alone is not an operation of M_full and
+# takes every escaped file out of the population (start_in_population 0); there 0 is expected from run 138 step 2 (the
+# write raises only a feature held "can only rise"), not from the guarantee. The unconstrained detector ~40-60%,
 # as on the population (run 138: 40/48, 35/47). Reference points: run 138 (certificate 1/41 and 1/43, SizeOfImage 0/40
 # and 0/41, from the escaped files, before the widening; the debug write untested there but evading 3/40 and 4/41 end to
 # end). Smoke (Claude, 6 files, debug_entry, 60 queries): unconstrained 3/5, mfull-sums 0/5 (+0.0000, 0 by escape).
 #
 # Reading (next R7 session): into this header, docs/evidence/r7-population-escape.md §7 and its log, PLAN.md step 2b
-# (iii), docs/status.md. Expect the monotone columns at or near 0; a non-zero one is read against in_population and
-# evaded_by_escape (a miss on a file outside the loose population is not a guarantee violation; report it either way).
+# (iii), docs/status.md. Expect the monotone columns at or near 0; a non-zero one is read against in_population (the
+# original), start_in_population (the escaped file the search starts from) and evaded_by_escape. The guarantee covers a
+# search only when both are in the loose population; evaded_outside_population counts the evasions it does not cover
+# (not a guarantee violation; report them either way).
 #
 # Resources: one search per (detector, file), NUM_WORKERS processes (spawn; ~1 GB each). Real extraction costs ~0.6 s
 # per candidate, so a file the search does not evade takes ~20 min at 2,000 candidates; ~3 escapes x ~130 (detector,
