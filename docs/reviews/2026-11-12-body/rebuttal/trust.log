@@ -1,0 +1,13 @@
+I wrote the trust draft (R2) to `docs/reviews/2026-11-12-body/rebuttal/trust.md` and edited nothing else. I ran no probe or other check on data; all three deciding questions were answered by reading the code.
+
+**Q1, the multi-byte marker probe.** It wouldn't decide anything. pefile checks multi-byte content in only a few places. The ones that matter are already recorded as locating positions: the MZ and PE signatures, the optional header's `Magic`, and the whole range pefile searches for the Rich header. The other two places (a section named `PAGE`, the debug-data markers) feed no feature.
+
+The reading did find one small gap, which the probe would have missed. After finding "Rich", pefile reads a 4-byte key just past it. If the marker ends exactly where the optional header starts, that key overlaps the linker-version fields, which the header-field overwrite writes. Our recorded range stops at the optional header. Hitting this needs a file whose COFF header spells "Rich". The fix is to extend the recorded range by four bytes, a pure addition to our code. I believe the direction table stays sound, but I haven't checked that on data.
+
+**Q2, the vocabulary check on the test files.** The stored outputs can't answer it, because the derivation keeps only the merged vocabulary. It also matters less than the triage assumed: the vocabulary is collected from the same file list the attacks use. So every attacked file's own items are in the sample, and no §5 number rests on the sample premise. The reviewer's check at inference would look at the edited file, not the original the guarantee is about.
+
+**Q3, closure for in-place writes.** As posed, the answer is no. The DOS-stub and header-field overwrites land in the Rich search range, which is recorded as locating, and the derivation flags those writes rather than declining them. Closure for the four overwrites still holds, for a different reason: none of them writes anything the population check reads. So closure needs testing only for the declared operations. The meta-review's §5 item 8 reaches the right conclusion with the wrong argument.
+
+Opinion lines:
+
+- **R2:** change the argument or description (one paragraph naming what the EMBER guarantee trusts and why, the EMBER claims conditioned on it; plus the four-byte fix to the Rich range in the code)

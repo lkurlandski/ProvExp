@@ -1,0 +1,19 @@
+I wrote the draft to `docs/reviews/2026-11-12-body/rebuttal/erdalt.md`. No other file was edited and nothing was committed.
+
+The reviewers and the meta-review suggested ERDALT's fall might come from bad training of our version of it. The stored model rules that out:
+
+- **The constraint held on what ERDALT learned from.** ERDALT's layer must turn each feature change it learned from into a vector with no negative entry. Training only pushes toward this with a penalty, so I recomputed it with the stored model. Only 2 of the 3,183 training vectors break it, and each by less than 4·10⁻⁷. All 399 GAMMA-imports training vectors meet it with room to spare.
+- **The 24 evasions on test malware must break it.** The network above the layer only has nonnegative weights, so a file's score can only drop if its vector has a negative entry. That is the test the meta-review set for "the failure is the unseen-vector one the paper describes", and it passes.
+- **"Stopped after one epoch" is a misreading of a line in `PLAN.md`.** ERDALT ran Gimenez et al.'s full 310-epoch schedule. Only epoch 297 met their selection rule (fewer than 5 violations), so that is the epoch kept. Validation AUC levels off around .90 and peaks at .907, nowhere near .93. Longer training would add a point or two at most and cannot change the 24/29.
+- **The port behaves like theirs where their claim applies.** Seven of its eight training attacks evade none of the 29 detected malware, in line with their 96% robustness.
+
+The AUC gap is real: their ERDALT sits 4.5 points below their gradient-boosted trees, ours 11 points below ours. Part of that may come from keeping the output layer nonnegative, since their 93.0% comes from code whose network is not monotone. Running their unmodified code stays settled as decided in session 41 (memory `methods-from-paper-not-code`), because that code breaks the guarantee being tested.
+
+The draft recommends three changes:
+- **§5.3:** one sentence reporting the check, and credit that their Proposition 3 assumes a known set of vectors.
+- **Appendix D:** one sentence on how ERDALT was trained, and their setup beside ours.
+- **A donor-overlap run at the scale-up:** GAMMA imports against ERDALT using the training donor files. The paper's sentence blaming the new donor files is untested so far. The run needs a donor-pool option added to `scripts/a1_evaluate.py` and then takes minutes.
+
+The R19 section runs to about 640 words, slightly over the ~600 asked for.
+
+**R19 — Opinion:** change the argument or description (the training met the constraint, so the finding stands; the paper should show that and credit their assumption)

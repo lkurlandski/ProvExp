@@ -6,13 +6,13 @@ Commit 2e4c350. Verdicts: decided, dismiss, cheap fix, investigate.
 |---|---|---|---|---|
 | R7 | routed system is a bypass | investigate | population | methodology: decision 11 stands; end-to-end number after run 143 |
 | R1 | attacks weaker than published; adaptive attack misses an operation | investigate | attacks | methodology: decision 12 stands; one wording fix; MAB rerun optional |
-| R2 | "sound" rests on tested premises | investigate | trust | investigate (before scale-up, step 1) |
+| R2 | "sound" rests on tested premises | investigate | trust | argument + 4-byte record fix: draft confirmed (session 58); probe and vocabulary check not needed |
 | R18 | learned baselines get less information | investigate | trial | investigate (before scale-up, step 2) |
 | R6 | formal results are known techniques | cheap fix | | argument: session 50 stands; name self-maintainability |
 | R4 | one instance for a class claim | cheap fix | | argument (after scale-up; wording not yet reviewed) |
 | R20 | statistics cannot rank defenses | cheap fix | | methodology: thresholds from the validation split at scale-up |
 | R11 | table cells from different detectors | dismiss | | no change: the full run fixes it |
-| R19 | ERDALT port may be weak | investigate | erdalt | investigate (before scale-up, step 1) |
+| R19 | ERDALT port may be weak | investigate | erdalt | argument: training met the constraint, finding stands (session 58); donor control at scale-up |
 | R3 | hand-analysis evidence thin | cheap fix | | argument (after scale-up; wording not yet reviewed) |
 | R17 | Theorem 1 beyond its proof; class universal | cheap fix | | no change: session 53b stands (no universality sentence) |
 | R15 | threat model scope; no named attacker | cheap fix | | argument (after scale-up; wording not yet reviewed) |
@@ -118,7 +118,12 @@ weight) and would be a research project; dismiss that part. What remains open is
 hold: a crafted Rich block already escaped single-byte probing once, so a multi-byte probe could find an unrecorded
 rule, and the per-file vocabulary check (C-Q5) is free only if no test file needs it. Both are short checks with
 outcomes that change what the paragraph can say.
-- [ ] Group trust: the multi-byte marker probe and the vocabulary check, before the scale-up; then the trust paragraph (with R13's counts) after it.
+- [x] Group trust: drafted (`rebuttal/trust.md`); the probe and the vocabulary check are not needed (code reading;
+  attacked files are in the sample by construction).
+- [ ] Before the scale-up's recount: extend the recorded Rich search range by the 4 key bytes past the marker (pure
+  addition; `trust.md`, question 1). Expect no direction to change.
+- [ ] After the scale-up: one paragraph (~120 words) at the end of §4.4 listing what the EMBER guarantee trusts, how
+  each part is checked (with R13's counts), and the three facts of `trust.md`; §5's lead conditioned on it.
 
 ### R18: learned baselines get less information than the derivation
 **Verdict:** investigate. Part of C-W3 restates the finding of §5.3: a defense learned from observed attacks cannot
@@ -169,7 +174,12 @@ that request is dismissed. What holds is that the port detects far less than the
 stopped after one epoch, and enforces positivity only as a soft penalty: if its training vectors already violate the
 constraint, its fall to its own training attack is a training failure, not the unseen-vector limitation the paper
 describes. That is one stored-data check, and it decides how §5.3's ERDALT paragraph reads.
-- [ ] Group erdalt: the positivity check on stored training vectors; if training failed, train ERDALT properly in the scale-up.
+- [x] Group erdalt: drafted (`rebuttal/erdalt.md`): 2 of 3,183 training vectors violate L(δ) ≥ 0, by < 4e-7; full
+  310-epoch schedule ("one epoch" was a misreading); the evasions are unseen vectors.
+- [ ] Scale-up: the donor-overlap control (GAMMA imports against ERDALT with the training donors; needs a donor-pool
+  option in `a1_evaluate.py`; ~30 files, minutes).
+- [ ] After the scale-up: §5.3 one sentence (training vectors all nonnegative, so the evasions are unseen vectors, what
+  Gimenez et al.'s Proposition 3 excludes, credited); Appendix D one sentence on the training and both setups.
 
 ### R3: the hand-analysis evidence is thin
 **Verdict:** cheap fix. The authors' own hand table cannot produce an evasion when detected malware sit far above the
