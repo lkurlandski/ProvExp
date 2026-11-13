@@ -309,8 +309,8 @@ edit can lower, nearly all of them features that edits move both ways.
 \paragraph{Adversarial training}
 Retraining the unconstrained detector on the full training set, with the same 3,183 outputs added to its malware,
 leaves its detection unchanged and halves what the toolkit achieves. The adaptive attack, which combines operations
-and uses those no toolkit attack has, still evades it about as often as before retraining, and so does MAB-Malware
-(\synthetic{20 of 50, against 30 of 49}).
+and uses those no toolkit attack has, still evades it about as often as before retraining (23 of 50, against 25 of
+49).
 The retrained detector has learned the outputs it was given, and those outputs say nothing about the edits the attacks
 did not make.
 % Run 133 step 5 (a_advtrain, full store, outputs appended to the training malware); toolkit, any of the eight:
@@ -346,11 +346,14 @@ hand for the same guarantee under additions give up most of the detection.
 Against the full threat model, the monotone detector on the sums detects 89.6\% of the malware at a 1\%
 false-positive rate, against 93.5\% for the unconstrained detector, and at a stricter 0.1\% rate it detects 74.7\%
 against 84.4\%. The detector on the features detects 87.2\% and 70.9\%. In return, no edit in the
-threat model lowers either detector's score. Our attacks evade the unconstrained detector on \synthetic{38} of the 47
-malware it detects, MAB-Malware alone on \synthetic{30}, and each monotone detector on \synthetic{a single file}. The adaptive attack confirms the guarantee on every
+threat model lowers either detector's score. Our attacks evade the unconstrained detector on 28 of the 47 malware it
+detects, and each monotone detector on \synthetic{a single file}. The adaptive attack confirms the guarantee on every
 file: trained on the full training set, the unconstrained detector falls to it on 25 of the 49 malware it detects, while
 its largest score drop on the monotone detector on the features is exactly zero, and a simpler search that appends and
-adds sections finds no drop on the detector on the sums.
+adds sections finds no drop on the detector on the sums. MAB-Malware, in about 2,400 edits against each monotone
+detector, never lowers its score.
+% MEASURED (run 139): mfull-feat 2,400 and mfull-sums 2,460 actions (pulls), every arm pulled 230-440 times;
+% p_lowest = p_clean exactly on all 40 and 41 files, the 12 and 11 outside the population included.
 
 \paragraph{Where the guarantee holds}
 The guarantee holds on the population (\Cref{sec:instances:population}), which contains \synthetic{89\%} of the
@@ -440,9 +443,10 @@ constraints together.
 The guarantee covers exactly the threat model the table was derived from, and a narrower one costs less. Under the
 additions threat model, the monotone detector on the sums keeps more features and detects 92.2\% of the malware
 instead of 89.6\%. The edits it leaves out are then open: the header fields attack, which overwrites fields in place and
-so lies outside the additions threat model, evades it on 12 of the 43 malware it detects, and with MAB-Malware's
-renames and removals the attacks evade it on \synthetic{18}, while no edit inside the additions threat model evades
-the detector on any file. A defender chooses the threat
+so lies outside the additions threat model, evades it on 12 of the 43 malware it detects, while no edit inside the
+additions threat model evades the detector on any file.
+% MEASURED (run 139): MAB-Malware evades madd-sums on 1/42, by RD (outside additions), a file header fields already
+% evades; union 12/43. A defender chooses the threat
 model, and with it which edits the detector withstands and what that costs in detection.
 
 \paragraph{Against hand-picked features}
@@ -470,11 +474,10 @@ unconstrained detector detects, GAMMA imports evades it on 21 and GAMMA sections
 paper~\cite{demetrio2021functionality}, about 500 queries instead of 100 and a larger pool of donor content, GAMMA
 imports evades the unconstrained detector on 27 of the 47 malware it detects and still evades neither monotone
 detector on a file in the population. MAB-Malware also writes some edits its own way: when it removes the debug or
-certificate entry, it zeroes the data the entry pointed to as well, which no operation does. It evades neither
-monotone detector on a file in the population, \synthetic{including the files where its output leaves the derived
-table}.
-% SYNTHETIC: run 139; outputs within the table checked as for the toolkit (scripts/a1_toolkit_split.py), at the
-% scale-up. Upstream arm.py: ArmRD zeroes the CodeView data (debug type 2) and the entry, ArmRC zeroes the
+certificate entry, it zeroes the data the entry pointed to as well, which no operation does. It never lowers either
+monotone detector's score, on any file.
+% MEASURED (run 139): RD and RC pulled 236-244 times on each monotone detector; p_lowest = p_clean on every file,
+% in the population or not (see The price). Upstream arm.py: ArmRD zeroes the CodeView data (debug type 2) and the entry, ArmRC zeroes the
 % certificate bytes and the entry.
 % MEASURED: in-population split, artifacts/experiments/a1/toolkit-split/split.json (evasion_passing: ref gamma_api
 % 21/35, gamma_sections 6/35; mfull-feat 0/28, mfull-sums 0/30 for both). Rename frees 301 features: a_price_list
