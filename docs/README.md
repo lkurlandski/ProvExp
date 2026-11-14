@@ -22,8 +22,9 @@ check `manuscript/main.aux` (`grep newlabel manuscript/main.aux`), and add the t
 |---|---|---|
 | `PLAN.md` | thesis, where the paper stands, the decisions of 2026-11-09, next steps, settled decisions | every session |
 | `docs/status.md` | current state, what waits on the user, short session log | every session; update at the end |
-| `docs/resume-prompt.md` | where the next R7/scale-up session starts: R7 is done at pilot scale; the user's decisions before the scale-up (the extractor question, step 2c; the protocol, step 3); rebuttal and R18 have their own prompts | starting an R7 or scale-up session |
-| `docs/resume-prompt-rebuttal.md` | where each rebuttal session starts, once `run_rebuttal.sh` has written the triage (`docs/reviews/<TAG>/rebuttal/triage.md`): the user decides on the triage table, then on drafts of the groups worth investigating; decisions recorded in the table | starting a rebuttal session |
+| `docs/resume-prompt.md` | where the next session starts: R7 and the extractor question are done; one last revisit of the review and rebuttal (anything else outside R18 and the scale-up?), then scale-up planning (step 3) | starting the next main-line session |
+| `docs/resume-prompt-R18.md` | where the R18 (trial competitor) session starts: run 144 and the three decisions | starting an R18 session |
+| `docs/resume-prompt-rebuttal.md` | the rebuttal procedure, kept for reference: once `run_rebuttal.sh` has written the triage, the user decides on the triage table, then on drafts of the groups worth investigating. The 2026-11-12 triage is complete; the next revisit folds into `docs/resume-prompt.md` | re-running the rebuttal procedure on a future review |
 | `docs/checkpoint-prompt.md` | the user's prompt for ending a session | the user ends a session |
 | `docs/paper-mock.md` | the paper's contributions, outline with word budgets, and tables | planning or writing any section; checking whether new work belongs in the paper |
 | `docs/writing-spec.md` | the user's raw reactions to drafts, newest first | writing paper prose (with the `paper-prose` skill) |

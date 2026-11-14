@@ -18,7 +18,14 @@ The framework is format-free (§3). PE malware with EMBER is the primary instanc
 planned, implemented, and piloted first. Other domains come later, possibly, and the paper's structure must accommodate
 them (below).
 
-## Where the paper stands (2026-11-12, session 45)
+## Where the paper stands (updated 2026-11-14, session 62)
+
+- **R7 and the rebuttal have closed the pre-scale-up work (sessions 48-62).** The simulated review's top risk R7 is
+  resolved at pilot scale (no router, full widening, LIEF's overlay rule, run 143); R1, R6, R17, R2's code fix and
+  R19's check are done; the extractor question is decided (stay on pefile, one audit pass to come). What remains before
+  the scale-up: one last revisit of the review and rebuttal (anything else outside R18 and the scale-up?), the R18
+  decisions on their own track, and then the scale-up itself. The rebuttal's text fixes wait for the scale-up's numbers.
+  The bullets below are the session-45 assessment that set this course, kept for its reasoning.
 
 - **§2-3 (the framework):** rewritten in the week of 2026-11-02; the user is reasonably satisfied. Pending: the user's
   holistic read of Sound Directions.
@@ -298,7 +305,13 @@ records of the §5 reviews, the table remake and the ERDALT check, is in
 1. **Done in session 46: files below 4 MB in every split.** The 4 MB-truncation brainstorm ended in a decision
    (decision 8 (iv), with the evidence), written into §4.4, §5.1's Setup, 5.4 and Appendix D before the review, as
    the user asked in session 45. Its one blue value (the attacked malware in the population) joins the scale-up.
-2. **A full simulated review** of the manuscript as it then stands (body only; the last full review, 2026-11-02,
+2. **Done (run; discussed sessions 48-61): the full simulated review**, and its register triaged. The whole register
+   R1-R21 has a verdict (`docs/reviews/2026-11-12-body/rebuttal/triage.md`); R7 (decision 11), R1 (decision 12), R6,
+   R17, R2's code fix and R19's check are applied; the text fixes (R2's trust paragraph, R3, R4, R5, R8, R12, R13, R15,
+   R21) are deferred to after the scale-up's numbers. **One last revisit of the review and rebuttal** (this hand-off,
+   `docs/resume-prompt.md`): anything else worth doing outside R18 and the scale-up before planning it? The original
+   framing of this step follows.
+   *A full simulated review* of the manuscript as it then stood (body only; the last full review, 2026-11-02,
    predates the new §3 and §5). *Designed in session 47* as a reusable procedure (`docs/reviews/review-prompt.md`,
    `docs/reviews/process/`): four independent reviewers who see only the PDF, then a meta-reviewer with full access
    that answers the checklist below; run by the user after session 47, discussed from session 48 (R7 first, decision
@@ -308,7 +321,9 @@ records of the §5 reviews, the table remake and the ERDALT check, is in
    the page, the new population (the prompt's bullet on the 4 MB scope was added in session 46), decision 6's revisit
    (is a problem-space defense expected? short literature pass), and MAB-Malware's absence. Its output decides what the
    scale-up includes. No narrow §2-3 review beforehand (user).
-2b. **Complete R7's widening (agreed with the user in session 53; decision 11's final form)**, before the scale-up:
+2b. **Done (sessions 53-62): R7's widening complete at pilot scale** (decision 11's final form). All of (i)-(v) below
+   are finished; session 62 added the escape audit against the widened population (no new in-population escape) and the
+   pefile-cap verification (`docs/evidence/r7-overlay-rule.md` §9-10). The scale-up's R7 items are in step 3.
    (i) the closure and exactness check on the widened population. **Done in session 55** (run 141; record
    `docs/evidence/r7-overlay-rule.md`): it failed through pefile's overlay rule (data-directory extents, the debug
    entry's among them, decide where the overlay starts, so `ent` moves it). **Decided (user): LIEF's overlay rule** (the
@@ -349,13 +364,16 @@ records of the §5 reviews, the table remake and the ERDALT check, is in
    (v) **Decided (user, session 61): blue values.** The monotone cells of the toolkit attacks and MAB-Malware on the
    `-loose` detectors are `\synthetic{0}` until the scale-up (Table 5's evaded cells, Appendix D's per-attack table,
    MAB-Malware's ~2,400 edits in *The price*).
-2c. **Before the scale-up's featurization: the extractor question** (raised by the user, session 55; Claude's view and
-   the criteria in `docs/evidence/r7-overlay-rule.md` §6). We use the EMBER2024 corpus below 4 MB, drop the warnings,
-   patch thrember's quirks, and now change pefile's overlay rule: design the extractor deliberately (principles stated
-   once, one audit pass, a deviations table) rather than patching reactively, and weigh moving the parser to LIEF once a
-   1.x release fixes 1.0.0's bugs (cost: rebuilding the record of the positions the parser reads, which pefile's Python
-   gave us). Cheapest before the scale-up featurizes everything; a short LIEF spike (structures vs pefile, timing,
-   exposed offsets) would inform it. The user decides.
+2c. **The extractor question: decided (user, session 62) — stay on pefile.** The LIEF spike
+   (`docs/evidence/r7-overlay-rule.md` §8) parsed the 100 pilot files with both parsers: structures agree on 99/100
+   (the one difference is pefile's 8,192-import cap), and parsing is only ~12-25% of our per-file time, so a switch
+   buys little against the cost of rebuilding the locating record (pefile's Python gave it to us) and losing the
+   bit-exact match with EMBER's released vectors. **Still to do before the scale-up's featurization:** one deliberate
+   audit pass against the three principles of §6, with a deviations table in Appendix D. Known entries: the overlay
+   rule (LIEF's), the warnings dropped, thrember's quirks patched, the 4 MB cut, and the newly verified items —
+   pefile's parser caps (§10: an exactness gap for `imp`/`sec` near a cap, not a soundness hole) and the
+   always-constant features (`docs/upstream-issues.md` 2-3). The escape audit against the widened population (§9)
+   found no new in-population escape.
 3. **Design and launch the scale-up as one protocol** (each item agreed before code; long runs as `run/` scripts for the
    user, possibly on the second server), **on the files our copy holds in full in every split** (the `truncated` flag
    false: training subsample, test split, attacked malware; decision 8 (iv)): seeds 0-2, full splits; one training set
