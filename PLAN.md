@@ -411,9 +411,37 @@ records of the §5 reviews, the table remake and the ERDALT check, is in
    them first (the review's new experiments: MAB-Malware, the escape attack, equal-information baselines, a trial
    table), then scale everything once. The sums row's adaptive cell stays 0% with its
    footnote (session 36).
+   **Added in session 63 (the last review revisit; nothing else before the scale-up, user agreed).** (a) The
+   extractor audit pass with its deviations table is the scale-up's *first* piece of work, before any featurization
+   script: it is the only item that can change the feature store. (b) Reporting duties the scale-up's scripts must
+   produce: the share of *all* attacked malware still detected after each attack at 1% and 0.1% FPR, files outside the
+   population counted (R7's last open triage item; body "after any attack", appendix per attack); §5.3's coverage
+   counts on modeled features only, the 88 warnings excluded (R12); from the scale-up's models, the monotone detector's
+   split-gain share on features no edit moves (R15) and the detected malware's margins against the hand table's
+   1.57-logit maximum drop (R3). (c) Compute: the user has a shared cluster (hundreds of nodes like this server,
+   priority queue); this scale-up need not be the last or the largest, so size it for days to a few weeks, not months.
+   (d) **Decided (user, session 63):** the adaptive attack scores 5,000 candidates by extraction for every detector
+   and escape (checkpoints 200, 1,000, 2,000, 5,000). **One seed (0)**, not seeds 0-2: seeds wait until the
+   methodology is final; compute goes to more samples instead (supersedes "seeds 0-2" above and in meta-review §7).
+   (e) **Organization and portability (user, session 63):** the scale-up's code and experiments reorganized into
+   something human-readable, and reproducible setup instructions for new systems (the SLURM clusters tigris and
+   sporc; SSViT's `scripts/create.py` shows their configuration). **Agreed (user, session 63):** a `pipeline/` folder
+   for the scale-up, one numbered stage per folder (setup, 1-audit, 2-features, 3-directions, 4-detectors, 5-attacks,
+   6-results), each with a short README and **one `run.sh` per step with the `#SBATCH` header at the top** (`sbatch`
+   on the cluster, `bash` locally; no separate submit scripts); outputs under `artifacts/scaleup/<stage>/`; one
+   registry of plain names for detectors and attacks; library code moved from `scripts/` into `src/provexp/` (old
+   scripts become thin wrappers or are deleted with the dead code), tests updated and expanded; the move checked
+   byte-identical on a pilot slice; `SETUP.md` with `build_env.sh` and `check.sh` (featurization bit-exact). Run
+   everything on sporc (x86_64); tigris (aarch64) only after a bit-exactness check. **Executed in a dedicated
+   refactoring session** (`docs/resume-prompt.md`), then the audit pass, then the remaining protocol items (malware
+   count first), then a session on the cluster's head node.
 4. **While the scale-up runs: §2's closing and contribution 4 against §5** (old step 2 (c)). §2 says §5 "uses them to
    attack malware detectors and to build robust ones"; in §5 the attack is an instrument. The mock's contribution 4 is
    stale ("four to six points", "learned constraints"). Writing only.
+   Also here (session 63), since they need no numbers: the rebuttal's number-free text fixes R4 (claims scoped "on
+   EMBER", what falls outside the class), R5 (Pierazzi et al.'s reason and minimal-app estimate), R15 (the attacker
+   named) and R21 (certified defenses; Cortellazzi, Kantchelian, Lucas 2024, Tsingenopoulos still uncited). The
+   number-dependent ones (R2's paragraph, R3, R8, R12, R13, R19) stay with step 5.
 5. **After reading the scale-up:** the final numbers into §4-5 and the open items (below); then shorten §4 and §5
    together (§4.3 first) and give §5's questions and answers more visual emphasis (old steps 2 (b) and (0)).
 6. **Decide on a second domain** with the scale-up's results in hand (the user's call; ideas in

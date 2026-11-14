@@ -22,7 +22,7 @@ check `manuscript/main.aux` (`grep newlabel manuscript/main.aux`), and add the t
 |---|---|---|
 | `PLAN.md` | thesis, where the paper stands, the decisions of 2026-11-09, next steps, settled decisions | every session |
 | `docs/status.md` | current state, what waits on the user, short session log | every session; update at the end |
-| `docs/resume-prompt.md` | where the next session starts: R7 and the extractor question are done; one last revisit of the review and rebuttal (anything else outside R18 and the scale-up?), then scale-up planning (step 3) | starting the next main-line session |
+| `docs/resume-prompt.md` | where the next session starts: the refactoring session (`pipeline/`, plain names, library code into `src/provexp/`, dead code removed, tests, `SETUP.md` for the SLURM clusters) before the scale-up | starting the next main-line session |
 | `docs/resume-prompt-R18.md` | where the R18 (trial competitor) session starts: run 144 and the three decisions | starting an R18 session |
 | `docs/resume-prompt-rebuttal.md` | the rebuttal procedure, kept for reference: once `run_rebuttal.sh` has written the triage, the user decides on the triage table, then on drafts of the groups worth investigating. The 2026-11-12 triage is complete; the next revisit folds into `docs/resume-prompt.md` | re-running the rebuttal procedure on a future review |
 | `docs/checkpoint-prompt.md` | the user's prompt for ending a session | the user ends a session |
@@ -63,6 +63,7 @@ or when changing an experiment. Run scripts are in `run/` (one per step, numbere
 |---|---|
 | `docs/archive/status-log-2026-11-12.md` | the session log, sessions 41-42 (search, don't read) |
 | `docs/archive/status-log-2026-11-10-to-11.md` | the session log, sessions 29-39 (search, don't read) |
+| `docs/archive/resume-prompt-2026-11-14-s63.md` | the resume prompt of session 63 (written in session 62): the last review/rebuttal revisit (nothing else before the scale-up) and the scale-up's shape (one seed, 5,000 candidates, the refactor) |
 | `docs/archive/resume-prompt-2026-11-14-s61.md` | the resume prompt of session 61 (written in session 57): read run 143 and write R7 into the paper (both done in session 61; blue values decided) |
 | `docs/archive/resume-prompt-2026-11-13-s57.md` | the resume prompt of session 57 (written in session 56): verify session 56's R7 code before run 143 (done: holds, two small fixes; run 143 cleared) |
 | `docs/archive/resume-prompt-2026-11-13-s55-56.md` | the resume prompt for sessions 55-56 (two tracks): read run 142, then `ent` in the attacks and run 143 (both done in session 56; run 143 handed to the user) |

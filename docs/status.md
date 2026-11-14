@@ -93,11 +93,11 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
 
 ## Waiting on the user
 
-- **The final look at the review and rebuttal, then the scale-up (this session's hand-off).** R7 is done; R18 runs on
-  its own track; the small items are closed. The next session revisits the review and rebuttal one last time
-  (`docs/resume-prompt.md`): is there anything else worth doing outside R18 and the scale-up? If not, start planning
-  the scale-up. Remaining rebuttal text fixes (R2's trust paragraph, R3, R4, R5, R8, R12, R13, R15, R21) are deferred
-  to after the scale-up's numbers by the triage.
+- **The refactoring session (next; `docs/resume-prompt.md`).** The review revisit is closed (nothing else before the
+  scale-up). Next: reorganize the code and experiments for the scale-up (`pipeline/`, plain names, library code into
+  `src/provexp/`, dead code removed, tests), with `SETUP.md` for new systems (the SLURM clusters sporc and tigris).
+  Then the extractor audit pass, the remaining protocol items (malware count first), and a session on the cluster's
+  head node. Number-free rebuttal text fixes (R4, R5, R15, R21) move to step 4 (while the scale-up runs).
 - **R18 (its own session): run 144 and three decisions** (session 60; `docs/evidence/r18-trial-competitor.md`,
   `docs/resume-prompt-R18.md`). Decide the reading, the trial row at the scale-up, and iterated adversarial training
   (recommended: in).
@@ -106,16 +106,26 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
 
 1. ~~The 4 MB-truncation decision~~ (done, session 46), ~~the full simulated review~~ (run; discussed sessions 48-61),
    ~~R7's widening~~ (done, sessions 53-62), ~~the extractor question~~ (decided, session 62: stay on pefile).
-2. **The final review/rebuttal revisit** (this hand-off): anything else outside R18 and the scale-up? Then:
-3. The scale-up designed and launched as one protocol (seeds 0-2, full splits, one training set for every detector,
-   ERDALT's stopping point, more malware, MAB-Malware held out, the R7 blue values and PROTOCOL recounts, the
-   extractor audit pass with the deviations table). PLAN.md step 3.
-4. While it runs: §2's closing and contribution 4 aligned with §5.
+2. ~~The final review/rebuttal revisit~~ (done, session 63: nothing else before the scale-up).
+3. The scale-up (PLAN.md step 3): **the refactoring session first** (`pipeline/`, `SETUP.md`), then the extractor
+   audit pass, the remaining protocol items (malware count first; one seed, 5,000 extraction-scored candidates, full
+   splits, one training set and protocol for every detector, the trial row, iterated adversarial training, the R7 blue
+   values and PROTOCOL recounts), then a head-node session on the cluster.
+4. While it runs: §2's closing and contribution 4 aligned with §5; the number-free text fixes R4, R5, R15, R21.
 5. After reading it: final numbers, then shortening §4-5 and §5's question-and-answer emphasis.
 6. A second domain decided with the scale-up's results in hand (the user's call).
 7. Introduction, discussion, abstract last.
 
 ## Session log
+
+- **2026-11-14 (session 63, scale-up track): review revisit closed; the scale-up's shape agreed.** Nothing else is
+  worth doing before the scale-up (user agreed): the number-dependent text fixes stay after it; R4, R5, R15, R21 move to
+  step 4; three reporting duties (still-detected share of all attacked malware, R12's modeled-only counts, R15's gain
+  share and R3's margins) and the audit pass as the first scale-up work added to PLAN.md step 3. **Decisions (user):**
+  5,000 extraction-scored candidates for every detector; **one seed, more samples** (seeds wait for a final
+  methodology); the user has shared SLURM clusters (sporc x86_64, tigris aarch64; config read from SSViT); a
+  `pipeline/` reorganization with one `run.sh` per step (`#SBATCH` header, `sbatch` or `bash`), plain names, library
+  code into `src/provexp/`, `SETUP.md`; executed in a dedicated refactoring session. PLAN.md step 3 (d)-(e).
 
 - **2026-11-14 (session 62, R7/scale-up track): the decisions before the scale-up taken; verification and small fixes
   done.** Rebuttal status reviewed (triage table, meta-review §5-8). **Decisions (user):** (1) stay on pefile, with a
