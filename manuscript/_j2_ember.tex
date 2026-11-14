@@ -58,7 +58,7 @@ same check covers them.
 \paragraph{Positions that locate items.} For each kind, the record lists the positions the parser reads to find its
 items: header fields and table entries, and positions that concern a whole kind, such as the number of sections and
 the bounds of the range in which the extractor searches for the Rich header. Some are easy to miss. The overlay starts
-where the last section or data directory ends, so the extent of every section and directory locates it. Others lie
+where the last section ends, so the extent of every section locates it. Others lie
 past the end of the file, when the headers point to content that an incomplete file does not hold. We
 completed the record by changing single bytes and checking whether the parse changed where no recorded position was
 written. A first round found three parser rules the record had missed. After we recorded them, none of 58,666
@@ -186,9 +186,9 @@ malware it detects, and on 16 if outputs over the budget count; the one trained 
     Adversarial training & 50 & 0 & 1 & 10 & 4 & 2 & 0 & 2 & 0 & 23 & 4 \\
     \midrule
     \multicolumn{12}{@{}l}{\emph{Full threat model (\Cref{tab:eval:detectors}, top)}} \\
-    Unconstrained        & 47 & 1 & 6 & 24 & 7 & 0 & 0 & 9 & 0 & --- & 10 \\
-    Monotone, features   & 40 & 0 & 0 & 0  & 0 & 0 & 0 & 1 & 0 & 0  & 0 \\
-    Monotone, sums       & 42 & 0 & 0 & 0  & 0 & 0 & 0 & 1 & 0 & 0  & 0 \\
+    Unconstrained        & 47 & 1 & 6 & 24 & 7 & 0 & 0 & 9 & 0 & 47 & 10 \\
+    Monotone, features   & 39 & \synthetic{0} & \synthetic{0} & \synthetic{0}  & \synthetic{0} & \synthetic{0} & \synthetic{0} & \synthetic{0} & \synthetic{0} & 0  & \synthetic{0} \\
+    Monotone, sums       & 40 & \synthetic{0} & \synthetic{0} & \synthetic{0}  & \synthetic{0} & \synthetic{0} & \synthetic{0} & \synthetic{0} & \synthetic{0} & 0  & \synthetic{0} \\
     \midrule
     \multicolumn{12}{@{}l}{\emph{Additions (\Cref{tab:eval:detectors}, bottom)}} \\
     Expert set           & 8  & 0 & 0 & 0  & 0 & 0 & 0 & 0 & 0 & 2  & 4 \\
@@ -199,7 +199,11 @@ malware it detects, and on 16 if outputs over the budget count; the one trained 
 % Session 49. Toolkit: a_varied/toolkit-{full,pv,erdalt}/table.json (top block; a seed per file) and
 % a1/toolkit-v2/table.json, a1/expert/toolkit/table.json (lower blocks; fixed seed, monotone rows routed). Adaptive:
 % run 127 (unconstrained, mfull-feat 0 of 41 unrouted), a_varied/adaptive-*-best, runs 108/119 greedy for mfull-sums
-% (0 of 43), run 120 for the expert set; no adaptive run on s10-ref or madd-sums (---). MAB-Malware column:
+% (0 of 43), run 120 for the expert set;
+% R7 (session 61): the full-threat-model block's monotone rows are the -loose detectors (run 140), unrouted; detected
+% and the adaptive column measured by run 143 (monotone 0 and unconstrained 47/47 under each of the
+% three escapes). SYNTHETIC: their toolkit and MAB-Malware cells, predicted 0 (the -pre-v2 header-fields
+% evasion went through routing); replaced by those attacks on the -loose detectors at the scale-up. no adaptive run on s10-ref or madd-sums (---). MAB-Malware column:
 % run/139_mab_malware.sh, mab_malware/<step>/results.parquet (unrouted; it detects 41 and 42 on the last two rows). SCALE-UP: one protocol and one detected count per row (R11).
 
 \paragraph{ERDALT.} We follow Gimenez et al.'s released code with one change: the output layer's weights are kept

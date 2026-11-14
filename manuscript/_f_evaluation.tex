@@ -350,7 +350,7 @@ Once the certificate entry is writable, an attacker can give a malware file the 
 detector cannot let a signature lower its score, and signatures are among the strongest benign evidence the features
 hold. In return, no edit in the threat model lowers either detector's score. Our attacks evade the unconstrained
 detector on all 47 malware it detects, 21 of them with a copied signature as the only edit, and evade neither monotone
-detector on any file. The adaptive attack ran its full budget of 2,000 candidates on every file the monotone detectors
+detector on any file. The adaptive attack ran its full budget on every file the monotone detectors
 detect, and its largest drop in their scores is exactly zero. MAB-Malware, in about \synthetic{2,400} edits against
 each monotone detector, never lowers its score.
 % MEASURED (run 140, one seed): -loose models (seed-0-s10-mfull-{feat,sums}-loose), TPR at 1%/0.1% FPR features 83.4/
@@ -359,7 +359,8 @@ each monotone detector, never lowers its score.
 % 47/47 under each of the three escapes, every evasion through `ent` with an appended certificate; one clone as the
 % only edit after the escape: 21/47 (cert_entry, image_size), 26/47 (debug_entry). Monotone 0/39 and 0/40 under each
 % escape, min_delta_logit exactly 0, every search 2,000 candidates (one image_size mfull-sums search lost to a stalled
-% worker). The full-training-set unconstrained comparison (run 127, 25/49) predates `ent` and was cut.
+% worker). PROTOCOL: run 143 extracted every candidate (no Prop. 1 scoring) at 2,000 candidates, where 5.1 states
+% Prop. 1 scoring and 5,000; the scale-up's single attack protocol settles one. The full-training-set unconstrained comparison (run 127, 25/49) predates `ent` and was cut.
 % SYNTHETIC: MAB-Malware (run 139) ran against the -pre-v2 detectors (mfull-feat 2,400, mfull-sums 2,460 actions; score
 % never below the clean score); replaced by MAB-Malware on the -loose detectors at the scale-up (PLAN.md step 3).
 
