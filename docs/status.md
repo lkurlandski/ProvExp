@@ -115,6 +115,15 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
 
 ## Session log
 
+- **2026-11-14 (session 62, R7/scale-up track): the decisions before the scale-up prepared.** Rebuttal status reviewed
+  (triage table, meta-review §5-8, manuscript). LIEF spike (record `docs/evidence/r7-overlay-rule.md` §8): structures
+  agree with pefile on 99/100 pilot files (the one difference: pefile's 8,192-import cap); LIEF parses ~35x faster but
+  parsing is ~12-25% of our per-file time; pefile's defensive caps are unmodelled (no soundness hole found, an exactness
+  gap). Recommendation: stay on pefile, one deliberate audit pass with a deviations table. Adaptive budget from stored
+  runs: evasions of learned defenses still climb from 1,000 to 5,000 candidates. Kim et al. (CCS 2017) cited for
+  signature cloning (b319638); the overfull vbox is gone. **Waiting on the user:** the extractor decision, the attack
+  protocol, the malware count, and which small pre-scale-up items to do.
+
 - **2026-11-14 (session 62, R18 track): ready for run 144.** While it ran (started 10:05): the six non-string
   disagreements traced (three are trial's blind spots; the two import addresses are declared too broadly, and run 145
   shows freeing them as monotone gains nothing: 83.2 vs 83.4% at 1% FPR, so trial's edge is real lowerable features);
