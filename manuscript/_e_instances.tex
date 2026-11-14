@@ -86,8 +86,9 @@ designed for; \emph{shifts} adds the two insertions that move existing content; 
 and removal. Two kinds of edit from the literature are left out. Packing replaces the file with a different program
 that restores the original at run time~\cite{demetrio2021adversarial}, so no item of the original survives it.
 Code-level transformations replace or move instructions while keeping their meaning~\cite{song2022mab,
-lucas2021malware,lucas2023adversarial,ling2024wolf}, and they are much harder to apply without breaking the program
-than the structural edits above; \Cref{sec:discussion} returns to them.
+lucas2021malware,lucas2023adversarial,ling2024wolf}, and they preserve the program's behavior by disassembling and
+transforming the code conservatively~\cite{lucas2021malware}. They need a disassembler and an analysis of the code
+where the structural edits above need neither; we leave them to future work (\Cref{sec:discussion}).
 
 \begin{table}[t]
   \caption{The operations of the threat model. Each threat model adds operations to the one above it; the toolkit

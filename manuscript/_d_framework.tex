@@ -277,7 +277,8 @@ readouts whose support contains one of these sums. Databases keep stored aggrega
 that totals a table is updated from the inserted and deleted rows instead of being recomputed, a technique known as
 incremental view maintenance~\cite{gupta1995maintenance,koch2014dbtoaster}. Writing an extractor as a fold over its
 items lets this technique apply to features. Part (i) is its rule for totals, and the item table supplies what the
-rule lacks for maxima and minima: the values that remain after a removal.
+rule lacks for maxima and minima, which are not self-maintainable under deletions~\cite{mumick1997maintenance}: the
+values that remain after a removal.
 
 \subsection{Sound Directions}
 \label{sec:fw:directions}
