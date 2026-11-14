@@ -22,7 +22,7 @@ prints the arguments). The Python next to each `run.sh` is a thin command line o
 ## Status of the steps
 
 `run.sh` exists for the steps the identity check runs (featurize, derived directions, catalogue checks, adaptive,
-MAB-Malware) and for setup; their defaults are the scale-up's where it is decided (5,000 extraction-scored
+MAB-Malware), for every audit step (session 65; the audit's file list, `FILES`, is still to be decided) and for setup; their defaults are the scale-up's where it is decided (5,000 extraction-scored
 candidates, one seed) and the current pilot inputs where it is not (file lists, model set `pilot`). The other steps
 get their `run.sh` in the protocol sessions, with the scale-up's files, budgets and detectors. Their pilot commands
 are in `run/` (a historical record: re-run them at tag `pilot-final`).
@@ -30,11 +30,11 @@ are in `run/` (a historical record: re-run them at tag `pilot-final`).
 | Step | Python | `run.sh` | Pilot record |
 |---|---|---|---|
 | `setup/` | `make_fixtures.py`, `check_reference.py`, `compare_outputs.py` | `build_env.sh`, `check.sh`, `identity_check.sh` | run 05 |
-| `1-audit/item-checks` | `item_checks.py` | protocol session | runs 90-96, 118 |
-| `1-audit/catalogue-checks` | `catalogue_checks.py` | yes | runs 103-107, 117, 141-142 |
-| `1-audit/population` | `population_clauses.py` | protocol session | run 136 |
-| `1-audit/escapes` | `escape_audit.py` | protocol session | run 137 |
-| `1-audit/hand-table` | `hand_table.py`, `overlay_witness.py`, `signature_witness.py`, `structure_witness.py` | protocol session | runs 88, 92, 98, 101 |
+| `1-audit/item-checks` | `item_checks.py` | yes (`FILES` required) | runs 90-96, 118 |
+| `1-audit/catalogue-checks` | `catalogue_checks.py` (with `--chained`) | yes | runs 103-107, 117, 141-142 |
+| `1-audit/population` | `population_clauses.py` | yes (`FILES` required) | run 136 |
+| `1-audit/escapes` | `escape_audit.py` | yes | run 137 |
+| `1-audit/hand-table` | `structure_witness.py`, `overlay_witness.py`, `signature_witness.py`, `witness_counts.py` (`hand_table.py`: the old Table A0, not in the paper) | yes (`FILES` required) | runs 88, 92, 98, 101 |
 | `2-features/featurize` | `featurize.py`, `check_features.py`, `refeaturize_nonpe.py` | yes | runs 01-02, 94, 102 |
 | `2-features/files` | `build_metadata.py`, `select_files.py` | protocol session | runs 03-04 |
 | `3-directions/derived` | `directions.py`, `expert_directions.py` | yes (`directions.py`) | runs 97, 102, 140, 142 |
@@ -58,7 +58,7 @@ are for tests and explorations only. Table numbers are the compiled PDF's (`manu
 | §4.4 | the population's share of files, by clause; closure (0 edits leave it) | `1-audit/population`, `1-audit/catalogue-checks` |
 | §4.3-4.4 | the cost of a declaration (detection with an operation dropped) | `4-detectors/price-list` |
 | §5.1 | the edit counts of the checks (sound, exact) | `1-audit/catalogue-checks`, `1-audit/item-checks` |
-| §5.2, Table 3 (*The eight errors of the hand-written table*) | the hand table's errors and the files where a real edit shows each | `1-audit/hand-table`, `3-directions/derived` |
+| §5.2, Table 3 (*The eight errors of the hand-written table*) | the hand table's errors and the files where a real edit shows each (`witness_counts.json`, by population) | `1-audit/hand-table`, `1-audit/catalogue-checks`, `1-audit/population`, `3-directions/derived` |
 | §5.2 | the expert set's directions and its adaptive cell | `3-directions/derived` (`expert_directions.py`), `5-attacks/adaptive` (`expert_adaptive.py`) |
 | §5.3, Table 4 (*Defenses learned from the outputs of the toolkit attacks*) | PV, ERDALT, adversarial training: detection and evasion by any attack | `4-detectors/adversarial-training`, `4-detectors/train`, `5-attacks/*`, `6-results` |
 | §5.3 | the lowerable features the toolkit's outputs lowered, by source; PV's hole | `6-results` (`coverage.py`, `pv_hole.py`) |
@@ -69,4 +69,4 @@ are for tests and explorations only. Table numbers are the compiled PDF's (`manu
 | Appendix D, Table 10 (*Leave-one-out over the toolkit attacks*) | each fold's detection and the held-out attack's evasions | `4-detectors/adversarial-training`, `4-detectors/train`, `5-attacks/toolkit` |
 | Appendix D, Table 11 (*Malware evaded by each attack, per detector*) | evasion per attack | `5-attacks/*`, `6-results` (`toolkit_split.py`) |
 | Appendix D | MAB-Malware against Zainab et al.'s setting (0.1% FPR, no byte cap) | `5-attacks/mab-malware` |
-| Appendix D | combined edits exact when the item table is carried forward | `1-audit/catalogue-checks` (to add: chained edits; the A' code that checked it on the pilot was removed) |
+| Appendix D | combined edits exact when the item table is carried forward | `1-audit/catalogue-checks` (`--chained`: three added sections, then an append; `chains.json`) |

@@ -13,3 +13,7 @@ the deviations table of Appendix D) comes first: it is the only stage that can c
 - `escapes/`: which single field writes outside the threat model take a file out of the population. Paper: §5.4.
 - `hand-table/`: the hand-written side-effect predictors against re-extraction, and the files that show each of their
   errors (overlay, signature, structure). Paper: §5.2, Table 3.
+
+Order at the scale-up (one file list, `FILES`, for every step): `population/`, then `escapes/`; `3-directions/derived`
+(the loose table) before `catalogue-checks/` (which also runs the chained edits); `hand-table/` last (its counts read
+the population and the catalogue's edits); `item-checks/` at any point.

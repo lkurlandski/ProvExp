@@ -13,7 +13,7 @@ export OUT_ROOT="${OUT_ROOT:-artifacts/refactor-baseline/new-pipeline}"
 
 EXTRACTORS="ember2024 sums expert" SPLITS=ts EVERY=264 pipeline/2-features/featurize/run.sh
 pipeline/3-directions/derived/run.sh
-NUM_FILES=5 pipeline/1-audit/catalogue-checks/run.sh
+CHAINED=0 NUM_FILES=5 pipeline/1-audit/catalogue-checks/run.sh
 DETECTORS="unconstrained monotone-sums" ESCAPES="none debug_entry" QUERIES=200 CHECKPOINTS=200 NUM_MALWARE=3 \
   SAVE_ROWS=1 pipeline/5-attacks/adaptive/run.sh
 DETECTORS="unconstrained monotone-sums" NUM_MALWARE=3 pipeline/5-attacks/mab-malware/run.sh

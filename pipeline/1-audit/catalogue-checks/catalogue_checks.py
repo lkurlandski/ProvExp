@@ -32,7 +32,14 @@ recorded as such.
 For the in-place operations and appends, the C1 engine (provexp.reach.predict, thrember's features with merged
 imports) also predicts the edited file, which extends G6's random writes with the adversarial contents.
 
+With `--chained` (Appendix D's combined edits), only chains are run: on each file, three added data sections and then
+an append, each step predicted from the previous step's predicted item table (never re-extracted) and compared with
+re-extraction of the file it writes; a step that does not apply or is flagged ends the chain.
+
 Outputs, in `{outdir}/`:
+    chains.parquet  (`--chained`) one row per (file, step): the operation, the result (exact, mismatch, flagged,
+                    does_not_apply), the mismatched features, the population check before and after
+    chains.json     (`--chained`) per step, the results on the population and outside it; `exact`
     edits.parquet   one row per (file, operation, instance): applies, parses, precondition, the precondition on the
                     edited file (P1, closure; for files that pass), features changed, violations under each
                     variant, the C1 result
@@ -424,6 +431,85 @@ def _check_base(name: str, base: str, z: bytes, pe: pefile.PE, seed: int) -> lis
 
 
 ################################################################################
+# Chained edits: the item table carried forward one edit at a time
+################################################################################
+
+
+def chain_steps(z: bytes, pe: pefile.PE, rng: np.random.Generator) -> list[tuple[str, bytes]]:
+    """
+    The chained instances (`--chained`): up to CHAIN_SECTIONS added data sections (random content, distinct names, at
+    the end or, on files with an overlay, before it), then an append of random bytes. Each step's parameters as
+    (op, label); the bytes are the section's content or the appended bytes.
+    """
+    before = pe.get_overlay_data_start_offset() is not None
+    steps = [(f"sec{'_before_overlay' if before else ''}", _random(4096, rng)) for _ in range(CHAIN_SECTIONS)]
+    return steps + [("app", _random(3000, rng))]
+
+
+CHAIN_SECTIONS = 3
+
+
+def _check_chain(task: tuple[str, int]) -> list[dict[str, Any]]:
+    """
+    One chain on one file: every step predicted from the previous step's predicted item table (never re-extracted),
+    and each intermediate file re-extracted only to compare. A step that does not apply ends the chain.
+    """
+    name, seed = task
+    merged: PEFeatureExtractor = _STATE["merged"]
+    z = _STATE["reader"].get(name).data
+    pe = _parse(z)
+    if pe is None:
+        return []
+    pre = passes_precondition(merged, z, loose=_STATE["loose"])
+    modeled = ~np.array([n.startswith("pefilewarnings:") for n in merged.feature_names])
+    names = merged.feature_names
+    rng = np.random.default_rng([seed, int(name[:8], 16), 1])
+    rows: list[dict[str, Any]] = []
+    old, table = z, merged.item_table(z)
+    for k, (label, content) in enumerate(chain_steps(z, pe, rng)):
+        row: dict[str, Any] = {"name": name, "precondition": pre, "step": k, "op": label, "applies": False,
+                               "result": "", "detail": []}
+        rows.append(row)
+        if label.startswith("sec"):
+            p = predict_add_section(merged, table, old, f".pv{k}".encode(), content, DATA_CHARACTERISTICS,
+                                    label.endswith("before_overlay"))
+            if p is None:
+                row["result"] = "does_not_apply"
+                break
+        else:
+            p = predict(table, old, ByteEdit(len(old), len(old), content), merged.recognizers)
+        row["applies"] = True
+        if p.table is None:
+            row["result"], row["detail"] = "flagged", [p.reason]
+            break
+        x = np.asarray(merged.feature_vector(p.new))  # type: ignore[no-untyped-call]
+        y = np.asarray(p.features(merged.readouts))
+        bad = modeled & ~((x == y) | (np.isnan(x) & np.isnan(y)))
+        row["result"] = "exact" if not bad.any() else "mismatch"
+        row["detail"] = [f"{names[i]} {x[i]} != {y[i]}" for i in np.where(bad)[0]][:20]
+        row["precondition_after"] = passes_precondition(merged, p.new, loose=_STATE["loose"]) if pre else None
+        old, table = p.new, p.table
+    return rows
+
+
+def chain_report(rows: list[dict[str, Any]]) -> dict[str, Any]:
+    """Per step: chains reaching it, and results on the files in the population and outside it."""
+    out: dict[str, Any] = {"files": len({r["name"] for r in rows})}
+    for k in sorted({r["step"] for r in rows}):
+        mine = [r for r in rows if r["step"] == k]
+        out[f"step_{k}"] = {
+            "op": Counter(r["op"] for r in mine).most_common(),
+            "population": Counter(r["result"] for r in mine if r["precondition"]).most_common(),
+            "outside": Counter(r["result"] for r in mine if not r["precondition"]).most_common(),
+            "mismatched_features": Counter(d.split(" ")[0] for r in mine if r["precondition"] and r["result"] == "mismatch"
+                                           for d in r["detail"]).most_common(20),
+        }
+    # Exact on the population: no chain step on a file in the population mispredicts (flags allowed, reported).
+    out["exact"] = not any(r["precondition"] and r["result"] == "mismatch" for r in rows)
+    return out
+
+
+################################################################################
 # Main
 ################################################################################
 
@@ -440,6 +526,9 @@ def main() -> None:
     parser.add_argument("--workers", type=int, default=16)
     parser.add_argument("--loose", action="store_true",
                         help="The widened population (R7): loose precondition, `ent`, escaped copies of each file.")
+    parser.add_argument("--chained", action="store_true",
+                        help="Only the chained edits (three added sections, then an append; the item table carried "
+                             "forward): chains.parquet and chains.json.")
     args = parser.parse_args()
     ops = LOOSE_OPS if args.loose else OPS
 
@@ -450,6 +539,24 @@ def main() -> None:
     if args.num_files:
         files = files[: args.num_files]
     print(f"{len(files)} files, {args.workers} workers, directions {args.directions}", flush=True)
+
+    if args.chained:
+        t0 = time.perf_counter()
+        chains: list[dict[str, Any]] = []
+        with get_context("forkserver").Pool(args.workers, initializer=_init_worker, initargs=(args.db, args.directions, args.loose)) as pool:
+            for r in tqdm(pool.imap_unordered(_check_chain, [(f, args.seed) for f in files]), total=len(files),
+                          mininterval=30, file=sys.stdout):
+                chains += r
+                for row in r:
+                    if row["result"] == "mismatch":
+                        print(f"chain {row['name'][:12]} step {row['step']} ({row['op']}): {row['detail'][:3]}", flush=True)
+        chains.sort(key=lambda r: (r["name"], r["step"]))
+        summary = chain_report(chains) | {"seconds": time.perf_counter() - t0}
+        args.outdir.mkdir(parents=True, exist_ok=True)
+        pl.DataFrame(chains, infer_schema_length=None).write_parquet(args.outdir / "chains.parquet")
+        (args.outdir / "chains.json").write_text(json.dumps(summary, indent=2))
+        print(json.dumps(summary, indent=1))
+        return
 
     rows: list[dict[str, Any]] = []
     t0 = time.perf_counter()
