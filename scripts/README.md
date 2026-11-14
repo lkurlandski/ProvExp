@@ -34,19 +34,12 @@ make_fixtures (test files).
 - **The trial competitor (R18, run 144):** trial_probe (a stronger trial of the in-place operations and donor imports,
   our own writers), trial_table (the direction table learned by trial against the derived one, and the files to
   train a monotone detector on it), trial_audit (replays each evasion of run 144 and names the features carrying it).
-- **From A' (dropped, two pieces used by the paper):** ap_check1_learned (learned constraints, run 110: Table 6's
-  learned row), ap_containment (combined edits, run 111: Table 5's last row), with ap_check0_solver (Kantchelian's
-  exact GBDT encoding) and ap_encoding underneath. The rest of `ap_*` is source material only.
 
 Library code: the item layer `src/provexp/items.py`, the engines `src/provexp/reach.py`, the catalogue
 `src/provexp/featuresets/ember2024/catalogue.py`, the re-encoding over sums `.../sums.py`, the expert set
 `.../expert.py`.
 
-## The old direction (explanation provenance, dropped 2026-10-22; kept as source material)
+## Removed
 
-Explanations and census (explain, provenance_census, pullback_agreement, pilot_tables, theory_coverage,
-provenance_cost, exact_pullback_check); CP (cp_tables, cp_coarsening, cp_blackbox); PB1 (discover_protected_fields,
-header_typical_values, faithfulness, pb1_tables); the trigger (trigger_*); PF1 (pf1, pf1_resolution, pf_inverse,
-pf_malconv); 3-A (cm_*); 3-C audit (audit_*); the old manuscript's figures (paper_figures); shared transplant machinery
-(shortcuts, shortcuts_transplant). They stay in place because tests and old `run/` scripts load them by path.
-Experiments dropped earlier are in `scripts/archive/`.
+The old direction's scripts (explanation provenance), the A' encoding (`ap_*`) and `scripts/archive/` were removed
+in the refactoring session (2026-11-14); they are in git history, last at tag `pilot-final`.

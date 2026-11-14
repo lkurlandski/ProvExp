@@ -17,3 +17,7 @@ Conventions, which matter for reproducibility:
 
 Reconstructed on 2026-10-08 from `artifacts/logs/` and the reports in `artifacts/`; steps 1-9 ran before that date,
 so their scripts record the arguments their logs and reports show, not a transcript of the shell.
+
+**A historical record since the refactoring session (2026-11-14).** Steps 1-146 call `scripts/*.py`, which moved
+into `pipeline/` and `src/provexp/` (or were removed) after step 146. To re-run one of them, check out the tag
+`pilot-final`, the last commit before the move. New experiments go into `pipeline/`.
