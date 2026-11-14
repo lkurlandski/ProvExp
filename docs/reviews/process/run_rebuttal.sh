@@ -8,7 +8,7 @@
 #      instead of the whole review, checking only the group's deciding questions (rebuttal-brief.md ->
 #      rebuttal/<group>.md).
 # Knobs in config.sh; procedure in docs/reviews/review-prompt.md; the decision sessions in
-# docs/resume-prompt-rebuttal.md.
+# docs/reviews/rebuttal-prompt.md.
 #
 # Usage (from the repository root):
 #   TAG=2026-11-12-body REBUTTAL_SKIP="R7 R1 R6 R17" docs/reviews/process/run_rebuttal.sh   # step 1 (triage)
@@ -68,7 +68,7 @@ fill() {
 
 if [[ -z "$REBUTTAL_GROUPS" ]]; then
     if [[ -f "$DRAFTS/triage.md" ]]; then
-        echo "rebuttal/triage.md exists: take the decisions on it (docs/resume-prompt-rebuttal.md), then run the"
+        echo "rebuttal/triage.md exists: take the decisions on it (docs/reviews/rebuttal-prompt.md), then run the"
         echo "groups to investigate with REBUTTAL_GROUPS=\"...\". Delete triage.md to triage again."
         sed -n 's/^GROUP \([a-z0-9-]*\): \(.*\)$/  group \1: \2/p' "$DRAFTS/triage.md"
         exit 0

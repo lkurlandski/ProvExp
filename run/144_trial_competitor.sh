@@ -1,7 +1,7 @@
 #!/bin/bash
-# R18 (docs/reviews/2026-11-12-body/rebuttal/triage.md; docs/resume-prompt-R18.md): the trial competitor. FOR ACADEMIC
-# SECURITY RESEARCH ONLY: our own adaptive search and the published MAB-Malware against our own detectors, on the
-# pilot test malware. Nothing is deployed.
+# R18 (docs/reviews/2026-11-12-body/rebuttal/triage.md; docs/archive/resume-prompt-2026-11-14-R18.md): the trial
+# competitor. FOR ACADEMIC SECURITY RESEARCH ONLY: our own adaptive search and the published MAB-Malware against our
+# own detectors, on the pilot test malware. Nothing is deployed.
 #
 # A practitioner who knows the twelve operations can learn their directions by trial (apply each, extract, look) instead
 # of deriving them. Here a monotone detector is built on the trial table exactly as the derived detector is built on the

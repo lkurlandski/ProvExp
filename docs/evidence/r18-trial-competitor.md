@@ -1,6 +1,6 @@
 # R18: the trial competitor
 
-Session 60 (2026-11-13, R18 track; `docs/resume-prompt-R18.md`). The review's point (C-W3, D-W6, B-W4 (e)): §5 never
+Session 60 (2026-11-13, R18 track; `docs/archive/resume-prompt-2026-11-14-R18.md`). The review's point (C-W3, D-W6, B-W4 (e)): §5 never
 builds the competitor a practitioner who knows the twelve operations would use, a systematic trial over them. This
 note records what was built, what it showed, and what waits on the user. The run is `run/144_trial_competitor.sh`
 (its header holds the numbers too); artifacts in `artifacts/experiments/r18_trial/`.

@@ -44,7 +44,7 @@ All in `docs/reviews/process/`:
 | `note-to-reviewers.md` | the authors' note: what the paper claims (while the introduction is empty), what is missing on purpose, how to treat preliminary numbers, **every blue value by name** | **before every run**, to match the manuscript |
 | `checklist.md` | the questions only the meta-reviewer answers, and the settled points | **before every run** |
 | `meta-brief.md` | the meta-reviewer's task and output form | when the output form changes |
-| `triage-brief.md` | the triage agent's task: a verdict per register item, the groups to investigate with their deciding questions, the form of `rebuttal/triage.md` | when the procedure of `docs/resume-prompt-rebuttal.md` changes |
+| `triage-brief.md` | the triage agent's task: a verdict per register item, the groups to investigate with their deciding questions, the form of `rebuttal/triage.md` | when the procedure of `docs/reviews/rebuttal-prompt.md` changes |
 | `rebuttal-brief.md` | one drafting agent's task: one group of items, its deciding questions, the form of its draft | likewise |
 | `dossier.py` | cuts out of a review folder what a group of items rests on (register rows, §3 verdicts, §5 entries, cited reviewer passages) | when the review's output form changes |
 | `run_rebuttal.sh` | the rebuttal: the triage (no `REBUTTAL_GROUPS`), or the drafts of the chosen groups, `REBUTTAL_PARALLEL` at a time | rarely |
@@ -86,7 +86,7 @@ Placeholders in the prompt files (`{{VENUE}}`, `{{SCALE}}`, `{{TAG}}`, `{{OUT}}`
 5. **Rebuttal triage** (automatic unless `REBUTTAL=0`): `docs/reviews/<TAG>/rebuttal/triage.md`, a verdict per
    register item and the groups to investigate; log `triage.log`. Rerun it alone with `STEPS=rebuttal TAG=<tag>`
    (an existing triage is kept; delete it to triage again).
-6. **Afterwards** (`docs/resume-prompt-rebuttal.md`): the user takes the decisions on the triage table, most
+6. **Afterwards** (`docs/reviews/rebuttal-prompt.md`): the user takes the decisions on the triage table, most
    significant first; the groups they choose to investigate are drafted with
    `REBUTTAL_GROUPS="<names>" STEPS=rebuttal TAG=<tag>` (`rebuttal/<group>.md`) and decided in a later session. The
    decisions decide what the full-scale run includes.

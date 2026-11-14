@@ -67,10 +67,8 @@ scale-up to be human-readable and portable. This session is hands-on refactoring
 - Propose the target tree and the list of deletions to the user before moving files; then move, then check.
 - Do not change any computation. Behaviour changes (e.g., the adaptive attack's watchdog for 5,000 candidates, the
   2,000 checkpoint) are noted for the scale-up session, not mixed into the move.
-- Leave the R18 session's files alone unless the user says that track is closed (it closed in session 63; its
-  uncommitted changes to `PLAN.md`, `docs/status.md`, `run/144_trial_competitor.sh`, `scripts/a1_adaptive.py`
-  (`--save_rows`), `scripts/trial_audit.py` and `docs/evidence/r18-trial-competitor.md` should be committed by the user or
-  that session first; check `git status` before starting).
+- The R18 track is closed and committed (39b9b49, b80ffe5: `a1_adaptive.py --save_rows`, `trial_audit.py --mab`, the
+  run 144 reading); its scripts are part of the refactor like any other. Check `git status` before starting.
 
 ## After this session
 
