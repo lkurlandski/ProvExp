@@ -127,8 +127,48 @@ reads. Smoke (1 pilot file, 100 candidates, trial detector): the saved row score
 and lists the features carrying the drop by `pred_contrib`, with trial's marking. On the smoke file it reproduces the
 stored row exactly and names `strings:regex_https://` (0 -> 16, -1.53 logit, free in trial).
 
+## Run 144: the attacks (session 63)
+
+Detected / evaded, all pilot malware each detector detects (in brackets: files in the population):
+
+| detector | beam, 2,000 candidates | MAB-Malware |
+|---|---|---|
+| trial | 44 / 26 (33 / 19) | 44 / 17 (32 / 12) |
+| trial-toolkit | 20 / 13 (14 / 7) | 20 / 3 (13 / 1) |
+| derived (`-loose`) | 39 / 0 (28 / 0) | 39 / 0 (27 / 0) |
+
+Hypothesis against it: derived 0 with its score never falling (min Δlogit +0.00): **held**. Trial evaded on 40-60%,
+nearly all by `ent`: **held** (59%; every evasion uses `ent`). Trial-toolkit evaded on a few: **failed** (13 of 20;
+only 2 use `ent`). MAB-Malware few or none: **failed** for trial (17 of 44, each by one overlay append of a benign
+section's content); held for trial-toolkit (3, two outside the population) and derived.
+
+Audit (`scripts/trial_audit.py`, `--mab` for MAB-Malware; outputs in `artifacts/experiments/r18_trial/attacks/audit/`):
+all 39 beam evasions replayed and every one reproduces the run (the four longest, 10-24 min each, replayed after the
+user's go-ahead). All 20 MAB-Malware evasions reproduce from
+the minimal files it kept. In every evasion the feature carrying the largest drop is one the trial table left
+**free**, i.e. no edit trial tried ever moved it:
+
+- trial, beam: `strings:regex_https://` leads 21 of 26 (0 -> 2 to 48: a cloned certificate's URLs), the rest import
+  buckets (`import_hash_271`, `library_hash_109`), `regex_onlick`, and two parser warnings on files outside the
+  population;
+- trial, MAB-Malware: `regex_https://` leads 16 of 17 (0 -> 2), with `regex_download` and `regex_powershell`: the
+  appended benign content holds URLs and those words, trial's random, printable and zero contents none;
+- trial-toolkit, beam: import library buckets lead 11 of 13 (`library_hash_163`, `167`, `162`, `199`, `110`): the attack's
+  donor libraries hash into buckets the 200 trial donors and the toolkit outputs never touched; parser warnings on
+  the files outside the population (where trial-toolkit is not even monotone: "Invalid resources directory", marked
+  raise-only, falls 1 -> 0).
+
+The derived detector drops the string counts and the warnings and holds the import buckets monotone increasing, so
+none of these moves can lower its score. Reading: each wider trial closes the holes it tried (the toolkit's benign
+appends close `regex_https://`), and the attack finds the next one it did not try (import buckets). Trial answers
+only for the edits and the contents it tries; the derived table answers for the threat model.
+
 ## Log
 
 - 2026-11-13 (session 60): steps 0-3 above; run 144 scripted; scripts `trial_probe.py`, `trial_table.py` (176dbb8).
 - 2026-11-14 (session 62): while run 144 ran: the six disagreements traced, run 145 (the import addresses' breadth
   costs nothing), the `--save_rows` patch (proposal), `scripts/trial_audit.py`.
+- 2026-11-14 (session 63): run 144 read and audited (above); `trial_audit.py --mab`. Decisions (user): the reading
+  (§5's lead and §5.3, text after the scale-up; trial's clean-detection edge stated with §5.4's cost); a trial row
+  (own writers + derived) in Table 5 at the scale-up, trial-toolkit at pilot scale; iterated adversarial training in
+  the scale-up as in step 3 (`ent` held out). `--save_rows` applied to `a1_adaptive.py` (39b9b49).

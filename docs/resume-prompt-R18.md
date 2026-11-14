@@ -1,5 +1,7 @@
 # Resume: R18, read run 144 and take the user's decisions
 
+**Closed in session 63 (2026-11-14):** run 144 read and audited, the three decisions taken (docs/evidence/r18-trial-competitor.md, Log). R18 has nothing open before the scale-up; this prompt is kept for the record.
+
 Written in session 60 (2026-11-13, R18 track), updated in session 62 (2026-11-14), for the next R18 session. Self-contained: everything needed is below or
 in the files it names. Two other tracks run in parallel: R7 (`docs/resume-prompt.md`) and the rebuttal
 (`docs/resume-prompt-rebuttal.md`). Commit only the files you changed (`git add <paths>`, never `git add -A`).

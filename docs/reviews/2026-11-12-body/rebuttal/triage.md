@@ -7,7 +7,7 @@ Commit 2e4c350. Verdicts: decided, dismiss, cheap fix, investigate.
 | R7 | routed system is a bypass | investigate | population | methodology: decision 11 stands; end-to-end number after run 143 |
 | R1 | attacks weaker than published; adaptive attack misses an operation | investigate | attacks | methodology: decision 12 stands; one wording fix; MAB rerun at their setting: yes (session 58) |
 | R2 | "sound" rests on tested premises | investigate | trust | argument + 4-byte record fix: draft confirmed (session 58); probe and vocabulary check not needed |
-| R18 | learned baselines get less information | investigate | trial | pending: trial evaded at smoke (5/11, signature cloning); run 144 for the user |
+| R18 | learned baselines get less information | investigate | trial | experiment: trial row (trial + derived) and iterated adversarial training in the scale-up; reading for §5's lead and §5.3 after it (session 63) |
 | R6 | formal results are known techniques | cheap fix | | argument: session 50 stands; name self-maintainability |
 | R4 | one instance for a class claim | cheap fix | | argument (after scale-up; wording not yet reviewed) |
 | R20 | statistics cannot rank defenses | cheap fix | | methodology: thresholds from the validation split at scale-up |
@@ -144,11 +144,18 @@ propose it without a reviewer. Iterative adversarial training is what four revie
   87.6% at 1% FPR (derived 83.4%) and falls at the smoke to one `ent` edit on 5 of 11 files, through
   `regex_https://`, a count trial never moved; with the toolkit outputs, trial takes in LIEF's side effects (179
   features) and detects 53.1%.
-- [ ] Run 144 (user): the trial detectors and the derived one under the real-scored beam and MAB-Malware.
-- [ ] User: the reading (proposed: §5's lead and §5.3 gain the trial row as evidence that trial answers only for the
-  edits and contents it tries; text after the scale-up).
-- [ ] User: iterated adversarial training at the scale-up (recommended: in, two rounds, `ent` and MAB-Malware held
-  out; needs a save option in `a1_adaptive.py`, R7-owned; ~13-15 h pilot, days at scale).
+- [x] Run 144 (user): the trial detectors and the derived one under the real-scored beam and MAB-Malware. Read and
+  audited in session 63: trial evaded on 26/44 (beam) and 17/44 (MAB-Malware), trial-toolkit 13/20 and 3/20, derived
+  0/39 under both with its score never falling; every evasion (39/39 beam replays, 20/20 MAB-Malware files) is carried
+  by a feature the trial table left free (`regex_https://` for trial, import buckets for trial-toolkit).
+- [x] User: the reading. Decided (session 63): §5's lead and §5.3 gain it as measured evidence that trial answers only
+  for the edits and contents it tries; the toolkit variant in a sentence or two; trial's clean-detection edge stated
+  with §5.4's cost. Text after the scale-up.
+- [x] User: the trial row at the scale-up. Decided (session 63): trial (own writers) and derived in Table 5, same
+  protocol; trial-toolkit stays at pilot scale.
+- [x] User: iterated adversarial training at the scale-up. Decided (session 63): in, two rounds, `ent` held out of the
+  loop, `ent` and MAB-Malware as held-out attacks. `a1_adaptive.py --save_rows` applied (user's go-ahead).
+- [ ] After the scale-up: the trial paragraph in §5's lead and §5.3 (with the cost in §5.4).
 
 ### R6: the formal results are known techniques
 **Verdict:** cheap fix. All four say it and they are right: Proposition 1 is the delta rule of incremental view

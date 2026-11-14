@@ -38,7 +38,22 @@
 #   regex_https:// and other string counts; derived 0 with its score never falling (Theorem 1); trial-toolkit evaded on
 #   a few files (its table misses fewer features, but it is monotone in some the attack can lower: its score fell in
 #   the smoke). MAB-Malware has no signature cloning: few or no evasions of any of the three.
-# Reading (next R18 session): into this header, then the triage's R18 entry.
+# Reading (Claude, session 63, 2026-11-14; run took 94 min adaptive + 13 min MAB at NUM_WORKERS=24). Detected / evaded
+#   (in brackets: files in the population):
+#                   beam (2,000 candidates)     MAB-Malware
+#   trial           44 / 26 (33 / 19)           44 / 17 (32 / 12)
+#   trial-toolkit   20 / 13 (14 / 7)            20 / 3  (13 / 1)
+#   derived         39 / 0  (28 / 0)            39 / 0  (27 / 0)
+#   Derived: 0 evasions, its score never fell below the clean score (min delta logit +0.00): held. Trial: 59%, every
+#   evasion uses `ent`: held. Trial-toolkit "a few": FAILED (13/20, only 2 use `ent`). MAB-Malware "few or none":
+#   FAILED for trial (17/44, each by one overlay append of benign content).
+#   Audit (scripts/trial_audit.py, and --mab; outputs in $OUT/audit/; all 39 beam evasions replayed and all 20 MAB
+#   evasions rescored, every one reproduces the run): every evasion's largest drop is a
+#   feature the trial table left free, i.e. one no tried edit moved. Trial: strings:regex_https:// in 21 of 26 beam and
+#   16 of 17 MAB evasions (a cloned certificate's or appended benign content's URLs; trial's contents held none), the
+#   rest import buckets and parser warnings. Trial-toolkit: import buckets (library_hash_163, 167, ...) in 11 of 13
+#   (the attack's donor libraries hash where trial's donors never did), parser warnings on the files outside the
+#   population. Each wider trial closes the holes it tried; the attack finds the next untried one.
 #
 # Resources: one search per (detector, file), NUM_WORKERS processes (spawn; ~1 GB each), OMP_NUM_THREADS=1 each.
 # Real extraction ~0.6 s per candidate on a loaded machine, so a file not evaded takes ~20 min: derived ~40 files at

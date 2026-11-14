@@ -401,11 +401,18 @@ records of the §5 reviews, the table remake and the ERDALT check, is in
    the scale-up, MAB-Malware also at Zainab et al.'s setting (0.1% FPR, no byte cap) against the unconstrained
    detector (R1), and the ERDALT donor-overlap control (GAMMA imports with the training donors; R19). Waiting on: run
    143 (R7 track) and R18 (the trial competitor; decides whether iterated adversarial training joins).
-   *R18, session 60* (`docs/evidence/r18-trial-competitor.md`): the trial detector falls at the smoke (5/11, one
-   signature-cloning edit, through a string count trial never moved); run 144 (attacks, ~3 h) waits on the user.
-   Proposed for the scale-up, the user's call: the trial row (trial and derived detectors, same protocol) in Table 5,
-   and iterated adversarial training (two rounds, adaptive beam in the loop, `ent` and MAB-Malware held out; needs a
-   save option in `a1_adaptive.py`, R7-owned).
+   *R18, sessions 60-63* (`docs/evidence/r18-trial-competitor.md`): run 144 read and audited. The trial detector
+   (directions learned by trying the twelve operations) is evaded on 26/44 pilot malware by the beam and 17/44 by
+   MAB-Malware, the derived detector on 0/39 by both; every evasion goes through a feature trial never saw move.
+   **Decided (user, session 63):** (a) the reading: §5's lead and §5.3 gain it as measured evidence that trial answers
+   only for the edits and contents it tries, the derivation for the threat model; the toolkit variant in a sentence or
+   two (a wider trial closes one hole, the attack finds the next); trial's clean-detection edge (87.6 vs 83.4% at 1%
+   FPR) stated with §5.4's cost, as resting on features an attacker can move; prose after the scale-up. (b) The
+   scale-up has a trial row in Table 5 (the own-writer trial and the derived detector, same protocol, beam and
+   MAB-Malware); trial-toolkit stays at pilot scale (text or appendix). (c) Iterated adversarial training in the
+   scale-up: two rounds of the beam over the twelve operations on training malware, `ent` held out of the loop,
+   tested with `ent` and MAB-Malware as held-out attacks (`a1_adaptive.py --save_rows`, applied in session 63;
+   training malware via `--pilot_files` with a training list and `--db .../tr`).
    **Answered (user, session 49): widen first, for now**, then scale everything once. The question was: scale the
    existing experiments first (more files, seeds 0-2), or widen
    them first (the review's new experiments: MAB-Malware, the escape attack, equal-information baselines, a trial

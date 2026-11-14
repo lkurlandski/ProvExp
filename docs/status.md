@@ -98,9 +98,6 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
   `src/provexp/`, dead code removed, tests), with `SETUP.md` for new systems (the SLURM clusters sporc and tigris).
   Then the extractor audit pass, the remaining protocol items (malware count first), and a session on the cluster's
   head node. Number-free rebuttal text fixes (R4, R5, R15, R21) move to step 4 (while the scale-up runs).
-- **R18 (its own session): run 144 and three decisions** (session 60; `docs/evidence/r18-trial-competitor.md`,
-  `docs/resume-prompt-R18.md`). Decide the reading, the trial row at the scale-up, and iterated adversarial training
-  (recommended: in).
 
 ## Scheduled (in order; PLAN.md, next steps)
 
@@ -126,6 +123,15 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
   methodology); the user has shared SLURM clusters (sporc x86_64, tigris aarch64; config read from SSViT); a
   `pipeline/` reorganization with one `run.sh` per step (`#SBATCH` header, `sbatch` or `bash`), plain names, library
   code into `src/provexp/`, `SETUP.md`; executed in a dedicated refactoring session. PLAN.md step 3 (d)-(e).
+
+- **2026-11-14 (session 63, R18 track): run 144 read; R18 decided.** The trial detector (directions learned by trying
+  the twelve operations) is evaded on 26/44 pilot malware by the beam and 17/44 by MAB-Malware, trial-toolkit on
+  13/20 and 3/20, the derived detector on 0/39 under both (score never falls). Audit (`trial_audit.py`, new `--mab`):
+  every evasion carried by a feature trial never saw move (`regex_https://`; import buckets for trial-toolkit).
+  Hypothesis: derived and trial parts held; trial-toolkit "a few" and MAB-Malware "few or none" failed (both in our
+  favour). **Decisions (user):** the reading for §5's lead and §5.3 (text after the scale-up); a trial row in Table 5
+  at the scale-up; iterated adversarial training in the scale-up (`ent` held out). `a1_adaptive.py --save_rows`
+  applied. R18 has no open item before the scale-up.
 
 - **2026-11-14 (session 62, R7/scale-up track): the decisions before the scale-up taken; verification and small fixes
   done.** Rebuttal status reviewed (triage table, meta-review §5-8). **Decisions (user):** (1) stay on pefile, with a
