@@ -369,7 +369,7 @@ records of the §5 reviews, the table remake and the ERDALT check, is in
    (the one difference is pefile's 8,192-import cap), and parsing is only ~12-25% of our per-file time, so a switch
    buys little against the cost of rebuilding the locating record (pefile's Python gave it to us) and losing the
    bit-exact match with EMBER's released vectors. **Still to do before the scale-up's featurization:** one deliberate
-   audit pass against the three principles of §6, with a deviations table in Appendix D. Known entries: the overlay
+   audit pass against the three principles of `docs/evidence/r7-overlay-rule.md` §6, with a deviations table in Appendix D. Known entries: the overlay
    rule (LIEF's), the warnings dropped, thrember's quirks patched, the 4 MB cut, and the newly verified items —
    pefile's parser caps (§10: an exactness gap for `imp`/`sec` near a cap, not a soundness hole) and the
    always-constant features (`docs/upstream-issues.md` 2-3). The escape audit against the widened population (§9)
