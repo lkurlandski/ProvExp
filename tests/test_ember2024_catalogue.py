@@ -3,7 +3,7 @@ Tests for provexp.featuresets.ember2024.catalogue: the layout clauses of the pre
 test file edited into the layout it excludes; and the item-stated operations' declarations, each against re-extraction
 of the file our own edit writes.
 
-The tests need executables in tests/data/ (see scripts/make_fixtures.py) and are skipped without them.
+The tests need executables in tests/data/ (see pipeline/setup/make_fixtures.py) and are skipped without them.
 """
 
 from pathlib import Path
@@ -40,7 +40,7 @@ FILES = sorted(f for f in DATA.glob("*/*") if f.is_file())[:12]
 
 def needs_files() -> None:
     if not FILES:
-        pytest.skip(f"No test files found in {DATA.as_posix()} (see scripts/make_fixtures.py).")
+        pytest.skip(f"No test files found in {DATA.as_posix()} (see pipeline/setup/make_fixtures.py).")
 
 
 def _pe(data: bytes) -> pefile.PE:

@@ -1,7 +1,7 @@
 """
 Tests for the EMBER-2024 feature set (featuresets/ember2024/features.py).
 
-Most of these tests need real executables in tests/data/ (see scripts/make_fixtures.py) and are skipped without them.
+Most of these tests need real executables in tests/data/ (see pipeline/setup/make_fixtures.py) and are skipped without them.
 """
 
 import collections
@@ -63,7 +63,7 @@ COUNT_FEATURES += [n for n in NAMES if n.startswith("strings:regex_")]
 
 def needs_files() -> None:
     if not FILES:
-        pytest.skip(f"No test files found in {DATA.as_posix()} (see scripts/make_fixtures.py).")
+        pytest.skip(f"No test files found in {DATA.as_posix()} (see pipeline/setup/make_fixtures.py).")
 
 
 @lru_cache(maxsize=4)

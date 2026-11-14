@@ -36,16 +36,19 @@ conference cycles are not a planning constraint (user).
   direction engines; "C1" and "C4" in old names), `featuresets/ember2024/` (`features.py`: thrember + instrumentation,
   with LIEF's overlay rule installed in pefile; `catalogue.py`: the edit catalogue and the population check; `sums.py`:
   the re-encoding over sums; `expert.py`: Gimenez et al.'s 40 features), `data/` (SimpleDB, feature store, TLSH),
-  `models/` (GBDT, MLP, MalConv, ERDALT), `metrics.py`. From the old direction: `boxmatrix.py`, `provenance.py`, `explain/`, `ablation.py`. Design notes:
-  `docs/design.md`.
-- `scripts/`: inventory in `scripts/README.md`, grouped by what the paper uses. Dropped experiments are under
-  `scripts/archive/`.
-- **Rankings break ties by a seeded permutation, never by position or index** (`ablation.element_order` /
-  `window_order` with `tiebreak`, `pf1.feature_order`), and treat scores within 1e-9 (relative) as tied: equal scores
-  are common (features or bytes with identical provenance; occlusion windows that change nothing).
-- `run/`: the commands that produced `artifacts/`, one numbered script per step, with the runtimes they took. **Add a
-  script here whenever a new experiment is run**, and keep its arguments in sync with what was actually run. In
-  these scripts: (1) `echo` a short line before each step saying what runs and, above all, **the log file** a long
+  `models/` (GBDT, MLP, MalConv, ERDALT), `metrics.py`, `boxmatrix.py` and `provenance.py` (the byte contributions
+  the instrumentation records), `attacks/` (toolkit, adaptive, MAB-Malware), `detectors.py`, `registry.py` (the plain
+  names of detectors and attacks), `featuresets/ember2024/{edits,escapes,population,directions,hand}.py`. Design
+  notes: `docs/design.md`.
+- `pipeline/` (since 2026-11-14): the experiments, one numbered stage per folder, one step per subfolder with a
+  `run.sh` (SLURM header; `sbatch` or `bash`) and a thin command line over `src/provexp/`; `pipeline/README.md` maps
+  each paper result to its step. **No script imports another**: shared code goes into `src/provexp/`. Setup for new
+  systems: `SETUP.md`. After moving or refactoring code, `pipeline/setup/identity_check.sh` must find no difference.
+- **Rankings break ties by a seeded permutation, never by position or index** (e.g. `_tie_order` in
+  `provexp.attacks.adaptive`), and treat scores within 1e-9 (relative) as tied: equal scores are common.
+- `run/`: the pilot's commands (steps 1-146), a historical record since the refactoring (2026-11-14): they call the
+  old `scripts/`, so re-run them at tag `pilot-final`. New experiments are `run.sh` steps in `pipeline/`. In every
+  run script: (1) `echo` a short line before each step saying what runs and, above all, **the log file** a long
   step writes to; (2) put one argument (or one short group) per line with `\` continuations, so that long commands
   are readable and easy to edit.
 - `tests/`: `reference/` is a verbatim copy of thrember's `features.py`. **Never edit it.**
@@ -57,7 +60,7 @@ conference cycles are not a planning constraint (user).
 - `tmp/` holds the user's scratch files (gitignored). Do not mention, list, or ask about them.
 - Gitignored, never commit: `tests/data/` (real malware), `checkpoints/` (MalConv), `index/` (split files from SSViT),
   `artifacts` (symlink to `/scratch/lk3591/provexp`: feature store, models, reports, logs).
-- Binaries: SimpleDB at `/shared/datasets/EMBER-2024/data/{tr,vl,ts}`, truncated to 4,000,000 bytes; scripts read
+- Binaries: SimpleDB at `/shared/datasets/EMBER-2024/data/{tr,vl,ts}`, truncated to 4,000,000 bytes; the code reads
   the location from `EMBER2024_DATA` (`src/provexp/data/paths.py`; set it on machines where the dataset lives
   elsewhere). Copying the artifacts to another server: `run/sync_artifacts.sh`.
 - Run featurization with `PYTHONHASHSEED=0` (thrember's warning features depend on the hash seed).
@@ -73,14 +76,14 @@ conference cycles are not a planning constraint (user).
   2026-10-12); GPUs are whatever `CUDA_VISIBLE_DEVICES` makes visible (unset: all), one process per visible GPU
   when separate processes train in parallel, never a custom `GPUS` variable (2026-11-11); the user may raise them, so
   never enforce the cap in Python (2026-10-26). Every new script reads the worker count from the environment, `NUM_WORKERS="${NUM_WORKERS:-16}"`, and passes `"$NUM_WORKERS"` to the
-  Python flag (`--workers`, `--num_workers`, ...), so the user can run `NUM_WORKERS=32 run/NNN_x.sh` (2026-11-03).
-  Never edit a `run/` script while it runs (bash reads it as it goes); sync its comments afterwards.
+  Python flag (`--workers`, `--num_workers`, ...), so the user can run `NUM_WORKERS=32 run/NNN_x.sh` (2026-11-03);
+  in `pipeline/`, `common.sh` sets it (the system's cores; 16 here). Never edit a run script while it runs (bash reads it as it goes); sync its comments afterwards.
 - **Explain plainly.** Lead with the plain-language version of an argument (what is computed, what it is compared
   with, why it matters); define terms and avoid dense shorthand. The user could not follow a jargon-heavy explanation
   (2026-10-12).
-- Light checks: `OMP_NUM_THREADS=2 nice -n 10 env/bin/pytest -q -p no:xdist tests/test_<module>.py`.
-  Full suite: `env/bin/pytest -n 16 tests` (~4 min).
-- Before committing: `env/bin/ruff check src tests scripts` and `env/bin/mypy src tests scripts` (strict) must pass.
+- Light checks: `env/bin/pytest -q tests/test_<module>.py`. Full suite: `env/bin/pytest -n 16 tests` (~4 min). Normal
+  priority (user, 2026-11-14).
+- Before committing: `env/bin/ruff check src tests pipeline` and `env/bin/mypy src tests pipeline` (strict) must pass.
 - **Compile the manuscript with `make` in `manuscript/`** (user-space TeX Live in `~/texlive`, latexmk + pdflatex).
   One file per section (`_a_abstract.tex` ... `_h_discussion.tex`, appendices `_j_proofs.tex` ...), in the mock's
   outline order; each stub's comment states its content and word budget. Count words with `texcount` per file.

@@ -204,7 +204,7 @@ PAST_END_KINDS = (
     ("section_split", "section"),
 )
 
-# The loader-ignored header fields (`hdr`; scripts/a1_adaptive.py, HDR_FIELDS).
+# The loader-ignored header fields (`hdr`; pipeline/5-attacks/adaptive/adaptive.py, HDR_FIELDS).
 HDR_FIELDS = (
     ("FILE_HEADER", "TimeDateStamp"), ("FILE_HEADER", "NumberOfSymbols"), ("FILE_HEADER", "PointerToSymbolTable"),
     ("OPTIONAL_HEADER", "MajorImageVersion"), ("OPTIONAL_HEADER", "MinorImageVersion"),
@@ -496,7 +496,7 @@ def passes_precondition(extractor: PEFeatureExtractor, z: bytes, loose: bool = F
 # The item-stated operations, written and declared exactly (Table 5)
 ################################################################################
 
-# NOTE: these are the operations of scripts/catalogue_checks.py (G7), written by our own byte-level edits, which do
+# NOTE: these are the operations of pipeline/1-audit/catalogue-checks/catalogue_checks.py (G7), written by our own byte-level edits, which do
 # exactly the operation and nothing else (no relayout, unlike LIEF; assumption A4). Each `write_*` returns the byte
 # edits that perform it, in order; each `predict_*` writes the operation and declares its item delta: the items it
 # adds, removes, or modifies, and the items it keeps although it writes or moves the bytes that locate them (the

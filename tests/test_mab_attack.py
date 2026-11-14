@@ -1,9 +1,9 @@
 """
-Tests for scripts/mab_attack.py: our single-threaded MAB-Malware run with its direct hand-over to the classifier makes
+Tests for pipeline/5-attacks/mab-malware/mab.py: our single-threaded MAB-Malware run with its direct hand-over to the classifier makes
 the same run as upstream's code handing each file over through its polled folders.
 
 Both runs use a stand-in classifier (a fixed pseudo-random verdict per file content), so they exercise the rewriter,
-the bandit, and the minimizer quickly. The tests need executables in tests/data/ (see scripts/make_fixtures.py) and are
+the bandit, and the minimizer quickly. The tests need executables in tests/data/ (see pipeline/setup/make_fixtures.py) and are
 skipped without them.
 """
 
@@ -30,7 +30,7 @@ GOODWARE = sorted(f for f in (DATA / "goodware").glob("*") if f.is_file())
 
 def needs_files() -> None:
     if len(MALWARE) < 4 or len(GOODWARE) < 4:
-        pytest.skip(f"Not enough test files in {DATA.as_posix()} (see scripts/make_fixtures.py).")
+        pytest.skip(f"Not enough test files in {DATA.as_posix()} (see pipeline/setup/make_fixtures.py).")
 
 
 def _smallest(files: list[Path], n: int) -> list[tuple[str, bytes]]:

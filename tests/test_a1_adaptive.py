@@ -1,8 +1,8 @@
 """
-Tests for scripts/a1_adaptive.py: the adaptive search's C1 predictors come from the engine (derivation step 9), with
-the hand predictors of scripts/a_c1_table0.py as their oracle.
+Tests for pipeline/5-attacks/adaptive/adaptive.py: the adaptive search's C1 predictors come from the engine (derivation step 9), with
+the hand predictors of pipeline/1-audit/hand-table/hand_table.py as their oracle.
 
-The tests need executables in tests/data/ (see scripts/make_fixtures.py) and are skipped without them.
+The tests need executables in tests/data/ (see pipeline/setup/make_fixtures.py) and are skipped without them.
 """
 
 from pathlib import Path
@@ -44,7 +44,7 @@ DATA_CHARACTERISTICS = 0xC0000040
 
 def needs_files() -> None:
     if not FILES:
-        pytest.skip(f"No test files found in {DATA.as_posix()} (see scripts/make_fixtures.py).")
+        pytest.skip(f"No test files found in {DATA.as_posix()} (see pipeline/setup/make_fixtures.py).")
 
 
 def _overlay(data: bytes) -> bool:

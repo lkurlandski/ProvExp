@@ -1,7 +1,7 @@
 """
 Tests for the layer-2 re-encodings of EMBER v3 (featuresets/ember2024/sums.py).
 
-Most of these tests need real executables in tests/data/ (see scripts/make_fixtures.py) and are skipped without them.
+Most of these tests need real executables in tests/data/ (see pipeline/setup/make_fixtures.py) and are skipped without them.
 """
 
 from __future__ import annotations
@@ -40,7 +40,7 @@ SUMS_COLUMNS = np.array([i for i, n in enumerate(NAMES) if n.split(":")[0] in SU
 
 def needs_files() -> None:
     if not FILES:
-        pytest.skip(f"No test files found in {DATA.as_posix()} (see scripts/make_fixtures.py).")
+        pytest.skip(f"No test files found in {DATA.as_posix()} (see pipeline/setup/make_fixtures.py).")
 
 
 def _parse(data: bytes) -> Optional[pefile.PE]:

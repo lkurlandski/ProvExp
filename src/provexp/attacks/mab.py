@@ -20,6 +20,7 @@ import lief
 import numpy as np
 import pefile
 
+from provexp.data.paths import ROOT
 from provexp.detectors import make_extractor
 from provexp.detectors import precondition_holds
 from provexp.models.erdalt import load_detector
@@ -28,8 +29,6 @@ __all__ = ["ATTACK", "MABChannel", "MAB_DIR", "donor_contents", "final_file", "h
            "run_sync", "trace", "trace_run", "write_config"]
 
 
-# The repository root (src/provexp/attacks/mab.py is three levels below it; the package is installed editable).
-ROOT = Path(__file__).resolve().parents[3]
 MAB_DIR = ROOT / "third_party" / "mab_malware"
 MAX_LENGTH = 4_000_000
 ATTACK = "mab_malware"

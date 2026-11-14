@@ -1,7 +1,7 @@
 """
 Tests for the item layer of the EMBER-2024 feature set (the `items` methods and `readouts` properties of features.py).
 
-The real-file tests need executables in tests/data/ (see scripts/make_fixtures.py) and are skipped without them.
+The real-file tests need executables in tests/data/ (see pipeline/setup/make_fixtures.py) and are skipped without them.
 """
 
 from pathlib import Path
@@ -42,7 +42,7 @@ MODELED = np.array([not n.startswith("pefilewarnings:") for n in NAMES])
 
 def needs_files() -> None:
     if not FILES:
-        pytest.skip(f"No test files found in {DATA.as_posix()} (see scripts/make_fixtures.py).")
+        pytest.skip(f"No test files found in {DATA.as_posix()} (see pipeline/setup/make_fixtures.py).")
 
 
 ################################################################################

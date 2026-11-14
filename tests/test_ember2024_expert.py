@@ -2,7 +2,7 @@
 Tests for provexp.featuresets.ember2024.expert: Gimenez et al.'s 40 features on pefile, their two assign-instead-of-
 accumulate quirks, and the patched variant's claim that adding a section or an import never lowers a feature.
 
-The real-file tests need executables in tests/data/ (see scripts/make_fixtures.py) and are skipped without them.
+The real-file tests need executables in tests/data/ (see pipeline/setup/make_fixtures.py) and are skipped without them.
 """
 
 from pathlib import Path
@@ -34,7 +34,7 @@ DATA_CHARACTERISTICS = 0xC0000040
 
 def needs_files() -> None:
     if not FILES:
-        pytest.skip(f"No test files found in {DATA.as_posix()} (see scripts/make_fixtures.py).")
+        pytest.skip(f"No test files found in {DATA.as_posix()} (see pipeline/setup/make_fixtures.py).")
 
 
 def _pe(data: bytes) -> pefile.PE | None:

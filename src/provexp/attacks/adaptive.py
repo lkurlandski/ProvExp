@@ -42,14 +42,14 @@ __all__ = ["Donors", "Engine", "HDR_FIELDS", "Operation", "RealEngine", "THREAT"
            "zero_directory_entry"]
 
 
-# The threat models' operation sets (scripts/a_directions.py): additions, gap insertions, in-place overwrites.
+# The threat models' operation sets (pipeline/3-directions/derived/directions.py): additions, gap insertions, in-place overwrites.
 ADD, INSERT, OVERWRITE = ("app", "sec", "imp"), ("ext", "shf"), ("slk", "dos", "hdr", "chk", "ren", "rdb", "rsg", "ent")
 
 
 THREAT = {"M_add": ADD, "M_shift": ADD + INSERT, "M_full": ADD + INSERT + OVERWRITE}
 
 
-# The loader-ignored header fields (the threat model's `hdr`, matching scripts/a_directions.py's `header` group).
+# The loader-ignored header fields (the threat model's `hdr`, matching pipeline/3-directions/derived/directions.py's `header` group).
 HDR_FIELDS = (("FILE_HEADER", "TimeDateStamp"), ("FILE_HEADER", "NumberOfSymbols"),
               ("FILE_HEADER", "PointerToSymbolTable"), ("OPTIONAL_HEADER", "MajorImageVersion"),
               ("OPTIONAL_HEADER", "MinorImageVersion"), ("OPTIONAL_HEADER", "MajorLinkerVersion"),

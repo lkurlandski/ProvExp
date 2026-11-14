@@ -1,0 +1,275 @@
+"""
+Direction A, Table A1 (docs/evidence/direction-A-A1-design.md): the attack-evaluation harness for the toolkit columns.
+
+FOR ACADEMIC SECURITY RESEARCH ONLY. This runs Gimenez et al.'s eight published secml-malware attacks against our own
+detectors, on our own pilot samples, solely to evaluate defenses: which detectors stay robust to attacks that were
+(seen) and were not (held-out) used to build PV selection. No new evasion technique is developed and nothing is
+deployed; attacked files are written only so they can be re-extracted and re-scored.
+
+One protocol for every cell:
+    operating point   each defense's threshold is calibrated to `--fpr` (1%) on the goodware of its own test
+                      predictions (ts_predictions.parquet): detected means p > tau, and at most 1% of goodware is
+    malware           the detected pilot malware, attacked only where the defense detects it at tau
+    budget            `--budget low` is Gimenez's (population 10, 10 iterations, 30 donors); `--budget literature` is
+                      the GAMMA paper's (51 iterations, ~510 queries, 75 donors; a_pv_attacks.BUDGETS). An attacked
+                      file whose added bytes exceed max(--budget_frac x size, --budget_min) counts as not evaded
+                      (over_budget); table.json also reports each group without that cap ("uncapped")
+    ground truth      the attacked file is written, read back, re-extracted, and re-scored; evaded means p_adv <= tau
+    validity          an attacked file that no longer parses as a PE counts as not evaded (invalid): secml-malware's
+                      shift attacks insert at the first section's raw offset, which is 0 on some files (e.g. the
+                      VMProtect layout), so they overwrite the MZ header; a broken file is outside every threat model
+
+The defenses are GBDTs on one feature store (`--features`: its manifest names the extractor); every defense is scored
+with that store's extractor. A routed defense (`--route name=fallback`) is the precondition row's detector: files that
+pass the precondition check (catalogue.precondition: nothing the parse is located through lies past the end of the
+file) are scored by the defense's model, the others by the fallback defense's model, each calibrated to its own
+threshold (a_pv_attacks.make_wrapper); the check is made on every file the attack queries. Results are also split by
+whether the original file passes the check (the guarantee covers only those). The quick seen/held-out split (`--seen`) is a quick check only; the formal version is
+leave-one-out (eight PV models; docs/evidence/direction-A-A1-design.md, decision 2).
+
+Outputs, in `{outdir}/`:
+    results.parquet   one row per (defense, attack, file): p_clean, p_adv, tau, evaded, bytes_added, over_budget, ok,
+                      valid, truncated, seconds
+    table.json        per defense: tau, detected, per-attack evasion, and per group (seen, held-out) the fraction of
+                      detected files evaded by at least one attack of the group, overall and split by truncation
+
+Usage (smoke on two files, one attack):
+    PYTHONHASHSEED=0 python pipeline/5-attacks/toolkit/toolkit.py --outdir /tmp/a1 --num_malware 2 --attacks padding \
+        --defense ref=artifacts/models/gbdt/seed-0-s10-ref --features artifacts/features/ember2024-sums-10
+"""
+
+from __future__ import annotations
+
+from argparse import ArgumentParser
+import json
+from multiprocessing import get_context
+from pathlib import Path
+import tempfile
+import time
+from typing import Any
+
+import lief
+import numpy as np
+import polars as pl
+
+from provexp.attacks.toolkit import ATTACKS
+from provexp.attacks.toolkit import BUDGETS
+from provexp.attacks.toolkit import build_attack
+from provexp.attacks.toolkit import build_donor_pools
+from provexp.attacks.toolkit import calibrated
+from provexp.attacks.toolkit import file_seed
+from provexp.attacks.toolkit import make_wrapper
+from provexp.attacks.toolkit import run_attack
+from provexp.data.files import load_pilot
+from provexp.data.paths import EMBER2024_DATA
+from provexp.data.paths import ROOT
+from provexp.detectors import MAX_LENGTH
+from provexp.detectors import calibrate_threshold
+from provexp.detectors import group_evasion
+from provexp.detectors import make_extractor
+from provexp.detectors import parse_defenses
+from provexp.detectors import precondition_holds
+from provexp.models.erdalt import load_detector
+from provexp.parallel import map_watchdog
+
+__all__: list[str] = []
+
+SEEN = ("padding", "gamma_sections", "gamma_shift", "content_shift")
+
+
+################################################################################
+# Protocol
+################################################################################
+
+
+################################################################################
+# Parallel workers (one attack on one file against one defense)
+################################################################################
+
+_W: dict[str, Any] = {}
+
+
+def _init_worker(features: Path, models: dict[str, str], routes: dict[str, tuple[str, float, float]],
+                 section_pop: list[Any], api_calls: list[Any], seed: int, iterations: int = 10,
+                 seed_per_file: bool = False) -> None:
+    """Build the extractor and one detector wrapper per defense, once per worker."""
+    lief.logging.disable()
+    extractor = make_extractor(features)
+    wrappers = {}
+    for d, m in models.items():
+        if d in routes:
+            fb, tau, tau_fb = routes[d]
+            wrappers[d] = make_wrapper(Path(m), extractor, fallback=Path(models[fb]), route=precondition_holds, taus=(tau, tau_fb))
+        else:
+            wrappers[d] = make_wrapper(Path(m), extractor)
+    _W.update(wrappers=wrappers, section_pop=section_pop, api_calls=api_calls, seed=seed, iterations=iterations,
+              tmp=tempfile.mkdtemp(prefix="a1_w_"), seed_per_file=seed_per_file)
+
+
+def _work(task: tuple[str, str, str, bytes, float, int, bool]) -> dict[str, Any]:
+    """Run one (defense, attack, file) and score the re-extracted result at the defense's threshold."""
+    defense, atk, name, data, tau, cap, pre = task
+    wrapper = _W["wrappers"][defense]
+    out_path = Path(_W["tmp"]) / f"{defense}.{name[:16]}.{atk}"
+    start = time.time()
+    p_clean = p_adv = float("nan")
+    added, ok, valid, error = 0, False, False, ""
+    try:
+        problem = build_attack(atk, wrapper, _W["section_pop"], _W["api_calls"], iterations=_W["iterations"])
+        # NOTE: by default every run is reseeded with the same seed (Gimenez et al.'s protocol), so GAMMA's random
+        # section names are the same on every file; --seed_per_file seeds each (attack, file) on its own.
+        seed = file_seed(_W["seed"], atk, name) if _W["seed_per_file"] else _W["seed"]
+        adv_bytes, p_clean, p_adv = run_attack(problem, wrapper, data, out_path, seed=seed)
+        added, ok = len(adv_bytes) - len(data), True
+        valid = lief.PE.parse(list(adv_bytes)) is not None
+    except Exception as e:
+        error = f"{type(e).__name__}: {str(e)[:200]}"
+        print(f"  WARN {defense} {atk} {name[:12]}: {error}", flush=True)
+    finally:
+        out_path.unlink(missing_ok=True)
+    over = added > cap
+    return {"defense": defense, "attack": atk, "name": name, "tau": tau, "p_clean": p_clean, "p_adv": p_adv,
+            "evaded": bool(ok and valid and not over and p_adv <= tau), "bytes_added": added, "over_budget": over,
+            "ok": ok, "valid": valid, "truncated": len(data) >= MAX_LENGTH, "precondition": pre, "error": error,
+            "seconds": time.time() - start}
+
+
+def _lost(task: tuple[str, str, str, bytes, float, int, bool]) -> dict[str, Any]:
+    """The row for a task whose worker died: an attack that failed (not evaded), with the error recorded."""
+    defense, atk, name, data, tau, cap, pre = task
+    return {"defense": defense, "attack": atk, "name": name, "tau": tau, "p_clean": float("nan"),
+            "p_adv": float("nan"), "evaded": False, "bytes_added": 0, "over_budget": False, "ok": False,
+            "valid": False, "truncated": len(data) >= MAX_LENGTH, "precondition": pre,
+            "error": "LostTask: worker died", "seconds": float("nan")}
+
+
+################################################################################
+# Main
+################################################################################
+
+
+def main() -> None:
+    parser = ArgumentParser(description=__doc__.split("\n\n")[1])
+    parser.add_argument("--outdir", type=Path, required=True)
+    parser.add_argument("--defense", action="append", required=True, help="name=model_dir (repeatable).")
+    parser.add_argument("--route", action="append", default=[], help="name=fallback: route the defense `name` to the "
+                        "defense `fallback` on files that fail the precondition check (repeatable).")
+    parser.add_argument("--features", type=Path, required=True, help="The feature store the defenses were trained on.")
+    parser.add_argument("--pilot_files", type=Path, default=ROOT / "artifacts/experiments/e1/seed-0/zeros/files.parquet")
+    parser.add_argument("--db", type=Path, default=EMBER2024_DATA / "ts")
+    parser.add_argument("--attacks", nargs="+", default=list(ATTACKS), choices=list(ATTACKS))
+    parser.add_argument("--seen", nargs="+", default=list(SEEN), choices=list(ATTACKS))
+    parser.add_argument("--fpr", type=float, default=0.01)
+    parser.add_argument("--budget", default="low", choices=list(BUDGETS),
+                        help="Attack budget: Gimenez's low one, or the GAMMA paper's (see a_pv_attacks.BUDGETS).")
+    parser.add_argument("--budget_frac", type=float, default=0.05)
+    parser.add_argument("--budget_min", type=int, default=512 * 1024)
+    parser.add_argument("--num_malware", type=int, default=None, help="Cap on malware files (for smoke tests).")
+    parser.add_argument("--num_workers", type=int, default=8, help="Processes over tasks.")
+    parser.add_argument("--seed", type=int, default=0)
+    parser.add_argument("--seed_per_file", action="store_true",
+                        help="Reseed each attack run with its own seed (a_advtrain.file_seed) instead of --seed.")
+    parser.add_argument("--stall_timeout", type=float, default=2700.0,
+                        help="Seconds with no finished task before the unfinished ones count as lost (a dead worker).")
+    args = parser.parse_args()
+    if args.num_workers < 1:
+        raise ValueError(f"--num_workers must be >= 1, got {args.num_workers}.")
+
+    lief.logging.disable()
+    args.outdir.mkdir(parents=True, exist_ok=True)
+    defenses = parse_defenses(args.defense)
+    routes_spec = {k: str(v) for k, v in parse_defenses(args.route).items()}
+    for d, fb in routes_spec.items():
+        if d not in defenses or fb not in defenses or fb in routes_spec:
+            raise ValueError(f"--route {d}={fb}: both must be defenses, and the fallback must not be routed.")
+    extractor = make_extractor(args.features)
+
+    malware, goodware = load_pilot(args.pilot_files, args.db)
+    if args.num_malware is not None:
+        malware = malware[: args.num_malware]
+    print(f"Pilot: {len(malware)} malware, {len(goodware)} goodware donors; {len(defenses)} defenses.", flush=True)
+
+    # Thresholds, and which pilot malware each defense detects (scored from the files themselves).
+    X = np.stack([extractor.feature_vector(data) for _, data in malware])  # type: ignore[no-untyped-call]
+    pre = [precondition_holds(data) for _, data in malware]
+    print(f"  {sum(pre)}/{len(malware)} pilot malware pass the precondition check", flush=True)
+    model_taus: dict[str, float] = {}
+    probs: dict[str, np.ndarray] = {}
+    for d, mdir in defenses.items():
+        pred = pl.read_parquet(mdir / "ts_predictions.parquet")
+        model_taus[d] = calibrate_threshold(pred["prob"].to_numpy(), pred["label"].to_numpy(), args.fpr)
+        probs[d] = np.asarray(load_detector(mdir, extractor.feature_names).predict(X))
+    taus: dict[str, float] = {}
+    detected: dict[str, list[int]] = {}
+    routes = {d: (fb, model_taus[d], model_taus[fb]) for d, fb in routes_spec.items()}
+    for d in defenses:
+        if d in routes:
+            fb = routes[d][0]
+            p = np.where(pre, calibrated(probs[d], model_taus[d]), calibrated(probs[fb], model_taus[fb]))
+            taus[d] = 0.5
+        else:
+            p, taus[d] = probs[d], model_taus[d]
+        detected[d] = [i for i in range(len(malware)) if p[i] > taus[d]]
+        print(f"  {d}: tau={taus[d]:.4f}{' (routed to ' + routes[d][0] + ')' if d in routes else ''}, detects "
+              f"{len(detected[d])}/{len(malware)} pilot malware", flush=True)
+
+    caps = [max(int(args.budget_frac * len(data)), args.budget_min) for _, data in malware]
+    tasks = [(d, atk, malware[i][0], malware[i][1], taus[d], caps[i], pre[i])
+             for d in defenses for atk in args.attacks for i in detected[d]]
+    with tempfile.TemporaryDirectory(prefix="a1_") as tmp:
+        iterations, how_many = BUDGETS[args.budget]
+        section_pop, api_calls = build_donor_pools(goodware, Path(tmp), how_many=how_many)
+        print(f"Budget {args.budget}: {iterations} iterations, {len(section_pop)} donor sections.", flush=True)
+        t0 = time.time()
+        models = {d: str(m / "model.txt") for d, m in defenses.items()}
+        with get_context("spawn").Pool(args.num_workers, initializer=_init_worker,
+                                       initargs=(args.features, models, routes, section_pop, api_calls, args.seed,
+                                                 iterations, args.seed_per_file)) as pool:
+            rows = map_watchdog(pool, _work, tasks, lost=_lost, stall_timeout=args.stall_timeout)
+        print(f"{len(tasks)} attack runs in {time.time() - t0:.0f}s on {args.num_workers} workers.", flush=True)
+
+    if not rows:
+        raise RuntimeError("No defense detects any pilot malware; nothing to attack.")
+    results = pl.DataFrame(rows)
+    results.write_parquet(args.outdir / "results.parquet")
+    held_out = [a for a in args.attacks if a not in args.seen]
+    seen = [a for a in args.attacks if a in args.seen]
+    table: dict[str, Any] = {"protocol": {"fpr": args.fpr, "budget": args.budget, "budget_frac": args.budget_frac,
+                                          "budget_min": args.budget_min, "seed": args.seed,
+                                          "seed_per_file": args.seed_per_file,
+                                          "features": args.features.resolve().as_posix(), "seen": seen,
+                                          "routes": routes_spec,
+                                          "held_out": held_out,
+                                          "split_note": "quick seen/held-out split; formal version is leave-one-out"},
+                             "defenses": {}}
+    for d in defenses:
+        r = results.filter(pl.col("defense") == d)
+        entry: dict[str, Any] = {"model": defenses[d].as_posix(), "tau": taus[d], "detected": len(detected[d]),
+                                 "routed_to": routes[d][0] if d in routes else None,
+                                 "detected_passing_precondition": sum(pre[i] for i in detected[d]),
+                                 "per_attack": {}, "groups": {}}
+        for atk in args.attacks:
+            a = r.filter(pl.col("attack") == atk)
+            entry["per_attack"][atk] = {"runs": a.height, "evaded": int(a["evaded"].sum()),
+                                        "failed": int((~a["ok"]).sum()), "over_budget": int(a["over_budget"].sum()),
+                                        "invalid": int((a["ok"] & ~a["valid"]).sum())}
+        for group, atks in (("seen", seen), ("held_out", held_out), ("all", list(args.attacks))):
+            entry["groups"][group] = {
+                "all": group_evasion(r, atks),
+                "truncated": group_evasion(r.filter(pl.col("truncated")), atks),
+                "untruncated": group_evasion(r.filter(~pl.col("truncated")), atks),
+                "precondition": group_evasion(r.filter(pl.col("precondition")), atks),
+                "no_precondition": group_evasion(r.filter(~pl.col("precondition")), atks),
+                "uncapped": group_evasion(r.with_columns(evaded=pl.col("ok") & pl.col("valid")
+                                                         & (pl.col("p_adv") <= pl.col("tau"))), atks),
+            }
+        table["defenses"][d] = entry
+        g = entry["groups"]
+        print(f"{d:16s} detected {len(detected[d]):2d}  seen {g['seen']['all']}  held-out {g['held_out']['all']}",
+              flush=True)
+    (args.outdir / "table.json").write_text(json.dumps(table, indent=2))
+    print(f"Wrote {args.outdir}/results.parquet and table.json", flush=True)
+
+
+if __name__ == "__main__":
+    main()

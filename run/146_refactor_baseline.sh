@@ -9,6 +9,9 @@
 #       an escape write, rows saved;
 #   (5) MAB-Malware, 3 malware, two detectors.
 # Run twice (OUT=.../old and OUT=.../old-repeat) to learn which output fields vary between identical runs (timings).
+# Ran 2026-11-14 (Claude) at b223fcd, ~20 min each: old and old-repeat agree on all 61 files but timing fields
+# (hypothesis held); the library move (185212e, OUT=.../new-lib) matched too. The scripts it calls left scripts/ in
+# the pipeline/ move; to re-run it, check out 185212e. Its successor is pipeline/setup/identity_check.sh.
 #
 # Hypothesis: the two old runs agree on every output except timing fields.
 #
