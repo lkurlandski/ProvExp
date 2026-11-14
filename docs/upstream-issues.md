@@ -145,3 +145,15 @@ Our copy: LIEF's rule installed in pefile at import (`features.overlay_data_star
 `PEFILE_OVERLAY_START`; tests in `tests/test_ember2024.py`, `TestOverlayRule`). On the files of the population the two
 rules agree; they differ on 67 of the 1,670 test files below 4 MB and ~3.7% of training files, mostly incomplete
 ones. Record: `docs/evidence/r7-overlay-rule.md`.
+
+## 10. pefile: defensive parser caps are not modeled by our instance (design note, found 2026-11-14)
+
+pefile caps the structures it parses: `MAX_IMPORT_SYMBOLS` 0x2000 (8,192, shared across import descriptors),
+`MAX_SECTIONS` 0x800, `MAX_SYMBOL_EXPORT_COUNT` 0x2000, `MAX_RESOURCE_ENTRIES` 0x8000, `MAX_STRING_LENGTH` 0x100000.
+Our `imp`/`sec` operations declare a change (new import/section items) that an addition crossing a cap does not fully
+realize, because pefile stops parsing at the cap. This is an exactness gap for the declared delta, not a soundness hole:
+our additions append after the existing parsed content, so a monotone-up feature (e.g. `num_imports`) still rises and
+never falls (verified session 62, `docs/evidence/r7-overlay-rule.md` §10; 0 model-read features fell over three pilot
+files pushed past the 8,192-import cap). Not a bug in pefile (the caps guard against malformed files); listed so the
+extractor audit records it as a deviation. A deliberate extractor could model the cap in the signature (declare the
+rise as "to at most the cap").

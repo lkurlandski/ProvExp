@@ -207,3 +207,24 @@ PLAN.md step 3) should still *score* end-to-end the writes that leave the popula
 "measured outside the population" is the claim there, not "proven". Note the ~12% of entry writes that point an entry
 into the image and stay in-population: outside the threat model, not a soundness counterexample, but a cheap scoring
 item for the scale-up.
+
+## 10. pefile's parser caps verified (session 62, 2026-11-14)
+
+The spike (§8) found pefile's defensive caps, which the instance does not model: imports 8,192 symbols
+(`MAX_IMPORT_SYMBOLS`), sections 2,048, exports 8,192, resource entries 32,768, strings 1 MB. Question: can an
+`imp`/`sec` addition that crosses a cap *lower* a feature a `-loose` monotone detector relies on? Hypothesis: no, an
+exactness gap only, because our additions append after the existing parsed content, so no feature the base had falls.
+
+Scratch check (not kept): three pilot files with ~50-75 base import symbols, `imp` adding ~8,600 functions to cross the
+8,192 cap, extracted on the merged extractor.
+- **num_imports 74 -> 8,109, 68 -> 8,115, 53 -> 8,124** (not the declared ~8,690): pefile stops at the cap, so the
+  *declared delta is wrong* (an exactness gap; `catalogue_checks` would flag such an edit as a mismatch), but the
+  feature **rises**; it never falls.
+- **Zero features that are not neutralized by the `-loose` M_full detectors fell** on any file (num_imports rises; the
+  import-hash buckets rise or hold; the 88 parser-warning features are neutralized, consistent with §4.2). So crossing
+  the cap is not a soundness hole: Corollary 1's guarantee holds. The adaptive attack at scale (`--score real`)
+  extracts the true capped features, so it never trusts the wrong delta either.
+- A one-section `sec` control changed no feature downward, as expected.
+
+**For the extractor audit (§6):** the caps are a deviation to list in Appendix D's deviations table as an exactness
+limit of `imp`/`sec` near the caps (not a soundness limit). No code change needed. `docs/upstream-issues.md` item 10.
