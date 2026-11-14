@@ -12,6 +12,8 @@ import pefile
 
 from provexp.featuresets.ember2024.catalogue import DEBUG_ENTRY
 from provexp.featuresets.ember2024.catalogue import SECURITY_ENTRY
+from provexp.featuresets.ember2024.edits import entry_write
+from provexp.featuresets.ember2024.features import field_range
 
 __all__ = ["ARCH_ENTRY", "WRITES", "arch_entry", "cert_entry", "debug_entry", "image_size", "overlay_entry", "raw_size"]
 
@@ -19,11 +21,20 @@ __all__ = ["ARCH_ENTRY", "WRITES", "arch_entry", "cert_entry", "debug_entry", "i
 ARCH_ENTRY = 7
 
 
+# NOTE: each write patches its field's bytes in the parsed file's data. `pefile.PE.write()` would repack every structure
+# pefile parsed, and on some files that rewrites bytes no write touched (e.g. 0485edc2..., ~40 bytes past the headers),
+# which the audit's one-field check rejects; on the other files the two are byte-identical.
+def _patch(pe: pefile.PE, structure: pefile.Structure, field: str, value: int) -> bytes:
+    """The parsed file with one field of `structure` set to `value` (little-endian, the field's width)."""
+    lo, hi = field_range(structure, field)
+    z = bytes(pe.__data__)
+    return z[:lo] + value.to_bytes(hi - lo, "little") + z[hi:]
+
+
 def _entry(pe: pefile.PE, i: int, va: int, size: int) -> bytes:
     """The file with data directory entry `i` set to (va, size)."""
-    d = pe.OPTIONAL_HEADER.DATA_DIRECTORY[i]
-    d.VirtualAddress, d.Size = va, size
-    return bytes(pe.write())
+    e = entry_write(pe, i, va, size)
+    return e.apply(bytes(pe.__data__))
 
 
 def cert_entry(pe: pefile.PE, n: int) -> Optional[bytes]:
@@ -51,8 +62,8 @@ def arch_entry(pe: pefile.PE, n: int) -> Optional[bytes]:
 
 def image_size(pe: pefile.PE, n: int) -> Optional[bytes]:
     """SizeOfImage raised by one SectionAlignment."""
-    pe.OPTIONAL_HEADER.SizeOfImage += pe.OPTIONAL_HEADER.SectionAlignment or 0x1000
-    return bytes(pe.write())
+    oh = pe.OPTIONAL_HEADER
+    return _patch(pe, oh, "SizeOfImage", oh.SizeOfImage + (oh.SectionAlignment or 0x1000))
 
 
 def overlay_entry(pe: pefile.PE, n: int) -> Optional[bytes]:
@@ -71,8 +82,7 @@ def raw_size(pe: pefile.PE, n: int) -> Optional[bytes]:
         return None
     s = max(pe.sections, key=lambda s: s.PointerToRawData + s.SizeOfRawData)
     fa = pe.OPTIONAL_HEADER.FileAlignment or 0x200
-    s.SizeOfRawData += ((n - (s.PointerToRawData + s.SizeOfRawData)) // fa + 1) * fa
-    return bytes(pe.write())
+    return _patch(pe, s, "SizeOfRawData", s.SizeOfRawData + ((n - (s.PointerToRawData + s.SizeOfRawData)) // fa + 1) * fa)
 
 
 WRITES: dict[str, Callable[[pefile.PE, int], Optional[bytes]]] = {
