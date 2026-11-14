@@ -25,6 +25,7 @@ check `manuscript/main.aux` (`grep newlabel manuscript/main.aux`), and add the t
 | `pipeline/README.md` | the scale-up's stages and steps, and which step produces each result of the paper | before running or adding any experiment |
 | `SETUP.md` | from a fresh clone to a system that runs `pipeline/` (environment, dataset, system config, the check) | setting up a new machine or the clusters |
 | `docs/resume-prompt.md` | where the next session starts: the extractor audit pass (the deviations table of Appendix D; `1-audit` at scale, with the hand table and a chained-edit check), the scale-up's first work | starting the next main-line session |
+| `docs/fable-theory-prompt.md` | a one-off prompt for a Claude Fable 5.2 session (credits until 2026-11-17): audit the proofs of §3, then rank ways to strengthen the theory; output `docs/evidence/fable-theory-analysis.md` | launching that session; reading its output |
 | `docs/reviews/rebuttal-prompt.md` | the rebuttal procedure, kept for reference: once `run_rebuttal.sh` has written the triage, the user decides on the triage table, then on drafts of the groups worth investigating. The 2026-11-12 triage is complete; the next revisit folds into `docs/resume-prompt.md` | re-running the rebuttal procedure on a future review |
 | `docs/checkpoint-prompt.md` | the user's prompt for ending a session | the user ends a session |
 | `docs/paper-mock.md` | the paper's contributions, outline with word budgets, and tables | planning or writing any section; checking whether new work belongs in the paper |
