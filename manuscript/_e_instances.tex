@@ -68,9 +68,16 @@ are implemented in the secml-malware library~\cite{demetrio2021adversarial}. We 
 list the operations each one uses in \Cref{tab:instances:catalogue}, and run them against every detector in
 \Cref{sec:evaluation}.
 
-Our threat model is the union of these edits, twelve operations in all (\Cref{tab:instances:catalogue}), with all
-content (bytes, section names and properties, imported names) chosen by the attacker within a byte budget. The
-operations form three nested threat models. \emph{Additions} only add content, the setting monotone detectors are
+Our threat model is the union of these edits, with one generalization, thirteen operations in all
+(\Cref{tab:instances:catalogue}), with all content (bytes, section names and properties, imported names) chosen by the
+attacker within a byte budget. The loader maps the data of neither the debug directory nor the certificate table, so it
+ignores their entries in the header, and an attacker who can remove an entry can as well set it to any value. This
+write lets the attacker point the certificate entry at a signature copied from a benign program and appended to the
+file. EMBER's extractor parses a signature but does not verify it, so the copy describes the file as signed by the
+benign program's publisher.
+% VERIFY: cite signature cloning (candidate: Kim et al., CCS 2017, "Certified Malware"); not in papers/ yet.
+% The extractor's authenticode features (signify) count certificates and read signing times; nothing checks the hash.
+The operations form three nested threat models. \emph{Additions} only add content, the setting monotone detectors are
 designed for; \emph{shifts} adds the two insertions that move existing content; and \emph{full} adds every overwrite
 and removal. Two kinds of edit from the literature are left out. Packing replaces the file with a different program
 that restores the original at run time~\cite{demetrio2021adversarial}, so no item of the original survives it.
@@ -80,7 +87,7 @@ than the structural edits above; \Cref{sec:discussion} returns to them.
 
 \begin{table}[t]
   \caption{The operations of the threat model. Each threat model adds operations to the one above it; the toolkit
-  attacks use six of the twelve. Changes: declared, the operation states its changes to the items; item tables, the
+  attacks use six of the thirteen. Changes: declared, the operation states its changes to the items; item tables, the
   changes of an overwrite are collected from the item tables of the population's files. All content, names, and
   properties are the attacker's choice.}
   \label{tab:instances:catalogue}
@@ -103,6 +110,7 @@ than the structural edits above; \Cref{sec:discussion} returns to them.
     rename a section & declared & full & \\
     remove the debug directory entry & declared & full & \\
     remove the certificate table entry & declared & full & \\
+    overwrite the debug or certificate entry & item tables & full & \\
     \bottomrule
   \end{tabular}
 \end{table}
@@ -126,10 +134,11 @@ of its content, and replaces the header fields it must update, such as the numbe
 Appending adds bytes and adds or extends the overlay. Renaming a section keeps the section and replaces its name, and
 each removal declares the items it removes.
 
-The four overwrites, of slack, of the DOS header and stub, of header fields the loader ignores, and of the checksum,
-are defined by the positions they write instead, and their changes come from the item tables, which record the items
+The five overwrites, of slack, of the DOS header and stub, of header fields the loader ignores, of the checksum, and of
+the two directory entries, are defined by the positions they write instead, and their changes come from the item tables, which record the items
 each position belongs to. An overwrite can also land on a position that the parser reads to find other items, such as
-an entry of the section table or a field that gives the location of a table. Such a write can change which items the
+an entry of the section table or a field that gives the location of a table. The entry write always does: it writes
+where the extractor looks for the signature and the debug data. Such a write can change which items the
 extractor finds, in a way the item table does not record. The signature then allows any change to the items of that
 kind, and for a single edit we decline to compute the side effects; Appendix~\ref{sec:ember} counts how often this
 happens and describes how we record these positions. Renaming and the removals also write such positions, but they
@@ -140,17 +149,20 @@ declare the changes that follow.
 
 The signature covers the threat model only over a population, and Theorem~\ref{thm:fw:directions} needs that population
 closed under the threat model. Ours is the complete PE files with a plain layout. A file is complete when everything
-the parser locates lies within it, and its layout is plain when the sections lie within the image that the loader maps
-and the headers hold only headers. On other files an edit can change items that no operation declares. Appending to an
+the parser locates lies within it, except the debug data and the signature, which may lie past its end: the entry write
+can point either there, and the population must stay closed under it. Its layout is plain when the sections lie within the image that the loader
+maps and the headers hold only headers. On other files an edit can change items that no operation declares. Appending to an
 incomplete file, for instance, supplies content the parser looked for and did not find, instead of extending the
 overlay. Closure is checked rather than proven: none of the 56,902 edits of \Cref{sec:eval:setup} that were applied to
 files in the population took a file out of it.
 
 Almost every file outside the population is incomplete: its headers locate sections or tables that lie, at least in
 part, past its end. Of the test files we use (\Cref{sec:eval:setup}), 94\% are in the population, 5\% are incomplete,
-and 0.4\% are complete files with an unusual layout. Whether a file is in the population is a property of the file
-alone, so a detector checks it at inference. A file in the population goes to the monotone detector, and any other
-file to an unconstrained one, which carries no guarantee.
+and 0.4\% are complete files with an unusual layout. The monotone detector scores every file. Its guarantee is
+proven on the population, and \Cref{sec:eval:detectors} measures it on files outside.
+% PROTOCOL: the closure count (56,902) and the shares above are for the population before the entry write (run 117,
+% run 136). The widened population is closed on the pilot (run 142: 0 of 13,326 edits on population files leave it,
+% escaped copies included; pilot population 88 -> 89 of 100). The scale-up recounts both on the widened population.
 % MEASURED (session 46, 2026-11-12), on the 1,670 files of at most 4 MB among the 2,000 test files of run 117/118
 % (artifacts/explanation_set/ts.parquet): 1,576 in the population (benign 924/938, malware 652/732); outside, 87
 % incomplete (an item, data directory, or section located past the end: benign 13, malware 74; 63 of them lack more than
