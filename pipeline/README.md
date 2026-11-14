@@ -34,6 +34,7 @@ are in `run/` (a historical record: re-run them at tag `pilot-final`).
 | `1-audit/catalogue-checks` | `catalogue_checks.py` (with `--chained`) | yes | runs 103-107, 117, 141-142 |
 | `1-audit/population` | `population_clauses.py` | yes (`FILES` required) | run 136 |
 | `1-audit/escapes` | `escape_audit.py` | yes | run 137 |
+| `1-audit/deviations` | `deviations.py` | yes (`FILES` required) | session 65 (2,000 test files) |
 | `1-audit/hand-table` | `structure_witness.py`, `overlay_witness.py`, `signature_witness.py`, `witness_counts.py` (`hand_table.py`: the old Table A0, not in the paper) | yes (`FILES` required) | runs 88, 92, 98, 101 |
 | `2-features/featurize` | `featurize.py`, `check_features.py`, `refeaturize_nonpe.py` | yes | runs 01-02, 94, 102 |
 | `2-features/files` | `build_metadata.py`, `select_files.py` | protocol session | runs 03-04 |
@@ -64,6 +65,7 @@ are for tests and explorations only. Table numbers are the compiled PDF's (`manu
 | §5.3 | the lowerable features the toolkit's outputs lowered, by source; PV's hole | `6-results` (`coverage.py`, `pv_hole.py`) |
 | §5.3 (with the scale-up) | the trial detector: evasions, and the features carrying them | `3-directions/trial`, `4-detectors/train`, `5-attacks/*`, `6-results` (`trial_audit.py`) |
 | §5.4, Table 5 (*Detectors for the full threat model ... and for additions only*) | detection at 1% and 0.1% FPR; evasion by any attack; the price of soundness; where the guarantee holds | `4-detectors/train`, `5-attacks/*` (escapes included), `1-audit/population`, `6-results` |
+| Appendix D (deviations table, proposed in session 65) | our deviations from EMBER v3 and the parser heuristics left as they are, with the files each applies to | `1-audit/deviations`, `1-audit/population` |
 | Appendix D, Table 8 (*EMBER's features by the readout forms*) | the readout forms | none (the extractor's code) |
 | Appendix D, Table 9 (*Side effects computed by Proposition 1*) | exact, declined and wrong edits, inside and outside the population; random in-place writes | `1-audit/catalogue-checks`, `1-audit/item-checks` |
 | Appendix D, Table 10 (*Leave-one-out over the toolkit attacks*) | each fold's detection and the held-out attack's evasions | `4-detectors/adversarial-training`, `4-detectors/train`, `5-attacks/toolkit` |
