@@ -7,7 +7,7 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
 41-42 in `docs/archive/status-log-2026-11-12.md`, sessions 43-54 in
 `docs/archive/status-log-2026-11-12-to-13-s43-54.md`, sessions 55-58 in `docs/archive/status-log-2026-11-13-s55-58.md`).
 
-## Current state (2026-11-14, through session 64)
+## Current state (2026-11-14, through session 65)
 
 - **Framework (§2-3):** rewritten; the user is reasonably satisfied. Open: the user's holistic read of Sound
   Directions after round 4 (finetuning only).
@@ -97,11 +97,21 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
   everything); `run/` is a historical record. Checked byte-identical against the old code
   (`pipeline/setup/identity_check.sh`). `pipeline/README.md` maps every paper result to its step: **every number in the
   paper comes from the scale-up** (user, session 64).
+- **The extractor audit pass (session 65): done, waiting on the user's decisions.** `docs/evidence/extractor-audit.md`:
+  the existing deviations and five new candidates, each with an example, counts on the 2,000 test files (in / outside
+  the population) and a recommendation; the proposed deviations table for Appendix D (not yet in the `.tex`). The one
+  recommended change to `features.py`: thrember's directory loop drops the last directory read instead of the reserved
+  one (13 files, 11 in the population, mostly .NET programs losing their CLR header). Every `1-audit` step now has a
+  `run.sh` (smoke-tested end to end), with the chained edits and Table 3's witness counts added and a new
+  `1-audit/deviations` step; the escape audit's writes no longer crash on files where pefile's `write()` rewrites
+  other bytes.
 
 ## Waiting on the user
 
-- **The extractor audit pass (next; `docs/resume-prompt.md`)**: `1-audit` at scale with the deviations table of
-  Appendix D, then the remaining protocol items (malware count first; each step's `run.sh` gets the scale-up's
+- **The audit pass's decisions (next; `docs/resume-prompt.md`)**: the five candidates of
+  `docs/evidence/extractor-audit.md` §2 (recommended: fix the directory off-by-one; keep the rest), the deviations
+  table (§3) before it goes into Appendix D, and the audit's file list (`FILES` of every `1-audit/*/run.sh`). Then any
+  `features.py` change before the scale-up's featurization, then the remaining protocol items (malware count first; each step's `run.sh` gets the scale-up's
   arguments as its item is decided), then a session on the cluster's head node (`SETUP.md`, `check.sh`, the "TO
   CONFIRM" values). Number-free rebuttal text fixes (R4, R5, R15, R21) are step 4 (while the scale-up runs).
 
@@ -110,7 +120,8 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
 1. ~~The 4 MB-truncation decision~~ (done, session 46), ~~the full simulated review~~ (run; discussed sessions 48-61),
    ~~R7's widening~~ (done, sessions 53-62), ~~the extractor question~~ (decided, session 62: stay on pefile).
 2. ~~The final review/rebuttal revisit~~ (done, session 63: nothing else before the scale-up).
-3. The scale-up (PLAN.md step 3): ~~the refactoring session~~ (done, session 64), then **the extractor audit pass**,
+3. The scale-up (PLAN.md step 3): ~~the refactoring session~~ (done, session 64), ~~the extractor audit pass~~ (done,
+   session 65; **its decisions wait on the user**),
    the remaining protocol items (malware count first; one seed, 5,000 extraction-scored candidates, full
    splits, one training set and protocol for every detector, the trial row, iterated adversarial training, the R7 blue
    values and PROTOCOL recounts), then a head-node session on the cluster.
@@ -120,6 +131,21 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
 7. Introduction, discussion, abstract last.
 
 ## Session log
+
+- **2026-11-14 (session 65): the extractor audit pass.** Read all of thrember's extractor and the pefile rules its
+  features rest on, against the three principles; counted each candidate on the 2,000 test files
+  (`docs/evidence/extractor-audit.md`; `artifacts/experiments/deviations/2000/`). Hypothesis (each candidate at most a
+  few percent, mostly incomplete files) held except the alignment bits (59 files) and the registry typo (93), both
+  definitions rather than parser heuristics. New candidates: directory off-by-one (13/2,000, fix recommended), entry
+  section on misaligned sections (3, keep), alignment bits as flags (59, keep), pefile's early stops in imports and
+  exports (~12, keep with the caps), string-pattern typos (keep as v3; upstream items 11-12 drafted). Work needing no
+  decision: `catalogue_checks.py --chained` (three sections then an append, item table carried forward; Appendix D's
+  combined edits), `hand-table/witness_counts.py` (Table 3's files per error, by population; reproduces 650, 151, 37
+  from pilot-era outputs), `1-audit/deviations` (the table's counts), `run.sh` for every audit step (smoke-tested on six
+  files: all checks pass, chains exact). Found and fixed: the escape audit aborted on a pilot file because pefile's
+  `write()` rewrote ~40 untouched bytes; the writes now patch their field (byte-identical on run 137's 900 writes).
+  My first measurement script hung on a quadratic regex of my own; rerun without it. Commits 4458d06, 1b12cbc,
+  8e8f8ca and the docs commit.
 
 - **2026-11-14 (session 64): the refactoring.** Proposed tree and deletions agreed (user: `run/` a record with tag
   `pilot-final`; the A' code deleted, combined edits re-checked in the audit; MalConv kept; **every result in the paper

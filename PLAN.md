@@ -374,6 +374,15 @@ records of the §5 reviews, the table remake and the ERDALT check, is in
    pefile's parser caps (§10: an exactness gap for `imp`/`sec` near a cap, not a soundness hole) and the
    always-constant features (`docs/upstream-issues.md` 2-3). The escape audit against the widened population (§9)
    found no new in-population escape.
+   **The audit pass: done in session 65; decisions wait on the user** (`docs/evidence/extractor-audit.md`). Five new
+   candidates, each counted on the 2,000 test files: (2.1) thrember's directory loop drops the last directory read,
+   not the reserved one (13 files, 11 in the population; recommended: fix, a pure addition); (2.2) the entry section
+   on files whose sections are not aligned (3; keep, or LIEF's extent, or a population clause); (2.3) alignment bits
+   decoded as flags (59; keep); (2.4) pefile's early stops in imports and exports (~12; keep with the caps); (2.5) the
+   string-pattern typos (keep as v3, or fix `registry_key` alone). Then the deviations table (§3 of that record) into
+   Appendix D in small blocks, and any `features.py` change before the featurization. The audit steps at scale all
+   have a `run.sh` (`pipeline/1-audit/`), waiting only on the audit's file list (`FILES`): a protocol item, best
+   decided with the malware count.
 3. **Design and launch the scale-up as one protocol** (each item agreed before code; long runs as `run/` scripts for the
    user, possibly on the second server), **on the files our copy holds in full in every split** (the `truncated` flag
    false: training subsample, test split, attacked malware; decision 8 (iv)): seeds 0-2, full splits; one training set
