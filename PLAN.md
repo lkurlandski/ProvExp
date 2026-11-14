@@ -330,8 +330,11 @@ records of the §5 reviews, the table remake and the ERDALT check, is in
    **Verified in session 57** (session 56 had been flagged by a safety classifier): all four commits hold; two fixes
    (77587f5): the clone's byte bound covers its padding, and the report's `start_in_population` (the image_size escape
    takes every file out of the loose population, so the guarantee covers only the cert/debug escapes' searches).
-   Cleared for the user. **Running** (user, started 2026-11-13, 8 workers: ~10-12 h); R7's last pilot experiment.
-   Next: read it (hypothesis in the script's header).
+   Cleared for the user. **Read in session 61:** the hypothesis held. Neither `-loose` monotone detector is evaded by
+   any escape (0/39 and 0/40 per escape; min_delta_logit 0; every search ran its 2,000 candidates); guaranteed for the
+   28 and 30 population originals under the cert/debug escapes, observed for the rest (the SizeOfImage escape takes
+   every file out); one SizeOfImage search lost to a stalled worker. The unconstrained detector is evaded on 47/47,
+   always through signature cloning (one clone alone: 21-26/47). Record: `docs/evidence/r7-population-escape.md` §7.
    (iv) The paper, in small blocks: §4's overwrites (the entry write) and population (the entries' data past the end);
    §5.4's price (robustness to signature cloning); Table 5's monotone rows from the `-loose` models, denominators
    unrouted; no routing in §4.4, §5.1, Appendix D; Appendix D's overlay rule and one sentence on the deviation. All of

@@ -89,12 +89,6 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
 
 ## Waiting on the user
 
-- **Run 143 running** (user, started 2026-11-13, 8 workers: ~10-12 h; `run/143_escape_pilot_loose.sh`, log
-  `artifacts/logs/escape_pilot_loose.log`): the escape pilot on the widened population, R7's last pilot experiment.
-  Session 57 re-verified session 56's code first (flagged by a safety classifier): it holds, with two small fixes
-  (77587f5). Hypothesis: no detected original evaded by either monotone detector (guaranteed for the cert/debug
-  escapes; for image_size, whose escaped files leave the population, expected from run 138). **Next R7 session:**
-  `docs/resume-prompt.md` (read run 143; R7's paper changes, most of which can start before it is read).
 - **The other tables' monotone cells** (PLAN.md step 2b (v)): re-run on the `-loose` models now, or blue values until
   the scale-up (Claude recommends blue values).
 - **The extractor question** (PLAN.md step 2c): the user's call, before the scale-up's featurization.
@@ -120,6 +114,13 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
 7. Introduction, discussion, abstract last.
 
 ## Session log
+
+- **2026-11-14 (session 61, R7 track): run 143 read.** Hypothesis held: neither `-loose` monotone detector is evaded
+  by any of the three escapes (0/39, 0/40 each; no candidate lowered a monotone score; full 2,000-candidate budgets);
+  guaranteed for the 28/30 population originals under the cert/debug escapes, observed for the rest; one SizeOfImage
+  search lost to a stalled worker (not re-run). The unconstrained detector: 47/47, every evasion by signature cloning
+  (hypothesis 40-60% failed). Written into run 143's header, the R7 record §7 and log, PLAN.md step 2b (iii). R7's
+  pilot experiments are complete; next the paper changes (step 2b (iv)) and decision (v).
 
 - **2026-11-13 (session 60, R18 track): the trial competitor.** Built the trial table from our own edits, a stronger
   probe (every section renamed, all slack/DOS/header bytes, donor imports from 200 benign training files;

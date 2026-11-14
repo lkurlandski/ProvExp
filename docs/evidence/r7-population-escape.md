@@ -174,6 +174,25 @@ the header-field overwrites are used too, which also answers part of R1) and `--
 - **Alternative recorded, not taken.** Widen for the debug entry only (nearly free) and leave the certificate entry,
   and with it signature cloning, outside the threat model as a stated limitation, measured by run 138 step 1 (no
   detected original evaded end to end; the write can lower the score by up to ~1 logit through `security_size`).
+- **Run 143, the escape pilot on the widened population (read in session 61).** Run 138's three escapes against
+  the `-loose` monotone detectors, M_full now with `ent` (signature cloning included), every candidate written by our
+  own byte edits and extracted, evasion counted from the unescaped originals. Hypothesis: no detected original evaded
+  by either monotone detector. **Held:**
+
+  | Escape | mfull-feat evaded | mfull-sums evaded | unconstrained evaded | Originals in the loose population (feat; sums) |
+  |---|---|---|---|---|
+  | certificate entry | 0/39 | 0/40 | 47/47 | 28/39; 30/40 (guaranteed) |
+  | SizeOfImage | 0/39 | 0/39 (1 search lost) | 47/47 | escaped files all outside (observation) |
+  | debug entry | 0/39 | 0/40 | 47/47 | 28/39; 30/40 (guaranteed) |
+
+  No candidate of any monotone search lowered the score (min_delta_logit 0), the escape write alone never did, and
+  every monotone search ran its full 2,000 candidates. The guarantee covers the cert/debug searches on population
+  originals (the escaped file stays in); the rest (11 and 10 originals outside the population, every SizeOfImage
+  search) are observations, none evaded. One SizeOfImage search against mfull-sums was lost to a stalled worker (the
+  slowest file); that file held in the other five monotone searches on it. The unconstrained detector was evaded on
+  every file (expected 40-60%), and every evasion uses `ent` with an appended certificate: signature cloning, which
+  alone evades 21-26 of 47. This is the other side of run 140's price: the unconstrained detector trusts a cloned
+  signature, the `-loose` monotone detectors give up about 4 points of TPR so that it cannot lower their score.
 - **Left for the scale-up.** The toolkit attacks on escaped files (their harness needs its own escape support);
   the end-to-end share "still detected out of all attacked" per attack column; the population share of attacked
   malware with its denominator (the blue 89%).
@@ -216,3 +235,8 @@ the header-field overwrites are used too, which also answers part of R1) and `--
   (padding), and `start_in_population` in escape runs -- the cert/debug escapes keep all 39 pilot originals in the
   population in it, the image_size escape takes all 39 out, so for image_size a monotone 0 in run 143 is an
   observation (as in run 138 step 2), not the guarantee.
+- 2026-11-14 (session 61): run 143 read (§7): the monotone `-loose` detectors are evaded by none of the three
+  escapes (0/39, 0/40 per escape; min_delta_logit 0; guaranteed for the 28 and 30 population originals under the
+  cert/debug escapes, observed for the rest); one SizeOfImage search lost to a stalled worker. The unconstrained
+  detector is evaded on 47/47, every time with signature cloning (hypothesis 40-60% failed). R7's pilot experiments
+  are complete.

@@ -33,6 +33,21 @@
 # search only when both are in the loose population; evaded_outside_population counts the evasions it does not cover
 # (not a guarantee violation; report them either way).
 #
+# Read (session 61, 2026-11-14). Finished 2026-11-13 20:58 at 8 workers (steps 8170 s, 8931 s, 8405 s). The hypothesis
+# held for the monotone detectors and failed for the unconstrained one.
+#   Monotone, evaded / detected originals (feat; sums): cert_entry 0/39, 0/40; image_size 0/39, 0/39; debug_entry
+#   0/39, 0/40. min_delta_logit 0 and evaded_by_escape 0 everywhere: no candidate of any search lowered a monotone
+#   score, and the escape write alone never did (cert/debug leave the monotone scores unchanged; image_size raises
+#   them by at most 0.009). Every monotone search ran its full 2,000 candidates and kept no edit. One image_size
+#   mfull-sums search was LOST (the slowest file, ~75 min per search; its worker stalled past the 2,700 s watchdog);
+#   the same file held against mfull-feat there and against both in the other two escapes. Not re-run.
+#   Coverage: 28/39 (feat) and 30/40 (sums) detected originals are in the loose population and stay in it after the
+#   cert/debug escape, so the guarantee covers those searches; the other 11 and 10, and every image_size search (start
+#   outside), are observations, not evaded either (evaded_outside_population 0).
+#   Unconstrained: 47/47 evaded under every escape (hypothesis ~40-60%: failed). Every evasion uses `ent` with an
+#   append, i.e. signature cloning, and one clone alone evades 21/47 (cert_entry, image_size) and 26/47 (debug_entry).
+#   Run 138 had no `ent` in the menu. Not a silent no-op: the same menu and engine evade the unconstrained detector.
+#
 # Resources: one search per (detector, file), NUM_WORKERS processes (spawn; ~1 GB each). Real extraction costs ~0.6 s
 # per candidate, so a file the search does not evade takes ~20 min at 2,000 candidates; ~3 escapes x ~130 (detector,
 # file) pairs, most of them monotone pairs that run the full budget: ~5-6 h with 16 workers. OMP_NUM_THREADS=1 per
