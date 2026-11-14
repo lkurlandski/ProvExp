@@ -35,22 +35,24 @@ number, and give its title alongside.
 
 ## The task: the user's decisions before the scale-up
 
-1. **The extractor question (PLAN.md step 2c).** Design the extractor deliberately (principles stated once, one audit
-   pass, a deviations table) rather than patch it, and weigh moving the parser to LIEF. Views and criteria:
-   `docs/evidence/r7-overlay-rule.md` §6. A short LIEF spike (structures vs pefile, timing, exposed offsets) would
-   inform it. Cheapest before the scale-up featurizes everything. One recommendation, not a menu.
+0. ~~**Rebuttal analysis**~~ Done (session 62): the triage and meta-review register are addressed except the text
+   fixes deferred to after the scale-up's numbers (R2's trust paragraph, R3, R4, R5, R8, R12, R13, R15, R21).
+1. ~~**The extractor question (PLAN.md step 2c).**~~ Decided (user, session 62): **stay on pefile.** The LIEF spike
+   (`docs/evidence/r7-overlay-rule.md` §8) found structures agree on 99/100 pilot files and parsing is only ~12-25% of
+   our per-file time, so a switch buys little for the cost of rebuilding the locating record. Still **to do before the
+   scale-up's featurization:** one deliberate audit pass with a deviations table in Appendix D (principles in §6; the
+   caps of §10 and the always-constant features of `upstream-issues.md` 2-3 are the known entries).
 2. **The scale-up's protocol (PLAN.md step 3).** Each item agreed with the user before code; long runs as `run/`
-   scripts. Open questions include the adaptive attack's single protocol (Prop. 1 scoring at 5,000 candidates, as
-   §5.1 states, vs. extraction at 2,000, as run 143 did) and its budget at scale.
-3. Small open items: a signature-cloning citation for §4.3 (`% VERIFY`; candidate Kim et al., CCS 2017, "Certified
-   Malware": obtain the PDF into `papers/` and check it first); `make check` reports one 2 pt overfull vbox near the
-   end of the appendices (page-level float placement; harmless while drafting).
+   scripts. Open questions include the adaptive attack's single protocol (§5.1 states Prop. 1 scoring at 5,000
+   candidates; run 143 extracted at 2,000) and its budget at scale; the malware count (session 62 suggested ~200 per
+   seed so PV and the expert set clear ~100 detected files); the scale-up's R7 items (PLAN.md step 3) and the
+   rebuttal's before-scale-up items (R1 at Zainab's setting, R19's donor control, R20's validation-split thresholds).
+3. ~~Small open items~~ Done (session 62): Kim et al. (CCS 2017) cited for signature cloning in §4.3 (the `% VERIFY`
+   resolved); the overfull vbox is gone; `make check` clean.
 
 ## Constraints
 
 - Explain plainly; one recommendation. State a hypothesis before any run; report a failed check as such.
-- No deadline talk; do not reopen settled decisions (no router, the full widening and its cost, "any attack"
-  columns, no timing claims, MAB-Malware's role, blue values until the scale-up).
 - Never propose sandbox execution or obtaining files over 4 MB.
 - Jobs over ~10 minutes go to the user as `run/` scripts. Before committing: ruff and mypy; after manuscript edits,
   `make` and `make check`. Commit to `main` in logical pieces; do not push.

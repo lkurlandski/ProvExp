@@ -115,14 +115,20 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
 
 ## Session log
 
-- **2026-11-14 (session 62, R7/scale-up track): the decisions before the scale-up prepared.** Rebuttal status reviewed
-  (triage table, meta-review §5-8, manuscript). LIEF spike (record `docs/evidence/r7-overlay-rule.md` §8): structures
-  agree with pefile on 99/100 pilot files (the one difference: pefile's 8,192-import cap); LIEF parses ~35x faster but
-  parsing is ~12-25% of our per-file time; pefile's defensive caps are unmodelled (no soundness hole found, an exactness
-  gap). Recommendation: stay on pefile, one deliberate audit pass with a deviations table. Adaptive budget from stored
-  runs: evasions of learned defenses still climb from 1,000 to 5,000 candidates. Kim et al. (CCS 2017) cited for
-  signature cloning (b319638); the overfull vbox is gone. **Waiting on the user:** the extractor decision, the attack
-  protocol, the malware count, and which small pre-scale-up items to do.
+- **2026-11-14 (session 62, R7/scale-up track): the decisions before the scale-up taken; verification and small fixes
+  done.** Rebuttal status reviewed (triage table, meta-review §5-8). **Decisions (user):** (1) stay on pefile, with a
+  deliberate audit pass and deviations table later (scale-up prep); (2,3) scale-up protocol and malware count are their
+  own session; (4) escape audit against the widened population: yes; (5) make the small manuscript fixes now.
+  **Done:** (a) LIEF spike (`r7-overlay-rule.md` §8): structures agree with pefile on 99/100 pilot files, LIEF ~35x
+  faster but parsing is ~12-25% of our time; stay on pefile. (b) pefile's parser caps verified (§10,
+  `upstream-issues.md` item 10): crossing the 8,192-import cap drives num_imports ~70 -> ~8,110 (declared delta wrong,
+  an exactness gap) but 0 model-read features fall on three files -> not a soundness hole; a deviations-table item.
+  (c) Escape audit against the loose population (§9): every loader-ignored entry write still leaves the loose
+  population exactly as run 137's strict audit; no new in-population escape; the scale-up's active escape search stands
+  (§7). (d) Three manuscript fixes (8d88ef3): Appendix D's pools ("adds a 0", minima 0 on every file), self-maintainability
+  (Mumick et al.) in §3.2, the code-level exclusion reworded against Lucas et al. in §4.3. (e) Kim et al. (CCS 2017)
+  cited for signature cloning (b319638, `% VERIFY` resolved); the overfull vbox is gone; `make check` clean.
+  **Waiting on the user:** the scale-up protocol and malware count (own session).
 
 - **2026-11-14 (session 62, R18 track): ready for run 144.** While it ran (started 10:05): the six non-string
   disagreements traced (three are trial's blind spots; the two import addresses are declared too broadly, and run 145
