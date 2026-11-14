@@ -339,41 +339,53 @@ score to be nondecreasing in the features that can only rise and nonincreasing i
 this detector on EMBER's features and also on the sums they are read from (Appendix~\ref{sec:ember}), because many
 features move both ways only through a readout that normalizes them, while their sums move one way. We measure what the
 constraints take from detection (\Cref{tab:eval:detectors}) and compare it with features chosen by hand: on the sums,
-the guarantee costs 3.9 points of detection at a 1\% false-positive rate and 9.7 at 0.1\%, while features chosen by
+the guarantee costs 7.8 points of detection at a 1\% false-positive rate and 16.3 at 0.1\%, while features chosen by
 hand for the same guarantee under additions give up most of the detection.
 
 \paragraph{The price}
-Against the full threat model, the monotone detector on the sums detects 89.6\% of the malware at a 1\%
-false-positive rate, against 93.5\% for the unconstrained detector, and at a stricter 0.1\% rate it detects 74.7\%
-against 84.4\%. The detector on the features detects 87.2\% and 70.9\%. In return, no edit in the
-threat model lowers either detector's score. Our attacks evade the unconstrained detector on 28 of the 47 malware it
-detects, and each monotone detector on \synthetic{a single file}. The adaptive attack confirms the guarantee on every
-file: trained on the full training set, the unconstrained detector falls to it on 25 of the 49 malware it detects, while
-its largest score drop on the monotone detector on the features is exactly zero, and a simpler search that appends and
-adds sections finds no drop on the detector on the sums. MAB-Malware, in about 2,400 edits against each monotone
-detector, never lowers its score.
-% MEASURED (run 139): mfull-feat 2,400 and mfull-sums 2,460 actions (pulls), every arm pulled 230-440 times;
-% p_lowest = p_clean exactly on all 40 and 41 files, the 12 and 11 outside the population included.
+Against the full threat model, the monotone detector on the sums detects 85.7\% of the malware at a 1\%
+false-positive rate, against 93.5\% for the unconstrained detector, and at a stricter 0.1\% rate it detects 68.1\%
+against 84.4\%. The detector on the features detects 83.4\% and 65.1\%. Most of this cost comes from the signature.
+Once the certificate entry is writable, an attacker can give a malware file the signature of a benign program, so the
+detector cannot let a signature lower its score, and signatures are among the strongest benign evidence the features
+hold. In return, no edit in the threat model lowers either detector's score. Our attacks evade the unconstrained
+detector on all 47 malware it detects, 21 of them with a copied signature as the only edit, and evade neither monotone
+detector on any file. The adaptive attack ran its full budget of 2,000 candidates on every file the monotone detectors
+detect, and its largest drop in their scores is exactly zero. MAB-Malware, in about \synthetic{2,400} edits against
+each monotone detector, never lowers its score.
+% MEASURED (run 140, one seed): -loose models (seed-0-s10-mfull-{feat,sums}-loose), TPR at 1%/0.1% FPR features 83.4/
+% 65.1, sums 85.7/68.1, AUC 0.9890 and 0.9906; before the entry write (-v2) 87.2/71.0 and 89.6/74.8.
+% MEASURED (run 143, escape pilot on the -loose models, evasion counted from the unescaped original): unconstrained
+% 47/47 under each of the three escapes, every evasion through `ent` with an appended certificate; one clone as the
+% only edit after the escape: 21/47 (cert_entry, image_size), 26/47 (debug_entry). Monotone 0/39 and 0/40 under each
+% escape, min_delta_logit exactly 0, every search 2,000 candidates (one image_size mfull-sums search lost to a stalled
+% worker). The full-training-set unconstrained comparison (run 127, 25/49) predates `ent` and was cut.
+% SYNTHETIC: MAB-Malware (run 139) ran against the -pre-v2 detectors (mfull-feat 2,400, mfull-sums 2,460 actions; score
+% never below the clean score); replaced by MAB-Malware on the -loose detectors at the scale-up (PLAN.md step 3).
 
 \paragraph{Where the guarantee holds}
-The guarantee holds on the population (\Cref{sec:instances:population}), which contains \synthetic{89\%} of the
-malware we attack and all but 1.5\% of the benign test files. A monotone detector sends a file outside the population
-to the unconstrained detector, and that is where the single toolkit evasion of each monotone detector happened: the
-header fields attack on an incomplete file, 51~KB long, whose headers describe 2~MB of sections. An attacker can build a
-file outside the population on purpose, but such files are rare among benign software, and so stand out.
-% SYNTHETIC: 89% predicted from the pilot's attacked malware of at most 4 MB (31 of 35 in the population) and from the
-% 2,000-file set's malware of at most 4 MB (652/732); replaced by the scale-up's attacked malware (PLAN.md, next step 3).
-% Pilot, all files: 38 of 50. Benign 1.5%: 14 of the 938 benign test files of at most 4 MB (13 incomplete, 1 with an
-% unusual layout). The evaded file: 480087e22a..., 51,190 bytes, sections to 2,059,264 (Table 5, header_fields;
-% artifacts/experiments/a1/toolkit-v2/results.parquet), not truncated by our copy, so it stays in the new scope.
+The guarantee holds on the population (\Cref{sec:instances:population}). It contains 24 of the 28 malware that each
+monotone detector detects, and all but 1.5\% of the benign test files. Outside it, the same detector scores the file
+without a guarantee. An attacker can take a file out on purpose with one write the loader ignores, and we tried the
+three we found: pointing the certificate entry or the debug entry past the end of the file, or raising the size of the
+image above what its sections need. The first two are entry writes, so the file stays in the population and the
+guarantee covers the attack that follows; the third takes every file out. We applied each write to every malware file
+and then ran the adaptive attack from the escaped file. Neither monotone detector is evaded after any of the three
+writes, and no candidate lowered its score, on files outside the population as well.
+% MEASURED (run 143): of the detected malware of at most 4 MB, 24/28 in the widened population for both monotone
+% detectors (all pilot files, truncated included: 28/39 and 30/40, the table's denominators). Benign 1.5%: 14 of the
+% 938 benign test files of at most 4 MB outside the population before the entry write (run 136); the widened
+% population can only hold more. Escapes: run 137 (audit), run 143 (cert_entry, image_size, debug_entry; the image_size
+% escape takes all files out, start_in_population 0). The routed toolkit evasion of the old text (header fields on an
+% incomplete file, 480087e22a...) went to the unconstrained detector; without routing, see Table 5's SYNTHETIC note.
 % P1 (closure) measured on the 2,000 files: run 117 (run/117_p1_closure.sh), 0 of 60,934 edits on passing files
-% (of 73,063 applied) leave the population, all twelve operations; pilot: 0 of 3,188. The split, outputs inside
-% the table, and still detected: scripts/a1_toolkit_split.py (runs 78, 105). P2: directions_sums.csv of
-% a_directions_derived_sums_v2 vs _2000_v3, every threat-model column and every per-operation precondition column
-% equal. Coverage: catalogue_checks/2000-v3 with explanation_set/ts.parquet (untruncated: 1,576/1,670; benign 924/938).
+% (of 73,063 applied) leave the population, all twelve operations; pilot: 0 of 3,188. Widened population: run 142,
+% 0 of 13,326 (pilot, escaped copies included). P2: directions_sums.csv of a_directions_derived_sums_v2 vs _2000_v3,
+% every threat-model column equal. Coverage: catalogue_checks/2000-v3 with explanation_set/ts.parquet.
 
 \paragraph{Where the cost lies}
-Most of the cost comes from the constraints of two operations, not from the features the detector drops. The table is
+Leaving the entry write out of the threat model recovers 3.9 points at 1\% false positives; of the entry write's cost,
+freeing only the debug entry accounts for 0.6. Most of the remaining cost comes from the constraints of two operations, not from the features the detector drops. The table is
 derived one operation at a time, so we retrained the monotone detector on the sums with each operation left out of the
 threat model in turn. At 1\% false positives, a detector that drops the two-sided features and constrains nothing else
 loses 0.2 points. With import addition in the threat model, all 1,282 import hash buckets must be nondecreasing, and
@@ -384,6 +396,9 @@ recovers 2.4 points. At 0.1\% false positives, the threshold is set by the few h
 retraining alone moves detection by a few points: leaving out append, which removes constraints, still lowers it by
 3.0. Above that noise, only dropping the two-sided features stands out, at 5.2 points, about as much as all the
 constraints together.
+% MEASURED (run 140): leaving `ent` out = the -v2 models, 85.7 -> 89.6 (sums); freeing only the debug features: 89.6
+% -> 89.0 (sums), 87.2 -> 87.1 (features) at 1%. PROTOCOL: the per-operation numbers below were measured on the table
+% before the entry write (run 126); the scale-up re-runs the price list on the widened table.
 % MEASURED (2026-11-04): run/126_price_list.sh, artifacts/experiments/a_price_list/table.json. TPR at 1% FPR: full
 % catalogue 89.6%; drop-only (no constraints) 93.3%; warnings only dropped 93.6%; reference 93.5%. Leaving out: imp
 % 91.7%, the three overwrites 91.0% (hdr 90.8%, chk 90.3%, dos 89.4%), rdb 90.0%, rsg 90.0%, ren 89.7%, app 89.3%,
@@ -403,10 +418,10 @@ constraints together.
     \cmidrule(lr){3-4}
     Detector & AUC \up & 1\% \up & 0.1\% \up & \multicolumn{2}{c}{Evaded \dn} \\
     \midrule
-    Unconstrained      & \textbf{.996} & \textbf{93.5} & \textbf{84.4} & \multicolumn{2}{c}{28/47} \\
+    Unconstrained      & \textbf{.996} & \textbf{93.5} & \textbf{84.4} & \multicolumn{2}{c}{47/47} \\
     \midrule
-    Monotone, features & .992 & 87.2 & 70.9 & \multicolumn{2}{c}{\textbf{1/40}} \\
-    Monotone, sums     & .994 & 89.6 & 74.7 & \multicolumn{2}{c}{\textbf{1/42}} \\
+    Monotone, features & .989 & 83.4 & 65.1 & \multicolumn{2}{c}{\textbf{\synthetic{0/39}}} \\
+    Monotone, sums     & .991 & 85.7 & 68.1 & \multicolumn{2}{c}{\textbf{\synthetic{0/40}}} \\
     \bottomrule
     \addlinespace[1.5em]
     \toprule
@@ -420,6 +435,11 @@ constraints together.
     \bottomrule
   \end{tabular*}
 \end{table}
+% R7 (session 61): the top half's monotone rows are the -loose models (run 140), scored on every file (no routing).
+% Evaded: unconstrained 47/47 measured (run 143's adaptive attack, union with the toolkit 26/47 and MAB 10/47).
+% SYNTHETIC: monotone 0/39 and 0/40; the adaptive part is measured (run 143: 0 under every escape), the toolkit and
+% MAB-Malware parts are predicted 0 (on -pre-v2 they evaded 1/40, 1/42 only through routing to the unconstrained
+% detector, and MAB 0); replaced by the toolkit and MAB-Malware attacks on the -loose detectors at the scale-up.
 % Table remade in session 43 (old version in git history before this commit). The adaptive column and the
 % full-training-set row moved to the text (The price); inside/outside: toolkit attacks inside/outside the additions
 % threat model (madd-sums: all 12 evasions are header_fields, a1/toolkit-v2/table.json).
