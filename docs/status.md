@@ -100,8 +100,12 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
 - **The extractor question** (PLAN.md step 2c): the user's call, before the scale-up's featurization.
 - **The review's rebuttal** (parallel to R7): triage decided (session 58, `docs/reviews/2026-11-12-body/rebuttal/
   triage.md`); trust (R2) and erdalt (R19) decided, R2's code fix done (session 59). Before the scale-up: R18, the
-  trial competitor (running in its own session, `docs/resume-prompt-R18.md`), then a last look. Text fixes (R2's
+  trial competitor (`docs/resume-prompt-R18.md`), then a last look. Text fixes (R2's
   paragraph, R21's §6 paragraph and the rest) come after the scale-up.
+- **R18: run 144 and three decisions** (session 60; `docs/evidence/r18-trial-competitor.md`). Run
+  `run/144_trial_competitor.sh` (~3 h at 16 workers; logs `artifacts/logs/r18_trial_{adaptive,mab}.log`; can share the
+  machine with run 143 at lower NUM_WORKERS). Decide: the reading (trial evaded through content it did not try), the
+  trial row at the scale-up, and iterated adversarial training at the scale-up (recommended: in).
 
 ## Scheduled (in order; PLAN.md, next steps)
 
@@ -117,6 +121,16 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
 
 ## Session log
 
+- **2026-11-13 (session 60, R18 track): the trial competitor.** Built the trial table from our own edits, a stronger
+  probe (every section renamed, all slack/DOS/header bytes, donor imports from 200 benign training files;
+  `scripts/trial_probe.py`, `trial_table.py`) and, as a variant, the toolkit outputs. Against the derived table on
+  modeled features: no soundness conflict; 66 lowerable features trial never lowered (62 string counts, the IAT
+  entry), 86 raise-only never moved. Its monotone detector detects more (87.6% vs 83.4% at 1% FPR) and **falls at the
+  smoke** (5/11 within 100 candidates, each by signature cloning: the certificate's URLs raise `regex_https://`, which
+  trial left free); the derived detector holds. Hypothesis (no new hole) failed. With the toolkit, trial absorbs LIEF's
+  side effects (179 features) and detects 53.1%. Iterated adversarial training: estimated ~13-15 h pilot, needs a
+  save option in `a1_adaptive.py` (R7-owned); recommended in. Run 144 scripted (176dbb8). **Next:** the user runs 144
+  and decides; then `docs/resume-prompt-R18.md`.
 - **2026-11-13 (session 59, rebuttal track): R2's 4-byte Rich fix.** When pefile finds the "Rich" marker it reads a
   4-byte key just past it, which can be the optional header's first four bytes; `RichHeader.items` now records them
   for files with pairs (pure addition; the empty case reads no key and is unchanged). Test `TestRichKey` (a synthetic

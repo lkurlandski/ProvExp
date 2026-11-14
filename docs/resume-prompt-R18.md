@@ -1,9 +1,8 @@
-# Resume: R18, the trial competitor (and whether iterated adversarial training joins the scale-up)
+# Resume: R18, read run 144 and take the user's decisions
 
-Written in session 58 (2026-11-13, rebuttal track), for the sessions that work on R18 of the 2026-11-12 simulated
-review. Self-contained: everything needed to start is below or in the files it names. Two other tracks run in
-parallel: R7 (`docs/resume-prompt.md`) and the rebuttal (`docs/resume-prompt-rebuttal.md`). Commit only the files you
-changed (`git add <paths>`, never `git add -A`).
+Written in session 60 (2026-11-13, R18 track), for the next R18 session. Self-contained: everything needed is below or
+in the files it names. Two other tracks run in parallel: R7 (`docs/resume-prompt.md`) and the rebuttal
+(`docs/resume-prompt-rebuttal.md`). Commit only the files you changed (`git add <paths>`, never `git add -A`).
 
 ## The project in brief
 
@@ -15,90 +14,65 @@ threat model can evade (Corollary 1). PE malware on EMBER2024 is the instance. �
 misses (5.2), what defenses learned from observed attacks miss (5.3), what robustness costs (5.4). Check
 `manuscript/main.aux` before naming a section, table or theorem number, and give the title alongside.
 
-**Read first:** `CLAUDE.md`, `docs/status.md` (skim), `PLAN.md` decisions 6, 10 and 12, then
-`docs/reviews/2026-11-12-body/rebuttal/triage.md`: R18's entry, `GROUP trial`, and the outcomes of the groups `trust`
-and `erdalt` (they run first; if their drafts `rebuttal/trust.md` and `rebuttal/erdalt.md` exist, skim their opinion
-lines). In the paper: §5's lead (`manuscript/_f_evaluation.tex`, the first paragraph) and §5.3, *What Observed Attacks
-Miss* (from `\subsection{What Observed Attacks Miss}` to `\subsection{What Robustness Costs}`). From the meta-review
-(`docs/reviews/2026-11-12-body/meta-review.md`): row R18 of the register (§6), C-W3's verdict, and point 9, *The
-problem-space defense*. Its [verified] facts are trusted; its judgement is not (memory `distrust-simulated-reviews`).
+**Read first:** `CLAUDE.md`, `docs/status.md` (skim), then **`docs/evidence/r18-trial-competitor.md`** (all of session
+60's work: the mock, the trial table, the detectors, the smoke attack and its audit, the adversarial-training
+recommendation) and the header of `run/144_trial_competitor.sh` (hypothesis, resources). The R18 entry of
+`docs/reviews/2026-11-12-body/rebuttal/triage.md` has the open action lines.
 
-## The issue, plainly
+## Where R18 stands
 
-The paper names three ways a practitioner learns what edits do to the features: **trial** (apply edits, extract,
-look), **reading the extractor** (hand analysis), and **observed attacks**. §5.2 and §5.3 measure what the last two
-miss, and the lead uses trial as the ground truth ("trial is exact but answers only for the edits it tries"). The
-reviewers' point (C-W3, D-W6, B-W4 (e); all four in some form): §5 never builds the competitor a practitioner who knows
-the twelve operations would actually use, **a systematic trial over those operations**. If that competitor gives the
-same table as our derivation and a monotone detector built on it holds, then what the computation adds over trial is
-the guarantee (a proof over the population, not a sample) and finding the holes before any attack; the paper's
-contrast with trial would need to say exactly that. I (session 58) would test this even without a reviewer: it is the
-realistic-alternative check CLAUDE.md asks of every application (memory `check-baseline-realism`).
+The review's point: §5 never builds the competitor a practitioner who knows the twelve operations would use, a
+systematic trial over them. Session 60 built it in its strongest fair form with our own byte-level writers (catalogue
+edits, a stronger probe of every in-place region, donor imports from benign training files), plus a variant that adds
+the toolkit's LIEF-written outputs.
 
-One part of C-W3 restates our finding as a flaw ("the learned defenses get less information, so the outcome is built
-in"): that a defense learned from the attacks at hand cannot see the operations they lacked *is* §5.3's finding, and a
-defender learns which operation to add only after an attacker used it. Do not reopen that part.
+- Trial table vs derived (modeled features): no soundness conflict; 66 lowerable features trial never lowered (62
+  string-pattern counts; the IAT entry, which the `imp` declaration lets an import adder move); 86 raise-only features
+  it never moved (84 import buckets).
+- Detectors, TPR at 1% / 0.1% FPR: derived `-loose` 83.4 / 65.1; trial 87.6 / 71.3; trial-toolkit 53.1 / 36.5.
+- Smoke (real-scored beam, 100 candidates, 12 pilot malware): trial evaded 5/11, each by one signature-cloning edit,
+  carried by `strings:regex_https://` (the certificate's URLs raise a count trial never moved, so left free);
+  derived 0/2, score never falls; trial-toolkit 0/3 but its score fell. The hypothesis of session 58 (no new hole)
+  failed.
 
-## What already exists (no new runs needed for step 1)
+## What waits
 
-- `artifacts/experiments/a_varied/coverage/features.csv` (from `scripts/a_coverage.py`, run 133 step 3, on the 3,183 outputs of §5.3):
-  one row per feature the derived table marks lowerable (1,070), with the operations that can lower it, `witnessed_by`
-  (which of our own byte-level edits lowered it on a population file: the 73,063 re-extracted edits of
-  `catalogue_checks.py`), and per source which toolkit attacks lowered it. **Trial table = witnessed by our edits ∪
-  lowered by a toolkit output.**
-- The meta-review's count [verified]: of the 142 lowerable features no toolkit output lowered, 75 (88 in all) are
-  parser warnings, which the instance does not model and marks "both" by fiat; about 20 are witnessed by our edits;
-  about 48 modeled ones are unwitnessed, 46 of them counts of strings matching a pattern. Of the eight hand-table
-  errors (Table 3), six would show up under random-content trial; the two Rich-header errors need a forged Rich block.
-- Monotone detectors: `scripts/train_classic.py --monotone <name TAB sign file>`; direction tables from
-  `scripts/a_directions.py`; the derived detectors' models `seed-0-s10-mfull-{feat,sums}-loose` (R7's widened
-  population; run 140's header has the training commands and runtimes). Attacks: `scripts/a1_adaptive.py` (beam,
-  `--score real`), toolkit via `a1_evaluate.py`, MAB-Malware via `scripts/mab_attack.py` (run 139).
+1. **Run 144** (the user runs it; ~3 h at 16 workers): the real-scored beam (2,000 candidates) and MAB-Malware against
+   trial, trial-toolkit and the derived detector. Read it against the hypothesis in its header: trial evaded on 40-60%,
+   nearly all by `ent`; derived 0 with its score never falling; trial-toolkit evaded on a few files; MAB-Malware (no
+   signature cloning) few or none. Audit every evasion as session 60 did (rebuild the edit, `pred_contrib` before and
+   after; the scratch `clone_audit.py` is gone, re-write it in a few lines) before any reading: name the feature
+   carrying it and whether trial marked it. Any evasion of the derived detector on a file in the population is a
+   soundness bug, not a result.
+2. **The user's decisions** (ask; do not decide):
+   - the reading: proposed, §5's lead and §5.3 gain the trial row as measured evidence that trial answers only for the
+     edits and contents it tries (and, from the toolkit variant, that trial through published tools cannot separate the
+     operations from the tools' side effects); text after the scale-up (no manuscript edits now);
+   - the trial row (trial and derived detectors, same protocol) in the scale-up;
+   - iterated adversarial training at the scale-up: recommended in (two rounds, adaptive beam over the twelve
+     operations on training malware, `ent` held out of the loop and MAB-Malware as the held-out attack; ~13-15 h at
+     pilot scale, days at scale). It needs an option in `scripts/a1_adaptive.py` to save the best candidate's feature row
+     per (defense, file); that script is R7-owned: propose the change to the user, do not make it.
+3. **Record** the decisions: R18's Decision cell and action lines in `triage.md`; the scale-up items in PLAN.md's next
+   step 3 (session 60's paragraph there is a proposal); a line in `docs/status.md`'s log; the evidence note's log.
 
-## The work, in order
+## Open details (small; raise only if they matter for the reading)
 
-**0. Mock the result first** (memory `mock-the-result-first`). Before any code: the row(s) the trial competitor adds to
-a §5 table, the operator behind each column, and which sentence of §5's lead or §5.3 moves under each outcome. State
-the hypothesis in a sentence or two. Mine, to check, not to adopt: the trial table matches the derived table on all
-but ~50 modeled features (the string-pattern counts, the Rich header), never marks lowerable a feature the derived
-table marks fixed (that would be a soundness error, not a difference), and its monotone detector holds against the
-adaptive attack because those ~50 features carry little gain; so the outcome is the reframing, not a new hole.
-
-**1. The trial table, from stored data** (minutes). Build it from `features.csv`; compare with the derived table on
-modeled features only (warnings apart, as R12 asks). Report: how many differ, which groups, and their split gain in the
-derived detector. **Fairness** (memory `fair-baselines-over-faithful-copies`): give trial its strongest fair form,
-i.e. every operation with the content variety a practitioner would use (random bytes and benign-donor content, several
-seeds), not one fixed content. If the stored edits used one content per operation, say so and estimate what more
-content would add before building anything. Also ask the opposite question: for the unwitnessed features, can any
-edit of the threat model lower them at all? If not, the derived table over-approximates there, and the trial detector
-would be the *better* detector on them; report that plainly.
-
-**2. A monotone detector on the trial table, attacked** (pilot, one seed). Train it like the derived detectors (same
-training set, same population, same threshold protocol), then the adaptive beam with `--score real` and MAB-Malware on
-the pilot. Training takes about a minute per model (run 140's header); the attacks likely exceed ~10 minutes: smoke-test
-on a small slice, then a numbered `run/` script for the user (check `ls run/` for the next free number right before writing it; the R7 track also adds
-scripts; `NUM_WORKERS="${NUM_WORKERS:-16}"`, one argument per line, an `echo` naming each step's log). Go/no-go, read
-after the run (memory `interpret-after-run`): an evasion through a feature trial missed means §5 gains its sharpest
-evidence for computation over trial; no evasion and detection within noise of the derived detector means the
-contrast with trial is reframed around the guarantee. Either outcome is a result; neither is "weak".
-
-**3. Iterated adversarial training: in or out of the scale-up.** The meta-review proposes revisiting decision 6:
-adversarial training with the adaptive attack over all twelve operations in the loop, on training malware, at least
-two rounds, tested with a held-out attack (MAB-Malware, or a held-out operation). Its expected outcome (it resists the
-attack in its loop, falls to a held-out one) would support §5.3, but it is days of compute. Do not run it here:
-estimate its cost from the stored runs (runs 122, 125, 130), check what Lucas et al. 2023 and Tsingenopoulos et al.
-2024 (`papers/`) did, and bring the user one recommendation, framed by step 2's outcome.
-
-**4. Record.** The user decides the reading of steps 1-2 and the step-3 question. Then: R18's Decision cell and a
-`- [ ]` action line in `triage.md`; the scale-up items into PLAN.md's next step 3; one line in `docs/status.md`'s log.
+- The six non-strings disagreements (iat_size, iat_virtual_address, import_virtual_address, authenticode:parse_error,
+  num_zero_size, SizeOfUninitializedData) were not traced through the derivation; `directions.csv`'s columns are the
+  strict variant, not the `-pre` one the detector uses.
+- The parser warning "Suspicious flags set for section" (13.9% of the trial detector's gain) is likely one no operation
+  removes, so the derived table over-approximates it by the warnings rule (R12); freeing the warnings costs the derived
+  detector nothing measurable (83.0 / 66.2).
+- The catalogue edits behind the trial table are on test files (the 2,000-file explanation set and the pilot), as is
+  the derivation's vocabulary; the donors are training files.
 
 ## Constraints
 
-- **No manuscript edits** in these sessions: §5's text changes after the scale-up, with the final numbers. The R7 track
-  owns §4.3.1, §4.4, §5.1's setup, §5.4, Table 5 and `catalogue.py`, `a_directions.py`, `a1_adaptive.py`,
-  `catalogue_checks.py`: read them, do not edit them; if R18 needs a change there, propose it and stop.
-- Pilot scale, one seed. Jobs over ~10 minutes (from the slowest case) go to the user as `run/` scripts.
-- §5 is findings, not a defense paper (memory `findings-not-defense-paper`); no timing or effort claims (the cost of
-  trial is the edits and extractions it needs, never seconds or person-days); hypothesis before every run, failed
-  checks reported as such.
-- Explain plainly: lead with what is computed, what it is compared with, why it matters.
+- **No manuscript edits** in these sessions. The R7 track owns §4.3.1, §4.4, §5.1's setup, §5.4, Table 5 and
+  `catalogue.py`, `a_directions.py`, `a1_adaptive.py`, `catalogue_checks.py`: read them, do not edit them.
+- Pilot scale, one seed. Jobs over ~10 minutes (from the slowest case) go to the user as `run/` scripts (check `ls run/`
+  for the next free number right before writing one; `NUM_WORKERS="${NUM_WORKERS:-16}"`, one argument per line, an
+  `echo` naming each step's log).
+- §5 is findings, not a defense paper; no timing or effort claims; hypothesis before every run, failed checks reported
+  as such. Explain plainly.

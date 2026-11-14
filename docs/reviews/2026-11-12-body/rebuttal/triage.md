@@ -7,7 +7,7 @@ Commit 2e4c350. Verdicts: decided, dismiss, cheap fix, investigate.
 | R7 | routed system is a bypass | investigate | population | methodology: decision 11 stands; end-to-end number after run 143 |
 | R1 | attacks weaker than published; adaptive attack misses an operation | investigate | attacks | methodology: decision 12 stands; one wording fix; MAB rerun at their setting: yes (session 58) |
 | R2 | "sound" rests on tested premises | investigate | trust | argument + 4-byte record fix: draft confirmed (session 58); probe and vocabulary check not needed |
-| R18 | learned baselines get less information | investigate | trial | investigate (before scale-up, step 2) |
+| R18 | learned baselines get less information | investigate | trial | pending: trial evaded at smoke (5/11, signature cloning); run 144 for the user |
 | R6 | formal results are known techniques | cheap fix | | argument: session 50 stands; name self-maintainability |
 | R4 | one instance for a class claim | cheap fix | | argument (after scale-up; wording not yet reviewed) |
 | R20 | statistics cannot rank defenses | cheap fix | | methodology: thresholds from the validation split at scale-up |
@@ -138,7 +138,17 @@ use: systematic trial over them. The 73,063 catalogue edits already form one, so
 cost analysis, not new runs; this is the realistic-alternative test CLAUDE.md asks of every application, and I would
 propose it without a reviewer. Iterative adversarial training is what four reviewers expect from the defender
 (decision 6 scheduled exactly this revisit), but it is compute-heavy, so the cheap question goes first.
-- [ ] Group trial: the trial table from the 73,063 catalogue edits and a monotone detector on it, after trust and erdalt; decide then whether iterated adversarial training joins the scale-up.
+- [x] Group trial: the trial table from the 73,063 catalogue edits and a monotone detector on it, after trust and erdalt; decide then whether iterated adversarial training joins the scale-up. Done in session 60
+  (`docs/evidence/r18-trial-competitor.md`): the trial table (our edits, a stronger probe, donor imports) never
+  conflicts with the derived one and misses 66 lowerable and 86 raise-only modeled features; its detector detects
+  87.6% at 1% FPR (derived 83.4%) and falls at the smoke to one `ent` edit on 5 of 11 files, through
+  `regex_https://`, a count trial never moved; with the toolkit outputs, trial takes in LIEF's side effects (179
+  features) and detects 53.1%.
+- [ ] Run 144 (user): the trial detectors and the derived one under the real-scored beam and MAB-Malware.
+- [ ] User: the reading (proposed: §5's lead and §5.3 gain the trial row as evidence that trial answers only for the
+  edits and contents it tries; text after the scale-up).
+- [ ] User: iterated adversarial training at the scale-up (recommended: in, two rounds, `ent` and MAB-Malware held
+  out; needs a save option in `a1_adaptive.py`, R7-owned; ~13-15 h pilot, days at scale).
 
 ### R6: the formal results are known techniques
 **Verdict:** cheap fix. All four say it and they are right: Proposition 1 is the delta rule of incremental view

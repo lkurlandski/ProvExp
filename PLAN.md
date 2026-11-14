@@ -367,6 +367,11 @@ records of the §5 reviews, the table remake and the ERDALT check, is in
    the scale-up, MAB-Malware also at Zainab et al.'s setting (0.1% FPR, no byte cap) against the unconstrained
    detector (R1), and the ERDALT donor-overlap control (GAMMA imports with the training donors; R19). Waiting on: run
    143 (R7 track) and R18 (the trial competitor; decides whether iterated adversarial training joins).
+   *R18, session 60* (`docs/evidence/r18-trial-competitor.md`): the trial detector falls at the smoke (5/11, one
+   signature-cloning edit, through a string count trial never moved); run 144 (attacks, ~3 h) waits on the user.
+   Proposed for the scale-up, the user's call: the trial row (trial and derived detectors, same protocol) in Table 5,
+   and iterated adversarial training (two rounds, adaptive beam in the loop, `ent` and MAB-Malware held out; needs a
+   save option in `a1_adaptive.py`, R7-owned).
    **Answered (user, session 49): widen first, for now**, then scale everything once. The question was: scale the
    existing experiments first (more files, seeds 0-2), or widen
    them first (the review's new experiments: MAB-Malware, the escape attack, equal-information baselines, a trial
