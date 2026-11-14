@@ -182,3 +182,28 @@ imports and exports on >95%; LIEF parses >=10x faster; pefile's parse is <30% of
 - **Reading:** a parser switch buys little speed and agrees on structure where it matters, at the cost of rebuilding
   the locating record (pefile.Structure offsets throughout `features.py`) and losing the bit-exact match with the
   released EMBER2024 vectors. The caps are the kind of parser behaviour a deliberate audit (§6) would catch.
+
+## 9. The escape audit against the widened population (session 62, 2026-11-14)
+
+Triage R7 question 2 (`rebuttal/triage.md`): run 137 audited loader-ignored writes against the *strict* population;
+does the *loose* widening (`ent` = security + debug entries exempt) open a new in-population escape? Scratch script
+(not kept; `passes_precondition(..., loose=True)` only, no extraction, no execution): 100 pilot files, 89 in the loose
+population, nine other data-directory entries (export, exception, architecture, global-ptr, tls, load-config,
+bound-import, delay-import, com), each pointed past the end, pointed at `SizeOfImage`, and zeroed.
+
+- **Every "past the end" write takes all 89 out of the loose population; "at image" takes 70 of 89 out** (the rest map
+  into a section, so they do not trip `directory_past_end`). Same as run 137 for the strict population: the loose
+  precondition still rejects these writes through `directory_past_end` / `vrange_beyond_image` / `image_too_large`.
+- **Only the `zero` writes stay in-population** (0 of 89 left). But zeroing a directory entry is either a no-op (the
+  entry is already 0) or removes a structure the loader uses (tls callbacks, load-config, imports), so it is not a
+  loader-ignored, functionality-preserving write. The genuinely loader-ignored entries are certificate (4) and debug
+  (6), already in `LOOSE_ENTRIES`, and architecture (7, reserved on x86/x64), whose feature (`copyright_*`) a nonzero
+  write only *raises* from 0.
+
+**Reading:** the widening introduced no new free bypass. Loader-ignored entry writes leave the loose population exactly
+as they left the strict one; with no router, such a file is scored by the same monotone detector, which run 143
+measured holds under the three escapes (cert, debug, image_size). The scale-up's active escape search (§7, and
+PLAN.md step 3) should still *score* end-to-end the writes that leave the population through other entries, since
+"measured outside the population" is the claim there, not "proven". Note the ~12% of entry writes that point an entry
+into the image and stay in-population: outside the threat model, not a soundness counterexample, but a cheap scoring
+item for the scale-up.
