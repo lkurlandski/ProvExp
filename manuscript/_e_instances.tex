@@ -78,8 +78,8 @@ attacker within a byte budget. The loader maps the data of neither the debug dir
 ignores their entries in the header, and an attacker who can remove an entry can as well set it to any value. This
 write lets the attacker point the certificate entry at a signature copied from a benign program and appended to the
 file. EMBER's extractor parses a signature but does not verify it, so the copy describes the file as signed by the
-benign program's publisher.
-% VERIFY: cite signature cloning (candidate: Kim et al., CCS 2017, "Certified Malware"); not in papers/ yet.
+benign program's publisher. Malware in the wild copies signatures this way, and such copies led 34 anti-virus
+products to miss known malware~\cite{kim2017certified}.
 % The extractor's authenticode features (signify) count certificates and read signing times; nothing checks the hash.
 The operations form three nested threat models. \emph{Additions} only add content, the setting monotone detectors are
 designed for; \emph{shifts} adds the two insertions that move existing content; and \emph{full} adds every overwrite
