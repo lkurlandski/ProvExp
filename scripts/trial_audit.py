@@ -10,8 +10,13 @@ adversarial files live in memory only.
 A replay that does not reproduce the stored row (operations or final score) is reported with `!!`: the search, its
 donors, or the defense changed since the run.
 
+With `--mab`, explains MAB-Malware's evasions instead (no replay: the minimal evasive file MAB-Malware kept under
+`{mab}/work/{defense}/output/minimal`, scored against the original); a score that differs from the stored one is
+reported with `!!`.
+
 Usage (after run 144):
     PYTHONHASHSEED=0 OMP_NUM_THREADS=1 python scripts/trial_audit.py --defense trial trial-toolkit
+    PYTHONHASHSEED=0 OMP_NUM_THREADS=1 python scripts/trial_audit.py --mab
 """
 
 from __future__ import annotations
@@ -31,7 +36,7 @@ import a1_adaptive as A  # noqa: E402
 from a_pv_attacks import load_pilot  # noqa: E402
 from provexp.data.paths import EMBER2024_DATA  # noqa: E402
 
-__all__ = ["Recorder", "marking"]
+__all__ = ["Recorder", "explain", "marking"]
 
 T = ROOT / "artifacts/experiments/r18_trial"
 MODELS = ROOT / "artifacts/models/gbdt"
@@ -74,6 +79,16 @@ def marking(defense: str) -> dict[str, str]:
     return out
 
 
+def explain(booster: Any, x0: np.ndarray, x1: np.ndarray, dim: int, names: list[str], mark: dict[str, str],
+            top: int) -> None:
+    """Print the features whose per-feature contribution fell most from `x0` to `x1`, with their trial marking."""
+    delta = (booster.predict(x1, pred_contrib=True)[0][:-1] - booster.predict(x0, pred_contrib=True)[0][:-1])[:dim]
+    for i in np.argsort(delta)[:top]:
+        if delta[i] >= -1e-6:
+            break
+        print(f"    {delta[i]:+.2f}  {names[i]:40s} {x0[0, i]:.4g} -> {x1[0, i]:.4g}  [{mark.get(names[i], 'free')}]")
+
+
 ################################################################################
 # Main
 ################################################################################
@@ -85,8 +100,12 @@ def main() -> None:
     parser.add_argument("--names", nargs="*", default=None, help="Only these files.")
     parser.add_argument("--queries", type=int, default=2000, help="The run's budget (run 144: 2,000).")
     parser.add_argument("--top", type=int, default=6, help="Features to list per evasion.")
+    parser.add_argument("--mab", nargs="?", type=Path, const=T / "attacks/mab", default=None,
+                        help="Explain MAB-Malware's evasions from this output directory (default: run 144's).")
     args = parser.parse_args()
 
+    if args.mab is not None:
+        args.results = args.mab / "results.parquet"
     res = pl.read_parquet(args.results).filter(pl.col("evaded"))
     if args.defense:
         res = res.filter(pl.col("defense").is_in(args.defense))
@@ -102,6 +121,22 @@ def main() -> None:
     A._init_worker(config, malware=malware, goodware=goodware)
     engine = A._W["engine"]
     names = engine.vector.feature_names
+    if args.mab is not None:
+        for row in res.iter_rows(named=True):
+            d, name = row["defense"], row["name"]
+            booster = A.padded_booster(DEFENSES[d], engine.dim)
+            found = [p for p in (args.mab / "work" / d / "output/minimal").iterdir() if p.name.startswith(name)]
+            if len(found) != 1:
+                print(f"!! {d} {name[:12]}: {len(found)} minimal files")
+                continue
+            x0 = engine.score(data_of[name]).reshape(1, -1)
+            x1 = engine.score(found[0].read_bytes()).reshape(1, -1)
+            p1 = float(booster.predict(x1)[0])
+            flag = "" if abs(p1 - row["p_adv"]) < 1e-6 else f"  !! stored {row['p_adv']:.4g}"
+            print(f"{d:14s} {name[:12]} applied={found[0].name[len(name) + 1:]} in_population={row['precondition']} "
+                  f"logit {A._logit(row['p_clean']):+.2f} -> {A._logit(p1):+.2f} (tau {A._logit(row['tau']):+.2f}){flag}")
+            explain(booster, x0, x1, engine.dim, names, marking(d), args.top)
+        return
     for row in res.iter_rows(named=True):
         d, name = row["defense"], row["name"]
         booster = A.padded_booster(DEFENSES[d], engine.dim)
@@ -121,15 +156,9 @@ def main() -> None:
         phis = [phi for _, phi in rec.seen]
         x0 = engine.score(z).reshape(1, -1)
         x1 = phis[int(np.argmin(booster.predict(np.stack(phis))))].reshape(1, -1)
-        delta = (booster.predict(x1, pred_contrib=True)[0][:-1] - booster.predict(x0, pred_contrib=True)[0][:-1])
-        delta = delta[: engine.dim]
-        mark = marking(d)
         print(f"{d:14s} {name[:12]} ops={r['ops']} logit {A._logit(row['p_clean']):+.2f} -> "
               f"{A._logit(r['p_adv_real']):+.2f} (tau {row['tau_logit']:+.2f})")
-        for i in np.argsort(delta)[: args.top]:
-            if delta[i] >= -1e-6:
-                break
-            print(f"    {delta[i]:+.2f}  {names[i]:40s} {x0[0, i]:.4g} -> {x1[0, i]:.4g}  [{mark.get(names[i], 'free')}]")
+        explain(booster, x0, x1, engine.dim, names, marking(d), args.top)
 
 
 if __name__ == "__main__":
