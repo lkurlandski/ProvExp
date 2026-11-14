@@ -33,7 +33,7 @@ make_fixtures (test files).
   `third_party/mab_malware` run single-threaded with a direct hand-over to our detectors; run 139), a_expert_adaptive, a_price_list (per-operation cost of soundness).
 - **The trial competitor (R18, run 144):** trial_probe (a stronger trial of the in-place operations and donor imports,
   our own writers), trial_table (the direction table learned by trial against the derived one, and the files to
-  train a monotone detector on it).
+  train a monotone detector on it), trial_audit (replays each evasion of run 144 and names the features carrying it).
 - **From A' (dropped, two pieces used by the paper):** ap_check1_learned (learned constraints, run 110: Table 6's
   learned row), ap_containment (combined edits, run 111: Table 5's last row), with ap_check0_solver (Kantchelian's
   exact GBDT encoding) and ap_encoding underneath. The rest of `ap_*` is source material only.

@@ -1,0 +1,71 @@
+--- scripts/a1_adaptive.py	2026-11-13 13:39:42.477658796 -0500
++++ scripts/a1_adaptive.py	2026-11-14 10:28:57.621148637 -0500
+@@ -833,7 +833,8 @@
+         p_state = float(booster.predict(engine.score(state).reshape(1, -1))[0])
+     return {"evaded": bool(logit_decl <= tau_logit), "p_adv_c1": float(1 / (1 + np.exp(-logit_decl))),
+             "p_adv_real": p_state, "evaded_real": bool(p_state <= tau), "queries": used, "ops": ",".join(ops_chosen),
+-            "num_ops": len(ops_chosen), "bytes_added": added, "min_delta_logit": min_delta, "tau_logit": tau_logit}
++            "num_ops": len(ops_chosen), "bytes_added": added, "min_delta_logit": min_delta, "tau_logit": tau_logit,
++            "_best": state}
+ 
+ 
+ ################################################################################
+@@ -964,7 +965,7 @@
+         "p_adv_real": float(1 / (1 + np.exp(-best[0]))), "evaded_real": bool(best[0] <= tau_logit), "queries": used,
+         "ops": ",".join(best[3]), "num_ops": len(best[3]), "bytes_added": best[2], "min_delta_logit": min_delta,
+         "tau_logit": tau_logit, "queries_to_evade": evade_at, "restarts": restarts, "steps": steps,
+-        "mismatches": mismatches}
++        "mismatches": mismatches, "_best": best[1]}
+     for q in checkpoints:
+         row[f"evaded_at_{q}"] = evade_at is not None and evade_at <= q
+     return row
+@@ -1019,6 +1020,10 @@
+                         draws=cfg["draws"], patience=cfg["patience"], checkpoints=cfg["checkpoints"])
+     else:
+         r = greedy_search(booster, engine, data, tau, make_menu, cfg["queries"], cfg["seed"], cap)
++    best_file = r.pop("_best")
++    if cfg.get("save_rows"):
++        # The best file's re-extracted feature row, in the store's layout (`--score real`), for adversarial training.
++        r["phi"] = engine.score(best_file).astype(np.float32).tolist()
+     r.update(defense=defense, name=name, tau=tau, p_clean=p_clean, p_orig=p_orig, in_population=in_pop,
+              start_in_population=start_in_pop, evaded_by_escape=bool(p_clean <= tau), truncated=len(data) >= MAX_LENGTH,
+              overrun_section=overrun, seconds=time.time() - t0)
+@@ -1116,7 +1121,12 @@
+                         "written and extracted with the sums extractor, none declined (RealEngine; needs a sums store).")
+     parser.add_argument("--escape", choices=["none", *ESCAPES], default="none", help="A field write applied to every "
+                         "malware before the attack, taking it out of the population (scripts/escape_audit.py; R7).")
++    parser.add_argument("--save_rows", action="store_true", help="Save the best file's feature row per (defense, file) "
++                        "as {outdir}/rows/{defense}/X.npy + files.parquet, the layout train_classic.py --augment "
++                        "reads (iterated adversarial training; R18). Needs --score real.")
+     args = parser.parse_args()
++    if args.save_rows and args.score != "real":
++        raise ValueError("--save_rows needs --score real (the rows must be in the store's layout).")
+ 
+     import lief
+     lief.logging.disable()
+@@ -1162,7 +1172,7 @@
+     config = {"ops": ops, "pilot_files": args.pilot_files, "db": args.db, "search": args.search,
+               "queries": args.queries, "seed": args.seed, "budget_frac": args.budget_frac,
+               "budget_min": args.budget_min, "beam": args.beam, "draws": args.draws, "patience": args.patience,
+-              "checkpoints": tuple(args.checkpoints), "score": args.score}
++              "checkpoints": tuple(args.checkpoints), "score": args.score, "save_rows": args.save_rows}
+     tasks: list[tuple[str, str, float, list[tuple[int, int]], str, bytes, float, bool, bool]] = []
+     for d, mdir in defenses.items():
+         booster = padded_booster(mdir, vector.dim)
+@@ -1197,6 +1207,16 @@
+             if (i + 1) % 10 == 0:
+                 print(f"  progress: {i + 1}/{len(tasks)} tasks in {time.time() - t0:.0f}s", flush=True)
+     rows = [r for r in rows if r is not None]
++    if args.save_rows:
++        for d in defenses:
++            mine = [r for r in rows if r["defense"] == d]
++            out = args.outdir / "rows" / d
++            out.mkdir(parents=True, exist_ok=True)
++            np.save(out / "X.npy", np.asarray([r["phi"] for r in mine], dtype=np.float32).reshape(len(mine), -1))
++            pl.DataFrame([{"name": r["name"], "label": 1, "p_clean": r["p_clean"], "p_adv": r["p_adv_real"],
++                           "ops": r["ops"], "evaded": r["evaded"]} for r in mine]).write_parquet(out / "files.parquet")
++        for r in rows:
++            r.pop("phi")
+     print(f"Searched {len(tasks)} (defense, file) pairs in {time.time() - t0:.0f}s.", flush=True)
+ 
+     results = pl.DataFrame(rows) if rows else pl.DataFrame(schema={"defense": pl.Utf8})  # nothing detected

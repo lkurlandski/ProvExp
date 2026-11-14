@@ -1,6 +1,6 @@
 # Resume: R18, read run 144 and take the user's decisions
 
-Written in session 60 (2026-11-13, R18 track), for the next R18 session. Self-contained: everything needed is below or
+Written in session 60 (2026-11-13, R18 track), updated in session 62 (2026-11-14), for the next R18 session. Self-contained: everything needed is below or
 in the files it names. Two other tracks run in parallel: R7 (`docs/resume-prompt.md`) and the rebuttal
 (`docs/resume-prompt-rebuttal.md`). Commit only the files you changed (`git add <paths>`, never `git add -A`).
 
@@ -35,13 +35,26 @@ the toolkit's LIEF-written outputs.
   derived 0/2, score never falls; trial-toolkit 0/3 but its score fell. The hypothesis of session 58 (no new hole)
   failed.
 
+## Done in session 62 (while run 144 ran; evidence note, section "While run 144 ran")
+
+- The six non-string disagreements traced: parse_error, num_zero_size and SizeOfUninitializedData are trial's blind
+  spots (derived right); the two import/IAT *addresses* are declared too broadly (`imp` `BOTH`, they can only rise),
+  but run 145 shows freeing them as monotone gains nothing (83.2 / 66.3 vs 83.4 / 65.1), so trial's four-point edge
+  rests on really lowerable features. Narrowing the declaration is an R7 proposal that changes no number.
+- `docs/evidence/r18-a1_adaptive-save_rows.patch`: the `--save_rows` option adversarial training needs, tested on a
+  copy, not applied (R7-owned). Training malware needs no code (`--pilot_files` with a training list, `--db .../tr`).
+- `scripts/trial_audit.py`: the audit, tested (reproduces the smoke evasion exactly).
+- Run 144 started 2026-11-14 10:05 with NUM_WORKERS=24; 51/103 adaptive tasks after 12 min.
+
 ## What waits
 
 1. **Run 144** (the user runs it; ~3 h at 16 workers): the real-scored beam (2,000 candidates) and MAB-Malware against
    trial, trial-toolkit and the derived detector. Read it against the hypothesis in its header: trial evaded on 40-60%,
    nearly all by `ent`; derived 0 with its score never falling; trial-toolkit evaded on a few files; MAB-Malware (no
-   signature cloning) few or none. Audit every evasion as session 60 did (rebuild the edit, `pred_contrib` before and
-   after; the scratch `clone_audit.py` is gone, re-write it in a few lines) before any reading: name the feature
+   signature cloning) few or none. Audit every evasion before any reading:
+   `PYTHONHASHSEED=0 OMP_NUM_THREADS=1 python scripts/trial_audit.py` (all evaded rows; `--defense` to filter; a `!!`
+   line means the replay differs from the run). MAB-Malware's evasions are not covered by it: audit them from
+   `$OUT/mab` the same way (feature rows before and after, `pred_contrib`): name the feature
    carrying it and whether trial marked it. Any evasion of the derived detector on a file in the population is a
    soundness bug, not a result.
 2. **The user's decisions** (ask; do not decide):
@@ -51,8 +64,8 @@ the toolkit's LIEF-written outputs.
    - the trial row (trial and derived detectors, same protocol) in the scale-up;
    - iterated adversarial training at the scale-up: recommended in (two rounds, adaptive beam over the twelve
      operations on training malware, `ent` held out of the loop and MAB-Malware as the held-out attack; ~13-15 h at
-     pilot scale, days at scale). It needs an option in `scripts/a1_adaptive.py` to save the best candidate's feature row
-     per (defense, file); that script is R7-owned: propose the change to the user, do not make it.
+     pilot scale, days at scale). It needs `--save_rows` in `scripts/a1_adaptive.py` (R7-owned): the patch is
+     `docs/evidence/r18-a1_adaptive-save_rows.patch`; ask the user whether to apply it.
 3. **Record** the decisions: R18's Decision cell and action lines in `triage.md`; the scale-up items in PLAN.md's next
    step 3 (session 60's paragraph there is a proposal); a line in `docs/status.md`'s log; the evidence note's log.
 

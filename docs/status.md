@@ -115,6 +115,12 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
 
 ## Session log
 
+- **2026-11-14 (session 62, R18 track): ready for run 144.** While it ran (started 10:05): the six non-string
+  disagreements traced (three are trial's blind spots; the two import addresses are declared too broadly, and run 145
+  shows freeing them as monotone gains nothing: 83.2 vs 83.4% at 1% FPR, so trial's edge is real lowerable features);
+  the `--save_rows` patch for `a1_adaptive.py` written and tested, not applied (R7-owned;
+  `docs/evidence/r18-a1_adaptive-save_rows.patch`); `scripts/trial_audit.py`. **Next:** read run 144 with
+  `docs/resume-prompt-R18.md`.
 - **2026-11-14 (session 61, R7 track): run 143 read.** Hypothesis held: neither `-loose` monotone detector is evaded
   by any of the three escapes (0/39, 0/40 each; no candidate lowered a monotone score; full 2,000-candidate budgets);
   guaranteed for the 28/30 population originals under the cert/debug escapes, observed for the rest; one SizeOfImage

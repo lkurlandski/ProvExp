@@ -96,6 +96,39 @@ uses it, and it is the strongest benign signal. Expected: the retrained detector
 falls to the held-out operation, which supports §5.3 with the defense the four reviewers expect. A pilot first (~15 h)
 if the user wants the reading before committing the scale-up's compute.
 
+## While run 144 ran (session 62)
+
+**The six non-string disagreements, traced.** Per-operation signs of the precondition row (`-pre`, the variant the
+detector uses; recomputed with a_directions' own functions on 24 pilot files, since `directions.csv` stores only the
+strict variant per operation):
+
+| feature | derived (-pre) | trial | reading |
+|---|---|---|---|
+| authenticode:parse_error | lowerable (rsg; ent and content writes) | never moved | derived right: set on 42 of 54,266 test files, none probed |
+| num_zero_size, SizeOfUninitializedData | raise-only (sec, imp) | never moved | derived right: an added section without raw data; our writers never add one |
+| iat_size (and import_size) | lowerable (imp only) | never moved | plausible: a recomputed inflated size, or the IAT entry pointed at the new thunks only |
+| iat_virtual_address, import_virtual_address | lowerable (imp only) | never moved / raised | over-broad: the new table lies in a section added after the others, so both addresses only rise |
+
+`catalogue.py:408-411` declares the four import/IAT entries `BOTH`. Run 145 measured what the two addresses' breadth
+costs: the derived `-loose` detector retrained with them monotone increasing instead of dropped, 83.2 / 66.3 vs 83.4 /
+65.1 (TPR at 1% / 0.1% FPR): nothing measurable (hypothesis: under one point; held). So trial's four-point edge rests
+on features that are lowerable, not on an over-broad declaration. Narrowing the declaration to `UP` for the two
+addresses is correct but changes no number; it is `catalogue.py` (R7-owned), so a proposal, not made.
+
+**The `a1_adaptive.py` change adversarial training needs**, written and tested on a copy, not applied (R7-owned):
+`docs/evidence/r18-a1_adaptive-save_rows.patch` (+28 lines). `--save_rows` (needs `--score real`) writes
+`{outdir}/rows/{defense}/X.npy` (the best file's re-extracted row per detected file, the store's layout, 3,655
+columns) and `files.parquet` (name, label 1, p_clean, p_adv, ops, evaded), the layout `train_classic.py --augment`
+reads. Smoke (1 pilot file, 100 candidates, trial detector): the saved row scores 0.7614, the search's own result
+(one `ent` edit). Training malware instead of the pilot needs no code: `--pilot_files` with a training-split file list
+(columns name, label, `log_odds:gbdt`) and `--db .../tr`, which also makes the donors training goodware.
+
+**The audit, ready**: `scripts/trial_audit.py` replays each evasion (the search is deterministic), takes the best file
+and lists the features carrying the drop by `pred_contrib`, with trial's marking. On the smoke file it reproduces the
+stored row exactly and names `strings:regex_https://` (0 -> 16, -1.53 logit, free in trial).
+
 ## Log
 
 - 2026-11-13 (session 60): steps 0-3 above; run 144 scripted; scripts `trial_probe.py`, `trial_table.py` (176dbb8).
+- 2026-11-14 (session 62): while run 144 ran: the six disagreements traced, run 145 (the import addresses' breadth
+  costs nothing), the `--save_rows` patch (proposal), `scripts/trial_audit.py`.
