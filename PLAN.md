@@ -339,9 +339,16 @@ records of the §5 reviews, the table remake and the ERDALT check, is in
    §5.4's price (robustness to signature cloning); Table 5's monotone rows from the `-loose` models, denominators
    unrouted; no routing in §4.4, §5.1, Appendix D; Appendix D's overlay rule and one sentence on the deviation. All of
    it can start before run 143 is read, except §5.4's *Where the guarantee holds*, which carries its result.
-   (v) **Decision for the user:** the other tables' monotone cells (toolkit attacks, MAB-Malware) still use the
-   `-pre-v2` detectors: re-run them on the `-loose` models now, or blue values until the scale-up (Claude recommends
-   blue values; the scale-up redoes every detector result). Then the scale-up's R7 items into step 3.
+   **Done in session 61** with the user, in three blocks (commits after fc942cb): §4.3 the entry write (13
+   operations; "overwrite the debug or certificate entry" in Table 1; the extractor does not verify signatures, a
+   `% VERIFY` for a signature-cloning citation), §4.4 the widened population and "the monotone detector scores every
+   file"; §5.4 *The price* (run 140's numbers, signature cloning as the reason, framed as a finding: user), *Where the
+   guarantee holds* (24 of 28 detected malware of at most 4 MB in the population; the three escapes, none evades),
+   *Where the cost lies* (one sentence on the entry write's 3.9 points; the per-operation numbers marked PROTOCOL);
+   Table 5 and Appendix D's per-attack table from the `-loose` models; LIEF's overlay rule in §4.2 and Appendix D.
+   (v) **Decided (user, session 61): blue values.** The monotone cells of the toolkit attacks and MAB-Malware on the
+   `-loose` detectors are `\synthetic{0}` until the scale-up (Table 5's evaded cells, Appendix D's per-attack table,
+   MAB-Malware's ~2,400 edits in *The price*).
 2c. **Before the scale-up's featurization: the extractor question** (raised by the user, session 55; Claude's view and
    the criteria in `docs/evidence/r7-overlay-rule.md` §6). We use the EMBER2024 corpus below 4 MB, drop the warnings,
    patch thrember's quirks, and now change pefile's overlay rule: design the extractor deliberately (principles stated
@@ -363,7 +370,13 @@ records of the §5 reviews, the table remake and the ERDALT check, is in
    `--score real`; equal-information learned defenses if decision 6 is revisited; thresholds from the validation split).
    From R7: the escape attacks at scale (look actively for further escapes), the toolkit attacks on escaped files, the
    population share of attacked malware with its denominator, the files outside the population re-featurized with
-   LIEF's overlay rule, and the unconstrained detector trained on the same store as the others.
+   LIEF's overlay rule, and the unconstrained detector trained on the same store as the others. Listed in session 61,
+   from the blue values and PROTOCOL notes the R7 text left: the toolkit attacks and MAB-Malware on the `-loose`
+   monotone detectors (Table 5, Appendix D's per-attack table); the price list (run 126) re-run on the widened table
+   (*Where the cost lies*); the closure count and the population shares recounted on the widened population (§4.4,
+   §5.4); the adaptive attack under one protocol (run 143 extracted every candidate at 2,000; §5.1 states Prop. 1
+   scoring and 5,000); a signature-cloning citation (`% VERIFY` in §4.3). Expect the unconstrained detector's adaptive
+   cell near 100% now that `ent` clones signatures.
    From the rebuttal (session 58, `docs/reviews/2026-11-12-body/rebuttal/triage.md`): **before the recount**, the
    recorded Rich search range extended by the 4 key bytes past the marker (R2; done in session 59, d806b84, no
    direction changed); at

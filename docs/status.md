@@ -89,8 +89,8 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
 
 ## Waiting on the user
 
-- **The other tables' monotone cells** (PLAN.md step 2b (v)): re-run on the `-loose` models now, or blue values until
-  the scale-up (Claude recommends blue values).
+- **R7 is done at pilot scale** (session 61): run 143 read, the paper's R7 text written, blue values for the monotone
+  toolkit/MAB cells. Next R7/scale-up session: `docs/resume-prompt.md` (the decisions before the scale-up).
 - **The extractor question** (PLAN.md step 2c): the user's call, before the scale-up's featurization.
 - **The review's rebuttal** (parallel to R7): triage decided (session 58, `docs/reviews/2026-11-12-body/rebuttal/
   triage.md`); trust (R2) and erdalt (R19) decided, R2's code fix done (session 59). Before the scale-up: R18, the
@@ -119,8 +119,12 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
   by any of the three escapes (0/39, 0/40 each; no candidate lowered a monotone score; full 2,000-candidate budgets);
   guaranteed for the 28/30 population originals under the cert/debug escapes, observed for the rest; one SizeOfImage
   search lost to a stalled worker (not re-run). The unconstrained detector: 47/47, every evasion by signature cloning
-  (hypothesis 40-60% failed). Written into run 143's header, the R7 record §7 and log, PLAN.md step 2b (iii). R7's
-  pilot experiments are complete; next the paper changes (step 2b (iv)) and decision (v).
+  (hypothesis 40-60% failed). Written into run 143's header, the R7 record §7 and log, PLAN.md step 2b (iii). Then the
+  paper's R7 text with the user in three blocks: §4.3 the entry write (13 operations), §4.4 the widened population and
+  no routing, §5.4 *The price* (run 140; signature cloning framed as a finding, user), *Where the guarantee holds*
+  (the escapes), *Where the cost lies*, Table 5 and Appendix D's per-attack table, LIEF's overlay rule in §4.2 and
+  Appendix D. Decision (v), user: blue values for the monotone toolkit/MAB cells until the scale-up; the scale-up's
+  R7 items listed in PLAN.md step 3. Open: a signature-cloning citation (`% VERIFY`), one 2 pt overfull vbox.
 
 - **2026-11-13 (session 60, R18 track): the trial competitor.** Built the trial table from our own edits, a stronger
   probe (every section renamed, all slack/DOS/header bytes, donor imports from 200 benign training files;
