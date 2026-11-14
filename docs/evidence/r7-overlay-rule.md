@@ -159,3 +159,26 @@ Claude's view, recorded for the decision:
 
 Sources: pefile PR #670 (github.com/erocarrera/pefile/pull/670), issue #378, PR #254 (open); elastic/ember
 `ember/features.py`; SANS ISC diary 31268; Joyce et al. 2025 (EMBER2024), §3.2 and the implementation paragraph.
+
+## 8. The LIEF spike (session 62, 2026-11-14)
+
+Scratch script (not kept): the 100 pilot files parsed by pefile (with LIEF's overlay rule installed) and by LIEF 1.0.0,
+structures compared after normalizing presentation (LIEF lists Rich entries in reverse; pefile names well-known
+ordinals through `ordlookup`; NUL padding in section names). Hypothesis: sections and directories agree on all files,
+imports and exports on >95%; LIEF parses >=10x faster; pefile's parse is <30% of our per-file time. Held.
+
+- **Structures:** identical on 99 of 100 files (sections, data directories, imports, exports, overlay size, Rich pairs,
+  entry point). The one difference: `85a9da0f439b...` has 14,707 imports in 21 libraries; pefile keeps 280 in 8,
+  because it stops at `MAX_IMPORT_SYMBOLS` (8,192) and skips every later descriptor. Signatures: 30 files have a
+  certificate entry; LIEF parses a signature on 25, pefile/signify on the same 25 (the other 5 lie past the end or do
+  not parse in either). LIEF 1.0.0 logs "Failed to parse X509 cert" on some signed files.
+- **Timing (per file, mean / median):** pefile parse 29 / 5 ms; LIEF parse 0.8 / 0.4 ms; our feature vector (incl.
+  pefile's parse) 104 / 21 ms; our item table 148 / 31 ms. Parsing is ~12% of features plus item table (~25% if the
+  item table parses again); the rest is our Python.
+- **pefile's defensive caps** (none modelled by the instance): imports 8,192 symbols (shared with delay imports),
+  sections 2,048, export symbols 8,192, resource entries 32,768 and depth 32, strings 1 MB. Our `imp` and `sec` keep the
+  existing descriptors and sections first, so crossing a cap truncates only added content: no feature falls (no
+  soundness hole found), but the declared change is then wrong (exactness). An audit item.
+- **Reading:** a parser switch buys little speed and agrees on structure where it matters, at the cost of rebuilding
+  the locating record (pefile.Structure offsets throughout `features.py`) and losing the bit-exact match with the
+  released EMBER2024 vectors. The caps are the kind of parser behaviour a deliberate audit (§6) would catch.
