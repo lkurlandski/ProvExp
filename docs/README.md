@@ -22,7 +22,9 @@ check `manuscript/main.aux` (`grep newlabel manuscript/main.aux`), and add the t
 |---|---|---|
 | `PLAN.md` | thesis, where the paper stands, the decisions of 2026-11-09, next steps, settled decisions | every session |
 | `docs/status.md` | current state, what waits on the user, short session log | every session; update at the end |
-| `docs/resume-prompt.md` | where the next session starts: the refactoring session (`pipeline/`, plain names, library code into `src/provexp/`, dead code removed, tests, `SETUP.md` for the SLURM clusters) before the scale-up | starting the next main-line session |
+| `pipeline/README.md` | the scale-up's stages and steps, and which step produces each result of the paper | before running or adding any experiment |
+| `SETUP.md` | from a fresh clone to a system that runs `pipeline/` (environment, dataset, system config, the check) | setting up a new machine or the clusters |
+| `docs/resume-prompt.md` | where the next session starts: the extractor audit pass (the deviations table of Appendix D; `1-audit` at scale, with the hand table and a chained-edit check), the scale-up's first work | starting the next main-line session |
 | `docs/reviews/rebuttal-prompt.md` | the rebuttal procedure, kept for reference: once `run_rebuttal.sh` has written the triage, the user decides on the triage table, then on drafts of the groups worth investigating. The 2026-11-12 triage is complete; the next revisit folds into `docs/resume-prompt.md` | re-running the rebuttal procedure on a future review |
 | `docs/checkpoint-prompt.md` | the user's prompt for ending a session | the user ends a session |
 | `docs/paper-mock.md` | the paper's contributions, outline with word budgets, and tables | planning or writing any section; checking whether new work belongs in the paper |
@@ -62,6 +64,8 @@ or when changing an experiment. Run scripts are in `run/` (one per step, numbere
 |---|---|
 | `docs/archive/status-log-2026-11-12.md` | the session log, sessions 41-42 (search, don't read) |
 | `docs/archive/status-log-2026-11-10-to-11.md` | the session log, sessions 29-39 (search, don't read) |
+| `docs/archive/resume-prompt-2026-11-14-s64.md` | the resume prompt of session 64 (written in session 63): the refactoring before the scale-up (done in session 64: `pipeline/`, `SETUP.md`, byte-identical to the old code) |
+| `docs/archive/status-log-2026-11-13-s55-58.md` | the status log of sessions 55-58 (R7's closure check and LIEF's overlay rule, `ent` in the attacks, run 143 cleared, the triage table) |
 | `docs/archive/resume-prompt-2026-11-14-R18.md` | the R18 track's resume prompt (sessions 60-63): the trial competitor, run 144 and the three decisions (all done in session 63; record in `docs/evidence/r18-trial-competitor.md`) |
 | `docs/archive/resume-prompt-2026-11-14-s63.md` | the resume prompt of session 63 (written in session 62): the last review/rebuttal revisit (nothing else before the scale-up) and the scale-up's shape (one seed, 5,000 candidates, the refactor) |
 | `docs/archive/resume-prompt-2026-11-14-s61.md` | the resume prompt of session 61 (written in session 57): read run 143 and write R7 into the paper (both done in session 61; blue values decided) |

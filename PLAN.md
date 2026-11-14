@@ -442,6 +442,17 @@ records of the §5 reviews, the table remake and the ERDALT check, is in
    everything on sporc (x86_64); tigris (aarch64) only after a bit-exactness check. **Executed in a dedicated
    refactoring session** (`docs/resume-prompt.md`), then the audit pass, then the remaining protocol items (malware
    count first), then a session on the cluster's head node.
+   **Done in session 64** (commits b223fcd, 185212e, 3a6fba2; `docs/status.md`): `pipeline/`, the registry, library code
+   in `src/provexp/`, dead code removed (tag `pilot-final`), `SETUP.md`, `build_env.sh`, `check.sh`; byte-identical to
+   the old code on a pilot slice (`pipeline/setup/identity_check.sh`). `run.sh` exists for featurize, the derived
+   directions, the catalogue checks, the adaptive search and MAB-Malware; each other step gets its `run.sh` when its
+   protocol item is decided.
+   (f) **Decided (user, session 64): every result the paper reports comes from the scale-up** (one protocol, the same
+   files); pilot runs are for tests and explorations only. `pipeline/README.md` maps each result to its step. So the
+   audit pass also runs the hand table at scale and counts the files showing each of its errors (the witnesses), and
+   re-checks combined edits by chaining the catalogue's edits (Appendix D's sentence rested on the removed A' code,
+   run 111); leave-one-out (Table 10) runs at scale, its cost joining the malware count; trial-toolkit is not in the
+   paper and stays an exploration.
 4. **While the scale-up runs: §2's closing and contribution 4 against §5** (old step 2 (c)). §2 says §5 "uses them to
    attack malware detectors and to build robust ones"; in §5 the attack is an instrument. The mock's contribution 4 is
    stale ("four to six points", "learned constraints"). Writing only.

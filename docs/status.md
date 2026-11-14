@@ -5,9 +5,9 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
 `docs/archive/` (the log before 2026-11-09 is `docs/archive/status-log-2026-10-to-2026-11-09.md`; sessions 21-28 are in
 `docs/archive/status-log-2026-11-09.md`, sessions 29-40 in `docs/archive/status-log-2026-11-10-to-11.md`, sessions
 41-42 in `docs/archive/status-log-2026-11-12.md`, sessions 43-54 in
-`docs/archive/status-log-2026-11-12-to-13-s43-54.md`).
+`docs/archive/status-log-2026-11-12-to-13-s43-54.md`, sessions 55-58 in `docs/archive/status-log-2026-11-13-s55-58.md`).
 
-## Current state (2026-11-14, through session 62)
+## Current state (2026-11-14, through session 64)
 
 - **Framework (§2-3):** rewritten; the user is reasonably satisfied. Open: the user's holistic read of Sound
   Directions after round 4 (finetuning only).
@@ -91,21 +91,27 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
   deliberate audit pass with a deviations table in Appendix D (the caps and the always-constant features are the known
   entries).
 
+- **Code (session 64): reorganized for the scale-up.** `pipeline/` (stages `setup`, `1-audit` ... `6-results`, one
+  step per folder, `run.sh` with SLURM headers), library code in `src/provexp/` (no script imports another), plain
+  detector names in `provexp.registry`, `SETUP.md`; the old direction's and A''s code removed (tag `pilot-final` keeps
+  everything); `run/` is a historical record. Checked byte-identical against the old code
+  (`pipeline/setup/identity_check.sh`). `pipeline/README.md` maps every paper result to its step: **every number in the
+  paper comes from the scale-up** (user, session 64).
+
 ## Waiting on the user
 
-- **The refactoring session (next; `docs/resume-prompt.md`).** The review revisit is closed (nothing else before the
-  scale-up). Next: reorganize the code and experiments for the scale-up (`pipeline/`, plain names, library code into
-  `src/provexp/`, dead code removed, tests), with `SETUP.md` for new systems (the SLURM clusters sporc and tigris).
-  Then the extractor audit pass, the remaining protocol items (malware count first), and a session on the cluster's
-  head node. Number-free rebuttal text fixes (R4, R5, R15, R21) move to step 4 (while the scale-up runs).
+- **The extractor audit pass (next; `docs/resume-prompt.md`)**: `1-audit` at scale with the deviations table of
+  Appendix D, then the remaining protocol items (malware count first; each step's `run.sh` gets the scale-up's
+  arguments as its item is decided), then a session on the cluster's head node (`SETUP.md`, `check.sh`, the "TO
+  CONFIRM" values). Number-free rebuttal text fixes (R4, R5, R15, R21) are step 4 (while the scale-up runs).
 
 ## Scheduled (in order; PLAN.md, next steps)
 
 1. ~~The 4 MB-truncation decision~~ (done, session 46), ~~the full simulated review~~ (run; discussed sessions 48-61),
    ~~R7's widening~~ (done, sessions 53-62), ~~the extractor question~~ (decided, session 62: stay on pefile).
 2. ~~The final review/rebuttal revisit~~ (done, session 63: nothing else before the scale-up).
-3. The scale-up (PLAN.md step 3): **the refactoring session first** (`pipeline/`, `SETUP.md`), then the extractor
-   audit pass, the remaining protocol items (malware count first; one seed, 5,000 extraction-scored candidates, full
+3. The scale-up (PLAN.md step 3): ~~the refactoring session~~ (done, session 64), then **the extractor audit pass**,
+   the remaining protocol items (malware count first; one seed, 5,000 extraction-scored candidates, full
    splits, one training set and protocol for every detector, the trial row, iterated adversarial training, the R7 blue
    values and PROTOCOL recounts), then a head-node session on the cluster.
 4. While it runs: §2's closing and contribution 4 aligned with §5; the number-free text fixes R4, R5, R15, R21.
@@ -114,6 +120,21 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
 7. Introduction, discussion, abstract last.
 
 ## Session log
+
+- **2026-11-14 (session 64): the refactoring.** Proposed tree and deletions agreed (user: `run/` a record with tag
+  `pilot-final`; the A' code deleted, combined edits re-checked in the audit; MalConv kept; **every result in the paper
+  at the scale-up's scale, pilot only for tests and explorations**, so the hand table, witnesses and leave-one-out get
+  scale-up steps and trial-toolkit stays an exploration). Commits: b223fcd (49 old scripts, `explain/`, ablation,
+  trigger, attack modules and their tests removed; `provenance.py`/`boxmatrix.py` kept: the instrumentation uses them),
+  185212e (library code into `src/provexp/`: `attacks/`, `detectors.py`, `parallel.py`, `featuresets/ember2024/
+  {edits,escapes,population,directions,hand}.py`), 3a6fba2 (`pipeline/`, registry, `SETUP.md`, `build_env.sh`,
+  `check.sh` with a bit-exact featurization reference). **Checks:** run 146 (old code, run twice: agree but timing);
+  the library move and the pipeline both identical to it on 61 outputs (featurization, both direction tables, a
+  catalogue check, two extraction-scored adaptive searches, MAB-Malware) but timing and the manifests' commit; tests
+  1,572 passed. Noted for later: duplicate writers (`edits.add_section` vs `attacks.adaptive.add_section`; the
+  operation tuples in `adaptive` and `directions`) to merge under the identity check; featurize as a job array needs a
+  step that creates the store before the tasks; one stale path in a `features.py` comment, kept so the file's hash
+  matches the stored stores.
 
 - **2026-11-14 (session 63, scale-up track): review revisit closed; the scale-up's shape agreed.** Nothing else is
   worth doing before the scale-up (user agreed): the number-dependent text fixes stay after it; R4, R5, R15, R21 move to
@@ -184,52 +205,3 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
   and 3 `op_ren` cells differ: max_entropy, max_size_ratio, overlay_entropy); the M_* rows are identical, and the
   difference comes from the R7 commits of sessions 55-57, not this fix. Run 140's header claim "reproduces v2
   exactly" was true when written. **Next:** R18 (own session), then the last look before the scale-up.
-- **2026-11-13 (session 58, rebuttal track): the triage table decided.** The four calibration items (R7, R1, R6, R17)
-  match the earlier decisions; the triage leans slightly toward doing more than needed. Before the scale-up, in order:
-  groups trust (R2) and erdalt (R19, split from baselines), then trial (R18), then a last look, then the scale-up;
-  text fixes after it. Decisions and actions in `rebuttal/triage.md`. **Next:** `TAG=2026-11-12-body
-  REBUTTAL_GROUPS="trust erdalt" docs/reviews/process/run_rebuttal.sh`. *Later:* trust and erdalt read and decided
-  (R2: paragraph + 4-byte Rich-range fix; R19: training sound, finding stands, donor control); MAB rerun at Zainab et
-  al.'s setting: yes. Before-scale-up items in PLAN.md step 3. **Next:** the 4-byte fix (own session); R18 runs
-  elsewhere (`docs/resume-prompt-R18.md`).
-- **2026-11-13 (session 57, R7 track): session 56's code re-verified; run 143 cleared.** Session 56 had been flagged by a
-  safety classifier, so its four R7 commits were re-checked with fresh eyes. Engine decline (e0fa5b8): holds; it only
-  replaces what used to raise, and on `74aecb25...` exactly the 16 error rows become declines, nothing else moves
-  (the decline fires through the older locating check there, so `splits` is a backstop; tests added, 20bf742).
-  Catalogue tests 228 passed. `ent` in the attack (868b8b6): holds; same 13 operations as the derived table; ent-only,
-  full-menu and debug-escape smokes leave both `-loose` monotone detectors at 0 evaded, `min_delta_logit` 0; the
-  models use none of the 1,474 neutralized features. Fixed (77587f5): the clone's byte bound now covers its padding
-  (undercounted by up to 7 bytes), and escape runs record `start_in_population`, since the image_size escape takes
-  every file out of the loose population (not an M_full operation), so its searches are not covered by the guarantee;
-  run 143's header corrected. Noted, unchanged: the unconstrained `ref` model is from the v1 store (as in runs 105, 138).
-  The user then started run 143 (8 workers). The resume prompt was rewritten for R7 and the decisions before the
-  scale-up only (the review's triage now lives in `docs/resume-prompt-rebuttal.md`); PLAN.md step 2b gained (v), the
-  decision on the other tables' monotone cells, and step 3 the scale-up's R7 items.
-
-- **2026-11-13 (session 56, R7 track): run 142 read; `ent` in the attacks; run 143 scripted.** Run 142 (full pilot,
-  LIEF's overlay rule): closed and sound, exact after one fix. 16 declared edits on one file's escaped copies raised an
-  error -- a certificate inside `.rsrc`, stretched past the end, that an insertion before the overlay splits; the engine
-  now declines an insertion that splits an item's members (e0fa5b8), re-checked on that file. Step 0's re-derived loose
-  table matches the `-loose` models feature by feature. Then `ent` added to `a1_adaptive.py`'s menu and M_full (zero,
-  past the end, signature cloning from signed goodware donors; 868b8b6), run 143 counts evasion from the unescaped
-  originals (0949a9c), and `run/143_escape_pilot_loose.sh` written for the user (8a058d2). Smokes held: the loose
-  monotone detector is not evaded under the full menu or by the debug-entry escape (where run 138 saw 4/41). Records:
-  `docs/evidence/r7-overlay-rule.md` §7, PLAN.md step 2b. **This session was flagged by a safety classifier; the user
-  therefore gated run 143 on a verification session that re-checks these four commits first (resume prompt).**
-
-- **2026-11-13 (session 55, R7 track): the closure check; LIEF's overlay rule.** `catalogue_checks.py --loose` (`ent`,
-  escaped copies far past, just past and inside the overlay; run 141). A session-53 bug fixed (the loose precondition
-  exempted only the certificate's items; run 140's table unchanged). Closure failed through pefile's overlay rule; a
-  trial fix (the overlay clause without the debug entry) closed the population but broke soundness (reverted). Claude
-  first recommended modelling pefile's rule on our side; the user: pefile is not the gold standard for what an overlay
-  is, findings should not hang on one parser's details, the options were not weighed equally (memory
-  `may-deviate-from-ember`, rewritten). Reweighed with evidence: LIEF starts the overlay after the last section (54 of
-  54 test copies unmoved); EMBER v2 has no overlay features; pefile's rule is deliberate (since 2016; PR #670). Scratch
-  check with LIEF's rule on 50 files: closed, sound, exact; masks unchanged. The user chose it as a quick patch (f0d2bb1;
-  `docs/upstream-issues.md` item 9), and raised designing the extractor deliberately, perhaps on LIEF (PLAN.md step
-  2c). Documentation brought in line: CLAUDE.md (the principle "the parser is not the gold standard"; the code line),
-  `docs/design.md`, the paper mock (the overlay sentence; the extractor's framing waits on step 2c), notes in the
-  item-layer and threat-model records, code comments in `catalogue.py` and `catalogue_checks.py`, `scripts/README.md`.
-  Commits aeeace0, f0d2bb1, 6173335 and the documentation commit. **Next (R7 track):** read run 142 (the user started
-  it at 11:55), then step 2b (ii).
-

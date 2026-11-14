@@ -1,6 +1,6 @@
-# Resume: the refactoring session before the scale-up
+# Resume: the extractor audit pass (the scale-up's first work)
 
-Written at the end of session 63 (2026-11-14). Self-contained: everything needed is below or in the files it names.
+Written at the end of session 64 (2026-11-14). Self-contained: everything needed is below or in the files it names.
 
 ## The project in brief
 
@@ -8,72 +8,57 @@ ProvExp is dissertation research on *sum-then-readout* feature extractors, the k
 pieces of the input, add up what each contributes, compute each feature by a formula over a few totals. From the
 instrumented extractor we compute what an attacker's edits do to the features: exactly for one edit (Proposition 1),
 and as sound directions for a whole threat model (Theorem 1), from which come monotone detectors that no edit in the
-threat model can evade (Corollary 1). PE malware on EMBER2024 is the instance. All pre-scale-up research is done
-(R7, R18, the review revisit); the next big step is the scale-up (PLAN.md step 3), on the user's SLURM clusters.
+threat model can evade (Corollary 1). PE malware on EMBER2024 is the instance. All pre-scale-up research is done; the
+code was reorganized for the scale-up in session 64.
 
-**Read first:** `CLAUDE.md`, `docs/status.md`, `PLAN.md` step 3 (especially (d) and (e), the decisions of session 63).
+**Read first:** `CLAUDE.md`, `docs/status.md`, `PLAN.md` step 2c (the audit pass) and step 3 (d)-(f), then
+`pipeline/README.md` (the stages, and which step produces each result of the paper).
 
-## Why this session
+## Where the code stands (session 64)
 
-The code grew by session: 84 scripts in `scripts/` named after old internal IDs (`a1_`, `ap_`, `cm_`, ...), 136
-numbered steps in `run/`, model directories like `models/gbdt/seed-0-a-mfull-pre-qf-v2`, and scripts that import
-library code from each other (e.g., `a1_adaptive.py` imports the edit writers from `catalogue_checks.py`, the escapes
-from `escape_audit.py`, `load_pilot` from `a_pv_attacks.py`). That was fine for prototyping; the user wants the
-scale-up to be human-readable and portable. This session is hands-on refactoring, not experiment design.
+- `pipeline/<stage>/<step>/`: a thin command line next to a `run.sh` with a SLURM header (`sbatch` on the clusters,
+  `bash` here, from the repository root); outputs under `artifacts/scaleup/<stage>/`; `pipeline/common.sh` sets the
+  system, `NUM_WORKERS`, `OUT_ROOT`. Library code in `src/provexp/`; no script imports another. Detector names in
+  `src/provexp/registry.py` (model set `pilot` only so far).
+- `run.sh` exists for `2-features/featurize`, `3-directions/derived`, `1-audit/catalogue-checks`, `5-attacks/adaptive`,
+  `5-attacks/mab-malware`. Every other step gets its `run.sh` when its protocol item is decided, following the same
+  pattern (knobs as environment variables with the scale-up's defaults; echo each step and its log).
+- After any code move, `pipeline/setup/identity_check.sh` must report no difference (~15-30 min).
+- `run/` (steps 1-146) is the pilot's record; its scripts are at tag `pilot-final`.
 
-## What was agreed (user, session 63; PLAN.md step 3 (e))
+## The rule for this and every later session (user, session 64)
 
-1. **`pipeline/`**, one numbered stage per folder: `setup/`, `1-audit/`, `2-features/`, `3-directions/`,
-   `4-detectors/`, `5-attacks/`, `6-results/`, plus `systems/` (one config per machine: paths, SLURM account and
-   partition, modules) and a `README.md` mapping each paper table or number to its stage and output file. Each stage
-   has a short README (what it computes, inputs, outputs, where it lands in the paper, runtime).
-2. **One `run.sh` per step, with the `#SBATCH` header at the top** (the user's existing workflow): `sbatch` on the
-   cluster, `bash` locally (the header is then comments). No separate submit scripts. File-parallel steps are SLURM job
-   arrays: each task takes a shard (`SLURM_ARRAY_TASK_ID`, with a local fallback that runs all shards), runs the worker
-   pool on its node (`NUM_WORKERS` as in CLAUDE.md), and a merge step combines the shards. Keep CLAUDE.md's `run/`
-   conventions (echo each step and its log; one argument per line).
-3. **Plain names in one registry**: detectors `unconstrained`, `monotone-features`, `monotone-sums`, `additions-only`,
-   `adversarial-training` (and the iterated variant), `pv`, `erdalt`, `expert-set`, `trial`; the attacks likewise
-   (toolkit attacks, `adaptive`, `mab-malware`, the escapes). Outputs under `artifacts/scaleup/<stage>/`.
-4. **Library code moves into `src/provexp/`** (e.g., `attacks/`, `featuresets/ember2024/edits.py`), so no script imports
-   another. Remove old and dead code (the old direction's `explain/`, `boxmatrix.py`, `provenance.py`, `ablation.py`,
-   the `cm_*`, `cp_*`, `pb1_*`, `trigger_*`, `pf*`, `audit_*`, `ap_*` scripts not used by the paper; `scripts/README.md`
-   lists what the paper uses) — git history keeps them. Decide per item whether the pilot's `run/` scripts must stay
-   runnable (thin wrappers) or become a historical record only; ask the user if unsure. Update and expand the tests.
-5. **`SETUP.md`** from a fresh clone: uv, Python 3.14, `requirements-lock.txt`, the vendored `third_party/` code, the
-   oscrypto pin, libmagic, `EMBER2024_DATA`, the artifacts location, the per-system config. `pipeline/setup/build_env.sh`
-   (a SLURM job where needed) and `pipeline/setup/check.sh` (data found; a few pilot files re-featurized and compared bit
-   for bit with stored vectors; the light tests).
-6. **The check that the move is correct:** the reorganized code gives byte-identical outputs to the current code on a
-   small pilot slice (the derived direction tables, `--loose` and not; one catalogue check; one extraction-scored
-   adaptive search; one MAB-Malware run; a featurization of a few files). Run the old code first and keep its outputs.
-   A difference is a bug in the move, reported as such.
+Every number, table and example the paper reports comes from the scale-up: one protocol, the same files. Pilot runs are
+for tests and explorations only. If an item is in the manuscript, it gets a scale-up step; if not, it stays at pilot
+scale. Do not ask the user about this per item.
 
-## The clusters (from `~/Documents/code/SSViT/scripts/create.py`, `scripts/build-env.sh`)
+## This session: the audit pass
 
-- SLURM, account `admalware`, partitions `sporc` (x86_64) and `tigris` (aarch64); `spack load gcc/lhqcen5` (sporc) or
-  `gcc/wmxcv23` (tigris); `source ./env/bin/activate`; logs `./logs/%x_%j.out`; datasets under
-  `/shared/rc/admalware/datasets/EMBER-2024`. SSViT's code assumes 36 CPUs per node. SSViT detects the system with
-  `squeue` and `arch`.
-- **Run on sporc.** tigris only after `check.sh` shows bit-identical featurization there (floating-point results may
-  differ across architectures, and our features must match EMBER's released vectors).
-- To confirm in a later session on the head node: cores per node, where large outputs live, maximum walltime, Python
-  3.14 through uv. Write the configs as best guesses, marked for that session.
+The only stage that can change the feature store, so it comes before any scale-up featurization (PLAN.md 2c, 3 (a)).
 
-## How to work
+1. **The deviations table (Appendix D).** A deliberate pass over the extractor against the three principles of §6:
+   every place where our extractor differs from EMBER v3 as released, why, and what it changes. Known entries: LIEF's
+   overlay rule; the warnings dropped; thrember's quirks patched (`docs/upstream-issues.md`); files above 4 MB
+   excluded; pefile's parser caps (an exactness gap near 8,192 imports, not a soundness hole;
+   `docs/evidence/r7-overlay-rule.md` §10); the always-constant features. Look for further ones; propose the table to
+   the user before writing it into the paper (small blocks; the `paper-prose` skill).
+2. **The audit steps at scale**, each with its `run.sh` in `pipeline/1-audit/`: item checks, catalogue checks,
+   population clauses, escapes, and (decided in session 64) the hand table with a count of the files that show each of
+   its errors, and a new mode of the catalogue checks that chains edits (up to three added sections, then an append)
+   with the item table carried forward: Appendix D's "combined edits are exact" rested on the removed A' code (run
+   111). The file set: decide with the user (the pilot's checks ran on the 100 pilot files and on 2,000 test files,
+   runs 117-118); estimate runtimes from the slowest case and hand long runs to the user.
+3. Then, one at a time with the user, the remaining protocol items (malware count first; leave-one-out's cost joins
+   it), then a session on the cluster's head node.
 
-- Plan the refactor in small, reviewable commits (CLAUDE.md: commit to `main` in logical pieces; ruff and mypy strict
-  must pass; light tests per module, full suite `env/bin/pytest -n 16 tests` when nothing of the user's runs).
-- Propose the target tree and the list of deletions to the user before moving files; then move, then check.
-- Do not change any computation. Behaviour changes (e.g., the adaptive attack's watchdog for 5,000 candidates, the
-  2,000 checkpoint) are noted for the scale-up session, not mixed into the move.
-- The R18 track is closed and committed (39b9b49, b80ffe5: `a1_adaptive.py --save_rows`, `trial_audit.py --mab`, the
-  run 144 reading); its scripts are part of the refactor like any other. Check `git status` before starting.
+## Noted for later (not this session unless needed)
 
-## After this session
-
-Then, in order: the extractor audit pass (`1-audit`, with the deviations table for Appendix D); the remaining protocol
-items, one at a time with the user (the malware count first: with one seed, ~1,000 detected attacked malware looks
-affordable, ~10,000 CPU-hours including the escapes); a session on the cluster's head node to test and patch.
+- Duplicate code to merge under the identity check: the two section/import writers (`featuresets/ember2024/edits.py`
+  and `attacks/adaptive.py`), the operation tuples in `attacks/adaptive.py` and `featuresets/ember2024/directions.py`.
+- Featurization as a SLURM job array needs a step that creates the store before the array's tasks write into it.
+- `features.py` has one stale path in a comment (`scripts/item_checks.py`); kept so the file's hash matches the stored
+  feature stores' manifests.
+- The cluster values in `pipeline/systems/{sporc,tigris}.sh` are marked "TO CONFIRM" (cores per node, output storage,
+  walltime, Python 3.14 through uv, libmagic, torch's aarch64 wheels on tigris).
 
 At the end of the session: update `docs/status.md` and PLAN.md; write the next resume prompt (archive this one).
