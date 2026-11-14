@@ -37,11 +37,7 @@ from provexp.featuresets.ember2024.features import PEFeatureExtractor
 from provexp.featuresets.ember2024.features import merge_import_descriptors
 from provexp.data.paths import EMBER2024_DATA
 
-__all__ = [
-    "security_entry",
-    "complete",
-    "main",
-]
+__all__ = ["security_entry", "complete", "main"]
 
 warnings.filterwarnings("ignore", category=SyntaxWarning)
 

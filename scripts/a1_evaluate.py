@@ -44,7 +44,6 @@ from argparse import ArgumentParser
 import json
 from multiprocessing import get_context
 from pathlib import Path
-import sys
 import tempfile
 import time
 from typing import Any
@@ -53,31 +52,29 @@ import lief
 import numpy as np
 import polars as pl
 
-from provexp.data.tabular import load_manifest
-from provexp.featuresets.ember2024.catalogue import passes_precondition
-from provexp.featuresets.ember2024.features import PEFeatureExtractor
-from provexp.featuresets.ember2024.expert import ExpertFeatureExtractor
-from provexp.featuresets.ember2024.features import merge_import_descriptors
-from provexp.featuresets.ember2024.sums import SumsFeatureExtractor
 from provexp.data.paths import EMBER2024_DATA
 
-sys.path.insert(0, str(Path(__file__).parent))
-from a_pv_attacks import ATTACKS  # noqa: E402
-from a_pv_attacks import BUDGETS  # noqa: E402
-from a_pv_attacks import build_attack  # noqa: E402
-from a_pv_attacks import calibrated  # noqa: E402
-from a_pv_attacks import build_donor_pools  # noqa: E402
-from a_pv_attacks import load_pilot  # noqa: E402
-from a_pv_attacks import make_wrapper  # noqa: E402
+from provexp.attacks.toolkit import ATTACKS
+from provexp.attacks.toolkit import BUDGETS
+from provexp.attacks.toolkit import build_attack
+from provexp.attacks.toolkit import build_donor_pools
+from provexp.attacks.toolkit import calibrated
+from provexp.attacks.toolkit import file_seed
+from provexp.attacks.toolkit import make_wrapper
+from provexp.attacks.toolkit import run_attack
+from provexp.data.files import load_pilot
+from provexp.detectors import MAX_LENGTH
+from provexp.detectors import calibrate_threshold
+from provexp.detectors import group_evasion
+from provexp.detectors import make_extractor
+from provexp.detectors import parse_defenses
+from provexp.detectors import precondition_holds
+from provexp.parallel import map_watchdog
 from provexp.models.erdalt import load_detector  # noqa: E402
-from a_pv_attacks import map_watchdog  # noqa: E402
-from a_pv_attacks import run_attack  # noqa: E402
-from a_advtrain import file_seed  # noqa: E402
 
-__all__ = ["calibrate_threshold", "group_evasion", "make_extractor"]
+__all__: list[str] = []
 
 ROOT = Path(__file__).resolve().parent.parent
-MAX_LENGTH = 4_000_000
 SEEN = ("padding", "gamma_sections", "gamma_shift", "content_shift")
 
 
@@ -85,60 +82,12 @@ SEEN = ("padding", "gamma_sections", "gamma_shift", "content_shift")
 # Protocol
 ################################################################################
 
-def make_extractor(features: Path) -> PEFeatureExtractor:
-    """The extractor a feature store was built with (quirk-fixed in every case), checked against its manifest."""
-    manifest = load_manifest(features)
-    extractor: PEFeatureExtractor
-    if manifest["feature_set"] == "ember2024-sums":
-        extractor = SumsFeatureExtractor()
-    elif manifest["feature_set"] == "ember2024-expert":
-        extractor = ExpertFeatureExtractor()
-    else:
-        extractor = merge_import_descriptors(PEFeatureExtractor())
-    if extractor.feature_names != manifest["feature_names"]:
-        raise RuntimeError(f"The extractor does not match the feature names of {features.as_posix()}.")
-    return extractor
-
-
-def calibrate_threshold(probs: np.ndarray, labels: np.ndarray, fpr: float) -> float:
-    """
-    The threshold tau at which p > tau flags at most `fpr` of the goodware.
-
-    Args:
-        probs: Predicted malware probabilities on the test split.
-        labels: Their labels (0 goodware, 1 malware).
-        fpr: The target false-positive rate.
-
-    Returns:
-        tau, the (1 - fpr) order statistic of the goodware probabilities.
-    """
-    good = np.sort(probs[labels == 0])[::-1]
-    if good.size == 0:
-        raise ValueError("No goodware to calibrate on.")
-    return float(good[min(int(fpr * good.size), good.size - 1)])
-
-
-def group_evasion(rows: pl.DataFrame, attacks: list[str]) -> dict[str, Any]:
-    """The fraction of attacked (detected) files that at least one attack of `attacks` evaded, within budget."""
-    g = rows.filter(pl.col("attack").is_in(attacks))
-    if g.height == 0:
-        return {"files": 0, "evaded": 0, "rate": None}
-    per_file = g.group_by("name").agg(pl.col("evaded").any())
-    n, e = per_file.height, int(per_file["evaded"].sum())
-    return {"files": n, "evaded": e, "rate": e / n}
-
 
 ################################################################################
 # Parallel workers (one attack on one file against one defense)
 ################################################################################
 
 _W: dict[str, Any] = {}
-_PRECONDITION_EXTRACTOR = merge_import_descriptors(PEFeatureExtractor())
-
-
-def precondition_holds(bytez: bytes) -> bool:
-    """The precondition row's check on a file (with the thrember extractor's item table)."""
-    return passes_precondition(_PRECONDITION_EXTRACTOR, bytez)
 
 
 def _init_worker(features: Path, models: dict[str, str], routes: dict[str, tuple[str, float, float]],
@@ -198,16 +147,6 @@ def _lost(task: tuple[str, str, str, bytes, float, int, bool]) -> dict[str, Any]
 ################################################################################
 # Main
 ################################################################################
-
-def parse_defenses(specs: list[str]) -> dict[str, Path]:
-    """`name=model_dir` pairs, in order."""
-    out: dict[str, Path] = {}
-    for spec in specs:
-        name, _, path = spec.partition("=")
-        if not name or not path:
-            raise ValueError(f"Expected name=model_dir, got {spec!r}.")
-        out[name] = Path(path)
-    return out
 
 
 def main() -> None:

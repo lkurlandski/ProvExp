@@ -31,15 +31,13 @@ import numpy as np
 import pefile
 import polars as pl
 
-import sys
 
 ROOT = Path(__file__).parent.parent
-sys.path.insert(0, str(ROOT / "scripts"))
 
-from a1_adaptive import rename_section  # noqa: E402
-from a1_evaluate import calibrate_threshold  # noqa: E402
-from a1_evaluate import make_extractor  # noqa: E402
-from a_pv_attacks import load_pilot  # noqa: E402
+from provexp.attacks.adaptive import rename_section  # noqa: E402
+from provexp.data.files import load_pilot  # noqa: E402
+from provexp.detectors import calibrate_threshold  # noqa: E402
+from provexp.detectors import make_extractor  # noqa: E402
 from provexp.featuresets.ember2024.expert import DEFAULT_DOS_STUB  # noqa: E402
 from provexp.featuresets.ember2024.expert import DOS_HEADER_SIZE  # noqa: E402
 from provexp.featuresets.ember2024.expert import SECTIONS  # noqa: E402

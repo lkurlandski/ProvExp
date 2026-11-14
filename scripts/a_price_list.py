@@ -20,8 +20,8 @@ import numpy as np
 import polars as pl
 from sklearn.metrics import roc_curve
 
-from a_directions import OPS
-from a_directions import direction
+from provexp.featuresets.ember2024.directions import OPS
+from provexp.featuresets.ember2024.directions import direction
 
 __all__ = ["variants", "derive", "table"]
 

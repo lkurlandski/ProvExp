@@ -29,307 +29,42 @@ from argparse import ArgumentParser
 import json
 from multiprocessing import get_context
 from pathlib import Path
-import random
 import tempfile
 import time
 from typing import Any
-from typing import Callable
 from typing import Optional
 
 import lief
-import numpy as np
 import polars as pl
 
-from provexp.data.simpledb import SimpleDB
-from provexp.data.simpledb import SimpleDBReader
 from provexp.featuresets.ember2024.features import merge_import_descriptors
 from provexp.featuresets.ember2024.features import PEFeatureExtractor
 from provexp.data.paths import EMBER2024_DATA
+from provexp.attacks.toolkit import ATTACKS
+from provexp.attacks.toolkit import build_attack
+from provexp.attacks.toolkit import build_donor_pools
+from provexp.attacks.toolkit import make_wrapper
+from provexp.attacks.toolkit import run_attack
+from provexp.data.files import load_pilot
 
-__all__ = ["ATTACKS", "BUDGETS", "build_attack", "map_watchdog", "run_attack"]
+__all__: list[str] = []
 
 ROOT = Path(__file__).resolve().parent.parent
-
-# The eight attacks Gimenez et al. derive PV selection from (their attack_experiment.py), at the low-budget setting
-# (population 10, 10 iterations). secml-malware's genetic engine is reseeded before each run (their random.seed(0)).
-ATTACKS = ("gamma_sections", "gamma_api", "gamma_shift", "content_shift", "dos_extend", "header_fields", "padding",
-           "format_exploit")
-
-# Attack budgets: (genetic iterations at population 10, donor sections/API groups). "low" is Gimenez et al.'s setting
-# (~100 queries, 30 donors). "literature" is the GAMMA paper's largest (Demetrio et al., TIFS 2021: population 10, up to
-# 510 queries, 75 donor sections), the budget at which GAMMA is reported to evade a GBDT on EMBER features.
-BUDGETS: dict[str, tuple[int, int]] = {"low": (10, 30), "literature": (51, 75)}
 
 
 ################################################################################
 # Our detector, wrapped for secml-malware's black-box engine
 ################################################################################
 
-def calibrated(p: np.ndarray, tau: float) -> np.ndarray:
-    """A probability on a routed detector's scale: sigmoid(logit(p) - logit(tau)), so p > tau iff the result > 0.5."""
-    eps = 1e-12
-    logit = np.log(np.clip(p, eps, 1 - eps)) - np.log(np.clip(1 - p, eps, 1 - eps))
-    out: np.ndarray = 1 / (1 + np.exp(-(logit - np.log(tau / (1 - tau)))))
-    return out
-
-
-def make_wrapper(model_path: Path, extractor: PEFeatureExtractor, fallback: Optional[Path] = None,
-                 route: Optional[Callable[[bytes], bool]] = None, taus: Optional[tuple[float, float]] = None) -> Any:
-    """A CWrapperPhi over our LightGBM GBDT that extracts features with our own extractor.
-
-    With `fallback`, the detector is routed: files for which `route` holds are scored by the model, the others by the
-    fallback model, each on one scale, sigmoid(logit(p) - logit(tau)) with its own threshold from `taus` (model,
-    fallback), so that a routed file is detected when its score exceeds 0.5. The attack queries the routed detector.
-
-    Args:
-        model_path: Path to the LightGBM model text file.
-        extractor: The (quirk-fixed) extractor whose features the GBDT was trained on.
-        fallback: Path to the fallback model (routed detectors only).
-        route: Whether a file goes to the model (routed detectors only).
-        taus: The two models' thresholds (routed detectors only).
-
-    Returns:
-        A secml-malware CWrapperPhi instance wrapping our classifier.
-    """
-    import lightgbm
-    from secml.array import CArray
-    from secml.ml.classifiers import CClassifier
-    from secml_malware.attack.blackbox.c_wrapper_phi import CWrapperPhi
-
-    routed = fallback is not None
-
-    def _load(path: Path) -> Any:
-        # NOTE: an ERDALT model directory (erdalt.json next to the given model.txt path) is scored through the same
-        # predict interface; it selects its columns from the extractor's layout by name.
-        from provexp.models.erdalt import is_erdalt
-        from provexp.models.erdalt import load_detector
-
-        if is_erdalt(Path(path).parent):
-            return load_detector(Path(path).parent, extractor.feature_names)
-        return lightgbm.Booster(model_file=str(path))
-
-    if routed and (route is None or taus is None):
-        raise ValueError("A routed detector needs `route` and `taus`.")
-
-    class _OurClassifier(CClassifier):  # type: ignore[misc]
-        def __init__(self) -> None:
-            super().__init__()
-            self._booster = _load(model_path)
-            self._fallback = _load(fallback) if fallback is not None else None
-            self._classes = 2
-            self._n_features = self._booster.num_feature() + int(routed)
-
-        def _forward(self, x: Any) -> Any:
-            X = x.atleast_2d().tondarray()
-            if self._fallback is None:
-                p = np.asarray(self._booster.predict(X))
-            else:
-                assert taus is not None
-                # The last column says whether each file goes to the model (see extract_features).
-                go = X[:, -1] > 0.5
-                p = np.where(go, calibrated(np.asarray(self._booster.predict(X[:, :-1])), taus[0]),
-                             calibrated(np.asarray(self._fallback.predict(X[:, :-1])), taus[1]))
-            return CArray(np.stack([1 - p, p], axis=1))
-
-        def _backward(self, w: Any) -> None:
-            pass
-
-        def _fit(self, x: Any, y: Any) -> None:
-            raise RuntimeError("The detector under attack is not trained here.")
-
-    class _OurWrapper(CWrapperPhi):  # type: ignore[misc]
-        def extract_features(self, x: Any) -> Any:
-            x = x.atleast_2d()
-            out = []
-            for i in range(x.shape[0]):
-                xi = x[i, :]
-                pad = xi.find(xi == 256)
-                if pad:
-                    xi = xi[0, : pad[0]]
-                bytez = bytes(xi.astype(np.uint8).tolist()[0])
-                v = extractor.feature_vector(bytez)  # type: ignore[no-untyped-call]
-                if routed:
-                    assert route is not None
-                    v = np.append(v, np.float32(route(bytez)))
-                out.append(v)
-            return CArray(np.stack(out))
-
-    return _OurWrapper(_OurClassifier())
-
 
 ################################################################################
 # Attacks
 ################################################################################
 
-def build_attack(name: str, wrapper: Any, section_pop: list[Any], api_calls: list[Any], iterations: int = 10) -> Any:
-    """Construct one secml-malware black-box problem by name (population 10; Gimenez et al.'s low budget by default).
-
-    Args:
-        name: One of ATTACKS.
-        wrapper: The CWrapperPhi over our detector.
-        section_pop: Goodware section contents, for the GAMMA section/shift attacks.
-        api_calls: Goodware (dll, functions) pairs, for the GAMMA API attack.
-        iterations: Genetic iterations (queries are about 10 per iteration); see BUDGETS.
-
-    Returns:
-        A secml-malware problem instance.
-    """
-    from secml_malware.attack.blackbox.c_black_box_format_exploit_evasion import (
-        CBlackBoxContentDOSExtensionProblem,
-        CBlackBoxContentShiftingEvasionProblem,
-        CBlackBoxFormatExploitEvasionProblem,
-    )
-    from secml_malware.attack.blackbox.c_black_box_padding_evasion import CBlackBoxPaddingEvasionProblem
-    from secml_malware.attack.blackbox.c_blackbox_headerfields_problem import CBlackBoxHeaderFieldsEvasionProblem
-    from secml_malware.attack.blackbox.c_gamma_sections_evasion import CGammaSectionsEvasionProblem
-    from secml_malware.attack.blackbox.c_gamma_shift_problem import CGammaShiftEvasionProblem
-    from secml_malware.attack.blackbox.c_gammapi_evasion import CGammaAPIEvasionProblem
-
-    builders: dict[str, Callable[[], Any]] = {
-        "gamma_sections": lambda: CGammaSectionsEvasionProblem(section_pop, wrapper, population_size=10,
-                                                               penalty_regularizer=1e-6, iterations=iterations, threshold=0),
-        "gamma_api": lambda: CGammaAPIEvasionProblem(api_calls, wrapper, population_size=10, penalty_regularizer=1e-6,
-                                                     iterations=iterations),
-        "gamma_shift": lambda: CGammaShiftEvasionProblem(section_pop, wrapper, population_size=10,
-                                                         penalty_regularizer=1e-6, iterations=iterations, threshold=0),
-        "content_shift": lambda: CBlackBoxContentShiftingEvasionProblem(wrapper, population_size=10,
-                                                                        iterations=iterations),
-        "dos_extend": lambda: CBlackBoxContentDOSExtensionProblem(wrapper, population_size=10, iterations=iterations),
-        "header_fields": lambda: CBlackBoxHeaderFieldsEvasionProblem(wrapper, population_size=10,
-                                                                     iterations=iterations),
-        "padding": lambda: CBlackBoxPaddingEvasionProblem(wrapper, population_size=10, how_many_padding_bytes=1000,
-                                                          iterations=iterations),
-        "format_exploit": lambda: CBlackBoxFormatExploitEvasionProblem(wrapper, population_size=10,
-                                                                       iterations=iterations),
-    }
-    if iterations < 1:
-        raise ValueError(f"iterations must be >= 1, got {iterations}.")
-    if name not in builders:
-        raise ValueError(f"Unknown attack {name!r}; expected one of {ATTACKS}.")
-    return builders[name]()
-
-
-def run_attack(problem: Any, wrapper: Any, data: bytes, out_path: Path, seed: int = 0) -> tuple[bytes, float, float]:
-    """Run one attack on one file; reseed first, write the result, re-score it from disk.
-
-    Args:
-        problem: A secml-malware problem instance.
-        wrapper: The CWrapperPhi over our detector.
-        data: The original file bytes.
-        out_path: Where to write the adversarial file.
-        seed: Reset the RNG to this before the search, as Gimenez et al. do.
-
-    Returns:
-        The written bytes, the clean malware probability, and the adversarial malware probability.
-    """
-    from secml.array import CArray
-    from secml_malware.attack.blackbox.ga.c_base_genetic_engine import CGeneticAlgorithm
-
-    random.seed(seed)
-    np.random.seed(seed)
-    x = CArray(np.frombuffer(data, dtype=np.uint8)).atleast_2d()
-    p_clean = wrapper.predict(x, True)[1][0, 1].item()
-    engine = CGeneticAlgorithm(problem)
-    _, _, adv_ds, _ = engine.run(x, CArray(p_clean))
-    engine.write_adv_to_file(adv_ds.X[0, :], str(out_path))
-    adv_bytes = out_path.read_bytes()
-    p_adv = wrapper.predict(CArray(np.frombuffer(adv_bytes, dtype=np.uint8)), True)[1][0, 1].item()
-    return adv_bytes, p_clean, p_adv
-
 
 ################################################################################
 # Pilot data
 ################################################################################
-
-def load_pilot(pilot_files: Path, db_dir: Path) -> tuple[list[tuple[str, bytes]], list[tuple[str, bytes]]]:
-    """The detected pilot malware and the pilot goodware, as (name, bytes) lists.
-
-    Args:
-        pilot_files: PB1's files.parquet (name, label, log_odds:gbdt).
-        db_dir: The SimpleDB directory holding the bytes.
-
-    Returns:
-        (malware, goodware); malware is restricted to samples the GBDT already detects (log-odds > 0).
-    """
-    df = pl.read_parquet(pilot_files).select("name", "label", "log_odds:gbdt")
-    reader = SimpleDBReader(SimpleDB(db_dir, check=False))
-    malware = [(r["name"], bytes(reader.get(r["name"]).data))
-               for r in df.filter((pl.col("label") == 1) & (pl.col("log_odds:gbdt") > 0)).iter_rows(named=True)]
-    goodware = [(r["name"], bytes(reader.get(r["name"]).data))
-                for r in df.filter(pl.col("label") == 0).iter_rows(named=True)]
-    return malware, goodware
-
-
-def build_donor_pools(goodware: list[tuple[str, bytes]], workdir: Path,
-                      how_many: int = 30) -> tuple[list[Any], list[Any]]:
-    """Goodware section and API-call pools for the GAMMA attacks, extracted from the pilot goodware.
-
-    Args:
-        goodware: (name, bytes) of the pilot goodware.
-        workdir: A scratch directory to materialize the goodware files in (secml-malware reads from disk).
-        how_many: Donor sections (and API groups) to extract; 30 is Gimenez et al.'s, see BUDGETS.
-
-    Returns:
-        (section_population, api_calls).
-    """
-    from secml_malware.attack.blackbox.c_gamma_sections_evasion import CGammaSectionsEvasionProblem
-    from secml_malware.attack.blackbox.c_gammapi_evasion import CGammaAPIEvasionProblem
-
-    gw_dir = workdir / "goodware"
-    gw_dir.mkdir(parents=True, exist_ok=True)
-    for name, data in goodware:
-        (gw_dir / name).write_bytes(data)
-    section_pop, _ = CGammaSectionsEvasionProblem.create_section_population_from_folder(
-        str(gw_dir), how_many=how_many, sections_to_extract=[".rdata", ".data"], to_ignore=[])
-    api_calls = CGammaAPIEvasionProblem.extract_api_calls_from_folder(str(gw_dir), how_many)
-    return section_pop, api_calls
-
-
-def map_watchdog(pool: Any, fn: Callable[[Any], Any], tasks: list[Any], lost: Callable[[Any], Any],
-                 stall_timeout: float = 2700.0, log_every: int = 50) -> list[Any]:
-    """`pool.map(fn, tasks)` that survives a worker dying mid-task.
-
-    A `multiprocessing.Pool` replaces a worker that dies (e.g. a segfault inside LIEF on a malformed file), but the task
-    it held never returns, so `pool.map` waits forever (run 122's first launch hung this way). Here each task is
-    submitted on its own; when no task has finished for `stall_timeout` seconds, the unfinished ones are reported, given
-    `lost(task)` as their result, and the pool is terminated.
-
-    Args:
-        pool: An open `multiprocessing.Pool`.
-        fn: The worker function.
-        tasks: Its inputs, one per call.
-        lost: Builds the result row for a task that never returned.
-        stall_timeout: Seconds without any completion before the unfinished tasks are declared lost (longer than the
-            slowest single attack).
-        log_every: Print progress every this many completions.
-
-    Returns:
-        The results, in the order of `tasks`.
-    """
-    if stall_timeout <= 0:
-        raise ValueError(f"stall_timeout must be positive, got {stall_timeout}.")
-    pending = {i: pool.apply_async(fn, (t,)) for i, t in enumerate(tasks)}
-    results: list[Any] = [None] * len(tasks)
-    t0 = last = time.time()
-    while pending:
-        finished = [i for i, a in pending.items() if a.ready()]
-        for i in finished:
-            results[i] = pending.pop(i).get()
-        done = len(tasks) - len(pending)
-        if finished:
-            last = time.time()
-            if done // log_every != (done - len(finished)) // log_every or not pending:
-                print(f"  progress: {done}/{len(tasks)} tasks in {time.time() - t0:.0f}s", flush=True)
-        elif time.time() - last > stall_timeout:
-            for i in pending:
-                print(f"  LOST task {i} (no result after {stall_timeout:.0f}s of no progress; a worker likely died): "
-                      f"{str(tasks[i][:3])[:120]}", flush=True)
-                results[i] = lost(tasks[i])
-            pool.terminate()
-            break
-        else:
-            time.sleep(5)
-    return results
 
 
 ################################################################################

@@ -39,10 +39,7 @@ from typing import Any
 import numpy as np
 import polars as pl
 
-__all__ = [
-    "CATALOGUE",
-    "respects",
-]
+__all__ = ["CATALOGUE", "respects"]
 
 # NOTE: how each secml-malware attack writes its edit (docs/status.md, 2026-11-02, the review's premises): six are
 # byte-level edits of catalogue operations; GAMMA sections and GAMMA API go through LIEF's writer, which relays out the

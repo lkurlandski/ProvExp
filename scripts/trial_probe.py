@@ -50,12 +50,9 @@ from provexp.featuresets.ember2024.catalogue import regions
 from provexp.featuresets.ember2024.features import PEFeatureExtractor
 from provexp.featuresets.ember2024.features import merge_import_descriptors
 
-sys.path.insert(0, str(Path(__file__).resolve().parent))
-from catalogue_checks import add_imports  # noqa: E402
+from provexp.featuresets.ember2024.edits import add_imports
 
-__all__ = [
-    "probe_file",
-]
+__all__ = ["probe_file"]
 
 CONTENTS = ("zeros", "printable")
 

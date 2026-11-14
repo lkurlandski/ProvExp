@@ -8,7 +8,6 @@ from __future__ import annotations
 
 from pathlib import Path
 from typing import Optional
-import sys
 import warnings
 
 import numpy as np
@@ -29,7 +28,6 @@ warnings.filterwarnings("ignore", category=SyntaxWarning)
 
 
 ROOT = Path(__file__).parent.parent
-sys.path.insert(0, str(ROOT / "scripts"))
 DATA = ROOT / "tests" / "data"
 FILES = sorted(f for f in DATA.glob("*/*") if f.is_file())[:12]
 
@@ -142,8 +140,8 @@ class TestBodyRegions:
         body: no re-encoded body count falls (G7), except the regexes that end in a word boundary.
         """
         needs_files()
-        from catalogue_checks import DATA_CHARACTERISTICS
-        from catalogue_checks import add_section
+        from provexp.featuresets.ember2024.edits import DATA_CHARACTERISTICS
+        from provexp.featuresets.ember2024.edits import add_section
         data, x = sample
         pe = _parse(data)
         if pe is None or pe.get_overlay_data_start_offset() is None:

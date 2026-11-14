@@ -18,7 +18,6 @@ from argparse import ArgumentParser
 import json
 from pathlib import Path
 
-import numpy as np
 import polars as pl
 
 from provexp.data.tabular import META_FILE

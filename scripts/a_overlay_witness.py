@@ -39,11 +39,7 @@ from provexp.featuresets.ember2024.sums import BodyByteHistogram
 from provexp.featuresets.ember2024.sums import BodyStrings
 from provexp.data.paths import EMBER2024_DATA
 
-__all__ = [
-    "extents_past_eof",
-    "overlay_size",
-    "main",
-]
+__all__ = ["extents_past_eof", "overlay_size", "main"]
 
 ROOT = Path(__file__).resolve().parents[1]
 CONTROL = 4096

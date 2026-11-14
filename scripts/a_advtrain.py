@@ -25,14 +25,12 @@ Usage (smoke on two malware, one attack):
 from __future__ import annotations
 
 from argparse import ArgumentParser
-import hashlib
 import json
 from multiprocessing import get_context
 from pathlib import Path
 import tempfile
 import time
 from typing import Any
-from typing import Optional
 
 import lief
 import numpy as np
@@ -45,13 +43,14 @@ from provexp.featuresets.ember2024.features import merge_import_descriptors
 from provexp.featuresets.ember2024.features import PEFeatureExtractor
 from provexp.data.paths import EMBER2024_DATA
 
-from a_pv_attacks import ATTACKS
-from a_pv_attacks import BUDGETS
-from a_pv_attacks import build_attack
-from a_pv_attacks import build_donor_pools
-from a_pv_attacks import map_watchdog
-from a_pv_attacks import make_wrapper
-from a_pv_attacks import run_attack
+from provexp.attacks.toolkit import ATTACKS
+from provexp.attacks.toolkit import BUDGETS
+from provexp.attacks.toolkit import build_attack
+from provexp.attacks.toolkit import build_donor_pools
+from provexp.attacks.toolkit import file_seed
+from provexp.attacks.toolkit import make_wrapper
+from provexp.attacks.toolkit import run_attack
+from provexp.parallel import map_watchdog
 
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -59,7 +58,7 @@ ROOT = Path(__file__).resolve().parent.parent
 # so Table 7's "seen" column is a true seen-attack test and the other four attacks are a held-out generalization test.
 SEEN = ("padding", "gamma_sections", "gamma_shift", "content_shift")
 
-__all__ = ["file_seed", "load_training", "main"]
+__all__ = ["load_training", "main"]
 
 
 ################################################################################
@@ -99,12 +98,6 @@ def load_training(features: Path, db_dir: Path, num_malware: int, num_goodware: 
 ################################################################################
 
 _W: dict[str, Any] = {}
-
-
-def file_seed(seed: int, attack: str, name: str) -> int:
-    """A seed per (attack, file), stable across runs and workers: the base seed plus a hash of both names."""
-    h = hashlib.sha256(f"{attack}:{name}".encode()).digest()
-    return (seed + int.from_bytes(h[:4], "little")) % 2**32
 
 
 def _init_worker(model: Path, section_pop: list[Any], api_calls: list[Any], seed: int, iterations: int = 10,

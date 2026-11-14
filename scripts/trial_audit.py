@@ -23,7 +23,6 @@ from __future__ import annotations
 
 from argparse import ArgumentParser
 from pathlib import Path
-import sys
 from typing import Any
 from typing import cast
 
@@ -31,9 +30,8 @@ import numpy as np
 import polars as pl
 
 ROOT = Path(__file__).resolve().parent.parent
-sys.path.insert(0, str(ROOT / "scripts"))
-import a1_adaptive as A  # noqa: E402
-from a_pv_attacks import load_pilot  # noqa: E402
+from provexp.data.files import load_pilot  # noqa: E402
+import provexp.attacks.adaptive as A  # noqa: E402
 from provexp.data.paths import EMBER2024_DATA  # noqa: E402
 
 __all__ = ["Recorder", "explain", "marking"]

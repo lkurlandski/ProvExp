@@ -6,7 +6,6 @@ The real-file tests need executables in tests/data/ (see scripts/make_fixtures.p
 """
 
 from pathlib import Path
-import sys
 import warnings
 
 import numpy as np
@@ -20,9 +19,8 @@ from provexp.featuresets.ember2024.expert import ExpertFeatures
 warnings.filterwarnings("ignore", category=SyntaxWarning)
 
 ROOT = Path(__file__).parent.parent
-sys.path.insert(0, str(ROOT / "scripts"))
-from catalogue_checks import add_imports  # noqa: E402
-from catalogue_checks import add_section  # noqa: E402
+from provexp.featuresets.ember2024.edits import add_imports  # noqa: E402
+from provexp.featuresets.ember2024.edits import add_section  # noqa: E402
 
 DATA = ROOT / "tests" / "data"
 FILES = sorted(f for f in DATA.glob("*/*") if f.is_file())[:12]

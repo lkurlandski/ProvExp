@@ -79,37 +79,23 @@ from provexp.reach import Vocabulary
 from provexp.reach import directions as derive_directions
 from provexp.reach import extension_monotone
 from provexp.data.paths import EMBER2024_DATA
+from provexp.featuresets.ember2024.directions import ADD
+from provexp.featuresets.ember2024.directions import HEADER_WRITES
+from provexp.featuresets.ember2024.directions import INSERT
+from provexp.featuresets.ember2024.directions import OPS
+from provexp.featuresets.ember2024.directions import Signs
+from provexp.featuresets.ember2024.directions import THREAT_MODELS
+from provexp.featuresets.ember2024.directions import direction
+from provexp.featuresets.ember2024.directions import every
+from provexp.featuresets.ember2024.directions import signs
 
 warnings.filterwarnings("ignore", category=SyntaxWarning)
 
-__all__ = [
-    "OPS",
-    "THREAT_MODELS",
-    "Rule",
-    "direction",
-    "feature_rule",
-]
+__all__ = ["Rule", "feature_rule"]
 
 ################################################################################
 # Operations and threat models
 ################################################################################
-
-# `ent` (the certificate and debug entries set to any value; R7) changes nothing unless --loose derives it.
-OPS = ("app", "sec", "imp", "ext", "shf", "slk", "dos", "hdr", "chk", "ren", "rdb", "rsg", "ent")
-ADD = ("app", "sec", "imp")
-INSERT = ("ext", "shf")
-OVERWRITE = ("slk", "dos", "hdr", "chk", "ren", "rdb", "rsg", "ent")
-THREAT_MODELS: dict[str, tuple[str, ...]] = {
-    "M_add": ADD,
-    "M_shift": ADD + INSERT,
-    "M_full": OPS,
-}
-
-# Operations that write bytes in place inside the header region (an added section's table entry and counts, an
-# insertion's pointer updates, and the overwrites other than slack).
-HEADER_WRITES = ("sec", "imp", "ext", "shf", "dos", "hdr", "chk", "ren", "rdb", "rsg", "ent")
-
-Signs = dict[str, str]  # op -> "", "+", "-", or "+-"
 
 
 class Rule(NamedTuple):
@@ -118,31 +104,6 @@ class Rule(NamedTuple):
     note: str
     reencoding: str = ""
     resigns: Optional[Signs] = None
-
-
-def signs(**kwargs: str) -> Signs:
-    """Signs per operation; operations not named do not move the feature."""
-    unknown = set(kwargs) - set(OPS)
-    if unknown:
-        raise ValueError(f"Unknown operations: {sorted(unknown)}")
-    return {op: kwargs.get(op, "") for op in OPS}
-
-
-def every(sign: str, ops: tuple[str, ...] = OPS) -> Signs:
-    """The same sign for every operation in `ops`; the others do not move the feature."""
-    return {op: sign if op in ops else "" for op in OPS}
-
-
-def direction(s: Signs, ops: tuple[str, ...]) -> str:
-    """The direction of a feature under the operations `ops`: fixed, up, down, or both."""
-    union = set("".join(s[op] for op in ops))
-    if not union:
-        return "fixed"
-    if union == {"+"}:
-        return "up"
-    if union == {"-"}:
-        return "down"
-    return "both"
 
 
 ################################################################################

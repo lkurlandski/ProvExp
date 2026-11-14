@@ -37,9 +37,7 @@ from provexp.featuresets.ember2024.features import PEFeatureExtractor
 from provexp.featuresets.ember2024.sums import SumsFeatureExtractor
 from provexp.data.paths import EMBER2024_DATA
 
-__all__ = [
-    "main",
-]
+__all__ = ["main"]
 
 ROOT = Path(__file__).parent.parent
 EXTRACTORS: dict[str, type[PEFeatureExtractor]] = {

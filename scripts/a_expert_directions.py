@@ -30,12 +30,10 @@ from pathlib import Path
 
 import pefile
 
-import sys
 
 ROOT = Path(__file__).parent.parent
-sys.path.insert(0, str(ROOT / "scripts"))
 
-from a1_evaluate import make_extractor  # noqa: E402
+from provexp.detectors import make_extractor  # noqa: E402
 from provexp.featuresets.ember2024 import catalogue  # noqa: E402
 from provexp.items import ItemTable  # noqa: E402
 from provexp.reach import Change  # noqa: E402

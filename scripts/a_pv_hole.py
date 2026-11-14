@@ -41,7 +41,6 @@ from __future__ import annotations
 from argparse import ArgumentParser
 import json
 from pathlib import Path
-import sys
 
 import lightgbm
 import numpy as np
@@ -50,8 +49,7 @@ import polars as pl
 from provexp.data.tabular import load_manifest
 from provexp.featuresets.ember2024.sums import SumsFeatureExtractor
 
-sys.path.insert(0, str(Path(__file__).resolve().parent))
-from train_erdalt import adv_deltas  # noqa: E402
+from provexp.attacks.toolkit import adv_deltas
 
 __all__ = ["adv_frame", "decreasable_features", "pv_kept"]
 

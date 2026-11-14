@@ -35,16 +35,11 @@ import torch
 from provexp.data.paths import EMBER2024_DATA
 from provexp.models.erdalt import ERDALTDetector
 
-import sys
-sys.path.insert(0, str(Path(__file__).resolve().parent))
-from a_pv_attacks import load_pilot  # noqa: E402
-from a1_evaluate import make_extractor  # noqa: E402
+from provexp.data.files import load_pilot
+from provexp.detectors import make_extractor
 
 
-__all__ = [
-    "directions",
-    "column_violations",
-]
+__all__ = ["directions", "column_violations"]
 
 ROOT = Path(__file__).resolve().parents[1]
 

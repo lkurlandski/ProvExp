@@ -53,18 +53,9 @@ from provexp.featuresets.ember2024.features import merge_import_descriptors
 from provexp.featuresets.ember2024.features import PEFeatureExtractor
 from provexp.data.paths import EMBER2024_DATA
 
-sys.path.insert(0, str(Path(__file__).parent))
-from a1_adaptive import add_section  # noqa: E402
+from provexp.attacks.adaptive import add_section
 
-__all__ = [
-    "rich_block",
-    "edit_entry",
-    "edit_rich_ext",
-    "edit_rich_hdr",
-    "edit_exports",
-    "edit_relocs",
-    "main",
-]
+__all__ = ["rich_block", "edit_entry", "edit_rich_ext", "edit_rich_hdr", "edit_exports", "edit_relocs", "main"]
 
 warnings.filterwarnings("ignore", category=SyntaxWarning)
 

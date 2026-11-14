@@ -50,7 +50,6 @@ from collections import Counter
 import json
 from multiprocessing import get_context
 from pathlib import Path
-import struct
 import sys
 import time
 from typing import Any
@@ -69,7 +68,6 @@ from provexp.featuresets.ember2024.catalogue import DEBUG_ENTRY
 from provexp.featuresets.ember2024.catalogue import LOOSE_ENTRIES
 from provexp.featuresets.ember2024.catalogue import HDR_FIELDS
 from provexp.featuresets.ember2024.catalogue import SECURITY_ENTRY
-from provexp.featuresets.ember2024.catalogue import PAGE
 from provexp.featuresets.ember2024.catalogue import passes_precondition
 from provexp.featuresets.ember2024.catalogue import predict_add_imports
 from provexp.featuresets.ember2024.catalogue import predict_add_section
@@ -77,9 +75,6 @@ from provexp.featuresets.ember2024.catalogue import predict_insert_gap
 from provexp.featuresets.ember2024.catalogue import predict_rename
 from provexp.featuresets.ember2024.catalogue import predict_zero_entry
 from provexp.featuresets.ember2024.catalogue import regions
-from provexp.featuresets.ember2024.catalogue import write_gap
-from provexp.featuresets.ember2024.catalogue import write_imports
-from provexp.featuresets.ember2024.catalogue import write_section
 from provexp.featuresets.ember2024.features import PEFeatureExtractor
 from provexp.featuresets.ember2024.features import field_range
 from provexp.featuresets.ember2024.features import merge_import_descriptors
@@ -89,27 +84,23 @@ from provexp.reach import ByteEdit
 from provexp.reach import Prediction
 from provexp.reach import predict
 from provexp.data.paths import EMBER2024_DATA
+from provexp.featuresets.ember2024.edits import CODE_CHARACTERISTICS
+from provexp.featuresets.ember2024.edits import DATA_CHARACTERISTICS
+from provexp.featuresets.ember2024.edits import add_imports
+from provexp.featuresets.ember2024.edits import add_section
+from provexp.featuresets.ember2024.edits import entry_write as _entry_write
+from provexp.featuresets.ember2024.edits import forged_rich
+from provexp.featuresets.ember2024.edits import insert_gap
+from provexp.featuresets.ember2024.edits import into_overlay as _into_overlay
+from provexp.featuresets.ember2024.edits import past_end as _past_end
 
-__all__ = [
-    "LOOSE_OPS",
-    "OPS",
-    "escaped",
-    "add_imports",
-    "add_section",
-    "forged_rich",
-    "insert_gap",
-    "instances",
-    "observed_signs",
-]
+__all__ = ["LOOSE_OPS", "OPS", "escaped", "instances", "observed_signs"]
 
 OPS = ("app", "sec", "imp", "ext", "shf", "slk", "dos", "hdr", "chk", "ren", "rdb", "rsg")
 LOOSE_OPS = OPS + ("ent",)
 
 SCN_CODE, SCN_DATA = 0x00000020, 0x00000040
 SCN_EXECUTE, SCN_READ, SCN_WRITE = 0x20000000, 0x40000000, 0x80000000
-DATA_CHARACTERISTICS = SCN_DATA | SCN_READ | SCN_WRITE
-CODE_CHARACTERISTICS = SCN_CODE | SCN_READ | SCN_EXECUTE
-IMPORT_ENTRY = 1
 
 ################################################################################
 # Byte-level edits (exactly the declared operation)
@@ -122,39 +113,6 @@ def _parse(z: bytes, fast: bool = False) -> Optional[pefile.PE]:
         return pefile.PE(data=z, fast_load=fast)
     except (pefile.PEFormatError, AttributeError):
         return None
-
-
-def add_section(z: bytes, name: bytes, content: bytes, characteristics: int, before_overlay: bool,
-                content_at_rva: Optional[Callable[[int], bytes]] = None) -> Optional[tuple[bytes, int]]:
-    """
-    Add a section (`sec`; `catalogue.write_section`): a header after the section table, the content padded to
-    FileAlignment at the end of the file or (`before_overlay`) where pefile's overlay starts.
-
-    Returns:
-        The edited file and the new section's RVA, or None if the headers have no room for another section header.
-    """
-    written = write_section(z, name, content, characteristics, before_overlay, content_at_rva)
-    return None if written is None else (written.new, written.layout["rva"])
-
-
-def add_imports(z: bytes, library: bytes, functions: list[bytes], before_overlay: bool) -> Optional[bytes]:
-    """Add imports (`imp`; `catalogue.write_imports`): a new section holding the import table, pointed to by IMPORT."""
-    written = write_imports(z, library, functions, before_overlay)
-    return None if written is None else written.new
-
-
-def insert_gap(z: bytes, at_pe_header: bool, gap: bytes) -> Optional[bytes]:
-    """Insert a gap (`ext` before the PE header, `shf` before the first section's data; `catalogue.write_gap`)."""
-    written = write_gap(z, at_pe_header, gap)
-    return None if written is None else written.new
-
-
-def forged_rich(pairs: list[tuple[int, int]], key: int = 0x5EED5EED) -> bytes:
-    """A Rich header block (DanS, padding, (comp.id, count) pairs, Rich, key), XOR-ed with `key`."""
-    words = [0x536E6144 ^ key, key, key, key]
-    for comp, count in pairs:
-        words += [comp ^ key, count ^ key]
-    return struct.pack(f"<{len(words)}I", *words) + b"Rich" + struct.pack("<I", key)
 
 
 ################################################################################
@@ -286,55 +244,6 @@ def instances(z: bytes, pe: pefile.PE, table: ItemTable, rng: np.random.Generato
         out.append(_in_place(op, "zero_entry", z, [ByteEdit(lo, lo + 8, b"\x00" * 8)],
                              declared_entry(index)))
     return out
-
-
-def _entry_write(pe: pefile.PE, index: int, va: int, size: int) -> ByteEdit:
-    """The in-place write of data directory entry `index` as (va, size)."""
-    lo = pe.OPTIONAL_HEADER.DATA_DIRECTORY[index].get_file_offset()
-    return ByteEdit(lo, lo + 8, struct.pack("<II", va, size))
-
-
-def _in_section(pe: pefile.PE, rva: int) -> bool:
-    return any(s.VirtualAddress <= rva < s.VirtualAddress + max(s.Misc_VirtualSize, s.SizeOfRawData) for s in pe.sections)
-
-
-def _past_end(pe: pefile.PE, index: int, n: int, by: int) -> Optional[ByteEdit]:
-    """
-    Entry `index` made to end `by` bytes past the end of the file: its extent lengthened if it has one, else placed at
-    an address that maps to the file's last bytes (outside every section, so pefile maps it one to one); None if
-    neither applies.
-    """
-    d = pe.OPTIONAL_HEADER.DATA_DIRECTORY[index]
-    if d.VirtualAddress and d.Size:
-        try:
-            start = d.VirtualAddress if index == SECURITY_ENTRY else pe.get_offset_from_rva(d.VirtualAddress)
-        except pefile.PEFormatError:
-            return None
-        if start is None or start >= n:
-            return None
-        return _entry_write(pe, index, d.VirtualAddress, n + by - start)
-    va = max(n - 8, 0)
-    if index != SECURITY_ENTRY and _in_section(pe, va):
-        return None
-    return _entry_write(pe, index, va, n + by - va)
-
-
-def _into_overlay(pe: pefile.PE, n: int) -> Optional[ByteEdit]:
-    """
-    The debug extent lengthened (from its address, or the first section's) to end one byte before the end of a file
-    with an overlay: pefile's own overlay rule would then start the overlay at the file's last byte (LIEF's, installed
-    by `features` since 2026-11-13, leaves it where it was; R7). None without an overlay.
-    """
-    start = pe.get_overlay_data_start_offset()
-    d = pe.OPTIONAL_HEADER.DATA_DIRECTORY[DEBUG_ENTRY]
-    va = d.VirtualAddress if d.VirtualAddress else (pe.sections[0].VirtualAddress if pe.sections else 0)
-    try:
-        lo = pe.get_offset_from_rva(va)
-    except pefile.PEFormatError:
-        return None
-    if start is None or n - start < 2 or lo is None or lo >= n - 1:
-        return None
-    return _entry_write(pe, DEBUG_ENTRY, va, n - 1 - lo)
 
 
 def escaped(z: bytes, pe: pefile.PE) -> list[tuple[str, bytes]]:

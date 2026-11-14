@@ -37,12 +37,11 @@ from provexp.metrics import compute_metrics
 from provexp.models.erdalt import fit_temperature
 from provexp.models.erdalt import save_erdalt
 from provexp.models.erdalt import train_erdalt
+from provexp.attacks.toolkit import adv_deltas
+from provexp.attacks.toolkit import pv_deltas
 
 
-__all__ = [
-    "pv_deltas",
-    "adv_deltas",
-]
+__all__: list[str] = []
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -50,38 +49,6 @@ ROOT = Path(__file__).resolve().parents[1]
 ################################################################################
 # Perturbation vectors
 ################################################################################
-
-def pv_deltas(path: Path, attacks: list[str], names: list[str]) -> npt.NDArray[np.float32]:
-    """The perturbation vectors of `attacks` in a named-column parquet, in the order of `names`."""
-    df = pl.read_parquet(path).filter(pl.col("attack").is_in(attacks))
-    missing = [n for n in names if n not in df.columns]
-    if missing:
-        raise ValueError(f"{path.as_posix()} lacks {len(missing)} of the model's features: {missing[:5]}")
-    return df.select(names).to_numpy().astype(np.float32)
-
-
-def adv_deltas(adv_dir: Path, adv_features: Path, attacks: list[str], names: list[str]) -> npt.NDArray[np.float32]:
-    """phi(z') - phi(z) for the attacked training malware in `adv_dir`, clean rows from `adv_features`' training split."""
-    layout = load_manifest(adv_features)["feature_names"]
-    index = {n: j for j, n in enumerate(layout)}
-    missing = [n for n in names if n not in index]
-    if missing:
-        raise ValueError(f"{adv_features.as_posix()} lacks {len(missing)} of the model's features: {missing[:5]}")
-    cols = np.array([index[n] for n in names], dtype=np.int64)
-    Xa = np.load(adv_dir / "X.npy")
-    files = pl.read_parquet(adv_dir / "files.parquet").with_row_index("i")
-    if files.height != Xa.shape[0] or Xa.shape[1] != len(layout):
-        raise RuntimeError(f"{adv_dir.as_posix()}: X.npy {Xa.shape} vs {files.height} rows, {len(layout)} features.")
-    files = files.filter(pl.col("attack").is_in(attacks))
-    X, meta = load_features(adv_features, "tr")
-    rows = dict(zip(meta["name"].to_list(), meta["row"].to_list()))
-    absent = [n for n in files["name"].to_list() if n not in rows]
-    if absent:
-        raise RuntimeError(f"{len(absent)} attacked files are not in {adv_features.as_posix()}/tr: {absent[:3]}")
-    clean = np.asarray(X[[rows[n] for n in files["name"].to_list()]])
-    adv = Xa[files["i"].to_numpy()]
-    out: npt.NDArray[np.float32] = (adv[:, cols] - clean[:, cols]).astype(np.float32)
-    return out
 
 
 ################################################################################

@@ -37,7 +37,6 @@ from __future__ import annotations
 from argparse import ArgumentParser
 import json
 from pathlib import Path
-import sys
 from typing import Any
 
 import numpy as np
@@ -46,15 +45,11 @@ import polars as pl
 
 from provexp.data.paths import EMBER2024_DATA
 
-sys.path.insert(0, str(Path(__file__).resolve().parent))
-from a_coverage import ATTACKS  # noqa: E402
-from a_coverage import population  # noqa: E402
-from train_erdalt import adv_deltas  # noqa: E402
+from provexp.attacks.toolkit import ATTACKS
+from provexp.attacks.toolkit import adv_deltas
+from provexp.featuresets.ember2024.population import population
 
-__all__ = [
-    "derived_table",
-    "trial_table",
-]
+__all__ = ["derived_table", "trial_table"]
 
 ROOT = Path(__file__).resolve().parents[1]
 TOL = 1e-9

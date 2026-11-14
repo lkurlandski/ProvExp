@@ -40,38 +40,24 @@ from __future__ import annotations
 
 from argparse import ArgumentParser
 import json
-from multiprocessing import get_context
 from pathlib import Path
-import sys
 from typing import Any
-from typing import Optional
 
 import numpy as np
 from numpy import typing as npt
 import polars as pl
 
 from provexp.data.paths import EMBER2024_DATA
-from provexp.data.simpledb import SimpleDB
-from provexp.data.simpledb import SimpleDBReader
-from provexp.featuresets.ember2024.catalogue import passes_precondition
-from provexp.featuresets.ember2024.features import PEFeatureExtractor
-from provexp.featuresets.ember2024.features import merge_import_descriptors
 
-sys.path.insert(0, str(Path(__file__).resolve().parent))
-from train_erdalt import adv_deltas  # noqa: E402
+from provexp.attacks.toolkit import ATTACKS
+from provexp.attacks.toolkit import adv_deltas
+from provexp.featuresets.ember2024.population import population
 
-__all__ = [
-    "TOOLKIT_OPS",
-    "OTHER_OPS",
-    "classify",
-    "lowered",
-]
+__all__ = ["TOOLKIT_OPS", "OTHER_OPS", "classify", "lowered"]
 
 ROOT = Path(__file__).resolve().parents[1]
 TOOLKIT_OPS = ("op_app_pre", "op_sec", "op_imp", "op_ext", "op_shf", "op_hdr")
 OTHER_OPS = ("op_slk", "op_dos", "op_chk", "op_ren", "op_rdb", "op_rsg")
-ATTACKS = ("gamma_sections", "gamma_api", "gamma_shift", "content_shift", "dos_extend", "header_fields", "padding",
-           "format_exploit")
 CLASSES = ("toolkit_ops", "other_ops", "warnings")
 BUCKET_GROUPS = ("section:size_hash_", "section:entropy_hash_", "section:vsize_hash_", "section:characteristics_hash_")
 
@@ -202,24 +188,6 @@ def witnessed(edits: Path) -> dict[str, set[str]]:
 ################################################################################
 # Population membership of the training malware
 ################################################################################
-
-_W: dict[str, Any] = {}
-
-
-def _init(db: str) -> None:
-    _W["reader"] = SimpleDBReader(SimpleDB(Path(db), check=False))
-    _W["extractor"] = merge_import_descriptors(PEFeatureExtractor())
-
-
-def _precondition(name: str) -> tuple[str, bool]:
-    data = bytes(_W["reader"].get(name).data)
-    return name, bool(passes_precondition(_W["extractor"], data))
-
-
-def population(names: list[str], db: Path, workers: int) -> dict[str, bool]:
-    """Whether each training file passes the precondition (the population of the plain layouts)."""
-    with get_context("spawn").Pool(workers, initializer=_init, initargs=(str(db),)) as pool:
-        return dict(pool.map(_precondition, names, chunksize=8))
 
 
 ################################################################################

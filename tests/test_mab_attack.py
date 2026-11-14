@@ -11,15 +11,13 @@ from __future__ import annotations
 
 from multiprocessing import get_context
 from pathlib import Path
-import sys
 from typing import Any
 
 import pytest
 
 ROOT = Path(__file__).parent.parent
-sys.path.insert(0, str(ROOT / "scripts"))
-from mab_attack import donor_contents  # noqa: E402
-from mab_attack import trace_run  # noqa: E402
+from provexp.attacks.mab import donor_contents  # noqa: E402
+from provexp.attacks.mab import trace_run  # noqa: E402
 
 DATA = ROOT / "tests" / "data"
 MALWARE = sorted(f for f in (DATA / "malware").glob("*") if f.is_file())
