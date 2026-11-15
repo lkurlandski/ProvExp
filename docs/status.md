@@ -134,6 +134,8 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
 
 ## Waiting on the user
 
+- **Before cloning on the cluster:** `git push` (main is ahead of origin), then copy what a clone does not bring
+  (`SETUP.md` §4: the split index files and the scale-up's file lists; `check.sh` stops without them).
 - **The head-node session** (`docs/resume-prompt.md`) needs the user at the cluster: `SETUP.md`, `check.sh`, the "TO
   CONFIRM" values, and each `run.sh`'s time, memory and GPUs. Then the user submits the steps in
   `pipeline/README.md`'s order, with `2-features/file-store` after the lists (or copy `files.sqlite` from this
@@ -156,6 +158,8 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
 
 ## Session log
 
+- **2026-11-15 (session 71): repository readied for the head node.** `SETUP.md` §4 lists what a clone does not
+  bring and how to copy it; `check.sh` checks for it; the audit stage's order states which list each step reads.
 - **2026-11-15 (session 70): the two open scale-up questions decided.** (1) The derived table's corpus. Read what
   `directions.py` takes from its files (unions: the kinds' terms, the in-place writes' changes, population
   membership). Hypothesis: tables from 300 evaluation and 300 training files identical. Held for the population's

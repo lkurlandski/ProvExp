@@ -41,6 +41,21 @@ outputs live, the maximum walltime, Python 3.14 through uv. They are checked in 
 before running anything (`ln -s <large storage> artifacts`). The pipeline writes under `artifacts/scaleup/<stage>/`;
 SLURM's own logs go to `logs/`. To use the pilot's models and feature stores elsewhere (the registry's `pilot` set),
 copy them with `run/sync_artifacts.sh`.
+
+**What a clone does not bring** (gitignored; copy from this server, `gcis-mkwics-rl`, into the same paths):
+
+    rsync -a lk3591@gcis-mkwics-rl.rit.edu:Documents/code/ProvExp/index/ember2024/us/ index/ember2024/us/
+    rsync -a lk3591@gcis-mkwics-rl.rit.edu:/scratch/lk3591/provexp/scaleup/2-features/files/ artifacts/scaleup/2-features/files/
+
+- `index/ember2024/us/{tr,vl,ts}.txt`: the split index files featurization reads;
+- `artifacts/scaleup/2-features/files/`: the scale-up's file lists (`ts.parquet`, `tr.parquet`, the two donor sets),
+  drawn once in session 67; every step reads them. Do not re-draw them on the cluster;
+- optional: `artifacts/metadata/` (~560 MB; only `2-features/files` reads it, to draw lists) and `tests/data/` (real
+  malware for the tests; without it they skip).
+
+The commits must be on the remote first: `git push` on this server before cloning (the clone is otherwise the
+pilot's code). `pipeline/setup/check.sh` stops if the index files or the lists are missing.
+
 The attacks read their files from `artifacts/scaleup/2-features/files/files.sqlite` when it exists (the file store,
 `pipeline/2-features/file-store`; the same bytes as the SimpleDB, each row's SHA-256 checked on read): build it there
 after the lists, or copy it from this server.
