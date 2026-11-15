@@ -26,6 +26,10 @@ from provexp.featuresets.ember2024.catalogue import predict_insert_gap
 from provexp.featuresets.ember2024.catalogue import predict_rename
 from provexp.featuresets.ember2024.catalogue import predict_zero_entry
 from provexp.featuresets.ember2024.catalogue import write_section
+from provexp.featuresets.ember2024.catalogue import written_add_imports
+from provexp.featuresets.ember2024.catalogue import written_add_section
+from provexp.featuresets.ember2024.catalogue import written_rename
+from provexp.featuresets.ember2024.catalogue import written_zero_entry
 from provexp.featuresets.ember2024.features import PEFeatureExtractor
 from provexp.featuresets.ember2024.features import field_range
 from provexp.featuresets.ember2024.features import fix_quirks
@@ -164,3 +168,38 @@ class TestDeclaredOperations:
     @pytest.mark.parametrize("index", [DEBUG_ENTRY, SECURITY_ENTRY])
     def test_zero_entry(self, extractor: PEFeatureExtractor, sample: bytes, index: int) -> None:
         _check_exact(extractor, predict_zero_entry(extractor, extractor.item_table(sample), sample, index))
+
+
+################################################################################
+# The same operations, written only
+################################################################################
+
+
+def _new(p: Optional[Prediction]) -> Optional[bytes]:
+    return None if p is None else p.new
+
+
+class TestWrittenOnly:
+    """Each `written_*` returns the file its `predict_*` writes, and None exactly where the prediction is None."""
+
+    @pytest.mark.parametrize("before_overlay", [False, True])
+    def test_add_section(self, extractor: PEFeatureExtractor, sample: bytes, before_overlay: bool) -> None:
+        name, content = b".pv0", bytes(range(256)) * 16
+        p = predict_add_section(extractor, extractor.item_table(sample), sample, name, content, DATA_CHARACTERISTICS,
+                                before_overlay)
+        assert written_add_section(sample, name, content, DATA_CHARACTERISTICS, before_overlay) == _new(p)
+
+    @pytest.mark.parametrize("library,functions", [(b"pvext.dll", [b"PvOne", b"PvTwo"]), (b"pvempty.dll", [])])
+    def test_add_imports(self, extractor: PEFeatureExtractor, sample: bytes, library: bytes, functions: list[bytes]) -> None:
+        p = predict_add_imports(extractor, extractor.item_table(sample), sample, library, functions, False)
+        assert written_add_imports(sample, library, functions, False) == _new(p)
+
+    @pytest.mark.parametrize("index,name", [(0, b".data"), (0, b""), (99, b".x")])
+    def test_rename(self, extractor: PEFeatureExtractor, sample: bytes, index: int, name: bytes) -> None:
+        p = predict_rename(extractor, extractor.item_table(sample), sample, index, name)
+        assert written_rename(sample, index, name) == _new(p)
+
+    @pytest.mark.parametrize("index", [DEBUG_ENTRY, SECURITY_ENTRY])
+    def test_zero_entry(self, extractor: PEFeatureExtractor, sample: bytes, index: int) -> None:
+        p = predict_zero_entry(extractor, extractor.item_table(sample), sample, index)
+        assert written_zero_entry(sample, index) == _new(p)

@@ -425,6 +425,11 @@ class Engine:
             raise RuntimeError("the declaration does not apply or was flagged")
         return self._fill(z, p.features(self.ext.readouts)), p.new, max(0, len(p.new) - len(z))
 
+    def structural(self, z: bytes, predict: Callable[[], Optional[Prediction]],
+                   write: Callable[[], Optional[bytes]]) -> tuple[np.ndarray, bytes, int]:
+        """A declared structural operation, given as its `catalogue.predict_*` and its `catalogue.written_*`."""
+        return self.declared(z, predict())
+
     def inplace(self, z: bytes, edits: list[ByteEdit]) -> tuple[np.ndarray, bytes, int]:
         """Score and write a chain of in-place overwrites (`reach.predict`); raise if any step is flagged."""
         table, old, p = self.table(z), z, None
@@ -475,6 +480,14 @@ class RealEngine(Engine):
             raise RuntimeError("the operation does not apply")
         return self.score(p.new), p.new, max(0, len(p.new) - len(z))
 
+    def structural(self, z: bytes, predict: Callable[[], Optional[Prediction]],
+                   write: Callable[[], Optional[bytes]]) -> tuple[np.ndarray, bytes, int]:
+        """Write and extract a structural operation; only the written file is needed, so nothing is predicted."""
+        new = write()
+        if new is None:
+            raise RuntimeError("the operation does not apply")
+        return self.score(new), new, max(0, len(new) - len(z))
+
     def inplace(self, z: bytes, edits: list[ByteEdit]) -> tuple[np.ndarray, bytes, int]:
         """Write and extract a chain of in-place overwrites."""
         if not edits:
@@ -488,8 +501,11 @@ def _sec_candidate(engine: Engine, name: str, content: bytes) -> Candidate:
     raw = name.encode()[:8]
 
     def thunk(z: bytes) -> tuple[np.ndarray, bytes, int]:
-        return engine.declared(z, catalogue.predict_add_section(engine.ext, engine.table(z), z, raw, content,
-                                                                 DATA_CHARACTERISTICS, False))
+        return engine.structural(
+            z,
+            lambda: catalogue.predict_add_section(engine.ext, engine.table(z), z, raw, content, DATA_CHARACTERISTICS,
+                                                  False),
+            lambda: catalogue.written_add_section(z, raw, content, DATA_CHARACTERISTICS, False))
 
     return ("sec", len(content), thunk)
 
@@ -499,7 +515,8 @@ def _imp_candidate(engine: Engine, library: str, functions: list[str]) -> Candid
     lib, fns = library.encode(), [f.encode() for f in functions][:20]
 
     def thunk(z: bytes) -> tuple[np.ndarray, bytes, int]:
-        return engine.declared(z, catalogue.predict_add_imports(engine.ext, engine.table(z), z, lib, fns, False))
+        return engine.structural(z, lambda: catalogue.predict_add_imports(engine.ext, engine.table(z), z, lib, fns, False),
+                                 lambda: catalogue.written_add_imports(z, lib, fns, False))
 
     return ("imp", 1 << 16, thunk)
 
@@ -509,7 +526,8 @@ def _ren_candidate(engine: Engine, name: str) -> Candidate:
     raw = name.encode()[:8]
 
     def thunk(z: bytes) -> tuple[np.ndarray, bytes, int]:
-        return engine.declared(z, catalogue.predict_rename(engine.ext, engine.table(z), z, 0, raw))
+        return engine.structural(z, lambda: catalogue.predict_rename(engine.ext, engine.table(z), z, 0, raw),
+                                 lambda: catalogue.written_rename(z, 0, raw))
 
     return ("ren", 0, thunk)
 
@@ -518,7 +536,8 @@ def _rm_candidate(engine: Engine, op: str, index: int) -> Candidate:
     """Remove a data-directory entry: debug (`rdb`) or security (`rsg`) (catalogue.predict_zero_entry; in place)."""
 
     def thunk(z: bytes) -> tuple[np.ndarray, bytes, int]:
-        return engine.declared(z, catalogue.predict_zero_entry(engine.ext, engine.table(z), z, index))
+        return engine.structural(z, lambda: catalogue.predict_zero_entry(engine.ext, engine.table(z), z, index),
+                                 lambda: catalogue.written_zero_entry(z, index))
 
     return (op, 0, thunk)
 

@@ -78,6 +78,10 @@ __all__ = [
     "predict_insert_gap",
     "predict_rename",
     "predict_zero_entry",
+    "written_add_section",
+    "written_add_imports",
+    "written_rename",
+    "written_zero_entry",
 ]
 
 
@@ -981,3 +985,41 @@ def predict_zero_entry(extractor: PEFeatureExtractor, table: ItemTable, z: bytes
                 added += _tagged([section._overlay_item(written.new, after, locating)], "section")
     kept = _kept(table, n, removed)
     return predict_structural(table, z, written.edits, removed, added, kept, extractor.recognizers)
+
+
+################################################################################
+# The same operations, written only (no declaration)
+################################################################################
+
+# NOTE: the extraction-scored adaptive search (`RealEngine`) needs only the file each `predict_*` writes, not its
+# prediction, which cost more than extracting the file (session 69's profile). Each `written_*` returns the
+# `Prediction.new` of its `predict_*` under the same conditions for applying, without the declaration. One condition
+# is left out: `predict_rename` also abstains when the item table holds a different number of sections than pefile
+# parses, which needs the table; on 357 renames of 48 evaluation and pilot files it never did, nor did any
+# `predict_*` raise where its writer applied (session 69).
+def written_add_section(z: bytes, name: bytes, content: bytes, characteristics: int,
+                        before_overlay: bool) -> Optional[bytes]:
+    """The file `predict_add_section` writes, or None where it does not apply."""
+    written = write_section(z, name, content, characteristics, before_overlay)
+    return None if _parse(z) is None or written is None else written.new
+
+
+def written_add_imports(z: bytes, library: bytes, functions: list[bytes], before_overlay: bool) -> Optional[bytes]:
+    """The file `predict_add_imports` writes, or None where it does not apply."""
+    written = write_imports(z, library, functions, before_overlay)
+    return None if _parse(z) is None or written is None else written.new
+
+
+def written_rename(z: bytes, index: int, name: bytes) -> Optional[bytes]:
+    """The file `predict_rename` writes, or None where it does not apply (see the NOTE above)."""
+    pe = _parse(z)
+    if pe is None or not 0 <= index < len(pe.sections):
+        return None
+    return write_rename(pe, z, index, name).new
+
+
+def written_zero_entry(z: bytes, index: int) -> Optional[bytes]:
+    """The file `predict_zero_entry` writes, or None where it does not apply."""
+    pe = _parse(z)
+    written = None if pe is None else write_zero_entry(pe, z, index)
+    return None if written is None else written.new
