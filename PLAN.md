@@ -382,15 +382,18 @@ records of the §5 reviews, the table remake and the ERDALT check, is in
    (2.4) pefile's early stops in imports and exports (~12): **kept**, listed with the parser caps; (2.5) the
    string-pattern typos: **fixed, all three** (`registry_key` as `HKEY_|HKLM|HKCU`, `.click(` literal, `email_addr` a
    bounded standard e-mail pattern; v3's feature names kept, `onlick` included, so the column order stays). The user:
-   we already fix several v3 bugs, so fix the obvious ones too. The authenticode definitions (§2.6) stay v3's. Then the deviations table (§3 of that record) into
-   Appendix D in small blocks, and any `features.py` change before the featurization. The audit steps at scale all
-   have a `run.sh` (`pipeline/1-audit/`), waiting only on the audit's file list (`FILES`): a protocol item, best
-   decided with the malware count.
+   we already fix several v3 bugs, so fix the obvious ones too. The authenticode definitions (§2.6) stay v3's.
+   **Done in session 66:** both fixes in `features.py` (`DataDirectoriesReserved`, `StringExtractorFixed`, installed
+   with the merged imports by `fix_quirks`; 47201e2), the reference fixtures regenerated, the identity check's
+   differences exactly the fixed features; Appendix D's *Changes to EMBER* with Table 8 (635eb6b; counts blue until
+   `1-audit/deviations` runs at scale). The audit steps at scale all have a `run.sh` (`pipeline/1-audit/`), waiting
+   only on the audit's file list (`FILES`): a protocol item, decided with the malware count.
 3. **Design and launch the scale-up as one protocol** (each item agreed before code; long runs as `run/` scripts for the
    user, possibly on the second server), **on the files our copy holds in full in every split** (the `truncated` flag
    false: training subsample, test split, attacked malware; decision 8 (iv)): seeds 0-2, full splits; one training set
    and one attack protocol for every detector of §5 (Tables 4 and 5 now show two different unconstrained detectors;
-   Table 5's two halves with the same detectors); ERDALT trained as in run 133 (their full 310-epoch schedule, epoch
+   Table 5's two halves with the same detectors; the pilot's adversarial training read the plain `ember2024` store,
+   EMBER v3 without our fixes, which stays only for `check_features.py`'s comparison with the released vectors); ERDALT trained as in run 133 (their full 310-epoch schedule, epoch
    chosen by their criterion; R19's check found the training sound, so no change); enough malware that PV and the expert set are not judged on 8-9 files; the adaptive budget at
    scale (~3,000 CPU-h at 5,000 candidates on 2,000 files; options: the 1,000-candidate checkpoint, a fixed subset, a
    cap on the monotone rows); **MAB-Malware as a held-out attack we did not write**. Hypothesis: MAB-Malware finds PV's

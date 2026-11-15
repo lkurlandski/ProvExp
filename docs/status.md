@@ -97,22 +97,21 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
   everything); `run/` is a historical record. Checked byte-identical against the old code
   (`pipeline/setup/identity_check.sh`). `pipeline/README.md` maps every paper result to its step: **every number in the
   paper comes from the scale-up** (user, session 64).
-- **The extractor audit pass (session 65): done, waiting on the user's decisions.** `docs/evidence/extractor-audit.md`:
-  the existing deviations and five new candidates, each with an example, counts on the 2,000 test files (in / outside
-  the population) and a recommendation; the proposed deviations table for Appendix D (not yet in the `.tex`). The one
-  recommended change to `features.py`: thrember's directory loop drops the last directory read instead of the reserved
-  one (13 files, 11 in the population, mostly .NET programs losing their CLR header). Every `1-audit` step now has a
-  `run.sh` (smoke-tested end to end), with the chained edits and Table 3's witness counts added and a new
-  `1-audit/deviations` step; the escape audit's writes no longer crash on files where pefile's `write()` rewrites
-  other bytes.
+- **The extractor audit (sessions 65-66): decided and applied.** `docs/evidence/extractor-audit.md` §2. Fixed (pure
+  additions, installed by `fix_quirks` in `features.py`, which replaces `merge_import_descriptors` at every
+  patched-extractor call site and in `SumsFeatureExtractor`): thrember's directory loop now skips the entry named
+  RESERVED, not the last one read (13/2,000 test files); three string patterns corrected (`registry_key`,
+  `email_addr`, `.click(`; v3's names kept; 411/2,000). Kept and listed: the entry section on misaligned sections,
+  alignment bits as flags, pefile's limits on imports and exports. Appendix D opens with *Changes to EMBER* and Table 8
+  (counts on the 2,000 test files, blue until `1-audit/deviations` runs at the scale-up). The plain `PEFeatureExtractor()`
+  still computes v3's released vectors (for `check_features.py`); the pilot's adversarial-training detector reads that
+  unpatched store, which the scale-up's one training set replaces (PLAN.md step 3).
 
 ## Waiting on the user
 
-- **The audit pass's decisions (next; `docs/resume-prompt.md`)**: the five candidates of
-  `docs/evidence/extractor-audit.md` §2 (recommended: fix the directory off-by-one; keep the rest), the deviations
-  table (§3) before it goes into Appendix D, and the audit's file list (`FILES` of every `1-audit/*/run.sh`). Then any
-  `features.py` change before the scale-up's featurization, then the remaining protocol items (malware count first; each step's `run.sh` gets the scale-up's
-  arguments as its item is decided), then a session on the cluster's head node (`SETUP.md`, `check.sh`, the "TO
+- **The scale-up's protocol items (next; `docs/resume-prompt.md`)**, malware count first, decided together with the
+  audit's file list (`FILES` of every `1-audit/*/run.sh`) and leave-one-out's cost; each step's `run.sh` gets the
+  scale-up's arguments as its item is decided. Then a session on the cluster's head node (`SETUP.md`, `check.sh`, the "TO
   CONFIRM" values). Number-free rebuttal text fixes (R4, R5, R15, R21) are step 4 (while the scale-up runs).
 
 ## Scheduled (in order; PLAN.md, next steps)
@@ -121,7 +120,7 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
    ~~R7's widening~~ (done, sessions 53-62), ~~the extractor question~~ (decided, session 62: stay on pefile).
 2. ~~The final review/rebuttal revisit~~ (done, session 63: nothing else before the scale-up).
 3. The scale-up (PLAN.md step 3): ~~the refactoring session~~ (done, session 64), ~~the extractor audit pass~~ (done,
-   session 65; **its decisions wait on the user**),
+   session 65; decided and applied in session 66),
    the remaining protocol items (malware count first; one seed, 5,000 extraction-scored candidates, full
    splits, one training set and protocol for every detector, the trial row, iterated adversarial training, the R7 blue
    values and PROTOCOL recounts), then a head-node session on the cluster.
@@ -131,6 +130,18 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
 7. Introduction, discussion, abstract last.
 
 ## Session log
+
+- **2026-11-15 (session 66): the audit's decisions applied.** The user decided the five candidates: directory
+  off-by-one fixed; entry section, alignment bits and pefile's early stops kept and listed; the string-pattern typos
+  **fixed, all three** (against my recommendation to keep v3's: "we're already fixing a lot of bugs ... we might as
+  well fix these obvious bugs"). Implemented as `DataDirectoriesReserved`, `StringExtractorFixed` and the installer
+  `fix_quirks` (47201e2), with tests; the stale `scripts/item_checks.py` comment fixed. Identity check vs run 146:
+  hypothesis held (the `ember2024` and `expert` stores identical; the sums store differs only in the fixed features,
+  407/2,048 files; catalogue only in observed-cell counts), plus one adaptive row on `0485edc2...` from session 65's
+  escape-write fix. Reference fixtures regenerated (sums only); full suite 1,737 passed. The deviations module now
+  counts the string fix (411/2,000, 335 in the population; hypothesis ~400 held) and pefile's import error stop (26,
+  more than the one case noted in session 65; most read what LIEF reads). Appendix D: *Changes to EMBER* and Table 8
+  (635eb6b, plan and draft accepted as written; `array` package added for ragged columns). Docs 0bb9c55, f555d10.
 
 - **2026-11-14 (session 65): the extractor audit pass.** Read all of thrember's extractor and the pefile rules its
   features rest on, against the three principles; counted each candidate on the 2,000 test files

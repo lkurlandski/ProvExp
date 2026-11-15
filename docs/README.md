@@ -24,7 +24,7 @@ check `manuscript/main.aux` (`grep newlabel manuscript/main.aux`), and add the t
 | `docs/status.md` | current state, what waits on the user, short session log | every session; update at the end |
 | `pipeline/README.md` | the scale-up's stages and steps, and which step produces each result of the paper | before running or adding any experiment |
 | `SETUP.md` | from a fresh clone to a system that runs `pipeline/` (environment, dataset, system config, the check) | setting up a new machine or the clusters |
-| `docs/resume-prompt.md` | where the next session starts: the extractor audit pass (the deviations table of Appendix D; `1-audit` at scale, with the hand table and a chained-edit check), the scale-up's first work | starting the next main-line session |
+| `docs/resume-prompt.md` | where the next session starts: the scale-up's protocol items, the malware count and the audit's file list first | starting the next main-line session |
 | `docs/fable-theory-prompt.md` | a one-off prompt for a Claude Fable 5.2 session (credits until 2026-11-17): audit the proofs of §3, then rank ways to strengthen the theory; output `docs/evidence/fable-theory-analysis.md` | launching that session; reading its output |
 | `docs/reviews/rebuttal-prompt.md` | the rebuttal procedure, kept for reference: once `run_rebuttal.sh` has written the triage, the user decides on the triage table, then on drafts of the groups worth investigating. The 2026-11-12 triage is complete; the next revisit folds into `docs/resume-prompt.md` | re-running the rebuttal procedure on a future review |
 | `docs/checkpoint-prompt.md` | the user's prompt for ending a session | the user ends a session |
@@ -66,6 +66,7 @@ or when changing an experiment. Run scripts are in `run/` (one per step, numbere
 |---|---|
 | `docs/archive/status-log-2026-11-12.md` | the session log, sessions 41-42 (search, don't read) |
 | `docs/archive/status-log-2026-11-10-to-11.md` | the session log, sessions 29-39 (search, don't read) |
+| `docs/archive/resume-prompt-2026-11-15-s66.md` | the resume prompt of session 66 (written in session 65): the audit's five decisions, the deviations table, the `features.py` fixes (all done in session 66) |
 | `docs/archive/resume-prompt-2026-11-14-s64.md` | the resume prompt of session 64 (written in session 63): the refactoring before the scale-up (done in session 64: `pipeline/`, `SETUP.md`, byte-identical to the old code) |
 | `docs/archive/resume-prompt-2026-11-14-s65.md` | the resume prompt of session 65 (written in session 64): the extractor audit pass (done in session 65: `docs/evidence/extractor-audit.md`; run.sh for every audit step) |
 | `docs/archive/status-log-2026-11-13-s55-58.md` | the status log of sessions 55-58 (R7's closure check and LIEF's overlay rule, `ent` in the attacks, run 143 cleared, the triage table) |
