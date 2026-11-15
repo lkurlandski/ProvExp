@@ -166,12 +166,13 @@ rise as "to at most the cap").
 directories that is `RESERVED` (always zero), but pefile reads only `NumberOfRvaAndSizes` entries, so a file declaring
 15 loses its COM descriptor (the CLR header of a .NET program) and one declaring 3 loses its resource directory. On
 2,000 EMBER2024 test files: 13 files, 11 of them .NET programs with 15 directories. A fix: skip by name
-(`if raw_obj[i]["name"] == "RESERVED": continue` over `range(1, len(raw_obj))`). Our handling: decided by the user
-(`docs/evidence/extractor-audit.md` §2.1).
+(`if raw_obj[i]["name"] == "RESERVED": continue` over `range(1, len(raw_obj))`). Our handling (user, session 66):
+fixed, `DataDirectoriesReserved` in `features.py`, installed by `fix_quirks`.
 
 ## 12. thrember: typos in the string patterns (found 2026-11-14)
 
 In `StringExtractor.__init__`: `email_addr` repeats `mac_addr`'s pattern, so the two features are always equal;
 `registry_key` searches `KHEY_|KHLM|HKCU` instead of `HKEY_|HKLM|HKCU` (93 of 2,000 test files contain `HKEY_` or
-`HKLM`); `.click(` is the unescaped pattern `.click`; the key `onlick` is misspelt (its pattern is right). Our handling:
-decided by the user (`docs/evidence/extractor-audit.md` §2.5; recommended: keep v3's definitions, report).
+`HKLM`); `.click(` is the unescaped pattern `.click`; the key `onlick` is misspelt (its pattern is right). Our handling (user,
+session 66): the three patterns fixed, v3's names kept (`StringExtractorFixed`, installed by `fix_quirks`); the fix
+changes a feature on 411 of the 2,000 test files.
