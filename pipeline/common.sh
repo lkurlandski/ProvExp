@@ -21,7 +21,7 @@ source env/bin/activate
 export PYTHONHASHSEED=0
 export OMP_NUM_THREADS="${OMP_NUM_THREADS:-1}"
 NUM_WORKERS="${NUM_WORKERS:-$CORES}"
-OUT_ROOT="${OUT_ROOT:-artifacts/scaleup}"
+export OUT_ROOT="${OUT_ROOT:-artifacts/scaleup}"  # exported: provexp.registry reads it
 mkdir -p logs
 
 tasks() {  # number of shards

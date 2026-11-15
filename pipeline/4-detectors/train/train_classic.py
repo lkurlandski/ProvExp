@@ -140,7 +140,7 @@ def main() -> None:
     parser.add_argument("--limit", type=int, default=None, help="Use at most this many samples per split (for testing).")
     parser.add_argument("--complete_only", action="store_true", help="Only files below 4,000,000 bytes, in every split.")
     parser.add_argument("--poison", type=Path, default=None, help="A poison directory (scripts/trigger_poison.py); its files replace their clean training rows.")
-    parser.add_argument("--augment", type=Path, default=None, help="A directory with X.npy and files.parquet (pipeline/4-detectors/adversarial-training/attack_training.py); its rows are APPENDED to the training split (adversarial training).")
+    parser.add_argument("--augment", type=Path, nargs="+", default=None, help="A directory with X.npy and files.parquet (pipeline/4-detectors/adversarial-training/attack_training.py); its rows are APPENDED to the training split (adversarial training).")
     parser.add_argument("--neutralize", type=Path, default=None, help="A file of feature names, one per line, to set to zero in every split.")
     parser.add_argument("--monotone", type=Path, default=None, help="GBDT only. A file of `name<TAB>sign` lines (sign +1 or -1): monotone constraints.")
     parser.add_argument("--suffix", type=str, default=None, help="The output directory's suffix (default: the poison's name).")
@@ -202,7 +202,11 @@ def main() -> None:
     if args.augment is not None:
         if args.suffix is None:
             raise ValueError("Give a --suffix with --augment, so the model does not overwrite the clean one.")
-        X_tr, y_tr, augment = apply_augment(X_tr, y_tr, args.augment, neutral)
+        summaries = []
+        for directory in args.augment:  # iterated adversarial training appends several rounds
+            X_tr, y_tr, summary = apply_augment(X_tr, y_tr, directory, neutral)
+            summaries.append(summary)
+        augment = summaries[0] if len(summaries) == 1 else {"rounds": summaries}
 
     if args.learner == "gbdt":
         extra: dict[str, Any] = {"monotone_constraints": constraints} if constraints else {}

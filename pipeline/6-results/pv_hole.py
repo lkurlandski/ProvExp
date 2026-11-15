@@ -122,6 +122,9 @@ def main() -> None:
     parser.add_argument("--tol", type=float, default=1e-6)
     parser.add_argument("--attacks", nargs="+", default=None, help="Derive PV from these attacks only (default: all).")
     parser.add_argument("--tag", type=str, default="", help="Suffix of the output files, e.g. '-seen'.")
+    parser.add_argument("--exclude", type=Path, default=None, help="A file of feature names (one per line) left out "
+                        "of the selection, e.g. the re-encoding's sums on the sums store (reencoded.neutralize.txt): "
+                        "PV then selects among EMBER's features, as on the pilot's feature-only store.")
     parser.add_argument("--drop_import_loss", type=int, default=None,
                         help="Leave out attacked outputs that lower at least this many `imports:` features (outputs "
                              "whose import table no longer parses), as a careful defender would.")
@@ -136,6 +139,9 @@ def main() -> None:
         if unknown:
             raise ValueError(f"Attacks not in the perturbation vectors: {sorted(unknown)}")
         df = df.filter(pl.col("attack").is_in(args.attacks))
+    if args.exclude is not None:
+        excluded = set(args.exclude.read_text().splitlines()) - {""}
+        df = df.drop([c for c in df.columns if c in excluded])
     broken: list[list[str]] = []
     if args.drop_import_loss is not None:
         # NOTE: the shift attacks leave a few files with an import table pefile no longer parses; their hundreds of
