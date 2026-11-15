@@ -12,7 +12,7 @@ copy and the copy re-extracted (thrember's features with merged imports):
     slk       every slack region of the file at once, zeros, then random printable bytes
     dos       every DOS region at once, the same two contents
     hdr       every header field of the catalogue (HDR_FIELDS) at once, the same two contents
-    imp       with `--donors`: `--imports` libraries drawn from the import tables of benign training files (each with
+    imp       with `--donors` or `--donor_list`: `--imports` libraries drawn from the import tables of benign training files (each with
               its functions, at most `--functions`), each added on its own with catalogue_checks.py's writer (our
               byte-level edit, not LIEF): the content variety a practitioner adding imports would use
 
@@ -167,6 +167,8 @@ def main() -> None:
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--workers", type=int, default=16)
     parser.add_argument("--donors", type=int, default=0, help="Benign training files to draw imports from (0: none).")
+    parser.add_argument("--donor_list", type=Path, default=None, help="Instead of --donors: a donor list (name; "
+                        "benign training files, the scale-up's 2-features/files/tr-donors-0.parquet), every file used.")
     parser.add_argument("--donor_db", type=Path, default=EMBER2024_DATA / "tr")
     parser.add_argument("--donor_meta", type=Path, default=Path("artifacts/features/ember2024/tr/meta.parquet"),
                         help="Metadata with name, label, truncated, status: where the benign donors are drawn from.")
@@ -175,11 +177,20 @@ def main() -> None:
     args = parser.parse_args()
 
     libraries: list[Library] = []
-    if args.donors:
-        meta = pl.read_parquet(args.donor_meta).filter((pl.col("label") == 0) & ~pl.col("truncated")
-                                                      & (pl.col("status") == "ok"))
-        donors = meta["name"].sample(args.donors, seed=args.seed).sort().to_list()
-        cache = args.out.with_name(f"donor-imports-{args.donors}-{args.functions}-{args.seed}.parquet")
+    if args.donors and args.donor_list is not None:
+        raise ValueError("Give --donors (a random draw) or --donor_list, not both.")
+    if args.donors or args.donor_list is not None:
+        if args.donor_list is not None:
+            donor_df = pl.read_parquet(args.donor_list)
+            if "label" in donor_df.columns and (donor_df["label"] != 0).any():
+                raise ValueError(f"The donor list {args.donor_list.as_posix()} holds files that are not goodware.")
+            donors = donor_df["name"].sort().to_list()
+            cache = args.out.with_name(f"donor-imports-{args.donor_list.stem}-{args.functions}.parquet")
+        else:
+            meta = pl.read_parquet(args.donor_meta).filter((pl.col("label") == 0) & ~pl.col("truncated")
+                                                          & (pl.col("status") == "ok"))
+            donors = meta["name"].sample(args.donors, seed=args.seed).sort().to_list()
+            cache = args.out.with_name(f"donor-imports-{args.donors}-{args.functions}-{args.seed}.parquet")
         if cache.exists():  # NOTE: reading the donors takes minutes; the draw is fixed by its arguments, so reuse it.
             c = pl.read_parquet(cache)
             libraries = [(d, list(f)) for d, f in zip(c["library"].to_list(), c["functions"].to_list())]
