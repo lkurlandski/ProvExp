@@ -282,3 +282,198 @@ threat model lets the attacker do:
 Kinds 1 and 2 are intrinsic *to the pair of extractor and threat model*, not to the threat model alone: a different
 extractor can move evidence from kind 2 into the fixed sums (§3.2), or make a free sum one-sided (a verified
 signature). That is the fourth term the question did not name, and I think it is the largest one that can be moved.
+
+## 3. The extension
+
+Two candidates. The first answers the question as asked (what the sign table forgets) and I recommend against it. The
+second is what I think can lower the cost; it adds nothing to §3's definitions.
+
+### 3.1 A relational rule for linear readouts (stated for the record; not recommended)
+
+Plain version: the table judges a formula over several sums by the directions of the sums, one at a time. For a
+weighted total of additive sums one can do better with what the signature already holds: evaluate the weighted total
+on each *change* and take the signs that occur. The quantity "bytes that are not zero bytes" is the size minus the
+count of zero bytes; the table calls it two-sided (an up sum minus an up sum), yet every change that adds a byte
+either raises it or leaves it, so it is up.
+
+**Rule (one more row of Table 1).** For a readout $\rho_j(\mathbf{s}) = \sum_{k \in K_j} w_k s_k$ over additive sums,
+the direction is the set of signs of $\sum_k w_k\,(\nu_\tau(c')_k - \nu_\tau(c)_k)$ over the changes $c \to c'$ in
+$\Delta$ (with 0 added).
+
+**Soundness** [proved]. By Proposition 1(i) the readout changes by the total of these terms over the changes the
+delta is made of, and a direction is closed under addition. Five lines in Appendix C, no new hypothesis.
+
+**What it gives.** The weight vectors whose readout is *up* form the dual cone of the change vectors,
+$G_\Delta^{*} = \{\mathbf{w} : \mathbf{w} \cdot \mathbf{g} \ge 0 \text{ for all } \mathbf{g} \in G_\Delta\}$. The
+table certifies only the dual of the sign box, which is smaller. Modulo the identities that hold on the population,
+the two coincide exactly when there is no sign slack (§2.2) [believed: bipolar theorem for finitely generated cones;
+I did not write out the closure condition for an infinite set of change vectors]. In abstract-interpretation terms
+this is the step from the sign domain to a relational one (Karr's linear equalities 1976, Cousot and Halbwachs's
+polyhedra 1978) [memory], so the idea is theirs and the instance would be ours.
+
+**Why not.** On EMBER I find no block where it recovers evidence that matters: the import block has no sign slack
+(§2.2); the two-sided sums of the overwrites and of the entry write are free (§2.3), so nothing can recover them; the
+invariants of a rename (totals over name buckets) are already sums, and leaving rename out of the threat model
+recovers 0.1 points; what remains are inequalities such as "an added string brings at least five printable
+characters", which I expect to carry no detection. It would add a table row, a notion ("change vector") and half a
+column for at most a few tenths of a point. It also brings back coupling, which was dropped for complexity. The
+honest place for it is one sentence in the discussion: the rule exists and is sound, and the instance did not need it.
+
+### 3.2 Anchored sums: raise the fixed share of the extractor (recommended to test)
+
+Plain version: the detector is free on sums that no edit can move, and 80% of what it learns comes from them. EMBER
+has few such sums because most of its totals run over *all* items of a kind, and the attacker can add items of almost
+every kind. A total over the items the attacker cannot add, remove or rewrite is fixed, and the detector may then
+read it without any constraint: low values, high values, proportions, anything. The sums re-encoding of Appendix D
+already works this way for two-sidedness (it recovered 2.4 points); this is the same move for one-sidedness.
+
+**In §3's terms nothing is new.** Split a kind $\tau$ into two kinds: $\tau_1$, the items the extractor locates
+through content the threat model cannot write (*anchored*), and $\tau_2$, the rest. Give each its own sums. If the
+signature has no change on $\tau_1$ ($\Delta_{\tau_1} = \emptyset$), Definition 9 makes every sum fed only by
+$\tau_1$ fixed, and Theorem 1 and Corollary 1 apply as they stand.
+
+**Proposition G (refining kinds never shrinks the class).** [proved under the stated correspondence] Let
+$\varphi'$ split kind $\tau$ of $\varphi$ into $\tau_1, \tau_2$ and each sum $k$ fed by $\tau$ into $k_1, k_2$ with
+$s_k = s_{k_1} \star_k s_{k_2}$, and let the signature of $\varphi$ contain every change of the signature of
+$\varphi'$ on $\tau_1$ and $\tau_2$ (and a removal and an addition for any item an edit moves between them). Then
+$d_k \supseteq d_{k_1} \cup d_{k_2}$, and every score that is monotone with respect to the table of $\varphi$ is
+monotone with respect to the table of $\varphi'$ when it reads $s_k$ as $s_{k_1} \star_k s_{k_2}$.
+
+*Proof.* A change that raises $k_1$ or $k_2$ raises the item's contribution to $k$, so it is counted in $d_k$;
+likewise for lowering. If $s_{k_1}$ and $s_{k_2}$ change with signs in $d_{k_1}$ and $d_{k_2}$, their combination
+changes with a sign in the union (a total of two changes; the larger or smaller of two values that each moved
+within a direction). $\square$
+
+Soundness never depends on the anchor being right. If some edit can move an item across the split, the covering
+signature must contain that change, the table then marks both parts as moving, and the gain is lost, not the
+guarantee. The anchor is checked the way closure is: on the corpus.
+
+**What a practitioner gets.** A design rule that the table itself audits: *put evidence where the threat model cannot
+write, and read it there separately.* For each kind, ask which items are located through fixed content; give them
+their own sums; the derived table confirms which came out fixed. In the PE instance the natural anchors are the
+section that holds the entry point and the regions that loader-used directories point to (resources, relocations,
+TLS), since the threat model rewrites none of them; the anchored sums would be that section's byte counts,
+byte-entropy counts, string counts, sizes and entropy. This stays in §4 and Appendix D, never in a definition.
+
+**Cost.** §3: nothing, or two sentences after Corollary 1 saying that a detector is unconstrained on fixed features
+and that an extractor can be written to have more of them. §4.2 and Appendix D: one more re-encoding, about 100
+words. §5.4: one row in Table 5 and a sentence. Work: declare the new kinds, derive the table again, re-featurize
+(a long job, the user's decision), and re-run the population and closure checks, where new anchors located through
+header fields are exactly the place earlier escapes were found.
+
+**The strongest argument against.** It is extractor design, not theory, and its instance is PE-specific; it re-opens
+the feature set, and with it the corpus checks and the risk of new population holes; its gain is my prediction, not a
+measurement; and it moves §5.4 a step toward "we built a better defense". My answer: experiment 4 bounds the gain
+from above in one minute of training before any of that work is done, and the finding it supports is about cost
+("the price depends on how much evidence the extractor reads where the attacker cannot write"), which is what §5.4
+currently cannot say.
+
+### 3.3 The signature (an extractor decision, PLAN.md step 2c)
+
+By §2.3 the entry write's 3.9 points cannot be recovered by any detector on the present features. They can be
+recovered by the extractor: a sum that counts a signature only if its hash matches the file *and* its chain reaches a
+trusted root can be lowered by the threat model (break it) and not raised (no key), so it is a down sum, and the
+detector before the entry write (89.6% at 1% FPR, 74.8% at 0.1%) is a measurement of roughly that detector, to the
+extent that the signatures in the corpus verify. Hash match alone is not enough, since anyone can sign a file with
+their own certificate. This is PE-specific and belongs to §4 and the discussion; in §5.4 it would explain a number:
+*the largest single price is the price of parsing a signature without verifying it*, which matches Kim et al.'s
+observation about anti-virus products that the paper already cites.
+
+## 4. Experiments for afterwards
+
+All on the pilot stores (`ember2024-sums-10-v2`, the loose table, seed 0), each one or a few GBDT trainings of about
+one minute. Reference points: unconstrained 93.5 / 84.4 (TPR at 1% / 0.1% FPR), monotone on the sums 85.7 / 68.1,
+before the entry write 89.6 / 74.7.
+
+1. **Free evidence under the loose table.** The unconstrained detector with the 1,474 two-sided sums neutralized
+   (the drop-only detector of the price list, on the loose table). *Claim tested:* Proposition E's part of the cost
+   is small. *Prediction:* 92.3 to 93.2 at 1% FPR (0.3 to 1.2 points lost), 76 to 79 at 0.1%.
+2. **The learner.** The same monotone detector with (a) `monotone_constraints_method` `intermediate` and `advanced`,
+   (b) iterations until the validation metric stops improving (cap 3,000) instead of the 500 cap that every model
+   now hits, (c) a small grid over `num_leaves` and `min_data_in_leaf`. Record the TPR on the *training* files too
+   (now 91.8 against 100.0 unconstrained). Check monotonicity afterwards as now (the adaptive search's largest score
+   drop is exactly zero), since the guarantee rests on the library's enforcement. *Claim tested:* part of the cost is
+   the learner. *Prediction:* +1 to +3 points at 1% FPR; I put 60% on at least +1 and 25% on at least +3. A second
+   learner (a monotone network) would be the follow-up only if this moves the number.
+3. **The fixed sums alone.** An unconstrained GBDT on the 203 fixed sums, everything else neutralized. It is
+   unevadable with no constraint at all. *Claim tested:* the monotone detector is mostly a free detector on what the
+   attacker cannot write. *Prediction:* 76 to 85 at 1% FPR, so the 1,978 one-sided sums add under 10 points.
+4. **Go/no-go for anchoring (an upper bound, not a detector).** The monotone detector with the constraints on the
+   683 `body_*` sums lifted, as if all body content were anchored. *Claim tested:* one-sidedness of the body sums
+   costs enough to be worth an anchored re-encoding. *Prediction:* +1.5 to +3 points at 1% FPR. Below +1: drop §3.2.
+5. **Verified signatures.** On the pilot test files with a certificate table, the share whose signature verifies
+   (hash and chain), for benign and for malware. *Claim tested:* the detector before the entry write measures what a
+   verifying extractor would give. *Prediction:* over 90% of signed benign files verify, and clearly fewer of the
+   signed malware, so the verified sum is at least as good benign evidence as the parsed one and the 3.9 points
+   are recoverable by the extractor. This one reads files and touches the extractor, so it is the user's decision.
+
+A caution for all five: the pilot trains on a 10% subsample. The unconstrained detector gains 2.6 points at 0.1% FPR
+from the full training set; the monotone detector's gain may differ, so the *cost* can move at the scale-up in
+either direction.
+
+## 5. Proof notes
+
+Short, a by-product. Known already: the ratio rule of Table 1 needs $b \ge 0$.
+
+1. **The sign of a change is defined by subtraction, and pools take infinite values.** On an input with no item
+   that touches a max pool, the pool is $-\infty$; the identity readout is then not a real number (Definition 4 has
+   $\rho_j: \mathcal{S} \to \mathbb{R}$) and "the change $x'_j - \varphi_j(z)$" of Theorem 1 is undefined when the
+   pool stays empty. Smallest fix, in Definition 7: *old* "the change of every feature $j$ has a sign in $D_j$";
+   *new* the same, preceded by "The sign of a change from $x$ to $x'$ is $+$ if $x' > x$, $-$ if $x' < x$, and $0$
+   if they are equal."
+2. **Default values on an empty pool.** An extractor that returns a default on an empty pool applies a readout
+   $g$ to it. $g$ is nondecreasing only if the default is at most every contribution (max pool) or at least every
+   contribution (min pool). A minimum that defaults to 0 is not: adding the first item raises the feature while the
+   min pool's direction under additions is down. Smallest fix, in Appendix C's readout paragraph, one sentence: "A
+   readout that returns a default for an empty pool is nondecreasing only if the default lies below every
+   contribution of a max pool, or above every contribution of a min pool; otherwise the feature takes the last
+   rule." Our instance is unaffected: thrember's three section minima include a literal 0 and are constant on all
+   54,266 pilot test files [measured], which is why the table has them fixed.
+3. **Corollary 1 is slightly more than Gimenez et al.'s Proposition 1.** Their statement asks the classifier to be
+   increasing in every feature; ours leaves it unconstrained on fixed features, which is where our detector takes
+   most of its gain. The proof is right; the sentence "This is Gimenez et al.'s Proposition 1" undersells and
+   slightly misstates it. *Old:* "This is Gimenez et al.'s Proposition~1, with the preorder ``$z'$ is reachable from
+   $z$'' and a feature map made monotone by $D$." *New:* "This is the argument of Gimenez et al.'s Proposition~1,
+   with the preorder ``$z'$ is reachable from $z$'' and, in place of the order $\le$ on the features, the order that
+   $D$ defines, under which two vectors that differ in a fixed feature are not comparable."
+4. **What the body says a monotone detector is.** §3.3: "A gradient-boosted tree trained with monotone constraints,
+   increasing in the up features and decreasing in the down features, and reading no feature marked both, is such a
+   score." True; a reader will not infer that it is *unconstrained in the fixed features*, and §5.4's reading of the
+   cost depends on it. Suggested addition: ", with no constraint on the fixed features".
+5. **The guarantee of the trained detector rests on LightGBM's enforcement of the constraints**, which the paper does
+   not state. The measured zero drops support it. If experiment 2 changes the method, a structural check of the
+   saved trees (every pair of leaves whose boxes are comparable in the table order has ordered values, per tree)
+   would make the claim independent of the library; it is a short function over `model.txt`.
+
+I found no error in the proofs of Proposition 1 and Theorem 1. The step "replacing the old values by the new ones,
+one at a time" is where total order and commutativity are used, and it is stated.
+
+## 6. What I would do next
+
+Run experiments 1 to 4 in one sitting (minutes). If experiment 2 gains a point or more, adopt the better learner
+for the scale-up and report the training-set fit next to the cost. If experiment 4 clears +1, decide on the anchored
+re-encoding together with the signature question, as one deliberate revision of the extractor (PLAN.md step 2c),
+because both need a re-featurization and the same corpus checks. Whatever the numbers, rewrite §5.4's *Where the cost
+lies* around the table of §2.5: which evidence a table-respecting detector may use, that no unevadable detector on
+these sums may use the free ones (Proposition E) or lower its score on a complete block (Proposition B), and how the
+measured cost divides among them. I would not add the relational rule, and I would not look for a data-only bound
+again: §2.4 closes that.
+
+## Appendix: what was run in this session
+
+Prediction only, no training. Scripts were scratch files and are not kept; each is a few lines over
+`artifacts/features/ember2024-sums-10-v2`, the saved models in `artifacts/models/gbdt/`, and
+`artifacts/experiments/a_directions_derived_sums_loose/directions_sums.csv`.
+
+- *Fit.* TPR at 1% / 0.1% FPR on the 207,872 training files and the 54,266 test files: drop-only (unconstrained)
+  100.0 / 99.8 and 93.3 / 79.2; monotone before the entry write 95.2 / 84.6 and 89.6 / 74.7; monotone, loose table
+  91.8 / 78.0 and 85.7 / 68.1. The test values reproduce §5.4's.
+- *Conflicts.* The table of §2.4.
+- *Gain shares.* Split gain of the loose monotone detector by direction: fixed 79.9%, up 20.1%. Its five most-used
+  sums: `characteristics_DLL` (32%), `resource_size`, `basereloc_size`, `AddressOfEntryPoint`, `num_rx`. Split gain of
+  the drop-only detector by direction and by the sign of each split's effect: fixed 40.9%, both 21.2% (the ten
+  sums the entry write frees), up used increasingly 18.8%, up used decreasingly 19.1%.
+- *Table.* Loose sums table, full threat model: 203 fixed, 1,978 up, 0 down, 1,474 both. Before the entry write the
+  ten signature and directory sums were down.
+- *Training settings read from the saved models:* `best_iteration` 500 of 500 for every model,
+  `monotone_constraints_method: basic`.
