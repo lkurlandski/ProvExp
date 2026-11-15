@@ -5,9 +5,10 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
 `docs/archive/` (the log before 2026-11-09 is `docs/archive/status-log-2026-10-to-2026-11-09.md`; sessions 21-28 are in
 `docs/archive/status-log-2026-11-09.md`, sessions 29-40 in `docs/archive/status-log-2026-11-10-to-11.md`, sessions
 41-42 in `docs/archive/status-log-2026-11-12.md`, sessions 43-54 in
-`docs/archive/status-log-2026-11-12-to-13-s43-54.md`, sessions 55-58 in `docs/archive/status-log-2026-11-13-s55-58.md`).
+`docs/archive/status-log-2026-11-12-to-13-s43-54.md`, sessions 55-58 in `docs/archive/status-log-2026-11-13-s55-58.md`, sessions 59-60 in
+`docs/archive/status-log-2026-11-13-s59-60.md`).
 
-## Current state (2026-11-14, through session 65)
+## Current state (2026-11-15, through session 67)
 
 - **Framework (§2-3):** rewritten; the user is reasonably satisfied. Open: the user's holistic read of Sound
   Directions after round 4 (finetuning only).
@@ -106,13 +107,21 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
   (counts on the 2,000 test files, blue until `1-audit/deviations` runs at the scale-up). The plain `PEFeatureExtractor()`
   still computes v3's released vectors (for `check_features.py`); the pilot's adversarial-training detector reads that
   unpatched store, which the scale-up's one training set replaces (PLAN.md step 3).
+- **The scale-up's protocol (session 67): decided** (PLAN.md step 3 (g)). Evaluation set: 1,000 malware and 1,000
+  benign complete test files (`pipeline/2-features/files`), also the audit's `FILES`; ~7-9k CPU-h for the attacks, no
+  fallback needed. Every detector on the full training split's complete files (`--complete_only`), thresholds on the
+  validation split, donors from training goodware (two disjoint sets of 100: the defenses' material and the trial's
+  imports, the attacks on the evaluation set). The learned defenses' material once: the eight toolkit attacks on 10,000
+  training malware, rows for every store and the binaries kept. Trial row learns from the evaluation set; iterated
+  adversarial training 1,000 per round; MAB-Malware at both settings; escapes against three detectors with the
+  adaptive search and the toolkit. Code for the lists, thresholds, donors, complete files and the attacks' `--protocol`
+  committed; the remaining `run.sh` steps are listed in PLAN.md step 3 (g).
 
 ## Waiting on the user
 
-- **The scale-up's protocol items (next; `docs/resume-prompt.md`)**, malware count first, decided together with the
-  audit's file list (`FILES` of every `1-audit/*/run.sh`) and leave-one-out's cost; each step's `run.sh` gets the
-  scale-up's arguments as its item is decided. Then a session on the cluster's head node (`SETUP.md`, `check.sh`, the "TO
-  CONFIRM" values). Number-free rebuttal text fixes (R4, R5, R15, R21) are step 4 (while the scale-up runs).
+- **Nothing blocks the next session.** It implements the scale-up's remaining `run.sh` steps (`docs/resume-prompt.md`),
+  then a session on the cluster's head node (`SETUP.md`, `check.sh`, the "TO CONFIRM" values). Number-free rebuttal
+  text fixes (R4, R5, R15, R21) are step 4 (while the scale-up runs).
 
 ## Scheduled (in order; PLAN.md, next steps)
 
@@ -121,15 +130,27 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
 2. ~~The final review/rebuttal revisit~~ (done, session 63: nothing else before the scale-up).
 3. The scale-up (PLAN.md step 3): ~~the refactoring session~~ (done, session 64), ~~the extractor audit pass~~ (done,
    session 65; decided and applied in session 66),
-   the remaining protocol items (malware count first; one seed, 5,000 extraction-scored candidates, full
-   splits, one training set and protocol for every detector, the trial row, iterated adversarial training, the R7 blue
-   values and PROTOCOL recounts), then a head-node session on the cluster.
+   ~~the protocol items~~ (decided, session 67), the remaining `run.sh` steps (next), then a head-node session on
+   the cluster.
 4. While it runs: §2's closing and contribution 4 aligned with §5; the number-free text fixes R4, R5, R15, R21.
 5. After reading it: final numbers, then shortening §4-5 and §5's question-and-answer emphasis.
 6. A second domain decided with the scale-up's results in hand (the user's call).
 7. Introduction, discussion, abstract last.
 
 ## Session log
+
+- **2026-11-15 (session 67): the scale-up's protocol decided.** With the user, item by item (PLAN.md step 3 (g)):
+  the evaluation set (1,000 + 1,000 complete test files; cost from the pilot's timings ~8-11 CPU-h per detected
+  malware, ~7-9k in all), one training set (full split, complete files), thresholds on the validation split, donors
+  from training goodware (two disjoint sets: R19 depends on the separation), the defenses' material once from 10,000
+  training malware (user: "one and done", so more samples), the trial row from the evaluation set, iterated
+  adversarial training 1,000 per round, escapes with adaptive and toolkit on three detectors. Lists drawn
+  (`artifacts/scaleup/2-features/files/`: 333 malware families plus 209 unlabeled; the family cap leans malware to
+  larger files, as before; the tr draw took 7 min, not the 3 predicted). Code (076e299, 2333496, and the protocol
+  commit): `select_files.py --complete_only --donor_sets`, the trainers' `--complete_only` and validation
+  predictions, `model_threshold`/`detection_at`, `load_attacked`, the attacks' `--protocol {pilot,scaleup}`; the audit
+  steps default to the evaluation set (the catalogue check had defaulted to the pilot files), the escape audit to the
+  whole population. Found: the trainers had never dropped truncated files (a PROTOCOL item; fixed by the flag).
 
 - **2026-11-15 (session 66): the audit's decisions applied.** The user decided the five candidates: directory
   off-by-one fixed; entry section, alignment bits and pefile's early stops kept and listed; the string-pattern typos
@@ -222,23 +243,3 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
   (the escapes), *Where the cost lies*, Table 5 and Appendix D's per-attack table, LIEF's overlay rule in §4.2 and
   Appendix D. Decision (v), user: blue values for the monotone toolkit/MAB cells until the scale-up; the scale-up's
   R7 items listed in PLAN.md step 3. Open: a signature-cloning citation (`% VERIFY`), one 2 pt overfull vbox.
-
-- **2026-11-13 (session 60, R18 track): the trial competitor.** Built the trial table from our own edits, a stronger
-  probe (every section renamed, all slack/DOS/header bytes, donor imports from 200 benign training files;
-  `scripts/trial_probe.py`, `trial_table.py`) and, as a variant, the toolkit outputs. Against the derived table on
-  modeled features: no soundness conflict; 66 lowerable features trial never lowered (62 string counts, the IAT
-  entry), 86 raise-only never moved. Its monotone detector detects more (87.6% vs 83.4% at 1% FPR) and **falls at the
-  smoke** (5/11 within 100 candidates, each by signature cloning: the certificate's URLs raise `regex_https://`, which
-  trial left free); the derived detector holds. Hypothesis (no new hole) failed. With the toolkit, trial absorbs LIEF's
-  side effects (179 features) and detects 53.1%. Iterated adversarial training: estimated ~13-15 h pilot, needs a
-  save option in `a1_adaptive.py` (R7-owned); recommended in. Run 144 scripted (176dbb8). **Next:** the user runs 144
-  and decides; then `docs/resume-prompt-R18.md`.
-- **2026-11-13 (session 59, rebuttal track): R2's 4-byte Rich fix.** When pefile finds the "Rich" marker it reads a
-  4-byte key just past it, which can be the optional header's first four bytes; `RichHeader.items` now records them
-  for files with pairs (pure addition; the empty case reads no key and is unchanged). Test `TestRichKey` (a synthetic
-  file whose COFF header ends in "Rich") failed before the fix on the two linker-version bytes. As predicted, the pilot
-  direction tables (`--loose` and without) are byte-identical before and after. Side note: the stored
-  `a_directions_derived_sums_v2` no longer matches a fresh derivation without `--loose` (it lacks the `op_ent` column,
-  and 3 `op_ren` cells differ: max_entropy, max_size_ratio, overlay_entropy); the M_* rows are identical, and the
-  difference comes from the R7 commits of sessions 55-57, not this fix. Run 140's header claim "reproduces v2
-  exactly" was true when written. **Next:** R18 (own session), then the last look before the scale-up.

@@ -484,6 +484,23 @@ records of the §5 reviews, the table remake and the ERDALT check, is in
    not), against the scale-up's undefended detector, so after it; ~80k outputs, ~700-900 CPU-h. Saved as feature rows
    for every store the defenses read and as compressed adversarial binaries (~30-60 GB), so an extractor change means
    re-featurizing, not re-attacking. PV, ERDALT, adversarial training and the leave-one-out folds all read it.
+   Drawn (`2-features/files`): `tr.parquet` (10,000 per label, from 114,054 training malware after the cap) and two
+   disjoint donor sets of 100 training goodware, `tr-donors-0` (the defenses' material, the trial's imports) and
+   `tr-donors-1` (every attack on the evaluation set); R19's donor-overlap control attacks with set 0. Code: the
+   trainers' `--complete_only` and `vl_predictions.parquet`; the attacks' `--protocol scaleup --donors`
+   (`provexp.data.files.load_attacked`, `provexp.detectors.model_threshold`/`detection_at`). (6) *The trial row:* the
+   trial learns from the evaluation set (the audit's catalogue edits and `trial_probe.py` on all 2,000, imports from
+   donor set 0), which favours the competitor. (7) *Iterated adversarial training:* 1,000 training malware per round
+   (of `tr.parquet`), the beam at 5,000 extraction-scored candidates, two rounds, `ent` held out (~0.5k CPU-h).
+   (8) *MAB-Malware* (arguments only): every detector at our setting (1% FPR, our byte cap, 60 actions, donor set 1),
+   plus Zainab et al.'s setting (0.1% FPR, no byte cap) against the unconstrained detector. (9) *Escapes:* the three
+   writes (certificate entry, debug entry, SizeOfImage) against the unconstrained and the two monotone detectors, each
+   followed by the adaptive search (in (1)'s budget) **and the eight toolkit attacks** (~600 CPU-h; `toolkit.py`
+   needs `--escape`, counted from the unescaped original as `adaptive.py` does); the escape audit on every population
+   file of the evaluation set. Still to implement before the head-node session: the scale-up's `run.sh` for training
+   (`--complete_only`), the defenses' material (rows for every store and the compressed binaries), the toolkit (with
+   escapes), iterated adversarial training, the trial row, MAB-Malware's second setting, the registry's `scaleup` model
+   set, and the reporting duties in `6-results` (share of all attacked malware still detected; R12, R15, R3).
 4. **While the scale-up runs: §2's closing and contribution 4 against §5** (old step 2 (c)). §2 says §5 "uses them to
    attack malware detectors and to build robust ones"; in §5 the attack is an instrument. The mock's contribution 4 is
    stale ("four to six points", "learned constraints"). Writing only.
