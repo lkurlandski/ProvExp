@@ -51,6 +51,7 @@ from provexp.attacks.toolkit import ATTACKS
 from provexp.attacks.toolkit import adv_deltas
 from provexp.data.paths import EMBER2024_DATA
 from provexp.data.paths import ROOT
+from provexp.data.tabular import load_manifest
 from provexp.featuresets.ember2024.population import population
 
 __all__ = ["TOOLKIT_OPS", "OTHER_OPS", "classify", "lowered"]
@@ -82,6 +83,12 @@ def classify(directions_dir: Path, stem: str) -> pl.DataFrame:
     table = pl.read_csv(directions_dir / "directions.csv", infer_schema_length=0)
     table = table.with_columns((pl.col("group") + ":" + pl.col("name")).alias("feature"))
     low = lowerable(directions_dir, stem)
+    # On the sums store the `-control` rows also drop the re-encoding's sums, which the detector does not read: they are
+    # not lowerable features of the table.
+    reencoded = directions_dir / "reencoded.neutralize.txt"
+    if reencoded.exists():
+        drop = set(reencoded.read_text().splitlines())
+        low = {f: d for f, d in low.items() if f not in drop}
     rows: list[dict[str, Any]] = []
     for r in table.filter(pl.col("feature").is_in(list(low))).iter_rows(named=True):
         ops = [c for c in TOOLKIT_OPS + OTHER_OPS if r[c] is not None and "-" in r[c]]
@@ -114,8 +121,10 @@ def lowered(deltas: npt.NDArray[np.float32], tol: float) -> npt.NDArray[np.bool_
 def by_class(feats: pl.DataFrame, hit: dict[str, bool]) -> dict[str, dict[str, Any]]:
     """Coverage per class (and in all): lowerable, lowered, share."""
     out: dict[str, dict[str, Any]] = {}
-    for cls in CLASSES + ("all",):
-        sub = feats if cls == "all" else feats.filter(pl.col("class") == cls)
+    for cls in CLASSES + ("modeled", "all"):
+        # `modeled`: every class but pefile's warnings, which §4.2 leaves out of the model (R12).
+        sub = (feats if cls == "all" else feats.filter(pl.col("class") != "warnings") if cls == "modeled"
+               else feats.filter(pl.col("class") == cls))
         n = sub.height
         k = sum(hit.get(f, False) for f in sub["feature"].to_list())
         out[cls] = {"lowerable": n, "lowered": k, "share": k / n if n else None}
@@ -215,7 +224,8 @@ def main() -> None:
     parser.add_argument("--outdir", type=Path, required=True)
     parser.add_argument("--directions_dir", type=Path, default=ROOT / "artifacts/experiments/a_directions_derived_v2")
     parser.add_argument("--stem", default="M_full-pre-quirkfixed")
-    parser.add_argument("--deltas", type=Path, default=ROOT / "artifacts/experiments/a_pv/deltas.parquet")
+    parser.add_argument("--deltas", type=Path, default=None, help="Run 78's vectors on the pilot's test malware "
+                        "(artifacts/experiments/a_pv/deltas.parquet); without it only the training malware count.")
     parser.add_argument("--pilot_results", type=Path,
                         default=ROOT / "artifacts/experiments/a1/toolkit-derived/results.parquet",
                         help="A toolkit run's results.parquet, for the pilot files' population membership.")
@@ -245,13 +255,20 @@ def main() -> None:
     report: dict[str, Any] = {"stem": args.stem, "tol": args.tol, "toolkit_ops": TOOLKIT_OPS, "other_ops": OTHER_OPS,
                               "lowerable": {c: int((feats["class"] == c).sum()) for c in CLASSES}}
 
-    # Pilot (run 78): all files and the files in the population.
-    pv = pl.read_parquet(args.deltas)
-    names = [c for c in pv.columns if c not in ("name", "attack", "p_clean", "p_adv")]
-    member = dict(pl.read_parquet(args.pilot_results).select("name", "precondition").unique("name").iter_rows())
+    # Pilot (run 78): all files and the files in the population. Without it (the scale-up), the features are those of
+    # the training rows' store that the direction table names (EMBER's; the re-encoding's sums are not in it).
     hits: dict[str, dict[str, list[str]]] = {}
-    for label, frame in (("pilot_all", pv), ("pilot_population", pv.filter(pl.col("name").replace_strict(
-            member, default=False)))):
+    frames: tuple[tuple[str, pl.DataFrame], ...] = ()
+    if args.deltas is not None:
+        pv = pl.read_parquet(args.deltas)
+        names = [c for c in pv.columns if c not in ("name", "attack", "p_clean", "p_adv")]
+        member = dict(pl.read_parquet(args.pilot_results).select("name", "precondition").unique("name").iter_rows())
+        frames = (("pilot_all", pv), ("pilot_population", pv.filter(pl.col("name").replace_strict(member, default=False))))
+    else:
+        table = pl.read_csv(args.directions_dir / "directions.csv", infer_schema_length=0)
+        known = set((table["group"] + ":" + table["name"]).to_list())
+        names = [n for n in load_manifest(args.adv_features)["feature_names"] if n in known]
+    for label, frame in frames:
         d = frame.select(names).to_numpy().astype(np.float32)
         report[label] = {"files": frame["name"].n_unique(),
                          **coverage(feats, names, d, frame["attack"].to_numpy(), args.tol)}
@@ -280,7 +297,7 @@ def main() -> None:
             hits[label] = {f: [a for a in ATTACKS if lowered(sub[att == a][:, [j]], args.tol)[0]]
                            for j, f in enumerate(names)}
             print(f"{label}: {report[label]['files']} files, union {report[label]['union']}", flush=True)
-        both = {f: hits["pilot_population"][f] or hits["train_population"][f] for f in names}
+        both = {f: hits.get("pilot_population", {}).get(f) or hits["train_population"][f] for f in names}
         report["pilot_and_train_population"] = by_class(feats, {f: bool(v) for f, v in both.items()})
 
     # Witnessed by our own edits, and the gap the toolkit leaves among the witnessed features.
@@ -293,7 +310,7 @@ def main() -> None:
         w = {f: bool(v) for f, v in wit.items()}
         w_tool = {f: bool(v & toolkit) for f, v in wit.items()}
         report["witnessed"] = {"any_op": by_class(feats, w), "toolkit_op": by_class(feats, w_tool)}
-        lowered_tk = {f: bool(hits["pilot_population"].get(f)) or bool(hits.get("train_population", {}).get(f))
+        lowered_tk = {f: bool(hits.get("pilot_population", {}).get(f)) or bool(hits.get("train_population", {}).get(f))
                       for f in names}
         gap = {f: w.get(f, False) and not lowered_tk.get(f, False) for f in names}
         gap_tool = {f: w_tool.get(f, False) and not lowered_tk.get(f, False) for f in names}

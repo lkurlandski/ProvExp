@@ -32,7 +32,8 @@ from numpy import typing as npt
 import polars as pl
 import torch
 
-from provexp.data.files import load_pilot
+from provexp.data.files import PROTOCOLS
+from provexp.data.files import load_attacked
 from provexp.data.paths import EMBER2024_DATA
 from provexp.data.paths import ROOT
 from provexp.detectors import make_extractor
@@ -83,21 +84,27 @@ def main() -> None:
                         help="A store whose extractor gives the model's features (for the pilot gradients).")
     parser.add_argument("--pilot_files", type=Path, default=ROOT / "artifacts/experiments/e1/seed-0/zeros/files.parquet")
     parser.add_argument("--db", type=Path, default=EMBER2024_DATA / "ts")
+    parser.add_argument("--protocol", choices=tuple(PROTOCOLS), default="pilot",
+                        help="pilot: the pilot list's detected malware; scaleup: the evaluation set's malware.")
     parser.add_argument("--tol", type=float, default=1e-3, help="Entries of L (standardized units) below this are 0.")
     parser.add_argument("--outdir", type=Path, required=True)
     args = parser.parse_args()
     args.outdir.mkdir(parents=True, exist_ok=True)
 
-    det = ERDALTDetector(args.model)
+    extractor = make_extractor(args.features)
+    det = ERDALTDetector(args.model, extractor.feature_names)  # selects its columns from the store's rows by name
     names = det.feature_names
     dirs = directions(args.directions, names)
     L = det.model.layer1.weight.detach().double().numpy()  # standardized units; the signs of L diag(1/std)
     bad = column_violations(L, dirs, args.tol)
+    modeled = np.array([not n.startswith("pefilewarnings:") for n in names])
     weight = np.abs(L) * (np.abs(L) > args.tol)
     classes = {"up": 1, "down": -1, "both": 2, "fixed": 0}
     summary: dict[str, object] = {
         "model": args.model.resolve().as_posix(), "directions": args.directions.as_posix(), "tol": args.tol,
         "weight_share_violating": float(weight[bad].sum() / weight.sum()),
+        # R12: without pefile's warnings, which §4.2 leaves out of the model.
+        "weight_share_violating_modeled": float(weight[:, modeled][bad[:, modeled]].sum() / weight[:, modeled].sum()),
         "per_class": {c: {"features": int((dirs == v).sum()),
                           "violating_columns": int(bad[:, dirs == v].any(axis=0).sum()),
                           "weight_share": float(weight[:, dirs == v][bad[:, dirs == v]].sum() / weight.sum())}
@@ -105,8 +112,7 @@ def main() -> None:
     }
 
     # The logit's derivative along each feature's allowed direction, on the pilot malware (the adaptive search's moves).
-    extractor = make_extractor(args.features)
-    malware, _ = load_pilot(args.pilot_files, args.db)
+    malware, _ = load_attacked(args.protocol, args.pilot_files, args.db, need_donors=False)
     X = np.stack([extractor.feature_vector(data) for _, data in malware])  # type: ignore[no-untyped-call]
     x = torch.from_numpy(det._select(X).numpy()).requires_grad_(True)
     det.model(x).sum().backward()

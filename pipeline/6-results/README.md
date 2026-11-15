@@ -6,6 +6,8 @@ No attack or training here; each script reads the outputs of stages 1-5.
 - `coverage.py`: which lowerable features the toolkit's outputs and our own edits lowered, by source (§5.3).
 - `pv_hole.py`, `erdalt_hole.py`: the features PV and ERDALT leave open, and the files evaded through them (§5.3).
 - `trial_audit.py`: replays each evasion of the trial detector and names the features carrying it (§5.3).
-- To add at the scale-up (PLAN.md step 3): the share of all attacked malware still detected after each attack (1% and
-  0.1% FPR), coverage on modeled features only, the monotone detector's split-gain share on features no edit moves, the
-  detected malware's margins.
+- `scaleup_tables.py`: per detector, detection at the validation thresholds (1% and 0.1% FPR), the share of all the
+  evaluation set's malware still detected after each attack and after any (escapes apart), the detected malware within
+  the hand table's 1.57-logit drop (R3), the monotone detectors' gain share on features no edit moves (R15).
+- `run.sh`: `scaleup_tables.py`, `coverage.py` (the `modeled` class: without the warnings, R12) and `erdalt_hole.py`
+  on the scale-up's outputs.
