@@ -34,10 +34,11 @@ import polars as pl
 
 
 from provexp.attacks.adaptive import rename_section
-from provexp.data.files import load_pilot
+from provexp.data.files import PROTOCOLS
+from provexp.data.files import load_attacked
 from provexp.data.paths import EMBER2024_DATA
 from provexp.data.paths import ROOT
-from provexp.detectors import calibrate_threshold
+from provexp.detectors import model_threshold
 from provexp.detectors import make_extractor
 from provexp.featuresets.ember2024.expert import DEFAULT_DOS_STUB
 from provexp.featuresets.ember2024.expert import DOS_HEADER_SIZE
@@ -201,6 +202,11 @@ def main() -> None:
     parser.add_argument("--outdir", type=Path, required=True)
     parser.add_argument("--pilot_files", type=Path, default=ROOT / "artifacts/experiments/e1/seed-0/zeros/files.parquet")
     parser.add_argument("--db", type=Path, default=EMBER2024_DATA / "ts")
+    parser.add_argument("--protocol", choices=tuple(PROTOCOLS), default="pilot",
+                        help="pilot: the pilot list and donors, thresholds on ts; scaleup: the evaluation list, --donors, "
+                             "thresholds on vl (provexp.data.files.PROTOCOLS).")
+    parser.add_argument("--donors", type=Path, default=None, help="Scale-up: the donor list (training goodware).")
+    parser.add_argument("--donor_db", type=Path, default=EMBER2024_DATA / "tr", help="The SimpleDB split of --donors.")
     parser.add_argument("--fpr", type=float, default=0.01)
     parser.add_argument("--max_steps", type=int, default=12)
     args = parser.parse_args()
@@ -208,9 +214,8 @@ def main() -> None:
 
     extractor = make_extractor(args.features)
     booster = lightgbm.Booster(model_file=str(args.model / "model.txt"))
-    pred = pl.read_parquet(args.model / "ts_predictions.parquet")
-    tau = calibrate_threshold(pred["prob"].to_numpy(), pred["label"].to_numpy(), args.fpr)
-    malware, _ = load_pilot(args.pilot_files, args.db)
+    tau = model_threshold(args.model, args.fpr, PROTOCOLS[args.protocol])
+    malware, _ = load_attacked(args.protocol, args.pilot_files, args.db, args.donors, args.donor_db, need_donors=False)
     print(f"tau = {tau:.6f}; {len(malware)} pilot malware", flush=True)
 
     rows = []

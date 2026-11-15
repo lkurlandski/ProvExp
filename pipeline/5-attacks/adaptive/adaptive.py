@@ -53,13 +53,14 @@ from provexp.attacks.adaptive import _attack_file
 from provexp.attacks.adaptive import _init_worker
 from provexp.attacks.adaptive import _lost
 from provexp.attacks.adaptive import _parse_defenses
-from provexp.attacks.adaptive import _threshold
 from provexp.attacks.adaptive import padded_booster
 from provexp.attacks.adaptive import target_buckets
-from provexp.data.files import load_pilot
+from provexp.data.files import PROTOCOLS
+from provexp.data.files import load_attacked
 from provexp.data.paths import EMBER2024_DATA
 from provexp.data.paths import ROOT
 from provexp.data.tabular import load_manifest
+from provexp.detectors import model_threshold
 from provexp.featuresets.ember2024 import catalogue
 from provexp.featuresets.ember2024.escapes import WRITES as ESCAPES
 from provexp.featuresets.ember2024.features import PEFeatureExtractor
@@ -149,6 +150,11 @@ def main() -> None:
     parser.add_argument("--features", type=Path, required=True, help="The feature store the defenses were trained on.")
     parser.add_argument("--pilot_files", type=Path, default=ROOT / "artifacts/experiments/e1/seed-0/zeros/files.parquet")
     parser.add_argument("--db", type=Path, default=EMBER2024_DATA / "ts")
+    parser.add_argument("--protocol", choices=tuple(PROTOCOLS), default="pilot",
+                        help="pilot: the pilot list and donors, thresholds on ts; scaleup: the evaluation list, --donors, "
+                             "thresholds on vl (provexp.data.files.PROTOCOLS).")
+    parser.add_argument("--donors", type=Path, default=None, help="Scale-up: the donor list (training goodware).")
+    parser.add_argument("--donor_db", type=Path, default=EMBER2024_DATA / "tr", help="The SimpleDB split of --donors.")
     parser.add_argument("--threat_model", choices=["M_add", "M_shift", "M_full"], default="M_full")
     parser.add_argument("--operations", nargs="*", default=None, help="Restrict to these operation names "
                         "(default: every operation of the threat model).")
@@ -200,7 +206,7 @@ def main() -> None:
         vector = extractor
     print(f"Scoring {args.score} ({vector.dim} features); operations {','.join(ops)}.", flush=True)
 
-    malware, goodware = load_pilot(args.pilot_files, args.db)
+    malware, goodware = load_attacked(args.protocol, args.pilot_files, args.db, args.donors, args.donor_db)
     if args.num_malware is not None:
         malware = malware[: args.num_malware]
     # (name, the file the search starts from, the unescaped original). With an escape the start is the escaped file --
@@ -229,7 +235,7 @@ def main() -> None:
     tasks: list[tuple[str, str, float, list[tuple[int, int]], str, bytes, float, bool, bool]] = []
     for d, mdir in defenses.items():
         booster = padded_booster(mdir, vector.dim)
-        tau = _threshold(mdir / "ts_predictions.parquet", args.fpr)
+        tau = model_threshold(mdir, args.fpr, PROTOCOLS[args.protocol])
         Xp = (np.stack([vector.feature_vector(start) for _, start, _ in attacks])  # type: ignore[no-untyped-call]
               if isinstance(booster, ERDALTDetector) else None)
         targets = [(b, sign) for b in target_buckets(booster, extractor.feature_names, args.target_buckets, Xp)

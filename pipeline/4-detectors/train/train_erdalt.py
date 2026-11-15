@@ -11,7 +11,8 @@ reference and PV-seen rows read them). Its perturbation vectors come from two so
                     clean vectors
 
 Outputs, in `{outdir}/erdalt/seed-{seed}{suffix}/`: model.pt and erdalt.json (provexp.models.erdalt.save_erdalt),
-metrics.json (as train_classic.py, plus the ERDALT training summary and history), ts_predictions.parquet.
+metrics.json (as train_classic.py, plus the ERDALT training summary and history), ts_predictions.parquet and
+vl_predictions.parquet. With `--complete_only`, every split keeps only the files below 4,000,000 bytes (the scale-up).
 
 Usage (smoke): PYTHONHASHSEED=0 python pipeline/4-detectors/train/train_erdalt.py --features artifacts/features/ember2024-sums-10-v2 \
     --neutralize artifacts/experiments/a_directions_sums/reencoded.neutralize.txt \
@@ -71,6 +72,7 @@ def main() -> None:
     parser.add_argument("--batch_size", type=int, default=256)
     parser.add_argument("--epochs", type=int, default=310)
     parser.add_argument("--limit", type=int, default=None, help="At most this many samples per split (smoke tests).")
+    parser.add_argument("--complete_only", action="store_true", help="Only files below 4,000,000 bytes, in every split.")
     args = parser.parse_args()
     if args.deltas is None and args.adv_dir is None:
         raise ValueError("Give --deltas, --adv_dir, or both.")
@@ -102,12 +104,12 @@ def main() -> None:
 
     data = {}
     for split in ("tr", "vl", "ts"):
-        X, meta = load_features(args.features, split, only_ok=True)
+        X, meta = load_features(args.features, split, only_ok=True, complete_only=args.complete_only)
         if args.limit is not None:
             X, meta = X[:args.limit], meta.head(args.limit)
         data[split] = (np.ascontiguousarray(np.asarray(X)[:, keep]), meta["label"].to_numpy().astype(np.int64), meta)
         print(f"Loaded {split}: {data[split][0].shape}", flush=True)
-    (X_tr, y_tr, _), (X_vl, y_vl, _), (X_ts, y_ts, meta_ts) = data["tr"], data["vl"], data["ts"]
+    (X_tr, y_tr, _), (X_vl, y_vl, meta_vl), (X_ts, y_ts, meta_ts) = data["tr"], data["vl"], data["ts"]
 
     device = torch.device(args.device)
     model, summary = train_erdalt(X_tr, y_tr, X_vl, y_vl, D, seed=args.seed, device=device,
@@ -118,7 +120,8 @@ def main() -> None:
             z = torch.cat([model(Xd[i:i + 8192]) for i in range(0, Xd.shape[0], 8192)])
         return np.asarray(z.double().cpu().numpy(), dtype=np.float64)
 
-    summary["temperature"] = fit_temperature(_logits(X_vl))
+    z_vl = _logits(X_vl)
+    summary["temperature"] = fit_temperature(z_vl)
     print(f"Temperature {summary['temperature']:.4g} (validation logits up to +-{30 * summary['temperature']:.4g}).",
           flush=True)
     save_erdalt(model, outdir, names, summary)
@@ -137,11 +140,14 @@ def main() -> None:
         "attacks": args.attacks,
         "deltas": sources,
         "training": summary,
+        "complete_only": args.complete_only,
         "ts_metrics": metrics,
         "minutes": (time.time() - t_0) / 60,
     }
     (outdir / "metrics.json").write_text(json.dumps(report, indent=2))
     meta_ts.select("name", "label").with_columns(pl.Series("prob", probs)).write_parquet(outdir / "ts_predictions.parquet")
+    probs_vl = 1.0 / (1.0 + np.exp(-z_vl / summary["temperature"]))
+    meta_vl.select("name", "label").with_columns(pl.Series("prob", probs_vl)).write_parquet(outdir / "vl_predictions.parquet")
     print(f"Wrote {outdir.as_posix()}.", flush=True)
 
 

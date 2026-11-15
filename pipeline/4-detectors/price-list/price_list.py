@@ -20,6 +20,7 @@ import numpy as np
 import polars as pl
 from sklearn.metrics import roc_curve
 
+from provexp.detectors import detection_at
 from provexp.featuresets.ember2024.directions import OPS
 from provexp.featuresets.ember2024.directions import direction
 
@@ -110,23 +111,26 @@ def derive(directions: Path, reference: Path, outdir: Path) -> list[str]:
 # Table
 ################################################################################
 
-def _metrics(model: Path) -> dict[str, Any]:
-    """AUC and TPR at 1% and 0.1% FPR on the test split."""
+def _metrics(model: Path, protocol: str = "pilot") -> dict[str, Any]:
+    """AUC and TPR at 1% and 0.1% FPR on the test split (pilot: from the test ROC; scaleup: at the vl thresholds)."""
     m = json.loads((model / "metrics.json").read_text())
+    if protocol == "scaleup":
+        return {"auc": m["ts_metrics"]["roc"], "tpr_1": detection_at(model, 0.01)["tpr"],
+                "tpr_01": detection_at(model, 0.001)["tpr"]}
     p = pl.read_parquet(model / "ts_predictions.parquet")
     fpr, tpr, _ = roc_curve(p["label"].to_numpy(), p["prob"].to_numpy())
     return {"auc": m["ts_metrics"]["roc"], "tpr_1": float(np.interp(0.01, fpr, tpr)),
             "tpr_01": float(np.interp(0.001, fpr, tpr))}
 
 
-def table(models: list[tuple[str, Path]], out: Path) -> None:
+def table(models: list[tuple[str, Path]], out: Path, protocol: str = "pilot") -> None:
     """Print and save the metrics of each (label, model directory), with the TPR difference from the first."""
     rows = []
     for label, path in models:
         if not (path / "metrics.json").exists():
             print(f"{label}: missing ({path})")
             continue
-        rows.append({"variant": label, **_metrics(path)})
+        rows.append({"variant": label, **_metrics(path, protocol)})
     base = rows[0]["tpr_1"] if rows else 0.0
     print(f"{'variant':28s} {'AUC':>7s} {'TPR@1%':>7s} {'vs first':>8s} {'TPR@0.1%':>8s}")
     for r in rows:
@@ -150,6 +154,8 @@ def main() -> None:
     p = sub.add_parser("table")
     p.add_argument("--model", action="append", required=True, help="label=path, the first is the baseline")
     p.add_argument("--out", type=Path, required=True)
+    p.add_argument("--protocol", choices=("pilot", "scaleup"), default="pilot",
+                   help="pilot: TPR from the test ROC; scaleup: at the thresholds set on the validation split.")
     args = parser.parse_args()
     if args.command == "derive":
         derive(args.directions, args.reference, args.outdir)
@@ -160,7 +166,7 @@ def main() -> None:
                 raise ValueError(f"--model expects label=path, got {item!r}")
             label, path = item.split("=", 1)
             models.append((label, Path(path)))
-        table(models, args.out)
+        table(models, args.out, args.protocol)
 
 
 if __name__ == "__main__":

@@ -988,12 +988,4 @@ def _parse_defenses(specs: list[str]) -> dict[str, Path]:
     return out
 
 
-def _threshold(pred_file: Path, fpr: float) -> float:
-    import polars as pl
-
-    pred = pl.read_parquet(pred_file)
-    good = np.sort(pred.filter(pl.col("label") == 0)["prob"].to_numpy())[::-1]
-    return float(good[min(int(fpr * good.size), good.size - 1)])
-
-
 MAX_LENGTH = 4_000_000

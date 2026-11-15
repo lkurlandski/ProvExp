@@ -19,6 +19,9 @@ Outputs, in `{outdir}/{learner}/seed-{seed}[-{poison}]/`:
     model.txt (GBDT) or model.pt (MLP)   the trained model
     metrics.json                         test metrics, plus the training configuration
     ts_predictions.parquet               the predicted probability of malware for each test sample
+    vl_predictions.parquet               the same for each validation sample (the scale-up's thresholds are set on it)
+
+With `--complete_only`, every split keeps only the files our copy holds in full (below 4,000,000 bytes; the scale-up).
 
 Usage:
     python pipeline/4-detectors/train/train_classic.py --learner gbdt --seed 0
@@ -135,6 +138,7 @@ def main() -> None:
     parser.add_argument("--num_threads", type=int, default=os.cpu_count(), help="GBDT only.")
     parser.add_argument("--categorical", action="store_true", help="GBDT only. Treat the categorical features as such (incompatible with interventional TreeSHAP).")
     parser.add_argument("--limit", type=int, default=None, help="Use at most this many samples per split (for testing).")
+    parser.add_argument("--complete_only", action="store_true", help="Only files below 4,000,000 bytes, in every split.")
     parser.add_argument("--poison", type=Path, default=None, help="A poison directory (scripts/trigger_poison.py); its files replace their clean training rows.")
     parser.add_argument("--augment", type=Path, default=None, help="A directory with X.npy and files.parquet (pipeline/4-detectors/adversarial-training/attack_training.py); its rows are APPENDED to the training split (adversarial training).")
     parser.add_argument("--neutralize", type=Path, default=None, help="A file of feature names, one per line, to set to zero in every split.")
@@ -178,7 +182,7 @@ def main() -> None:
     t_0 = time.time()
     data = {}
     for split in ("tr", "vl", "ts"):
-        X, meta = load_features(args.features, split, only_ok=True)
+        X, meta = load_features(args.features, split, only_ok=True, complete_only=args.complete_only)
         if args.limit is not None:
             X, meta = X[:args.limit], meta.head(args.limit)
         if neutral:
@@ -186,7 +190,7 @@ def main() -> None:
             X[:, neutral] = 0.0
         data[split] = (np.ascontiguousarray(X), meta["label"].to_numpy().astype(np.int64), meta)
         print(f"Loaded {split}: {X.shape}", flush=True)
-    (X_tr, y_tr, meta_tr), (X_vl, y_vl, _), (X_ts, y_ts, meta_ts) = data["tr"], data["vl"], data["ts"]
+    (X_tr, y_tr, meta_tr), (X_vl, y_vl, meta_vl), (X_ts, y_ts, meta_ts) = data["tr"], data["vl"], data["ts"]
     poison: dict[str, object] = {}
     if args.poison is not None:
         X_tr, y_tr, poison = apply_poison(X_tr, y_tr, meta_tr, args.poison)
@@ -201,6 +205,7 @@ def main() -> None:
         booster = train_gbdt(X_tr, y_tr, X_vl, y_vl, seed=args.seed, num_threads=args.num_threads, categorical=args.categorical, **extra)
         booster.save_model(outdir / "model.txt", num_iteration=booster.best_iteration)
         probs = np.asarray(booster.predict(X_ts, num_iteration=booster.best_iteration))
+        probs_vl = np.asarray(booster.predict(X_vl, num_iteration=booster.best_iteration))
         config = {"best_iteration": booster.best_iteration, "categorical": args.categorical,
                   "monotone": args.monotone.resolve().as_posix() if args.monotone else None,
                   "num_monotone": sum(1 for c in constraints if c != 0)}
@@ -211,6 +216,9 @@ def main() -> None:
         with torch.no_grad():
             Xts = torch.from_numpy(X_ts).to(device)
             probs = torch.cat([model(Xts[i:i + 8192]).softmax(dim=-1)[:, 1] for i in range(0, Xts.shape[0], 8192)]).cpu().numpy()
+            Xvl = torch.from_numpy(X_vl).to(device)
+            probs_vl = torch.cat([model(Xvl[i:i + 8192]).softmax(dim=-1)[:, 1]
+                                  for i in range(0, Xvl.shape[0], 8192)]).cpu().numpy()
         config = {}
 
     metrics = compute_metrics(y_ts, probs)
@@ -224,11 +232,13 @@ def main() -> None:
         "poison": poison or None,
         "augment": augment or None,
         "neutralized": [int(j) for j in neutral] or None,
+        "complete_only": args.complete_only,
         "ts_metrics": metrics,
         "minutes": (time.time() - t_0) / 60,
     }
     (outdir / "metrics.json").write_text(json.dumps(report, indent=2))
     meta_ts.select("name", "label").with_columns(pl.Series("prob", probs)).write_parquet(outdir / "ts_predictions.parquet")
+    meta_vl.select("name", "label").with_columns(pl.Series("prob", probs_vl)).write_parquet(outdir / "vl_predictions.parquet")
     print(f"Wrote {outdir.as_posix()}.", flush=True)
 
 

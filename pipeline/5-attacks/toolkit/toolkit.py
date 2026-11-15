@@ -8,7 +8,7 @@ deployed; attacked files are written only so they can be re-extracted and re-sco
 
 One protocol for every cell:
     operating point   each defense's threshold is calibrated to `--fpr` (1%) on the goodware of its own test
-                      predictions (ts_predictions.parquet): detected means p > tau, and at most 1% of goodware is
+                      predictions (ts_predictions.parquet; vl_predictions.parquet under --protocol scaleup): detected means p > tau, and at most 1% of goodware is
     malware           the detected pilot malware, attacked only where the defense detects it at tau
     budget            `--budget low` is Gimenez's (population 10, 10 iterations, 30 donors); `--budget literature` is
                       the GAMMA paper's (51 iterations, ~510 queries, 75 donors; a_pv_attacks.BUDGETS). An attacked
@@ -60,11 +60,12 @@ from provexp.attacks.toolkit import calibrated
 from provexp.attacks.toolkit import file_seed
 from provexp.attacks.toolkit import make_wrapper
 from provexp.attacks.toolkit import run_attack
-from provexp.data.files import load_pilot
+from provexp.data.files import PROTOCOLS
+from provexp.data.files import load_attacked
 from provexp.data.paths import EMBER2024_DATA
 from provexp.data.paths import ROOT
 from provexp.detectors import MAX_LENGTH
-from provexp.detectors import calibrate_threshold
+from provexp.detectors import model_threshold
 from provexp.detectors import group_evasion
 from provexp.detectors import make_extractor
 from provexp.detectors import parse_defenses
@@ -157,6 +158,11 @@ def main() -> None:
     parser.add_argument("--features", type=Path, required=True, help="The feature store the defenses were trained on.")
     parser.add_argument("--pilot_files", type=Path, default=ROOT / "artifacts/experiments/e1/seed-0/zeros/files.parquet")
     parser.add_argument("--db", type=Path, default=EMBER2024_DATA / "ts")
+    parser.add_argument("--protocol", choices=tuple(PROTOCOLS), default="pilot",
+                        help="pilot: the pilot list and donors, thresholds on ts; scaleup: the evaluation list, --donors, "
+                             "thresholds on vl (provexp.data.files.PROTOCOLS).")
+    parser.add_argument("--donors", type=Path, default=None, help="Scale-up: the donor list (training goodware).")
+    parser.add_argument("--donor_db", type=Path, default=EMBER2024_DATA / "tr", help="The SimpleDB split of --donors.")
     parser.add_argument("--attacks", nargs="+", default=list(ATTACKS), choices=list(ATTACKS))
     parser.add_argument("--seen", nargs="+", default=list(SEEN), choices=list(ATTACKS))
     parser.add_argument("--fpr", type=float, default=0.01)
@@ -184,7 +190,7 @@ def main() -> None:
             raise ValueError(f"--route {d}={fb}: both must be defenses, and the fallback must not be routed.")
     extractor = make_extractor(args.features)
 
-    malware, goodware = load_pilot(args.pilot_files, args.db)
+    malware, goodware = load_attacked(args.protocol, args.pilot_files, args.db, args.donors, args.donor_db)
     if args.num_malware is not None:
         malware = malware[: args.num_malware]
     print(f"Pilot: {len(malware)} malware, {len(goodware)} goodware donors; {len(defenses)} defenses.", flush=True)
@@ -196,8 +202,7 @@ def main() -> None:
     model_taus: dict[str, float] = {}
     probs: dict[str, np.ndarray] = {}
     for d, mdir in defenses.items():
-        pred = pl.read_parquet(mdir / "ts_predictions.parquet")
-        model_taus[d] = calibrate_threshold(pred["prob"].to_numpy(), pred["label"].to_numpy(), args.fpr)
+        model_taus[d] = model_threshold(mdir, args.fpr, PROTOCOLS[args.protocol])
         probs[d] = np.asarray(load_detector(mdir, extractor.feature_names).predict(X))
     taus: dict[str, float] = {}
     detected: dict[str, list[int]] = {}

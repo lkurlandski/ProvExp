@@ -37,7 +37,8 @@ META_FILE = "meta.parquet"
 MANIFEST_FILE = "manifest.json"
 
 
-def load_features(root: Path | str, split: str, mmap: bool = True, only_ok: bool = False) -> tuple[npt.NDArray[np.float32], pl.DataFrame]:
+def load_features(root: Path | str, split: str, mmap: bool = True, only_ok: bool = False,
+                  complete_only: bool = False) -> tuple[npt.NDArray[np.float32], pl.DataFrame]:
     """
     Load the feature matrix and metadata of a split.
 
@@ -46,6 +47,8 @@ def load_features(root: Path | str, split: str, mmap: bool = True, only_ok: bool
         split: The name of the split, e.g., "tr".
         mmap: Whether to memory-map the feature matrix instead of reading it into memory.
         only_ok: Whether to drop the samples whose features failed to extract. This reads the selected rows into memory.
+        complete_only: Whether to drop, too, the samples our copy holds truncated (4,000,000 bytes or more; the
+            scale-up uses only complete files in every split). Implies the same read into memory.
 
     Returns:
         The feature matrix, shape (N, d), and its metadata, with N rows in the same order.
@@ -55,8 +58,12 @@ def load_features(root: Path | str, split: str, mmap: bool = True, only_ok: bool
     meta = pl.read_parquet(directory / META_FILE).sort("row")
     if meta.height != X.shape[0] or not np.array_equal(meta["row"].to_numpy(), np.arange(X.shape[0])):
         raise RuntimeError(f"The metadata in {directory.as_posix()} is not aligned with its feature matrix.")
-    if only_ok:
-        mask = (meta["status"] == "ok").to_numpy()
+    if only_ok or complete_only:
+        mask = np.ones(meta.height, dtype=bool)
+        if only_ok:
+            mask &= (meta["status"] == "ok").to_numpy()
+        if complete_only:
+            mask &= ~meta["truncated"].to_numpy()
         X = np.asarray(X[mask])
         meta = meta.filter(pl.Series(mask))
     return X, meta

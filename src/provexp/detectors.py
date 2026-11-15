@@ -18,7 +18,7 @@ from provexp.featuresets.ember2024.features import PEFeatureExtractor
 from provexp.featuresets.ember2024.features import fix_quirks
 from provexp.featuresets.ember2024.sums import SumsFeatureExtractor
 
-__all__ = ["MAX_LENGTH", "calibrate_threshold", "group_evasion", "make_extractor", "parse_defenses",
+__all__ = ["MAX_LENGTH", "THRESHOLD_SPLITS", "calibrate_threshold", "detection_at", "model_threshold", "group_evasion", "make_extractor", "parse_defenses",
            "precondition_holds"]
 
 
@@ -56,6 +56,50 @@ def calibrate_threshold(probs: np.ndarray, labels: np.ndarray, fpr: float) -> fl
     if good.size == 0:
         raise ValueError("No goodware to calibrate on.")
     return float(good[min(int(fpr * good.size), good.size - 1)])
+
+
+# NOTE: the pilot's models set their thresholds on the test split (ts); the scale-up's on the validation split (vl;
+# session 67), whose predictions the trainers write next to the test predictions.
+THRESHOLD_SPLITS = ("vl", "ts")
+
+
+def model_threshold(model_dir: Path, fpr: float, split: str = "ts") -> float:
+    """
+    A model's threshold at `fpr`, from the goodware of its stored predictions on one split.
+
+    Args:
+        model_dir: The model directory, holding `{split}_predictions.parquet` (name, label, prob).
+        fpr: The target false-positive rate.
+        split: The split the threshold is set on: "vl" (the scale-up) or "ts" (the pilot).
+
+    Returns:
+        tau, as calibrate_threshold.
+    """
+    if split not in THRESHOLD_SPLITS:
+        raise ValueError(f"split must be one of {THRESHOLD_SPLITS}, got {split!r}.")
+    path = Path(model_dir) / f"{split}_predictions.parquet"
+    if not path.exists():
+        raise FileNotFoundError(f"{path.as_posix()} does not exist; the pilot's models have only ts predictions.")
+    pred = pl.read_parquet(path)
+    return calibrate_threshold(pred["prob"].to_numpy(), pred["label"].to_numpy(), fpr)
+
+
+def detection_at(model_dir: Path, fpr: float, split: str = "vl") -> dict[str, float]:
+    """
+    A model's detection on the test split at the threshold set at `fpr` on `split` (the scale-up: vl).
+
+    Args:
+        model_dir: The model directory (ts_predictions.parquet, and `{split}_predictions.parquet`).
+        fpr: The target false-positive rate.
+        split: The split the threshold is set on.
+
+    Returns:
+        tau, the share of test malware with p > tau (tpr), and the share of test goodware with p > tau (fpr_ts).
+    """
+    tau = model_threshold(model_dir, fpr, split)
+    pred = pl.read_parquet(Path(model_dir) / "ts_predictions.parquet")
+    p, y = pred["prob"].to_numpy(), pred["label"].to_numpy()
+    return {"tau": tau, "tpr": float(np.mean(p[y == 1] > tau)), "fpr_ts": float(np.mean(p[y == 0] > tau))}
 
 
 def group_evasion(rows: pl.DataFrame, attacks: list[str]) -> dict[str, Any]:
