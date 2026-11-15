@@ -54,10 +54,9 @@ from provexp.attacks.toolkit import build_donor_pools
 from provexp.attacks.toolkit import file_seed
 from provexp.attacks.toolkit import make_wrapper
 from provexp.attacks.toolkit import run_attack
+from provexp.data.files import FileReader
 from provexp.data.files import load_donors
 from provexp.data.paths import EMBER2024_DATA
-from provexp.data.simpledb import SimpleDB
-from provexp.data.simpledb import SimpleDBReader
 from provexp.data.tabular import load_manifest
 from provexp.detectors import make_extractor
 from provexp.parallel import map_watchdog
@@ -96,7 +95,7 @@ def shard_names(files: Path, shard: int, num_shards: int, num_malware: int | Non
 _W: dict[str, Any] = {}
 
 
-def _init_worker(features: Path, model: Path, rows: dict[str, Path], db: Path, section_pop: list[Any],
+def _init_worker(features: Path, model: Path, rows: dict[str, Path], files: Path, db: Path, section_pop: list[Any],
                  api_calls: list[Any], seed: int, iterations: int, binaries: Path | None) -> None:
     """Build the per-worker extractors, detector wrapper, reader and attack donor pools once."""
     lief.logging.disable()
@@ -104,7 +103,7 @@ def _init_worker(features: Path, model: Path, rows: dict[str, Path], db: Path, s
     extractors = {store: make_extractor(path) for store, path in rows.items()}
     _W.update(wrapper=make_wrapper(model, extractor), extractors=extractors, section_pop=section_pop,
               api_calls=api_calls, seed=seed, iterations=iterations, binaries=binaries,
-              reader=SimpleDBReader(SimpleDB(db, check=False)), tmp=tempfile.mkdtemp(prefix="attack_training_w_"))
+              reader=FileReader(files, db), tmp=tempfile.mkdtemp(prefix="attack_training_w_"))
 
 
 def _work(task: tuple[str, str]) -> dict[str, Any]:
@@ -114,7 +113,7 @@ def _work(task: tuple[str, str]) -> dict[str, Any]:
     row: dict[str, Any] = {"name": name, "attack": atk, "ok": False, "evaded": False, "p_clean": float("nan"),
                            "p_adv": float("nan"), "bytes_added": 0, "phi": None}
     try:
-        data = bytes(_W["reader"].get(name).data)
+        data = _W["reader"].get(name)
         problem = build_attack(atk, _W["wrapper"], _W["section_pop"], _W["api_calls"], iterations=_W["iterations"])
         adv_bytes, p_clean, p_adv = run_attack(problem, _W["wrapper"], data, out_path, seed=file_seed(_W["seed"], atk, name))
         phi = {store: x.feature_vector(adv_bytes).astype(np.float32) for store, x in _W["extractors"].items()}
@@ -247,7 +246,7 @@ def main() -> None:
         t0 = time.time()
         with get_context("spawn").Pool(args.num_workers, initializer=_init_worker,
                                        initargs=(args.features, args.model / "model.txt" if args.model.is_dir()
-                                                 else args.model, rows, args.db, section_pop, api_calls, args.seed,
+                                                 else args.model, rows, args.files, args.db, section_pop, api_calls, args.seed,
                                                  iterations, binaries)) as pool:
             results = map_watchdog(pool, _work, tasks, lost=_lost, stall_timeout=args.stall_timeout)
         print(f"{len(tasks)} attack runs in {time.time() - t0:.0f}s on {args.num_workers} workers.", flush=True)

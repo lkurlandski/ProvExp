@@ -9,10 +9,51 @@ from typing import Optional
 
 import polars as pl
 
+from provexp.data.filestore import FileStore
+from provexp.data.filestore import store_beside
 from provexp.data.simpledb import SimpleDB
 from provexp.data.simpledb import SimpleDBReader
 
-__all__ = ["PROTOCOLS", "load_attacked", "load_donors", "load_evaluation", "load_pilot"]
+__all__ = ["PROTOCOLS", "FileReader", "load_attacked", "load_donors", "load_evaluation", "load_pilot", "read_files"]
+
+
+class FileReader:
+    """
+    Reads files by name: from the file store beside a file list (`provexp.data.filestore`, 2-features/file-store) when
+    it holds them, else from the SimpleDB (which decompresses a whole shard per file).
+    """
+
+    def __init__(self, file_list: Path, db_dir: Path) -> None:
+        path = store_beside(file_list)
+        self.store = FileStore(path) if path is not None else None
+        self.held = self.store.names() if self.store is not None else set()
+        self.db_dir = db_dir
+        self._reader: Optional[SimpleDBReader] = None
+
+    def get(self, name: str) -> bytes:
+        """The bytes of one file."""
+        if name in self.held:
+            assert self.store is not None
+            return self.store.get(name)
+        if self._reader is None:
+            self._reader = SimpleDBReader(SimpleDB(self.db_dir, check=False))
+        return bytes(self._reader.get(name).data)
+
+
+def read_files(names: list[str], file_list: Path, db_dir: Path) -> list[tuple[str, bytes]]:
+    """
+    The bytes of `names`, as (name, bytes) pairs in their order (`FileReader`).
+
+    Args:
+        names: The files to read.
+        file_list: The file list they come from (its directory may hold a store).
+        db_dir: The SimpleDB directory holding their bytes.
+
+    Returns:
+        The files.
+    """
+    reader = FileReader(file_list, db_dir)
+    return [(n, reader.get(n)) for n in names]
 
 
 def load_pilot(pilot_files: Path, db_dir: Path) -> tuple[list[tuple[str, bytes]], list[tuple[str, bytes]]]:
@@ -50,8 +91,7 @@ def load_evaluation(files: Path, db_dir: Path, donors: Optional[Path] = None,
         (malware, donors); donors is empty without a donor list.
     """
     names = pl.read_parquet(files).filter(pl.col("label") == 1)["name"].to_list()
-    reader = SimpleDBReader(SimpleDB(db_dir, check=False))
-    malware = [(n, bytes(reader.get(n).data)) for n in names]
+    malware = read_files(names, files, db_dir)
     if donors is None:
         return malware, []
     if donor_db_dir is None:
@@ -72,8 +112,7 @@ def load_donors(donors: Path, db_dir: Path) -> list[tuple[str, bytes]]:
     df = pl.read_parquet(donors)
     if "label" in df.columns and (df["label"] != 0).any():
         raise ValueError(f"The donor list {donors.as_posix()} holds files that are not goodware.")
-    reader = SimpleDBReader(SimpleDB(db_dir, check=False))
-    return [(n, bytes(reader.get(n).data)) for n in df["name"].to_list()]
+    return read_files(df["name"].to_list(), donors, db_dir)
 
 
 # The two setups the attacks run under: the pilot's (the pilot list, its malware pre-filtered by the old GBDT, the
