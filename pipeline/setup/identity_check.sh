@@ -22,9 +22,9 @@ if [[ -e $OUT_ROOT ]]; then
 fi
 
 EXTRACTORS="ember2024 sums expert" SPLITS=ts EVERY=264 pipeline/2-features/featurize/run.sh
-pipeline/3-directions/derived/run.sh
-# The pilot's files and protocol (the steps default to the scale-up's evaluation set and protocol since session 67).
+# The pilot's files and protocol (the steps default to the scale-up's lists and protocol since sessions 67 and 70).
 PILOT=artifacts/experiments/e1/seed-0/zeros/files.parquet
+FILES=$PILOT DB="${EMBER2024_DATA:-/shared/datasets/EMBER-2024/data}/ts" CHECK_FILES="" pipeline/3-directions/derived/run.sh
 FILES=$PILOT CHAINED=0 NUM_FILES=5 pipeline/1-audit/catalogue-checks/run.sh
 PROTOCOL=pilot MODELS=pilot DETECTORS="unconstrained monotone-sums" ESCAPE_DETECTORS="unconstrained monotone-sums" \
   ESCAPES="none debug_entry" SHARDS=1 EXPERT=0 QUERIES=200 CHECKPOINTS=200 NUM_MALWARE=3 SAVE_ROWS=1 pipeline/5-attacks/adaptive/run.sh

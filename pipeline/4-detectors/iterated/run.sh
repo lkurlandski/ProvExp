@@ -12,7 +12,9 @@
 # Iterated adversarial training (protocol item 7, session 67; R18, docs/evidence/r18-trial-competitor.md step 3): the
 # adversarially trained detector (4-detectors/adversarial-training, the toolkit's material appended) retrained on
 # what our adaptive search finds against it, for two rounds. FOR ACADEMIC SECURITY RESEARCH ONLY: our own search
-# against our own detectors, on training malware, to build a defense.
+# against our own detectors, on training malware, to build a defense. The starting point (the adversarially trained
+# detector, not the unconstrained one) was confirmed by the user in session 70: the strongest learned competitor, with
+# the adversarial-training row beside it showing what the rounds add.
 #   round k (1, 2): the beam (5,000 extraction-scored candidates, M_full without `ent`, which stays held out of the
 #   loop) against the previous round's detector (round 1: adversarial-training) on 1,000 training malware of
 #   2-features/files/tr.parquet (round k takes the list's malware k*1,000-(k+1)*1,000 by name order, so the rounds
