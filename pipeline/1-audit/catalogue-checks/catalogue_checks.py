@@ -94,7 +94,7 @@ from provexp.featuresets.ember2024.edits import into_overlay as _into_overlay
 from provexp.featuresets.ember2024.edits import past_end as _past_end
 from provexp.featuresets.ember2024.features import PEFeatureExtractor
 from provexp.featuresets.ember2024.features import field_range
-from provexp.featuresets.ember2024.features import merge_import_descriptors
+from provexp.featuresets.ember2024.features import fix_quirks
 from provexp.featuresets.ember2024.sums import SumsFeatureExtractor
 from provexp.items import ItemTable
 from provexp.reach import ByteEdit
@@ -325,7 +325,7 @@ def _init_worker(db: Path, directions: Path, loose: bool) -> None:
         raise RuntimeError(f"{directions} does not list the sums extractor's features in order.")
     ops = LOOSE_OPS if loose else OPS
     _STATE.update(
-        reader=SimpleDBReader(SimpleDB(db, check=False)), sums=sums, merged=merge_import_descriptors(PEFeatureExtractor()),
+        reader=SimpleDBReader(SimpleDB(db, check=False)), sums=sums, merged=fix_quirks(PEFeatureExtractor()),
         strict={op: [s or "" for s in d[f"op_{op}"].to_list()] for op in ops},
         pre={op: [s or "" for s in d[f"op_{op}_pre"].to_list()] for op in ops},
         loose=loose,

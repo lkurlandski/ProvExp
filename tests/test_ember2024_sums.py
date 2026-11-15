@@ -15,7 +15,7 @@ import pefile
 import pytest
 
 from provexp.featuresets.ember2024.features import PEFeatureExtractor
-from provexp.featuresets.ember2024.features import merge_import_descriptors
+from provexp.featuresets.ember2024.features import fix_quirks
 from provexp.featuresets.ember2024.sums import SUMS_GROUPS
 from provexp.featuresets.ember2024.sums import BodyByteEntropyHistogram
 from provexp.featuresets.ember2024.sums import SumsFeatureExtractor
@@ -32,7 +32,7 @@ DATA = ROOT / "tests" / "data"
 FILES = sorted(f for f in DATA.glob("*/*") if f.is_file())[:12]
 
 SUMS = SumsFeatureExtractor()
-BASE = merge_import_descriptors(PEFeatureExtractor())
+BASE = fix_quirks(PEFeatureExtractor())
 NAMES = SUMS.feature_names
 INDEX = {n: i for i, n in enumerate(NAMES)}
 SUMS_COLUMNS = np.array([i for i, n in enumerate(NAMES) if n.split(":")[0] in SUMS_GROUPS])

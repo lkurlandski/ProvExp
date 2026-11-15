@@ -51,7 +51,7 @@ from provexp.data.simpledb import SimpleDB
 from provexp.data.simpledb import SimpleDBReader
 from provexp.featuresets.ember2024.features import ImportsInfo
 from provexp.featuresets.ember2024.features import PEFeatureExtractor
-from provexp.featuresets.ember2024.features import merge_import_descriptors
+from provexp.featuresets.ember2024.features import fix_quirks
 from provexp.featuresets.ember2024.features import rva_ranges
 from provexp.featuresets.ember2024.sums import SUMS_GROUPS
 from provexp.featuresets.ember2024.sums import SumsFeatureExtractor
@@ -70,7 +70,7 @@ warnings.filterwarnings("ignore", category=SyntaxWarning)
 ################################################################################
 
 _READER: SimpleDBReader | None = None
-_MERGED = merge_import_descriptors(PEFeatureExtractor())
+_MERGED = fix_quirks(PEFeatureExtractor())
 _IMPORTS = ImportsInfo()  # type: ignore[no-untyped-call]
 _SUMS = SumsFeatureExtractor()
 

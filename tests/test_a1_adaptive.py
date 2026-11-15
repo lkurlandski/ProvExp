@@ -13,7 +13,7 @@ import pefile
 import pytest
 
 from provexp.featuresets.ember2024.features import PEFeatureExtractor
-from provexp.featuresets.ember2024.features import merge_import_descriptors
+from provexp.featuresets.ember2024.features import fix_quirks
 
 warnings.filterwarnings("ignore", category=SyntaxWarning)
 
@@ -31,7 +31,7 @@ from provexp.featuresets.ember2024.hand import predict_append  # noqa: E402
 DATA = ROOT / "tests" / "data"
 FILES = sorted(f for f in DATA.glob("*/*") if f.is_file())[:12]
 
-EXTRACTOR = merge_import_descriptors(PEFeatureExtractor())
+EXTRACTOR = fix_quirks(PEFeatureExtractor())
 NAMES = EXTRACTOR.feature_names
 INDEX = {n: i for i, n in enumerate(NAMES)}
 MODELED = np.array([not n.startswith("pefilewarnings:") for n in NAMES])

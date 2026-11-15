@@ -52,7 +52,7 @@ from provexp.data.paths import EMBER2024_DATA
 from provexp.data.simpledb import SimpleDB
 from provexp.data.simpledb import SimpleDBReader
 from provexp.featuresets.ember2024.features import PEFeatureExtractor
-from provexp.featuresets.ember2024.features import merge_import_descriptors
+from provexp.featuresets.ember2024.features import fix_quirks
 
 __all__ = ["rich_block", "edit_entry", "edit_rich_ext", "edit_rich_hdr", "edit_exports", "edit_relocs", "main"]
 
@@ -213,7 +213,7 @@ def _init_worker(db: Path, cases: list[str], donors: list[tuple[str, bytes]]) ->
 
     lief.logging.disable()
     warnings.filterwarnings("ignore", category=SyntaxWarning)
-    extractor = merge_import_descriptors(PEFeatureExtractor())
+    extractor = fix_quirks(PEFeatureExtractor())
     names = extractor.feature_names
     _STATE.update(
         reader=SimpleDBReader(SimpleDB(db, check=False)), extractor=extractor, names=names, cases=cases, donors=donors,

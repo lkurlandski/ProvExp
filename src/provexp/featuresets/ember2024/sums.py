@@ -3,8 +3,8 @@ The layer-2 re-encodings of EMBER v3 (direction A, docs/evidence/direction-A-thr
 computes before its readout normalizes, ratios, or signs them, read so that the attacker's additions can only raise
 them.
 
-`SumsFeatureExtractor` is thrember's extractor with the duplicate-DLL import quirk fixed (`merge_import_descriptors`),
-followed by four feature types:
+`SumsFeatureExtractor` is thrember's extractor with its quirks fixed (`fix_quirks`: merged import descriptors, the
+RESERVED directory, the string patterns), followed by four feature types:
     body_histogram      raw byte counts over the body regions (re-encodings 1 and 2)
     body_byteentropy    raw byte/entropy counts over windows tiled per body region (re-encoding 2)
     body_strings        raw string, printable-character, and regex counts over the body regions (re-encodings 1, 2)
@@ -44,9 +44,10 @@ from provexp.featuresets.ember2024.features import PEFeatureExtractor
 from provexp.featuresets.ember2024.features import Range
 from provexp.featuresets.ember2024.features import SectionInfo
 from provexp.featuresets.ember2024.features import StringExtractor
+from provexp.featuresets.ember2024.features import StringExtractorFixed
 from provexp.featuresets.ember2024.features import clipped
 from provexp.featuresets.ember2024.features import field_range
-from provexp.featuresets.ember2024.features import merge_import_descriptors
+from provexp.featuresets.ember2024.features import fix_quirks
 from provexp.featuresets.ember2024.features import section_data_range
 from provexp.featuresets.ember2024.features import section_locating
 from provexp.items import Identity
@@ -247,7 +248,7 @@ class BodyStrings(FeatureType):
     name = "body_strings"
 
     def __init__(self) -> None:
-        self._strings = StringExtractor()  # type: ignore[no-untyped-call]
+        self._strings: StringExtractor = StringExtractorFixed()
         self._regexes = sorted(self._strings.regex_idxs, key=lambda k: self._strings.regex_idxs[k])
         self.dim = 2 + 96 + len(self._regexes)
 
@@ -404,11 +405,11 @@ SUMS_GROUPS = ("body_histogram", "body_byteentropy", "body_strings", "section_sp
 
 
 class SumsFeatureExtractor(PEFeatureExtractor):
-    """thrember's extractor with merged import descriptors, followed by the four re-encoded groups (`SUMS_GROUPS`)."""
+    """thrember's extractor with its quirks fixed (`fix_quirks`), followed by the four re-encoded groups (`SUMS_GROUPS`)."""
 
     def __init__(self) -> None:
         super().__init__()
-        merge_import_descriptors(self)
+        fix_quirks(self)
         self.features = self.features + [
             BodyByteHistogram(),
             BodyByteEntropyHistogram(),

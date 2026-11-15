@@ -258,7 +258,7 @@ def clipped(num_bytes: int, ranges: Sequence[Optional[Range]]) -> tuple[Range, .
 # one directory made the extractor treat the file as not a PE; docs/upstream-issues.md, item 5). Kinds add their own
 # (an import's descriptor and thunks, the overlay's extents). Locating ranges are not clipped to the file: an extent
 # past the end of the file is locating, since appending can bring it inside (docs/evidence/item-layer-design.md, the overlay
-# case and "structures past the end of the file"). Check G5 (`scripts/item_checks.py locating`) flips header and
+# case and "structures past the end of the file"). Check G5 (`pipeline/1-audit/item-checks/item_checks.py locating`) flips header and
 # directory bytes and fails on any change of an item not recorded in its ranges.
 _HEADER_LOCATING_FIELDS = [
     ("DOS_HEADER", "e_magic"),
@@ -2248,14 +2248,17 @@ class DataDirectories(FeatureType):
     def feature_names(self) -> list[str]:
         return [f"{n.lower()}_{f}" for n in self._name_order for f in ("size", "virtual_address")] + ["has_relocs", "has_dynamic_relocs"]
 
+    def _read_entries(self, directories: list[pefile.Structure]) -> list[pefile.Structure]:
+        """The directory entries `process_raw_features` reads: every one but the last (usually RESERVED)."""
+        return list(directories[:-1])
+
     def provenance(self, bytez: bytes, pe: pefile.PE | None = None) -> BoxMatrix:
         C = Contributions(len(bytez), self.dim)
         if pe is None:
             return C.build()
 
-        # Mirror `process_raw_features`, which skips the last data directory (usually RESERVED).
         directories = pe.OPTIONAL_HEADER.DATA_DIRECTORY
-        for d in directories[:-1]:
+        for d in self._read_entries(directories):
             idx = self._name_order.index(str(d.name).replace("IMAGE_DIRECTORY_ENTRY_", ""))
             C.add_item(2 * idx, [field_range(d, "Size")])
             C.add_item(2 * idx + 1, [field_range(d, "VirtualAddress")])
@@ -2274,11 +2277,10 @@ class DataDirectories(FeatureType):
         if pe is None:
             return ItemTable(n, families, [])
 
-        # Mirror `process_raw_features`, which skips the last data directory (usually RESERVED).
         items = []
         located = entries_locating(pe)
         directories = pe.OPTIONAL_HEADER.DATA_DIRECTORY
-        for d in directories[:-1]:
+        for d in self._read_entries(directories):
             idx = self._name_order.index(str(d.name).replace("IMAGE_DIRECTORY_ENTRY_", ""))
             for k, name in enumerate(("Size", "VirtualAddress")):
                 r = field_range(d, name)
@@ -2920,3 +2922,89 @@ def overlay_data_start_offset(pe: pefile.PE) -> Optional[int]:
 
 
 setattr(pefile.PE, "get_overlay_data_start_offset", overlay_data_start_offset)
+
+
+################################################################################
+# Correctness: thrember's data-directory and string-pattern quirks fixed (added on top of thrember)
+################################################################################
+
+
+# NOTE: two more quirks of thrember's, fixed as `ImportsInfoMerged` fixes the import overwrite: subclasses that change
+# only what is wrong, installed into an extractor by `fix_quirks` together with `merge_import_descriptors`
+# (docs/evidence/extractor-audit.md, 2.1 and 2.5; docs/upstream-issues.md). thrember's classes stay unchanged, so
+# `PEFeatureExtractor()` alone still computes EMBER v3's vectors.
+#   - `DataDirectories.process_raw_features` reads every entry but the last, meant to skip the 16th, RESERVED one. A
+#     file that declares fewer than 16 directories (`NumberOfRvaAndSizes`) loses a real one: most often a .NET
+#     program's COM descriptor (15 declared). pefile names the entries by position and stops at 16, so skipping the
+#     entry named RESERVED reads exactly the first min(n, 15).
+#   - Three of `StringExtractor`'s patterns are typos: `registry_key` searches for `KHEY_|KHLM` (for `HKEY_|HKLM`),
+#     `email_addr` repeats `mac_addr`'s pattern, and `.click(` is the pattern `.click` (any character, then `click`).
+#     The fixed patterns keep v3's feature names, the misspelt key `onlick` included (its pattern is right), so the
+#     regex columns keep their order. Every repeat in the e-mail pattern is bounded, so a search stays linear in a
+#     string's length; none of the three can match a newline, as `_strings_raw_features` requires.
+_RESERVED_DIRECTORY = "IMAGE_DIRECTORY_ENTRY_RESERVED"
+FIXED_STRING_PATTERNS: dict[str, re.Pattern[str]] = {
+    "registry_key": re.compile("\\b(?:HKEY_|HKLM|HKCU)"),
+    "email_addr": re.compile("\\b[A-Za-z0-9._%+-]{1,64}@[A-Za-z0-9.-]{1,255}\\.[A-Za-z]{2,24}\\b"),
+    ".click(": re.compile("\\.click\\(", re.IGNORECASE),
+}
+
+
+class DataDirectoriesReserved(DataDirectories):
+    """`DataDirectories` that skips the entry named RESERVED instead of the last entry read (see the NOTE above)."""
+
+    def process_raw_features(self, raw_obj):  # type: ignore[no-untyped-def]
+        if not raw_obj:
+            return np.zeros(self.dim, dtype=np.float32)
+
+        features = np.zeros(2 * len(self._name_order) + 2, dtype=np.float32)
+        for entry in raw_obj[1:]:
+            if entry["name"] == "RESERVED":
+                continue
+            idx = self._name_order.index(entry["name"])
+            features[2 * idx] = entry["size"]
+            features[2 * idx + 1] = entry["virtual_address"]
+        features[-2] = raw_obj[0]["has_relocs"]
+        features[-1] = raw_obj[0]["has_dynamic_relocs"]
+        return features
+
+    def _read_entries(self, directories: list[pefile.Structure]) -> list[pefile.Structure]:
+        """Every entry but the one named RESERVED."""
+        return [d for d in directories if d.name != _RESERVED_DIRECTORY]
+
+
+class StringExtractorFixed(StringExtractor):
+    """`StringExtractor` with the typos in three of its patterns fixed (see the NOTE above)."""
+
+    def __init__(self) -> None:
+        super().__init__()  # type: ignore[no-untyped-call]
+        missing = set(FIXED_STRING_PATTERNS) - set(self._regexes)
+        if missing:
+            raise RuntimeError(f"thrember's string patterns no longer include {sorted(missing)}.")
+        self._regexes = {k: FIXED_STRING_PATTERNS.get(k, r) for k, r in self._regexes.items()}
+        self.regex_idxs = {k: v for v, k in enumerate(sorted(self._regexes))}
+
+
+_FIXED_TYPES: dict[type[FeatureType], Callable[[], FeatureType]] = {
+    DataDirectories: DataDirectoriesReserved,
+    StringExtractor: StringExtractorFixed,
+}
+
+
+def fix_quirks(extractor: PEFeatureExtractor) -> PEFeatureExtractor:
+    """
+    Fix every thrember quirk we know of in an extractor (in place): merged import descriptors, the RESERVED directory,
+    and the string patterns.
+
+    Args:
+        extractor: An extractor with thrember's `ImportsInfo`, `DataDirectories`, and `StringExtractor`.
+
+    Returns:
+        The extractor.
+    """
+    merge_import_descriptors(extractor)
+    found = {type(fe) for fe in extractor.features} & set(_FIXED_TYPES)
+    if found != set(_FIXED_TYPES):
+        raise ValueError(f"The extractor has no {sorted(t.__name__ for t in set(_FIXED_TYPES) - found)} to replace.")
+    extractor.features = [_FIXED_TYPES[type(fe)]() if type(fe) in _FIXED_TYPES else fe for fe in extractor.features]
+    return extractor

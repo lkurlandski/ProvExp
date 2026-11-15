@@ -15,7 +15,7 @@ from provexp.data.tabular import load_manifest
 from provexp.featuresets.ember2024.catalogue import passes_precondition
 from provexp.featuresets.ember2024.expert import ExpertFeatureExtractor
 from provexp.featuresets.ember2024.features import PEFeatureExtractor
-from provexp.featuresets.ember2024.features import merge_import_descriptors
+from provexp.featuresets.ember2024.features import fix_quirks
 from provexp.featuresets.ember2024.sums import SumsFeatureExtractor
 
 __all__ = ["MAX_LENGTH", "calibrate_threshold", "group_evasion", "make_extractor", "parse_defenses",
@@ -34,7 +34,7 @@ def make_extractor(features: Path) -> PEFeatureExtractor:
     elif manifest["feature_set"] == "ember2024-expert":
         extractor = ExpertFeatureExtractor()
     else:
-        extractor = merge_import_descriptors(PEFeatureExtractor())
+        extractor = fix_quirks(PEFeatureExtractor())
     if extractor.feature_names != manifest["feature_names"]:
         raise RuntimeError(f"The extractor does not match the feature names of {features.as_posix()}.")
     return extractor
@@ -68,7 +68,7 @@ def group_evasion(rows: pl.DataFrame, attacks: list[str]) -> dict[str, Any]:
     return {"files": n, "evaded": e, "rate": e / n}
 
 
-_PRECONDITION_EXTRACTOR = merge_import_descriptors(PEFeatureExtractor())
+_PRECONDITION_EXTRACTOR = fix_quirks(PEFeatureExtractor())
 
 
 def precondition_holds(bytez: bytes) -> bool:

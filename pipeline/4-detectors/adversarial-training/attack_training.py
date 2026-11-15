@@ -49,7 +49,7 @@ from provexp.data.simpledb import SimpleDB
 from provexp.data.simpledb import SimpleDBReader
 from provexp.data.tabular import load_manifest
 from provexp.featuresets.ember2024.features import PEFeatureExtractor
-from provexp.featuresets.ember2024.features import merge_import_descriptors
+from provexp.featuresets.ember2024.features import fix_quirks
 from provexp.parallel import map_watchdog
 
 
@@ -103,7 +103,7 @@ def _init_worker(model: Path, section_pop: list[Any], api_calls: list[Any], seed
                  seed_per_file: bool = False) -> None:
     """Build the per-worker extractor, detector wrapper, and attack donor pools once."""
     lief.logging.disable()
-    extractor = merge_import_descriptors(PEFeatureExtractor())  # quirk-fixed, matches artifacts/features/ember2024
+    extractor = fix_quirks(PEFeatureExtractor())  # quirk-fixed, matches artifacts/features/ember2024
     _W.update(extractor=extractor, wrapper=make_wrapper(model, extractor), section_pop=section_pop,
               api_calls=api_calls, seed=seed, iterations=iterations, tmp=tempfile.mkdtemp(prefix="a_advtrain_w_"),
               seed_per_file=seed_per_file)

@@ -53,3 +53,8 @@ class TestDeviations:
     def test_not_a_pe(self) -> None:
         row = deviations(b"MZ" + b"\x00" * 100)
         assert row["parses"] is False
+
+    def test_string_patterns(self) -> None:
+        row = deviations(b"MZ" + b"\x00" * 100 + b"HKEY_LOCAL_MACHINE\x00admin@example.com\x00")
+        assert row["string_patterns_differ"] is True
+        assert row["string_patterns"] == "email_addr,registry_key"

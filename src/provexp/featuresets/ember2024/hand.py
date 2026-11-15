@@ -23,7 +23,9 @@ __all__ = ["append_payload", "edit_add_section", "edit_append", "edit_dos_overwr
            "predict_add_section_sums", "predict_append", "predict_append_sums", "predict_content_overwrite"]
 
 
-_STRINGS = StringExtractor()  # type: ignore[no-untyped-call]
+def _strings(extractor: PEFeatureExtractor) -> StringExtractor:
+    """The extractor's string feature type (thrember's, or the one with its patterns fixed)."""
+    return next(fe for fe in extractor.features if isinstance(fe, StringExtractor))
 
 
 # Fixed file offsets of the IMAGE_DOS_HEADER members EMBER reads as `header` features (each a little-endian uint16);
@@ -146,7 +148,7 @@ def _append_raw(extractor: PEFeatureExtractor, z: bytes, appended: bytes) -> dic
     raw["byteentropy"] = be.flatten().tolist()
 
     # strings: the appended block's own strings add to the counts (no boundary merge: guard byte is non-printable).
-    add = _STRINGS.raw_features(appended, None)  # type: ignore[no-untyped-call]
+    add = _strings(extractor).raw_features(appended, None)  # type: ignore[no-untyped-call]
     _apply_string_delta(raw["strings"], _empty_strings_raw(), add)
 
     # section: SizeOfRawData is unchanged, so each size_ratio scales by old_len/new_len; the overlay grows.
@@ -226,8 +228,8 @@ def predict_content_overwrite(extractor: PEFeatureExtractor, z: bytes, lo: int, 
     b = hi
     while b < old_len and _printable(z[b]):
         b += 1
-    old_s = _STRINGS.raw_features(z[a:b], None)  # type: ignore[no-untyped-call]
-    new_s = _STRINGS.raw_features(zp[a:b], None)  # type: ignore[no-untyped-call]
+    old_s = _strings(extractor).raw_features(z[a:b], None)  # type: ignore[no-untyped-call]
+    new_s = _strings(extractor).raw_features(zp[a:b], None)  # type: ignore[no-untyped-call]
     _apply_string_delta(raw["strings"], old_s, new_s)
 
     # header: EMBER reads the DOS-header fields; recompute each uint16 member overwritten by the edit from its fixed
@@ -293,7 +295,7 @@ def _add_section_raw(extractor: PEFeatureExtractor, z: bytes, name: str, content
     raw["byteentropy"] = be.flatten().tolist()
 
     # strings: the content's own strings (no boundary merge assumed; the tool pads around the section).
-    _apply_string_delta(raw["strings"], _empty_strings_raw(), _STRINGS.raw_features(content, None))  # type: ignore[no-untyped-call]
+    _apply_string_delta(raw["strings"], _empty_strings_raw(), _strings(extractor).raw_features(content, None))  # type: ignore[no-untyped-call]
 
     # section: a new section item is declared; its size_ratio and all others use the declared new length.
     sec = raw["section"]

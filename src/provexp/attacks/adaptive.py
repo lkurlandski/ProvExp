@@ -26,7 +26,7 @@ from provexp.featuresets.ember2024.edits import entry_write
 from provexp.featuresets.ember2024.edits import past_end as past_end_edit
 from provexp.featuresets.ember2024.features import PEFeatureExtractor
 from provexp.featuresets.ember2024.features import field_range
-from provexp.featuresets.ember2024.features import merge_import_descriptors
+from provexp.featuresets.ember2024.features import fix_quirks
 from provexp.featuresets.ember2024.population import has_overrun_section
 from provexp.featuresets.ember2024.sums import SumsFeatureExtractor
 from provexp.items import ItemTable
@@ -900,7 +900,7 @@ def _init_worker(config: dict[str, Any], malware: Optional[list[tuple[str, bytes
     lief.logging.disable()
     if goodware is None:
         _, goodware = load_pilot(config["pilot_files"], config["db"])
-    extractor = merge_import_descriptors(PEFeatureExtractor())
+    extractor = fix_quirks(PEFeatureExtractor())
     engine = RealEngine(extractor, SumsFeatureExtractor()) if config.get("score") == "real" else Engine(extractor)
     _W.clear()
     _W.update(config=config, extractor=extractor, engine=engine, donors=Donors(goodware),

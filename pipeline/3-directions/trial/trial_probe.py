@@ -49,7 +49,7 @@ from provexp.featuresets.ember2024.catalogue import passes_precondition
 from provexp.featuresets.ember2024.catalogue import regions
 from provexp.featuresets.ember2024.edits import add_imports
 from provexp.featuresets.ember2024.features import PEFeatureExtractor
-from provexp.featuresets.ember2024.features import merge_import_descriptors
+from provexp.featuresets.ember2024.features import fix_quirks
 
 __all__ = ["probe_file"]
 
@@ -66,7 +66,7 @@ _W: dict[str, Any] = {}
 def _init(db: str, libraries: list[Library], imports: int) -> None:
     _W["reader"] = SimpleDBReader(SimpleDB(Path(db), check=False))
     _W["libraries"], _W["imports"] = libraries, imports
-    _W["extractor"] = merge_import_descriptors(PEFeatureExtractor())
+    _W["extractor"] = fix_quirks(PEFeatureExtractor())
 
 
 def _fill(label: str, n: int, rng: np.random.Generator) -> bytes:

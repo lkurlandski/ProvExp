@@ -18,7 +18,7 @@ from provexp.featuresets.ember2024.features import RichHeader
 from provexp.featuresets.ember2024.features import clipped
 from provexp.featuresets.ember2024.features import field_range
 from provexp.featuresets.ember2024.features import header_locating
-from provexp.featuresets.ember2024.features import merge_import_descriptors
+from provexp.featuresets.ember2024.features import fix_quirks
 from provexp.featuresets.ember2024.features import rva_ranges
 from provexp.featuresets.ember2024.features import zstring_end
 from provexp.items import Item
@@ -34,7 +34,7 @@ ROOT = Path(__file__).parent.parent
 DATA = ROOT / "tests" / "data"
 FILES = sorted(f for f in DATA.glob("*/*") if f.is_file())[:6]
 
-EXTRACTOR = merge_import_descriptors(PEFeatureExtractor())
+EXTRACTOR = fix_quirks(PEFeatureExtractor())
 NAMES = EXTRACTOR.feature_names
 ORIGINAL_IMPORTS = ImportsInfo()  # type: ignore[no-untyped-call]
 MODELED = np.array([not n.startswith("pefilewarnings:") for n in NAMES])

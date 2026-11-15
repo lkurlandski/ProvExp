@@ -45,7 +45,7 @@ from provexp.data.simpledb import SimpleDB
 from provexp.data.simpledb import SimpleDBIterator
 from provexp.featuresets.ember2024.escapes import WRITES
 from provexp.featuresets.ember2024.features import PEFeatureExtractor
-from provexp.featuresets.ember2024.features import merge_import_descriptors
+from provexp.featuresets.ember2024.features import fix_quirks
 from provexp.featuresets.ember2024.population import LAYOUT
 from provexp.featuresets.ember2024.population import PAST_END
 from provexp.featuresets.ember2024.population import clauses
@@ -89,7 +89,7 @@ def _shard(args: tuple[Path, int, list[str]]) -> list[dict[str, Any]]:
     warnings.filterwarnings("ignore")
     db, shard, names = args
     wanted = set(names)
-    extractor = merge_import_descriptors(PEFeatureExtractor())
+    extractor = fix_quirks(PEFeatureExtractor())
     rows = []
     for sample in SimpleDBIterator(SimpleDB(db, check=False)).iter(shard):
         if sample.name in wanted:

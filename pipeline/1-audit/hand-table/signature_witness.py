@@ -35,7 +35,7 @@ from provexp.data.paths import EMBER2024_DATA
 from provexp.data.simpledb import SimpleDB
 from provexp.data.simpledb import SimpleDBReader
 from provexp.featuresets.ember2024.features import PEFeatureExtractor
-from provexp.featuresets.ember2024.features import merge_import_descriptors
+from provexp.featuresets.ember2024.features import fix_quirks
 
 __all__ = ["security_entry", "complete", "main"]
 
@@ -84,7 +84,7 @@ def main() -> None:
     args = parser.parse_args()
 
     reader = SimpleDBReader(SimpleDB(args.db, check=False))
-    extractor = merge_import_descriptors(PEFeatureExtractor())
+    extractor = fix_quirks(PEFeatureExtractor())
     names = extractor.feature_names
     auth = [i for i, n in enumerate(names) if n.startswith("authenticode:")]
     df = pl.read_parquet(args.files)

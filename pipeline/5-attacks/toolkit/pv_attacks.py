@@ -46,7 +46,7 @@ from provexp.data.files import load_pilot
 from provexp.data.paths import EMBER2024_DATA
 from provexp.data.paths import ROOT
 from provexp.featuresets.ember2024.features import PEFeatureExtractor
-from provexp.featuresets.ember2024.features import merge_import_descriptors
+from provexp.featuresets.ember2024.features import fix_quirks
 
 __all__: list[str] = []
 
@@ -77,7 +77,7 @@ _W: dict[str, Any] = {}
 def _init_worker(model: Path, section_pop: list[Any], api_calls: list[Any], seed: int) -> None:
     """Build the per-worker extractor, detector wrapper, and donor pools once."""
     lief.logging.disable()
-    extractor = merge_import_descriptors(PEFeatureExtractor())  # quirk-fixed, per docs/archive/direction-A/direction-A-mock.md check 2
+    extractor = fix_quirks(PEFeatureExtractor())  # quirk-fixed, per docs/archive/direction-A/direction-A-mock.md check 2
     _W.update(extractor=extractor, names=extractor.feature_names, wrapper=make_wrapper(model, extractor),
               section_pop=section_pop, api_calls=api_calls, seed=seed, tmp=tempfile.mkdtemp(prefix="a_pv_w_"))
 

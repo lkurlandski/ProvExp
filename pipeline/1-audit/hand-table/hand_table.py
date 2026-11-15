@@ -55,6 +55,7 @@ from provexp.data.simpledb import SimpleDB
 from provexp.data.simpledb import SimpleDBReader
 from provexp.featuresets.ember2024.catalogue import add_section
 from provexp.featuresets.ember2024.features import PEFeatureExtractor
+from provexp.featuresets.ember2024.features import fix_quirks
 from provexp.featuresets.ember2024.hand import edit_add_section
 from provexp.featuresets.ember2024.hand import edit_append
 from provexp.featuresets.ember2024.hand import edit_dos_overwrite
@@ -145,7 +146,7 @@ def main() -> None:
     args = parser.parse_args()
     args.outdir.mkdir(parents=True, exist_ok=True)
 
-    extractor = PEFeatureExtractor()
+    extractor = fix_quirks(PEFeatureExtractor())
     readouts = extractor.readouts
     names = extractor.feature_names
     group = [n.split(":", 1)[0] for n in names]

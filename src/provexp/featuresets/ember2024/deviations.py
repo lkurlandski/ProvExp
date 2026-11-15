@@ -17,7 +17,9 @@ Each check reads the file with pefile (with our patches installed by `features`)
     export_names_lost       named exports pefile stopped before (an invalid name, a repeated entry, its caps)
     import_cap              pefile's 8,192-import cap was reached
     import_dll_invalid      a DLL name outside pefile's character set (read as "*invalid*")
-    registry_typo           the bytes contain HKEY_ or HKLM, which thrember's registry regex misspells (KHEY_, KHLM)
+    import_stopped          pefile stopped reading the import or delay-import descriptors after repeated errors
+    string_patterns_differ  a string feature whose pattern we fixed (registry_key, email_addr, .click() counts otherwise
+                            than thrember's; the names that differ in `string_patterns`)
 """
 
 from __future__ import annotations
@@ -33,9 +35,11 @@ __all__ = ["CHECKS", "deviations"]
 
 CHECKS = ("overlay_rules_differ", "guard_fired", "repeated_descriptor", "dirs_below_16", "dropped_dir_nonzero",
           "entry_rule_differs", "entry_length_sensitive", "align_bits", "sections_cut", "export_names_lost",
-          "import_cap", "import_dll_invalid", "registry_typo")
+          "import_cap", "import_dll_invalid", "import_stopped", "string_patterns_differ")
 
 SCN_EXECUTE = 0x20000000
+_STRINGS_V3 = features.StringExtractor()  # type: ignore[no-untyped-call]
+_STRINGS_FIXED = features.StringExtractorFixed()
 SCN_ALIGN_MASK = 0x00F00000
 
 
@@ -97,7 +101,11 @@ def deviations(z: bytes) -> dict[str, Any]:
         `parses` and, if it parses, one entry per name in CHECKS (bool, or a count for `export_names_lost`), plus the
         two entry sections and the dropped directory's name where they apply.
     """
-    row: dict[str, Any] = {"parses": False, "registry_typo": b"HKEY_" in z or b"HKLM" in z}
+    # The string features do not depend on the parse.
+    v3 = _STRINGS_V3.raw_features(z, None)["string_counts"]  # type: ignore[no-untyped-call]
+    fixed = _STRINGS_FIXED.raw_features(z, None)["string_counts"]  # type: ignore[no-untyped-call]
+    differ = sorted(k for k in features.FIXED_STRING_PATTERNS if v3.get(k, 0) != fixed.get(k, 0))
+    row: dict[str, Any] = {"parses": False, "string_patterns_differ": bool(differ), "string_patterns": ",".join(differ)}
     try:
         pe = pefile.PE(data=z)
     except (pefile.PEFormatError, AttributeError):
@@ -122,4 +130,6 @@ def deviations(z: bytes) -> dict[str, Any]:
     row["export_names_lost"] = max(0, min(exports.struct.NumberOfNames, pefile.MAX_SYMBOL_EXPORT_COUNT) - named) if exports is not None else 0
     row["import_cap"] = any("too many imported symbols" in w.lower() or "excessive number of imports" in w.lower() for w in warnings)
     row["import_dll_invalid"] = any(e.dll == b"*invalid*" for e in imports)
+    row["import_stopped"] = any(w.startswith(("Too many errors parsing the import directory",
+                                              "Too many errors parsing the Delay import directory")) for w in warnings)
     return row

@@ -28,7 +28,7 @@ from provexp.featuresets.ember2024.catalogue import predict_zero_entry
 from provexp.featuresets.ember2024.catalogue import write_section
 from provexp.featuresets.ember2024.features import PEFeatureExtractor
 from provexp.featuresets.ember2024.features import field_range
-from provexp.featuresets.ember2024.features import merge_import_descriptors
+from provexp.featuresets.ember2024.features import fix_quirks
 from provexp.reach import Prediction
 
 warnings.filterwarnings("ignore", category=SyntaxWarning)
@@ -117,7 +117,7 @@ class TestPlainLayout:
 
 @pytest.fixture(scope="module")
 def extractor() -> PEFeatureExtractor:
-    return merge_import_descriptors(PEFeatureExtractor())
+    return fix_quirks(PEFeatureExtractor())
 
 
 def _check_exact(extractor: PEFeatureExtractor, p: Optional[Prediction]) -> None:

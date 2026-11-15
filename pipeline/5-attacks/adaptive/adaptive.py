@@ -63,7 +63,7 @@ from provexp.data.tabular import load_manifest
 from provexp.featuresets.ember2024 import catalogue
 from provexp.featuresets.ember2024.escapes import WRITES as ESCAPES
 from provexp.featuresets.ember2024.features import PEFeatureExtractor
-from provexp.featuresets.ember2024.features import merge_import_descriptors
+from provexp.featuresets.ember2024.features import fix_quirks
 from provexp.featuresets.ember2024.sums import SumsFeatureExtractor
 from provexp.models.erdalt import ERDALTDetector
 from provexp.parallel import map_watchdog
@@ -187,7 +187,7 @@ def main() -> None:
     defenses = _parse_defenses(args.defense)
 
     manifest = load_manifest(args.features)
-    extractor = merge_import_descriptors(PEFeatureExtractor())
+    extractor = fix_quirks(PEFeatureExtractor())
     if manifest["feature_names"][: extractor.dim] != extractor.feature_names:
         raise RuntimeError(f"The store {args.features.as_posix()} ({manifest['feature_set']}) does not start with the "
                            "thrember features: the C1 engine has no recognizers for other layouts.")

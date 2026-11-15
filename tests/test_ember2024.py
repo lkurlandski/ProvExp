@@ -27,6 +27,9 @@ from provexp.featuresets.ember2024.features import ImportsInfoMerged
 from provexp.featuresets.ember2024.features import PEFeatureExtractor
 from provexp.featuresets.ember2024.features import field_range
 from provexp.featuresets.ember2024.features import hash_indices
+from provexp.featuresets.ember2024.features import DataDirectoriesReserved
+from provexp.featuresets.ember2024.features import StringExtractorFixed
+from provexp.featuresets.ember2024.features import fix_quirks
 from provexp.featuresets.ember2024.features import merge_import_descriptors
 from provexp.featuresets.ember2024.features import rva_string_range
 from provexp.provenance import Provenance
@@ -474,3 +477,82 @@ class TestImportsInfoMerged:
         total = sum(len(e.imports) for e in pe.DIRECTORY_ENTRY_IMPORT)
         assert merged[INDEX["imports:num_imports"]] == total
         assert original[INDEX["imports:num_imports"]] < total
+
+
+################################################################################
+# The RESERVED Directory and the String Patterns (fixes added on top of thrember)
+################################################################################
+
+
+def _fewer_directories(data: bytes, n: int) -> bytes:
+    """The file with `n` data directories declared, and a nonzero Size in the last one kept (written in place)."""
+    pe = _parse(data)
+    if pe is None or len(pe.OPTIONAL_HEADER.DATA_DIRECTORY) != 16:
+        pytest.skip("Not a PE file with 16 data directories.")
+    out = bytearray(data)
+    lo, hi = field_range(pe.OPTIONAL_HEADER, "NumberOfRvaAndSizes")
+    out[lo:hi] = struct.pack("<I", n)
+    lo, hi = field_range(pe.OPTIONAL_HEADER.DATA_DIRECTORY[n - 1], "Size")
+    out[lo:hi] = struct.pack("<I", 0x48)
+    return bytes(out)
+
+
+class TestFixQuirks:
+
+    def test_installs_every_fix(self) -> None:
+        extractor = fix_quirks(PEFeatureExtractor())
+        kinds = [type(fe) for fe in extractor.features]
+        assert ImportsInfoMerged in kinds and DataDirectoriesReserved in kinds and StringExtractorFixed in kinds
+        assert extractor.feature_names == NAMES
+        with pytest.raises(ValueError):
+            fix_quirks(extractor)
+
+    def test_same_with_sixteen_directories(self, sample: tuple[bytes, np.ndarray, Provenance]) -> None:
+        """With 16 directories declared, the entry skipped is the RESERVED one either way."""
+        needs_files()
+        data, x, prov = sample
+        pe = _parse(data)
+        if pe is None or len(pe.OPTIONAL_HEADER.DATA_DIRECTORY) != 16:
+            pytest.skip("Not a PE file with 16 data directories.")
+        original, fixed = features.DataDirectories(), DataDirectoriesReserved()  # type: ignore[no-untyped-call]
+        raw = original.raw_features(data, pe)  # type: ignore[no-untyped-call]
+        assert np.array_equal(original.process_raw_features(raw), fixed.process_raw_features(raw))  # type: ignore[no-untyped-call]
+        assert np.array_equal(original.provenance(data, pe).pieces().lo, fixed.provenance(data, pe).pieces().lo)
+
+    @pytest.mark.parametrize("n,name", [(15, "com_descriptor"), (3, "resource")])
+    def test_fewer_directories_keep_the_last(self, n: int, name: str) -> None:
+        """thrember drops the last declared directory; the fix reads it, and its provenance and items record it."""
+        needs_files()
+        data = _fewer_directories(FILES[0].read_bytes(), n)
+        col = INDEX[f"datadirectories:{name}_size"]
+        assert EXTRACTOR.feature_vector(data)[col] == 0  # type: ignore[no-untyped-call]
+        extractor = fix_quirks(PEFeatureExtractor())
+        x, prov = extractor.feature_vector_with_provenance(data)
+        assert x[col] == 0x48
+        pe = _parse(data)
+        assert pe is not None
+        lo, hi = field_range(pe.OPTIONAL_HEADER.DATA_DIRECTORY[n - 1], "Size")
+        assert column_ranges(prov, col) == [(lo, hi)]
+        fields = [i for i in extractor.item_table(data).items if i.kind == "field" and i.group == "datadirectories"]
+        assert len(fields) == 2 * n
+
+    @pytest.mark.parametrize("text,regex,original,fixed", [
+        (b"SOFTWARE\\HKEY_LOCAL_MACHINE\x00HKLM\\Run\x00", "registry_key", 0, 2),
+        (b"KHEY_typo\x00HKCU\\Software\x00", "registry_key", 2, 1),
+        (b"mail admin@example.com now\x00aa:bb:cc:dd:ee:ff\x00", "email_addr", 1, 1),
+        (b"no mail here\x00a.b@c\x00x@y.zz\x00", "email_addr", 0, 1),
+        (b"button.click()\x00xxclick\x00", ".click(", 2, 1),
+    ])
+    def test_string_patterns(self, text: bytes, regex: str, original: int, fixed: int) -> None:
+        """Each fixed pattern counts what its name says (here the strings containing it), and agrees with the slow path."""
+        thrember, ours = features.StringExtractor(), StringExtractorFixed()  # type: ignore[no-untyped-call]
+        assert thrember.regex_idxs == ours.regex_idxs
+        assert thrember.raw_features(text, None)["string_counts"].get(regex, 0) == original  # type: ignore[no-untyped-call]
+        assert ours.raw_features(text, None)["string_counts"].get(regex, 0) == fixed  # type: ignore[no-untyped-call]
+        assert features._strings_raw_features_original(ours, text, None) == ours.raw_features(text, None)  # type: ignore[no-untyped-call]
+
+    def test_email_pattern_is_linear(self) -> None:
+        """A long run of address characters with no @ is searched quickly (every repeat is bounded)."""
+        ours = StringExtractorFixed()
+        ours.raw_features(b"a" * 200_000, None)  # type: ignore[no-untyped-call]
+

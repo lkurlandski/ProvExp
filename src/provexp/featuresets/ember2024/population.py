@@ -18,7 +18,7 @@ from provexp.featuresets.ember2024.catalogue import SECURITY_ENTRY
 from provexp.featuresets.ember2024.catalogue import passes_precondition
 from provexp.featuresets.ember2024.catalogue import precondition
 from provexp.featuresets.ember2024.features import PEFeatureExtractor
-from provexp.featuresets.ember2024.features import merge_import_descriptors
+from provexp.featuresets.ember2024.features import fix_quirks
 from provexp.featuresets.ember2024.features import rva_ranges
 from provexp.featuresets.ember2024.features import section_data_range
 
@@ -103,7 +103,7 @@ _W: dict[str, Any] = {}
 
 def _init(db: str) -> None:
     _W["reader"] = SimpleDBReader(SimpleDB(Path(db), check=False))
-    _W["extractor"] = merge_import_descriptors(PEFeatureExtractor())
+    _W["extractor"] = fix_quirks(PEFeatureExtractor())
 
 
 def _precondition(name: str) -> tuple[str, bool]:

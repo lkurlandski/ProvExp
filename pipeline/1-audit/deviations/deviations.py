@@ -30,6 +30,7 @@ from provexp.data.paths import EMBER2024_DATA
 from provexp.data.simpledb import SimpleDB
 from provexp.data.simpledb import SimpleDBReader
 from provexp.featuresets.ember2024.deviations import CHECKS
+from provexp.featuresets.ember2024.features import FIXED_STRING_PATTERNS
 from provexp.featuresets.ember2024.deviations import deviations
 
 _STATE: dict[str, Any] = {}
@@ -56,6 +57,11 @@ def report(rows: pl.DataFrame, population: Optional[pl.DataFrame]) -> dict[str, 
     for check in CHECKS:
         hit = rows.filter(pl.col(check).cast(pl.Float64).fill_null(0) > 0)
         out[check] = {"in_population": int(hit["in_population"].sum()), "outside": int((~hit["in_population"]).sum())}
+    # The fixed string patterns one by one.
+    for pattern in FIXED_STRING_PATTERNS:
+        hit = rows.filter(pl.col("string_patterns").fill_null("").str.split(",").list.contains(pattern))
+        out[f"string_pattern {pattern}"] = {"in_population": int(hit["in_population"].sum()),
+                                             "outside": int((~hit["in_population"]).sum())}
     return out
 
 
