@@ -5,6 +5,10 @@ sums gives up at 1% FPR (93.5% to 85.7%, pilot), how much must *every* unevadabl
 much is lost because the table keeps only a sign per feature (abstraction), and how much because our GBDT is not the
 best table-respecting detector (learner)?
 
+> **Read section 7 first.** After the user's review (same session), §3.2 (anchored sums), §3.3 (verified signatures)
+> and experiments 4 and 5 are **rejected**, and none of the mathematics here is a headline contribution. Sections 1 to
+> 6 are kept as written, as the record of the analysis.
+
 Paper numbers below are from `manuscript/main.aux`: Definition 7 (*Threat models and directions*), Definition 8
 (*Changes and signatures*), Definition 9 (*Directions of sums*), Table 1 (direction rules of the readouts),
 Proposition 1 (*Exact side effects*), Theorem 1 (*Sound directions*), Corollary 1 (*Robustness*), §5.4 (*What
@@ -477,3 +481,65 @@ Prediction only, no training. Scripts were scratch files and are not kept; each 
   ten signature and directory sums were down.
 - *Training settings read from the saved models:* `best_iteration` 500 of 500 for every model,
   `monotone_constraints_method: basic`.
+
+## 7. Discussion with the user after the findings, and what was decided (session 71)
+
+**My own assessment, when asked whether this direction fits, strengthens the framework, and is novel.**
+*Fit:* yes; everything uses only the table, the signature and closure, and the two new words ("complete", "free") are
+one-line conditions. *Strength:* modest; it does not strengthen Theorem 1 or Corollary 1, it lets §5.4 say what the
+cost is a cost of. *Novelty:* low as mathematics. Proposition A and B are elementary order theory, Proposition F is
+the conflict-graph bound of the robust-classification literature, and Proposition E is ours in the framework's terms
+but short. What is original is empirical: the monotone detector is mostly an unconstrained detector on the 203 sums
+the attacker cannot move, and the cost divides by what the attacker can place, raise, or not touch. None of it should
+be listed as a contribution.
+
+**The user's reaction.** (1) The result is acceptable but not ideal: they had hoped for a second headline result on
+the order of Theorem 1, and "the bound belongs to the robust-classification literature" is exactly what they feared.
+(2) They reject the anchoring proposal outright: a feature computed over the entry-point section is robust only until
+the attacker finds a way to move the entry point, and they were surprised it was proposed at all. They also see
+extractor revision as feature engineering, away from foundational observations about feature-space and problem-space
+adversarial examples. I agree with the second point and withdrew the proposal.
+
+**A consequence I pointed out, which stands.** The same condition already applies to the detector in the paper: it
+takes 80% of its split gain from the 203 fixed sums, `AddressOfEntryPoint` among its five most-used, and its guarantee
+holds only while those fields stay outside the threat model. §5.4 should say this plainly; experiment 3 (the fixed
+sums alone) measures how much rests on it.
+
+**What survives of §3.2 without any extractor work:** only the observation that the cost of robustness depends on
+where the extractor reads its evidence relative to where the attacker can write. It is supported by experiment 3 and
+needs no new feature. Likewise "the largest price is the price of parsing a signature without verifying it" explains
+the entry write's 3.9 points without changing the extractor.
+
+**Why this question cannot yield a headline result.** Bounding the cost from data is vacuous (§2.4), and the
+mathematics around the split is elementary or someone else's.
+
+**The one candidate for a headline result: the converse of Corollary 1 as a real theorem ("step 2").** Today:
+table-monotone implies unevadable. The theorem would add: under a condition checked on the signature, every
+unevadable detector on these sums is table-monotone. Theorem 1 says the table is sound; this would say it loses
+nothing for detectors, and it would give the finding the user asked for at the start (the cost is the price of the
+threat model for this extractor, not of our construction). What is missing:
+
+- *The condition is not yet checkable.* Proposition B assumes "the table is complete", which restates the conclusion.
+  My guess at a signature-level condition has two parts: every change in the signature is realizable by an edit on
+  every population input where it applies (no signature slack), and every one-sided sum can be moved on its own up to
+  identities that hold on the population (no sign slack).
+- *Bundling.* It holds for the import block, but strictly fails where changes come together (an added import also
+  brings bytes and strings). I believe a block-by-block version is provable; I am not confident a clean statement
+  covers the whole EMBER table.
+- *Novelty unchecked.* Gimenez et al. prove sufficiency only (checked in the PDF). I have not searched for a converse
+  elsewhere (monotone-classifier papers first: Incer et al. 2018, Chen et al. 2021). The order-theory core is simple,
+  so the contribution would be the condition and its link to the signature.
+- *Cost.* It brings back a relative of coupling and tightness, which were dropped for complexity.
+
+My estimate, given to the user: about even odds that a bounded session yields something they would call a theorem on
+the order of Theorem 1. Stop rule proposed: more than one new definition, or bundling that cannot be handled in a
+remark, and it stays the two-sentence remark it is now.
+
+**Decided (user).** Step 1 only for now: experiments 1 to 3 and the rewrite of §5.4's *Where the cost lies*. Then
+discuss the outcomes; step 2 (with its literature check first) only if the user agrees then. State of step 1 and the
+next actions: `docs/resume-prompt-fable.md`.
+
+**Found while building step 1.** LightGBM falls back to the `basic` constraint method, with a warning only, unless
+`feature_fraction` and `feature_fraction_bynode` are 1; the step sets both for the method comparison. At 100 rounds
+on the pilot store the three methods are within 0.1 points of accuracy (93.71, 93.78, 93.75). Too early to judge,
+but it does not yet support my prediction of +1 to +3 points for experiment 2.

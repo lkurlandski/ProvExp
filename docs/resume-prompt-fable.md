@@ -1,7 +1,8 @@
 # Resume prompt: the cost of robustness, step 1 (written 2026-11-15, session 71, at the usage limit)
 
 Paste into a fresh session (Fable 5.2 or Opus). Read `docs/evidence/fable-cost-of-robustness.md` first (the findings;
-§4 holds the experiments and their predictions), not the status log.
+§4 holds the experiments and their predictions; **§7 records the discussion with the user, what was rejected and
+why, and the candidate for step 2**), not the status log.
 
 ## What was decided (user, session 71)
 
