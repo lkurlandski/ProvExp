@@ -40,7 +40,7 @@ are in `run/` (a historical record: re-run them at tag `pilot-final`).
 | `2-features/files` | `build_metadata.py`, `select_files.py` | yes (the evaluation set: 1,000 malware, 1,000 benign, complete files) | runs 03-04 |
 | `3-directions/derived` | `directions.py`, `expert_directions.py` | yes (`directions.py`) | runs 97, 102, 140, 142 |
 | `3-directions/trial` | `trial_probe.py`, `trial_table.py` | protocol session | run 144 |
-| `4-detectors/train` | `train_classic.py`, `train_erdalt.py` | protocol session | runs 99, 105, 128, 140 |
+| `4-detectors/train` | `train_classic.py`, `train_erdalt.py` | yes (Table 5 and the expert set; the learned defenses in `adversarial-training`) | runs 99, 105, 128, 140 |
 | `4-detectors/adversarial-training` | `attack_training.py` | protocol session | runs 122, 125, 133 |
 | `4-detectors/price-list` | `price_list.py` | protocol session | run 126 |
 | `5-attacks/toolkit` | `toolkit.py`, `pv_attacks.py` | protocol session | runs 81, 100, 123-124, 131, 133, 135 |
