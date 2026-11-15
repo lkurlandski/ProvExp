@@ -41,6 +41,9 @@ outputs live, the maximum walltime, Python 3.14 through uv. They are checked in 
 before running anything (`ln -s <large storage> artifacts`). The pipeline writes under `artifacts/scaleup/<stage>/`;
 SLURM's own logs go to `logs/`. To use the pilot's models and feature stores elsewhere (the registry's `pilot` set),
 copy them with `run/sync_artifacts.sh`.
+The attacks read their files from `artifacts/scaleup/2-features/files/files.sqlite` when it exists (the file store,
+`pipeline/2-features/file-store`; the same bytes as the SimpleDB, each row's SHA-256 checked on read): build it there
+after the lists, or copy it from this server.
 
 ## 5. The check
 

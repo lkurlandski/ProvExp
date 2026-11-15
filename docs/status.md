@@ -130,12 +130,15 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
 
 ## Waiting on the user
 
-- **Next: the head-node session** (`docs/resume-prompt.md` §4.2) needs the user at the cluster: `SETUP.md`, `check.sh`, the "TO
+- **Next session, on this machine: the two open questions** (the user, session 69; `docs/resume-prompt.md`): the
+  derived table's corpus at the scale-up (`3-directions/derived`'s `FILES`), and iterated adversarial training's
+  starting point (below). Neither needs the cluster.
+- **Then the head-node session** (`docs/resume-prompt.md` §4.2) needs the user at the cluster: `SETUP.md`, `check.sh`, the "TO
   CONFIRM" values, and each `run.sh`'s time, memory and GPUs. Then the user submits the steps in
   `pipeline/README.md`'s order, with `2-features/file-store` after the lists (or copy `files.sqlite` from this
   server). Number-free rebuttal text fixes (R4, R5, R15, R21) are step 4 (while the scale-up
   runs).
-- **One choice made by Claude, open to the user's veto:** iterated adversarial training starts from the adversarially
+- **One choice made by Claude, open to the user's veto (next session's second question):** iterated adversarial training starts from the adversarially
   trained detector (the toolkit's material already appended), not from the unconstrained one, so its two rounds add
   the beam's outputs to the strongest learned baseline (`pipeline/4-detectors/iterated/run.sh`).
 
@@ -147,7 +150,8 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
 3. The scale-up (PLAN.md step 3): ~~the refactoring session~~ (done, session 64), ~~the extractor audit pass~~ (done,
    session 65; decided and applied in session 66),
    ~~the protocol items~~ (decided, session 67), ~~the remaining `run.sh` steps~~ (done, session 68), ~~lightweight
-   optimization of the hot spots~~ (done, session 69), then a head-node session on the cluster (next).
+   optimization of the hot spots~~ (done, session 69), the two open questions (next), then a head-node session
+   on the cluster.
 4. While it runs: §2's closing and contribution 4 aligned with §5; the number-free text fixes R4, R5, R15, R21.
 5. After reading it: final numbers, then shortening §4-5 and §5's question-and-answer emphasis.
 6. A second domain decided with the scale-up's results in hand (the user's call).

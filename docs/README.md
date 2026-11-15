@@ -24,7 +24,7 @@ check `manuscript/main.aux` (`grep newlabel manuscript/main.aux`), and add the t
 | `docs/status.md` | current state, what waits on the user, short session log | every session; update at the end |
 | `pipeline/README.md` | the scale-up's stages and steps, and which step produces each result of the paper | before running or adding any experiment |
 | `SETUP.md` | from a fresh clone to a system that runs `pipeline/` (environment, dataset, system config, the check) | setting up a new machine or the clusters |
-| `docs/resume-prompt.md` | where the next session starts: lightweight optimization of the scale-up's hot spots (profile, assess, implement what the user approves), then the head-node session and the launch | starting the next main-line session |
+| `docs/resume-prompt.md` | where the next session starts: the two open scale-up questions on this machine (the derived table's corpus; iterated adversarial training's starting point), then the head-node session and the launch | starting the next main-line session |
 | `docs/fable-theory-prompt.md` | a one-off prompt for a Claude Fable 5.2 session (credits until 2026-11-17): audit the proofs of §3, then rank ways to strengthen the theory; output `docs/evidence/fable-theory-analysis.md` | launching that session; reading its output |
 | `docs/reviews/rebuttal-prompt.md` | the rebuttal procedure, kept for reference: once `run_rebuttal.sh` has written the triage, the user decides on the triage table, then on drafts of the groups worth investigating. The 2026-11-12 triage is complete; the next revisit folds into `docs/resume-prompt.md` | re-running the rebuttal procedure on a future review |
 | `docs/checkpoint-prompt.md` | the user's prompt for ending a session | the user ends a session |
@@ -66,6 +66,7 @@ or when changing an experiment. Run scripts are in `run/` (one per step, numbere
 |---|---|
 | `docs/archive/status-log-2026-11-12.md` | the session log, sessions 41-42 (search, don't read) |
 | `docs/archive/status-log-2026-11-10-to-11.md` | the session log, sessions 29-39 (search, don't read) |
+| `docs/archive/resume-prompt-2026-11-15-s69.md` | the resume prompt of session 69 (written in session 68): lightweight optimization of the scale-up's hot spots (done in session 69: three bit-identical changes, the adaptive candidate ~3x cheaper) |
 | `docs/archive/resume-prompt-2026-11-15-s68.md` | the resume prompt of session 68 (written in session 67): the scale-up's remaining `run.sh` steps (all done in session 68; `pipeline/README.md`) |
 | `docs/archive/resume-prompt-2026-11-15-s67.md` | the resume prompt of session 67 (written in session 66): the scale-up's protocol items, malware count first (all decided in session 67; PLAN.md step 3 (g)) |
 | `docs/archive/resume-prompt-2026-11-15-s66.md` | the resume prompt of session 66 (written in session 65): the audit's five decisions, the deviations table, the `features.py` fixes (all done in session 66) |

@@ -517,12 +517,15 @@ records of the §5 reviews, the table remake and the ERDALT check, is in
    class for R12; `erdalt_hole.py --protocol`). A bug from session 67 fixed: the adaptive search's workers reloaded
    the pilot list under `--protocol scaleup`. Open for the user: the derived table's corpus at the scale-up, and
    iterated adversarial training's starting point (Claude chose the adversarially trained detector).
-   **Next (user, end of session 68): lightweight optimization before the launch.** Profile the expensive paths (the
-   adaptive search's extraction-scored candidates above all, ~7-9k CPU-h; the material; featurization), then assess
-   each hot spot (gain in CPU-h, effort, added complexity; techniques in the user's order of preference: a better
-   algorithm, numpy, numba, Cython, C/C++) for the user's cost-benefit call; implement only what is approved,
-   bit-identical, and re-profile. Then the head-node session (`SETUP.md`, `check.sh`, the "TO CONFIRM" values, each
-   `run.sh`'s time and memory).
+   **Lightweight optimization (session 69): done, bit-identical.** Profiled; three changes approved and made: the
+   extraction-scored search writes structural candidates without computing their unused prediction; a file store
+   (`2-features/file-store`, SQLite beside the lists) for the attacked files; the string features with numpy and
+   `str.find`. An adaptive candidate ~0.32 -> ~0.10 s (the search ~7-9k -> ~2.5-3k CPU-h), sums extraction 120 -> 78
+   ms per file. The remaining time is spread (strings ~40% of an extraction, byte-entropy windows ~25%, byte counts
+   and pefile's parse the rest); no further change would gain 50% alone (session 69's assessment).
+   **Next (user, session 69): the two open questions, on this machine** (the derived table's corpus; iterated
+   adversarial training's starting point), **then the head-node session** (`SETUP.md`, `check.sh`, the "TO CONFIRM"
+   values, each `run.sh`'s time and memory, `2-features/file-store` after the lists).
 4. **While the scale-up runs: §2's closing and contribution 4 against §5** (old step 2 (c)). §2 says §5 "uses them to
    attack malware detectors and to build robust ones"; in §5 the attack is an instrument. The mock's contribution 4 is
    stale ("four to six points", "learned constraints"). Writing only.
