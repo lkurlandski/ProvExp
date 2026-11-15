@@ -6,9 +6,9 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
 `docs/archive/status-log-2026-11-09.md`, sessions 29-40 in `docs/archive/status-log-2026-11-10-to-11.md`, sessions
 41-42 in `docs/archive/status-log-2026-11-12.md`, sessions 43-54 in
 `docs/archive/status-log-2026-11-12-to-13-s43-54.md`, sessions 55-58 in `docs/archive/status-log-2026-11-13-s55-58.md`, sessions 59-60 in
-`docs/archive/status-log-2026-11-13-s59-60.md`).
+`docs/archive/status-log-2026-11-13-s59-60.md`, sessions 61-62 in `docs/archive/status-log-2026-11-14-s61-62.md`).
 
-## Current state (2026-11-15, through session 67)
+## Current state (2026-11-15, through session 68)
 
 - **Framework (§2-3):** rewritten; the user is reasonably satisfied. Open: the user's holistic read of Sound
   Directions after round 4 (finetuning only).
@@ -116,12 +116,24 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
   adversarial training 1,000 per round; MAB-Malware at both settings; escapes against three detectors with the
   adaptive search and the toolkit. Code for the lists, thresholds, donors, complete files and the attacks' `--protocol`
   committed; the remaining `run.sh` steps are listed in PLAN.md step 3 (g).
+- **The scale-up's steps (session 68): every one has its `run.sh`**, smoke-tested on a small slice (the pilot's 10%
+  stores and models trained on 20,000 files, a few malware): `4-detectors/{train,adversarial-training,learned,
+  iterated,price-list}`, `3-directions/trial`, `5-attacks/{toolkit,adaptive,mab-malware}` (the long ones SLURM job
+  arrays that resume), `6-results` (`scaleup_tables.py`, `coverage.py`, `erdalt_hole.py`); the order in
+  `pipeline/README.md`; models under `4-detectors/<name>` (the registry's `scaleup` set). Bug fixed: the adaptive
+  search's workers reloaded the pilot list under `--protocol scaleup` (session 67's change, which the pilot-protocol
+  identity check could not see). Open for the user: the derived table's corpus, and iterated adversarial training's
+  starting point (`docs/resume-prompt.md` §4).
 
 ## Waiting on the user
 
-- **Nothing blocks the next session.** It implements the scale-up's remaining `run.sh` steps (`docs/resume-prompt.md`),
-  then a session on the cluster's head node (`SETUP.md`, `check.sh`, the "TO CONFIRM" values). Number-free rebuttal
-  text fixes (R4, R5, R15, R21) are step 4 (while the scale-up runs).
+- **The head-node session** (`docs/resume-prompt.md`) needs the user at the cluster: `SETUP.md`, `check.sh`, the "TO
+  CONFIRM" values, and each `run.sh`'s time, memory and GPUs. Then the user submits the steps in
+  `pipeline/README.md`'s order. Number-free rebuttal text fixes (R4, R5, R15, R21) are step 4 (while the scale-up
+  runs).
+- **One choice made by Claude, open to the user's veto:** iterated adversarial training starts from the adversarially
+  trained detector (the toolkit's material already appended), not from the unconstrained one, so its two rounds add
+  the beam's outputs to the strongest learned baseline (`pipeline/4-detectors/iterated/run.sh`).
 
 ## Scheduled (in order; PLAN.md, next steps)
 
@@ -130,14 +142,27 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
 2. ~~The final review/rebuttal revisit~~ (done, session 63: nothing else before the scale-up).
 3. The scale-up (PLAN.md step 3): ~~the refactoring session~~ (done, session 64), ~~the extractor audit pass~~ (done,
    session 65; decided and applied in session 66),
-   ~~the protocol items~~ (decided, session 67), the remaining `run.sh` steps (next), then a head-node session on
-   the cluster.
+   ~~the protocol items~~ (decided, session 67), ~~the remaining `run.sh` steps~~ (done, session 68), then a
+   head-node session on the cluster (next).
 4. While it runs: §2's closing and contribution 4 aligned with §5; the number-free text fixes R4, R5, R15, R21.
 5. After reading it: final numbers, then shortening §4-5 and §5's question-and-answer emphasis.
 6. A second domain decided with the scale-up's results in hand (the user's call).
 7. Introduction, discussion, abstract last.
 
 ## Session log
+
+- **2026-11-15 (session 68): the scale-up's remaining `run.sh` steps.** Registry `scaleup` set (6d9dbd4); training
+  (b21f4d7); the defenses' material and the learned defenses (4734d57: `attack_training.py` on the lists with shards,
+  rows for the sums and expert stores checked equal to the zstd binaries' re-extraction, `pv_hole.py --exclude` so PV
+  selects among EMBER's features, `--augment` of several directories); the trial row (6adba41, `--donor_list`); the
+  price list (54b2b73); the toolkit with `--escape` and the attacks as job arrays, MAB-Malware's three settings, the
+  identity check from an empty directory with the pilot's settings pinned; `6-results`. Smokes: every step ran end to
+  end on small slices; coverage's `modeled` class gives 982 lowerable (the meta-review's R12 recount). Found while
+  smoke-testing: the adaptive workers' pilot reload (fixed); after the debug-entry escape `gamma_api` stopped evading
+  the smoke's unconstrained detector (LIEF's rebuild; noted in the resume prompt); `coverage.py` counted the
+  re-encoding's sums as lowerable on the sums table's `-control` rows (fixed). Identity check: only session 66's recorded
+  differences (the fixed string and directory features, the catalogue's counts, the manifests' commit, the escape row
+  of `0485edc2...`).
 
 - **2026-11-15 (session 67): the scale-up's protocol decided.** With the user, item by item (PLAN.md step 3 (g)):
   the evaluation set (1,000 + 1,000 complete test files; cost from the pilot's timings ~8-11 CPU-h per detected
@@ -211,35 +236,3 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
   favour). **Decisions (user):** the reading for §5's lead and §5.3 (text after the scale-up); a trial row in Table 5
   at the scale-up; iterated adversarial training in the scale-up (`ent` held out). `a1_adaptive.py --save_rows`
   applied. R18 has no open item before the scale-up.
-
-- **2026-11-14 (session 62, R7/scale-up track): the decisions before the scale-up taken; verification and small fixes
-  done.** Rebuttal status reviewed (triage table, meta-review §5-8). **Decisions (user):** (1) stay on pefile, with a
-  deliberate audit pass and deviations table later (scale-up prep); (2,3) scale-up protocol and malware count are their
-  own session; (4) escape audit against the widened population: yes; (5) make the small manuscript fixes now.
-  **Done:** (a) LIEF spike (`r7-overlay-rule.md` §8): structures agree with pefile on 99/100 pilot files, LIEF ~35x
-  faster but parsing is ~12-25% of our time; stay on pefile. (b) pefile's parser caps verified (§10,
-  `upstream-issues.md` item 10): crossing the 8,192-import cap drives num_imports ~70 -> ~8,110 (declared delta wrong,
-  an exactness gap) but 0 model-read features fall on three files -> not a soundness hole; a deviations-table item.
-  (c) Escape audit against the loose population (§9): every loader-ignored entry write still leaves the loose
-  population exactly as run 137's strict audit; no new in-population escape; the scale-up's active escape search stands
-  (§7). (d) Three manuscript fixes (8d88ef3): Appendix D's pools ("adds a 0", minima 0 on every file), self-maintainability
-  (Mumick et al.) in §3.2, the code-level exclusion reworded against Lucas et al. in §4.3. (e) Kim et al. (CCS 2017)
-  cited for signature cloning (b319638, `% VERIFY` resolved); the overfull vbox is gone; `make check` clean.
-  **Waiting on the user:** the scale-up protocol and malware count (own session).
-
-- **2026-11-14 (session 62, R18 track): ready for run 144.** While it ran (started 10:05): the six non-string
-  disagreements traced (three are trial's blind spots; the two import addresses are declared too broadly, and run 145
-  shows freeing them as monotone gains nothing: 83.2 vs 83.4% at 1% FPR, so trial's edge is real lowerable features);
-  the `--save_rows` patch for `a1_adaptive.py` written and tested, not applied (R7-owned;
-  `docs/evidence/r18-a1_adaptive-save_rows.patch`); `scripts/trial_audit.py`. **Next:** read run 144 with
-  `docs/resume-prompt-R18.md`.
-- **2026-11-14 (session 61, R7 track): run 143 read.** Hypothesis held: neither `-loose` monotone detector is evaded
-  by any of the three escapes (0/39, 0/40 each; no candidate lowered a monotone score; full 2,000-candidate budgets);
-  guaranteed for the 28/30 population originals under the cert/debug escapes, observed for the rest; one SizeOfImage
-  search lost to a stalled worker (not re-run). The unconstrained detector: 47/47, every evasion by signature cloning
-  (hypothesis 40-60% failed). Written into run 143's header, the R7 record §7 and log, PLAN.md step 2b (iii). Then the
-  paper's R7 text with the user in three blocks: §4.3 the entry write (13 operations), §4.4 the widened population and
-  no routing, §5.4 *The price* (run 140; signature cloning framed as a finding, user), *Where the guarantee holds*
-  (the escapes), *Where the cost lies*, Table 5 and Appendix D's per-attack table, LIEF's overlay rule in §4.2 and
-  Appendix D. Decision (v), user: blue values for the monotone toolkit/MAB cells until the scale-up; the scale-up's
-  R7 items listed in PLAN.md step 3. Open: a signature-cloning citation (`% VERIFY`), one 2 pt overfull vbox.

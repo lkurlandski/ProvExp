@@ -501,6 +501,22 @@ records of the §5 reviews, the table remake and the ERDALT check, is in
    (`--complete_only`), the defenses' material (rows for every store and the compressed binaries), the toolkit (with
    escapes), iterated adversarial training, the trial row, MAB-Malware's second setting, the registry's `scaleup` model
    set, and the reporting duties in `6-results` (share of all attacked malware still detected; R12, R15, R3).
+   **Done in session 68:** every step has its `run.sh` with the scale-up's defaults, each smoke-tested on a small
+   slice (`pipeline/README.md` gives the order). The registry's `scaleup` set (`4-detectors/<name>`, with
+   `iterated-{1,2}` and the leave-one-out folds `{pv,erdalt}-loo-<attack>`); `4-detectors/train` (Table 5, the expert
+   set, trial); the material as a job array (`4-detectors/adversarial-training`: `attack_training.py` on the lists,
+   rows for the sums and expert stores, zstd binaries, shards merged later; rows checked equal to the binaries'
+   re-extraction); `4-detectors/learned` (PV selected among EMBER's features with `pv_hole.py --exclude`, ERDALT one
+   per GPU, adversarial training, the folds); `4-detectors/iterated` (the adversarially trained detector as round 0,
+   rounds of 1,000 disjoint training malware, `ent` held out, rows of earlier rounds kept); `4-detectors/price-list`;
+   `3-directions/trial` (`trial_probe.py --donor_list`); `5-attacks/toolkit` (`toolkit.py --escape`; array over
+   detectors, escapes, folds and R19's donor control) and `5-attacks/adaptive` (array over escapes x 20 shards, plus
+   the expert set's search), MAB-Malware's three settings (ours, the expert set, Zainab et al.'s); `6-results`
+   (`scaleup_tables.py`: test TPR at the validation thresholds, the share of all evaluation malware still detected
+   after each attack and after any at 1% and 0.1% FPR, R3's margins, R15's gain share; `coverage.py`'s `modeled`
+   class for R12; `erdalt_hole.py --protocol`). A bug from session 67 fixed: the adaptive search's workers reloaded
+   the pilot list under `--protocol scaleup`. Next: the head-node session (`SETUP.md`, `check.sh`, the "TO CONFIRM"
+   values, each `run.sh`'s time and memory).
 4. **While the scale-up runs: §2's closing and contribution 4 against §5** (old step 2 (c)). §2 says §5 "uses them to
    attack malware detectors and to build robust ones"; in §5 the attack is an instrument. The mock's contribution 4 is
    stale ("four to six points", "learned constraints"). Writing only.

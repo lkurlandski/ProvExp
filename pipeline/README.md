@@ -21,11 +21,22 @@ prints the arguments). The Python next to each `run.sh` is a thin command line o
 
 ## Status of the steps
 
-`run.sh` exists for the steps the identity check runs (featurize, derived directions, catalogue checks, adaptive,
-MAB-Malware), for every audit step (session 65; their `FILES` default to the evaluation set, session 67), for the evaluation set and for setup; their defaults are the scale-up's where it is decided (5,000 extraction-scored
-candidates, one seed) and the current pilot inputs where it is not (file lists, model set `pilot`). The other steps
-get their `run.sh` in the protocol sessions, with the scale-up's files, budgets and detectors. Their pilot commands
-are in `run/` (a historical record: re-run them at tag `pilot-final`).
+Every step has a `run.sh` with the scale-up's defaults (session 68): the evaluation set and donor lists of
+`2-features/files`, the model set `scaleup` (`4-detectors/<name>`), thresholds on the validation split, 5,000
+extraction-scored candidates, one seed. The long steps are SLURM job arrays (`--array` in their header; `bash` runs
+the tasks in turn) and skip what is already done, so resubmitting resumes. The time and memory in the headers are
+estimates until the head-node session. The pilot's commands are in `run/` (a historical record: re-run them at tag
+`pilot-final`).
+
+The order (each step's inputs are the outputs above it):
+
+1. `2-features/featurize` (the stores, full splits), `2-features/files` (done: the lists);
+2. `3-directions/derived`; `1-audit/*` (the catalogue check's edits feed the trial); `3-directions/trial`;
+3. `4-detectors/train` (Table 5, the expert set, trial);
+4. `4-detectors/adversarial-training` (the material, array), then `4-detectors/learned` (PV, ERDALT, adversarial
+   training, the leave-one-out folds; GPUs), then `4-detectors/iterated`;
+5. `5-attacks/toolkit`, `5-attacks/adaptive` (arrays), `5-attacks/mab-malware`;
+6. `6-results`.
 
 | Step | Python | `run.sh` | Pilot record |
 |---|---|---|---|
@@ -39,14 +50,16 @@ are in `run/` (a historical record: re-run them at tag `pilot-final`).
 | `2-features/featurize` | `featurize.py`, `check_features.py`, `refeaturize_nonpe.py` | yes | runs 01-02, 94, 102 |
 | `2-features/files` | `build_metadata.py`, `select_files.py` | yes (the evaluation set: 1,000 malware, 1,000 benign, complete files) | runs 03-04 |
 | `3-directions/derived` | `directions.py`, `expert_directions.py` | yes (`directions.py`) | runs 97, 102, 140, 142 |
-| `3-directions/trial` | `trial_probe.py`, `trial_table.py` | protocol session | run 144 |
+| `3-directions/trial` | `trial_probe.py`, `trial_table.py` | yes (the evaluation set, donor set 0's imports) | run 144 |
 | `4-detectors/train` | `train_classic.py`, `train_erdalt.py` | yes (Table 5 and the expert set; the learned defenses in `adversarial-training`) | runs 99, 105, 128, 140 |
-| `4-detectors/adversarial-training` | `attack_training.py` | protocol session | runs 122, 125, 133 |
+| `4-detectors/adversarial-training` | `attack_training.py` | yes (the material: array over 10,000 training malware) | runs 122, 125, 133 |
+| `4-detectors/learned` | (`train_classic.py`, `train_erdalt.py`, `pv_hole.py`) | yes (PV, ERDALT, adversarial training, leave-one-out) | runs 133, 135 |
+| `4-detectors/iterated` | (`adaptive.py --save_rows`, `train_classic.py`) | yes (two rounds) | none (R18 step 3) |
 | `4-detectors/price-list` | `price_list.py` | protocol session | run 126 |
-| `5-attacks/toolkit` | `toolkit.py`, `pv_attacks.py` | protocol session | runs 81, 100, 123-124, 131, 133, 135 |
-| `5-attacks/adaptive` | `adaptive.py`, `expert_adaptive.py` | yes (`adaptive.py`) | runs 127, 120, 143, 144 |
-| `5-attacks/mab-malware` | `mab.py` | yes | runs 139, 144 |
-| `6-results` | `toolkit_split.py`, `coverage.py`, `pv_hole.py`, `erdalt_hole.py`, `trial_audit.py` | protocol session | runs 131-135, 144 |
+| `5-attacks/toolkit` | `toolkit.py` (with `--escape`), `pv_attacks.py` (pilot only) | yes (array: detectors, escapes, folds, R19's donor control) | runs 81, 100, 123-124, 131, 133, 135 |
+| `5-attacks/adaptive` | `adaptive.py`, `expert_adaptive.py` | yes (array: escapes x shards, the expert set) | runs 127, 120, 143, 144 |
+| `5-attacks/mab-malware` | `mab.py` | yes (ours, the expert set, Zainab et al.'s setting) | runs 139, 144 |
+| `6-results` | `scaleup_tables.py`, `coverage.py`, `erdalt_hole.py` (`pv_hole.py` runs in `learned`; `toolkit_split.py`, `trial_audit.py` pilot only) | yes | runs 131-135, 144 |
 
 ## Where each result of the paper comes from
 
