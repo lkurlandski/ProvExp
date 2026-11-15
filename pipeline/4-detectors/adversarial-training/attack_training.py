@@ -54,6 +54,7 @@ from provexp.attacks.toolkit import build_donor_pools
 from provexp.attacks.toolkit import file_seed
 from provexp.attacks.toolkit import make_wrapper
 from provexp.attacks.toolkit import run_attack
+from provexp.data.files import load_donors
 from provexp.data.paths import EMBER2024_DATA
 from provexp.data.simpledb import SimpleDB
 from provexp.data.simpledb import SimpleDBReader
@@ -86,15 +87,6 @@ def shard_names(files: Path, shard: int, num_shards: int, num_malware: int | Non
     if num_malware is not None:
         names = names[:num_malware]
     return names[shard::num_shards]
-
-
-def load_donors(donors: Path, db_dir: Path) -> list[tuple[str, bytes]]:
-    """The goodware of a donor list, as (name, bytes)."""
-    df = pl.read_parquet(donors)
-    if "label" in df.columns and (df["label"] != 0).any():
-        raise ValueError(f"The donor list {donors.as_posix()} holds files that are not goodware.")
-    reader = SimpleDBReader(SimpleDB(db_dir, check=False))
-    return [(n, bytes(reader.get(n).data)) for n in df["name"].to_list()]
 
 
 ################################################################################

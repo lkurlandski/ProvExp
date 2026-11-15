@@ -14,6 +14,7 @@ import pytest
 
 from provexp.data.files import PROTOCOLS
 from provexp.data.files import load_attacked
+from provexp.data.files import load_donors
 from provexp.data.tabular import FEATURES_FILE
 from provexp.data.tabular import META_FILE
 from provexp.data.tabular import load_features
@@ -127,6 +128,12 @@ class TestLoadAttacked:
     def test_scaleup_needs_donors(self, tmp_path: Path) -> None:
         with pytest.raises(ValueError, match="--donors"):
             load_attacked("scaleup", tmp_path, tmp_path)
+
+    def test_donors_must_be_goodware(self, tmp_path: Path) -> None:
+        donors = tmp_path / "donors.parquet"
+        pl.DataFrame({"name": ["a", "b"], "label": [0, 1]}).write_parquet(donors)
+        with pytest.raises(ValueError, match="not goodware"):
+            load_donors(donors, tmp_path)
 
 
 ################################################################################

@@ -19,6 +19,13 @@ One protocol for every cell:
                       shift attacks insert at the first section's raw offset, which is 0 on some files (e.g. the
                       VMProtect layout), so they overwrite the MZ header; a broken file is outside every threat model
 
+With `--escape`, a field write outside the threat model (provexp.featuresets.ember2024.escapes; R7) is applied to
+every malware first, and the attacks start from the escaped file; only files the write takes out of the strict
+population are attacked. Detection and evasion count from the unescaped original, as in the adaptive search: a
+defense attacks the originals it detects, and an attack evades when the end file is not detected (the escape write
+alone may already do so: `evaded_by_escape`). Each row records whether the original and the escaped file lie in the
+(loose) population, where the guarantee covers the search.
+
 The defenses are GBDTs on one feature store (`--features`: its manifest names the extractor); every defense is scored
 with that store's extractor. A routed defense (`--route name=fallback`) is the precondition row's detector: files that
 pass the precondition check (catalogue.precondition: nothing the parse is located through lies past the end of the
@@ -50,6 +57,7 @@ from typing import Any
 
 import lief
 import numpy as np
+import pefile
 import polars as pl
 
 from provexp.attacks.toolkit import ATTACKS
@@ -70,6 +78,10 @@ from provexp.detectors import group_evasion
 from provexp.detectors import make_extractor
 from provexp.detectors import parse_defenses
 from provexp.detectors import precondition_holds
+from provexp.featuresets.ember2024.catalogue import passes_precondition
+from provexp.featuresets.ember2024.escapes import WRITES as ESCAPES
+from provexp.featuresets.ember2024.features import PEFeatureExtractor
+from provexp.featuresets.ember2024.features import fix_quirks
 from provexp.models.erdalt import load_detector
 from provexp.parallel import map_watchdog
 
@@ -107,9 +119,12 @@ def _init_worker(features: Path, models: dict[str, str], routes: dict[str, tuple
               tmp=tempfile.mkdtemp(prefix="a1_w_"), seed_per_file=seed_per_file)
 
 
-def _work(task: tuple[str, str, str, bytes, float, int, bool]) -> dict[str, Any]:
+Task = tuple[str, str, str, bytes, float, int, bool, dict[str, Any]]
+
+
+def _work(task: Task) -> dict[str, Any]:
     """Run one (defense, attack, file) and score the re-extracted result at the defense's threshold."""
-    defense, atk, name, data, tau, cap, pre = task
+    defense, atk, name, data, tau, cap, pre, extra = task
     wrapper = _W["wrappers"][defense]
     out_path = Path(_W["tmp"]) / f"{defense}.{name[:16]}.{atk}"
     start = time.time()
@@ -132,16 +147,16 @@ def _work(task: tuple[str, str, str, bytes, float, int, bool]) -> dict[str, Any]
     return {"defense": defense, "attack": atk, "name": name, "tau": tau, "p_clean": p_clean, "p_adv": p_adv,
             "evaded": bool(ok and valid and not over and p_adv <= tau), "bytes_added": added, "over_budget": over,
             "ok": ok, "valid": valid, "truncated": len(data) >= MAX_LENGTH, "precondition": pre, "error": error,
-            "seconds": time.time() - start}
+            "seconds": time.time() - start, **extra}
 
 
-def _lost(task: tuple[str, str, str, bytes, float, int, bool]) -> dict[str, Any]:
+def _lost(task: Task) -> dict[str, Any]:
     """The row for a task whose worker died: an attack that failed (not evaded), with the error recorded."""
-    defense, atk, name, data, tau, cap, pre = task
+    defense, atk, name, data, tau, cap, pre, extra = task
     return {"defense": defense, "attack": atk, "name": name, "tau": tau, "p_clean": float("nan"),
             "p_adv": float("nan"), "evaded": False, "bytes_added": 0, "over_budget": False, "ok": False,
             "valid": False, "truncated": len(data) >= MAX_LENGTH, "precondition": pre,
-            "error": "LostTask: worker died", "seconds": float("nan")}
+            "error": "LostTask: worker died", "seconds": float("nan"), **extra}
 
 
 ################################################################################
@@ -177,7 +192,11 @@ def main() -> None:
                         help="Reseed each attack run with its own seed (a_advtrain.file_seed) instead of --seed.")
     parser.add_argument("--stall_timeout", type=float, default=2700.0,
                         help="Seconds with no finished task before the unfinished ones count as lost (a dead worker).")
+    parser.add_argument("--escape", choices=["none", *ESCAPES], default="none", help="A field write applied to every "
+                        "malware before the attacks (R7); detection and evasion count from the unescaped original.")
     args = parser.parse_args()
+    if args.escape != "none" and args.route:
+        raise ValueError("--escape does not combine with --route.")
     if args.num_workers < 1:
         raise ValueError(f"--num_workers must be >= 1, got {args.num_workers}.")
 
@@ -194,6 +213,24 @@ def main() -> None:
     if args.num_malware is not None:
         malware = malware[: args.num_malware]
     print(f"Pilot: {len(malware)} malware, {len(goodware)} goodware donors; {len(defenses)} defenses.", flush=True)
+    # (the file the attacks start from) per malware: the escaped file under --escape, else the file itself. Escaped files
+    # that stay in the strict population, or that the write does not apply to, are not attacked (as adaptive.py).
+    starts: list[bytes] = [data for _, data in malware]
+    if args.escape != "none":
+        plain = fix_quirks(PEFeatureExtractor())
+        kept: list[tuple[str, bytes]] = []
+        starts = []
+        for name, data in malware:
+            try:
+                out = ESCAPES[args.escape](pefile.PE(data=data), len(data))
+            except Exception:  # noqa: BLE001
+                out = None
+            if out is not None and not passes_precondition(plain, out):
+                kept.append((name, data))
+                starts.append(out)
+        print(f"Escape {args.escape}: {len(kept)} of {len(malware)} malware written and out of the strict population; "
+              "detection and evasion counted from the unescaped originals.", flush=True)
+        malware = kept
 
     # Thresholds, and which pilot malware each defense detects (scored from the files themselves).
     X = np.stack([extractor.feature_vector(data) for _, data in malware])  # type: ignore[no-untyped-call]
@@ -218,8 +255,21 @@ def main() -> None:
         print(f"  {d}: tau={taus[d]:.4f}{' (routed to ' + routes[d][0] + ')' if d in routes else ''}, detects "
               f"{len(detected[d])}/{len(malware)} pilot malware", flush=True)
 
+    extras: dict[tuple[str, int], dict[str, Any]] = {(d, i): {} for d in defenses for i in detected[d]}
+    if args.escape != "none":
+        plain = fix_quirks(PEFeatureExtractor())
+        X_start = np.stack([extractor.feature_vector(z) for z in starts])  # type: ignore[no-untyped-call]
+        for d, mdir in defenses.items():
+            p_start = np.asarray(load_detector(mdir, extractor.feature_names).predict(X_start))
+            for i in detected[d]:
+                # The guarantee covers a search only if the original and the escaped file are both in the (loose)
+                # population (as adaptive.py).
+                in_pop = passes_precondition(plain, malware[i][1], loose=True)
+                extras[d, i] = {"p_orig": float(probs[d][i]), "evaded_by_escape": bool(p_start[i] <= taus[d]),
+                                "in_population": in_pop,
+                                "start_in_population": passes_precondition(plain, starts[i], loose=True)}
     caps = [max(int(args.budget_frac * len(data)), args.budget_min) for _, data in malware]
-    tasks = [(d, atk, malware[i][0], malware[i][1], taus[d], caps[i], pre[i])
+    tasks = [(d, atk, malware[i][0], starts[i], taus[d], caps[i], pre[i], extras[d, i])
              for d in defenses for atk in args.attacks for i in detected[d]]
     with tempfile.TemporaryDirectory(prefix="a1_") as tmp:
         iterations, how_many = BUDGETS[args.budget]
@@ -241,7 +291,7 @@ def main() -> None:
     seen = [a for a in args.attacks if a in args.seen]
     table: dict[str, Any] = {"protocol": {"fpr": args.fpr, "budget": args.budget, "budget_frac": args.budget_frac,
                                           "budget_min": args.budget_min, "seed": args.seed,
-                                          "seed_per_file": args.seed_per_file,
+                                          "seed_per_file": args.seed_per_file, "escape": args.escape,
                                           "features": args.features.resolve().as_posix(), "seen": seen,
                                           "routes": routes_spec,
                                           "held_out": held_out,
@@ -268,6 +318,16 @@ def main() -> None:
                 "uncapped": group_evasion(r.with_columns(evaded=pl.col("ok") & pl.col("valid")
                                                          & (pl.col("p_adv") <= pl.col("tau"))), atks),
             }
+        if args.escape != "none" and r.height:
+            # Per file (any attack), from the unescaped originals: the escape write alone, the population, and the
+            # evasions the guarantee does not cover (original or escaped file outside the population).
+            files = r.group_by("name").agg(pl.col("evaded").any(), pl.col("evaded_by_escape").first(),
+                                           pl.col("in_population").first(), pl.col("start_in_population").first())
+            outside = files.filter(~(pl.col("in_population") & pl.col("start_in_population")))
+            entry["escape"] = {"evaded_by_escape": int(files["evaded_by_escape"].sum()),
+                               "in_population": int(files["in_population"].sum()),
+                               "start_in_population": int(files["start_in_population"].sum()),
+                               "evaded_outside_population": int(outside["evaded"].sum())}
         table["defenses"][d] = entry
         g = entry["groups"]
         print(f"{d:16s} detected {len(detected[d]):2d}  seen {g['seen']['all']}  held-out {g['held_out']['all']}",

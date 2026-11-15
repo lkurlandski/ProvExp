@@ -10,15 +10,26 @@ set -euo pipefail
 cd "$(dirname "$0")/../.."
 OLD="${1:-artifacts/refactor-baseline/old}"
 export OUT_ROOT="${OUT_ROOT:-artifacts/refactor-baseline/new-pipeline}"
+# The steps skip outputs that exist (to resume on the cluster), so the check starts from an empty directory: a stale
+# output would be compared instead of a fresh one.
+if [[ -e $OUT_ROOT ]]; then
+  if [[ $OUT_ROOT != artifacts/refactor-baseline/* ]]; then
+    echo "$OUT_ROOT exists; give an OUT_ROOT that does not, or remove it." >&2
+    exit 1
+  fi
+  echo "Removing the previous check's outputs, $OUT_ROOT."
+  rm -rf "$OUT_ROOT"
+fi
 
 EXTRACTORS="ember2024 sums expert" SPLITS=ts EVERY=264 pipeline/2-features/featurize/run.sh
 pipeline/3-directions/derived/run.sh
 # The pilot's files and protocol (the steps default to the scale-up's evaluation set and protocol since session 67).
 PILOT=artifacts/experiments/e1/seed-0/zeros/files.parquet
 FILES=$PILOT CHAINED=0 NUM_FILES=5 pipeline/1-audit/catalogue-checks/run.sh
-PROTOCOL=pilot MODELS=pilot DETECTORS="unconstrained monotone-sums" ESCAPES="none debug_entry" QUERIES=200 CHECKPOINTS=200 \
-  NUM_MALWARE=3 SAVE_ROWS=1 pipeline/5-attacks/adaptive/run.sh
-PROTOCOL=pilot MODELS=pilot DETECTORS="unconstrained monotone-sums" NUM_MALWARE=3 pipeline/5-attacks/mab-malware/run.sh
+PROTOCOL=pilot MODELS=pilot DETECTORS="unconstrained monotone-sums" ESCAPE_DETECTORS="unconstrained monotone-sums" \
+  ESCAPES="none debug_entry" SHARDS=1 EXPERT=0 QUERIES=200 CHECKPOINTS=200 NUM_MALWARE=3 SAVE_ROWS=1 pipeline/5-attacks/adaptive/run.sh
+PROTOCOL=pilot MODELS=pilot SETTINGS=ours DETECTORS="unconstrained monotone-sums" NUM_MALWARE=3 \
+  pipeline/5-attacks/mab-malware/run.sh
 
 echo "Comparing $OLD with $OUT_ROOT:"
 source env/bin/activate

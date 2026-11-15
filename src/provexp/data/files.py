@@ -12,7 +12,7 @@ import polars as pl
 from provexp.data.simpledb import SimpleDB
 from provexp.data.simpledb import SimpleDBReader
 
-__all__ = ["PROTOCOLS", "load_attacked", "load_evaluation", "load_pilot"]
+__all__ = ["PROTOCOLS", "load_attacked", "load_donors", "load_evaluation", "load_pilot"]
 
 
 def load_pilot(pilot_files: Path, db_dir: Path) -> tuple[list[tuple[str, bytes]], list[tuple[str, bytes]]]:
@@ -56,12 +56,24 @@ def load_evaluation(files: Path, db_dir: Path, donors: Optional[Path] = None,
         return malware, []
     if donor_db_dir is None:
         raise ValueError("A donor list needs the SimpleDB directory of its split (donor_db_dir).")
-    donor_df = pl.read_parquet(donors)
-    if "label" in donor_df.columns and (donor_df["label"] != 0).any():
+    return malware, load_donors(donors, donor_db_dir)
+
+
+def load_donors(donors: Path, db_dir: Path) -> list[tuple[str, bytes]]:
+    """The goodware of a donor list (name; training goodware), as (name, bytes) pairs in the list's order.
+
+    Args:
+        donors: The donor list.
+        db_dir: The SimpleDB directory holding their bytes.
+
+    Returns:
+        The donors.
+    """
+    df = pl.read_parquet(donors)
+    if "label" in df.columns and (df["label"] != 0).any():
         raise ValueError(f"The donor list {donors.as_posix()} holds files that are not goodware.")
-    donor_reader = SimpleDBReader(SimpleDB(donor_db_dir, check=False))
-    goodware = [(n, bytes(donor_reader.get(n).data)) for n in donor_df["name"].to_list()]
-    return malware, goodware
+    reader = SimpleDBReader(SimpleDB(db_dir, check=False))
+    return [(n, bytes(reader.get(n).data)) for n in df["name"].to_list()]
 
 
 # The two setups the attacks run under: the pilot's (the pilot list, its malware pre-filtered by the old GBDT, the

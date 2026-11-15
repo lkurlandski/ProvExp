@@ -165,6 +165,9 @@ def main() -> None:
     parser.add_argument("--budget_frac", type=float, default=0.05)
     parser.add_argument("--budget_min", type=int, default=512 * 1024)
     parser.add_argument("--num_malware", type=int, default=None)
+    parser.add_argument("--shard", type=int, default=0, help="Attack only every --num_shards-th malware from this one "
+                        "(one SLURM array task each; the shards' outputs are concatenated in 6-results).")
+    parser.add_argument("--num_shards", type=int, default=1)
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--search", choices=["greedy", "beam"], default="greedy", help="greedy: runs 108/119; beam: "
                         "the strong-attack search (beam_search).")
@@ -209,6 +212,9 @@ def main() -> None:
     malware, goodware = load_attacked(args.protocol, args.pilot_files, args.db, args.donors, args.donor_db)
     if args.num_malware is not None:
         malware = malware[: args.num_malware]
+    if not 0 <= args.shard < args.num_shards:
+        raise ValueError(f"--shard must lie in [0, {args.num_shards}), got {args.shard}.")
+    malware = malware[args.shard :: args.num_shards]
     # (name, the file the search starts from, the unescaped original). With an escape the start is the escaped file --
     # the escape write is the attack's fixed first move, now an `ent` edit in the threat model -- and detection and
     # evasion are counted from the unescaped original (detected original, undetected end file; R7, run 143).
@@ -231,7 +237,8 @@ def main() -> None:
     config = {"ops": ops, "pilot_files": args.pilot_files, "db": args.db, "search": args.search,
               "queries": args.queries, "seed": args.seed, "budget_frac": args.budget_frac,
               "budget_min": args.budget_min, "beam": args.beam, "draws": args.draws, "patience": args.patience,
-              "checkpoints": tuple(args.checkpoints), "score": args.score, "save_rows": args.save_rows}
+              "checkpoints": tuple(args.checkpoints), "score": args.score, "save_rows": args.save_rows,
+              "protocol": args.protocol, "donors": args.donors, "donor_db": args.donor_db}
     tasks: list[tuple[str, str, float, list[tuple[int, int]], str, bytes, float, bool, bool]] = []
     for d, mdir in defenses.items():
         booster = padded_booster(mdir, vector.dim)

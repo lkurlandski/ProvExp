@@ -19,6 +19,7 @@ import numpy as np
 import pefile
 from sklearn.utils import murmurhash3_32
 
+from provexp.data.files import load_donors
 from provexp.data.files import load_pilot
 from provexp.featuresets.ember2024 import catalogue
 from provexp.featuresets.ember2024.edits import add_section as write_section
@@ -898,8 +899,11 @@ def _init_worker(config: dict[str, Any], malware: Optional[list[tuple[str, bytes
     """Build the extractor, engine, donors, and bucket names once per process; boosters load lazily per defense."""
     import lief
     lief.logging.disable()
-    if goodware is None:
-        _, goodware = load_pilot(config["pilot_files"], config["db"])
+    if goodware is None:  # a worker process: only the donors are needed, read as the main process read them
+        if config.get("protocol", "pilot") == "pilot":
+            _, goodware = load_pilot(config["pilot_files"], config["db"])
+        else:
+            goodware = load_donors(config["donors"], config["donor_db"])
     extractor = fix_quirks(PEFeatureExtractor())
     engine = RealEngine(extractor, SumsFeatureExtractor()) if config.get("score") == "real" else Engine(extractor)
     _W.clear()
