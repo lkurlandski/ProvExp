@@ -523,9 +523,23 @@ records of the §5 reviews, the table remake and the ERDALT check, is in
    `str.find`. An adaptive candidate ~0.32 -> ~0.10 s (the search ~7-9k -> ~2.5-3k CPU-h), sums extraction 120 -> 78
    ms per file. The remaining time is spread (strings ~40% of an extraction, byte-entropy windows ~25%, byte counts
    and pefile's parse the rest); no further change would gain 50% alone (session 69's assessment).
-   **Next (user, session 69): the two open questions, on this machine** (the derived table's corpus; iterated
-   adversarial training's starting point), **then the head-node session** (`SETUP.md`, `check.sh`, the "TO CONFIRM"
-   values, each `run.sh`'s time and memory, `2-features/file-store` after the lists).
+   **The two open questions: decided (user, session 70).** (10) *The derived table's corpus:* the tables are built
+   from training files (the 20,000 of `2-features/files/tr.parquet`: the defender's data, never the evaluated files)
+   and rebuilt from the evaluation set as a check; `compare_tables.py` reports whether the evaluation set shows a
+   move the table lacks (`3-directions/check/{strict,loose}.json`). This turns decision 2's check into a held-out
+   one, and is the less favourable side of the comparison with the trial, which learns from the evaluation set. If
+   the two differ at scale, the cells are reported and the user decides (the union is the fallback). What the corpus
+   supplies are unions (the kinds' terms, the in-place writes' changes, population membership), so a table only
+   gains signs with more files. Checked on 300 evaluation against 300 training files (loose): the population's
+   variant identical in every per-operation cell, the detectors' input files identical (also to the pilot's
+   100-file table); the hypothesis "identical" failed only for the strict variant's per-operation cells (2,597 of
+   47,515, from a few files outside the population; no threat-model direction differs). With 32 or 48 files one
+   feature differs (`num_empty_name` under renaming: up instead of both), so a small corpus is not enough. Cost ~5
+   CPU-s per file and variant, ~60 CPU-h in all. (11) *Iterated adversarial training's starting point:* the
+   adversarially trained detector, as scripted (R18's strongest realistic learned competitor; the adversarial-training
+   row beside it shows what the beam's rounds add; one row, not two).
+   **Next: the head-node session** (`SETUP.md`, `check.sh`, the "TO CONFIRM" values, each `run.sh`'s time and memory,
+   `2-features/file-store` after the lists).
 4. **While the scale-up runs: §2's closing and contribution 4 against §5** (old step 2 (c)). §2 says §5 "uses them to
    attack malware detectors and to build robust ones"; in §5 the attack is an instrument. The mock's contribution 4 is
    stale ("four to six points", "learned constraints"). Writing only.

@@ -8,7 +8,7 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
 `docs/archive/status-log-2026-11-12-to-13-s43-54.md`, sessions 55-58 in `docs/archive/status-log-2026-11-13-s55-58.md`, sessions 59-60 in
 `docs/archive/status-log-2026-11-13-s59-60.md`, sessions 61-62 in `docs/archive/status-log-2026-11-14-s61-62.md`).
 
-## Current state (2026-11-15, through session 69)
+## Current state (2026-11-15, through session 70)
 
 - **Framework (§2-3):** rewritten; the user is reasonably satisfied. Open: the user's holistic read of Sound
   Directions after round 4 (finetuning only).
@@ -127,20 +127,17 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
 - **Optimization (session 69): done, bit-identical.** The adaptive search's candidate ~3x cheaper (391 -> 127 s on the
   profiling slice; ~7-9k -> ~2.5-3k CPU-h at the scale-up); sums extraction 120 -> 78 ms per file; a file store
   (`2-features/file-store`, SQLite beside the lists) replaces ~25 min of SimpleDB loading per attack task.
+- **The two open questions (session 70): decided.** The derived tables are built from training files
+  (`tr.parquet`) and rebuilt from the evaluation set as a check (`3-directions/derived`: `compare_tables.py`,
+  `3-directions/check/`); iterated adversarial training starts from the adversarially trained detector, as scripted.
+  PLAN.md step 3 (g), items 10-11. No protocol question is open before the cluster.
 
 ## Waiting on the user
 
-- **Next session, on this machine: the two open questions** (the user, session 69; `docs/resume-prompt.md`): the
-  derived table's corpus at the scale-up (`3-directions/derived`'s `FILES`), and iterated adversarial training's
-  starting point (below). Neither needs the cluster.
-- **Then the head-node session** (`docs/resume-prompt.md` §4.2) needs the user at the cluster: `SETUP.md`, `check.sh`, the "TO
+- **The head-node session** (`docs/resume-prompt.md`) needs the user at the cluster: `SETUP.md`, `check.sh`, the "TO
   CONFIRM" values, and each `run.sh`'s time, memory and GPUs. Then the user submits the steps in
   `pipeline/README.md`'s order, with `2-features/file-store` after the lists (or copy `files.sqlite` from this
-  server). Number-free rebuttal text fixes (R4, R5, R15, R21) are step 4 (while the scale-up
-  runs).
-- **One choice made by Claude, open to the user's veto (next session's second question):** iterated adversarial training starts from the adversarially
-  trained detector (the toolkit's material already appended), not from the unconstrained one, so its two rounds add
-  the beam's outputs to the strongest learned baseline (`pipeline/4-detectors/iterated/run.sh`).
+  server). Number-free rebuttal text fixes (R4, R5, R15, R21) are step 4 (while the scale-up runs).
 
 ## Scheduled (in order; PLAN.md, next steps)
 
@@ -150,8 +147,8 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
 3. The scale-up (PLAN.md step 3): ~~the refactoring session~~ (done, session 64), ~~the extractor audit pass~~ (done,
    session 65; decided and applied in session 66),
    ~~the protocol items~~ (decided, session 67), ~~the remaining `run.sh` steps~~ (done, session 68), ~~lightweight
-   optimization of the hot spots~~ (done, session 69), the two open questions (next), then a head-node session
-   on the cluster.
+   optimization of the hot spots~~ (done, session 69), ~~the two open questions~~ (decided, session 70), then a
+   head-node session on the cluster.
 4. While it runs: §2's closing and contribution 4 aligned with §5; the number-free text fixes R4, R5, R15, R21.
 5. After reading it: final numbers, then shortening §4-5 and §5's question-and-answer emphasis.
 6. A second domain decided with the scale-up's results in hand (the user's call).
@@ -159,6 +156,16 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
 
 ## Session log
 
+- **2026-11-15 (session 70): the two open scale-up questions decided.** (1) The derived table's corpus. Read what
+  `directions.py` takes from its files (unions: the kinds' terms, the in-place writes' changes, population
+  membership). Hypothesis: tables from 300 evaluation and 300 training files identical. Held for the population's
+  variant (every per-operation cell) and the detectors' input files, also against the pilot's table; **failed** for
+  the strict variant's per-operation cells (2,597 differ, no threat-model direction). User: build from training
+  files, rebuild from the evaluation set as a check. `run.sh` rewritten (`FILES`/`DB`, `CHECK_FILES`/`CHECK_DB`,
+  `LIMIT`), `compare_tables.py` added, the identity check pinned to the pilot files; smoke on 48 files per list ran
+  end to end (one feature differs at that size, the table lacking nothing). (2) Iterated adversarial training keeps
+  the adversarially trained detector as its start (user). The identity check was not re-run (only its call of the
+  derived step changed: the pilot list, as before, now passed explicitly).
 - **2026-11-15 (session 69): lightweight optimization of the scale-up's hot spots.** Profiled (cProfile): an adaptive
   candidate under `--score real` spent 53% computing `catalogue.predict_*`'s prediction only to take its written file,
   43% extracting; within extraction the string regexes were 55-87% (run twice in the sums extractor), pefile ~11%; a
