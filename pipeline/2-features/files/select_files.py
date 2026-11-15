@@ -10,8 +10,12 @@ The set is deliberately not stratified by size and not selected for dissimilarit
 are representative of the test split within each label. The report compares its size distribution with the
 population's; subgroups that turn out too small should be oversampled explicitly and reweighted.
 
+With --complete_only, only the files our copy holds in full (below 4,000,000 bytes, the `truncated` flag false) are
+candidates: the scale-up's evaluation set (1,000 malware and 1,000 benign files; decided with the user, session 67).
+
 Usage:
     python pipeline/2-features/files/select_files.py --num_samples 2000
+    python pipeline/2-features/files/select_files.py --num_samples 2000 --complete_only --outfile <scale-up list>
 """
 
 from argparse import ArgumentParser
@@ -85,10 +89,14 @@ def main() -> None:
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--outfile", type=Path, default=ROOT / "artifacts" / "explanation_set" / "ts.parquet")
     parser.add_argument("--partial", action="store_true", help="Select from the finished shards of an unfinished run.")
+    parser.add_argument("--complete_only", action="store_true", help="Only files below 4,000,000 bytes (not truncated).")
     args = parser.parse_args()
 
     meta = size_bins(load_meta(args.features, args.split, args.partial))
     report: dict[str, object] = {"candidates": meta.height, "population": composition(meta)}
+    if args.complete_only:
+        meta = meta.filter(~pl.col("truncated"))
+        report["complete"] = dict(meta.group_by("label").len().sort("label").iter_rows())
 
     meta = deduplicate(meta, args.threshold, args.seed)
     report["after_dedup"] = dict(meta.group_by("label").len().sort("label").iter_rows())

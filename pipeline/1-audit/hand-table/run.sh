@@ -16,12 +16,12 @@
 # The overlay and signature witnesses run in one process (pilot: runs 88, 98, minutes on 100 files); the time above is
 # a guess until the file list is decided.
 # Output: $OUT_ROOT/1-audit/hand-table/ ({structure,overlay,signature}/, witness_counts.json).
-# Knobs: FILES (required; SCALE-UP: decided with the user), DB.
+# Knobs: FILES (default: the evaluation set of 2-features/files, 1,000 malware and 1,000 benign files), DB.
 set -euo pipefail
 cd "${SLURM_SUBMIT_DIR:-$(dirname "$0")/../../..}"
 source pipeline/common.sh
 
-: "${FILES:?Set FILES to the file list of the audit (parquet: name, label, truncated).}"
+FILES="${FILES:-$OUT_ROOT/2-features/files/ts.parquet}"
 DB="${DB:-$EMBER2024_DATA/ts}"
 OUT=$OUT_ROOT/1-audit/hand-table
 mkdir -p "$OUT/logs"

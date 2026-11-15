@@ -14,13 +14,13 @@
 # only items located there (locating); random in-place writes predicted by Proposition 1, compared with re-extraction
 # (margins). Pilot: runs 90-96 and 118 (57 min for exact on 2,000 files at 24 workers).
 # Output: $OUT_ROOT/1-audit/item-checks/{exact,locating-header,locating-directories,margins}/report.json.
-# Knobs: FILES (required; SCALE-UP: decided with the user), DB, LOCATING_FILES (files flipped per region, default 20,
+# Knobs: FILES (default: the evaluation set of 2-features/files, 1,000 malware and 1,000 benign files), DB, LOCATING_FILES (files flipped per region, default 20,
 # as the pilot), MARGINS_FILES (files given random writes, 0: all), SEED.
 set -euo pipefail
 cd "${SLURM_SUBMIT_DIR:-$(dirname "$0")/../../..}"
 source pipeline/common.sh
 
-: "${FILES:?Set FILES to the file list of the audit (parquet: name, label, truncated).}"
+FILES="${FILES:-$OUT_ROOT/2-features/files/ts.parquet}"
 DB="${DB:-$EMBER2024_DATA/ts}"
 OUT=$OUT_ROOT/1-audit/item-checks
 mkdir -p "$OUT/logs"

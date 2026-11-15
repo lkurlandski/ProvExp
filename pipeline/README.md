@@ -22,7 +22,7 @@ prints the arguments). The Python next to each `run.sh` is a thin command line o
 ## Status of the steps
 
 `run.sh` exists for the steps the identity check runs (featurize, derived directions, catalogue checks, adaptive,
-MAB-Malware), for every audit step (session 65; the audit's file list, `FILES`, is still to be decided) and for setup; their defaults are the scale-up's where it is decided (5,000 extraction-scored
+MAB-Malware), for every audit step (session 65; their `FILES` default to the evaluation set, session 67), for the evaluation set and for setup; their defaults are the scale-up's where it is decided (5,000 extraction-scored
 candidates, one seed) and the current pilot inputs where it is not (file lists, model set `pilot`). The other steps
 get their `run.sh` in the protocol sessions, with the scale-up's files, budgets and detectors. Their pilot commands
 are in `run/` (a historical record: re-run them at tag `pilot-final`).
@@ -37,7 +37,7 @@ are in `run/` (a historical record: re-run them at tag `pilot-final`).
 | `1-audit/deviations` | `deviations.py` | yes (`FILES` required) | session 65 (2,000 test files) |
 | `1-audit/hand-table` | `structure_witness.py`, `overlay_witness.py`, `signature_witness.py`, `witness_counts.py` (`hand_table.py`: the old Table A0, not in the paper) | yes (`FILES` required) | runs 88, 92, 98, 101 |
 | `2-features/featurize` | `featurize.py`, `check_features.py`, `refeaturize_nonpe.py` | yes | runs 01-02, 94, 102 |
-| `2-features/files` | `build_metadata.py`, `select_files.py` | protocol session | runs 03-04 |
+| `2-features/files` | `build_metadata.py`, `select_files.py` | yes (the evaluation set: 1,000 malware, 1,000 benign, complete files) | runs 03-04 |
 | `3-directions/derived` | `directions.py`, `expert_directions.py` | yes (`directions.py`) | runs 97, 102, 140, 142 |
 | `3-directions/trial` | `trial_probe.py`, `trial_table.py` | protocol session | run 144 |
 | `4-detectors/train` | `train_classic.py`, `train_erdalt.py` | protocol session | runs 99, 105, 128, 140 |

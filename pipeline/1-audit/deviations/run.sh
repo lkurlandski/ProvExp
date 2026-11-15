@@ -13,12 +13,12 @@
 # heuristics apply to each file, in the population and outside it. Needs 1-audit/population. Session 65: ~7 min on
 # 2,000 files at 16 workers on a loaded machine.
 # Output: $OUT_ROOT/1-audit/deviations/ (files.parquet, report.json).
-# Knobs: FILES (required; SCALE-UP: decided with the user), DB.
+# Knobs: FILES (default: the evaluation set of 2-features/files, 1,000 malware and 1,000 benign files), DB.
 set -euo pipefail
 cd "${SLURM_SUBMIT_DIR:-$(dirname "$0")/../../..}"
 source pipeline/common.sh
 
-: "${FILES:?Set FILES to the file list of the audit (parquet: name, label, truncated).}"
+FILES="${FILES:-$OUT_ROOT/2-features/files/ts.parquet}"
 DB="${DB:-$EMBER2024_DATA/ts}"
 OUT=$OUT_ROOT/1-audit/deviations
 mkdir -p "$OUT/logs"

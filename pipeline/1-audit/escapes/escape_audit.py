@@ -102,13 +102,13 @@ def main() -> None:
     parser.add_argument("--clauses", type=Path, default=Path("artifacts/experiments/population_clauses/2000/files.parquet"))
     parser.add_argument("--db", type=Path, default=EMBER2024_DATA / "ts")
     parser.add_argument("--outdir", type=Path, required=True)
-    parser.add_argument("--n", type=int, default=150, help="Files sampled from the population (below 4 MB).")
+    parser.add_argument("--n", type=int, default=150, help="Files sampled from the population (below 4 MB); 0: all of them.")
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--workers", type=int, default=16)
     args = parser.parse_args()
 
     pop = pl.read_parquet(args.clauses).filter(pl.col("in_population"), ~pl.col("truncated")).sort("name")
-    pick = np.random.default_rng(args.seed).permutation(pop.height)[: args.n]
+    pick = np.random.default_rng(args.seed).permutation(pop.height)[: args.n or None]
     files = pop[pick.tolist()].select("name", "label")
     db = SimpleDB(args.db, check=False)
     index = db.get_name_to_idx_map()

@@ -15,7 +15,8 @@
 # Output: $OUT_ROOT/1-audit/catalogue/ (edits.parquet, report.json: the verdicts `pass`, `closed`).
 # A second pass (CHAINED=1, the default) runs the chained edits: three added sections then an append, the item table
 # carried forward one edit at a time (Appendix D's combined edits). Output: $OUT_ROOT/1-audit/catalogue/chains.json.
-# Knobs: NUM_FILES (first N files; 0, the default: all), FILES, DIRECTIONS, CHAINED (0 skips the chains).
+# Knobs: FILES (default: the evaluation set of 2-features/files), NUM_FILES (first N files; 0, the default: all),
+# DIRECTIONS, CHAINED (0 skips the chains).
 set -euo pipefail
 cd "${SLURM_SUBMIT_DIR:-$(dirname "$0")/../../..}"
 source pipeline/common.sh
@@ -23,14 +24,13 @@ source pipeline/common.sh
 DIRECTIONS="${DIRECTIONS:-$OUT_ROOT/3-directions/loose/directions_sums.csv}"
 OUT=$OUT_ROOT/1-audit/catalogue
 mkdir -p "$OUT/logs"
-FILES_ARG=()
-if [[ -n "${FILES:-}" ]]; then FILES_ARG=(--files "$FILES"); fi
+FILES="${FILES:-$OUT_ROOT/2-features/files/ts.parquet}"
 
 echo "Catalogue check, loose, against $DIRECTIONS. Log: $OUT/logs/catalogue.log"
 python pipeline/1-audit/catalogue-checks/catalogue_checks.py \
   --loose \
   --directions "$DIRECTIONS" \
-  "${FILES_ARG[@]}" \
+  --files "$FILES" \
   --num_files "${NUM_FILES:-0}" \
   --outdir "$OUT" \
   --workers "$NUM_WORKERS" \
@@ -43,7 +43,7 @@ if [[ "${CHAINED:-1}" == "1" ]]; then
     --chained \
     --loose \
     --directions "$DIRECTIONS" \
-    "${FILES_ARG[@]}" \
+    --files "$FILES" \
     --num_files "${NUM_FILES:-0}" \
     --outdir "$OUT" \
     --workers "$NUM_WORKERS" \
