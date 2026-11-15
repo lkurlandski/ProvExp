@@ -21,6 +21,9 @@ Outputs, in `{outdir}/{learner}/seed-{seed}[-{poison}]/` (or `--model_dir`):
     ts_predictions.parquet               the predicted probability of malware for each test sample
     vl_predictions.parquet               the same for each validation sample (the scale-up's thresholds are set on it)
 
+With `--param KEY=VALUE` (GBDT only, repeatable), a LightGBM parameter overrides the default (the learner comparison of
+pipeline/4-detectors/cost-split).
+
 With `--complete_only`, every split keeps only the files our copy holds in full (below 4,000,000 bytes; the scale-up).
 
 Usage:
@@ -143,6 +146,7 @@ def main() -> None:
     parser.add_argument("--augment", type=Path, nargs="+", default=None, help="A directory with X.npy and files.parquet (pipeline/4-detectors/adversarial-training/attack_training.py); its rows are APPENDED to the training split (adversarial training).")
     parser.add_argument("--neutralize", type=Path, default=None, help="A file of feature names, one per line, to set to zero in every split.")
     parser.add_argument("--monotone", type=Path, default=None, help="GBDT only. A file of `name<TAB>sign` lines (sign +1 or -1): monotone constraints.")
+    parser.add_argument("--param", action="append", default=[], metavar="KEY=VALUE", help="GBDT only. A LightGBM parameter that overrides `EMBER2024_LIGHTGBM_PARAMS` (the value is read as JSON, else as a string); repeatable.")
     parser.add_argument("--suffix", type=str, default=None, help="The output directory's suffix (default: the poison's name).")
     parser.add_argument("--model_dir", type=Path, default=None, help="The output directory itself, instead of "
                         "{outdir}/{learner}/seed-{seed}{suffix} (the scale-up: 4-detectors/<registry name>).")
@@ -210,6 +214,14 @@ def main() -> None:
 
     if args.learner == "gbdt":
         extra: dict[str, Any] = {"monotone_constraints": constraints} if constraints else {}
+        for item in args.param:
+            if "=" not in item:
+                raise ValueError(f"--param expects KEY=VALUE, got {item!r}")
+            key, value = item.split("=", 1)
+            try:
+                extra[key] = json.loads(value)
+            except json.JSONDecodeError:
+                extra[key] = value
         booster = train_gbdt(X_tr, y_tr, X_vl, y_vl, seed=args.seed, num_threads=args.num_threads, categorical=args.categorical, **extra)
         booster.save_model(outdir / "model.txt", num_iteration=booster.best_iteration)
         probs = np.asarray(booster.predict(X_ts, num_iteration=booster.best_iteration))
@@ -217,6 +229,8 @@ def main() -> None:
         config = {"best_iteration": booster.best_iteration, "categorical": args.categorical,
                   "monotone": args.monotone.resolve().as_posix() if args.monotone else None,
                   "num_monotone": sum(1 for c in constraints if c != 0)}
+        if args.param:  # only when given, so that a run without overrides writes the same metrics.json as before
+            config["params"] = {k: v for k, v in extra.items() if k != "monotone_constraints"}
     else:
         device = torch.device(args.device)
         model = train_mlp(X_tr, y_tr, X_vl, y_vl, seed=args.seed, device=device)

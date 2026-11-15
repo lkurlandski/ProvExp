@@ -134,9 +134,9 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
 
 ## Waiting on the user
 
-- **The cost of robustness (session 71, Fable):** read `docs/evidence/fable-cost-of-robustness.md` and decide on its
-  five one-minute pilot experiments (§4), the learner change, and the two extractor questions (anchored sums, verified
-  signatures).
+- **The cost of robustness (session 71, Fable):** read `docs/evidence/fable-cost-of-robustness.md` and then resume with
+  `docs/resume-prompt-fable.md`: step 1 (experiments 1-3 and §5.4's rewrite) is decided and half built
+  (`pipeline/4-detectors/cost-split`, not yet run; ruff and mypy not yet run); extractor changes are rejected.
 - **Before cloning on the cluster:** `git push` (main is ahead of origin), then copy what a clone does not bring
   (`SETUP.md` §4: the split index files and the scale-up's file lists; `check.sh` stops without them).
 - **The head-node session** (`docs/resume-prompt.md`) needs the user at the cluster: `SETUP.md`, `check.sh`, the "TO
