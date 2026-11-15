@@ -134,6 +134,9 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
 
 ## Waiting on the user
 
+- **The cost of robustness (session 71, Fable):** read `docs/evidence/fable-cost-of-robustness.md` and decide on its
+  five one-minute pilot experiments (§4), the learner change, and the two extractor questions (anchored sums, verified
+  signatures).
 - **Before cloning on the cluster:** `git push` (main is ahead of origin), then copy what a clone does not bring
   (`SETUP.md` §4: the split index files and the scale-up's file lists; `check.sh` stops without them).
 - **The head-node session** (`docs/resume-prompt.md`) needs the user at the cluster: `SETUP.md`, `check.sh`, the "TO
