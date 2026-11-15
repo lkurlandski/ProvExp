@@ -52,7 +52,7 @@ not compute them~\cite{joyce2025ember},
 and a detector trained without them loses no detection (0.1 points more at a 1\% false-positive rate). % run 126 (pilot)
 We also change one rule of EMBER's parser: it starts the overlay where the last section or data directory ends, and we
 start it where the last section ends, as LIEF~\cite{lief} does, so that writing a directory entry the loader ignores
-cannot move the overlay.
+cannot move the overlay. \Cref{sec:ember} lists every change we make to EMBER, with the reason for each.
 % R7, docs/evidence/r7-overlay-rule.md §5 (user, 2026-11-13): LIEF's rule installed in pefile by features.py (f0d2bb1).
 
 \subsection{Threat Model}
