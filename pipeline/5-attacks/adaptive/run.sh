@@ -17,14 +17,14 @@
 # CHECKPOINTS, NUM_MALWARE (default all), DB, SAVE_ROWS, and PROTOCOL: scaleup (the default; session 67) attacks the
 # evaluation set's malware (FILES, default 2-features/files/ts.parquet), each detector on those it detects, with the
 # training-goodware donor set DONORS (default tr-donors-1) and thresholds on the validation split; pilot keeps the
-# pilot list and its goodware and thresholds on the test split (the identity check). SCALE-UP still open: the model
-# set `scaleup` (MODELS) and the time.
+# pilot list and its goodware and thresholds on the test split (the identity check, with MODELS=pilot). MODELS
+# defaults to `scaleup` (4-detectors/<name>). SCALE-UP still open: the time.
 set -euo pipefail
 cd "${SLURM_SUBMIT_DIR:-$(dirname "$0")/../../..}"
 source pipeline/common.sh
 
 DETECTORS="${DETECTORS:-unconstrained monotone-features monotone-sums}"
-MODELS="${MODELS:-pilot}"
+MODELS="${MODELS:-scaleup}"
 ESCAPES="${ESCAPES:-none}"
 QUERIES="${QUERIES:-5000}"
 CHECKPOINTS="${CHECKPOINTS:-200 1000 2000 5000}"

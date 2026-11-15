@@ -20,6 +20,12 @@ from provexp.data.tabular import load_features
 from provexp.detectors import calibrate_threshold
 from provexp.detectors import detection_at
 from provexp.detectors import model_threshold
+from provexp.registry import DESCRIPTIONS
+from provexp.registry import TOOLKIT_ATTACKS
+from provexp.registry import Detector
+from provexp.registry import defense_args
+from provexp.registry import detector
+from provexp.registry import scaleup_models
 
 
 def _predictions(path: Path, good: list[float], bad: list[float]) -> None:
@@ -121,3 +127,25 @@ class TestLoadAttacked:
     def test_scaleup_needs_donors(self, tmp_path: Path) -> None:
         with pytest.raises(ValueError, match="--donors"):
             load_attacked("scaleup", tmp_path, tmp_path)
+
+
+################################################################################
+# The registry's scale-up model set
+################################################################################
+
+class TestScaleupModels:
+
+    def test_layout(self) -> None:
+        models = scaleup_models("root")
+        assert set(models) == set(DESCRIPTIONS)
+        assert models["unconstrained"] == Detector("root/4-detectors/unconstrained", "root/2-features/sums")
+        assert models["expert-set"].features == "root/2-features/expert"
+        assert {f"pv-loo-{a}" for a in TOOLKIT_ATTACKS} <= set(models)
+
+    def test_defense_args(self) -> None:
+        args = defense_args(["unconstrained", "monotone-sums", "iterated-2"], "scaleup")
+        assert args[0] == "--defense" and args[1].startswith("unconstrained=") and args[1].endswith("/unconstrained")
+        with pytest.raises(ValueError):
+            defense_args(["unconstrained", "expert-set"], "scaleup")  # two stores
+        with pytest.raises(ValueError):
+            detector("iterated-1", "pilot")

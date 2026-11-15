@@ -16,9 +16,9 @@ pipeline/3-directions/derived/run.sh
 # The pilot's files and protocol (the steps default to the scale-up's evaluation set and protocol since session 67).
 PILOT=artifacts/experiments/e1/seed-0/zeros/files.parquet
 FILES=$PILOT CHAINED=0 NUM_FILES=5 pipeline/1-audit/catalogue-checks/run.sh
-PROTOCOL=pilot DETECTORS="unconstrained monotone-sums" ESCAPES="none debug_entry" QUERIES=200 CHECKPOINTS=200 \
+PROTOCOL=pilot MODELS=pilot DETECTORS="unconstrained monotone-sums" ESCAPES="none debug_entry" QUERIES=200 CHECKPOINTS=200 \
   NUM_MALWARE=3 SAVE_ROWS=1 pipeline/5-attacks/adaptive/run.sh
-PROTOCOL=pilot DETECTORS="unconstrained monotone-sums" NUM_MALWARE=3 pipeline/5-attacks/mab-malware/run.sh
+PROTOCOL=pilot MODELS=pilot DETECTORS="unconstrained monotone-sums" NUM_MALWARE=3 pipeline/5-attacks/mab-malware/run.sh
 
 echo "Comparing $OLD with $OUT_ROOT:"
 source env/bin/activate

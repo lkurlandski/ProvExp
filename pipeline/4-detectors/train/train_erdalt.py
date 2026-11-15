@@ -10,7 +10,7 @@ reference and PV-seen rows read them). Its perturbation vectors come from two so
                     files.parquet), in the layout of `--adv_features`, whose training rows of the same names are the
                     clean vectors
 
-Outputs, in `{outdir}/erdalt/seed-{seed}{suffix}/`: model.pt and erdalt.json (provexp.models.erdalt.save_erdalt),
+Outputs, in `{outdir}/erdalt/seed-{seed}{suffix}/` (or `--model_dir`): model.pt and erdalt.json (provexp.models.erdalt.save_erdalt),
 metrics.json (as train_classic.py, plus the ERDALT training summary and history), ts_predictions.parquet and
 vl_predictions.parquet. With `--complete_only`, every split keeps only the files below 4,000,000 bytes (the scale-up).
 
@@ -66,7 +66,9 @@ def main() -> None:
     parser.add_argument("--adv_features", type=Path, default=ROOT / "artifacts" / "features" / "ember2024")
     parser.add_argument("--attacks", nargs="+", required=True, help="The seen attacks whose vectors ERDALT learns.")
     parser.add_argument("--outdir", type=Path, default=ROOT / "artifacts" / "models")
-    parser.add_argument("--suffix", type=str, required=True)
+    parser.add_argument("--suffix", type=str, default=None)
+    parser.add_argument("--model_dir", type=Path, default=None, help="The output directory itself, instead of "
+                        "{outdir}/erdalt/seed-{seed}{suffix} (the scale-up: 4-detectors/<registry name>).")
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--device", type=str, default="cuda")
     parser.add_argument("--batch_size", type=int, default=256)
@@ -77,7 +79,9 @@ def main() -> None:
     if args.deltas is None and args.adv_dir is None:
         raise ValueError("Give --deltas, --adv_dir, or both.")
 
-    outdir = args.outdir / "erdalt" / f"seed-{args.seed}{args.suffix}"
+    if (args.suffix is None) == (args.model_dir is None):
+        raise ValueError("Give exactly one of --suffix and --model_dir.")
+    outdir = args.model_dir if args.model_dir is not None else args.outdir / "erdalt" / f"seed-{args.seed}{args.suffix}"
     store_names: list[str] = load_manifest(args.features)["feature_names"]
     dropped: set[str] = set()
     if args.neutralize is not None:

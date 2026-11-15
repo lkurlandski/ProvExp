@@ -15,7 +15,7 @@ use them (3-B mitigation, docs/graveyard.md); give the output a `--suffix`.
 With `--monotone` (GBDT only), a file of `name<TAB>sign` lines (sign +1 or -1) constrains the GBDT to be monotone
 increasing or decreasing in those features (direction A, go/no-go check 3; pipeline/3-directions/derived/directions.py writes the files).
 
-Outputs, in `{outdir}/{learner}/seed-{seed}[-{poison}]/`:
+Outputs, in `{outdir}/{learner}/seed-{seed}[-{poison}]/` (or `--model_dir`):
     model.txt (GBDT) or model.pt (MLP)   the trained model
     metrics.json                         test metrics, plus the training configuration
     ts_predictions.parquet               the predicted probability of malware for each test sample
@@ -144,10 +144,14 @@ def main() -> None:
     parser.add_argument("--neutralize", type=Path, default=None, help="A file of feature names, one per line, to set to zero in every split.")
     parser.add_argument("--monotone", type=Path, default=None, help="GBDT only. A file of `name<TAB>sign` lines (sign +1 or -1): monotone constraints.")
     parser.add_argument("--suffix", type=str, default=None, help="The output directory's suffix (default: the poison's name).")
+    parser.add_argument("--model_dir", type=Path, default=None, help="The output directory itself, instead of "
+                        "{outdir}/{learner}/seed-{seed}{suffix} (the scale-up: 4-detectors/<registry name>).")
     args = parser.parse_args()
+    if args.model_dir is not None:
+        args.suffix = args.suffix if args.suffix is not None else ""  # the directory is named; no overwrite to fear
 
     suffix = args.suffix if args.suffix is not None else (f"-{args.poison.name}" if args.poison else "")
-    outdir = args.outdir / args.learner / f"seed-{args.seed}{suffix}"
+    outdir = args.model_dir if args.model_dir is not None else args.outdir / args.learner / f"seed-{args.seed}{suffix}"
     outdir.mkdir(parents=True, exist_ok=True)
 
     neutral: list[int] = []
