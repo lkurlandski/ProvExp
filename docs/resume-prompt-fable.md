@@ -26,15 +26,15 @@ Paste into a fresh session (Fable 5.2 or Opus). Read `docs/evidence/fable-cost-o
   The pilot command is in `run.sh`'s header.
 - **Found:** LightGBM silently falls back to `basic` unless `feature_fraction` and `feature_fraction_bynode` are 1;
   the step sets both to 1 for the three method variants (basic is then the control).
-- **Not known yet:** the run time of `intermediate` and `advanced`. A timing run (100 rounds each, into the session
-  scratchpad) was in flight when the session ended; redo it. With `basic`, 100 rounds take about 22 s on the pilot
-  store, so 3,000 rounds are about 6 minutes; if `advanced` is much slower, lower `ITERATIONS` or hand the user the
-  script (jobs over ~10 minutes are the user's to run).
+- **Timing (pilot store, 100 rounds, subsampling off, loading included):** basic 23 s, intermediate 21 s, advanced
+  40 s; the methods now really differ (accuracy at 100 rounds: 93.71, 93.78, 93.75, so no large effect yet). At 3,000
+  rounds expect about 6 minutes for basic and intermediate and 15-20 for advanced: run the first two yourself
+  (`METHODS="basic intermediate"`), and either lower `ITERATIONS` for advanced or hand the user the script.
 
 ## Next, in order
 
 1. `env/bin/ruff check src tests pipeline`, `env/bin/mypy src tests pipeline`; fix what they report.
-2. Time the methods, then run the step at pilot scale (command in `run.sh`'s header). Compare each number with the
+2. Run the step at pilot scale (command in `run.sh`'s header). Compare each number with the
    prediction in the findings file's §4 and report misses as misses. Check the `violations` column is 0 for every
    monotone model.
 3. Append the results to the findings file (a new section 7), add the step to `pipeline/README.md` and
