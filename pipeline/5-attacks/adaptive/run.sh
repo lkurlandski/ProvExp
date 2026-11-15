@@ -30,7 +30,10 @@
 # (default tr-donors-1) and thresholds on the validation split; pilot keeps the pilot list and its goodware and
 # thresholds on the test split (the identity check, with MODELS=pilot).
 # Cost (session 67, from the pilot's timings): ~8-11 CPU-h per detected malware over all detectors, ~7-9k CPU-h in
-# all; a plain-search shard ~10-12 h on 36 cores, an escape shard ~4 h. SCALE-UP TO CONFIRM: time and memory.
+# all; a plain-search shard ~10-12 h on 36 cores, an escape shard ~4 h. Session 69 made a candidate ~3x cheaper
+# (~0.32 -> ~0.10 s: no unused prediction, faster strings), so about a third of that: ~2.5-3k CPU-h, a plain-search
+# shard ~3.5-4 h, an escape shard ~1.5 h; with 2-features/file-store, loading takes seconds instead of ~25 min.
+# SCALE-UP TO CONFIRM: time and memory.
 set -euo pipefail
 cd "${SLURM_SUBMIT_DIR:-$(dirname "$0")/../../..}"
 source pipeline/common.sh

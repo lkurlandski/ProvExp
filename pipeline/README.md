@@ -30,7 +30,8 @@ estimates until the head-node session. The pilot's commands are in `run/` (a his
 
 The order (each step's inputs are the outputs above it):
 
-1. `2-features/featurize` (the stores, full splits), `2-features/files` (done: the lists);
+1. `2-features/featurize` (the stores, full splits), `2-features/files` (done: the lists), `2-features/file-store`
+   (the attacked files' bytes in one SQLite file beside the lists; optional, it only speeds up loading);
 2. `3-directions/derived`; `1-audit/*` (the catalogue check's edits feed the trial); `3-directions/trial`;
 3. `4-detectors/train` (Table 5, the expert set, trial);
 4. `4-detectors/adversarial-training` (the material, array), then `4-detectors/learned` (PV, ERDALT, adversarial
@@ -49,6 +50,7 @@ The order (each step's inputs are the outputs above it):
 | `1-audit/hand-table` | `structure_witness.py`, `overlay_witness.py`, `signature_witness.py`, `witness_counts.py` (`hand_table.py`: the old Table A0, not in the paper) | yes (`FILES` required) | runs 88, 92, 98, 101 |
 | `2-features/featurize` | `featurize.py`, `check_features.py`, `refeaturize_nonpe.py` | yes | runs 01-02, 94, 102 |
 | `2-features/files` | `build_metadata.py`, `select_files.py` | yes (the evaluation set: 1,000 malware, 1,000 benign, complete files) | runs 03-04 |
+| `2-features/file-store` | `build_store.py` | yes (the evaluation set, the donor sets, the material's training malware) | session 69 |
 | `3-directions/derived` | `directions.py`, `expert_directions.py` | yes (`directions.py`) | runs 97, 102, 140, 142 |
 | `3-directions/trial` | `trial_probe.py`, `trial_table.py` | yes (the evaluation set, donor set 0's imports) | run 144 |
 | `4-detectors/train` | `train_classic.py`, `train_erdalt.py` | yes (Table 5 and the expert set; the learned defenses in `adversarial-training`) | runs 99, 105, 128, 140 |
