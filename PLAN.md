@@ -515,8 +515,14 @@ records of the §5 reviews, the table remake and the ERDALT check, is in
    (`scaleup_tables.py`: test TPR at the validation thresholds, the share of all evaluation malware still detected
    after each attack and after any at 1% and 0.1% FPR, R3's margins, R15's gain share; `coverage.py`'s `modeled`
    class for R12; `erdalt_hole.py --protocol`). A bug from session 67 fixed: the adaptive search's workers reloaded
-   the pilot list under `--protocol scaleup`. Next: the head-node session (`SETUP.md`, `check.sh`, the "TO CONFIRM"
-   values, each `run.sh`'s time and memory).
+   the pilot list under `--protocol scaleup`. Open for the user: the derived table's corpus at the scale-up, and
+   iterated adversarial training's starting point (Claude chose the adversarially trained detector).
+   **Next (user, end of session 68): lightweight optimization before the launch.** Profile the expensive paths (the
+   adaptive search's extraction-scored candidates above all, ~7-9k CPU-h; the material; featurization), then assess
+   each hot spot (gain in CPU-h, effort, added complexity; techniques in the user's order of preference: a better
+   algorithm, numpy, numba, Cython, C/C++) for the user's cost-benefit call; implement only what is approved,
+   bit-identical, and re-profile. Then the head-node session (`SETUP.md`, `check.sh`, the "TO CONFIRM" values, each
+   `run.sh`'s time and memory).
 4. **While the scale-up runs: §2's closing and contribution 4 against §5** (old step 2 (c)). §2 says §5 "uses them to
    attack malware detectors and to build robust ones"; in §5 the attack is an instrument. The mock's contribution 4 is
    stale ("four to six points", "learned constraints"). Writing only.

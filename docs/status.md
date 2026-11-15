@@ -127,7 +127,11 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
 
 ## Waiting on the user
 
-- **The head-node session** (`docs/resume-prompt.md`) needs the user at the cluster: `SETUP.md`, `check.sh`, the "TO
+- **Next session: lightweight optimization first** (the user's request, end of session 68; `docs/resume-prompt.md`
+  §4.1): profile the expensive paths (the adaptive search's candidates, extraction, the toolkit and MAB-Malware),
+  assess each hot spot's gain, effort and complexity for the user's cost-benefit call, implement only what the user
+  approves, bit-identical.
+- **Then the head-node session** (`docs/resume-prompt.md` §4.2) needs the user at the cluster: `SETUP.md`, `check.sh`, the "TO
   CONFIRM" values, and each `run.sh`'s time, memory and GPUs. Then the user submits the steps in
   `pipeline/README.md`'s order. Number-free rebuttal text fixes (R4, R5, R15, R21) are step 4 (while the scale-up
   runs).
@@ -142,8 +146,8 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
 2. ~~The final review/rebuttal revisit~~ (done, session 63: nothing else before the scale-up).
 3. The scale-up (PLAN.md step 3): ~~the refactoring session~~ (done, session 64), ~~the extractor audit pass~~ (done,
    session 65; decided and applied in session 66),
-   ~~the protocol items~~ (decided, session 67), ~~the remaining `run.sh` steps~~ (done, session 68), then a
-   head-node session on the cluster (next).
+   ~~the protocol items~~ (decided, session 67), ~~the remaining `run.sh` steps~~ (done, session 68), lightweight
+   optimization of the hot spots (next), then a head-node session on the cluster.
 4. While it runs: §2's closing and contribution 4 aligned with §5; the number-free text fixes R4, R5, R15, R21.
 5. After reading it: final numbers, then shortening §4-5 and §5's question-and-answer emphasis.
 6. A second domain decided with the scale-up's results in hand (the user's call).
