@@ -259,18 +259,30 @@ class TestSpeedups:
         b"!This program cannot be run in DOS mode.\r\n$\x00Invoke-Expression powershell GET /index POST /x",
         b"1BoatSLRHtKNngkdXEeobR76b53LETtpyT\x00fe80::1 and 2001:db8:0:0:0:0:2:1\x00/dev/null /proc/self",
         b"PASSWORD password Password\x00\x00\x00mutexmutex\x00ftp://host/x ftp: html<script>\x7f\x7f\x7f\x7f\x7f",
-    ], ids=range(7))
+        b"HtMl hTML\x00JAVASCRIPTjavascript PowerShell\x00mutexmutexmutex\x00crypTcrypt\x00GET /GET /\x00\xff",
+        b"\x7f\x7f\x7f\x7fhtml\x80http://a\x1fabcd\x00abcde\x00/tmp//tmp/x\x0a/usr/bin/\x20\x20\x20\x20\x20",
+    ], ids=range(9))
     def test_strings_raw_features_match_original(self, text: bytes) -> None:
         """Every regex count, at string boundaries included, equals the original per-string search."""
         extractor = features.StringExtractor()  # type: ignore[no-untyped-call]
         original = features._strings_raw_features_original(extractor, text, None)  # type: ignore[no-untyped-call]
         assert features._strings_raw_features(extractor, text, None) == original
+        fixed = features.StringExtractorFixed()
+        assert features._strings_raw_features(fixed, text, None) == features._strings_raw_features_original(fixed, text, None)  # type: ignore[no-untyped-call]
+        assert features._printable_runs(text) == extractor._allstrings.findall(text)
+
+    def test_literal_patterns(self) -> None:
+        """The plain words are found by str.find; every other pattern by its regex."""
+        literal = {k for k, r in features.StringExtractor()._regexes.items() if features._literal(r) is not None}  # type: ignore[no-untyped-call]
+        assert {"html", "powershell", "dos_msg", "get"} <= literal
+        assert not {"url", "ipv4_addr", "base64string", ".click(", "registry_key"} & literal
 
     def test_strings_on_files(self, sample: tuple[bytes, np.ndarray, Provenance]) -> None:
         data, _, _ = sample
         extractor = features.StringExtractor()  # type: ignore[no-untyped-call]
         original = features._strings_raw_features_original(extractor, data, None)  # type: ignore[no-untyped-call]
         assert features._strings_raw_features(extractor, data, None) == original
+        assert features._printable_runs(data) == extractor._allstrings.findall(data)
 
 
 ################################################################################

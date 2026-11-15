@@ -2758,9 +2758,51 @@ class PEFeatureExtractor(object):
 # reach across, and `.` excludes it); and `\b` sees the newline as a non-word character, exactly like the string's end.
 # The original method is kept unchanged above (this file only adds to thrember) and replaced here; tests compare the
 # two on real files.
+# NOTE (session 69): two more exact shortcuts, after the regexes still made up most of an extraction.
+#   - The strings, the maximal runs of 0x20-0x7f of at least 5 bytes (thrember's `[\x20-\x7f]{5,}`, which is greedy
+#     and so finds exactly those runs), are found with numpy (`_printable_runs`) when the extractor uses that pattern.
+#   - A pattern that is a plain word (no regex metacharacter, at most the IGNORECASE flag; 67 of the 77) is found with
+#     `str.find`, advancing past each match, which gives finditer's positions: a literal's leftmost non-overlapping
+#     matches. Under IGNORECASE the search runs on the lowercased text: the text is ASCII (the strings' bytes are
+#     0x20-0x7f), and in ASCII a case-insensitive match of an ASCII word is exactly a match of the lowercased word in
+#     the lowercased text, at the same positions (lowercasing ASCII keeps every length).
+_PRINTABLE_RUNS = b"[\x20-\x7f]{5,}"
+_REGEX_META = frozenset(".^$*+?{}[]\\|()")
+
+
+def _printable_runs(bytez: bytes) -> list[bytes]:
+    """The maximal runs of bytes 0x20-0x7f of length 5 or more, in order (thrember's `_allstrings.findall(bytez)`)."""
+    a = np.frombuffer(bytez, dtype=np.uint8)
+    edges = np.diff(((a >= 0x20) & (a <= 0x7F)).view(np.int8), prepend=np.int8(0), append=np.int8(0))
+    starts, ends = np.flatnonzero(edges == 1), np.flatnonzero(edges == -1)
+    keep = ends - starts >= 5
+    return [bytez[lo:hi] for lo, hi in zip(starts[keep].tolist(), ends[keep].tolist())]
+
+
+def _literal(r: re.Pattern[str]) -> Optional[tuple[str, bool]]:
+    """(the word, case-insensitive) if `r` matches a plain word, else None."""
+    if not isinstance(r.pattern, str) or not r.pattern or _REGEX_META & set(r.pattern):
+        return None
+    if r.flags & ~(re.IGNORECASE | re.UNICODE):
+        return None
+    return (r.pattern.lower(), True) if r.flags & re.IGNORECASE else (r.pattern, False)
+
+
+def _find_all(text: str, word: str) -> list[int]:
+    """The starts of the leftmost non-overlapping occurrences of `word` in `text` (finditer's, for a literal)."""
+    out, i = [], text.find(word)
+    while i >= 0:
+        out.append(i)
+        i = text.find(word, i + len(word))
+    return out
+
+
 def _strings_raw_features(self: StringExtractor, bytez: bytes, pe: Optional[pefile.PE]) -> dict:  # type: ignore[type-arg]
     """StringExtractor.raw_features, with the regex counts computed in one pass per regex (see the NOTE above)."""
-    allstrings = self._allstrings.findall(bytez)
+    if self._allstrings.pattern == _PRINTABLE_RUNS:
+        allstrings = _printable_runs(bytez)
+    else:
+        allstrings = self._allstrings.findall(bytez)
     allstrings_ascii = [s.decode() for s in allstrings]
     if allstrings:
         string_lengths = [len(s) for s in allstrings]
@@ -2781,10 +2823,18 @@ def _strings_raw_features(self: StringExtractor, bytez: bytes, pe: Optional[pefi
     string_counts = {}
     if allstrings_ascii:
         text = "\n".join(allstrings_ascii)
+        lower: Optional[str] = None
         # Where each string starts in `text`; a match belongs to the last string starting at or before it.
         starts = np.cumsum([0] + [len(s) + 1 for s in allstrings_ascii[:-1]])
         for k, r in self._regexes.items():
-            positions = [m.start() for m in r.finditer(text)]
+            word = _literal(r)
+            if word is None:
+                positions = [m.start() for m in r.finditer(text)]
+            elif word[1]:
+                lower = text.lower() if lower is None else lower
+                positions = _find_all(lower, word[0])
+            else:
+                positions = _find_all(text, word[0])
             if positions:
                 string_counts[k] = int(np.unique(np.searchsorted(starts, positions, side="right") - 1).size)
     string_counts = OrderedDict(sorted(string_counts.items()))
