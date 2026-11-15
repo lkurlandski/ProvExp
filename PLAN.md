@@ -374,12 +374,15 @@ records of the §5 reviews, the table remake and the ERDALT check, is in
    pefile's parser caps (§10: an exactness gap for `imp`/`sec` near a cap, not a soundness hole) and the
    always-constant features (`docs/upstream-issues.md` 2-3). The escape audit against the widened population (§9)
    found no new in-population escape.
-   **The audit pass: done in session 65; decisions wait on the user** (`docs/evidence/extractor-audit.md`). Five new
+   **The audit pass: done in session 65; decided (user, session 66)** (`docs/evidence/extractor-audit.md` §2). Five
    candidates, each counted on the 2,000 test files: (2.1) thrember's directory loop drops the last directory read,
-   not the reserved one (13 files, 11 in the population; recommended: fix, a pure addition); (2.2) the entry section
-   on files whose sections are not aligned (3; keep, or LIEF's extent, or a population clause); (2.3) alignment bits
-   decoded as flags (59; keep); (2.4) pefile's early stops in imports and exports (~12; keep with the caps); (2.5) the
-   string-pattern typos (keep as v3, or fix `registry_key` alone). Then the deviations table (§3 of that record) into
+   not the reserved one (13 files, 11 in the population): **fixed** (skip the entry named `RESERVED`; a pure
+   addition); (2.2) the entry section on files whose sections are not aligned (3): **kept**, listed as a parser rule
+   left as it is; (2.3) alignment bits decoded as flags (59): **kept** (v3's definition, a function of one field);
+   (2.4) pefile's early stops in imports and exports (~12): **kept**, listed with the parser caps; (2.5) the
+   string-pattern typos: **fixed, all three** (`registry_key` as `HKEY_|HKLM|HKCU`, `.click(` literal, `email_addr` a
+   bounded standard e-mail pattern; v3's feature names kept, `onlick` included, so the column order stays). The user:
+   we already fix several v3 bugs, so fix the obvious ones too. The authenticode definitions (§2.6) stay v3's. Then the deviations table (§3 of that record) into
    Appendix D in small blocks, and any `features.py` change before the featurization. The audit steps at scale all
    have a `run.sh` (`pipeline/1-audit/`), waiting only on the audit's file list (`FILES`): a protocol item, best
    decided with the malware count.

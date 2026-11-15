@@ -15,7 +15,9 @@ keep a rule of the parser's, the table says why. Apart from these changes, we se
 we use only the files our copy of the dataset holds in full (\Cref{sec:eval:setup}).
 
 % SYNTHETIC: every count in this table is on the 2,000 test files (artifacts/experiments/deviations/2000, session 66),
-% the string-pattern row predicted; pipeline/1-audit/deviations at the scale-up replaces them (its report.json), on the
+% artifacts/experiments/deviations/2000-s66; the parser-limits row is the union of export_names_lost, import_cap,
+% import_dll_invalid and import_stopped (a limit applies; on most such files pefile still reads what LIEF reads).
+% pipeline/1-audit/deviations at the scale-up replaces them (its report.json), on the
 % audit's file list. Record: docs/evidence/extractor-audit.md. The guard's 394 is on the whole corpus (2026-10-27).
 \begin{table}[h]
   \caption{Our changes to EMBER, and the parser rules we keep; files affected (in the population).}
@@ -30,11 +32,11 @@ we use only the files our copy of the dataset holds in full (\Cref{sec:eval:setu
     a crash in one directory's parser loses that directory, not the file & parser bug & \synthetic{394 of 2.9\,M} \\
     import descriptors of one library merged & EMBER bug & \synthetic{77 (61)} \\
     the reserved directory skipped, not the last one read & EMBER bug & \synthetic{13 (11)} \\
-    three string patterns corrected & EMBER bug & \synthetic{100 (85)} \\
+    three string patterns corrected & EMBER bug & \synthetic{411 (335)} \\
     \midrule
     Kept & & \\
     \midrule
-    the parser's limits on imports and exports & fixed by the bytes & \synthetic{12 (6)} \\
+    the parser's limits on imports and exports & fixed by the bytes & \synthetic{37 (23)} \\
     the entry section on misaligned sections & no loader rule & \synthetic{3 (3)} \\
     alignment bits read as several flags & EMBER's definition & \synthetic{59 (45)} \\
     \bottomrule

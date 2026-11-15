@@ -35,6 +35,24 @@ merge, which is already a deviation.
 
 ## 2. New candidates, each for the user to decide
 
+**Decided (user, session 66, 2026-11-15):** 2.1 fixed; 2.2 kept and listed; 2.3 kept; 2.4 kept, listed with the caps;
+2.5 **fixed, all three patterns** (against the recommendation: "we're already fixing a lot of bugs in the EMBER-v3
+feature set, so we might as well fix these obvious bugs while we're at it"): `registry_key` as
+`\b(?:HKEY_|HKLM|HKCU)`, `.click(` as `\.click\(`, `email_addr` as
+`\b[A-Za-z0-9._%+-]{1,64}@[A-Za-z0-9.-]{1,255}\.[A-Za-z]{2,24}\b` (bounded, so the search stays linear on long
+strings). v3's feature names stay, the misspelt key `onlick` included (its pattern is right; renaming would reorder
+the regex columns). 2.6's authenticode definitions stay v3's (neither is plainly a typo).
+
+**Counts after the decisions (session 66, `artifacts/experiments/deviations/2000-s66/`; the module now counts the
+fixed string patterns per file, `string_patterns_differ`, and pefile's stop after repeated import errors,
+`import_stopped`).** The string fix changes a feature on 411 files (335 in the population): `.click(` 275 (231),
+`email_addr` 145 (103), `registry_key` 63 (54). `import_stopped` fires on 26 (18); with the export names lost, the
+import cap and `*invalid*` DLL names, a parser limit applies to 37 files (23). The identity check against run 146
+(fresh outputs in `artifacts/refactor-baseline/new-pipeline-s66/`) differs exactly in the fixed features of the sums
+store (407 of 2,048 files), the catalogue's observed-cell counts (+1 to +2 for `ext`, `app`, `shf`), and one adaptive
+output row on `0485edc2...`, from 4458d06's escape writes (byte counts only); the `ember2024` and `expert` stores are
+unchanged.
+
 Each entry gives what happens, a concrete file, the counts, how EMBER v2 handled it where I know, what a change would
 change, and my recommendation.
 
