@@ -13,6 +13,10 @@ population's; subgroups that turn out too small should be oversampled explicitly
 With --complete_only, only the files our copy holds in full (below 4,000,000 bytes, the `truncated` flag false) are
 candidates: the scale-up's evaluation set (1,000 malware and 1,000 benign files; decided with the user, session 67).
 
+With --donor_sets K, K disjoint sets of --donors_per_set goodware are also drawn (seeded) from the selected goodware and
+written next to the list (`<stem>-donors-<k>.parquet`): on the training split, the attacks' donor files (set 0 for the
+learned defenses' training material, set 1 for the attacks on the evaluation set; R19's control swaps them).
+
 Usage:
     python pipeline/2-features/files/select_files.py --num_samples 2000
     python pipeline/2-features/files/select_files.py --num_samples 2000 --complete_only --outfile <scale-up list>
@@ -89,6 +93,8 @@ def main() -> None:
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--outfile", type=Path, default=ROOT / "artifacts" / "explanation_set" / "ts.parquet")
     parser.add_argument("--partial", action="store_true", help="Select from the finished shards of an unfinished run.")
+    parser.add_argument("--donor_sets", type=int, default=0, help="Disjoint donor sets drawn from the selected goodware.")
+    parser.add_argument("--donors_per_set", type=int, default=100)
     parser.add_argument("--complete_only", action="store_true", help="Only files below 4,000,000 bytes (not truncated).")
     args = parser.parse_args()
 
@@ -123,6 +129,15 @@ def main() -> None:
 
     args.outfile.parent.mkdir(parents=True, exist_ok=True)
     selected.write_parquet(args.outfile)
+    if args.donor_sets:
+        good = selected.filter(pl.col("label") == 0).sample(fraction=1.0, shuffle=True, seed=args.seed)
+        need = args.donor_sets * args.donors_per_set
+        if good.height < need:
+            raise RuntimeError(f"{need} donors requested, only {good.height} goodware selected.")
+        for k in range(args.donor_sets):
+            donors = good.slice(k * args.donors_per_set, args.donors_per_set).sort("row")
+            donors.write_parquet(args.outfile.with_name(f"{args.outfile.stem}-donors-{k}.parquet"))
+        report["donor_sets"] = [args.donors_per_set] * args.donor_sets
     args.outfile.with_suffix(".json").write_text(json.dumps(report | vars(args), indent=2, default=str))
     print(json.dumps(report, indent=2))
 

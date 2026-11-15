@@ -468,6 +468,22 @@ records of the §5 reviews, the table remake and the ERDALT check, is in
    re-checks combined edits by chaining the catalogue's edits (Appendix D's sentence rested on the removed A' code,
    run 111); leave-one-out (Table 10) runs at scale, its cost joining the malware count; trial-toolkit is not in the
    paper and stays an exploration.
+   (g) **Protocol items decided (user, session 67).** (1) *Evaluation set:* 1,000 malware and 1,000 benign test files,
+   drawn only from the complete files (below 4 MB), TLSH near-duplicates removed, at most 10 per family, seed 0
+   (`pipeline/2-features/files`, `select_files.py --complete_only`; drawn: 333 families plus 209 unlabeled; the cap
+   leans the malware toward larger files, 44% at 512 KiB-4 MB, as the old selection did). Every attack runs on its
+   malware (each detector on those it detects), every `1-audit` step on all of it. Cost estimated from the pilot: ~8-11
+   CPU-h per detected malware (the adaptive search at 5,000 extraction-scored candidates, ~10 pairs per file at the
+   full budget), ~7-9k CPU-h in all, about a day on ten nodes; none of the fallbacks (1,000-candidate checkpoint,
+   subset, cap) is needed. (2) *One training set:* every detector trains on the full training split's complete files
+   (~1.76M), each reading its patched store. (3) *Thresholds* (1% and 0.1% FPR) set on the validation split's
+   goodware for every detector (the pilot used the test split). (4) *Donors:* one fixed set of training-split complete
+   goodware for every attack on the evaluation set (toolkit, adaptive with signature cloning, MAB-Malware); no test file
+   in the attacker's hands. (5) *The learned defenses' material, once:* the eight toolkit attacks (seed per file, low
+   budget, training donors) on 10,000 training malware (complete, deduplicated, family cap; all of them, detected or
+   not), against the scale-up's undefended detector, so after it; ~80k outputs, ~700-900 CPU-h. Saved as feature rows
+   for every store the defenses read and as compressed adversarial binaries (~30-60 GB), so an extractor change means
+   re-featurizing, not re-attacking. PV, ERDALT, adversarial training and the leave-one-out folds all read it.
 4. **While the scale-up runs: §2's closing and contribution 4 against §5** (old step 2 (c)). §2 says §5 "uses them to
    attack malware detectors and to build robust ones"; in §5 the attack is an instrument. The mock's contribution 4 is
    stale ("four to six points", "learned constraints"). Writing only.

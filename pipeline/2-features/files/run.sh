@@ -15,9 +15,15 @@
 # all of it (their FILES default to this list). The draw reads only the byte-level columns of a featurized store's
 # meta (status, size, truncated, TLSH), which do not depend on the extractor's patches, so any store of the test split
 # gives the same list.
-# Output: $OUT_ROOT/2-features/files/ts.parquet (name, label, truncated, ...) and ts.json (the counts at each stage).
-# Knobs: FEATURES (a featurized store with ts/meta.parquet; default the scale-up's), METADATA (the released metadata
-# of build_metadata.py, for the family cap), NUM_SAMPLES (default 2000, half per label), SEED.
+# The same rule on the training split gives the learned defenses' material and the donors (session 67): 10,000
+# training malware attacked once by the eight toolkit attacks (4-detectors/adversarial-training), and two disjoint
+# sets of 100 training goodware as donors: set 0 for that material, set 1 for every attack on the evaluation set (no
+# test file in the attacker's hands; R19's donor-overlap control attacks with set 0 instead).
+# Output: $OUT_ROOT/2-features/files/ts.parquet (name, label, truncated, ...), tr.parquet, tr-donors-{0,1}.parquet,
+# and a .json per list (the counts at each stage). ~1 min (ts) and ~7 min (tr).
+# Knobs: FEATURES (a featurized store with ts/ and tr/meta.parquet; default the scale-up's), METADATA (the released
+# metadata of build_metadata.py, for the family cap), NUM_SAMPLES (default 2000, half per label), NUM_TRAINING
+# (default 20000, half per label), DONORS (per set, default 100), SEED.
 set -euo pipefail
 cd "${SLURM_SUBMIT_DIR:-$(dirname "$0")/../../..}"
 source pipeline/common.sh
@@ -38,3 +44,17 @@ python pipeline/2-features/files/select_files.py \
   --outfile "$OUT/ts.parquet" \
   &> "$OUT/logs/files.log"
 echo "Done. List: $OUT/ts.parquet"
+
+echo "Training malware and donor sets from $FEATURES/tr. Log: $OUT/logs/files-tr.log"
+python pipeline/2-features/files/select_files.py \
+  --features "$FEATURES" \
+  --metadata "$METADATA" \
+  --split tr \
+  --num_samples "${NUM_TRAINING:-20000}" \
+  --complete_only \
+  --donor_sets 2 \
+  --donors_per_set "${DONORS:-100}" \
+  --seed "${SEED:-0}" \
+  --outfile "$OUT/tr.parquet" \
+  &> "$OUT/logs/files-tr.log"
+echo "Done. Lists: $OUT/tr.parquet, $OUT/tr-donors-{0,1}.parquet"
