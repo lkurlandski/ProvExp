@@ -8,7 +8,7 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
 `docs/archive/status-log-2026-11-12-to-13-s43-54.md`, sessions 55-58 in `docs/archive/status-log-2026-11-13-s55-58.md`, sessions 59-60 in
 `docs/archive/status-log-2026-11-13-s59-60.md`, sessions 61-62 in `docs/archive/status-log-2026-11-14-s61-62.md`).
 
-## Current state (2026-11-15, through session 68)
+## Current state (2026-11-15, through session 69)
 
 - **Framework (§2-3):** rewritten; the user is reasonably satisfied. Open: the user's holistic read of Sound
   Directions after round 4 (finetuning only).
@@ -124,16 +124,16 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
   search's workers reloaded the pilot list under `--protocol scaleup` (session 67's change, which the pilot-protocol
   identity check could not see). Open for the user: the derived table's corpus, and iterated adversarial training's
   starting point (`docs/resume-prompt.md` §4).
+- **Optimization (session 69): done, bit-identical.** The adaptive search's candidate ~3x cheaper (391 -> 127 s on the
+  profiling slice; ~7-9k -> ~2.5-3k CPU-h at the scale-up); sums extraction 120 -> 78 ms per file; a file store
+  (`2-features/file-store`, SQLite beside the lists) replaces ~25 min of SimpleDB loading per attack task.
 
 ## Waiting on the user
 
-- **Next session: lightweight optimization first** (the user's request, end of session 68; `docs/resume-prompt.md`
-  §4.1): profile the expensive paths (the adaptive search's candidates, extraction, the toolkit and MAB-Malware),
-  assess each hot spot's gain, effort and complexity for the user's cost-benefit call, implement only what the user
-  approves, bit-identical.
-- **Then the head-node session** (`docs/resume-prompt.md` §4.2) needs the user at the cluster: `SETUP.md`, `check.sh`, the "TO
+- **Next: the head-node session** (`docs/resume-prompt.md` §4.2) needs the user at the cluster: `SETUP.md`, `check.sh`, the "TO
   CONFIRM" values, and each `run.sh`'s time, memory and GPUs. Then the user submits the steps in
-  `pipeline/README.md`'s order. Number-free rebuttal text fixes (R4, R5, R15, R21) are step 4 (while the scale-up
+  `pipeline/README.md`'s order, with `2-features/file-store` after the lists (or copy `files.sqlite` from this
+  server). Number-free rebuttal text fixes (R4, R5, R15, R21) are step 4 (while the scale-up
   runs).
 - **One choice made by Claude, open to the user's veto:** iterated adversarial training starts from the adversarially
   trained detector (the toolkit's material already appended), not from the unconstrained one, so its two rounds add
@@ -146,8 +146,8 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
 2. ~~The final review/rebuttal revisit~~ (done, session 63: nothing else before the scale-up).
 3. The scale-up (PLAN.md step 3): ~~the refactoring session~~ (done, session 64), ~~the extractor audit pass~~ (done,
    session 65; decided and applied in session 66),
-   ~~the protocol items~~ (decided, session 67), ~~the remaining `run.sh` steps~~ (done, session 68), lightweight
-   optimization of the hot spots (next), then a head-node session on the cluster.
+   ~~the protocol items~~ (decided, session 67), ~~the remaining `run.sh` steps~~ (done, session 68), ~~lightweight
+   optimization of the hot spots~~ (done, session 69), then a head-node session on the cluster (next).
 4. While it runs: §2's closing and contribution 4 aligned with §5; the number-free text fixes R4, R5, R15, R21.
 5. After reading it: final numbers, then shortening §4-5 and §5's question-and-answer emphasis.
 6. A second domain decided with the scale-up's results in hand (the user's call).
@@ -155,6 +155,18 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
 
 ## Session log
 
+- **2026-11-15 (session 69): lightweight optimization of the scale-up's hot spots.** Profiled (cProfile): an adaptive
+  candidate under `--score real` spent 53% computing `catalogue.predict_*`'s prediction only to take its written file,
+  43% extracting; within extraction the string regexes were 55-87% (run twice in the sums extractor), pefile ~11%; a
+  toolkit query ~70% extraction; the SimpleDB decompressed a ~500 MB shard per file read (~1.4 s). Approved by the
+  user and done, each bit-identical (tests, `check_reference.py` 32/32 for all three extractors, the identity check with
+  only its recorded differences): (1) `catalogue.written_*` and `Engine.structural` (ba53c6c; the two paths never
+  diverged on 1,785 edits of 48 files); (2) the file store, `provexp.data.filestore` and `2-features/file-store`
+  (a28c90e, dd5a8ff; the user chose a store over grouped reads; SQLite, stdlib, read-only and lock-free); (3) strings:
+  printable runs with numpy, plain-word patterns with `str.find` (1cc6f82; a regex library rejected: per-pattern
+  equivalence proofs and aarch64 builds). Re-profiled: the slice's search 391 -> 127 s, results identical; sums
+  extraction 120 -> 78 ms per file. Not done: byte-entropy windows with numpy (~15% of extraction; floating-point
+  care), secml's own code (third-party).
 - **2026-11-15 (session 68): the scale-up's remaining `run.sh` steps.** Registry `scaleup` set (6d9dbd4); training
   (b21f4d7); the defenses' material and the learned defenses (4734d57: `attack_training.py` on the lists with shards,
   rows for the sums and expert stores checked equal to the zstd binaries' re-extraction, `pv_hole.py --exclude` so PV
