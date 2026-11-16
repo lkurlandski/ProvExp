@@ -912,3 +912,233 @@ noise). The scale-up's price list (on tigris, not read) could change the split.
 
 **Where it would pay:** an instance whose costly constraints sit on counts or totals that the budget moves little
 against their scale.
+
+## H. The hand-off: the statements in the form to write from (session 76, 2026-11-16)
+
+Written so that a later session can turn this into manuscript text without redoing the mathematics. **H supersedes
+F.3 as the form to use;** F stays as the record of how it was found. Everything in H.1-H.5 is proved here. Nothing
+is in the manuscript, and whether and where any of it enters is the user's decision (H.9).
+
+Notation as in §3: threat model $\mathcal{M}$, population $Z$ closed under $\mathcal{M}$, signature $\Delta$,
+contributions $\nu_\tau$, sums $s_k$, readouts $\rho_j$ with the sets $P_j$, $N_j$, $O_j$ of the readout rule,
+derived table $D_\Delta$.
+
+### H.1 Two definitions
+
+**Definition (cost and size).** A *cost* gives every transformation $T \in \mathcal{M}$ applied to an input $z$ a
+number $\kappa(T, z) \ge 0$, for example the number of elements it writes or adds. The cost of a sequence of
+transformations is the total of its steps, and $\mathcal{R}_B(z)$ is the set of feature vectors of the inputs
+reached from $z$ by sequences of cost at most $B$. A *size* gives every change $c \to c'$ in $\Delta_\tau$ a number
+$w_\tau(c \to c') \ge 0$, for example the number of written elements among the item's members. The signature
+*covers $\mathcal{M}$ at cost* over $Z$ if every $T \in \mathcal{M}$ applied to any $z \in Z$ has a delta made of
+changes in $\Delta$ such that, for each kind $\tau$, the sizes of its changes of kind $\tau$ total at most
+$\kappa(T, z)$.
+
+Remarks. (1) Covering at cost implies covering. (2) The sizes are totalled **per kind**, never over all kinds: one
+written element is a member of items of several kinds (in Algorithm 1 an element of an added token is also an
+*element* item), so the sizes over all kinds exceed the cost. (3) No name is needed for the pair of a signature and
+its sizes.
+
+**Definition (rates).** An additive sum $k$ *rises at rate at most* $u_k$ if there are numbers $u_{k\tau} \ge 0$,
+one per kind that contributes to $k$, with $u_k = \sum_\tau u_{k\tau}$ and
+$$
+  \nu_\tau(c')_k - \nu_\tau(c)_k \;\le\; u_{k\tau}\, w_\tau(c \to c') \qquad \text{for every change in } \Delta_\tau .
+$$
+It *falls at rate at most* $l_k$ in the same way, with $\nu_\tau(c)_k - \nu_\tau(c')_k \le l_{k\tau}\, w_\tau(c \to c')$.
+
+Remarks. (1) Most sums receive contributions from one kind; then the rate is that kind's. (2) The rate is a worst
+case over every content the attacker may write: if one content moves the sum by 255 per element and another by 0,
+the rate is 255. (3) If no change raises $k$ (its direction lacks $+$), it rises at rate 0. (4) **A sum may have no
+rate.** If one written element makes the extractor find an item made of elements that were already there (a length
+field, a delimiter that completes a record), the sum moves by an amount that no size pays for, and no number $u_k$
+works. Such a sum keeps its direction from Theorem 1 and gets nothing more. No infinity appears anywhere.
+
+### H.2 Proposition (bounded sums)
+
+*Let $\Delta$ cover $\mathcal{M}$ at cost over a population $Z$ closed under $\mathcal{M}$, and let $z \in Z$ and
+$z'$ be reached from $z$ by a sequence of cost at most $B$. If the additive sum $k$ rises at rate at most $u_k$,
+then $s_k(z') - s_k(z) \le u_k B$. If it falls at rate at most $l_k$, then $s_k(z') - s_k(z) \ge -l_k B$.*
+
+*Proof.* Let the steps be $T_1, \dots, T_m$ with costs $\kappa_i$, from $z_{i-1}$ to $z_i$, $z_0 = z$. Every $z_i$
+is in $Z$ by closure, so step $i$ has a delta made of changes $C_i$ in $\Delta$ whose sizes total at most
+$\kappa_i$ in each kind. By Proposition 1 (i), the step changes $s_k$ by the total of
+$\nu_\tau(c')_k - \nu_\tau(c)_k$ over $C_i$. Each term is at most $u_{k\tau}$ times the size of its change (also
+when the term is negative, since the right side is not), so the changes of kind $\tau$ add at most
+$u_{k\tau} \kappa_i$ and the step at most $u_k \kappa_i$. Adding the steps gives $u_k \sum_i \kappa_i \le u_k B$.
+The lower bound is the same argument with the signs exchanged. $\qed$
+
+**The interval of a sum.** Each side comes from the best fact available: the direction (if $d_k$ lacks $+$ the sum
+does not rise at all, by Theorem 1), else the rate, else nothing. Then clip to the values the sum can take (a count
+is not negative). Write $[\underline{s}_k, \overline{s}_k]$; a side with neither fact is *open*.
+
+### H.3 Proposition (the corner rule)
+
+*Let the readout of feature $j$ rise with $P_j$ and fall with $N_j$ **on the box** of the intervals of the sums in
+its support, and let every sum in $O_j$ be fixed. If the sides $\underline{s}_k$ for $k \in P_j$ and
+$\overline{s}_k$ for $k \in N_j$ are not open, then every $\mathbf{x}' \in \mathcal{R}_B(z)$ has
+$x'_j \ge \rho_j(\mathbf{a})$, where $\mathbf{a}$ holds $\underline{s}_k$ on $P_j$, $\overline{s}_k$ on $N_j$ and
+$s_k(z)$ on $O_j$. With the opposite sides, $x'_j \le \rho_j(\mathbf{b})$ for the opposite corner $\mathbf{b}$.*
+
+*Proof.* By H.2 and Theorem 1, the sums of the reached input lie in the box. They are at or above $\mathbf{a}$ on
+$P_j$, at or below it on $N_j$, and equal to it on $O_j$, and the readout rises with $P_j$ and falls with $N_j$
+between any two such points of the box. $\qed$
+
+"On the box" means: for any two points of the box, not only for values that occur in inputs. The forms of Table 1:
+
+| Readout | Monotone on the box? |
+|---|---|
+| identity, monotone $g$, distinct count | always |
+| ratio $a/b$ | on a box with $\underline{a} \ge 0$ and $\underline{b} > 0$. If $\underline{b} = 0$ the upper end is **open**: the corner $(\overline{a}, 0)$ does not occur, and the convention reads 0 there, which is below the present value (F.4, case g) |
+| normalized bin | on a box of non-negative counts |
+| any other | no bound; the feature keeps its direction |
+
+A feature that fits two rows gets the intersection of the two intervals. A share of a histogram is the case that
+matters: read as a normalized bin it gets the exact high end, and read as its count over the total (the total as a
+sum of its own, rate 1) it gets the exact low end. Under additions of $B$ elements the two give
+$[\,c/(n+B),\ (c+B)/(n+B)\,]$, which is exact. No further rule is needed for shares.
+
+A side of a feature's interval is: the present value if the direction lacks that sign; else the corner value if the
+proposition applies; else open.
+
+### H.4 Corollary (a certificate from one evaluation)
+
+*Let the score $h$ be nondecreasing in the features of a set $A$, nonincreasing in those of a set $A'$, arbitrary
+in features that the table marks fixed, and let it read no other feature. Suppose the interval of every feature in
+$A$ has a low end and that of every feature in $A'$ a high end, and let $\mathbf{x}^{c}(z, B)$ hold these ends and
+$\varphi_j(z)$ on the fixed features. Then $h(\mathbf{x}') \ge h(\mathbf{x}^{c}(z, B))$ for every
+$\mathbf{x}' \in \mathcal{R}_B(z)$.*
+
+*Proof.* $\mathbf{x}'$ is at or above $\mathbf{x}^{c}$ on $A$, at or below it on $A'$, equal on the fixed features,
+and $h$ reads nothing else. $\qed$
+
+Reading. The file $z$ is *certified at budget $B$* if $h(\mathbf{x}^{c}(z, B))$ is above the threshold: one
+evaluation of the score, no solver. If $h$ is monotone with respect to the table, $\mathbf{x}^{c}$ is $\varphi(z)$
+for every $B$, which is Corollary 1. The guarantee is per file and per budget, counted from the file $z$, as
+certified accuracy at a radius is for robust classifiers; it is not a property of the score alone.
+
+### H.5 Proposition (with directions alone, strict monotonicity loses nothing)
+
+Call $\mathbf{x}'$ *allowed from* $\mathbf{x}$ under a table $D$ if the change of every feature has a sign in its
+direction. A score $h$ *certifies* $\mathbf{x}$ at threshold $t$ under $D$ if $h(\mathbf{x}') \ge t$ for every
+$\mathbf{x}'$ allowed from $\mathbf{x}$.
+
+*For any score $h$ bounded below, let $h^{\downarrow}(\mathbf{x})$ be the infimum of $h$ over the vectors allowed
+from $\mathbf{x}$. Then (i) $h^{\downarrow}$ is monotone with respect to $D$; (ii) $h$ certifies $\mathbf{x}$ at $t$
+exactly when $h^{\downarrow}(\mathbf{x}) \ge t$; (iii) $h^{\downarrow} \le h$. So at every threshold the monotone
+score $h^{\downarrow}$ detects exactly the inputs that $h$ certifies and flags no input that $h$ does not flag.*
+
+*Proof.* A direction contains 0 and is closed under addition (Appendix C), so $\mathbf{x}$ is allowed from itself,
+which gives (iii), and what is allowed from an allowed vector is allowed, so for $\mathbf{x}'$ allowed from
+$\mathbf{x}$ the infimum defining $h^{\downarrow}(\mathbf{x}')$ runs over a subset of the one defining
+$h^{\downarrow}(\mathbf{x})$, which gives (i). (ii) is the definition. $\qed$
+
+What it says. When the direction table is all that is known of the attacker, a relaxed ("somewhat monotone") score
+with a certificate is matched at every operating point by a strictly monotone score: the same guaranteed
+detections, no more false positives. What it does not say: (a) nothing about training (the best monotone score
+need not be the one a learner finds, and $h^{\downarrow}$ of a tree ensemble need not be a tree ensemble of that
+size); (b) nothing about detections without a guarantee, where $h$ may detect more; (c) it is relative to the
+table, which may allow vectors no edit produces. It is elementary ($h^{\downarrow}$ is the largest monotone function
+below $h$). It is **not** the converse of Corollary 1 that sessions 71-73 closed ("unevadable implies monotone",
+false). **Not searched for in the literature.**
+
+**With a budget the statement is false, by example (Algorithm 1).** One feature, the count $c$ of a value;
+the threat model adds elements; cost and size count elements, so $c$ rises at rate 1 and its direction is up.
+A malicious input has $c = 5$, a benign one $c = 150$. Every score monotone with respect to the table has
+$h(5) \le h(150)$ and cannot detect the first without flagging the second. The score that is 1 for $c < 50$ and 0
+otherwise is nonincreasing in $c$; at budget 20 the worst corner of the malicious input is $c = 25$, where the
+score is 1: certified, and the benign input is not flagged. Without a budget the attacker adds 145 elements and
+evades, as the proposition requires. So a relaxed detector can beat every strictly monotone one exactly when sizes
+are known, and its gain is the room between how far the budget moves a feature and the scale on which the feature
+separates the classes.
+
+### H.6 The check on Algorithm 1
+
+Operations: add a token $q$ (cost $\lvert q \rvert$), add a record of length $L$ (cost $L$), extend a record by
+$m$ elements (cost $m$). Rates: a value count 1; a token count $1/\lvert q \rvert$; *records* 1 (a record of one
+element); *size* 1. All fall at rate 0.
+
+| Feature | Interval at budget $B$ | Against the truth |
+|---|---|---|
+| a token count | $[s_q,\ s_q + B/\lvert q \rvert]$ | exact |
+| a value's share | $[c/(n+B),\ (c+B)/(n+B)]$ | exact (two rows intersected) |
+| $x_1$ = size / records | $[\text{size}/(\text{records}+B),\ (\text{size}+B)/\text{records}]$ | high end exact; low end loose (the truth is $(\text{size}+B)/(\text{records}+B)$ when the mean exceeds 1): added records bring their elements, and the box does not know it |
+| $x_2$ = largest | low end the present value; high end open | a pool; see H.7 |
+| $x_3$ = entropy | none | truly bounded for a small budget; the rule gives nothing for "any other" |
+| $x_4$ = distinct tokens | $[x_4,\ \text{number of keys}]$ | useless; the truth is $x_4 + B/\min \lvert q \rvert$ (H.7) |
+
+With "remove a record" added to the threat model, *records* can fall to 0 within a large enough budget, and the
+high end of $x_1$ is open (H.3's table).
+
+### H.7 Proved or sketched, and not proposed for the manuscript
+
+- **A max pool, upper side.** F.3, step 4. In the body a pool keeps its direction.
+- **A max pool, lower side (sketch, believed complete).** Suppose one kind feeds the pool and every change that
+  removes an item or lowers its contribution has size at least $\omega > 0$. Follow each item of $z$ through the
+  replacements that keep or raise its contribution. A sequence of cost at most $B$ holds at most
+  $\lfloor B/\omega \rfloor$ removing or lowering changes, so all but that many items of $z$ end with at least
+  their contribution, and the pool ends at or above the contribution ranked $\lfloor B/\omega \rfloor + 1$ in the
+  item table of $z$. This needs the item table, not the sums.
+- **Sums that share the budget.** H.2 applied to a total: if every change raises the sums of a family by at most
+  $u$ times its size in total, the rises of the family total at most $uB$ (same proof). This gives the distinct
+  count $x_4 + B/\min \lvert q \rvert$. No feature of EMBER was found to need it.
+- **Sums that move together** (the low end of $x_1$). A ratio of two totals takes its extremes when the whole budget
+  goes to one kind of change. Believed, not written out, not needed on EMBER.
+- **Capacity.** For in-place writes the binding limit is where the operation can write, not the byte budget (G.3).
+  No statement has been worked out. This is the open design question if the direction is pursued on EMBER.
+
+### H.8 The closest work, now read (PDFs in `papers/`)
+
+- **Chen et al., *Cost-Aware Robust Tree Ensembles for Security Applications*, USENIX Security 2021**
+  (`chen2021cost.pdf`). They "propose a new cost modeling method to capture the feature manipulation cost as
+  constraint" and train tree ensembles against it. The constraint is a box per feature, asymmetric in the two
+  directions, and it comes from the analyst: "we categorize attacker's cost of increasing and decreasing the value
+  of each feature into one of the four categories: negligible, low, medium, and high costs. The categories are
+  based on relative cost differences, rather than absolute scale." Case study: Twitter spam. So the object H.3
+  computes (an interval per feature and direction) is the object they assume from "domain knowledge". They train
+  against the box; H.4 certifies with one evaluation only for scores monotone per feature.
+- **Vos and Verwer, *Efficient Training of Robust Decision Trees Against Adversarial Examples*, ICML 2021**
+  (`vos2021efficient.pdf`; the arXiv version was read). GROOT: "we allow each feature to be perturbed with a
+  user-specified parameter: either a maximum distance or constraints on the direction of perturbation." Again the
+  per-feature range is given by the user.
+- **Chen et al., CCS 2021** (`chen2021learning.pdf`): F.5.
+- The relation to state, in their terms: these works take per-feature ranges as input and train against them; the
+  bounds here would compute such ranges from an extractor and a budget on edits. The same relation as Theorem 1
+  has to Incer et al. and Gimenez et al. Neither is in the bibliography yet.
+
+### H.9 What is decided, and what is not
+
+Decided by the user (G.1): this is the statement meant; the premise per edit; simpler is better; the pool passage
+shorter and in the appendix. Not decided: whether any of this enters the manuscript, and in which form. Options,
+with Claude's view:
+
+1. **A paragraph in the discussion** on what the directions discard: where one write moves a feature across its
+   range, the direction is all there is; where a feature moves little per element, a budget gives an interval
+   (H.2-H.4, cited as a straightforward extension), which the paper does not evaluate. Claude: yes.
+2. **H.5 beside Corollary 1** (a short proposition in §3.3 with its proof in Appendix C, or a sentence): with
+   directions alone, asking for strict monotonicity loses no guaranteed detection. It answers "why constrain the
+   model instead of certifying a free one" and says that §5.4's price is the price of the guarantee under the
+   table and not of the model class, in the sense of H.5's caveats. Claude: worth the user's look; it touches how
+   §5.4's number is read, so it must not be written without the user's agreement.
+3. **A subsection of its own after Sound Directions** (two definitions, H.2, H.3 in a sentence, H.4; about 400-450
+   words; proofs in Appendix C). Claude: only with a result behind it, either the budget curve on EMBER or a
+   second instance. Not woven into §3.3: every result of §5 rests on signs alone.
+
+On EMBER at the paper's budget nothing can be shown (G.3, G.4).
+
+### H.10 Traps, for whoever writes the text
+
+1. Sizes are totalled per kind. "One budget for all changes" is false (F.4, case b).
+2. The corner rule needs monotonicity on the whole box. Never evaluate a ratio at a zero denominator; that end is
+   open (F.4, case g).
+3. Clip a sum's interval to the values it can take before using the corner rule.
+4. No infinity. A sum has a rate or it has none.
+5. The certificate is per file and per budget; a relaxed score is not robust by construction.
+6. H.5 is about what a score can represent. Do not write that a monotone detector *is* as good as any other, and
+   do not present it as a converse of Corollary 1.
+7. All of it is elementary (a Lipschitz bound, interval arithmetic for monotone functions, a monotone function on a
+   box, a monotone lower envelope). No claim of new mathematics; what is ours is the chain from a budget on edits
+   to a certificate, as for signs.
+8. No claim of a payoff on EMBER. The numbers in G.3 and G.4 are the pilot's, one seed.
+9. A' is not a verdict (F.2), and is not to be cited as one.
+10. Chen et al. and Vos and Verwer in their own terms, with the quotes of H.8 checked again against the PDFs.
+11. Paper numbers from `manuscript/main.aux`. Text goes in uncommitted, for the user's review (resume prompt).
