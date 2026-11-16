@@ -135,12 +135,17 @@ in `docs/archive/status-log-2026-11-14-s63.md`).
 
 ## Waiting on the user
 
-- **The theory session, stage 2 (session 74; `docs/evidence/theory-analysis.md`, part C):** six candidate ideas,
-  each tried against Algorithm 1 first; the user chooses which to work out (proofs or counterexamples go to part D,
-  one idea at a time). Claude's suggestion: C.1 (closure derived from the table) first.
-- **Proof note 5** (`docs/evidence/proof-notes.md`): approved, not applied. Its first part calls
-  `monotone_violations` in `4-detectors/train` (a pipeline step); the user says whether Claude adds it, and the
-  sentence in §5.1 follows.
+- **The theory session, stage 2 (session 74; `docs/evidence/theory-analysis.md`, parts C-D):** the user chose C.1
+  (closure as a consequence) and C.2 (one rule for all readouts). **C.1 is worked out (D.1):** the lemma is proved;
+  on EMBER, by reading the code, it would derive closure for nine of the thirteen operations and leave the four that
+  move the layout checked. Waiting: whether the three sentences go into §3.3 as theory (text proposed in D.1), and
+  whether the instance work (the clauses as counts, the table rebuilt) is wanted. Then C.2.
+- **Proof note 5:** the sentence is in §5.1's *Detectors* in blue with a `% SYNTHETIC, TO VERIFY EXPERIMENTALLY`
+  comment (4e67a96). Still to do before the scale-up's training: call `monotone_violations` in `4-detectors/train`
+  and record the count; the prose is updated when the result is read.
+- **Bounds on size instead of signs:** the user asked to think about it more; the answer is in part C ("Weighed and
+  not proposed"): it is direction A' (dropped 2026-11-02), with three reasons that hold beyond that implementation,
+  one sentence that may be worth having, and the condition under which to revisit it.
 - **Before cloning on the cluster:** `git push` (main is ahead of origin), then copy what a clone does not bring
   (`SETUP.md` §4: the split index files and the scale-up's file lists; `check.sh` stops without them).
 - **The head-node session** (`docs/resume-prompt-head-node.md`) needs the user at the cluster: `SETUP.md`, `check.sh`, the "TO
@@ -178,6 +183,9 @@ in `docs/archive/status-log-2026-11-14-s63.md`).
   (pipeline). **Stage 2 opened:** part C lists six candidates (closure as a consequence; one rule for all readouts;
   item size, where monotonicity across refinements is false both ways; the blind spot of a learned table; side
   effects independent of the host up to the readout; threat models add up) and what was weighed and not proposed.
+  **C.1 worked out** (D.1; see "Waiting on the user"); proof note 5's sentence added to §5.1 as a prediction.
+  Claude's first reason against bounds on size was incomplete (it had not checked the graveyard: the idea is A');
+  corrected in part C.
 - **2026-11-16 (sessions 72-73, Fable): the cost of robustness, closed and reverted.** Step 1 (three pilot
   experiments, a rewrite of *Where the cost lies*) and step 2 (the converse of Corollary 1: false in general) gave no
   theoretical result. The user lost confidence in the work; on their instruction the manuscript paragraph, the

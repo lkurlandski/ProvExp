@@ -336,8 +336,19 @@ what they let the paper state, not in their difficulty.
 
 ### Weighed and not proposed
 
-- **Bounds on size instead of signs.** Possible (each added element moves a count by one), but a use needs a
-  verifier for the detector, which is machinery of the kind the user declined with the relational rule.
+- **Bounds on size instead of signs.** Corrected after the user asked (session 74): my first reason here ("needs a
+  verifier") was the weakest one and left out the main fact. This idea is direction A', tried and dropped on
+  2026-11-02 (`docs/graveyard.md`): a sound region per file and budget with an exact solver for the trees. It
+  certified nothing above 4 KB, where the paper's budget is 5% of the file or 512 KB. Three reasons hold beyond that
+  implementation. (1) The domain has no small budget: nothing limits what an attacker adds, which is why Incer et al.
+  and Gimenez et al. work with directions. (2) Bounded movement helps only features that average over the file
+  (histograms, means); a header field or a presence bit covers its whole range with one write. The price list of
+  §5.4 puts the cost elsewhere: dropping the two-sided features costs 0.2 points at 1% false positives (pilot), and
+  the rest comes from the constraints for imports and header writes, which no budget bounds. (3) The guarantee would
+  change kind, from "no edit, on any file of the population" to "this file, up to this budget". What may be worth
+  one sentence: a direction is what an interval becomes when the budget is unbounded, which says why signs are the
+  right domain here. To revisit only if the scale-up's price list shows that the two-sided features carry detection
+  at 0.1% false positives (pilot: 5.2 points, within retraining noise).
 - **A locality lemma** (a write changes only the items that read a written position). It would turn part of
   "covers" into a proof, but only given a sound record of what the parser reads, and the instance builds that record
   by perturbation. The checked premise would move, not go away.
@@ -352,5 +363,85 @@ few sentences each. I would work out C.1 first, because its value depends on a r
 that could still kill it.
 
 ## D. Proofs or counterexamples for the chosen ideas
+
+### D.1 Closure as a consequence (C.1; chosen by the user)
+
+**Status: the lemma is proved. Its payoff on EMBER is established by reading the code only; no clause has been
+re-modelled and nothing was run.**
+
+**Lemma.** Let $\Delta$ cover $\mathcal{M}$ over $Z$, with every sum totally ordered, and let
+$Z = \{ z \in Z_0 : \varphi_j(z) \le t_j \text{ for every } j \in J \}$ for a set $J$ of features of the extractor,
+thresholds $t_j$, and a set $Z_0$ closed under $\mathcal{M}$ (for instance all inputs). If no direction
+$(D_\Delta)_j$, $j \in J$, contains $+$, then $Z$ is closed under $\mathcal{M}$.
+
+*Proof.* Let $z \in Z$ and $T \in \mathcal{M}$. The first claim of Theorem 1 needs no closure: the change
+$\varphi_j(T(z)) - \varphi_j(z)$ has a sign in $(D_\Delta)_j$, hence is not positive, for every $j \in J$. So
+$\varphi_j(T(z)) \le \varphi_j(z) \le t_j$, and $T(z) \in Z_0$ by assumption, so $T(z) \in Z$. $\qed$
+
+The same holds with $\ge$ and no $-$, and for features that are sums. There is no circle: covering is assumed over
+$Z$ only, and it is used only on inputs of $Z$.
+
+**The form that reads best.** A population is usually "the inputs that contain no offending item". Let a sum count
+the offending items (each contributes 1, every other item 0), and let $Z$ be the inputs where the count is 0. The
+lemma then says: *if no change of the signature creates an offending item, the population is closed.* Closure stops
+being a hypothesis of its own. It follows from covering and from a property of the signature that can be read off
+the changes.
+
+**Counterexample hunt (Algorithm 1).** $Z$ = inputs with no record longer than 100. "Add a token": no change touches
+*largest*, closed, and truly so. "Extend a record": a change raises *largest*, the lemma is silent, and $Z$ is truly
+not closed. "Replace a record by one of the same length": fixed, closed. I found no case where the lemma's
+hypothesis holds and closure fails, as the proof says there cannot be.
+
+**What it does not give.** The converse. A table may give "both" to a membership feature of a closed population,
+because signs lose what ties two totals together. Example: $Z$ = inputs whose records hold at most half of all
+elements, and the edit adds a record of $r$ elements together with $r$ loose elements. Both totals rise, the rule
+for their ratio says both, and $Z$ is closed.
+
+**On EMBER, by reading `catalogue.precondition`, `plain_layout`, `regions` and `population.clauses`.**
+The population has seven live clauses. Each compares quantities the parser reads from the headers with each other
+or with the length of the file: section extents against SizeOfImage (two clauses), the PE header's offset against
+the DOS header and against the sections' data (two), and sections, data directories and located items against the
+end of the file (three). The certificate and debug entries are exempt since the widening of R7.
+
+- **Nine of the thirteen operations: closure would follow from the table.** The seven in-place writes (slack, DOS
+  header and stub, the nine loader-ignored header fields, the checksum, section names, the two removals) and the
+  entry write touch no position that a live clause reads: `regions` cuts the positions the parser reads out of the
+  slack and the DOS region, the nine fields and the checksum appear in no clause, and the two entries are exempt.
+  Append changes one ingredient, the length of the file, in the direction every clause allows. For these nine, the
+  membership features are fixed or down.
+- **Four operations: signs are not enough.** Adding a section, adding imports (which adds a section) and the two
+  insertions move the layout: section offsets, the header's sizes and the length of the file rise together. Each
+  clause still holds afterwards because the quantities move by the same amount, and a sign table cannot see that
+  (the example above). Closure for these four would follow from the lemma only in its second form, if each
+  operation's declared changes are shown to create no offending item. That is an argument per operation about its
+  own definition, or it stays a corpus check.
+- **Not established.** (1) The clauses are not sums of the instance today. Most of their ingredients are (header
+  fields, directory entries, the file's size are EMBER features), but whether an item is located past the end is
+  recorded as positions, not as a contribution. Writing the clauses as counts is a change to the instance, and the
+  derived table would have to be rebuilt to confirm the nine. (2) I did not check field by field that pefile reads
+  none of the nine loader-ignored fields to locate an item; the code's comment says so, and the corpus check agrees.
+  (3) For the entry write I traced the exemption in the directory clause, not how the item clause treats debug data
+  past the end; run 142 found the widened population closed on the pilot.
+- **Consistent with R7.** The writes that the escape audit found to leave the population (an entry pointed past the
+  end, SizeOfImage raised) are exactly writes to positions a clause reads. Under the lemma they are the changes that
+  can raise a membership count.
+
+**What it would change in the paper (proposal, not applied).**
+
+- §3.3, after the paragraph that explains Theorem 1. *New, three sentences:* "Closure need not be a separate
+  assumption. If the population is the set of inputs on which some features of the extractor stay at or below given
+  values, and the derived table says that no edit can raise these features, then no edit takes an input out of the
+  population, by the first claim of the theorem. In particular, a population defined as the inputs without items of
+  some offending form is closed if no change in $\Delta$ creates such an item."
+- Appendix C: the proof above, four lines.
+- §4.4. *Old:* "Closure is checked rather than proven: none of the 56,902 edits ... took a file out of it."
+  *New, only after the instance work below:* closure follows from the signature for the operations that write in
+  place or append, and is checked for the four that move the layout.
+
+**Assessment.** The lemma is true, two lines long, and uses nothing new. It removes closure as an independent
+premise in the theory. On EMBER it would turn a corpus check into a derivation for nine operations and leave four
+checked, and it rests on covering, which stays checked. So register R2 goes from three tested premises to two and a
+part. Getting there needs instance work outside this session (the clauses as counts, the table rebuilt), which is
+the user's call. Without that work, the three sentences in §3.3 can still stand as theory, with §4.4 unchanged.
 
 ## E. What to do next
