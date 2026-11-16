@@ -137,8 +137,13 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
 - **The cost of robustness (sessions 71-72, Fable):** step 1 is done at pilot scale
   (`docs/evidence/fable-cost-of-robustness.md` §8, §8.1; *Where the cost lies* rewritten in an Opus session).
   **Boosting rounds stay at 500 for every detector (user)**; the round comparisons were pilot-only (10% of the
-  training files) and do not inform the full-scale choice. The paragraph's 3,000-round aside is cut. Open: **step 2** (the converse of Corollary 1 as a theorem) starts from `docs/resume-prompt-fable.md`,
-  literature check first.
+  training files) and do not inform the full-scale choice. The paragraph's 3,000-round aside is cut. **Step 2 (the
+  converse of Corollary 1) is done, with a negative outcome (session 73; the findings file's §9, for the user to
+  read):** the converse is false in general (Algorithm 1's own extractor is a counterexample: an item that feeds two
+  moving sums), the stop rule applies, no theorem and nothing in the manuscript. Open for the user: whether to add
+  the two-sentence "least sound table" remark (§9.5; would need a count from existing catalogue outputs) and a
+  citation of Wang et al. 2022 in §6. Correction recorded: Gimenez et al.'s Proposition 2 is an existential
+  converse (the manuscript's §6 already says so; my notes had "sufficiency only").
 - **Before cloning on the cluster:** `git push` (main is ahead of origin), then copy what a clone does not bring
   (`SETUP.md` §4: the split index files and the scale-up's file lists; `check.sh` stops without them).
 - **The head-node session** (`docs/resume-prompt.md`) needs the user at the cluster: `SETUP.md`, `check.sh`, the "TO
@@ -162,6 +167,14 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
 7. Introduction, discussion, abstract last.
 
 ## Session log
+
+- **2026-11-16 (session 73, Fable): cost of robustness, step 2.** Literature check (Gimenez et al., Incer et al.,
+  Chen et al. in `papers/`; Wang et al. 2022 downloaded; abstract-interpretation completeness by search only), then
+  the mathematics. Outcome negative: unevadable is equivalent to "no single change lowers the score" under a realized
+  signature (elementary; the one-sided form of Wang et al.'s Proposition 1), and table-monotone is strictly stronger
+  whenever one item feeds two moving sums by amounts no identity ties (`size - records` on Algorithm 1). Two
+  definitions needed and bundling not a remark: the stop rule applies. Note for the user: the findings file's §9. No
+  experiment, no code, no manuscript change.
 
 - **2026-11-16 (session 72, Fable): cost of robustness, step 1's experiments.** ruff and mypy pass on session 71's
   code; `4-detectors/cost-split` run at pilot scale (`basic`, `intermediate`; `advanced` not run) and added to the

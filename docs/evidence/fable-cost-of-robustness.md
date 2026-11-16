@@ -7,7 +7,8 @@ best table-respecting detector (learner)?
 
 > **Read section 7 first.** After the user's review (same session), §3.2 (anchored sums), §3.3 (verified signatures)
 > and experiments 4 and 5 are **rejected**, and none of the mathematics here is a headline contribution. Sections 1 to
-> 6 are kept as written, as the record of the analysis.
+> 6 are kept as written, as the record of the analysis. **Section 9 is step 2's outcome: the converse of Corollary 1
+> does not hold in general, and no second theorem comes of it.**
 
 Paper numbers below are from `manuscript/main.aux`: Definition 7 (*Threat models and directions*), Definition 8
 (*Changes and signatures*), Definition 9 (*Directions of sums*), Table 1 (direction rules of the readouts),
@@ -526,7 +527,8 @@ threat model for this extractor, not of our construction). What is missing:
 - *Bundling.* It holds for the import block, but strictly fails where changes come together (an added import also
   brings bytes and strings). I believe a block-by-block version is provable; I am not confident a clean statement
   covers the whole EMBER table.
-- *Novelty unchecked.* Gimenez et al. prove sufficiency only (checked in the PDF). I have not searched for a converse
+- *Novelty unchecked.* Gimenez et al. prove sufficiency only (checked in the PDF). **[Wrong; corrected in §9.2:
+  their Proposition 2 is an existential converse.]** I have not searched for a converse
   elsewhere (monotone-classifier papers first: Incer et al. 2018, Chen et al. 2021). The order-theory core is simple,
   so the contribution would be the condition and its link to the signature.
 - *Cost.* It brings back a relative of coupling and tightness, which were dropped for complexity.
@@ -614,3 +616,167 @@ subsample (207,872 files). How many rounds a model can use depends on the amount
 comparisons say nothing about the full training set, where the user's experience is that rounds past 500 add very
 little. I should have said this before measuring. Decision: every detector stays at 500 rounds; raising the cap is an
 end-stage option, for all detectors together.
+
+## 9. Step 2: the converse of Corollary 1 (session 73, 2026-11-16)
+
+Nothing here is in the manuscript. No experiment was run; everything is reading and proof. Confidence marks as in the
+header, plus **[search]**: found by web search and read only in the search result, not in a PDF.
+
+### 9.1 The outcome in plain words
+
+**There is no second theorem here. The stop rule applies, on both of its clauses, and for a reason stronger than
+"it got complicated": the converse as we wanted it is false in general, and it already fails for the extractor of
+Algorithm 1 under the simplest threat model.**
+
+The hoped-for statement was: under a condition on the signature, every detector that no edit can evade is monotone
+with respect to the table. What is true instead:
+
+1. A detector is unevadable exactly when no single change of the signature lowers its score (given that every change
+   can be carried out on its own). This is a clean "if and only if", but it is the one-sided twin of a published
+   proposition (Wang et al. 2022) and elementary.
+2. "Monotone with respect to the table" is strictly stronger than that whenever one item feeds two sums that move, by
+   amounts that are not tied to each other. Then a detector may let one sum pull the score down as long as the other
+   pushes it up at least as much; no edit evades it, and the table rejects it. In Algorithm 1, a record adds 1 to
+   *records* and its length to *size*, and the score "size minus records" is such a detector.
+3. Items that feed a count and a size at once are what real extractors are made of. A condition that excludes them
+   leaves blocks like the import buckets (every contribution is exactly 1) and little else. So the condition would
+   not be checkable in any light way, would not cover the EMBER table, and would need two new definitions.
+
+What can be said truthfully, and briefly, is in §9.5: among detectors built the way every monotone defense is built
+(one constraint per feature), no sound choice of constraints is more permissive than the derived table. That is a
+remark of two sentences, its proof is two lines, and it is the "tightness" the mock already lists as dropped.
+
+My estimate in session 71 was even odds. The answer is no.
+
+### 9.2 Literature check
+
+**A correction to §7 and to the resume prompt first.** Both say Gimenez et al. prove "sufficiency only (checked in
+the PDF)". That is wrong. Their Proposition 2 is a converse of a kind [PDF, pp. 5-6]: "We also prove the converse is
+true: any robust detector can be decomposed as a monotonic detector on a latent feature space", formally "There exist
+$g$ and $h$ such that $f \circ \varphi = (f \circ h) \circ (g \circ \varphi)$ and $f \circ h$ is monotonically
+increasing." The manuscript already has this right (§6: "Gimenez et al. proved the converse: every robust detector
+can be written as ..."); only my notes were wrong. What their proposition does and does not say: the post-processing
+$g$ is built from the classifier itself (it orders feature vectors by $f$'s score), so it shows that such a $g$
+exists for each robust $f$, not that any given feature order is necessary. Our candidate was the fixed-representation
+version: no post-processing, the extractor's own sums, the table's own order. A reviewer would still read it as
+"a second converse after Gimenez et al.'s", which lowers what it could have been worth.
+
+| Work | What it states | Relation |
+|---|---|---|
+| Gimenez et al. 2025 [PDF] | Prop. 1 sufficiency; Prop. 2 the existential converse above; Prop. 3 (ERDALT): a linear layer $L$ with $L(\delta) \ge 0$ on every perturbation vector, then a monotone network, is robust | Prop. 3's layer is a learned element of the dual cone of the perturbation vectors: the relational rule of §3.1, learned from attacks instead of derived |
+| Wang et al., *Robust Learning against Relational Adversaries*, NeurIPS 2022 [PDF, now `papers/wang2022robust.pdf`; not in `main.bib`] | Attacker = reflexive-transitive closure of a relation $R$ (Def. 1); Prop. 1: "A classifier $f$ is robust at all $x$ iff $x \to_R z \Rightarrow f(x) = f(z)$" | The same attacker as our $\mathcal{M}$ with its sequences. Their Prop. 1 is the label-invariance form of Proposition A and of §9.3's local criterion; ours is one-sided (the score may rise). They evaluate on malware. Worth a citation in §6 whatever happens here |
+| Incer et al. 2018 [PDF] | Monotone classifier on hand-picked monotone features; sufficiency, informally | No converse (no "necessary", "only if" in the text) |
+| Chen et al. 2021 [PDF] | Monotonicity as one of five global robustness properties, enforced by verification | No converse |
+| Giacobazzi, Ranzato, Scozzari, *Making abstract interpretations complete*, JACM 2000 [search] | Completeness of an abstract domain for an operation; the rule of signs is complete for multiplication and not for addition; an incomplete domain has a least complete refinement | "Sign slack" is the sign domain's incompleteness for adding up changes, and the relational rule of §3.1 is a refinement toward completeness. The vocabulary and the phenomenon are theirs |
+| Functions monotone with respect to a cone order; a differentiable function is nondecreasing iff its gradient lies in the dual cone (Boyd and Vandenberghe, §3.6) [memory] | | The mathematics of "which detectors on these sums are unevadable" for additive sums |
+
+I found no paper that states, for a fixed feature map, a checkable condition under which every robust detector is
+monotone in a given per-feature order. Four searches are not proof of absence. Given §9.4, the question is moot.
+
+### 9.3 What is true: the exact characterization
+
+Plain version: if the attacker can carry out each change of the signature by itself, then what edits can do to the
+items is exactly "apply changes of the signature, one after another". A detector is then unevadable exactly when no
+single change lowers it.
+
+Say that $\Delta$ is **realized** by $\mathcal{M}$ over $Z$ if for every $z \in Z$ and every change
+$(\tau, c \to c') \in \Delta$ that applies to $z$ ($c = \bot$, or $(\tau, c) \in \pi(z)$) some finite sequence of
+edits takes $z$ to a $z'$ whose delta is made of that change alone.
+
+**Proposition H (local criterion).** [proved] Let $Z$ be closed, and let $\Delta$ cover $\mathcal{M}$ over $Z$ and be
+realized by it. Then $h \circ \mathbf{s}$ is unevadable on $Z$ if and only if
+$h(\sigma(B')) \ge h(\sigma(B))$ for every $z \in Z$, $B = \pi(z)$, and every $B'$ that one applicable change of
+$\Delta$ makes from $B$.
+
+*Proof.* "Only if": the change is carried out by edits (realized), so the score may not fall. "If": an edit on
+$z \in Z$ has a delta made of changes $C$ in $\Delta$ (cover), all of whose old contents are in $\pi(z)$. Apply them
+one at a time; by realization and closure each intermediate multiset is $\pi$ of a population input, the next change
+applies to it, and the score does not fall at any step. Sequences of edits follow by closure. $\square$
+
+It needs one new definition and is exact. It is also Proposition A with generators, the one-sided form of Wang et
+al.'s Proposition 1, and it does not mention the table. It is not a result to headline.
+
+### 9.4 Why the table's order is not necessary: sign slack is the normal case
+
+Plain version: the table judges each sum alone. One item usually moves several sums at once, and the amounts are
+linked (a record that is added brings at least one element). A detector may exploit the link; the table cannot see it.
+
+**Counterexample (Algorithm 1).** [proved] Sums *records* (each record adds 1) and *size* (each record adds its
+length, at least 1, since an item has a nonempty set of members). Threat model: add a record with any content; the
+population is every input; the signature (additions of records) covers and is realized. The table marks both sums up.
+Take $h = \textit{size} - \textit{records}$. An added record of length $L$ changes $h$ by $L - 1 \ge 0$, so $h$ is
+unevadable. It is not monotone with respect to the table: $(\textit{records}, \textit{size}) = (1, 10)$ and
+$(5, 11)$ are both population vectors, the second is larger in both sums, and $h$ falls from 9 to 6. In the terms of
+§2.2: the two vectors are comparable in the table order and not in the reach order, because four more records bring
+at least four more elements.
+
+So the converse fails for the paper's own illustrative extractor with a signature that is as exact as a signature can
+be. The cause is not signature slack and not bundling across kinds; it is a single item contributing to two moving
+sums by amounts that are not tied by an identity.
+
+**The general statement.** [proved for additive sums moved by additions; the rest believed] Let $G$ be the change
+vectors of §2.2. With a realized signature of additions, $\mathbf{a} \preceq_R \mathbf{b}$ holds exactly when
+$\mathbf{b} - \mathbf{a}$ is a finite total of vectors in $G$. The table's order asks only that
+$\mathbf{b} - \mathbf{a}$ have the right signs. The two agree, and the converse of Corollary 1 holds, if and only if
+every difference of two population vectors with the table's signs is a total of change vectors. For a linear score
+$\mathbf{w} \cdot \mathbf{s}$: unevadable means $\mathbf{w} \cdot \mathbf{g} \ge 0$ for every change vector, the dual
+cone of $G$; table-monotone means $w_k \ge 0$ on every up sum, which is a smaller set as soon as some $\mathbf{g}$
+has two non-zero entries whose ratio is bounded. What the table loses is exactly the scores that trade one sum
+against another: the relational rule of §3.1, which was weighed and declined in session 71, and what ERDALT's linear
+layer learns from examples.
+
+**Where the condition holds.** The import block (§2.2): every contribution is 1 and the three totals are tied by an
+identity of the population, so differences with the right signs are totals of change vectors. Presence-style and
+key-count blocks in general. **Where it does not** [believed, by the argument above, not checked on the instance]:
+string count against printable characters (each string brings at least five), counts against byte totals, sizes that
+move in steps of the file alignment, the byte-entropy windows against the byte histogram. Deciding it for the EMBER
+table as a whole also runs into two things that cut the other way: files that share a sum vector link the order
+(§2.1's transitive closure), and regions the attacker may overwrite let existing bytes be rearranged. Settling that
+would be a per-block case analysis of PE regions, which is the opposite of a condition read off the signature.
+
+**Against the stop rule.** (1) A statement of the converse needs "realized" and a second notion for the absence of
+sign slack (differences of population vectors with the table's signs are totals of change vectors): two definitions.
+(2) Bundling is not a remark: with it "realized" fails on EMBER for every added import, and the fix is a signature of
+bundles, which is the coupling the mock lists as dropped. Both clauses are met. The result stays a remark.
+
+### 9.5 What can be said in two sentences
+
+Plain version: every monotone defense, ours included, is specified by one decision per feature (must rise, must
+fall, free, unused). Among all such specifications that guarantee robustness, the derived table on the sums is the
+most permissive one. Whoever builds a detector of this form cannot do better by choosing the constraints differently.
+
+Call the directions of the sums **witnessed** if every sign in every $d_k$ is the sign of the change of $s_k$ under
+some edit of $\mathcal{M}$ on some input of $Z$.
+
+**Proposition I (least sound table).** [proved] If the directions of the sums are witnessed, every direction table
+$D'$ on the sums that is sound for $\mathcal{M}$ over $Z$ satisfies $D'_k \supseteq d_k$ for every $k$. Consequently,
+if a per-sum assignment of constraints is such that every score obeying it is unevadable on $Z$, every such score is
+monotone with respect to $D_\Delta$.
+
+*Proof.* If a sign is in $d_k$, some edit on a population input changes $s_k$ with that sign, and a sound $D'$ must
+contain it. For the consequence: if the assignment let a score fall as $s_k$ rises while $+ \in d_k$, the score
+$-s_k$ obeys it and the witnessing edit lowers it; likewise for $-$, and a sum the assignment leaves free is covered
+by both cases. $\square$
+
+Honest weight: this is the standard notion of a best abstraction in a given abstract domain [memory], its proof is
+two lines, and it is the "region's tightness" that `docs/paper-mock.md` lists under *Dropped from the paper*. It
+holds for the sums, not for features with ratio or "any other" readouts, whose rules are loose by design. It would
+support one sentence in §5.4: the cost is not an artefact of how we chose the constraints. Whether the EMBER sums
+table is witnessed is not known; the catalogue check's observed cells would say, from existing outputs. Hypothesis if
+that count is wanted: nearly all non-fixed signs are witnessed, with exceptions among hashed buckets no enumerated
+key reaches and among the overwrite positions shared with the parser. (This count depends on the number of files
+scanned, not on the amount of training data.)
+
+### 9.6 Recommendation
+
+1. No Theorem 2, no new definition in §3. The cost of robustness cannot be stated as "the price of the threat model,
+   not of our construction" without qualification, because a relational detector on the same sums could in principle
+   keep evidence the table drops. What can be claimed is narrower and true: Proposition E (free sums are lost to
+   every unevadable detector) and, if wanted, Proposition I (no per-feature constraints do better).
+2. §5.4's *Where the cost lies* needs no change from this. If the two-sentence remark of §2.2 is ever added, it
+   should say that the converse holds on blocks whose items contribute to one moving sum or to sums tied by an
+   identity, and name what is lost elsewhere (scores that trade one sum against another).
+3. §6 could cite Wang et al. 2022 beside Gimenez et al. for the attacker defined by closure under a relation (one
+   bib entry). The user's call.
+4. The user's wish for a second headline result is not met by this question. I do not see a variant of it that
+   would be: the positive statements are elementary or prior work, and the strong statement is false.
