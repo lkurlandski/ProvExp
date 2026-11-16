@@ -6,9 +6,10 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
 `docs/archive/status-log-2026-11-09.md`, sessions 29-40 in `docs/archive/status-log-2026-11-10-to-11.md`, sessions
 41-42 in `docs/archive/status-log-2026-11-12.md`, sessions 43-54 in
 `docs/archive/status-log-2026-11-12-to-13-s43-54.md`, sessions 55-58 in `docs/archive/status-log-2026-11-13-s55-58.md`, sessions 59-60 in
-`docs/archive/status-log-2026-11-13-s59-60.md`, sessions 61-62 in `docs/archive/status-log-2026-11-14-s61-62.md`).
+`docs/archive/status-log-2026-11-13-s59-60.md`, sessions 61-62 in `docs/archive/status-log-2026-11-14-s61-62.md`, session 63
+in `docs/archive/status-log-2026-11-14-s63.md`).
 
-## Current state (2026-11-16, through session 73)
+## Current state (2026-11-16, through session 74, stage 1)
 
 - **Framework (§2-3):** rewritten; the user is reasonably satisfied. Open: the user's holistic read of Sound
   Directions after round 4 (finetuning only).
@@ -134,11 +135,14 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
 
 ## Waiting on the user
 
-- **The theory session (next; `docs/resume-prompt.md`):** the proof audit first, then brainstorming how to strengthen
-  the theory, with the user. Findings file only (`docs/evidence/theory-analysis.md`); no manuscript, code or
-  experiments. The user may run it with another model.
-- **The proof notes (`docs/evidence/proof-notes.md`):** five small corrections to §3.3 and Appendix C, each with
-  old and new text, none applied. The user approves or rejects each; the audit confirms or corrects them.
+- **The theory session, stage 1 done (session 74; `docs/evidence/theory-analysis.md`, parts A and B):** the user
+  reads the audit and the half page, then stage 2 starts (ideas to strengthen the theory, chosen by the user; parts
+  C-E). Still a findings file only: no manuscript, code or experiments.
+- **Eight small corrections to §3 and Appendix C, none applied**, each with old and new text; the user approves or
+  rejects each. Three are new (`theory-analysis.md` A.4): the ratio rule also needs $b \ge 0$; Table 7's caption is
+  wrong for a min pool under a replacement; §3.2's lead says the delta gives $z'$. Five are the proof notes
+  (`docs/evidence/proof-notes.md`), all confirmed; A.5 moves the text of notes 1 and 2 into Appendix C and advises
+  against widening Definition 4.
 - **Before cloning on the cluster:** `git push` (main is ahead of origin), then copy what a clone does not bring
   (`SETUP.md` §4: the split index files and the scale-up's file lists; `check.sh` stops without them).
 - **The head-node session** (`docs/resume-prompt-head-node.md`) needs the user at the cluster: `SETUP.md`, `check.sh`, the "TO
@@ -163,6 +167,15 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
 
 ## Session log
 
+- **2026-11-16 (session 74, Fable): the theory session, stage 1 (the proof audit).** Read §2-§4, §6, Appendices
+  B-C, the prior-work and proof notes, reviewer A's report and its triage. Proposition 1, Theorem 1 and Corollary 1
+  are correct with complete proofs. New, all small, with old and new text: the ratio rule lost $b \ge 0$ in session
+  53b's fix (counterexample: $b = -1$, $a$ from 1 to 2); Table 7's caption exchanges up and down for a min pool under
+  a replacement too, where it should not (the engine's `Min` rule is right); §3.2's lead. The five proof notes hold
+  (Gimenez et al.'s Proposition 1 and Severi et al.'s hashing remark checked in the PDFs); notes 1-2 fit in Appendix
+  C. The patterns paragraph is correct because thrember counts strings with a match (`re.search`), not matches. The
+  universality of Definition 5 was not reopened (settled in session 53b). Output: `docs/evidence/theory-analysis.md`
+  A and B; the oldest log entries (session 63) moved to the archive. Stage 2 waits for the user.
 - **2026-11-16 (sessions 72-73, Fable): the cost of robustness, closed and reverted.** Step 1 (three pilot
   experiments, a rewrite of *Where the cost lies*) and step 2 (the converse of Corollary 1: false in general) gave no
   theoretical result. The user lost confidence in the work; on their instruction the manuscript paragraph, the
@@ -261,21 +274,3 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
   operation tuples in `adaptive` and `directions`) to merge under the identity check; featurize as a job array needs a
   step that creates the store before the tasks; one stale path in a `features.py` comment, kept so the file's hash
   matches the stored stores.
-
-- **2026-11-14 (session 63, scale-up track): review revisit closed; the scale-up's shape agreed.** Nothing else is
-  worth doing before the scale-up (user agreed): the number-dependent text fixes stay after it; R4, R5, R15, R21 move to
-  step 4; three reporting duties (still-detected share of all attacked malware, R12's modeled-only counts, R15's gain
-  share and R3's margins) and the audit pass as the first scale-up work added to PLAN.md step 3. **Decisions (user):**
-  5,000 extraction-scored candidates for every detector; **one seed, more samples** (seeds wait for a final
-  methodology); the user has shared SLURM clusters (sporc x86_64, tigris aarch64; config read from SSViT); a
-  `pipeline/` reorganization with one `run.sh` per step (`#SBATCH` header, `sbatch` or `bash`), plain names, library
-  code into `src/provexp/`, `SETUP.md`; executed in a dedicated refactoring session. PLAN.md step 3 (d)-(e).
-
-- **2026-11-14 (session 63, R18 track): run 144 read; R18 decided.** The trial detector (directions learned by trying
-  the twelve operations) is evaded on 26/44 pilot malware by the beam and 17/44 by MAB-Malware, trial-toolkit on
-  13/20 and 3/20, the derived detector on 0/39 under both (score never falls). Audit (`trial_audit.py`, new `--mab`):
-  every evasion carried by a feature trial never saw move (`regex_https://`; import buckets for trial-toolkit).
-  Hypothesis: derived and trial parts held; trial-toolkit "a few" and MAB-Malware "few or none" failed (both in our
-  favour). **Decisions (user):** the reading for §5's lead and §5.3 (text after the scale-up); a trial row in Table 5
-  at the scale-up; iterated adversarial training in the scale-up (`ent` held out). `a1_adaptive.py --save_rows`
-  applied. R18 has no open item before the scale-up.
