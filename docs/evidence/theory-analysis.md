@@ -1096,7 +1096,7 @@ high end of $x_1$ is open (H.3's table).
   based on relative cost differences, rather than absolute scale." Case study: Twitter spam. So the object H.3
   computes (an interval per feature and direction) is the object they assume from "domain knowledge". They train
   against the box; H.4 certifies with one evaluation only for scores monotone per feature.
-- **Vos and Verwer, *Efficient Training of Robust Decision Trees Against Adversarial Examples*, ICML 2021**
+- **Vos and Verwer, *Efficient Training of Robust Decision Trees Against Adversarial Examples*** (ICML 2021 from memory: verify the venue)
   (`vos2021efficient.pdf`; the arXiv version was read). GROOT: "we allow each feature to be perturbed with a
   user-specified parameter: either a maximum distance or constraints on the direction of perturbation." Again the
   per-feature range is given by the user.
