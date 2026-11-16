@@ -12,8 +12,7 @@ Theorem 1 and Corollary 1 (numbers from `manuscript/main.aux`).
 - **Boosting rounds: every detector stays at 500 (user, session 72). Do not reopen it.** The round comparisons of §8
   and §8.1 were made on the pilot's 10% training subsample and say nothing about the full training set; the user's
   experience there is that rounds past 500 add very little. Raising the cap is an end-stage option of the user's,
-  for all detectors together. Open, the user's call: the last sentence of *Where the cost lies* still reports the
-  3,000-round aside beside 500-round numbers; I recommended cutting it and got no answer.
+  for all detectors together. The 3,000-round aside is cut from *Where the cost lies* (user).
 - **Lesson from session 72:** before measuring anything on the pilot stores, say in the first sentence whether the
   question depends on the amount of training data (rounds, capacity, learner comparisons do). If it does, the pilot
   cannot answer it; say so and do not report numbers as if it could. Report facts and their limits before

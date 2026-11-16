@@ -412,15 +412,13 @@ addition, which requires all 1,282 import hash buckets to be nondecreasing, reco
 header overwrites 1.4; no other operation moves detection by more than 0.4 points. Rename makes the most features move
 both ways, 301, yet leaving it out recovers only 0.1 points. At a 0.1\% false-positive rate, the threshold is set by the
 few highest-scoring benign files, and retraining alone moves detection by a few points, too much to price single
-operations. Training the monotone detector for up to 3,000 rounds instead of 500, keeping the round with the best
-validation score, adds 1.5 points at a 1\% false-positive rate, whichever of LightGBM's constraint methods it uses.
+operations.
 % MEASURED (session 72, pipeline/4-detectors/cost-split, pilot, seed 0, loose table on ember2024-sums-10-v2;
 % artifacts/experiments/cost_split/4-detectors/cost-split/table.json): sums 203 fixed, 1,978 up, 0 down, 1,474 both;
 % monotone (Table 5's, 500 rounds) 79.9% of split gain on the fixed sums, AddressOfEntryPoint among its five most used;
 % two-sided sums dropped, unconstrained otherwise 91.8/78.8 (unconstrained 93.5/84.4); fixed sums only 79.7/57.7;
-% monotone up to 3,000 rounds 87.2/71.8 (1,567 rounds), basic 87.1/72.3, intermediate 87.5/72.1, advanced 87.8/71.5; zero structural
-% violations. "Add 6.0" is against Table 5's 85.7; against the uncapped 87.2 it is 7.5. Whether Table 5's monotone rows
-% move to the uncapped training is open (user).
+% zero structural violations. "Add 6.0" is against Table 5's 85.7. Every detector trains for 500 rounds (user, session
+% 72).
 % MEASURED (run 140): leaving `ent` out = the -v2 models, 85.7 -> 89.6 (sums); freeing only the debug features: 89.6
 % -> 89.0 (sums), 87.2 -> 87.1 (features) at 1%. PROTOCOL: the per-operation numbers below were measured on the table
 % before the entry write (run 126); the scale-up re-runs the price list on the widened table.

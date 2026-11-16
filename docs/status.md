@@ -137,8 +137,7 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
 - **The cost of robustness (sessions 71-72, Fable):** step 1 is done at pilot scale
   (`docs/evidence/fable-cost-of-robustness.md` §8, §8.1; *Where the cost lies* rewritten in an Opus session).
   **Boosting rounds stay at 500 for every detector (user)**; the round comparisons were pilot-only (10% of the
-  training files) and do not inform the full-scale choice. Open: the paragraph's last sentence (the 3,000-round aside;
-  cut recommended); **step 2** (the converse of Corollary 1 as a theorem) starts from `docs/resume-prompt-fable.md`,
+  training files) and do not inform the full-scale choice. The paragraph's 3,000-round aside is cut. Open: **step 2** (the converse of Corollary 1 as a theorem) starts from `docs/resume-prompt-fable.md`,
   literature check first.
 - **Before cloning on the cluster:** `git push` (main is ahead of origin), then copy what a clone does not bring
   (`SETUP.md` §4: the split index files and the scale-up's file lists; `check.sh` stops without them).
