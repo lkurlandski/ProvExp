@@ -13,7 +13,10 @@ import pefile
 import pytest
 
 from provexp.featuresets.ember2024 import features  # noqa: F401  (installs the overlay rule and the guard in pefile)
+from provexp.featuresets.ember2024.catalogue import DEBUG_ENTRY
 from provexp.featuresets.ember2024.catalogue import SECURITY_ENTRY
+from provexp.featuresets.ember2024.edits import into_overlay
+from provexp.featuresets.ember2024.edits import past_end
 from provexp.featuresets.ember2024.escapes import WRITES
 
 warnings.filterwarnings("ignore", category=SyntaxWarning)
@@ -68,3 +71,27 @@ class TestWrites:
         out = WRITES["image_size"](pe, len(sample))
         assert out is not None
         assert pefile.PE(data=out).OPTIONAL_HEADER.SizeOfImage == oh.SizeOfImage + (oh.SectionAlignment or 0x1000)
+
+
+################################################################################
+# Files with fewer data directory entries
+################################################################################
+
+
+class TestFewEntries:
+    """
+    A file may declare fewer than 16 entries (NumberOfRvaAndSizes; 24 of the 2,000 evaluation files, one with none):
+    every write of a missing entry does not apply (None) rather than failing (session 74's catalogue-check crash).
+    """
+
+    @pytest.mark.parametrize("kept", [0, 3, 5])
+    def test_missing_entries(self, sample: bytes, kept: int) -> None:
+        pe = pefile.PE(data=sample)
+        pe.OPTIONAL_HEADER.DATA_DIRECTORY = pe.OPTIONAL_HEADER.DATA_DIRECTORY[:kept]
+        n = len(sample)
+        if kept <= SECURITY_ENTRY:
+            assert WRITES["cert_entry"](pe, n) is None
+            assert past_end(pe, SECURITY_ENTRY, n, 1) is None
+        assert WRITES["debug_entry"](pe, n) is None
+        assert past_end(pe, DEBUG_ENTRY, n, 1) is None
+        assert into_overlay(pe, n) is None

@@ -38,7 +38,9 @@ def _entry(pe: pefile.PE, i: int, va: int, size: int) -> bytes:
 
 
 def cert_entry(pe: pefile.PE, n: int) -> Optional[bytes]:
-    """The certificate entry extended (or, if absent, placed) past the end of the file."""
+    """The certificate entry extended (or, if absent, placed) past the end of the file; None without the entry."""
+    if len(pe.OPTIONAL_HEADER.DATA_DIRECTORY) <= SECURITY_ENTRY:
+        return None
     d = pe.OPTIONAL_HEADER.DATA_DIRECTORY[SECURITY_ENTRY]
     if d.VirtualAddress and d.Size:
         return _entry(pe, SECURITY_ENTRY, d.VirtualAddress, d.Size + n)
@@ -46,7 +48,9 @@ def cert_entry(pe: pefile.PE, n: int) -> Optional[bytes]:
 
 
 def debug_entry(pe: pefile.PE, n: int) -> Optional[bytes]:
-    """The debug entry extended (or, if absent, placed) past the end of the file."""
+    """The debug entry extended (or, if absent, placed) past the end of the file; None without the entry."""
+    if len(pe.OPTIONAL_HEADER.DATA_DIRECTORY) <= DEBUG_ENTRY:
+        return None
     d = pe.OPTIONAL_HEADER.DATA_DIRECTORY[DEBUG_ENTRY]
     if d.VirtualAddress and d.Size:
         return _entry(pe, DEBUG_ENTRY, d.VirtualAddress, d.Size + 2 * n)
