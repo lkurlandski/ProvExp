@@ -147,16 +147,22 @@ in `docs/archive/status-log-2026-11-14-s63.md`).
 
 ## Waiting on the user
 
-- **Resubmit the rest of the scale-up** (session 76), on the tigris head node from the repository root (everything
-  finished left out; the queue is empty):
-  `SKIP="3-directions/derived 3-directions/gate 1-audit/population 1-audit/item-checks 1-audit/escapes 1-audit/deviations 1-audit/catalogue-checks 1-audit/hand-table 3-directions/trial train train-trial 4-detectors/adversarial-training 4-detectors/price-list" bash pipeline/submit.sh`
-  Session 76: the defenses' material (job 1018609) is complete, all ten shards (79113 valid of 80,000 attack runs) despite SLURM's
-  OUT_OF_MEMORY: 224 of 80,000 runs (all `gamma_sections`/`gamma_api`, on 117 files; not large ones, median 131 KB;
-  87 of them also break other secml attacks) lost to OOM-killed workers and counted as invalid; list in
-  `artifacts/scaleup/4-detectors/material/lost.txt`. Accepted as attack failures (the pilot's run 133 had one too);
-  the cause (a runaway allocation in GAMMA on malformed headers) is a hypothesis, not checked. The toolkit on the
-  evaluation set will meet the same files: lost runs count as not evaded (`LostTask` in its rows), each costing a
-  45-min stall at the task's end. Earlier: 2a42a34, 384f0d7 (session 74's two fixes).
+- **Resubmit the rest of the scale-up** (session 76), on the tigris head node from the repository root (the queue is
+  empty), in two commands: first the repair of the defenses' material, then the chain (which reuses the queued repair
+  by its job name, `defenses-material`):
+  `REPAIR=artifacts/scaleup/4-detectors/material/lost.txt sbatch --cpus-per-task=8 --mem=64G --time=0-03:00:00 pipeline/4-detectors/adversarial-training/run.sh`
+  `SKIP="3-directions/derived 3-directions/gate 1-audit/population 1-audit/item-checks 1-audit/escapes 1-audit/deviations 1-audit/catalogue-checks 1-audit/hand-table 3-directions/trial train train-trial 4-detectors/price-list" bash pipeline/submit.sh`
+  Session 76: the material's job (1018609) finished all ten shards, but 224 of 80,000 GAMMA runs (117 files) were
+  lost to OOM-killed workers. Cause found: LIEF's rebuild runs away on some malformed files (output padded to a
+  garbage section offset, 2 GiB; failed allocations; parser crashes): 38 of 40 lost files fail LIEF's round trip,
+  0 of 40 controls; the other lost runs were collateral (two heavy files, ~7 GB and 4-8 min per run, finish alone).
+  Fixed (430ef83): `provexp.attacks.lief_check` checks each start file once in a capped child process; where LIEF
+  cannot rebuild it, the two GAMMA attacks are *not applicable* (no run, counted apart), in the toolkit and the
+  material; `--repair` re-runs the applicable lost tasks and marks the rest. Smoke-tested on a copy of shard 5
+  (24 lost, all not applicable) and the toolkit (3 files). Diagnostics: `artifacts/scaleup/diag/gamma-oom/`.
+  **Open for the user:** `6-results`' per-attack "still detected" divides by all evaluation malware, so a file a
+  GAMMA attack is not applicable to counts as still detected in that attack's column (the any-attack numbers are
+  unaffected: the other six attack it). Earlier: 2a42a34, 384f0d7 (session 74's two fixes).
   Report failures as they come (logs in `logs/<name>_<id>.out` and `artifacts/scaleup/<stage>/logs/`). Once the
   first adaptive and toolkit tasks finish, shorten their 24 h walltime limits from the measured times.
 - **`git push`** from the server that has the session-74 commits, then `git pull` on the other machine.
