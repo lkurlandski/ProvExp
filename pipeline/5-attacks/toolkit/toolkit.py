@@ -18,6 +18,9 @@ One protocol for every cell:
     validity          an attacked file that no longer parses as a PE counts as not evaded (invalid): secml-malware's
                       shift attacks insert at the first section's raw offset, which is 0 on some files (e.g. the
                       VMProtect layout), so they overwrite the MZ header; a broken file is outside every threat model
+    applicability     the two GAMMA attacks rebuild the file through LIEF; on files LIEF cannot rebuild (checked once
+                      per start file, provexp.attacks.lief_check) they are not applicable: no run and no row, counted
+                      as `not_applicable` in table.json rather than as failures
 
 With `--escape`, a field write outside the threat model (provexp.featuresets.ember2024.escapes; R7) is applied to
 every malware first, and the attacks start from the escaped file; only files the write takes out of the strict
@@ -39,6 +42,7 @@ Outputs, in `{outdir}/`:
                       valid, truncated, seconds
     table.json        per defense: tau, detected, per-attack evasion, and per group (seen, held-out) the fraction of
                       detected files evaded by at least one attack of the group, overall and split by truncation
+    lief_check.parquet  the attacked files LIEF cannot rebuild, and why (only when a LIEF-based attack runs)
 
 Usage (smoke on two files, one attack):
     PYTHONHASHSEED=0 python pipeline/5-attacks/toolkit/toolkit.py --outdir /tmp/a1 --num_malware 2 --attacks padding \
@@ -54,6 +58,7 @@ from pathlib import Path
 import tempfile
 import time
 from typing import Any
+from typing import Optional
 
 import lief
 import numpy as np
@@ -68,6 +73,8 @@ from provexp.attacks.toolkit import calibrated
 from provexp.attacks.toolkit import file_seed
 from provexp.attacks.toolkit import make_wrapper
 from provexp.attacks.toolkit import run_attack
+from provexp.attacks.lief_check import LIEF_ATTACKS
+from provexp.attacks.lief_check import lief_round_trips
 from provexp.data.files import PROTOCOLS
 from provexp.data.files import load_attacked
 from provexp.data.paths import EMBER2024_DATA
@@ -268,9 +275,24 @@ def main() -> None:
                 extras[d, i] = {"p_orig": float(probs[d][i]), "evaded_by_escape": bool(p_start[i] <= taus[d]),
                                 "in_population": in_pop,
                                 "start_in_population": passes_precondition(plain, starts[i], loose=True)}
+    # LIEF's round trip, once per file the LIEF-based attacks would start from (provexp.attacks.lief_check): where LIEF
+    # cannot rebuild the file, those attacks are not applicable to it (no task, no row; counted in table.json).
+    lief_reason: dict[int, Optional[str]] = {}
+    if any(a in LIEF_ATTACKS for a in args.attacks):
+        attacked = sorted({i for d in defenses for i in detected[d]})
+        lief_reason = dict(zip(attacked, lief_round_trips([starts[i] for i in attacked], args.num_workers)))
+        bad = {i: r for i, r in lief_reason.items() if r is not None}
+        pl.DataFrame({"name": [malware[i][0] for i in bad], "reason": list(bad.values())},
+                     schema={"name": pl.Utf8, "reason": pl.Utf8}).write_parquet(args.outdir / "lief_check.parquet")
+        print(f"LIEF round trip: {len(bad)} of {len(attacked)} attacked files cannot be rebuilt; {LIEF_ATTACKS} are not "
+              f"applicable to them ({args.outdir}/lief_check.parquet).", flush=True)
+
+    def applicable(atk: str, i: int) -> bool:
+        return atk not in LIEF_ATTACKS or lief_reason.get(i) is None
+
     caps = [max(int(args.budget_frac * len(data)), args.budget_min) for _, data in malware]
     tasks = [(d, atk, malware[i][0], starts[i], taus[d], caps[i], pre[i], extras[d, i])
-             for d in defenses for atk in args.attacks for i in detected[d]]
+             for d in defenses for atk in args.attacks for i in detected[d] if applicable(atk, i)]
     with tempfile.TemporaryDirectory(prefix="a1_") as tmp:
         iterations, how_many = BUDGETS[args.budget]
         section_pop, api_calls = build_donor_pools(goodware, Path(tmp), how_many=how_many)
@@ -306,6 +328,7 @@ def main() -> None:
         for atk in args.attacks:
             a = r.filter(pl.col("attack") == atk)
             entry["per_attack"][atk] = {"runs": a.height, "evaded": int(a["evaded"].sum()),
+                                        "not_applicable": sum(not applicable(atk, i) for i in detected[d]),
                                         "failed": int((~a["ok"]).sum()), "over_budget": int(a["over_budget"].sum()),
                                         "invalid": int((a["ok"] & ~a["valid"]).sum())}
         for group, atks in (("seen", seen), ("held_out", held_out), ("all", list(args.attacks))):

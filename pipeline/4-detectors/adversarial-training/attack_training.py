@@ -17,9 +17,16 @@ the donors of the section and import attacks. The target is `--model`, scored wi
 The work splits into shards (`--shard k --num_shards N`: every N-th malware from the k-th), one per SLURM array task;
 a shard whose report.json exists is skipped. `--merge` then assembles the shards.
 
+The two GAMMA attacks rebuild the file through LIEF; on files LIEF cannot rebuild (checked once per file,
+provexp.attacks.lief_check) they are not applicable: not run, and counted as `not_applicable`, not as attempted.
+`--repair LOST` mends a complete shard whose run lost tasks to dead workers (LOST: lines `attack name`, as the LOST log
+lines name them; session 76's 4-detectors/material/lost.txt): the lost tasks LIEF can rebuild are run again and their
+rows appended, the others become not applicable; the shard's report records the repair, so a second one is a no-op.
+
 Outputs:
     {outdir}/shards/{k}/<store>/X.npy, files.parquet   a shard's rows, one directory per store of `--rows`
     {outdir}/shards/{k}/report.json                    the shard's counts
+    {outdir}/shards/{k}/lief_check.parquet             the shard's files LIEF cannot rebuild, and why
     {outdir}/binaries/<attack>/<name>.zst              each valid adversarial file, zstd-compressed (`--keep_binaries`)
     {outdir}/<store>/X.npy, files.parquet, report.json  after `--merge`: the rows train_classic.py --augment,
                                                         train_erdalt.py --adv_dir and pv_hole.py --adv_dir read
@@ -47,6 +54,8 @@ import lief
 import numpy as np
 import polars as pl
 
+from provexp.attacks.lief_check import LIEF_ATTACKS
+from provexp.attacks.lief_check import lief_round_trips
 from provexp.attacks.toolkit import ATTACKS
 from provexp.attacks.toolkit import BUDGETS
 from provexp.attacks.toolkit import build_attack
@@ -134,7 +143,7 @@ def _lost(task: tuple[str, str]) -> dict[str, Any]:
     """The row for a task whose worker died: counted as attempted, not valid."""
     atk, name = task
     return {"name": name, "attack": atk, "ok": False, "evaded": False, "p_clean": float("nan"),
-            "p_adv": float("nan"), "bytes_added": 0, "phi": None}
+            "p_adv": float("nan"), "bytes_added": 0, "phi": None, "lost": True}
 
 
 ################################################################################
@@ -176,8 +185,8 @@ def merge(outdir: Path, num_shards: int) -> dict[str, Any]:
                   num_goodware=reports[0]["num_goodware"],
                   total_attempted=sum(r["total_attempted"] for r in reports),
                   total_valid=sum(r["total_valid"] for r in reports),
-                  per_attack={a: {k: sum(r["per_attack"][a][k] for r in reports) for k in ("attempted", "valid", "evaded")}
-                              for a in attacks})
+                  per_attack={a: {k: sum(r["per_attack"][a].get(k, 0) for r in reports)
+                                  for k in ("attempted", "valid", "evaded", "not_applicable")} for a in attacks})
     for store in stores:
         X = np.concatenate([np.load(s / store / "X.npy") for s in shards])
         files = pl.concat([pl.read_parquet(s / store / "files.parquet") for s in shards])
@@ -211,11 +220,13 @@ def main() -> None:
     parser.add_argument("--seed", type=int, default=0, help="The base of each (attack, file)'s own seed.")
     parser.add_argument("--stall_timeout", type=float, default=2700.0,
                         help="Seconds with no finished task before the unfinished ones count as lost (a dead worker).")
+    parser.add_argument("--repair", type=Path, default=None,
+                        help="Mend a complete shard: re-run its lost tasks listed in this file (`attack name` lines).")
     args = parser.parse_args()
     if args.merge:
-        report = merge(args.outdir, args.num_shards)
-        print(f"Merged {args.num_shards} shards: {report['total_valid']} valid of {report['total_attempted']} "
-              f"attack runs, stores {report['stores']}.", flush=True)
+        merged = merge(args.outdir, args.num_shards)
+        print(f"Merged {args.num_shards} shards: {merged['total_valid']} valid of {merged['total_attempted']} "
+              f"attack runs, stores {merged['stores']}.", flush=True)
         return
     for flag in ("files", "donors", "features", "model", "rows"):
         if getattr(args, flag) is None:
@@ -227,56 +238,114 @@ def main() -> None:
         raise ValueError(f"The --rows stores need distinct directory names: {args.rows}.")
 
     part = args.outdir / "shards" / str(args.shard)
-    if (part / "report.json").exists():
+    done = (part / "report.json").exists()
+    if args.repair is None and done:
         print(f"Shard {args.shard} is complete ({part.as_posix()}); skipping.", flush=True)
         return
+    if args.repair is not None:
+        if not done:
+            raise RuntimeError(f"--repair needs a complete shard; {part.as_posix()} has no report.json.")
+        if "repair" in json.loads((part / "report.json").read_text()):
+            print(f"Shard {args.shard} is already repaired; skipping.", flush=True)
+            return
     lief.logging.disable()
     names = shard_names(args.files, args.shard, args.num_shards, args.num_malware)
     goodware = load_donors(args.donors, args.db)
     print(f"Shard {args.shard}/{args.num_shards}: {len(names)} training malware to attack, {len(goodware)} goodware "
           f"donors; rows for {sorted(rows)}.", flush=True)
     binaries = args.outdir / "binaries" if args.keep_binaries else None
+    candidates = [(atk, name) for atk in args.attacks for name in names]
+    if args.repair is not None:
+        lost = {tuple(line.split()[:2]) for line in args.repair.read_text().splitlines()
+                if line.strip() and not line.startswith("#")}
+        candidates = [t for t in candidates if t in lost]
+        print(f"Repair: {len(candidates)} lost tasks of this shard in {args.repair.as_posix()}.", flush=True)
 
-    with tempfile.TemporaryDirectory(prefix="attack_training_") as tmp:
-        iterations, how_many = BUDGETS[args.budget]
-        section_pop, api_calls = build_donor_pools(goodware, Path(tmp), how_many=how_many)
-        print(f"Budget {args.budget}: {iterations} iterations; donor pools: {len(section_pop)} sections, "
-              f"{len(api_calls)} API groups.", flush=True)
-        tasks = [(atk, name) for atk in args.attacks for name in names]
-        t0 = time.time()
-        with get_context("spawn").Pool(args.num_workers, initializer=_init_worker,
-                                       initargs=(args.features, args.model / "model.txt" if args.model.is_dir()
-                                                 else args.model, rows, args.files, args.db, section_pop, api_calls, args.seed,
-                                                 iterations, binaries)) as pool:
-            results = map_watchdog(pool, _work, tasks, lost=_lost, stall_timeout=args.stall_timeout)
-        print(f"{len(tasks)} attack runs in {time.time() - t0:.0f}s on {args.num_workers} workers.", flush=True)
+    # LIEF's round trip, once per file a LIEF-based attack would start from (provexp.attacks.lief_check).
+    reader = FileReader(args.files, args.db)
+    lief_names = sorted({name for atk, name in candidates if atk in LIEF_ATTACKS})
+    reasons = dict(zip(lief_names, lief_round_trips((reader.get(n) for n in lief_names), args.num_workers)))
+    bad = {n: r for n, r in reasons.items() if r is not None}
+    part.mkdir(parents=True, exist_ok=True)
+    pl.DataFrame({"name": list(bad), "reason": list(bad.values())},
+                 schema={"name": pl.Utf8, "reason": pl.Utf8}).write_parquet(
+        part / ("lief_check.parquet" if args.repair is None else "lief_check-repair.parquet"))
+    print(f"LIEF round trip: {len(bad)} of {len(lief_names)} files cannot be rebuilt; {LIEF_ATTACKS} are not "
+          f"applicable to them.", flush=True)
+    skipped = [(atk, name) for atk, name in candidates if atk in LIEF_ATTACKS and name in bad]
+    tasks = [t for t in candidates if not (t[0] in LIEF_ATTACKS and t[1] in bad)]
+
+    results: list[dict[str, Any]] = []
+    if tasks:
+        with tempfile.TemporaryDirectory(prefix="attack_training_") as tmp:
+            iterations, how_many = BUDGETS[args.budget]
+            section_pop, api_calls = build_donor_pools(goodware, Path(tmp), how_many=how_many)
+            print(f"Budget {args.budget}: {iterations} iterations; donor pools: {len(section_pop)} sections, "
+                  f"{len(api_calls)} API groups.", flush=True)
+            t0 = time.time()
+            with get_context("spawn").Pool(args.num_workers, initializer=_init_worker,
+                                           initargs=(args.features, args.model / "model.txt" if args.model.is_dir()
+                                                     else args.model, rows, args.files, args.db, section_pop, api_calls,
+                                                     args.seed, iterations, binaries)) as pool:
+                results = map_watchdog(pool, _work, tasks, lost=_lost, stall_timeout=args.stall_timeout)
+            print(f"{len(tasks)} attack runs in {time.time() - t0:.0f}s on {args.num_workers} workers.", flush=True)
 
     valid = [r for r in results if r["ok"]]
     files = pl.DataFrame([{"name": r["name"], "attack": r["attack"], "label": 1, "p_clean": r["p_clean"],
                            "p_adv": r["p_adv"], "bytes_added": r["bytes_added"]} for r in valid],
                          schema={"name": pl.Utf8, "attack": pl.Utf8, "label": pl.Int64, "p_clean": pl.Float64,
                                  "p_adv": pl.Float64, "bytes_added": pl.Int64})
-    per_attack = {atk: {"attempted": sum(r["attack"] == atk for r in results),
-                        "valid": sum(r["attack"] == atk and r["ok"] for r in results),
-                        "evaded": sum(r["attack"] == atk and r["evaded"] for r in results)}
-                  for atk in args.attacks}
-    report = {"shard": args.shard, "num_shards": args.num_shards, "num_malware": len(names),
-              "num_goodware": len(goodware), "attacks": list(args.attacks), "budget": args.budget, "seed": args.seed,
-              "seed_per_file": True, "model": args.model.resolve().as_posix(),
-              "features": args.features.resolve().as_posix(), "files": args.files.resolve().as_posix(),
-              "donors": args.donors.resolve().as_posix(), "stores": sorted(rows),
-              "total_valid": len(valid), "total_attempted": len(results), "per_attack": per_attack}
+    counts = {atk: {"attempted": sum(r["attack"] == atk for r in results),
+                    "valid": sum(r["attack"] == atk and r["ok"] for r in results),
+                    "evaded": sum(r["attack"] == atk and r["evaded"] for r in results),
+                    "not_applicable": sum(a == atk for a, _ in skipped)}
+              for atk in args.attacks}
+    if args.repair is None:
+        per_attack = counts
+        report: dict[str, Any] = {
+            "shard": args.shard, "num_shards": args.num_shards, "num_malware": len(names),
+            "num_goodware": len(goodware), "attacks": list(args.attacks), "budget": args.budget, "seed": args.seed,
+            "seed_per_file": True, "model": args.model.resolve().as_posix(),
+            "features": args.features.resolve().as_posix(), "files": args.files.resolve().as_posix(),
+            "donors": args.donors.resolve().as_posix(), "stores": sorted(rows),
+            "total_valid": len(valid), "total_attempted": len(results), "per_attack": per_attack}
+    else:
+        # The lost tasks were counted as attempted and not valid: re-run ones keep their attempt and add what they
+        # produced; not-applicable ones leave the attempts.
+        report = json.loads((part / "report.json").read_text())
+        per_attack = report["per_attack"]
+        for atk, c in counts.items():
+            d = per_attack[atk]
+            d["attempted"] -= c["not_applicable"]
+            d["valid"] += c["valid"]
+            d["evaded"] += c["evaded"]
+            d["not_applicable"] = d.get("not_applicable", 0) + c["not_applicable"]
+        report["total_valid"] += len(valid)
+        report["total_attempted"] -= len(skipped)
+        report["repair"] = {"lost": args.repair.resolve().as_posix(), "tasks": len(candidates), "rerun": len(tasks),
+                            "rerun_valid": len(valid), "lost_again": sum(bool(r.get("lost")) for r in results),
+                            "not_applicable": len(skipped)}
     for store, path in rows.items():
         dim = len(load_manifest(path)["feature_names"])
         X = (np.stack([r["phi"][store] for r in valid]) if valid else np.zeros((0, dim), np.float32))
         if X.shape[1] != dim:
             raise RuntimeError(f"Rows for {store} have width {X.shape[1]}, the store expects {dim}.")
-        _write_rows(part, store, X, files.select(_FILES_COLUMNS), report)
-    (part / "report.json").write_text(json.dumps(report, indent=2))  # last: marks the shard complete
+        store_files = files.select(_FILES_COLUMNS)
+        if args.repair is not None:
+            # NOTE: a repair interrupted after some stores were written may have appended these rows already; the
+            # lost tasks had no rows before, so a (name, attack) already present is one such row and is not added twice.
+            old_files = pl.read_parquet(part / store / "files.parquet")
+            seen = set(zip(old_files["name"].to_list(), old_files["attack"].to_list()))
+            keep = [i for i, r in enumerate(valid) if (r["name"], r["attack"]) not in seen]
+            X = np.concatenate([np.load(part / store / "X.npy"), X[keep]])
+            store_files = pl.concat([old_files, store_files[keep]])
+        _write_rows(part, store, X, store_files, report)
+    (part / "report.json").write_text(json.dumps(report, indent=2))  # last: marks the shard complete (or repaired)
     for atk, d in per_attack.items():
-        print(f"{atk}: valid {d['valid']}/{d['attempted']}, evaded {d['evaded']}", flush=True)
-    print(f"Saved {len(valid)} adversarial rows per store to {part.as_posix()}.", flush=True)
-
+        print(f"{atk}: valid {d['valid']}/{d['attempted']}, evaded {d['evaded']}, not applicable "
+              f"{d.get('not_applicable', 0)}", flush=True)
+    print(f"{'Repaired' if args.repair is not None else 'Saved'}: {report['total_valid']} adversarial rows per store "
+          f"in {part.as_posix()}.", flush=True)
 
 if __name__ == "__main__":
     main()
