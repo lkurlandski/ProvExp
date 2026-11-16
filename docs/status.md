@@ -134,13 +134,12 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
 
 ## Waiting on the user
 
-- **The cost of robustness (sessions 71-72, Fable):** step 1's experiments are run at pilot scale and read
-  (`docs/evidence/fable-cost-of-robustness.md` §8): fixed sums alone 79.7% at 1% FPR; two-sided sums dropped 91.8
-  (prediction missed: 1.7 points lost, not 0.3-1.2); the monotone detector gains 1.5 points from training past the
-  500-round cap (87.2), nothing from the constraint method. Open: (1) the rewrite of §5.4's *Where the cost lies*
-  (paragraph plan approved "for now"; to be drafted in an Opus session from `docs/resume-prompt-fable.md`);
-  (2) whether the scale-up trains the monotone detectors without the 500-round cap (changes Table 5's rows);
-  (3) step 2 (the converse of Corollary 1 as a theorem), the user's call after reading the outcomes.
+- **The cost of robustness (sessions 71-72, Fable):** step 1 is done at pilot scale
+  (`docs/evidence/fable-cost-of-robustness.md` §8, §8.1; *Where the cost lies* rewritten in an Opus session).
+  **Boosting rounds stay at 500 for every detector (user)**; the round comparisons were pilot-only (10% of the
+  training files) and do not inform the full-scale choice. Open: the paragraph's last sentence (the 3,000-round aside;
+  cut recommended); **step 2** (the converse of Corollary 1 as a theorem) starts from `docs/resume-prompt-fable.md`,
+  literature check first.
 - **Before cloning on the cluster:** `git push` (main is ahead of origin), then copy what a clone does not bring
   (`SETUP.md` §4: the split index files and the scale-up's file lists; `check.sh` stops without them).
 - **The head-node session** (`docs/resume-prompt.md`) needs the user at the cluster: `SETUP.md`, `check.sh`, the "TO
@@ -169,7 +168,10 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
   code; `4-detectors/cost-split` run at pilot scale (`basic`, `intermediate`; `advanced` not run) and added to the
   pipeline READMEs. Results and the reading against the predictions: the findings file's §8. Zero structural
   violations in every monotone model. The user approved the paragraph plan for *Where the cost lies* and moved the
-  drafting to Opus (Fable credits).
+  drafting to Opus (Fable credits). Later the same day: I read the monotone detector's gain from 3,000 rounds as a
+  share of the cost without training the other detectors the same way, and reported pilot-subsample round
+  comparisons as if they bore on the full training set; both corrected (§8.1 and its caveat). The user: confusing and
+  misleading; rounds stay at 500. Resume prompt rewritten for step 2.
 - **2026-11-15 (session 71): repository readied for the head node.** `SETUP.md` §4 lists what a clone does not
   bring and how to copy it; `check.sh` checks for it; the audit stage's order states which list each step reads.
 - **2026-11-15 (session 70): the two open scale-up questions decided.** (1) The derived table's corpus. Read what

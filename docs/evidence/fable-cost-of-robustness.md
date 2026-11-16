@@ -608,3 +608,9 @@ one cap of 3,000 (1% FPR): 1.2 in the two-sided sums, 5.7 between the detector w
 the fixed sums alone 82.1, the one-sided sums adding 5.1. No reading of §8 changes in kind; each number moves by up to
 about a point. One seed, a 10% training subsample; the 0.1% column moves by several points from retraining alone (the
 dropped detector falls 3.8 there with more rounds).
+
+**Scale caveat and decision (user, session 72).** Everything in §8 and §8.1 is measured on the pilot's 10% training
+subsample (207,872 files). How many rounds a model can use depends on the amount of training data, so the round
+comparisons say nothing about the full training set, where the user's experience is that rounds past 500 add very
+little. I should have said this before measuring. Decision: every detector stays at 500 rounds; raising the cap is an
+end-stage option, for all detectors together.

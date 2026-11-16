@@ -1,55 +1,63 @@
-# Resume prompt: the cost of robustness, the rewrite of §5.4 (written 2026-11-16, session 72)
+# Resume prompt: the cost of robustness, step 2 (written 2026-11-16, session 72)
 
-Paste into a fresh **Opus** session (the user moved the drafting off Fable to save credits). Read first, in this
-order: `docs/evidence/fable-cost-of-robustness.md` §7 (what was decided and rejected), §8 (the experiments' results)
-and §2.5 (the table the rewrite is built around); then §5.4 (*What Robustness Costs*) in
-`manuscript/_f_evaluation.tex`; then the skill `paper-prose`.
+Paste into a fresh session. Read `docs/evidence/fable-cost-of-robustness.md` first: §2.1-2.3 (the two orders,
+Proposition B, signature slack and sign slack, Proposition E), §7 (the discussion with the user and the candidate
+theorem), §8 and §8.1 (step 1's results). Then §3.3 (*Sound Directions*) of the manuscript with Definitions 7-9,
+Theorem 1 and Corollary 1 (numbers from `manuscript/main.aux`).
 
-## What is settled
+## Where things stand
 
-- Step 1's experiments are run at pilot scale and read (findings §8). At 1% / 0.1% FPR: unconstrained 93.5 / 84.4;
-  two-sided sums dropped 91.8 / 78.8; fixed sums alone 79.7 / 57.7; monotone as in Table 5 85.7 / 68.1; monotone
-  trained past the 500-round cap 87.2 / 71.8 (1,567 rounds). The constraint method makes no difference. The monotone
-  detector takes 80% of its split gain from the 203 fixed sums. Zero structural violations.
-- **No extractor changes** (anchored sums, verified signatures): rejected by the user, do not raise them. None of the
-  mathematics is a headline contribution; Propositions B and E appear as two or three sentences of prose, with no
-  numbered statement.
-- The guarantee's dependence on the fixed sums is said plainly: the detector rests on fields the threat model does
-  not write, and holds only while they stay outside it.
+- **Step 1 is done.** Experiments 1-3 ran at pilot scale (§8); §5.4's *Where the cost lies* is rewritten (Opus
+  session, committed in 9b5825c; the user has seen it).
+- **Boosting rounds: every detector stays at 500 (user, session 72). Do not reopen it.** The round comparisons of §8
+  and §8.1 were made on the pilot's 10% training subsample and say nothing about the full training set; the user's
+  experience there is that rounds past 500 add very little. Raising the cap is an end-stage option of the user's,
+  for all detectors together. Open, the user's call: the last sentence of *Where the cost lies* still reports the
+  3,000-round aside beside 500-round numbers; I recommended cutting it and got no answer.
+- **Lesson from session 72:** before measuring anything on the pilot stores, say in the first sentence whether the
+  question depends on the amount of training data (rounds, capacity, learner comparisons do). If it does, the pilot
+  cannot answer it; say so and do not report numbers as if it could. Report facts and their limits before
+  recommendations, and never compare models trained under different settings.
 
-## The paragraph plan for *Where the cost lies* (approved by the user "for now")
+## Step 2: what it is
 
-1. **What a monotone detector may read.** Unconstrained on the fixed sums; on the one-sided sums it may only count
-   evidence of malware; nothing from the two-sided sums. The share of split gain on the fixed sums (80%).
-2. **What no detector on these sums could keep.** Sums the attacker can set to any value carry nothing for any
-   unevadable detector (Proposition E in a sentence or two; the signature is the main case). Dropping the two-sided
-   sums costs 1.7 points at 1% FPR, 5.6 at 0.1%.
-3. **What rests on the fixed sums.** The fixed sums alone detect 79.7%; the one-sided sums add 7.5 points. The plain
-   statement of the condition above.
-4. **The per-operation prices.** The current text (imports 2.1, the three overwrites 1.4, rename 0.1, the caveat at
-   0.1% FPR), shortened. These were measured on the table before the entry write (`% PROTOCOL` comment); keep that
-   comment.
-5. The learner: one sentence at most. Whether the paper's monotone rows move to the uncapped training is the user's
-   decision (below); until then the text keeps Table 5's 85.7 / 68.1.
+Today: a score that is monotone with respect to the table is unevadable (Corollary 1). The candidate result is the
+converse as a theorem: **under a condition that can be checked on the signature, every unevadable detector on these
+sums is monotone with respect to the table.** Theorem 1 says the table is sound; this would say that, for detectors,
+it loses nothing, so the cost of robustness is the price of the threat model for this extractor and not of our
+construction. The user hoped for a second result on the order of Theorem 1; my estimate in session 71 was about even
+odds that a bounded session yields one.
 
-Draft straight into the `.tex`, in one small block for the user's review, pilot numbers (the scale-up re-runs them).
-Then `make` and `make check` in `manuscript/`, and read the rendered text before showing it.
+What is missing (§7):
 
-## Remaining steps, in order
+- Proposition B assumes "the table is complete", which restates the conclusion. Needed: a condition on the signature.
+  My guess has two parts: every change in the signature is realizable by an edit on every population input where it
+  applies (no signature slack), and every one-sided sum can be moved on its own up to identities that hold on the
+  population (no sign slack).
+- Bundling: the condition holds for the import block, but an added import also brings bytes and strings into other
+  sums. A block-by-block statement looks provable; a clean statement over the whole EMBER table may not exist.
+- Novelty is unchecked.
 
-1. Optional, about 5 minutes: the `advanced` constraint method (`intermediate` showed no effect, so expect none).
-   The existing models are skipped:
+## Order of work
 
-       OUT_ROOT=artifacts/experiments/cost_split COMPLETE=0 \
-       SUMS=artifacts/features/ember2024-sums-10-v2 DIR=artifacts/experiments/a_directions_derived_sums_loose \
-       REF=artifacts/models/gbdt/seed-0-s10-ref MONO=artifacts/models/gbdt/seed-0-s10-mfull-sums-loose \
-       bash pipeline/4-detectors/cost-split/run.sh
+1. **Literature check first** (CLAUDE.md: read the closest work on the same task before building). Is a converse
+   stated anywhere: that a detector robust to a set of transformations must be monotone in the order they induce?
+   Start with Gimenez et al. (sufficiency only, checked in the PDF), Incer et al. 2018, Chen et al. 2021, the papers
+   citing them, and the monotone-classification and abstract-interpretation (completeness of an abstraction)
+   literatures. Check claims against PDFs in `papers/`; mark anything from memory as such. This part is search and
+   reading and can be done in an Opus session.
+2. **A short math note for the user's review** (in the findings file or a new file under `docs/evidence/`): the
+   condition, the statement, the proof, the import block as the worked case, and what bundling does to it. Plain
+   version first, then the mathematics.
+3. **Stop rule (proposed in session 71):** if the statement needs more than one new definition, or bundling cannot
+   be handled in a remark, it stays the two-sentence remark it is now. Report that outcome as it is.
+4. Nothing goes into the manuscript before the user has read the note and agreed.
 
-   Add its row to the findings file's §8.
-2. Draft the rewrite from the plan above; log the user's reactions in `docs/writing-spec.md`.
-3. Ask the user: should the scale-up train the monotone detectors until the validation metric stops improving
-   (cap 3,000) instead of 500 rounds? It gains 1.5 points at 1% FPR here and changes Table 5's monotone rows; for a
-   fair comparison every detector would get the same rule (`4-detectors/train/run.sh`).
-4. Update `docs/status.md`; commit.
-5. **Step 2** (the converse of Corollary 1 as a theorem, findings §7) is the user's call and is the part worth a
-   Fable session; it starts with a literature check.
+## Constraints
+
+- No extractor changes, no anchored sums, no verified signatures (rejected, §7). No new experiments are planned for
+  step 2; if a check on data seems needed, propose it with its hypothesis first, and see the lesson above.
+- The framework stays format-free: the condition must be stated on items, sums, changes and the signature, never on
+  PE specifics; the import block is an example, in the instance sections.
+- Be harsh about novelty, and do not present elementary order theory as ours.
+- Update `docs/status.md` at the end of the session.
