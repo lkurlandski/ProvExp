@@ -24,7 +24,8 @@ check `manuscript/main.aux` (`grep newlabel manuscript/main.aux`), and add the t
 | `docs/status.md` | current state, what waits on the user, short session log | every session; update at the end |
 | `pipeline/README.md` | the scale-up's stages and steps, and which step produces each result of the paper | before running or adding any experiment |
 | `SETUP.md` | from a fresh clone to a system that runs `pipeline/` (environment, dataset, system config, the check) | setting up a new machine or the clusters |
-| `docs/resume-prompt.md` | where the next session starts: the head-node session on the cluster (setup, the "TO CONFIRM" values, the launch in `pipeline/README.md`'s order; the derived table's check read first) | starting the next main-line session |
+| `docs/resume-prompt.md` | where the next session starts: the theory session (the proof audit, then ideas to strengthen the theory with the user; findings file only) | starting the next session |
+| `docs/resume-prompt-head-node.md` | the head-node session on the cluster (setup, the "TO CONFIRM" values, the launch in `pipeline/README.md`'s order; the derived table's check read first) | starting the head-node session |
 | `docs/evidence/proof-notes.md` | five small corrections to §3.3 and Appendix C found while reading the proofs (old and new text; none applied until the user approves) | deciding on or applying them |
 | `docs/reviews/rebuttal-prompt.md` | the rebuttal procedure, kept for reference: once `run_rebuttal.sh` has written the triage, the user decides on the triage table, then on drafts of the groups worth investigating. The 2026-11-12 triage is complete; the next revisit folds into `docs/resume-prompt.md` | re-running the rebuttal procedure on a future review |
 | `docs/checkpoint-prompt.md` | the user's prompt for ending a session | the user ends a session |

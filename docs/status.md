@@ -123,7 +123,7 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
   `pipeline/README.md`; models under `4-detectors/<name>` (the registry's `scaleup` set). Bug fixed: the adaptive
   search's workers reloaded the pilot list under `--protocol scaleup` (session 67's change, which the pilot-protocol
   identity check could not see). Open for the user: the derived table's corpus, and iterated adversarial training's
-  starting point (`docs/resume-prompt.md` §4).
+  starting point (`docs/resume-prompt-head-node.md` §4).
 - **Optimization (session 69): done, bit-identical.** The adaptive search's candidate ~3x cheaper (391 -> 127 s on the
   profiling slice; ~7-9k -> ~2.5-3k CPU-h at the scale-up); sums extraction 120 -> 78 ms per file; a file store
   (`2-features/file-store`, SQLite beside the lists) replaces ~25 min of SimpleDB loading per attack task.
@@ -134,12 +134,14 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
 
 ## Waiting on the user
 
+- **The theory session (next; `docs/resume-prompt.md`):** the proof audit first, then brainstorming how to strengthen
+  the theory, with the user. Findings file only (`docs/evidence/theory-analysis.md`); no manuscript, code or
+  experiments. The user may run it with another model.
 - **The proof notes (`docs/evidence/proof-notes.md`):** five small corrections to §3.3 and Appendix C, each with
-  old and new text, none applied. The user approves or rejects each. After that, if the user wants it: the theory
-  audit and ideas phase of the original prompt (`git show 0563ef0:docs/fable-theory-prompt.md`), findings file only.
+  old and new text, none applied. The user approves or rejects each; the audit confirms or corrects them.
 - **Before cloning on the cluster:** `git push` (main is ahead of origin), then copy what a clone does not bring
   (`SETUP.md` §4: the split index files and the scale-up's file lists; `check.sh` stops without them).
-- **The head-node session** (`docs/resume-prompt.md`) needs the user at the cluster: `SETUP.md`, `check.sh`, the "TO
+- **The head-node session** (`docs/resume-prompt-head-node.md`) needs the user at the cluster: `SETUP.md`, `check.sh`, the "TO
   CONFIRM" values, and each `run.sh`'s time, memory and GPUs. Then the user submits the steps in
   `pipeline/README.md`'s order, with `2-features/file-store` after the lists (or copy `files.sqlite` from this
   server). Number-free rebuttal text fixes (R4, R5, R15, R21) are step 4 (while the scale-up runs).
