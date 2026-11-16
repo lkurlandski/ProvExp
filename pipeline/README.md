@@ -58,7 +58,6 @@ The order (each step's inputs are the outputs above it):
 | `4-detectors/learned` | (`train_classic.py`, `train_erdalt.py`, `pv_hole.py`) | yes (PV, ERDALT, adversarial training, leave-one-out) | runs 133, 135 |
 | `4-detectors/iterated` | (`adaptive.py --save_rows`, `train_classic.py`) | yes (two rounds) | none (R18 step 3) |
 | `4-detectors/price-list` | `price_list.py` | protocol session | run 126 |
-| `4-detectors/cost-split` | `cost_split.py` (`train_classic.py --param`) | yes (two-sided sums dropped, fixed sums only, the monotone detector's rounds and constraint methods) | session 72 (pilot stores) |
 | `5-attacks/toolkit` | `toolkit.py` (with `--escape`), `pv_attacks.py` (pilot only) | yes (array: detectors, escapes, folds, R19's donor control) | runs 81, 100, 123-124, 131, 133, 135 |
 | `5-attacks/adaptive` | `adaptive.py`, `expert_adaptive.py` | yes (array: escapes x shards, the expert set) | runs 127, 120, 143, 144 |
 | `5-attacks/mab-malware` | `mab.py` | yes (ours, the expert set, Zainab et al.'s setting) | runs 139, 144 |
@@ -74,7 +73,6 @@ are for tests and explorations only. Table numbers are the compiled PDF's (`manu
 | §4.3, Table 2 (*The operations of the threat model*) | the operations; which the toolkit attacks use | none (definitions) |
 | §4.4 | the population's share of files, by clause; closure (0 edits leave it) | `1-audit/population`, `1-audit/catalogue-checks` |
 | §4.3-4.4 | the cost of a declaration (detection with an operation dropped) | `4-detectors/price-list` |
-| §5.4 (*What Robustness Costs*) | where the cost lies: detection on the fixed sums alone and with the two-sided sums dropped; the fixed sums' share of split gain | `4-detectors/cost-split` |
 | §5.1 | the edit counts of the checks (sound, exact) | `1-audit/catalogue-checks`, `1-audit/item-checks` |
 | §5.2, Table 3 (*The eight errors of the hand-written table*) | the hand table's errors and the files where a real edit shows each (`witness_counts.json`, by population) | `1-audit/hand-table`, `1-audit/catalogue-checks`, `1-audit/population`, `3-directions/derived` |
 | §5.2 | the expert set's directions and its adaptive cell | `3-directions/derived` (`expert_directions.py`), `5-attacks/adaptive` (`expert_adaptive.py`) |

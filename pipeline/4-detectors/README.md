@@ -15,7 +15,3 @@ scale-up's models in `4-detectors/<name>/`.
   (`adaptive.py --save_rows`), each followed by retraining. Paper: Table 4.
 - `price-list/`: detectors with one operation's declaration left out: the price of soundness per operation. Paper:
   §5.4.
-- `cost-split/`: where the monotone detector's cost lies: unconstrained detectors with the two-sided sums dropped and
-  on the fixed sums alone, and the monotone detector with more boosting rounds and LightGBM's other constraint
-  methods, each with its fit on the training split, the fixed sums' share of split gain and a structural check of the
-  constraints. Paper: §5.4.
