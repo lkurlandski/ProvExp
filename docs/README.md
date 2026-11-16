@@ -24,7 +24,7 @@ check `manuscript/main.aux` (`grep newlabel manuscript/main.aux`), and add the t
 | `docs/status.md` | current state, what waits on the user, short session log | every session; update at the end |
 | `pipeline/README.md` | the scale-up's stages and steps, and which step produces each result of the paper | before running or adding any experiment |
 | `SETUP.md` | from a fresh clone to a system that runs `pipeline/` (environment, dataset, system config, the check) | setting up a new machine or the clusters |
-| `docs/resume-prompt.md` | where the next session starts: the head-node session on the cluster (setup, the "TO CONFIRM" values, the launch in `pipeline/README.md`'s order; the derived table's check read first) | starting the next main-line session |
+| `docs/resume-prompt.md` | where the next session starts: the scale-up running on tigris (failures as they come, walltime limits, decision 12's follow-up, writing meanwhile) | starting the next main-line session |
 | `docs/evidence/proof-notes.md` | five small corrections to §3.3 and Appendix C found while reading the proofs (old and new text; none applied until the user approves) | deciding on or applying them |
 | `docs/reviews/rebuttal-prompt.md` | the rebuttal procedure, kept for reference: once `run_rebuttal.sh` has written the triage, the user decides on the triage table, then on drafts of the groups worth investigating. The 2026-11-12 triage is complete; the next revisit folds into `docs/resume-prompt.md` | re-running the rebuttal procedure on a future review |
 | `docs/checkpoint-prompt.md` | the user's prompt for ending a session | the user ends a session |
@@ -66,6 +66,7 @@ or when changing an experiment. Run scripts are in `run/` (one per step, numbere
 |---|---|
 | `docs/archive/status-log-2026-11-12.md` | the session log, sessions 41-42 (search, don't read) |
 | `docs/archive/status-log-2026-11-10-to-11.md` | the session log, sessions 29-39 (search, don't read) |
+| `docs/archive/resume-prompt-2026-11-16-s74.md` | the resume prompt of session 74 (written in session 70): the head-node session (done in session 74: tigris set up, `pipeline/submit.sh`, decision 12 on the derived table) |
 | `docs/archive/resume-prompt-2026-11-15-s70.md` | the resume prompt of session 70 (written in session 69): the two open scale-up questions (decided in session 70: the derived tables from training files with the evaluation set as a check; iterated adversarial training from the adversarially trained detector) |
 | `docs/archive/resume-prompt-2026-11-15-s69.md` | the resume prompt of session 69 (written in session 68): lightweight optimization of the scale-up's hot spots (done in session 69: three bit-identical changes, the adaptive candidate ~3x cheaper) |
 | `docs/archive/resume-prompt-2026-11-15-s68.md` | the resume prompt of session 68 (written in session 67): the scale-up's remaining `run.sh` steps (all done in session 68; `pipeline/README.md`) |

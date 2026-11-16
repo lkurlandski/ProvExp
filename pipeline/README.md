@@ -58,7 +58,7 @@ The order (each step's inputs are the outputs above it):
 | `2-features/files` | `build_metadata.py`, `select_files.py` | yes (the evaluation set: 1,000 malware, 1,000 benign, complete files) | runs 03-04 |
 | `2-features/file-store` | `build_store.py` | yes (the evaluation set, the donor sets, the material's training malware) | session 69 |
 | `3-directions/derived` | `directions.py`, `compare_tables.py`, `expert_directions.py` | yes (`directions.py`, the check) | runs 97, 102, 140, 142 |
-| `3-directions/gate` | `gate.py` | yes (stops the detectors unless the derived check is clean) | session 71 |
+| `3-directions/gate` | `gate.py` | yes (stops the detectors unless the derived check is clean) | session 74 |
 | `3-directions/trial` | `trial_probe.py`, `trial_table.py` | yes (the evaluation set, donor set 0's imports) | run 144 |
 | `4-detectors/train` | `train_classic.py`, `train_erdalt.py` | yes (Table 5 and the expert set; the learned defenses in `adversarial-training`) | runs 99, 105, 128, 140 |
 | `4-detectors/adversarial-training` | `attack_training.py` | yes (the material: array over 10,000 training malware) | runs 122, 125, 133 |

@@ -33,7 +33,7 @@ release cannot parse the version string of OpenSSL 3.x.10 and later; signify nee
 the modules to load. `pipeline/common.sh` picks the file: `local` without SLURM, `tigris` on aarch64, `sporc`
 otherwise (`SYSTEM=...` overrides). For a new machine, copy `local.sh` and edit it.
 
-The `run.sh` headers target tigris (confirmed in session 71, `pipeline/systems/tigris.sh`): CPU steps on the `gg`
+The `run.sh` headers target tigris (confirmed in session 74, `pipeline/systems/tigris.sh`): CPU steps on the `gg`
 nodes (`--constraint=gg`; half a node, 72 cores, or a quarter per array task), the one GPU step on the `gh` nodes
 (one GH200 per array task). On the head node itself run nothing heavier than two cores: submit everything. sporc's
 values are still guesses ("TO CONFIRM" in `sporc.sh`); it shares the file system and is set up when it is used.
