@@ -28,11 +28,18 @@ the tasks in turn) and skip what is already done, so resubmitting resumes. The t
 estimates until the head-node session. The pilot's commands are in `run/` (a historical record: re-run them at tag
 `pilot-final`).
 
+**Submitting everything at once:** `bash pipeline/submit.sh` on the cluster's head node submits every step below as
+SLURM jobs chained by dependencies (a job starts only when the jobs it reads from finished without error; a failure
+cancels what depends on it). A gate after `3-directions/derived` (`3-directions/gate`) stops every detector unless the
+derived tables' check is clean (session 70's rule). After a fix, rerun it: finished work is skipped, a job still
+queued is reused (`scancel` it first to rerun it), and `SKIP` leaves out steps or job names (finished steps that
+recompute, such as `3-directions/derived`). `DRY=1` prints the chain. The job IDs go to `logs/submit-<date>.txt`.
+
 The order (each step's inputs are the outputs above it):
 
 1. `2-features/featurize` (the stores, full splits), `2-features/files` (done: the lists), `2-features/file-store`
    (the attacked files' bytes in one SQLite file beside the lists; optional, it only speeds up loading);
-2. `3-directions/derived` (from the training list, checked against the evaluation set); `1-audit/*` (the catalogue check's edits feed the trial); `3-directions/trial`;
+2. `3-directions/derived` (from the training list, checked against the evaluation set), `3-directions/gate`; `1-audit/*` (the catalogue check's edits feed the trial); `3-directions/trial`;
 3. `4-detectors/train` (Table 5, the expert set, trial);
 4. `4-detectors/adversarial-training` (the material, array), then `4-detectors/learned` (PV, ERDALT, adversarial
    training, the leave-one-out folds; GPUs), then `4-detectors/iterated`;
@@ -52,6 +59,7 @@ The order (each step's inputs are the outputs above it):
 | `2-features/files` | `build_metadata.py`, `select_files.py` | yes (the evaluation set: 1,000 malware, 1,000 benign, complete files) | runs 03-04 |
 | `2-features/file-store` | `build_store.py` | yes (the evaluation set, the donor sets, the material's training malware) | session 69 |
 | `3-directions/derived` | `directions.py`, `compare_tables.py`, `expert_directions.py` | yes (`directions.py`, the check) | runs 97, 102, 140, 142 |
+| `3-directions/gate` | `gate.py` | yes (stops the detectors unless the derived check is clean) | session 74 |
 | `3-directions/trial` | `trial_probe.py`, `trial_table.py` | yes (the evaluation set, donor set 0's imports) | run 144 |
 | `4-detectors/train` | `train_classic.py`, `train_erdalt.py` | yes (Table 5 and the expert set; the learned defenses in `adversarial-training`) | runs 99, 105, 128, 140 |
 | `4-detectors/adversarial-training` | `attack_training.py` | yes (the material: array over 10,000 training malware) | runs 122, 125, 133 |

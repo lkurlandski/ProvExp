@@ -1,4 +1,4 @@
-# RIT Research Computing, partition tigris (aarch64), confirmed on the head node 2026-11-16 (session 71):
+# RIT Research Computing, partition tigris (aarch64), confirmed on the head node 2026-11-16 (session 74):
 #   gg-a nodes: 144 cores, 450 GB, no GPU (the run.sh headers select them with --constraint=gg);
 #   gh-a nodes: 72 cores, 550 GB, one GH200 (--constraint=gh; 4-detectors/learned only);
 #   maximum walltime 20 days; uv's Python 3.14 works; featurization is bit-identical to the reference here.

@@ -1,149 +1,96 @@
-# Resume: the theory session (proof audit first, then ideas to strengthen the theory)
+# Resume: the head-node session (the scale-up on the cluster)
 
-Written at the end of session 73 (2026-11-16). Self-contained; paste it into a fresh session or say "read
-`docs/resume-prompt.md` and carry it out". It is written for whichever model the user chooses. The head-node session
-for the scale-up is a separate track: `docs/resume-prompt-head-node.md`.
+Written at the end of session 70 (2026-11-15). This prompt is self-contained: what the project is, where things stand,
+the rules that apply, and what this session does. Files are named for detail, but only `CLAUDE.md` (loaded
+automatically) needs reading first.
 
-## 1. The job, and its order
+## 1. The project in brief
 
-The user wants **the theoretical contributions of the paper made stronger**. This session does that in two stages,
-and the order is fixed:
+ProvExp is dissertation research on *sum-then-readout* feature extractors, the kind security classifiers use: find the
+pieces of the input (items), add up what each contributes (sums), compute each feature by a formula over a few totals
+(readouts). From the instrumented extractor we compute what an attacker's edits do to the features: exactly for one
+edit (Proposition 1), as sound directions for a whole threat model (Theorem 1: for each feature, whether some edit
+can raise it, lower it, or neither), and from those, monotone detectors no edit in the threat model can evade
+(Corollary 1). PE malware on EMBER2024 is the instance. The paper (`manuscript/*.tex`, ACM CCS format) is drafted on
+pilot-scale results (100 pilot files, one seed). The **scale-up** (PLAN.md step 3) on the user's SLURM clusters
+replaces every number in the paper.
 
-1. **The proof audit** (section 4). Complete it, write it to the output file, commit, and report to the user.
-2. **Brainstorming how to improve the theory** (section 5), only after the audit and **together with the user**:
-   present candidates briefly, let the user choose, and work out only what they choose.
+## 2. Where things stand
 
-The session's output is one findings file, `docs/evidence/theory-analysis.md`. **It does not edit the manuscript, the
-code, `PLAN.md` or the pipeline, and it runs no experiments.** Anything that would change the paper is proposed as
-old and new text and waits for the user.
+- **The protocol is decided, with no open question** (sessions 67 and 70; PLAN.md step 3 (g), items 1-11): an
+  evaluation set of 1,000 malware and 1,000 benign complete test files (`artifacts/scaleup/2-features/files/ts.parquet`);
+  every detector on the full training split's complete files; thresholds on the validation split; two disjoint donor
+  sets of 100 training goodware (set 0: the defenses' material and the trial's imports; set 1: every attack on the
+  evaluation set); the defenses' material once from 10,000 training malware; the trial row learning from the
+  evaluation set; iterated adversarial training, 1,000 training malware per round, starting from the adversarially
+  trained detector; MAB-Malware at ours and at Zainab et al.'s setting; three escapes against three detectors with
+  the adaptive search and the toolkit.
+- **The derived direction tables are built from training files** (session 70): the 20,000 files of `tr.parquet`,
+  then rebuilt from the evaluation set as a check (`pipeline/3-directions/derived/run.sh`; `compare_tables.py` writes
+  `3-directions/check/{strict,loose}.json` and prints whether the evaluation set shows a move the table lacks). On 300
+  files of each the population's variant and the detectors' input files were identical; the strict variant's
+  per-operation cells differ with the corpus (no threat-model direction does). **If the check reports "NOT COVERED"
+  or differing population cells at scale, show the user the cells before any detector is trained**: the user decides
+  (the union of both corpora is the fallback).
+- **Every step has its `run.sh`** (session 68), smoke-tested; `pipeline/README.md` lists them in order, each header
+  names its inputs, outputs, knobs and estimated cost.
+- **Optimized (session 69), bit-identical:** an adaptive candidate ~0.32 -> ~0.10 s (the search ~7-9k -> ~2.5-3k
+  CPU-h); a file store (`2-features/file-store`: the attacked files in one SQLite file beside the lists, read by the
+  loaders when present); sums extraction 120 -> 78 ms per file. No further optimization is planned.
+- The identity check (`pipeline/setup/identity_check.sh`) shows only its recorded reference differences (the fixed
+  string and directory features, the catalogue's counts, the manifests' commit, the escape row of `0485edc2...`). It
+  was not re-run after session 70, which changed only how it calls the derived step (the pilot list, now passed
+  explicitly); run it once before the cluster work if in doubt (~10 min).
 
-## 2. What went wrong before, so that it is not repeated
+## 3. Rules that apply (from the user; also in CLAUDE.md and the memory)
 
-Sessions 71-73 (Claude Fable 5.2) were meant to strengthen the theory and did not. The user's judgement: the work
-went off the rails, produced poorly conceived ideas and unsuccessful experiments, and was confusing. Everything it
-changed in the manuscript and the pipeline has been reverted (commit 3944894). Concretely:
+- Explain plainly; lead with what is computed, what it is compared with, and why it matters.
+- State a hypothesis (a sentence or two) before running anything; report a failed check as such.
+- Ask before changing what a statistic or claim is for; the user decides protocol questions, Claude recommends.
+- Run yourself only jobs of about 10 minutes or less, estimated from the slowest case; otherwise smoke-test and hand
+  the user a `run.sh`. Normal priority. Never edit a `run.sh` while it runs.
+- Commit to `main` in logical pieces (ruff and strict mypy on `src tests pipeline` must pass); do not push.
 
-- The session narrowed "strengthen the theory" to one question (what the monotone detector's cost in detection is a
-  cost of), then drifted from mathematics into pilot experiments and a rewrite of §5.4.
-- It proposed feature engineering as theory (sums "anchored" to content the attacker cannot write; verified
-  signatures). The user rejected both outright: a feature that is robust only until the attacker finds the anchor is
-  not a contribution, and extractor redesign is not what the paper is about.
-- It compared detectors trained under different settings and reported pilot-subsample numbers as if they bore on the
-  full training set. **Boosting rounds stay at 500 for every detector; do not reopen it.**
-- It gave an estimate of "even odds" for a second theorem and then spent a session finding the statement false.
+## 4. This session: the head-node session (with the user at the cluster)
 
-Rules that follow, for this session:
+1. **Setup** (`SETUP.md`): clone, `pipeline/setup/build_env.sh`, the `artifacts` symlink, the dataset location; copy
+   the file lists and the metadata (`artifacts/scaleup/2-features/files/`, `artifacts/metadata/`) from this server.
+2. **`pipeline/setup/check.sh`** must pass (bit-exact featurization on 32 files, the tests).
+3. **The "TO CONFIRM" values** in `pipeline/systems/sporc.sh` (cores per node, large storage, walltime, Python 3.14
+   through uv) and in each `run.sh`'s header: time, memory, `--gpus-per-node` (`4-detectors/learned`: ERDALT one per
+   GPU, each loading the ~25-30 GB store), array sizes. The adaptive search's header carries session 69's lower cost;
+   re-check the shard count against it (fewer, longer shards may now suit the walltime). `3-directions/derived` now
+   reads 22,000 files twice (~60 CPU-h, ~2 h on 36 cores; its 4 h limit should hold).
+4. **Featurization:** `2-features/featurize/run.sh` with `EXTRACTORS="sums expert"` on the full splits, one node.
+5. **The file store:** `2-features/file-store/run.sh` after the lists (or copy `files.sqlite` from this server once
+   built); its build time (~1-3 h) and size (~10-15 GB) are estimates.
+6. Then the steps in `pipeline/README.md`'s order, submitted by the user. After `3-directions/derived`, read its
+   check's report first (above).
 
-- **Stay on the theory of §3 and Appendices B-C.** No experiments, no extractor changes, no detector training. If an
-  idea seems to need data, say what and why, and stop there.
-- **Kill an idea cheaply before developing it.** For every candidate result, first look for a counterexample on the
-  extractor of Algorithm 1 (records, tokens, elements). Several plausible statements die there in five minutes.
-- **Tell the user early and plainly** when an idea is elementary, already published, or false. Do not present
-  elementary order theory or another field's standard result as ours.
-- **Plain language first**, then mathematics. Short. One idea per paragraph. No option menus with invented names.
-- **Do not promise.** State what is proved, what is believed, and what is unknown, in those words.
+## 5. While the scale-up runs (PLAN.md step 4)
 
-## 3. What is already known (do not redo)
+§2's closing and contribution 4 aligned with §5; the number-free text fixes R4, R5, R15, R21. Writing only, with the
+`paper-prose` skill, in small blocks with the user's review.
 
-The record of sessions 71-73 is `docs/archive/fable-cost-of-robustness.md`. **Do not read it by default** and do not
-take text from it into the paper; open a section only when checking one of the facts below.
+## 6. Noted for later (not this session unless it becomes necessary)
 
-- **A converse of Corollary 1 is false in general** (§9.4 there). "Every detector no edit can evade is monotone with
-  respect to the table" fails on Algorithm 1 under "add a record": the score *size − records* cannot be evaded and is
-  not monotone with respect to the table (compare 1 record of size 10 with 5 records of size 11). The cause is one
-  item feeding two sums that move by amounts no identity ties. It holds only on blocks where every contribution is
-  a unit count (the import buckets).
-- **Unevadable is equivalent to "no single change of the signature lowers the score"** when every change can be
-  carried out on its own. True, elementary, and the one-sided form of Proposition 1 of Wang et al., *Robust Learning
-  against Relational Adversaries*, NeurIPS 2022 (`papers/wang2022robust.pdf`; not in `main.bib`).
-- **Gimenez et al.'s Proposition 2 is already a converse** of an existential kind (every robust detector is a
-  monotone one after a post-processing built from the classifier). §6 of the manuscript says so correctly.
-- **The derived table on the sums is the least sound table** if every sign in it is witnessed by some edit (§9.5).
-  Two-line proof; it is the "region's tightness" that the paper mock lists as dropped.
-- **No bound on the cost of robustness can be computed from data without a learner** (§2.4): the in-sample ceiling
-  is 100% for every class of unevadable detectors.
-- **A relational refinement of the sign table** (evaluating a weighted total of sums on each change; the dual cone of
-  the change vectors) is sound and was declined by the user as machinery without payoff on EMBER. It is what ERDALT's
-  linear layer learns from examples.
-- **Five small corrections to §3.3 and Appendix C** are written up with old and new text in
-  `docs/evidence/proof-notes.md`. None is applied; the user decides each. The audit should confirm or correct them,
-  not rediscover them.
+- After the debug-entry escape, `gamma_api` (which rebuilds the file through LIEF) no longer evaded the unconstrained
+  smoke detector on 3 files it evades unescaped: LIEF seems to handle the escaped debug entry differently. Worth a
+  look when the toolkit's escape rows are read (it weakens the toolkit after an escape, not the guarantee).
+- `mab.py` and `toolkit.py` stop with an error when a detector detects none of the malware (a smoke artifact).
+- Duplicate code to merge, under the identity check: the section and import writers in
+  `featuresets/ember2024/edits.py` and `attacks/adaptive.py`; the operation tuples in `attacks/adaptive.py` and
+  `featuresets/ember2024/directions.py`.
+- `pv_attacks.py`, `toolkit_split.py` and `trial_audit.py` still read the pilot's layout only.
+- EMBER v2's handling of the directories and the entry section is stated from memory in the audit record; verify
+  against `elastic/ember`'s `features.py` before the paper cites v2 for either.
+- The evaluation set's malware lean toward larger files (44% at 512 KiB-4 MB against 25% in the test split), an
+  effect of the family cap; worth one sentence in Setup if a reader could ask.
+- Other SimpleDB readers (the audit steps, `3-directions/trial`, `3-directions/derived`) still read file by file; they
+  could use `provexp.data.files.FileReader` if their scale-up runs turn out slow on loading.
 
-## 4. Stage 1: the proof audit
+## 7. At the end of the session
 
-Read fully, in this order: `manuscript/_c_background.tex` (§2), `manuscript/_d_framework.tex` (§3),
-`manuscript/_i2_types.tex` (Appendix B), `manuscript/_j_proofs.tex` (Appendix C), `manuscript/_e_instances.tex` (§4,
-for how the theory is used: signatures of operations stated as writes come from a record of the positions the parser
-reads and are *checked* on a corpus, not proven), `manuscript/_g_related_work.tex` (§6), `docs/evidence/r6-prior-work.md`,
-`docs/evidence/proof-notes.md`. Then `PLAN.md` ("Thesis", "Settled decisions") and `docs/paper-mock.md` (the
-contributions and "Dropped from the paper"). Paper numbers come from `manuscript/main.aux`: Definitions 1-10,
-Proposition 1 (*Exact side effects*), Theorem 1 (*Sound directions*), Corollary 1 (*Robustness*), Table 1 (the
-readout rules), Table 7 (the sign table).
-
-Check Proposition 1, Theorem 1 and Corollary 1, and everything they use: the sign table, the readout rules and the
-ratio's side condition, the total-order hypothesis, pools and their neutral elements, replacements against removal
-plus addition, sequences of edits and closure, the hashed-keys and patterns-under-extension paragraphs, and Appendix
-B. For each, one of four verdicts:
-
-- **Correct as stated**: one line.
-- **Wrong**: the smallest counterexample.
-- **A real gap**: right in spirit, but a careful formal-methods reviewer would ask for a change. The smallest fix, as
-  old and new text.
-- **Pedantic**: one line at the end, or dropped.
-
-Then half a page, in plain language: what the three results say together, what is new in them stated as strongly as
-is honest, and where the theory is thinner than the paper's claims. Write part A (audit) and part B (this half page)
-to the output file, commit, and **report to the user before going on**.
-
-## 5. Stage 2: ideas to strengthen the theory (with the user)
-
-"Stronger" means: a result that says more, a result that covers more (a larger class of extractors, weaker
-hypotheses), a result that gives a finding of §5 a theoretical footing, or a cleaner formulation that makes the
-existing results easier to appreciate.
-
-Open questions the original prompt raised and that have **not** been worked on:
-
-- **Learned versus derived constraints.** §5.3 finds that defenses learned from observed attacks miss edits they
-  never saw. Is there a short general statement behind it, so that 5.3 is a consequence and not only an observation?
-- **Closure and populations.** Theorem 1 needs a population closed under the threat model, and one write outside the
-  threat model can take an input out. What can be said without closure, or about the largest population on which a
-  table is sound?
-- **Item size and locality** (the user's stated interest). Items are hierarchical and the framework applies at every
-  granularity. Is there a precise statement of the trade-off between coarse and fine items, such as a monotonicity
-  result across refinements of the item map?
-- **The class itself.** Which extractors are sum-then-readout, what falls outside, and is there a characterization or
-  a clean extension?
-- **Proposition 1's own weight.** What does exactness enable beyond Theorem 1, for instance in relation to Pierazzi
-  et al.'s side-effect vector? No timing claims.
-- **A richer abstract domain than signs** (bounds on magnitude). Weigh it against the user's dislike of machinery and
-  against the declined relational rule.
-
-Already closed, see section 3: converses of Corollary 1, tightness of the table, bounds on the cost of robustness.
-
-How to run this stage: give the user a short list (at most six candidates; for each: the statement in plain words,
-whether you believe it and why, the check on Algorithm 1, what it would change in the paper, its cost in new
-concepts, and the strongest argument against it). The user chooses. Only then attempt a proof or a counterexample,
-one idea at a time, reporting after each. A clean failure is reported as a failure.
-
-## 6. Settled; do not reopen without a strong, specific reason
-
-- The formalization is a contribution; be harsh but fair about novelty. Credit foundations as foundations, never as
-  a borrowed-versus-new ledger that concedes each result (the novelty is the combination).
-- Elegant fixes only, for gaps a real reader cares about; prefer reusing a mechanism the framework has over a new
-  hypothesis or clause. Loophole findings no reader cares about are not problems.
-- Proofs carry the weight: no machinery or pages for assumptions that are checked on a corpus.
-- The framework is format-free: no PE specifics in §3. The domain is adversarial examples in practical security tasks.
-- No timing claims, no effort claims, no packing motivation, no sandbox execution, no extractor redesign for
-  robustness.
-- Dropped earlier for complexity, not for being wrong (the mock's "Dropped from the paper"): coupling, the region's
-  tightness, a cost theorem, the old Theorems 2-3. Bringing one back needs an explicit argument and the user's yes.
-- Portray cited work in its authors' terms and check every claim about it against the PDF in `papers/`; mark
-  anything from memory as such.
-
-## 7. Output and housekeeping
-
-- `docs/evidence/theory-analysis.md`: A. proof audit; B. the theory in brief; C. candidate ideas (after the user has
-  seen A and B); D. proofs or counterexamples for the ideas the user chose; E. what to do next, in a few sentences.
-  Commit after each part. Do not push.
-- At the end, update `docs/status.md` (its "Waiting on the user" entry for the proof notes and its session log).
-- Do not spawn subagents.
+Update `docs/status.md` (current state, waiting on the user, a session-log entry; archive the oldest entries past about
+ten) and PLAN.md; write the next resume prompt, self-contained like this one, and archive this one as
+`docs/archive/resume-prompt-<date>-s71.md`, with its line in `docs/README.md`.

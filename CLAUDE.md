@@ -11,7 +11,8 @@ conference cycles are not a planning constraint (user).
 ## Read first
 
 - **Every session:** `docs/status.md` (current state, what waits on the user; **update it at the end of every
-  session**) and `PLAN.md` (thesis, decisions, next steps). The session's starting point: `docs/resume-prompt.md`.
+  session**) and `PLAN.md` (thesis, decisions, next steps). The session's starting point: `docs/resume-prompt.md` (the scale-up) or
+  `docs/resume-prompt-theory.md` (the theory track).
 - **Everything else only when the task needs it.** `docs/README.md` indexes every document, active, evidence, and
   archived, with when to open it. Do not read archived material by default; search it when a reason or a record is
   needed. The manuscript (`manuscript/*.tex`) is the authority on the paper's content.

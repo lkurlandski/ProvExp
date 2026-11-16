@@ -9,8 +9,16 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
 `docs/archive/status-log-2026-11-13-s59-60.md`, sessions 61-62 in `docs/archive/status-log-2026-11-14-s61-62.md`, session 63
 in `docs/archive/status-log-2026-11-14-s63.md`).
 
-## Current state (2026-11-16, through session 74)
+## Current state (2026-11-16, through session 75)
 
+- **Scale-up running on tigris (session 74).** Setup done (`SETUP.md`, `pipeline/systems/tigris.sh`); everything is
+  submitted by `bash pipeline/submit.sh` (SLURM dependencies; `3-directions/gate` before the detectors). Done:
+  featurization (sums, expert), the file store, the derived tables, population, item checks, escapes, deviations. The
+  gate stopped the chain on the derived check (PLAN.md decision 12: the training table is a strict superset of the
+  evaluation set's, 361 cells, 98 directions); the user chose the training table. Also done: `train` (five detectors;
+  unconstrained test AUC 0.998) and `price-list`. The first resubmission failed on two bugs, both fixed (below); the
+  user resubmits the rest: the catalogue check, hand table and trial table, the trial detector, the defenses'
+  material, the learned defenses, iterated training, the attacks and the results.
 - **Framework (§2-3):** rewritten; the user is reasonably satisfied. Open: the user's holistic read of Sound
   Directions after round 4 (finetuning only). **Session 74 (the theory session):** proofs audited (correct; seven
   small corrections applied); two additions to §3.3, each approved after a brief look and not yet read closely by the
@@ -128,7 +136,7 @@ in `docs/archive/status-log-2026-11-14-s63.md`).
   `pipeline/README.md`; models under `4-detectors/<name>` (the registry's `scaleup` set). Bug fixed: the adaptive
   search's workers reloaded the pilot list under `--protocol scaleup` (session 67's change, which the pilot-protocol
   identity check could not see). Open for the user: the derived table's corpus, and iterated adversarial training's
-  starting point (`docs/resume-prompt-head-node.md` §4).
+  starting point (`docs/archive/resume-prompt-2026-11-16-head-node.md` §4).
 - **Optimization (session 69): done, bit-identical.** The adaptive search's candidate ~3x cheaper (391 -> 127 s on the
   profiling slice; ~7-9k -> ~2.5-3k CPU-h at the scale-up); sums extraction 120 -> 78 ms per file; a file store
   (`2-features/file-store`, SQLite beside the lists) replaces ~25 min of SimpleDB loading per attack task.
@@ -139,7 +147,18 @@ in `docs/archive/status-log-2026-11-14-s63.md`).
 
 ## Waiting on the user
 
-- **Bounds on size: the mathematics note waits for the user's review** (`theory-analysis.md`, part F; session 75).
+- **Resubmit the rest of the scale-up** (session 74), on the tigris head node from the repository root (the finished
+  steps and the gate left out; the queued catalogue check, hand table and trial table are reused):
+  `SKIP="3-directions/derived 3-directions/gate 1-audit/population 1-audit/item-checks 1-audit/escapes 1-audit/deviations train 4-detectors/price-list" bash pipeline/submit.sh`
+  (after `scancel` of any pending job it would otherwise reuse). First resubmission failed on two bugs, both fixed
+  (2a42a34: files with fewer than 16 directory entries; 384f0d7: secml's `~/secml-data` race); `train` and
+  `price-list` finished.
+  Report failures as they come (logs in `logs/<name>_<id>.out` and `artifacts/scaleup/<stage>/logs/`). Once the
+  first adaptive and toolkit tasks finish, shorten their 24 h walltime limits from the measured times.
+- **`git push`** from the server that has the session-74 commits, then `git pull` on the other machine.
+- Number-free rebuttal text fixes (R4, R5, R15, R21) are step 4 (while the scale-up runs).
+- **Bounds on size: the mathematics note waits for the user's review** (`theory-analysis.md`, part F; session 75;
+  next theory session: `docs/resume-prompt-theory.md`).
   The user chose this direction; the four small ideas (C.3-C.6) are set aside for the user or another session. The
   note has the objects in order (cost, priced signature, rates, bounded sums, the corner rule, the worst corner), the
   hunt on Algorithm 1, and four decisions (F.7): whether this is the statement meant; the premise per edit or per
@@ -155,12 +174,6 @@ in `docs/archive/status-log-2026-11-14-s63.md`).
   - optional: `reach.py`'s rule for a normalized bin is the old, looser one (sound; same table under free content).
 - **`make check` reports one overfull vertical box** (1 pt, the last pages of Appendix D) since c2fee51: the text
   above reflowed. Left for the next edit of Appendix D.
-- **Before cloning on the cluster:** `git push` (main is ahead of origin), then copy what a clone does not bring
-  (`SETUP.md` §4: the split index files and the scale-up's file lists; `check.sh` stops without them).
-- **The head-node session** (`docs/resume-prompt-head-node.md`) needs the user at the cluster: `SETUP.md`, `check.sh`, the "TO
-  CONFIRM" values, and each `run.sh`'s time, memory and GPUs. Then the user submits the steps in
-  `pipeline/README.md`'s order, with `2-features/file-store` after the lists (or copy `files.sqlite` from this
-  server). Number-free rebuttal text fixes (R4, R5, R15, R21) are step 4 (while the scale-up runs).
 
 ## Scheduled (in order; PLAN.md, next steps)
 
@@ -170,14 +183,17 @@ in `docs/archive/status-log-2026-11-14-s63.md`).
 3. The scale-up (PLAN.md step 3): ~~the refactoring session~~ (done, session 64), ~~the extractor audit pass~~ (done,
    session 65; decided and applied in session 66),
    ~~the protocol items~~ (decided, session 67), ~~the remaining `run.sh` steps~~ (done, session 68), ~~lightweight
-   optimization of the hot spots~~ (done, session 69), ~~the two open questions~~ (decided, session 70), then a
-   head-node session on the cluster.
+   optimization of the hot spots~~ (done, session 69), ~~the two open questions~~ (decided, session 70), ~~the
+   head-node session~~ (done, session 74); running.
 4. While it runs: §2's closing and contribution 4 aligned with §5; the number-free text fixes R4, R5, R15, R21.
 5. After reading it: final numbers, then shortening §4-5 and §5's question-and-answer emphasis.
 6. A second domain decided with the scale-up's results in hand (the user's call).
 7. Introduction, discussion, abstract last.
 
 ## Session log
+
+Two sessions were numbered 74: the head node on tigris, and the theory session. The two tracks have separate resume
+prompts: `docs/resume-prompt.md` (the scale-up) and `docs/resume-prompt-theory.md` (theory).
 
 - **2026-11-16 (session 75, Fable): bounds on size, the mathematics note.** The user chose the direction and asked
   that the A' archive be read with caution. Part F of `theory-analysis.md`: A' re-read (its failure was an exact
@@ -190,7 +206,7 @@ in `docs/archive/status-log-2026-11-14-s63.md`).
   systematic loss: the sums share a budget and the box forgets it). Said plainly: all of it is elementary
   (intervals after signs), and the paper's price list points to a small payoff on EMBER at the present byte budget
   (one write or a few bytes flip the features whose constraints cost most). No experiment, no manuscript change.
-- **2026-11-16 (session 74, Fable): the theory session.** *Stage 1, the proof audit:* Proposition 1, Theorem 1 and
+- **2026-11-16 (session 74 (theory), Fable): the theory session.** *Stage 1, the proof audit:* Proposition 1, Theorem 1 and
   Corollary 1 correct with complete proofs. Three small new corrections (the ratio rule lost $b \ge 0$ in session
   53b's fix; Table 7's caption wrong for a min pool under a replacement; §3.2's lead) and proof notes 1-4 applied
   (d12ba89); note 5's sentence in §5.1 as a prediction (4e67a96). *Stage 2, ideas:* six candidates, each tried
@@ -204,6 +220,18 @@ in `docs/archive/status-log-2026-11-14-s63.md`).
   questions: a lemma statement with a needless closed superset that made it read as obvious, and bounds on size
   dismissed first with a weak reason and then by citing A' as a verdict (the user: A' was early, much has changed;
   the direction stays open). The oldest log entries (session 63) moved to the archive.
+- **2026-11-16 (session 74 (head node)): the head-node session on tigris.** Env built, `check.sh` passed (featurization
+  bit-identical on aarch64; 470 tests passed). Headers retargeted to tigris (gg CPU nodes, half or a quarter node; one
+  GH200 per `learned` task, ERDALT-only tasks with 8 cores); `NUM_WORKERS` follows `SLURM_CPUS_PER_TASK`.
+  `pipeline/submit.sh` chains every step; `3-directions/gate` stops the detectors unless the derived check is clean.
+  Featurization took 2.3 h (72 cores), the file store 11 min (9.3 GB), the derived tables 54 min. The gate stopped
+  on 361 differing population cells (PLAN.md decision 12); the user chose the training table and kept the gate.
+  Head-node rule (user): at most two CPUs there; everything heavier through `sbatch`. Two failures after the
+  resubmission, both fixed: the catalogue check crashed on files declaring fewer than 16 data directory entries (24 of
+  the 2,000 evaluation files, 13 without the certificate and debug entries; the entry writes in `edits.py` and
+  `escapes.py` now return None there; the catalogue check passes, exact and closed, on the 24 files; 2a42a34), and nine
+  of ten material tasks raced on secml's `~/secml-data` (384f0d7). `submit.sh` fixed to reuse a queued array by its
+  array ID and to take job names in `SKIP` (b4bdaf4).
 - **2026-11-16 (sessions 72-73, Fable): the cost of robustness, closed and reverted.** Step 1 (three pilot
   experiments, a rewrite of *Where the cost lies*) and step 2 (the converse of Corollary 1: false in general) gave no
   theoretical result. The user lost confidence in the work; on their instruction the manuscript paragraph, the

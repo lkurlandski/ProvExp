@@ -76,8 +76,11 @@ def past_end(pe: pefile.PE, index: int, n: int, by: int) -> Optional[ByteEdit]:
     """
     Entry `index` made to end `by` bytes past the end of the file: its extent lengthened if it has one, else placed at
     an address that maps to the file's last bytes (outside every section, so pefile maps it one to one); None if
-    neither applies.
+    neither applies or the file has no entry `index` (NumberOfRvaAndSizes <= index; 24 of the 2,000 evaluation files
+    declare fewer than 16 entries).
     """
+    if len(pe.OPTIONAL_HEADER.DATA_DIRECTORY) <= index:
+        return None
     d = pe.OPTIONAL_HEADER.DATA_DIRECTORY[index]
     if d.VirtualAddress and d.Size:
         try:
@@ -99,6 +102,8 @@ def into_overlay(pe: pefile.PE, n: int) -> Optional[ByteEdit]:
     with an overlay: pefile's own overlay rule would then start the overlay at the file's last byte (LIEF's, installed
     by `features` since 2026-11-13, leaves it where it was; R7). None without an overlay.
     """
+    if len(pe.OPTIONAL_HEADER.DATA_DIRECTORY) <= DEBUG_ENTRY:
+        return None
     start = pe.get_overlay_data_start_offset()
     d = pe.OPTIONAL_HEADER.DATA_DIRECTORY[DEBUG_ENTRY]
     va = d.VirtualAddress if d.VirtualAddress else (pe.sections[0].VirtualAddress if pe.sections else 0)

@@ -1,6 +1,6 @@
 # Theory analysis: the proof audit, and the theory in brief
 
-Session 74 (2026-11-16), carrying out `docs/archive/resume-prompt-2026-11-16-s74.md`. Parts A and B are stage 1
+Session 74 (2026-11-16), carrying out `docs/archive/resume-prompt-2026-11-16-s74-theory.md`. Parts A and B are stage 1
 (the audit), parts C to E stage 2 (ideas). Part F is session 75's note on bounds on size (not in the manuscript).
 **In the manuscript:** the three items of A.4 and proof notes 1-4
 (d12ba89); proof note 5's sentence in §5.1 as a prediction (4e67a96); C.1 as Lemma 1 (*Closure*) in §3.3 with its

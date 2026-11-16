@@ -538,8 +538,24 @@ records of the §5 reviews, the table remake and the ERDALT check, is in
    CPU-s per file and variant, ~60 CPU-h in all. (11) *Iterated adversarial training's starting point:* the
    adversarially trained detector, as scripted (R18's strongest realistic learned competitor; the adversarial-training
    row beside it shows what the beam's rounds add; one row, not two).
-   **Next: the head-node session** (`SETUP.md`, `check.sh`, the "TO CONFIRM" values, each `run.sh`'s time and memory,
-   `2-features/file-store` after the lists).
+   **The head-node session: done (session 74, 2026-11-16, tigris).** Setup on tigris (aarch64; gg CPU nodes 144
+   cores, gh nodes one GH200): `check.sh` passed, featurization bit-identical to the reference; `artifacts` ->
+   `/shared/rc/admalware/provexp`; the headers ask for half a gg node (72 cores), a quarter per array task, one GH200
+   per `learned` task. `pipeline/submit.sh` submits the whole chain with SLURM dependencies; `3-directions/gate` stops
+   the detectors unless the derived check is clean. Done at scale: featurization (sums, expert), the file store, the
+   derived tables, population, item checks (2,000 files, 0 failures), escapes, deviations.
+   (12) **The derived table at scale (user, session 74).** The gate stopped the chain: the table from the 20,000
+   training files covers the evaluation set (no move it lacks), but 361 population cells differ, every one a move
+   only training files show: slack writes on the 256 body-histogram bytes (no direction changes), a section rename
+   raising and lowering the 96 `body_strings:printable_*` counts and `section:max_entropy`, the header-field
+   overwrites moving `has_relocs` and `has_dynamic_relocs`; 98 threat-model directions become two-sided (98 more
+   features dropped by the monotone detectors). The union of both corpora is the training table. Decided: proceed
+   with the training table (the protocol); the gate stays as it is (stops on any differing population cell). The
+   files behind the new moves are not yet identified (worth knowing before §4.3.2 is rewritten).
+   Also done at scale: `train` (the five detectors without the trial) and `price-list`. Two bugs found at scale and
+   fixed (session 74): files with fewer than 16 data directory entries (24 of the 2,000 evaluation files) crashed the
+   entry writes (catalogue check, escapes); secml's data directory raced across array tasks.
+   **Next:** the rest of the chain, resubmitted (`SKIP=...` in `docs/status.md`); then read it (step 5).
 4. **While the scale-up runs: §2's closing and contribution 4 against §5** (old step 2 (c)). §2 says §5 "uses them to
    attack malware detectors and to build robust ones"; in §5 the attack is an instrument. The mock's contribution 4 is
    stale ("four to six points", "learned constraints"). Writing only.
@@ -555,7 +571,7 @@ records of the §5 reviews, the table remake and the ERDALT check, is in
 7. **The introduction, discussion, abstract, ethics and open science** last, once the body is settled.
 8. **The theory track (parallel to the scale-up; opened in session 74, 2026-11-16).** The user wants the paper's
    theoretical contributions made stronger. Record: `docs/evidence/theory-analysis.md`; next session:
-   `docs/resume-prompt.md`.
+   `docs/resume-prompt-theory.md`.
    (a) *Done:* the proof audit (seven small corrections to §3 and Appendix C); **Lemma 1 (*Closure*)** in §3.3: a
    population bounded by features that the derived table does not allow to rise is closed, so closure follows from
    covering and the table where the population is defined through items; **the readout rule**: one rule (the sums a
@@ -577,7 +593,7 @@ records of the §5 reviews, the table remake and the ERDALT check, is in
    (d) *Closed in sessions 71-73, not to reopen without the user:* converses of Corollary 1, a bound on the cost of
    robustness, extractor redesign for robustness.
 
-Open items (fix when the affected text is touched): **the checks recounted on the files below 4 MB** from stored
+Open items (fix when the affected text is touched): **the sample-read signature's claim (decision 12):** §4.3.2's last sentence and §5.1's *Checking results* say the table from 100 files equals the one from 2,000, so the sample-read part "does not depend on which files were read"; at scale the 20,000 training files add 98 directions the 2,000 evaluation files do not show. Rewrite both to the held-out check (the training table covers the evaluation set; more files only add moves, so a larger sample errs on the conservative side) with the user, after the files behind the new moves are known. **the checks recounted on the files below 4 MB** from stored
 outputs, no runs (decision 8 (iv); with the next item): 5.1's edit counts, Table 3's file counts, Appendix D's counts and
 Table 9 (outside the population: 42 wrong edits on 6 files instead of 45 on 7; session 46).
 5.1's "73,063 edits" is run 107's direction check, the exactness

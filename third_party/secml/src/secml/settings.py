@@ -176,7 +176,7 @@ This is set by default to:
 
 """
 if not os.path.isdir(SECML_HOME_DIR):
-    os.makedirs(os.path.abspath(SECML_HOME_DIR))
+    os.makedirs(os.path.abspath(SECML_HOME_DIR), exist_ok=True)
     _logger.info('New `SECML_HOME_DIR` created: {:}'.format(SECML_HOME_DIR))
 
 
@@ -254,7 +254,7 @@ This is set by default to: ``{SECML_HOME_DIR}/datasets``
 
 """
 if not os.path.isdir(SECML_DS_DIR):
-    os.makedirs(os.path.abspath(SECML_DS_DIR))
+    os.makedirs(os.path.abspath(SECML_DS_DIR), exist_ok=True)
     _logger.info('New `SECML_DS_DIR` created: {:}'.format(SECML_DS_DIR))
 
 SECML_MODELS_DIR = _parse_env_config(
@@ -267,7 +267,7 @@ This is set by default to: ``{SECML_HOME_DIR}/models``
 
 """
 if not os.path.isdir(SECML_MODELS_DIR):
-    os.makedirs(os.path.abspath(SECML_MODELS_DIR))
+    os.makedirs(os.path.abspath(SECML_MODELS_DIR), exist_ok=True)
     _logger.info('New `SECML_MODELS_DIR` created: {:}'.format(SECML_MODELS_DIR))
 
 SECML_EXP_DIR = _parse_env_config(
@@ -280,7 +280,7 @@ This is set by default to: ``{SECML_HOME_DIR}/experiments``
 
 """
 if not os.path.isdir(SECML_EXP_DIR):
-    os.makedirs(os.path.abspath(SECML_EXP_DIR))
+    os.makedirs(os.path.abspath(SECML_EXP_DIR), exist_ok=True)
     _logger.info('New `SECML_EXP_DIR` created: {:}'.format(SECML_EXP_DIR))
 
 # ------------ #
@@ -303,7 +303,7 @@ This is set by default to: ``{SECML_HOME_DIR}/logs``
 
 """
 if not os.path.isdir(SECML_LOGS_DIR):
-    os.makedirs(os.path.abspath(SECML_LOGS_DIR))
+    os.makedirs(os.path.abspath(SECML_LOGS_DIR), exist_ok=True)
     _logger.info('New `SECML_LOGS_DIR` created: {:}'.format(SECML_LOGS_DIR))
 
 SECML_LOGS_FILENAME = _parse_env_config(
@@ -330,7 +330,7 @@ SECML_PYTORCH_DIR =_parse_env(
     'SECML_PYTORCH_DIR',
     default=os.path.join(os.path.expanduser('~'), 'secml-data/pytorch-data'))
 if not os.path.isdir(SECML_PYTORCH_DIR):
-    os.makedirs(os.path.abspath(SECML_PYTORCH_DIR))
+    os.makedirs(os.path.abspath(SECML_PYTORCH_DIR), exist_ok=True)
     _logger.info('New `SECML_PYTORCH_DIR` created: {:}'.format(SECML_PYTORCH_DIR))
 """Directory for storing PyTorch data.
  
