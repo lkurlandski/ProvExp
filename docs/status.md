@@ -135,17 +135,20 @@ in `docs/archive/status-log-2026-11-14-s63.md`).
 
 ## Waiting on the user
 
-- **The theory session, stage 2 (session 74; `docs/evidence/theory-analysis.md`, parts C-D):** the user chose C.1
-  (closure as a consequence) and C.2 (one rule for all readouts). **C.1 is worked out (D.1):** the lemma is proved;
-  on EMBER, by reading the code, it would derive closure for nine of the thirteen operations and leave the four that
-  move the layout checked. Waiting: whether the three sentences go into §3.3 as theory (text proposed in D.1), and
-  whether the instance work (the clauses as counts, the table rebuilt) is wanted. Then C.2.
+- **The theory session, stage 2 (session 74; `docs/evidence/theory-analysis.md`, parts C-E):**
+  - **C.1, closure as a consequence (D.1):** proved; the user: "close, but not quite ready" to enter §3.3 (the
+    statement first read as obvious; restated without the misleading $Z_0$). Nothing applied.
+  - **C.2, one rule for all readouts (D.2):** proved, every row of Table 1 checked (the normalized bin gets
+    tighter, nothing changes on EMBER); new text for §3.3's paragraph, Table 1 and Appendix C proposed, not applied.
+    The user decides.
+  - **Instance-level work for C.1, a later session (user):** the population's clauses written as counts over items,
+    the derived table rebuilt, the nine in-place and append operations confirmed, the four layout-moving ones
+    decided (D.1). §4.4 changes only after that.
+  - **Bounds on size instead of signs: an open direction (user: "incredibly meaningful"; A' does not settle it).**
+    A dedicated session after C.1 and C.2; starting points in part E. No sentence on intervals in the paper yet.
 - **Proof note 5:** the sentence is in §5.1's *Detectors* in blue with a `% SYNTHETIC, TO VERIFY EXPERIMENTALLY`
   comment (4e67a96). Still to do before the scale-up's training: call `monotone_violations` in `4-detectors/train`
   and record the count; the prose is updated when the result is read.
-- **Bounds on size instead of signs:** the user asked to think about it more; the answer is in part C ("Weighed and
-  not proposed"): it is direction A' (dropped 2026-11-02), with three reasons that hold beyond that implementation,
-  one sentence that may be worth having, and the condition under which to revisit it.
 - **Before cloning on the cluster:** `git push` (main is ahead of origin), then copy what a clone does not bring
   (`SETUP.md` §4: the split index files and the scale-up's file lists; `check.sh` stops without them).
 - **The head-node session** (`docs/resume-prompt-head-node.md`) needs the user at the cluster: `SETUP.md`, `check.sh`, the "TO

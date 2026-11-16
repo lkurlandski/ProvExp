@@ -349,6 +349,9 @@ what they let the paper state, not in their difficulty.
   one sentence: a direction is what an interval becomes when the budget is unbounded, which says why signs are the
   right domain here. To revisit only if the scale-up's price list shows that the two-sided features carry detection
   at 0.1% false positives (pilot: 5.2 points, within retraining noise).
+  **Open, by the user's decision (session 74):** "an incredibly meaningful direction"; A' was explored at a much
+  earlier point and does not settle it; to be taken up with dedication in a session of its own, after C.1 and C.2.
+  No sentence on intervals in the paper until then. See part E.
 - **A locality lemma** (a write changes only the items that read a written position). It would turn part of
   "covers" into a proof, but only given a sound record of what the parser reads, and the instance builds that record
   by perturbation. The checked premise would move, not go away.
@@ -369,14 +372,18 @@ that could still kill it.
 **Status: the lemma is proved. Its payoff on EMBER is established by reading the code only; no clause has been
 re-modelled and nothing was run.**
 
-**Lemma.** Let $\Delta$ cover $\mathcal{M}$ over $Z$, with every sum totally ordered, and let
-$Z = \{ z \in Z_0 : \varphi_j(z) \le t_j \text{ for every } j \in J \}$ for a set $J$ of features of the extractor,
-thresholds $t_j$, and a set $Z_0$ closed under $\mathcal{M}$ (for instance all inputs). If no direction
-$(D_\Delta)_j$, $j \in J$, contains $+$, then $Z$ is closed under $\mathcal{M}$.
+**Lemma.** Let $\Delta$ cover $\mathcal{M}$ over $Z$, with every sum totally ordered, and let $Z$ be the set of
+inputs on which some features of the extractor stay at or below given values:
+$Z = \{ z : \varphi_j(z) \le t_j \text{ for every } j \in J \}$. If no direction $(D_\Delta)_j$, $j \in J$, contains
+$+$, then $Z$ is closed under $\mathcal{M}$.
 
 *Proof.* Let $z \in Z$ and $T \in \mathcal{M}$. The first claim of Theorem 1 needs no closure: the change
 $\varphi_j(T(z)) - \varphi_j(z)$ has a sign in $(D_\Delta)_j$, hence is not positive, for every $j \in J$. So
-$\varphi_j(T(z)) \le \varphi_j(z) \le t_j$, and $T(z) \in Z_0$ by assumption, so $T(z) \in Z$. $\qed$
+$\varphi_j(T(z)) \le \varphi_j(z) \le t_j$ for every $j \in J$, which is $T(z) \in Z$. $\qed$
+
+(An earlier version of this statement placed $Z$ inside a closed set $Z_0$. That set did no work and misled: a
+subset of a closed set is not closed in general. All files are closed under every edit, and the complete files are
+a subset that one write to a directory entry leaves. Removed after the user's question.)
 
 The same holds with $\ge$ and no $-$, and for features that are sums. There is no circle: covering is assumed over
 $Z$ only, and it is used only on inputs of $Z$.
@@ -441,7 +448,108 @@ end of the file (three). The certificate and debug entries are exempt since the 
 **Assessment.** The lemma is true, two lines long, and uses nothing new. It removes closure as an independent
 premise in the theory. On EMBER it would turn a corpus check into a derivation for nine operations and leave four
 checked, and it rests on covering, which stays checked. So register R2 goes from three tested premises to two and a
-part. Getting there needs instance work outside this session (the clauses as counts, the table rebuilt), which is
-the user's call. Without that work, the three sentences in §3.3 can still stand as theory, with §4.4 unchanged.
+part.
+
+**Decisions (user, session 74).** (1) Not integrated into the framework yet: "close, but not quite ready". The user
+found the statement obvious as first presented; the $Z_0$ in it was the cause, and the plain explanation is: the
+condition that defines the population is treated as one more feature, and the table that says which way every
+feature can move then says whether any edit can break the condition. (2) **Instance-level work is needed and is
+saved for a later session, once the theory is settled:** write the population's clauses as counts over items,
+rebuild the derived table, confirm the nine operations, and decide how the four layout-moving operations are handled
+(an argument per declaration, or the corpus check as now). Only then does §4.4's sentence change.
+
+### D.2 One rule for all readouts (C.2; chosen by the user)
+
+**Status: proved. Every row of Table 1 checked against it. Nothing applied.**
+
+**Rule.** Let the readout of feature $j$ split the sums it reads into three groups: $P_j$, the sums it rises with;
+$N_j$, the sums it falls with; $O_j$, the rest. Precisely: on the values of the sums that occur,
+$\rho_j(\mathbf{b}) \ge \rho_j(\mathbf{a})$ whenever $b_k \ge a_k$ on $P_j$, $b_k \le a_k$ on $N_j$, and $b_k = a_k$
+on $O_j$. The feature's direction is
+\[
+  D_j = \bigcup_{k \in P_j} d_k \;\cup \bigcup_{k \in N_j} (-d_k) \;\cup \bigcup_{k \in O_j} (d_k \cup -d_k).
+\]
+
+**Claim.** If every sum $k$ that the feature reads changes with a sign in $d_k$, the feature changes with a sign in
+$D_j$.
+
+*Proof.* Let $\mathbf{a}$ and $\mathbf{b}$ be the sums before and after. If $D_j$ lacks $-$, then no $d_k$ on $P_j$
+contains $-$, no $d_k$ on $N_j$ contains $+$, and every $d_k$ on $O_j$ is fixed. So $b_k \ge a_k$ on $P_j$,
+$b_k \le a_k$ on $N_j$, and $b_k = a_k$ on $O_j$, and the hypothesis on $\rho_j$ gives
+$\rho_j(\mathbf{b}) \ge \rho_j(\mathbf{a})$. If $D_j$ lacks $+$, exchange the roles of $\mathbf{a}$ and $\mathbf{b}$.
+If it lacks both, both inequalities hold and the feature is unchanged. If it lacks neither, there is nothing to
+show. $\qed$
+
+**The rows of Table 1 as cases.**
+
+| Readout | Rises with ($P$) | Falls with ($N$) | Rule gives | Table 1 today |
+|---|---|---|---|---|
+| identity $s_k$ | $k$ | | $d_k$ | same |
+| monotone $g(s_k)$ | $k$ | | $d_k$ | same |
+| distinct count | every $q$ | | $\bigcup_q d_q$ | same |
+| ratio $a/b$, or 0 if $b = 0$ | $a$ | $b$ | $d_a \cup (-d_b)$ | same |
+| normalized bin $c_i / \sum_l c_l$ | $c_i$ | the other bins | $d_i \cup \bigcup_{l \ne i} (-d_l)$ | "as the ratio": $d_i \cup (-d_{\text{total}})$ |
+| any other | | | fixed if every $d_k$ is, else both | same |
+
+- *The ratio's zero case.* The values that occur are $a \ge 0$ with $b > 0$, and $a = b = 0$. On this set the ratio
+  with its convention rises with $a$ and falls with $b$: a pair with $b > 0$ and the pair $(0, 0)$ are comparable
+  only if the first has $a = 0$, and then both read 0. So the three cases of Appendix C's proof reduce to this one
+  check, and the side conditions of the caption are the description of the set.
+- *The normalized bin is the one row that changes, and it gets tighter.* Read over the bins, a bin's share rises
+  with its own count and falls with every other count. If the edits can only add to bin $i$, the rule gives up for
+  bin $i$ and down for the others. Today's rule gives both for bin $i$, because the total rises too. Under a threat
+  model with free content every bin can rise and both rules give both, so no direction changes on EMBER; the gain
+  shows under restricted content, such as padding with one value.
+- *Free of charge:* totals and differences of sums, means, the larger or smaller of several sums, products of
+  non-negative sums, and any composition of these.
+
+**Corollary 1 is the same rule.** A score that rises with the up features, falls with the down features, reads the
+fixed features in any way and does not read the both features gets the direction up from the rule, applied to the
+features in place of the sums. So the chain is one lemma used twice: sums to features, features to score. The
+remark that a score may read sums directly needs no separate sentence.
+
+**Counterexample hunt (Algorithm 1).** $x_1$ = size / records under "add a record": size in $P$ is up, records in
+$N$ is up, the rule gives both, which is right (the average can go either way). Under "extend a record": size up,
+records fixed, up, right. $x_4$ under "add a token": up. $x_3$ (entropy): all in $O$, both. No row disagrees with
+the present table except the normalized bin, where the new direction is contained in the old one.
+
+**What it would change in the paper (proposal, not applied).**
+
+- §3.3, the paragraph "The readouts turn the directions of sums into directions of features." *New text, about the
+  same length:* "The readouts turn the directions of sums into directions of features, by one rule. Flipping a
+  direction, written $-d$, exchanges up and down, and the union of two directions is again a direction. A readout
+  rises with some of the sums it reads and falls with others. A sum it rises with passes its direction on to the
+  feature, a sum it falls with passes its direction flipped, and any other sum passes both its direction and the
+  flipped one. The feature's direction is the union of what its sums pass on. \Cref{tab:fw:readouts} lists, for
+  each form of \Cref{sec:fw:model}, the sums it rises and falls with. A ratio rises with its numerator and falls
+  with its denominator, so it can rise only if the numerator can rise or the denominator can fall. A readout of no
+  listed form rises or falls with none of its sums in a way we can state, so its feature is fixed if every sum in
+  its support is fixed, and can move either way otherwise."
+- Table 1: the columns "Rises with" and "Falls with" in place of "Direction"; the same rows.
+- Appendix C, *The readout rules*: the proof above (about 90 words) and the ratio's check (about 60) in place of
+  the present paragraph (about 230).
+- Before Corollary 1, optionally one sentence: the score is a last readout, of the features, and the same rule gives
+  it the direction up.
+
+**Assessment.** True and elementary: it is the fact that maps which keep an order compose, applied twice. What the
+paper gains is a shorter §3.3 and Appendix C, a rule a second domain can use without new proofs, one tighter row,
+and Corollary 1 seen as part of the same chain. What it costs is a rewrite of a paragraph and a table the user has
+accepted. No measured number changes.
 
 ## E. What to do next
+
+- **C.1 (closure):** the theory is done and waits for the user's go to enter §3.3. The instance-level work
+  (D.1, decision 2) is a later session's.
+- **C.2 (one rule):** proved; the user decides whether Table 1 and its paragraph are rewritten as proposed in D.2.
+- **Bounds on size: an open direction, not abandoned (user).** For the session that takes it up, what has changed
+  since A' (Claude's reading, to be tested, not a promise):
+  - A' asked whether a *fragile* detector can be certified. The question can now be what a *robust* detector may
+    read beyond the one-sided features: a two-sided feature that the budget cannot move far.
+  - A' bounded *features*, and its looseness came from the formulas (normalized histograms, entropy windows).
+    Detectors can now read the sums, where one added element moves one count by exactly one.
+  - The signature gives a place to state what each change costs, and D.2's rule carries over unchanged: a readout
+    that rises with some sums and falls with others maps a box of sums to the interval between two of its corners.
+  - The three obstacles in part C stand as things to design around: no natural small budget, features that one
+    write moves across their whole range, and a guarantee per file and budget.
+  - Start as Sound Directions round 4 did: a short note that settles the mathematics, a counterexample hunt on
+    Algorithm 1, and only then any experiment.
