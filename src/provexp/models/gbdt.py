@@ -14,6 +14,7 @@ from numpy import typing as npt
 __all__ = [
     "EMBER2024_CATEGORICAL",
     "EMBER2024_LIGHTGBM_PARAMS",
+    "monotone_violations",
     "train_gbdt",
 ]
 
@@ -104,3 +105,57 @@ def train_gbdt(
     values = np.array(history["vl"][stopper_metric])
     booster.best_iteration = int(np.argmax(values) if stopper_mode == "max" else np.argmin(values)) + 1
     return booster
+
+
+def monotone_violations(booster: lgb.Booster, constraints: list[int], tolerance: float = 0.0) -> tuple[int, float]:
+    """
+    Check, from the trees alone, that a GBDT's raw score respects its monotone constraints.
+
+    A score that is unconstrained in some features, nondecreasing in those with constraint +1 and nonincreasing in
+    those with -1 must satisfy value(A) <= value(B) for every two leaves A, B of a tree that hold inputs x in A and
+    x' in B with x = x' on the unconstrained features, x <= x' on the increasing ones and x >= x' on the decreasing
+    ones. If every tree satisfies this, so does their sum, whatever the training method was.
+
+    Args:
+        booster: The trained model (numeric splits only).
+        constraints: Per feature, +1 (nondecreasing), -1 (nonincreasing), or 0 (unconstrained).
+        tolerance: A leaf pair counts as a violation if value(A) exceeds value(B) by more than this.
+
+    Returns:
+        The number of violating leaf pairs over all trees, and the largest value(A) - value(B) among them (0.0 if
+        none).
+    """
+    sign = np.asarray(constraints, dtype=np.int64)
+    count, worst = 0, 0.0
+    for info in booster.dump_model()["tree_info"]:
+        leaves: list[tuple[dict[int, tuple[float, float]], float]] = []
+        stack: list[tuple[dict[str, Any], dict[int, tuple[float, float]]]] = [(info["tree_structure"], {})]
+        while stack:
+            node, box = stack.pop()
+            if "leaf_value" in node:
+                leaves.append((box, float(node["leaf_value"])))
+                continue
+            if node["decision_type"] != "<=":
+                raise ValueError(f"Only numeric splits are supported. Got {node['decision_type']!r}.")
+            j, t = int(node["split_feature"]), float(node["threshold"])
+            lo, hi = box.get(j, (-np.inf, np.inf))
+            stack.append((node["left_child"], box | {j: (lo, min(hi, t))}))
+            stack.append((node["right_child"], box | {j: (max(lo, t), hi)}))
+        used = sorted({j for box, _ in leaves for j in box})
+        if len(leaves) < 2 or not used:
+            continue
+        lo = np.array([[box.get(j, (-np.inf, np.inf))[0] for j in used] for box, _ in leaves])
+        hi = np.array([[box.get(j, (-np.inf, np.inf))[1] for j in used] for box, _ in leaves])
+        value = np.array([v for _, v in leaves])
+        s = sign[used]
+        # Per feature, whether some x in A (rows) and x' in B (columns) stand in the allowed relation; a box is
+        # (lo, hi].
+        up = lo[:, None, :] < hi[None, :, :]        # x <= x' possible
+        down = lo[None, :, :] < hi[:, None, :]      # x >= x' possible
+        comparable = np.where(s == 1, up, np.where(s == -1, down, up & down)).all(axis=2)
+        drop = value[:, None] - value[None, :]
+        bad = comparable & (drop > tolerance)
+        count += int(bad.sum())
+        if bad.any():
+            worst = max(worst, float(drop[bad].max()))
+    return count, worst

@@ -9,6 +9,7 @@ import pytest
 import torch
 
 from provexp.models.gbdt import EMBER2024_CATEGORICAL
+from provexp.models.gbdt import monotone_violations
 from provexp.models.gbdt import train_gbdt
 from provexp.models.mlp import build_mlp
 from provexp.models.mlp import fit_standardize
@@ -80,3 +81,38 @@ def test_mlp_consumes_raw_features() -> None:
     x = torch.from_numpy(X[:4]).requires_grad_()
     model(x)[:, 1].sum().backward()
     assert x.grad is not None and x.grad.shape == x.shape
+
+
+class TestMonotoneViolations:
+    """The structural check of a GBDT's monotone constraints (provexp.models.gbdt.monotone_violations)."""
+
+    @staticmethod
+    def data(n: int = 4000, seed: int = 0) -> tuple[np.ndarray, np.ndarray]:
+        """Labels that rise with feature 0, fall with feature 1, and depend on feature 2 in neither way."""
+        rng = np.random.default_rng(seed)
+        X = rng.normal(size=(n, 4)).astype(np.float32)
+        y = ((X[:, 0] - X[:, 1] + np.sin(3 * X[:, 2]) + 0.3 * rng.normal(size=n)) > 0).astype(np.int64)
+        return X, y
+
+    @pytest.mark.parametrize("method", ["basic", "intermediate", "advanced"])
+    def test_constrained_model_passes(self, method: str) -> None:
+        X, y = self.data()
+        constraints = [1, -1, 0, 0]
+        booster = train_gbdt(X[:3000], y[:3000], X[3000:], y[3000:], num_threads=THREADS, num_iterations=30,
+                             min_data_in_leaf=20, monotone_constraints=constraints,
+                             monotone_constraints_method=method)
+        assert monotone_violations(booster, constraints) == (0, 0.0)
+
+    def test_unconstrained_model_fails(self) -> None:
+        X, y = self.data()
+        booster = train_gbdt(X[:3000], y[:3000], X[3000:], y[3000:], num_threads=THREADS, num_iterations=30,
+                             min_data_in_leaf=20)
+        count, worst = monotone_violations(booster, [0, 0, 1, 0])  # feature 2 acts through a sine
+        assert count > 0 and worst > 0.0
+
+    def test_wrong_sign_fails(self) -> None:
+        X, y = self.data()
+        booster = train_gbdt(X[:3000], y[:3000], X[3000:], y[3000:], num_threads=THREADS, num_iterations=30,
+                             min_data_in_leaf=20, monotone_constraints=[1, -1, 0, 0])
+        count, _ = monotone_violations(booster, [-1, 1, 0, 0])
+        assert count > 0

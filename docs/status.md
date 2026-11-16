@@ -8,7 +8,7 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
 `docs/archive/status-log-2026-11-12-to-13-s43-54.md`, sessions 55-58 in `docs/archive/status-log-2026-11-13-s55-58.md`, sessions 59-60 in
 `docs/archive/status-log-2026-11-13-s59-60.md`, sessions 61-62 in `docs/archive/status-log-2026-11-14-s61-62.md`).
 
-## Current state (2026-11-15, through session 70)
+## Current state (2026-11-16, through session 73)
 
 - **Framework (§2-3):** rewritten; the user is reasonably satisfied. Open: the user's holistic read of Sound
   Directions after round 4 (finetuning only).
@@ -134,6 +134,9 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
 
 ## Waiting on the user
 
+- **The proof notes (`docs/evidence/proof-notes.md`):** five small corrections to §3.3 and Appendix C, each with
+  old and new text, none applied. The user approves or rejects each. After that, if the user wants it: the theory
+  audit and ideas phase of the original prompt (`git show 0563ef0:docs/fable-theory-prompt.md`), findings file only.
 - **Before cloning on the cluster:** `git push` (main is ahead of origin), then copy what a clone does not bring
   (`SETUP.md` §4: the split index files and the scale-up's file lists; `check.sh` stops without them).
 - **The head-node session** (`docs/resume-prompt.md`) needs the user at the cluster: `SETUP.md`, `check.sh`, the "TO
@@ -158,6 +161,13 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
 
 ## Session log
 
+- **2026-11-16 (sessions 72-73, Fable): the cost of robustness, closed and reverted.** Step 1 (three pilot
+  experiments, a rewrite of *Where the cost lies*) and step 2 (the converse of Corollary 1: false in general) gave no
+  theoretical result. The user lost confidence in the work; on their instruction the manuscript paragraph, the
+  `cost-split` step and `train_classic.py --param` were reverted to their state before the Fable sessions (3944894).
+  Kept: `provexp.models.gbdt.monotone_violations` with its tests, session 70's scale-up commits, and the proof notes.
+  The record is `docs/archive/fable-cost-of-robustness.md` (not to be used for the paper without the user's say).
+  Boosting rounds stay at 500 for every detector (user).
 - **2026-11-15 (session 71): repository readied for the head node.** `SETUP.md` §4 lists what a clone does not
   bring and how to copy it; `check.sh` checks for it; the audit stage's order states which list each step reads.
 - **2026-11-15 (session 70): the two open scale-up questions decided.** (1) The derived table's corpus. Read what
