@@ -20,7 +20,8 @@ $\mathbf{s}(z')$ both agree with $\sigma(B)$ on $K_j$. By Definition~\ref{def:fw
 $\rho_j(\mathbf{s}(z)) = \rho_j(\mathbf{s}(z'))$, and by \eqref{eq:fw:extractor}, $\varphi_j(z) = \varphi_j(z')$.
 
 \paragraph{Directions.}
-Write $\operatorname{sgn}(x) \in \{-, 0, +\}$ for the sign of a number. Every direction contains $0$, and each is
+The sign of the change of a value from $a$ to $a'$ is $+$ if $a' > a$, $-$ if $a' < a$, and $0$ if the two are equal,
+which also covers a pool that no item touches, whose value is infinite. Every direction contains $0$, and each is
 closed under addition: if every term of a finite total has a sign in a direction $d$, so does the total (a total of
 non-negative terms is non-negative, a total of zeros is zero, and $\mathsf{both}$ allows every sign). A total whose
 terms have signs in several directions has a sign in their union, which is again a direction. Below, an edit takes
@@ -30,7 +31,8 @@ contributions, which the next paragraph proves.
 
 \begin{table}[h]
   \caption{Directions that common contributions give their sums under each change: adding, removing, or replacing an
-  item, with any new content or with a restricted one. A min pool follows the max pool with up and down exchanged.}
+  item, with any new content or with a restricted one. Under additions and removals, a min pool follows the max pool
+  with up and down exchanged; under a replacement it moves as the max pool does.}
   \label{tab:fw:signs}
   \footnotesize
   \setlength{\tabcolsep}{4pt}
@@ -99,8 +101,11 @@ a letter.
 \paragraph{The readout rules (\Cref{tab:fw:readouts}).}
 Suppose every sum $k$ that a feature reads changes with a sign in $d_k$. The identity passes the sign through. A
 nondecreasing function $g(s_k)$, such as a presence bit $[s_k > 0]$, rises only if $s_k$ rises and falls only if
-$s_k$ falls, so its change has a sign in $d_k$. A distinct count is a total of presence bits, so its change has a
-sign in the union of their directions. For a ratio $a/b$, with $a \ge 0$ and $a = 0$ whenever $b = 0$, suppose
+$s_k$ falls, so its change has a sign in $d_k$. A feature that returns a pool returns a default value when no item
+touches the pool, so that it is a real number; this readout is nondecreasing only if the default is at most every
+contribution to a max pool, or at least every contribution to a min pool, and otherwise the feature takes the last
+rule. A distinct count is a total of presence bits, so its change has a
+sign in the union of their directions. For a ratio $a/b$, with $a \ge 0$, $b \ge 0$, and $a = 0$ whenever $b = 0$, suppose
 first that $b > 0$ before and after, and write $a' = a + \alpha$ and $b' = b + \beta$; then
 \[
   \frac{a'}{b'} - \frac{a}{b} = \frac{\alpha\, b - a\, \beta}{b\, b'}.
@@ -128,7 +133,8 @@ in $(D_\Delta)_j$. Without closure, a step can leave $Z$, and the signature says
 The second part of the proof of Theorem~\ref{thm:fw:directions} uses only that the table is sound and that $Z$ is
 closed, so it holds for $D$: for every $z \in Z$ and $\mathbf{x}' \in \mathcal{R}(z)$, the change $x'_j - \varphi_j(z)$
 of every feature $j$ has a sign in $D_j$. Since $h$ is monotone with respect to $D$, $h(\mathbf{x}') \ge
-h(\varphi(z))$. This is Gimenez et al.'s Proposition~1~\cite{gimenez2025certifiably}, with the preorder ``$z'$ is
-reachable from $z$'' and a feature map made monotone by $D$. A score that reads sums instead of features is covered by
+h(\varphi(z))$. This is the argument of Gimenez et al.'s Proposition~1~\cite{gimenez2025certifiably}, with the preorder
+``$z'$ is reachable from $z$'' and, in place of the order $\le$ on the features, the order that $D$ defines, under
+which two vectors that differ in a fixed feature are not comparable. A score that reads sums instead of features is covered by
 the same argument, since a sum under the identity readout is a feature, and the rule of the identity gives it the
 direction of the sum.

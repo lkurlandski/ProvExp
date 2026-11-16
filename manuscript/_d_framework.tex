@@ -200,7 +200,7 @@ contribution. The rest of this section computes from the item table.
 % (docs/archive/framework/sprint-framework-review.md): round 1 2026-11-07, round 2 2026-11-08 from a six-paragraph spine (no example).
 An edit applies a transformation $T$ to an input $z$ and gives $z' = T(z)$. Its side effects are usually found by
 applying the edit and extracting the features of $z'$. This subsection describes an edit instead by its delta, the
-items it removes and adds, and proves that the delta and the item table of $z$ give $z'$ exactly (before the edit is
+items it removes and adds, and proves that the delta and the item table of $z$ give the features of $z'$ exactly (before the edit is
 applied) and thus the side effects of the transformation, $T$.
 
 \definition[Item delta]
@@ -385,7 +385,7 @@ that key is added, falls when one is removed, and stays when an item is replaced
 \begin{table}[t]
   \caption{Direction rules of the readout forms of \Cref{sec:fw:model}: the direction of a feature from the
   directions $d$ of the sums it reads. A presence bit $[s_k > 0]$ is monotone.
-  A ratio reads 0 when $b = 0$; it requires $a \ge 0$, and $a = 0$ whenever $b = 0$.}
+  A ratio reads 0 when $b = 0$; it requires $a \ge 0$ and $b \ge 0$, and $a = 0$ whenever $b = 0$.}
   \label{tab:fw:readouts}
   \small
   \begin{tabular}{@{}llc@{}}
@@ -449,8 +449,8 @@ evaded when the attacker's edits can only raise the features~\cite{gimenez2025ce
 which features the edits can only raise, which they can only lower, and which they cannot change, so it says how the
 score must behave. We call $h$ \emph{monotone with respect to} $D$ if $h(\mathbf{x}') \ge h(\mathbf{x})$ whenever the
 change $x'_j - x_j$ of every feature $j$ has a sign in $D_j$. A gradient-boosted tree trained with monotone
-constraints, increasing in the up features and decreasing in the down features, and reading no feature marked both,
-is such a score.
+constraints, increasing in the up features, decreasing in the down features, unconstrained in the fixed features, and
+reading no feature marked both, is such a score.
 
 \corollary[Robustness]
 \label{cor:fw:robustness}
