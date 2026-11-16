@@ -129,6 +129,12 @@ induction on $i$, so each step changes feature $j$ with a sign in $(D_\Delta)_j$
 $x'_j - \varphi_j(z)$ is the total of these steps' changes, and a direction is closed under addition, so it has a sign
 in $(D_\Delta)_j$. Without closure, a step can leave $Z$, and the signature says nothing about the steps after it.
 
+\paragraph{Proof of Lemma~\ref{lem:fw:closure}.}
+Let $z \in Z$ and $T \in \mathcal{M}$. The first part of the proof of Theorem~\ref{thm:fw:directions} does not use
+closure, and gives the change $\varphi_j(T(z)) - \varphi_j(z)$ a sign in $(D_\Delta)_j$ for every feature $j$. For
+$j \in J$ this direction does not contain $+$, so $\varphi_j(T(z)) \le \varphi_j(z) \le t_j$, and $T(z) \in Z$. With
+$\ge$ and $-$ in place of $\le$ and $+$, the same argument gives the lemma for lower bounds.
+
 \paragraph{Proof of Corollary~\ref{cor:fw:robustness}.}
 The second part of the proof of Theorem~\ref{thm:fw:directions} uses only that the table is sound and that $Z$ is
 closed, so it holds for $D$: for every $z \in Z$ and $\mathbf{x}' \in \mathcal{R}(z)$, the change $x'_j - \varphi_j(z)$

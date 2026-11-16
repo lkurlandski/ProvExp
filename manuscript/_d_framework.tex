@@ -437,6 +437,26 @@ also holds for the sequence as a whole, because adding up changes keeps them wit
 rise, and a rise followed by no change is a rise. Without closure, an intermediate input can leave $Z$, and the table
 says nothing about the steps after it.
 
+Closure need not be assumed separately. A population is usually defined by a condition on its inputs, and when the
+condition is a bound on features of the extractor, the derived table says whether an edit can break it.
+
+\lemma[Closure]
+\label{lem:fw:closure}
+{
+Let $\varphi$ be a sum-then-readout extractor whose sums are totally ordered, $\mathcal{M}$ a threat model, and $Z$
+the set of inputs $z$ with $\varphi_j(z) \le t_j$ for every feature $j$ in a set $J$, for given values $t_j$. Let
+$\Delta$ be a signature that covers $\mathcal{M}$ over $Z$. If no direction $(D_\Delta)_j$ with $j \in J$ contains
+$+$, then $Z$ is closed under $\mathcal{M}$.
+}
+
+\noindent The first claim of Theorem~\ref{thm:fw:directions} holds without closure. Applied to an input of $Z$ and a
+feature of $J$, it says that the edit does not raise the feature, so the feature stays at or below its bound and the
+edited input is in $Z$. The same holds for lower bounds on features that the table does not allow to fall. A
+population of the inputs that hold no item of some unwanted form is of this kind: the number of such items is a sum,
+read by the identity and bounded by 0, and it cannot rise if no change in $\Delta$ adds such an item or turns another
+item into one. The table that gives each feature its direction then also shows that the edits cannot leave the
+population.
+
 Reasoning about every edit at once through a few abstract values is the idea of abstract
 interpretation~\cite{cousot1977abstract}, whose introductory example is the rule of signs: the sign of a product
 follows from the signs of its factors, without the numbers. A direction is such a sign, and like the rule of signs it
