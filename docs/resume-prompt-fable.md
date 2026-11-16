@@ -1,45 +1,55 @@
-# Resume prompt: the cost of robustness, step 1 (written 2026-11-15, session 71, at the usage limit)
+# Resume prompt: the cost of robustness, the rewrite of §5.4 (written 2026-11-16, session 72)
 
-Paste into a fresh session (Fable 5.2 or Opus). Read `docs/evidence/fable-cost-of-robustness.md` first (the findings;
-§4 holds the experiments and their predictions; **§7 records the discussion with the user, what was rejected and
-why, and the candidate for step 2**), not the status log.
+Paste into a fresh **Opus** session (the user moved the drafting off Fable to save credits). Read first, in this
+order: `docs/evidence/fable-cost-of-robustness.md` §7 (what was decided and rejected), §8 (the experiments' results)
+and §2.5 (the table the rewrite is built around); then §5.4 (*What Robustness Costs*) in
+`manuscript/_f_evaluation.tex`; then the skill `paper-prose`.
 
-## What was decided (user, session 71)
+## What is settled
 
-- Proceed with **step 1 only**: experiments 1-3 of the findings file's §4, then rewrite §5.4's *Where the cost lies*
-  around what evidence a table-respecting detector may use (the table of §2.5), with Propositions B and E as two or
-  three sentences. Afterwards discuss the outcomes with the user; **step 2** (the converse of Corollary 1 as a theorem
-  with a condition checkable on the signature, after a literature check) only then, if the user agrees.
-- **No extractor changes.** Anchored sums (§3.2) and verified signatures (§3.3, experiment 5) are dropped; experiment
-  4 is dropped with them. The user rejected the anchoring idea outright (a feature is fixed only until the attacker
-  learns to move its anchor). Do not raise it again. The same condition applies to the 203 fixed sums the current
-  detector relies on (80% of its split gain); say so plainly in §5.4.
-- None of the mathematics is a headline contribution; do not present it as one.
+- Step 1's experiments are run at pilot scale and read (findings §8). At 1% / 0.1% FPR: unconstrained 93.5 / 84.4;
+  two-sided sums dropped 91.8 / 78.8; fixed sums alone 79.7 / 57.7; monotone as in Table 5 85.7 / 68.1; monotone
+  trained past the 500-round cap 87.2 / 71.8 (1,567 rounds). The constraint method makes no difference. The monotone
+  detector takes 80% of its split gain from the 203 fixed sums. Zero structural violations.
+- **No extractor changes** (anchored sums, verified signatures): rejected by the user, do not raise them. None of the
+  mathematics is a headline contribution; Propositions B and E appear as two or three sentences of prose, with no
+  numbered statement.
+- The guarantee's dependence on the fixed sums is said plainly: the detector rests on fields the threat model does
+  not write, and holds only while they stay outside it.
 
-## State of the work (committed, but NOT yet checked with ruff and mypy, and not yet run end to end)
+## The paragraph plan for *Where the cost lies* (approved by the user "for now")
 
-- `pipeline/4-detectors/train/train_classic.py`: new `--param KEY=VALUE` (LightGBM overrides; metrics.json unchanged
-  when not given).
-- `src/provexp/models/gbdt.py`: `monotone_violations` (checks the constraints from the saved trees), tests in
-  `tests/test_models.py` (`TestMonotoneViolations`, 5 pass).
-- `pipeline/4-detectors/cost-split/{run.sh,cost_split.py}`: the step. Variants: `droponly` (experiment 1),
-  `fixed-only` (experiment 3), `mono-rounds` (3,000 rounds), `mono-{basic,intermediate,advanced}` (experiment 2).
-  The pilot command is in `run.sh`'s header.
-- **Found:** LightGBM silently falls back to `basic` unless `feature_fraction` and `feature_fraction_bynode` are 1;
-  the step sets both to 1 for the three method variants (basic is then the control).
-- **Timing (pilot store, 100 rounds, subsampling off, loading included):** basic 23 s, intermediate 21 s, advanced
-  40 s; the methods now really differ (accuracy at 100 rounds: 93.71, 93.78, 93.75, so no large effect yet). At 3,000
-  rounds expect about 6 minutes for basic and intermediate and 15-20 for advanced: run the first two yourself
-  (`METHODS="basic intermediate"`), and either lower `ITERATIONS` for advanced or hand the user the script.
+1. **What a monotone detector may read.** Unconstrained on the fixed sums; on the one-sided sums it may only count
+   evidence of malware; nothing from the two-sided sums. The share of split gain on the fixed sums (80%).
+2. **What no detector on these sums could keep.** Sums the attacker can set to any value carry nothing for any
+   unevadable detector (Proposition E in a sentence or two; the signature is the main case). Dropping the two-sided
+   sums costs 1.7 points at 1% FPR, 5.6 at 0.1%.
+3. **What rests on the fixed sums.** The fixed sums alone detect 79.7%; the one-sided sums add 7.5 points. The plain
+   statement of the condition above.
+4. **The per-operation prices.** The current text (imports 2.1, the three overwrites 1.4, rename 0.1, the caveat at
+   0.1% FPR), shortened. These were measured on the table before the entry write (`% PROTOCOL` comment); keep that
+   comment.
+5. The learner: one sentence at most. Whether the paper's monotone rows move to the uncapped training is the user's
+   decision (below); until then the text keeps Table 5's 85.7 / 68.1.
 
-## Next, in order
+Draft straight into the `.tex`, in one small block for the user's review, pilot numbers (the scale-up re-runs them).
+Then `make` and `make check` in `manuscript/`, and read the rendered text before showing it.
 
-1. `env/bin/ruff check src tests pipeline`, `env/bin/mypy src tests pipeline`; fix what they report.
-2. Run the step at pilot scale (command in `run.sh`'s header). Compare each number with the
-   prediction in the findings file's §4 and report misses as misses. Check the `violations` column is 0 for every
-   monotone model.
-3. Append the results to the findings file (a new section 7), add the step to `pipeline/README.md` and
-   `pipeline/4-detectors/README.md`, update `docs/status.md`.
-4. Draft the rewrite of *Where the cost lies* (`manuscript/_f_evaluation.tex`, skill `paper-prose`), in a small
-   block for the user's review. Pilot numbers; the scale-up re-runs them.
-5. Report to the user and ask about step 2.
+## Remaining steps, in order
+
+1. Optional, about 5 minutes: the `advanced` constraint method (`intermediate` showed no effect, so expect none).
+   The existing models are skipped:
+
+       OUT_ROOT=artifacts/experiments/cost_split COMPLETE=0 \
+       SUMS=artifacts/features/ember2024-sums-10-v2 DIR=artifacts/experiments/a_directions_derived_sums_loose \
+       REF=artifacts/models/gbdt/seed-0-s10-ref MONO=artifacts/models/gbdt/seed-0-s10-mfull-sums-loose \
+       bash pipeline/4-detectors/cost-split/run.sh
+
+   Add its row to the findings file's §8.
+2. Draft the rewrite from the plan above; log the user's reactions in `docs/writing-spec.md`.
+3. Ask the user: should the scale-up train the monotone detectors until the validation metric stops improving
+   (cap 3,000) instead of 500 rounds? It gains 1.5 points at 1% FPR here and changes Table 5's monotone rows; for a
+   fair comparison every detector would get the same rule (`4-detectors/train/run.sh`).
+4. Update `docs/status.md`; commit.
+5. **Step 2** (the converse of Corollary 1 as a theorem, findings §7) is the user's call and is the part worth a
+   Fable session; it starts with a literature check.

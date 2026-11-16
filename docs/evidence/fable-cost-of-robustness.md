@@ -543,3 +543,44 @@ next actions: `docs/resume-prompt-fable.md`.
 `feature_fraction` and `feature_fraction_bynode` are 1; the step sets both for the method comparison. At 100 rounds
 on the pilot store the three methods are within 0.1 points of accuracy (93.71, 93.78, 93.75). Too early to judge,
 but it does not yet support my prediction of +1 to +3 points for experiment 2.
+
+## 8. Step 1, experiments 1 to 3 at pilot scale (session 72, 2026-11-16)
+
+Step `pipeline/4-detectors/cost-split` (pilot command in its `run.sh`), on `ember2024-sums-10-v2`, the loose table,
+seed 0. Output: `artifacts/experiments/cost_split/4-detectors/cost-split/table.json`. TPR at 1% and 0.1% FPR on the
+test and the training split; "fixed" is the share of split gain on the 203 fixed sums; "violations" is the structural
+check of the constraints on the saved trees.
+
+| Model | test 1% | test 0.1% | train 1% | train 0.1% | trees | fixed | violations |
+|---|---|---|---|---|---|---|---|
+| unconstrained | 93.5 | 84.4 | 100.0 | 100.0 | 500 | 31.0% | |
+| two-sided sums dropped (experiment 1) | 91.8 | 78.8 | 99.9 | 99.3 | 499 | 45.3% | |
+| fixed sums only (experiment 3) | 79.7 | 57.7 | 88.4 | 70.7 | 500 | 100% | |
+| monotone, as in Table 5 (500 rounds) | 85.7 | 68.1 | 91.8 | 78.0 | 500 | 79.9% | 0 |
+| monotone, up to 3,000 rounds | 87.2 | 71.8 | 98.2 | 92.1 | 1,567 | 79.7% | 0 |
+| monotone, method `basic`, all features per split | 87.1 | 72.3 | 99.1 | 94.9 | 2,018 | 81.3% | 0 |
+| monotone, method `intermediate`, all features per split | 87.5 | 72.1 | 98.8 | 94.0 | 1,734 | 80.9% | 0 |
+
+Against the predictions of §4 (one seed; retraining alone moves these numbers by a few tenths at 1% FPR and more at
+0.1%):
+
+1. **Experiment 1: missed at 1% FPR, held at 0.1%.** Predicted 92.3 to 93.2 and 76 to 79; measured 91.8 and 78.8.
+   Dropping the 1,474 two-sided sums costs 1.7 points at 1% FPR, not the 0.3 to 1.2 predicted, and 5.6 at 0.1%.
+   (Before the entry write the same detector lost 0.2; the ten sums the entry write frees account for the rest.) It
+   remains an upper estimate of Proposition E's part, since it drops every two-sided sum, free or not.
+2. **Experiment 2: held at the low end, and the gain is the rounds, not the constraint method.** Predicted +1 to +3;
+   measured +1.5 at 1% FPR and +3.7 at 0.1% from letting training run until the validation metric stops improving
+   (1,567 rounds; the 500 cap was binding). `intermediate` against its control `basic` is +0.4 and -0.2, within
+   retraining noise. The grid over `num_leaves` and `min_data_in_leaf` was not run. The monotone detector now fits
+   its training files at 98 to 99% (1% FPR), so what remains is not underfitting. `advanced` was not run (command in
+   `docs/resume-prompt-fable.md`); given `intermediate`, I expect no effect.
+3. **Experiment 3: held.** Predicted 76 to 85; measured 79.7. An unconstrained detector on the 203 fixed sums alone,
+   unevadable with no constraint, detects 79.7% at 1% FPR; the 1,978 one-sided sums add 7.5 points to it (87.2).
+4. **The constraints hold structurally:** zero violations in every monotone model.
+
+**The split these numbers give** (1% FPR): 93.5 unconstrained; 1.7 points in the two-sided sums (no table-respecting
+detector may read them, and by Proposition E no unevadable detector may read the free ones among them); 1.5 points
+were the 500-round cap (learner); 4.3 to 4.6 points remain between the detector with the two-sided sums dropped
+(91.8) and the best monotone detector (87.2 to 87.5): benign evidence in sums the attacker can only raise, plus
+whatever a better learner would still find. At 0.1% FPR: 5.6, 3.7, and about 6.5. The scale-up should train the
+monotone detectors without the 500-round cap; that changes Table 5's monotone rows (85.7 to about 87.2 here).

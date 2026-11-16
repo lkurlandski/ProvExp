@@ -8,7 +8,7 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
 `docs/archive/status-log-2026-11-12-to-13-s43-54.md`, sessions 55-58 in `docs/archive/status-log-2026-11-13-s55-58.md`, sessions 59-60 in
 `docs/archive/status-log-2026-11-13-s59-60.md`, sessions 61-62 in `docs/archive/status-log-2026-11-14-s61-62.md`).
 
-## Current state (2026-11-15, through session 70)
+## Current state (2026-11-16, through session 72)
 
 - **Framework (§2-3):** rewritten; the user is reasonably satisfied. Open: the user's holistic read of Sound
   Directions after round 4 (finetuning only).
@@ -134,9 +134,13 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
 
 ## Waiting on the user
 
-- **The cost of robustness (session 71, Fable):** read `docs/evidence/fable-cost-of-robustness.md` and then resume with
-  `docs/resume-prompt-fable.md`: step 1 (experiments 1-3 and §5.4's rewrite) is decided and half built
-  (`pipeline/4-detectors/cost-split`, not yet run; ruff and mypy not yet run); extractor changes are rejected.
+- **The cost of robustness (sessions 71-72, Fable):** step 1's experiments are run at pilot scale and read
+  (`docs/evidence/fable-cost-of-robustness.md` §8): fixed sums alone 79.7% at 1% FPR; two-sided sums dropped 91.8
+  (prediction missed: 1.7 points lost, not 0.3-1.2); the monotone detector gains 1.5 points from training past the
+  500-round cap (87.2), nothing from the constraint method. Open: (1) the rewrite of §5.4's *Where the cost lies*
+  (paragraph plan approved "for now"; to be drafted in an Opus session from `docs/resume-prompt-fable.md`);
+  (2) whether the scale-up trains the monotone detectors without the 500-round cap (changes Table 5's rows);
+  (3) step 2 (the converse of Corollary 1 as a theorem), the user's call after reading the outcomes.
 - **Before cloning on the cluster:** `git push` (main is ahead of origin), then copy what a clone does not bring
   (`SETUP.md` §4: the split index files and the scale-up's file lists; `check.sh` stops without them).
 - **The head-node session** (`docs/resume-prompt.md`) needs the user at the cluster: `SETUP.md`, `check.sh`, the "TO
@@ -161,6 +165,11 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
 
 ## Session log
 
+- **2026-11-16 (session 72, Fable): cost of robustness, step 1's experiments.** ruff and mypy pass on session 71's
+  code; `4-detectors/cost-split` run at pilot scale (`basic`, `intermediate`; `advanced` not run) and added to the
+  pipeline READMEs. Results and the reading against the predictions: the findings file's §8. Zero structural
+  violations in every monotone model. The user approved the paragraph plan for *Where the cost lies* and moved the
+  drafting to Opus (Fable credits).
 - **2026-11-15 (session 71): repository readied for the head node.** `SETUP.md` §4 lists what a clone does not
   bring and how to copy it; `check.sh` checks for it; the audit stage's order states which list each step reads.
 - **2026-11-15 (session 70): the two open scale-up questions decided.** (1) The derived table's corpus. Read what
