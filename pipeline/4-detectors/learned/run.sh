@@ -26,6 +26,7 @@
 # (~25-30 GB); the GBDTs train meanwhile on the CPU, one at a time. A model whose predictions exist is skipped.
 # As a job array (the header's 0-8, tigris: one GH200 per node), task i trains only the i-th ERDALT model (erdalt, then
 # the eight erdalt-loo-<a>); task 0 also trains every GBDT. The first task to arrive merges the material, under a lock.
+# pipeline/submit.sh submits task 0 at the header's size and tasks 1-8 apart with 8 cores (ERDALT runs on the GPU).
 # Inputs: 4-detectors/material/shards (4-detectors/adversarial-training), 4-detectors/unconstrained (4-detectors/train),
 # 2-features/sums, 3-directions/loose.
 # Output: $OUT_ROOT/4-detectors/<name>/ (the registry's names); PV's selections in 4-detectors/pv-selection/.
