@@ -469,9 +469,9 @@ rebuild the derived table, confirm the nine operations, and decide how the four 
 $N_j$, the sums it falls with; $O_j$, the rest. Precisely: on the values of the sums that occur,
 $\rho_j(\mathbf{b}) \ge \rho_j(\mathbf{a})$ whenever $b_k \ge a_k$ on $P_j$, $b_k \le a_k$ on $N_j$, and $b_k = a_k$
 on $O_j$. The feature's direction is
-\[
+$$
   D_j = \bigcup_{k \in P_j} d_k \;\cup \bigcup_{k \in N_j} (-d_k) \;\cup \bigcup_{k \in O_j} (d_k \cup -d_k).
-\]
+$$
 
 **Claim.** If every sum $k$ that the feature reads changes with a sign in $d_k$, the feature changes with a sign in
 $D_j$.
@@ -632,10 +632,10 @@ instance's to establish, as covering is, and it implies covering. Kind by kind, 
 to items of several kinds (F.4, case b).
 
 **3. Rates.** For an additive sum $k$ and a kind $\tau$, the *rate of rise*
-\[
+$$
   u_{k\tau} = \sup \Big\{ \frac{\nu_\tau(c')_k - \nu_\tau(c)_k}{w_\tau(c \to c')} :
   (c \to c') \in \Delta_\tau \text{ raises } k \Big\},
-\]
+$$
 which is 0 if no change raises $k$ and $\infty$ if a change of size 0 does. The *rate of fall* $l_{k\tau}$ is the
 same with the changes that lower $k$. Let $u_k = \sum_\tau u_{k\tau}$ and $l_k = \sum_\tau l_{k\tau}$.
 *Why:* the rate is the most that one unit of budget can move the sum. The direction $d_k$ of Definition 9 is exactly
@@ -643,9 +643,9 @@ the record of which of $l_k$ and $u_k$ are not zero. So a direction is a pair of
 
 **4. Bounded sums (proved).** *Let $(\Delta, w)$ cover $\mathcal{M}$ within budget over a population $Z$ closed
 under $\mathcal{M}$. Then for every $z \in Z$, every $z' \in \mathcal{M}_B(z)$ and every additive sum $k$,*
-\[
+$$
   -\,l_k B \;\le\; s_k(z') - s_k(z) \;\le\; u_k B .
-\]
+$$
 *Proof.* Take one step $T_i$ of the sequence, of cost $\kappa_i$, from $z_{i-1}$ to $z_i$; both are in $Z$ by
 closure. Its delta is made of changes $C_i$ in $\Delta$, and by Proposition 1 (i) the sum changes by the total of
 $\nu_\tau(c')_k - \nu_\tau(c)_k$ over $C_i$. A change of kind $\tau$ that raises $k$ adds at most $u_{k\tau}$ times
@@ -689,9 +689,9 @@ $\mathcal{M}_B(z)$ lies in the interval $I_j(z, B)$ that the corner rule returns
 features, nonincreasing in another set, free in features that cannot move, and let it read no other feature. Let
 $\mathbf{x}^{c}(z, B)$ be the vector that puts every feature of the first set at the low end of its interval and
 every feature of the second set at the high end. Then
-\[
+$$
   h(\varphi(z')) \;\ge\; h\big(\mathbf{x}^{c}(z, B)\big) \qquad \text{for every } z' \in \mathcal{M}_B(z),
-\]
+$$
 because $\varphi(z')$ lies above the corner in every feature of the first set, below it in every feature of the
 second, and equals it elsewhere. So a file is certified at budget $B$ if the score **at one computed vector** is
 above the threshold. If $h$ is monotone with respect to the sign table, the worst corner is $\varphi(z)$ itself for
@@ -793,3 +793,80 @@ would not add them before that is known.
 3. The two repairs of F.4: wait for evidence that a feature needs them (my advice), or work them out now.
 4. May I read the stored derived table to class the two-sided sums (F.6)? It decides whether EMBER can show
    anything, and it is the cheapest way to kill or keep the application.
+
+## G. The user's review of part F, and the read of the derived table (session 76, 2026-11-16)
+
+### G.1 The user's answers and comments
+
+1. The statement of F.3 is what was meant by "bounds on size".
+2. The stored tables may be read.
+3. The simple premise (per edit) is preferred; the approach is to be discussed further.
+4. The two repairs "don't sound unreasonable"; to be discussed.
+
+Comments. F.3 points the right way but may be more complicated than is necessary or useful, and the framework
+section has little room left. **How the material enters the framework (woven through, or a subsection of its own)
+is the critical decision.** The counterexample hunt was confusing: does F.3 work as written, are the repairs the
+remedy, and do they touch the established framework? "Priced signature" and "covers within budget" are unclear, and
+the notation for the size of a change does not help. The size-0 case: is it possible at all; the language around
+infinity is sloppy. Of all contents an edit may write, only the one that moves the sum most counts (the user's
+question; yes). The bound on additive sums is concise, the pool part long-winded: shorter, and in the appendix. The
+display math did not render in the VS Code preview (fixed: `$$` in place of `\[ \]`).
+
+### G.2 Answers recorded
+
+- **F.3 is sound as written.** The three dead items of F.4 are simpler forms tried before F.3 was written, and F.3
+  already avoids each: sizes are counted kind by kind (case b), the corner rule asks for a readout monotone on the
+  whole box (case g), and the third (case f) was a shortcut that F.3 never uses.
+- **The repairs concern tightness, not soundness,** and belong to the new part only. Nothing established
+  (Definitions 1-10, Proposition 1, Theorem 1, Lemma 1, Corollary 1) would change.
+- **A share needs no repair if it is read as its count over the total,** with the total as a sum of its own (rate
+  1). The ratio row of Table 1 then gives $[c/(n+B),\ (c+B)/n]$: the low end is exact and the high end is loose
+  only by the factor $(n+B)/n$. Read by the normalized-bin row, the low corner raises every other count by $B$ and
+  gives $c/(n+255B)$ for a byte histogram.
+- **No infinity is needed.** A sum either *has a rate* (a number $u$ such that no change raises it by more than $u$
+  times its size) or has none and keeps its direction from Theorem 1. The bounded statement then sits on top of
+  Theorem 1 instead of containing it. A change that is not paid for by written elements does occur: one written
+  element that makes the parser find other items (cases h and i). Such sums have no rate.
+- **Simpler form proposed:** one definition (the size of a change, the cost of an edit, and the premise that an
+  edit's changes of each kind total at most its cost; no name "priced signature"), one definition of a rate, one
+  proposition for additive sums, one corollary for the detector. Pools keep their direction in the body.
+
+### G.3 The read: which two-sided columns could a budget bound?
+
+Read: `artifacts/experiments/a_directions_derived_sums_loose/directions_sums.csv` (the pilot's table, population
+variant, with the entry write) and `a_price_list/table.json` (pilot, before the entry write). The scale-up's
+training table and price list are on tigris and were not read. Classes by Claude's reading of each mechanism, not
+by a computation.
+
+Of 3,655 columns: 1,978 up, 203 fixed, 1,474 two-sided (dropped by the monotone detector).
+
+| Class | Columns | Count |
+|---|---|---|
+| No rate: one write or a few bytes move it across its range | header fields 25, rich header 33, signature 8, directory entries 8, start bytes 2, section buckets and overlay features 216, split section buckets 400 (a rename moves a section's whole contribution to another bucket) | 692 |
+| Not modeled | parser warnings | 88 |
+| Bounded by a budget | byte shares 256, whole-file string features 177, file entropy 1, four pattern counts over the body | 438 |
+| Bounded under appends and in-place writes, not when content shifts (the windows are tiled anew) | byte-entropy shares | 256 |
+
+Two facts decide what this is worth.
+
+1. **The bounded classes are already in the detector as counts.** The re-encoding over sums holds the same bytes,
+   windows and strings as raw counts over the body (683 columns, marked up, read by the monotone detector). What a
+   bound could add is their normalized forms: a byte's share, the mean string length, the entropy.
+2. **The paper's budget is large against the files.** It is 5% of the file or 512 KB, whichever is larger; every
+   file is below 4 MB, so the budget is always 512 KB, at least 12.8% of the file and more than the whole file for
+   about half of the pilot's files. A share $s$ of a file of $n$ bytes can then truly move to anywhere in
+   $[s\,n/(n+B),\ (s\,n+B)/(n+B)]$: for $B = n$, $[s/2,\ s/2 + 1/2]$. This is arithmetic, not looseness.
+
+The ceiling for all 1,474 columns together is the price list's "dropped only" row: 0.2 points at 1% false
+positives, 5.2 at 0.1%. The same list shows a swing of 3 points at 0.1% in the wrong direction between two variants
+(the threat model without appends detects less than with them), so the 5.2 is not far above retraining noise, and
+it is shared with the 692 columns that no budget bounds.
+
+**Result: at the paper's budget, bounds on size have nothing to show on EMBER.** They could show something only
+along a budget axis (certified detection at 1 KB, 4 KB, ... , 512 KB), which is a new experiment with a detector
+trained for it. Not proposed here; it is the user's decision whether that is wanted.
+
+**An observation for the design.** For in-place writes the binding limit is not the byte budget but where the
+operation can write (a name field, a slack range): a capacity per file, not a rate. A rate times 512 KB says nothing
+there. Decision 12's 96 printable counts under a rename may be of this kind (a guess: the files have not been
+identified and the table is on tigris).
