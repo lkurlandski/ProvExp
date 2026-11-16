@@ -1,7 +1,9 @@
 # Theory analysis: the proof audit, and the theory in brief
 
-Session 74 (2026-11-16), carrying out `docs/resume-prompt.md`. Parts A and B are stage 1. Parts C to E wait for the
-user. Nothing here is applied: every change to the paper is given as old and new text and waits for a decision.
+Session 74 (2026-11-16), carrying out `docs/resume-prompt.md`. Parts A and B are stage 1; part C opens stage 2.
+**Applied (user, session 74; commit d12ba89):** the three items of A.4 and proof notes 1-4 as placed in A.5. Not
+applied: A.4 item 2's optional second edit, and proof note 5, which is a change to a pipeline step and a sentence
+that depends on it.
 Numbers are from `manuscript/main.aux`: Definitions 1-10, Proposition 1 (*Exact side effects*), Theorem 1 (*Sound
 directions*), Corollary 1 (*Robustness*), Table 1 (the readout rules), Table 7 (the sign table, Appendix C).
 
@@ -199,7 +201,155 @@ hand. No earlier work derives feature directions from an extractor (`r6-prior-wo
 
 ## C. Candidate ideas
 
-After the user has read A and B.
+Six candidates. Each was first tried against Algorithm 1 for a counterexample; what died is reported as dead. "I
+believe" means I have a proof sketch of a few lines that I have not written out; nothing below is proved yet. None
+needs data. All six are elementary once the framework is in place, and I say so for each: their value would be in
+what they let the paper state, not in their difficulty.
+
+### C.1 Closure as a consequence, not a hypothesis
+
+- **In plain words.** Theorem 1 asks that the edits cannot take an input out of the population, and the paper checks
+  this on a corpus. If the population is *defined by features* (for instance "the number of items located past the
+  end is zero"), then closure follows from the table: an edit cannot leave the population if the table says it cannot
+  raise that count. The first half of Theorem 1, which needs no closure, proves it.
+- **Statement.** Let $\Delta$ cover $\mathcal{M}$ over $Z$, and let $Z$ be the inputs on which features
+  $m_1, \dots, m_r$ of the extractor are at most given thresholds. If the derived table gives no $m_i$ the sign $+$,
+  then $Z$ is closed under $\mathcal{M}$.
+- **Belief.** True; two lines from Theorem 1's first part.
+- **Algorithm 1.** $Z$ = inputs whose largest record has at most 100 elements. Under "add a token", *largest* is
+  fixed, so $Z$ is closed. Under "add a record", it is up, the lemma does not apply, and $Z$ is indeed not closed.
+- **What it changes.** Theorem 1 loses a hypothesis whenever the population is written this way; "closure is checked
+  rather than proven" (§4.4, register R2) becomes "closure follows from the signature". An operation that can leave
+  the population shows up in the table as one that can raise a membership count, which is what the escape audit of
+  R7 found by trial.
+- **New concepts.** None in §3 (a population given by features). In §4, the population's clauses written as counts.
+- **Against.** Covering is itself checked on a corpus, so the proof rests on a checked premise. Whether EMBER's
+  clauses can all be written as item counts, and whether signs suffice for each, is unknown until each clause is read
+  (reading code, no run). Where a clause compares two totals that rise together, signs will say "both".
+
+### C.2 One rule for all readouts, and Corollary 1 as the same rule
+
+- **In plain words.** Table 1 has six rules. They are one rule: a sum the formula rises with passes its direction
+  on, a sum it falls with passes its direction flipped, and any other sum passes it both ways. The ratio is the case
+  "rises with the numerator, falls with the denominator". A detector's score is one more formula over the features,
+  so Corollary 1 is this rule applied once more.
+- **Statement.** Let a readout be nondecreasing in the sums of $P$ and nonincreasing in those of $N$, for every value
+  of its other sums $O$, on the values that occur. Then its direction is
+  $\bigcup_{P} d_k \cup \bigcup_{N} (-d_k) \cup \bigcup_{O} (d_k \cup -d_k)$.
+- **Belief.** True; three lines. I checked that the ratio with its zero convention is monotone in this sense on its
+  domain ($b > 0$, or $a = b = 0$), so the three-case proof in Appendix C reduces to that check.
+- **Algorithm 1.** $x_1$ = size / records under "add a record": both sums are up, one in $P$ and one in $N$, so
+  both, as now. Every row of Table 1 gives the direction it gives today.
+- **What it changes.** Table 1 becomes one rule with the current rows as examples. Totals, differences, means,
+  the larger or smaller of several sums get tight directions with no new rule (a duration is a last time minus a first
+  time), which matters for a second domain more than for EMBER. Corollary 1 reads as the last step of the same
+  chain. A companion fact comes free: the table of a union of threat models is the union of their tables (C.6).
+- **New concepts.** None; it removes rows.
+- **Against.** Elementary order theory (monotone maps compose), close to what monotonicity type systems do. It
+  rewrites a table and a proof the user has accepted. No feature of EMBER changes direction, as far as I can tell
+  without checking each "any other" readout.
+
+### C.3 Item size: no monotone trade-off, but tables combine
+
+- **In plain words.** The hoped-for result, "finer items give tighter tables" (or the reverse), is **false both
+  ways**. What is true: every item map gives a sound table, tables from different item maps can be intersected, and
+  the work of Proposition 1 only shrinks as items get finer.
+- **Dead, with counterexamples.**
+  - *Finer can be tighter.* Move one element from one record to another. With records as items, one record shrinks
+    and one grows, so the total size gets "both". With elements as items, nothing is removed or added, so it is
+    fixed. The fine map sees that content is conserved across items.
+  - *Coarser can be tighter.* Let records always hold as many *a* as *b*, and let a sum count *a* minus *b*. With
+    records as items it is fixed. With elements as items, adding an *a* raises it and adding a *b* lowers it, so
+    "both". The coarse map sees an invariant inside an item.
+- **What survives (I believe; short proofs).**
+  1. The pointwise intersection of sound tables is sound, so two item maps of the same extractor can be used
+     together, and the result is at least as tight as either.
+  2. With one item for the whole input, the derived table is the least sound table by definition, and computing it
+     is the original problem. So the one-item limit is the specification, and every finer map is a sound
+     approximation of it that can be written down.
+  3. If a coarse item splits into fine items, the fine delta of an edit is contained in the split of its coarse
+     delta: Proposition 1 never does more work at the finer level.
+- **What it changes.** A paragraph in §3.1 or §7 that says precisely how item size matters, with the two examples.
+  It turns the fact that every mapping meets Definition 5 into a stated design choice.
+- **New concepts.** One definition (when one item map refines another).
+- **Against.** Standard in abstract interpretation (an analysis that treats parts independently loses what ties them
+  together; analyses combine by intersection). Point 2 is the "tightness" the mock lists as dropped. The EMBER
+  instance uses one item map, so nothing in §5 would use point 1.
+
+### C.4 What a defense learned from attacks cannot know
+
+- **In plain words.** A table learned from attacks records the directions in which the observed attacks moved each
+  feature. It is exact for those attacks and silent on the same operations with other content. From the same
+  observed attacks, the framework derives the table for every content, and the difference between the two tables
+  is the defense's blind spot, known before any new attack is run.
+- **Statement.** Let $A$ be a set of observed edits, $L_A$ the table of the signs they showed, and $\Delta_A$ the
+  signature that allows, for each kind, every change of the types the observed deltas contain, with any content.
+  Then $L_A \subseteq D_{\Delta_A}$ feature by feature; $L_A$ is sound for the edits $\Delta_A$ covers only if the
+  observations witness every sign of the least sound table; and the number of observations this needs grows with
+  the number of keys the content can take, while $\Delta_A$ needs each kind and type of change once.
+- **Belief.** True and close to definitional.
+- **Algorithm 1.** Observe "add the tokens *foo* and *bar*". $L_A$ has two token counts up and every other one
+  fixed. $\Delta_A$ ("add any token") has every token count up. An edit that adds *baz* raises a count that the
+  learned table trusts as fixed.
+- **What it changes.** §5.3 gets a statement that its measurements illustrate: the blind spot is content the attacks
+  did not use, and it is computable from the attacks themselves. It also explains why trying every operation once
+  (the trial detector of R18) is not enough.
+- **New concepts.** The learned table as an object of §3 (one definition).
+- **Against.** The most elementary of the six: without the extractor, what was not observed cannot be excluded. It
+  covers defenses that select features by observed signs; a learned linear layer (ERDALT) needs the same statement
+  for cones, which is the relational rule the user declined.
+
+### C.5 Side effects do not depend on the host, up to the readout
+
+- **In plain words.** Pierazzi et al. note that the same addition to two different objects can give different side
+  effects. Proposition 1 says exactly how far that goes: the same delta changes every additive total by the same
+  amount on every host. The host enters only through the current totals a formula reads, and, when an item is
+  removed from a maximum or minimum, through the items that remain.
+- **Statement.** If two inputs agree on the sums in the support of feature $j$, these are additive (or pools from
+  which the delta removes nothing), and the same delta applies to both, then feature $j$ takes the same value after
+  the edit on both.
+- **Belief.** True; it is Proposition 1 (i) and (iii) read for two inputs.
+- **Algorithm 1.** "Add a record of 7 elements" adds 7 to size and 1 to records on every input; $x_1$ then differs
+  between hosts only through their size and records.
+- **What it changes.** Three sentences after Proposition 1. It gives the proposition a consequence of its own that
+  answers a remark of the paper we build on, and it makes their estimate from a minimal host exact at the level of
+  totals. No timing claim.
+- **New concepts.** None.
+- **Against.** Small, and a reader may find it obvious. The delta itself can depend on the host (the fields an edit
+  must update), which the statement assumes away.
+
+### C.6 Threat models add up
+
+- **In plain words.** The table of two sets of operations together is the union of their tables. On a population
+  closed under both, no combination of operations moves a feature in a direction that no single operation moves it.
+  Without closure this fails, and that failure is exactly the escape of R7.
+- **Statement.** $D_{\Delta \cup \Delta'} = D_\Delta \cup D_{\Delta'}$ feature by feature; with Theorem 1, the same
+  holds for every sequence that mixes the two threat models on a population closed under both.
+- **Belief.** True; the direction of a sum is a union over changes, and each rule of Table 1 commutes with unions
+  (I checked each row).
+- **Algorithm 1.** "Add a record" and "add a token": the table of both is the union of the two.
+- **What it changes.** One or two sentences in §3.3. The per-operation reading of §5.4 (which operation costs which
+  features) rests on it, and it says in one line what closure buys.
+- **New concepts.** None.
+- **Against.** Trivial. It says the *table* is additive over operations; the cost in detection is not, and a reader
+  may hear more than is said.
+
+### Weighed and not proposed
+
+- **Bounds on size instead of signs.** Possible (each added element moves a count by one), but a use needs a
+  verifier for the detector, which is machinery of the kind the user declined with the relational rule.
+- **A locality lemma** (a write changes only the items that read a written position). It would turn part of
+  "covers" into a proof, but only given a sound record of what the parser reads, and the instance builds that record
+  by perturbation. The checked premise would move, not go away.
+- **A characterization of the class.** There is none to find: every function of the items is a readout of counts per
+  content, so the class is not delimited by its sums, only made useful by its readouts.
+
+### My view
+
+C.1 and C.2 change the theory itself: one removes a hypothesis, the other shortens the section and widens what it
+covers. C.3 answers the question about item size, mostly by saying what is false. C.4, C.5 and C.6 are remarks of a
+few sentences each. I would work out C.1 first, because its value depends on a reading of the population's clauses
+that could still kill it.
 
 ## D. Proofs or counterexamples for the chosen ideas
 

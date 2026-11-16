@@ -9,10 +9,10 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
 `docs/archive/status-log-2026-11-13-s59-60.md`, sessions 61-62 in `docs/archive/status-log-2026-11-14-s61-62.md`, session 63
 in `docs/archive/status-log-2026-11-14-s63.md`).
 
-## Current state (2026-11-16, through session 74, stage 1)
+## Current state (2026-11-16, through session 74)
 
 - **Framework (§2-3):** rewritten; the user is reasonably satisfied. Open: the user's holistic read of Sound
-  Directions after round 4 (finetuning only).
+  Directions after round 4 (finetuning only). Proofs audited in session 74 (correct; seven small corrections applied).
 - **§4:** drafted in the new structure (lead, 4.1-4.4, Appendix D "The EMBER Instance"), then revised in session 38
   after Claude's review with the `humanistic-paper-review` skill (all eight findings applied; 4.3 split into
   *Operations* and *Signature*; 4.4 reordered). Second, lightweight review in session 40 (three findings, all
@@ -135,14 +135,12 @@ in `docs/archive/status-log-2026-11-14-s63.md`).
 
 ## Waiting on the user
 
-- **The theory session, stage 1 done (session 74; `docs/evidence/theory-analysis.md`, parts A and B):** the user
-  reads the audit and the half page, then stage 2 starts (ideas to strengthen the theory, chosen by the user; parts
-  C-E). Still a findings file only: no manuscript, code or experiments.
-- **Eight small corrections to §3 and Appendix C, none applied**, each with old and new text; the user approves or
-  rejects each. Three are new (`theory-analysis.md` A.4): the ratio rule also needs $b \ge 0$; Table 7's caption is
-  wrong for a min pool under a replacement; §3.2's lead says the delta gives $z'$. Five are the proof notes
-  (`docs/evidence/proof-notes.md`), all confirmed; A.5 moves the text of notes 1 and 2 into Appendix C and advises
-  against widening Definition 4.
+- **The theory session, stage 2 (session 74; `docs/evidence/theory-analysis.md`, part C):** six candidate ideas,
+  each tried against Algorithm 1 first; the user chooses which to work out (proofs or counterexamples go to part D,
+  one idea at a time). Claude's suggestion: C.1 (closure derived from the table) first.
+- **Proof note 5** (`docs/evidence/proof-notes.md`): approved, not applied. Its first part calls
+  `monotone_violations` in `4-detectors/train` (a pipeline step); the user says whether Claude adds it, and the
+  sentence in §5.1 follows.
 - **Before cloning on the cluster:** `git push` (main is ahead of origin), then copy what a clone does not bring
   (`SETUP.md` §4: the split index files and the scale-up's file lists; `check.sh` stops without them).
 - **The head-node session** (`docs/resume-prompt-head-node.md`) needs the user at the cluster: `SETUP.md`, `check.sh`, the "TO
@@ -175,7 +173,11 @@ in `docs/archive/status-log-2026-11-14-s63.md`).
   (Gimenez et al.'s Proposition 1 and Severi et al.'s hashing remark checked in the PDFs); notes 1-2 fit in Appendix
   C. The patterns paragraph is correct because thrember counts strings with a match (`re.search`), not matches. The
   universality of Definition 5 was not reopened (settled in session 53b). Output: `docs/evidence/theory-analysis.md`
-  A and B; the oldest log entries (session 63) moved to the archive. Stage 2 waits for the user.
+  A and B; the oldest log entries (session 63) moved to the archive. **The user approved all eight corrections;**
+  seven applied to the manuscript (d12ba89: the three new ones, proof notes 1-4; `make check` clean), note 5 waits
+  (pipeline). **Stage 2 opened:** part C lists six candidates (closure as a consequence; one rule for all readouts;
+  item size, where monotonicity across refinements is false both ways; the blind spot of a learned table; side
+  effects independent of the host up to the readout; threat models add up) and what was weighed and not proposed.
 - **2026-11-16 (sessions 72-73, Fable): the cost of robustness, closed and reverted.** Step 1 (three pilot
   experiments, a rewrite of *Where the cost lies*) and step 2 (the converse of Corollary 1: false in general) gave no
   theoretical result. The user lost confidence in the work; on their instruction the manuscript paragraph, the

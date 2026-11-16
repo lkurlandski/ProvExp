@@ -1,8 +1,12 @@
 # Proof notes: five small corrections to §3.3 and Appendix C
 
 Written 2026-11-16 (session 73). Found while reading the proofs of Proposition 1 (*Exact side effects*), Theorem 1
-(*Sound directions*) and Corollary 1 (*Robustness*); numbers from `manuscript/main.aux`. **None is applied.** Each
-has the text as it stands, the proposed text, and the reason. Approve or reject each one separately.
+(*Sound directions*) and Corollary 1 (*Robustness*); numbers from `manuscript/main.aux`. Each has the text as it
+stood, the proposed text, and the reason.
+
+**Status (session 74, 2026-11-16):** all five approved by the user. Notes 1-4 are applied (commit d12ba89), notes 1
+and 2 with the text and place of `theory-analysis.md` A.5 (both in Appendix C; Definitions 4 and 7 unchanged). Note 5
+is not applied: it changes a pipeline step.
 
 I found no error in the proofs of Proposition 1 and Theorem 1. Notes 1 and 2 are gaps in what the statements cover,
 note 3 is an inaccurate comparison with prior work, notes 4 and 5 are things the paper relies on and does not say.
