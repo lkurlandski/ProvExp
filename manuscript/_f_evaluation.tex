@@ -40,7 +40,12 @@ We train gradient-boosted tree detectors~\cite{ke2017lightgbm} on a 10\% subsamp
 split, with one seed, and test them on a 10\% subsample of its test split: an unconstrained detector on all features,
 the baseline, and detectors with monotone constraints for the defenses built on them (those of
 Corollary~\ref{cor:fw:robustness} and of prior work). Edits and attacks run on 100 test files, half of them malware. Each detector's threshold is set to a 1\%
-false-positive rate on the benign test files.
+false-positive rate on the benign test files. Corollary~\ref{cor:fw:robustness} holds only for a score that satisfies
+the constraints, so we check them on the trained trees, and \synthetic{no tree of any monotone detector violates
+them}.
+% SYNTHETIC, TO VERIFY EXPERIMENTALLY (proof note 5; user, session 74): a prediction. provexp.models.gbdt.
+% monotone_violations found 0 violations on the pilot's monotone models, but no pipeline step calls it yet. Call it
+% once per monotone model in 4-detectors/train (count into metrics.json), then replace or reword at the scale-up.
 % NOTE (user, session 35): the 10% subsamples and the 100 files are the pilot; scale up first once the write-up is
 % finished (PLAN.md, step 5).
 
