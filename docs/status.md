@@ -14,8 +14,10 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
   submitted by `bash pipeline/submit.sh` (SLURM dependencies; `3-directions/gate` before the detectors). Done:
   featurization (sums, expert), the file store, the derived tables, population, item checks, escapes, deviations. The
   gate stopped the chain on the derived check (PLAN.md decision 12: the training table is a strict superset of the
-  evaluation set's, 361 cells, 98 directions); the user chose the training table. Running or queued: the catalogue
-  check, the hand table, the trial table, then the detectors, attacks and results.
+  evaluation set's, 361 cells, 98 directions); the user chose the training table. Also done: `train` (five detectors;
+  unconstrained test AUC 0.998) and `price-list`. The first resubmission failed on two bugs, both fixed (below); the
+  user resubmits the rest: the catalogue check, hand table and trial table, the trial detector, the defenses'
+  material, the learned defenses, iterated training, the attacks and the results.
 - **Framework (§2-3):** rewritten; the user is reasonably satisfied. Open: the user's holistic read of Sound
   Directions after round 4 (finetuning only).
 - **§4:** drafted in the new structure (lead, 4.1-4.4, Appendix D "The EMBER Instance"), then revised in session 38
@@ -177,7 +179,12 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
   `pipeline/submit.sh` chains every step; `3-directions/gate` stops the detectors unless the derived check is clean.
   Featurization took 2.3 h (72 cores), the file store 11 min (9.3 GB), the derived tables 54 min. The gate stopped
   on 361 differing population cells (PLAN.md decision 12); the user chose the training table and kept the gate.
-  Head-node rule (user): at most two CPUs there; everything heavier through `sbatch`.
+  Head-node rule (user): at most two CPUs there; everything heavier through `sbatch`. Two failures after the
+  resubmission, both fixed: the catalogue check crashed on files declaring fewer than 16 data directory entries (24 of
+  the 2,000 evaluation files, 13 without the certificate and debug entries; the entry writes in `edits.py` and
+  `escapes.py` now return None there; the catalogue check passes, exact and closed, on the 24 files; 2a42a34), and nine
+  of ten material tasks raced on secml's `~/secml-data` (384f0d7). `submit.sh` fixed to reuse a queued array by its
+  array ID and to take job names in `SKIP` (b4bdaf4).
 - **2026-11-16 (sessions 72-73, Fable): the cost of robustness, closed and reverted.** Step 1 (three pilot
   experiments, a rewrite of *Where the cost lies*) and step 2 (the converse of Corollary 1: false in general) gave no
   theoretical result. The user lost confidence in the work; on their instruction the manuscript paragraph, the

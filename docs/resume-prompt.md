@@ -17,11 +17,15 @@ number.
 
 - **The scale-up runs on tigris** (RIT's aarch64 cluster; set up in session 74: `SETUP.md`,
   `pipeline/systems/tigris.sh`). `bash pipeline/submit.sh` on the head node submits the whole chain with SLURM
-  dependencies (a failure cancels what depends on it; a step already queued is reused; `SKIP` leaves steps out;
+  dependencies (a failure cancels what depends on it; a step already queued is reused, so `scancel` what must be
+  rerun; `SKIP` leaves steps or job names out, e.g. `train` without `train-trial`;
   `DRY=1` prints the chain). Job IDs: `logs/submit-<date>.txt`. Logs: `logs/<name>_<id>.out` and
   `artifacts/scaleup/<stage>/logs/`.
 - **Done at scale:** featurization (sums, expert), the file store, the derived tables, population, item checks
-  (2,000 files, 0 failures), escapes, deviations.
+  (2,000 files, 0 failures), escapes, deviations, `train` (five detectors), `price-list`.
+- **Fixed in session 74 after the first failures:** files declaring fewer than 16 data directory entries (24 of the
+  2,000 evaluation files; the entry writes now return None, 2a42a34); secml's `~/secml-data` race between array
+  tasks (384f0d7); `submit.sh`'s reuse of a queued array (array ID, `%F`) and `SKIP` by job name (b4bdaf4).
 - **Decision 12 (PLAN.md, session 74):** the derived table from the 20,000 training files covers the evaluation set,
   but adds 98 two-sided directions the evaluation set does not show (96 `body_strings:printable_*` under a section
   rename, `has_relocs` and `has_dynamic_relocs` under the header-field overwrites). The user chose the training table

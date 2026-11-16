@@ -552,8 +552,10 @@ records of the §5 reviews, the table remake and the ERDALT check, is in
    features dropped by the monotone detectors). The union of both corpora is the training table. Decided: proceed
    with the training table (the protocol); the gate stays as it is (stops on any differing population cell). The
    files behind the new moves are not yet identified (worth knowing before §4.3.2 is rewritten).
-   **Next:** the rest of the chain, resubmitted without the gate (`SKIP=...` in `docs/status.md`); then read it
-   (step 5).
+   Also done at scale: `train` (the five detectors without the trial) and `price-list`. Two bugs found at scale and
+   fixed (session 74): files with fewer than 16 data directory entries (24 of the 2,000 evaluation files) crashed the
+   entry writes (catalogue check, escapes); secml's data directory raced across array tasks.
+   **Next:** the rest of the chain, resubmitted (`SKIP=...` in `docs/status.md`); then read it (step 5).
 4. **While the scale-up runs: §2's closing and contribution 4 against §5** (old step 2 (c)). §2 says §5 "uses them to
    attack malware detectors and to build robust ones"; in §5 the attack is an instrument. The mock's contribution 4 is
    stale ("four to six points", "learned constraints"). Writing only.

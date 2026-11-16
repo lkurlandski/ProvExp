@@ -31,8 +31,9 @@ estimates until the head-node session. The pilot's commands are in `run/` (a his
 **Submitting everything at once:** `bash pipeline/submit.sh` on the cluster's head node submits every step below as
 SLURM jobs chained by dependencies (a job starts only when the jobs it reads from finished without error; a failure
 cancels what depends on it). A gate after `3-directions/derived` (`3-directions/gate`) stops every detector unless the
-derived tables' check is clean (session 70's rule). After a fix, rerun it: finished work is skipped. The job IDs go to
-`logs/submit-<date>.txt`.
+derived tables' check is clean (session 70's rule). After a fix, rerun it: finished work is skipped, a job still
+queued is reused (`scancel` it first to rerun it), and `SKIP` leaves out steps or job names (finished steps that
+recompute, such as `3-directions/derived`). `DRY=1` prints the chain. The job IDs go to `logs/submit-<date>.txt`.
 
 The order (each step's inputs are the outputs above it):
 
