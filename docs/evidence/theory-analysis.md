@@ -1125,6 +1125,10 @@ with Claude's view:
 
 On EMBER at the paper's budget nothing can be shown (G.3, G.4).
 
+**The user's choice at the end of session 76:** option 2 (H.5 and the reading of §5.4) is to be thought through by
+the user with the next session, not settled here. The questions to settle are listed in
+`docs/resume-prompt-theory.md`, section 4.
+
 ### H.10 Traps, for whoever writes the text
 
 1. Sizes are totalled per kind. "One budget for all changes" is false (F.4, case b).

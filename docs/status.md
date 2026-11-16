@@ -157,13 +157,16 @@ in `docs/archive/status-log-2026-11-14-s63.md`, sessions 64-65 in `docs/archive/
   first adaptive and toolkit tasks finish, shorten their 24 h walltime limits from the measured times.
 - **`git push`** from the server that has the session-74 commits, then `git pull` on the other machine.
 - Number-free rebuttal text fixes (R4, R5, R15, R21) are step 4 (while the scale-up runs).
-- **Bounds on size: the mathematics is done; the user decides what enters the manuscript** (`theory-analysis.md`,
-  parts G and H; session 76; next theory session, on Opus: `docs/resume-prompt-theory.md`). Three options (H.9): a
-  discussion paragraph on what the directions discard; H.5 beside Corollary 1 (with directions alone, strict
-  monotonicity loses no guaranteed detection; it changes how §5.4's price is read, so it needs the user's
-  agreement); a subsection of its own for the bounds, only with a result behind it. On EMBER at the paper's budget
-  nothing can be shown (read from the pilot's table; the scale-up's price list and derived table are on tigris,
-  unread). Also open: a budget curve as a new experiment (the user's call), the literature check for H.5.
+- **Bounds on size: the mathematics is written; the user decides, with Opus, what enters the manuscript**
+  (`theory-analysis.md`, parts G and H; session 76; next theory session: `docs/resume-prompt-theory.md`).
+  **To think through first: H.5** (with directions alone, a strictly monotone score loses no guaranteed detection
+  against any relaxed one). Does it go beside Corollary 1, and may §5.4's price then be read as the price of the
+  guarantee under the table and not of the model class? It holds for what a score can represent, not for what
+  training finds, and it is close to the cost-of-robustness work closed in sessions 71-73; the literature has not
+  been searched for it. Then: a discussion paragraph on what the directions discard; a subsection for the bounds
+  only with a result behind it. On EMBER at the paper's budget nothing can be shown (read from the pilot's table;
+  the scale-up's price list and derived table are on tigris, unread). A budget curve would be a new experiment (the
+  user's call).
 - **The user's close read of Lemma 1 and the readout rule** (§3.3, Table 1, Appendix C), when convenient.
 - **Follow-ups from session 74, none started** (PLAN.md, next step 8):
   - instance-level work for Lemma 1: the population's clauses as counts over items, the derived table rebuilt, the
