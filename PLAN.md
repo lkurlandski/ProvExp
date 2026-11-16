@@ -585,6 +585,12 @@ records of the §5 reviews, the table remake and the ERDALT check, is in
    *Session 75:* the user chose bounds on size (the four small ideas are set aside). The mathematics note is
    `theory-analysis.md`, part F, waiting for the user's review and four decisions (F.7); no experiment and no
    manuscript text before that.
+   *Session 76:* reviewed by the user (the statement is the one meant; simpler is wanted); the read of the pilot's
+   derived table says that at the paper's budget nothing can be shown on EMBER; the user's idea of a relaxed
+   ("somewhat monotone") detector needs sizes and has little room on EMBER; the statements in final form, with
+   proofs, the closest work and the options for the manuscript, are part H. **Waiting: the user's decision on what
+   enters the manuscript** (H.9), worked out with Opus. First to think through: H.5 (strict monotonicity loses no
+   guaranteed detection under directions alone) and whether §5.4's price may be read through it.
    (c) *Follow-ups, not started:* the instance-level work for Lemma 1 (the population's clauses as counts over
    items, the derived table rebuilt, the nine in-place and append operations confirmed, the four layout-moving ones
    decided; only then §4.4's "closure is checked rather than proven" changes); `monotone_violations` called in

@@ -7,9 +7,9 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
 41-42 in `docs/archive/status-log-2026-11-12.md`, sessions 43-54 in
 `docs/archive/status-log-2026-11-12-to-13-s43-54.md`, sessions 55-58 in `docs/archive/status-log-2026-11-13-s55-58.md`, sessions 59-60 in
 `docs/archive/status-log-2026-11-13-s59-60.md`, sessions 61-62 in `docs/archive/status-log-2026-11-14-s61-62.md`, session 63
-in `docs/archive/status-log-2026-11-14-s63.md`).
+in `docs/archive/status-log-2026-11-14-s63.md`, sessions 64-65 in `docs/archive/status-log-2026-11-14-s64-65.md`).
 
-## Current state (2026-11-16, through session 75)
+## Current state (2026-11-16, through session 76)
 
 - **Scale-up running on tigris (session 74).** Setup done (`SETUP.md`, `pipeline/systems/tigris.sh`); everything is
   submitted by `bash pipeline/submit.sh` (SLURM dependencies; `3-directions/gate` before the detectors). Done:
@@ -167,13 +167,16 @@ in `docs/archive/status-log-2026-11-14-s63.md`).
   first adaptive and toolkit tasks finish, shorten their 24 h walltime limits from the measured times.
 - **`git push`** from the server that has the session-74 commits, then `git pull` on the other machine.
 - Number-free rebuttal text fixes (R4, R5, R15, R21) are step 4 (while the scale-up runs).
-- **Bounds on size: the mathematics note waits for the user's review** (`theory-analysis.md`, part F; session 75;
-  next theory session: `docs/resume-prompt-theory.md`).
-  The user chose this direction; the four small ideas (C.3-C.6) are set aside for the user or another session. The
-  note has the objects in order (cost, priced signature, rates, bounded sums, the corner rule, the worst corner), the
-  hunt on Algorithm 1, and four decisions (F.7): whether this is the statement meant; the premise per edit or per
-  sequence; the two repairs for the shared budget; and whether Claude may read the stored derived table to class the
-  two-sided sums as bounded or not, which decides whether EMBER can show anything. Nothing is in the manuscript.
+- **Bounds on size: the mathematics is written; the user decides, with Opus, what enters the manuscript**
+  (`theory-analysis.md`, parts G and H; session 76; next theory session: `docs/resume-prompt-theory.md`).
+  **To think through first: H.5** (with directions alone, a strictly monotone score loses no guaranteed detection
+  against any relaxed one). Does it go beside Corollary 1, and may §5.4's price then be read as the price of the
+  guarantee under the table and not of the model class? It holds for what a score can represent, not for what
+  training finds, and it is close to the cost-of-robustness work closed in sessions 71-73; the literature has not
+  been searched for it. Then: a discussion paragraph on what the directions discard; a subsection for the bounds
+  only with a result behind it. On EMBER at the paper's budget nothing can be shown (read from the pilot's table;
+  the scale-up's price list and derived table are on tigris, unread). A budget curve would be a new experiment (the
+  user's call).
 - **The user's close read of Lemma 1 and the readout rule** (§3.3, Table 1, Appendix C), when convenient.
 - **Follow-ups from session 74, none started** (PLAN.md, next step 8):
   - instance-level work for Lemma 1: the population's clauses as counts over items, the derived table rebuilt, the
@@ -205,6 +208,18 @@ in `docs/archive/status-log-2026-11-14-s63.md`).
 Two sessions were numbered 74: the head node on tigris, and the theory session. The two tracks have separate resume
 prompts: `docs/resume-prompt.md` (the scale-up) and `docs/resume-prompt-theory.md` (theory).
 
+- **2026-11-16 (session 76, Fable): bounds on size, reviewed, read against EMBER, and handed off.** The user
+  confirmed the statement, allowed the read, and found F.3 more complicated than needed. *The read* (pilot's derived
+  table, 3,655 columns, 1,474 two-sided): 692 have no bound (one write or a few bytes), 88 are warnings, 438 are
+  bounded by a budget and 256 partly, but the bounded ones are already read as counts and the budget is 512 KB on
+  every file; at the paper's budget nothing can be shown. *The user's idea,* a "somewhat monotone" detector: it
+  needs sizes (with directions alone the lowest reachable score is a strictly monotone score with the same
+  guaranteed detections and no more false positives; with a budget a relaxed score can truly win), and on EMBER the
+  costly constraints leave it a few tenths of a point at 1% (pilot price list). *Part H:* the statements in final
+  form with proofs (cost and size per kind, rates without infinity, bounded sums, the corner rule with its
+  conditions per readout, the certificate, H.5), the check on Algorithm 1, the two papers known from memory read
+  (per-feature ranges given by the analyst; PDFs in `papers/`), options and traps for the text. No experiment, no
+  manuscript change. Sessions 64-65 of this log moved to the archive.
 - **2026-11-16 (session 75, Fable): bounds on size, the mathematics note.** The user chose the direction and asked
   that the A' archive be read with caution. Part F of `theory-analysis.md`: A' re-read (its failure was an exact
   solver over a detector not built for a certificate, at a budget above the file's size on half the files; its
@@ -310,33 +325,3 @@ prompts: `docs/resume-prompt.md` (the scale-up) and `docs/resume-prompt-theory.m
   counts the string fix (411/2,000, 335 in the population; hypothesis ~400 held) and pefile's import error stop (26,
   more than the one case noted in session 65; most read what LIEF reads). Appendix D: *Changes to EMBER* and Table 8
   (635eb6b, plan and draft accepted as written; `array` package added for ragged columns). Docs 0bb9c55, f555d10.
-
-- **2026-11-14 (session 65): the extractor audit pass.** Read all of thrember's extractor and the pefile rules its
-  features rest on, against the three principles; counted each candidate on the 2,000 test files
-  (`docs/evidence/extractor-audit.md`; `artifacts/experiments/deviations/2000/`). Hypothesis (each candidate at most a
-  few percent, mostly incomplete files) held except the alignment bits (59 files) and the registry typo (93), both
-  definitions rather than parser heuristics. New candidates: directory off-by-one (13/2,000, fix recommended), entry
-  section on misaligned sections (3, keep), alignment bits as flags (59, keep), pefile's early stops in imports and
-  exports (~12, keep with the caps), string-pattern typos (keep as v3; upstream items 11-12 drafted). Work needing no
-  decision: `catalogue_checks.py --chained` (three sections then an append, item table carried forward; Appendix D's
-  combined edits), `hand-table/witness_counts.py` (Table 3's files per error, by population; reproduces 650, 151, 37
-  from pilot-era outputs), `1-audit/deviations` (the table's counts), `run.sh` for every audit step (smoke-tested on six
-  files: all checks pass, chains exact). Found and fixed: the escape audit aborted on a pilot file because pefile's
-  `write()` rewrote ~40 untouched bytes; the writes now patch their field (byte-identical on run 137's 900 writes).
-  My first measurement script hung on a quadratic regex of my own; rerun without it. Commits 4458d06, 1b12cbc,
-  8e8f8ca and the docs commit.
-
-- **2026-11-14 (session 64): the refactoring.** Proposed tree and deletions agreed (user: `run/` a record with tag
-  `pilot-final`; the A' code deleted, combined edits re-checked in the audit; MalConv kept; **every result in the paper
-  at the scale-up's scale, pilot only for tests and explorations**, so the hand table, witnesses and leave-one-out get
-  scale-up steps and trial-toolkit stays an exploration). Commits: b223fcd (49 old scripts, `explain/`, ablation,
-  trigger, attack modules and their tests removed; `provenance.py`/`boxmatrix.py` kept: the instrumentation uses them),
-  185212e (library code into `src/provexp/`: `attacks/`, `detectors.py`, `parallel.py`, `featuresets/ember2024/
-  {edits,escapes,population,directions,hand}.py`), 3a6fba2 (`pipeline/`, registry, `SETUP.md`, `build_env.sh`,
-  `check.sh` with a bit-exact featurization reference). **Checks:** run 146 (old code, run twice: agree but timing);
-  the library move and the pipeline both identical to it on 61 outputs (featurization, both direction tables, a
-  catalogue check, two extraction-scored adaptive searches, MAB-Malware) but timing and the manifests' commit; tests
-  1,572 passed. Noted for later: duplicate writers (`edits.add_section` vs `attacks.adaptive.add_section`; the
-  operation tuples in `adaptive` and `directions`) to merge under the identity check; featurize as a job array needs a
-  step that creates the store before the tasks; one stale path in a `features.py` comment, kept so the file's hash
-  matches the stored stores.
