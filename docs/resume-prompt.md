@@ -1,5 +1,10 @@
 # Resume: the theory track, continued (first, choose a direction with the user)
 
+**Update, session 75 (2026-11-16):** the direction is chosen: bounds on size (section 5). The mathematics note is
+`docs/evidence/theory-analysis.md`, part F, and waits for the user's review and the four decisions of F.7. Start
+there, not with section 1's choice; sections 2, 6, 8 and 9 still apply. The four small ideas (section 4) are set
+aside by the user.
+
 Written at the end of session 74 (2026-11-16). Self-contained; paste it into a fresh session or say "read
 `docs/resume-prompt.md` and carry it out". The head-node session for the scale-up is a separate track:
 `docs/resume-prompt-head-node.md`.

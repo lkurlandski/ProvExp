@@ -1,7 +1,8 @@
 # Theory analysis: the proof audit, and the theory in brief
 
 Session 74 (2026-11-16), carrying out `docs/archive/resume-prompt-2026-11-16-s74.md`. Parts A and B are stage 1
-(the audit), parts C to E stage 2 (ideas). **In the manuscript:** the three items of A.4 and proof notes 1-4
+(the audit), parts C to E stage 2 (ideas). Part F is session 75's note on bounds on size (not in the manuscript).
+**In the manuscript:** the three items of A.4 and proof notes 1-4
 (d12ba89); proof note 5's sentence in §5.1 as a prediction (4e67a96); C.1 as Lemma 1 (*Closure*) in §3.3 with its
 proof in Appendix C (f2f1fcf); C.2 as the readout rule, with Table 1, Definition 10 and Appendix C rewritten
 (c2fee51). The texts proposed in D.1 and D.2 were drafts; the manuscript has the final wording. The numbers below
@@ -558,3 +559,237 @@ accepted. No measured number changes.
     write moves across their whole range, and a guarantee per file and budget.
   - Start as Sound Directions round 4 did: a short note that settles the mathematics, a counterexample hunt on
     Algorithm 1, and only then any experiment.
+
+## F. Bounds on size instead of signs: the mathematics note (session 75, 2026-11-16)
+
+The user chose this direction ("the right direction") and asked that `docs/archive/a-prime/` be read with a heavy
+grain of salt. **Status: a note for the user's review. Nothing is in the manuscript, nothing was run, no code was
+changed.** "Proved" below means the proof is written in this part; "believed" means I have a short argument that is
+not written out; "unknown" means unknown.
+
+### F.1 The question in plain words
+
+The sign table says, for each feature, which way the edits of the threat model can move it. It does not tell an edit
+that adds one element from an edit that adds a million. If the attacker has a budget (at most $B$ elements written
+or added), more can be said: how far each sum, and then each feature, can move. A detector could then also read a
+feature that the sign table marks as moving both ways, or one it must now read in the direction the table dictates,
+as long as the budget cannot move that feature far.
+
+Three things are needed, in this order: a bound on each sum, a way to carry it through the readouts, and a statement
+about a detector that needs no solver. Each is below (F.3), then what broke on Algorithm 1 (F.4).
+
+### F.2 Direction A': what failed, read with caution, and what has changed
+
+**What A' was.** Per file, an exact solver searched over the attacker's choices (bytes appended, up to three
+sections added) for the lowest score of a given gradient-boosted detector, with every feature written as a function
+of those choices. A file was certified if the proven lowest score stayed above the threshold. Budget: 5% of the file
+or 512 KB, whichever is larger.
+
+**What the record shows.** Sound throughout (every one of 1,105 real edits inside the region). Certificates only for
+PV under appends, and elsewhere only up to 4 KB (13 files for the undefended detector, one seed).
+
+**Where I do not trust the record's reasoning.**
+
+1. *"The cause is the relaxation, not the solver."* This rests on one file's bound at 64 KB. The record never
+   separates "the bound is loose" from "the score really can be moved that far". When the solver's answers were
+   written as files, the one file whose clean score the record gives fell from 8.6 to 2.5, and the others scored
+   between 3.4 and 6.8 (threshold 1.1): true drops, though not evasions. And real attacks evade the same undefended
+   detector on 27 of the 47 files it detects. A detector that was not built for a certificate mostly cannot have
+   one, whatever the bound.
+2. *The budget.* On 26 of the 50 pilot files, 512 KB exceeds the file's own size. The encoding note itself predicted
+   that no certificate is possible there "whatever the encoding does". Part of A''s failure is this budget, not the
+   idea.
+3. *The structural reason in the graveyard* ("certifying a fragile detector answers a question a reviewer would not
+   ask") is about auditing detectors built by others. It says nothing about building a detector that uses sizes.
+
+**What carries over as fact.** (a) Items that overlap or merge are the hard kinds: the entropy windows share bytes,
+and strings merge at the boundary between old and new content. F.4 meets the same effect on Algorithm 1. (b) Some
+operations have a capacity per file (no free slot for a section header). (c) At a budget of 5%, a share of a
+histogram can truly rise from 0.4% to about 5% of the file; this is arithmetic, not looseness.
+
+**What has changed since.** (1) The detector can be built for the certificate. For a score that is monotone in every
+feature it reads, the certificate is one evaluation of the score (F.3, step 6): no solver, no relaxation, no files
+written from a solver's answer. This removes A''s whole machinery. (2) The signature and the readout rule exist, so
+the bound can be a statement that contains Theorem 1 instead of a tool beside it. (3) Detectors read sums, so a
+count is bounded directly and the entropy windows need not be modelled unless a detector reads them. What has not
+changed: the budget of the experiments is large, and F.6 says what that means.
+
+### F.3 The objects, in order
+
+Notation as in §3. "Element" is the unit of cost throughout; any other unit works the same way.
+
+**1. Cost and budget.** Each transformation $T \in \mathcal{M}$ applied to an input $z$ has a cost
+$\kappa(T, z) \ge 0$, for example the number of elements it writes or adds. The cost of a sequence is the total of
+its steps. $\mathcal{M}_B(z)$ is the set of inputs reached from $z$ by sequences of cost at most $B$.
+*Why:* without a price nothing limits size. With $B = \infty$ this is the threat model of Definition 7.
+
+**2. The size of a change, and covering within budget.** A *priced signature* is a signature $\Delta$ together with
+a size $w_\tau(c \to c') \ge 0$ for every change in $\Delta_\tau$: for an added item, say, the number of its
+elements. It *covers $\mathcal{M}$ within budget* over $Z$ if every $T \in \mathcal{M}$ applied to any $z \in Z$
+has a delta made of changes in $\Delta$ whose sizes, **kind by kind**, total at most $\kappa(T, z)$.
+*Why:* the budget is counted in elements and the sums move through items; this premise ties the two. It is the
+instance's to establish, as covering is, and it implies covering. Kind by kind, because one written element belongs
+to items of several kinds (F.4, case b).
+
+**3. Rates.** For an additive sum $k$ and a kind $\tau$, the *rate of rise*
+\[
+  u_{k\tau} = \sup \Big\{ \frac{\nu_\tau(c')_k - \nu_\tau(c)_k}{w_\tau(c \to c')} :
+  (c \to c') \in \Delta_\tau \text{ raises } k \Big\},
+\]
+which is 0 if no change raises $k$ and $\infty$ if a change of size 0 does. The *rate of fall* $l_{k\tau}$ is the
+same with the changes that lower $k$. Let $u_k = \sum_\tau u_{k\tau}$ and $l_k = \sum_\tau l_{k\tau}$.
+*Why:* the rate is the most that one unit of budget can move the sum. The direction $d_k$ of Definition 9 is exactly
+the record of which of $l_k$ and $u_k$ are not zero. So a direction is a pair of rates with their sizes forgotten.
+
+**4. Bounded sums (proved).** *Let $(\Delta, w)$ cover $\mathcal{M}$ within budget over a population $Z$ closed
+under $\mathcal{M}$. Then for every $z \in Z$, every $z' \in \mathcal{M}_B(z)$ and every additive sum $k$,*
+\[
+  -\,l_k B \;\le\; s_k(z') - s_k(z) \;\le\; u_k B .
+\]
+*Proof.* Take one step $T_i$ of the sequence, of cost $\kappa_i$, from $z_{i-1}$ to $z_i$; both are in $Z$ by
+closure. Its delta is made of changes $C_i$ in $\Delta$, and by Proposition 1 (i) the sum changes by the total of
+$\nu_\tau(c')_k - \nu_\tau(c)_k$ over $C_i$. A change of kind $\tau$ that raises $k$ adds at most $u_{k\tau}$ times
+its size; any other adds nothing positive. The sizes of the changes of kind $\tau$ total at most $\kappa_i$, so the
+step raises the sum by at most $\sum_\tau u_{k\tau} \kappa_i = u_k \kappa_i$. Adding the steps gives $u_k B$. The
+lower bound is the same argument. $\qed$
+
+*Pools (proved for the upper side of a max pool; the rest in words).* A max pool has no rate for additions, since an
+added item brings a value and not an increment. Let $a_k(x)$ be the largest contribution to $k$ of an item that can
+be added at size at most $x$, and $u_k$ the rate over replacements only. Then the pool ends at most at
+$m(B) = \max\big(s_k(z) + u_k B,\ \sup_{x \le B}\, [\,a_k(x) + u_k (B - x)\,]\big)$: by induction on the steps,
+every item of $z_i$ contributes at most $m$ of the cost spent so far (a kept item by induction, a replaced one
+because $m(K) + u_k \kappa \le m(K + \kappa)$, an added one because $a_k(\kappa) \le m(K + \kappa)$). The lower side
+is different in kind. When the item that holds the maximum is removed, what remains decides the new value, so no
+rate bounds the fall. The bound comes from the item table of $z$: if every change that removes or lowers an item
+has size at least $\omega > 0$, at most $B/\omega$ items are touched, and the pool stays at or above the
+contribution ranked just after them. **This is the first place inside the theory where the item table of
+Proposition 1 is needed and the sums alone do not do.**
+
+**5. From sums to features: the corner rule (proved).** Step 4 gives every sum in the support of feature $j$ an
+interval, and together a box. *If the readout rises with $P_j$ and falls with $N_j$ on the whole box, and no sum in
+$O_j$ can move, then the feature stays between the readout's values at two corners of the box:* the corner with the
+sums of $P_j$ at their lowest and those of $N_j$ at their highest, and the opposite corner. (Every point of the box
+lies between the two corners in the order that the readout respects.) If a sum in $O_j$ can move, the rule gives no
+bound, unless a bound is known for that form of readout.
+*Why:* this is the readout rule \eqref{eq:fw:readout-rule} with intervals in place of directions, and it reuses
+$P_j$, $N_j$, $O_j$ unchanged. It needs one thing more than the readout rule does: monotonicity on the whole box,
+not only on the values that occur (F.4, case g).
+
+**The statement these give (proved from 4 and 5).** *Under the premise of step 4, every feature of every input in
+$\mathcal{M}_B(z)$ lies in the interval $I_j(z, B)$ that the corner rule returns from the rates.* Three properties:
+- it is never wider than the sign table allows: if $(D_\Delta)_j$ lacks $+$, the interval's upper end is
+  $\varphi_j(z)$ itself, and likewise for $-$;
+- at $B = \infty$ it says what the sign table says: each end of an interval is then either the present value or as
+  far as the readout can go, which is one of the four directions. Theorem 1 is this statement with an unlimited
+  budget;
+- it depends on the input, through the sums of $z$ (a ratio's interval depends on its denominator) and, for pools,
+  through its item table. The sign table depends on no input.
+
+**6. From features to a detector: the worst corner (proved).** Let the score $h$ be nondecreasing in a set of
+features, nonincreasing in another set, free in features that cannot move, and let it read no other feature. Let
+$\mathbf{x}^{c}(z, B)$ be the vector that puts every feature of the first set at the low end of its interval and
+every feature of the second set at the high end. Then
+\[
+  h(\varphi(z')) \;\ge\; h\big(\mathbf{x}^{c}(z, B)\big) \qquad \text{for every } z' \in \mathcal{M}_B(z),
+\]
+because $\varphi(z')$ lies above the corner in every feature of the first set, below it in every feature of the
+second, and equals it elsewhere. So a file is certified at budget $B$ if the score **at one computed vector** is
+above the threshold. If $h$ is monotone with respect to the sign table, the worst corner is $\varphi(z)$ itself for
+every $B$: that is Corollary 1. A detector may now be monotone in a feature the table marks both, or monotone
+against the table's direction, and pays for it by the width of that feature's interval. The guarantee is per file
+and per budget, as certified accuracy at a radius is in the literature on robust classifiers.
+
+### F.4 The counterexample hunt on Algorithm 1
+
+Cost: the number of elements added or written. Operations: add a token, add a record, extend a record, and, to
+break things, remove a record and overwrite an element.
+
+| | Case | Result |
+|---|---|---|
+| a | A value count, any addition | Rate 1. $[c_v, c_v + B]$, exact for one count. All counts together: the box lets each rise by $B$; truly they rise by $B$ in total. **Loose.** |
+| b | A token count; the token's elements are also element items | Adding token $q$ has size $\lvert q \rvert$, so the count rises by at most $B / \lvert q \rvert$: long keys cost more. The same $\lvert q \rvert$ elements are $\lvert q \rvert$ changes of kind *element*. Kind by kind the premise holds; **with one budget shared by all kinds it fails** ($2\lvert q \rvert > \lvert q \rvert$). Dead: the shared budget. |
+| c | $x_1$ = size / records | Under "extend": $[x_1, (\text{size}+B)/\text{records}]$, exact. Under "add a record": the box gives a low end of $\text{size}/(\text{records}+B)$; the true low end is $(\text{size}+B)/(\text{records}+B)$. Sound, **loose**: the corner adds records without their elements. |
+| d | $x_2$ = largest | At most $\text{largest} + B$. Exact. |
+| e | $x_3$ = entropy | All sums in $O_j$: **no bound** from the corner rule, though the entropy plainly cannot move far under a small budget. |
+| f | $x_4$ = distinct tokens | The corner turns on every key at once: the bound is the size of the vocabulary. The truth is $x_4 + B$. **Useless**, for the same reason as (a). |
+| g | $x_1$ with "remove a record" | The corner has records at 0 and size unchanged, where the readout's convention reads 0. Evaluated there, the "upper bound" is 0, below the present value. **Unsound unless the readout is monotone on the whole box** (read $a/0$ as $+\infty$ for $a > 0$). This is why step 5 asks for it. |
+| h | One added element completes a record whose other elements were already in the input | The change adds a long item for a cost of 1. Either its size is 1 and the rate is infinite, or its size is its length and the premise fails. **Sound either way, but empty** for a kind that old elements can complete, unless such changes are counted apart (an edit makes at most a fixed number of them). This is what A' called boundary effects. |
+| i | Overwrite one element that locates items (a length field) | One element rewrites a whole record: as (h), the rate is infinite and the interval is the direction. This is "a header field covers its whole range with one write", and the theory gives the right answer for it: **nothing beyond the sign**. |
+| j | Remove the largest record | The fall of the maximum has no rate; the bound is per file, from the item table (step 4). |
+| k | A score that falls with two value counts | The worst corner raises both by $B$; the attacker has $B$ in total. **Loose across features**, as (a) is across sums. A score that rises with shares does not suffer from it: with a share read as its count over the total, the corner puts every share at $c_i/(n+B)$, and adding $B$ elements of one value does lower all the other shares to exactly that. |
+
+**Dead on arrival, with the case that killed each:** one budget shared across kinds (b); the corner rule under the
+readout rule's own hypothesis (g); "the worst case is the whole budget spent on one kind of change" as a general
+rule (f: the most distinct tokens come from spreading the budget).
+
+**The one systematic loss: the sums share one budget and the box forgets it** (a, c, f, k). Two repairs are sound
+and elementary; I believe both and have written out neither.
+- *Total movement.* The budget bounds the total of the movements of all sums in a support, not only each one. A
+  readout that adds up one term per sum (a distinct count) then moves by at most that total: $x_4 \le x_4 + B$.
+- *Pure edits.* For a ratio or a share, the extremes over everything the budget allows are reached by spending the
+  whole budget on one kind of change (a ratio of totals is largest or smallest at a vertex of the set of affordable
+  mixtures). This gives (c) exactly, and a share's interval exactly: $[c_i/(n+B),\ (c_i+B)/(n+B)]$. For the entropy
+  it gives the exact low end (add $B$ copies of one value), not the high end.
+
+Whether either repair is worth its definitions depends on which features an instance needs them for. Undecided; I
+would not add them before that is known.
+
+### F.5 What is elementary, and the closest work
+
+- **Intervals after signs is the textbook order of abstract interpretation.** The bound on sums is a Lipschitz
+  argument, the corner rule is interval arithmetic for monotone functions, the worst corner is the fact that a
+  monotone function on a box is smallest at a corner, and the pure-edit repair is a standard fact about ratios on
+  polytopes. None of this is new mathematics. What would be ours is what was ours for signs: the priced signature
+  (a budget in elements turned into bounds per kind of item), and the chain from a budget in the problem space to a
+  certificate with one evaluation.
+- **Closest work on the task, checked in `papers/`:** Chen et al. (CCS 2021, `chen2021learning.pdf`) train security
+  classifiers with global robustness properties that include monotonicity and a *small neighborhood* property
+  ($d(x, x') \le \epsilon \Rightarrow \lvert F(x) - F(x') \rvert \le c \cdot \epsilon$, with $d$ the largest change
+  of a feature "normalized by the standard deviation of that input feature"). The properties come from "security
+  domain knowledge"; the neighborhood is chosen, not derived. That is the same gap that Incer et al. and Gimenez et
+  al. leave for directions. **Not checked, from memory only:** Chen et al., *Cost-Aware Robust Tree Ensembles for
+  Security Applications* (USENIX Security 2021), who give each feature a hand-assigned box by its cost of change
+  and train trees against it; and Vos and Verwer's robust trees for user-specified per-feature ranges. Both must be
+  read before any claim; neither PDF is in `papers/`.
+
+### F.6 What is proved, what is believed, what is unknown
+
+- **Proved (in F.3):** the bound on additive sums; the upper side of a max pool; the corner rule; that the intervals
+  contain Theorem 1's table as the case of an unlimited budget; the worst corner, with Corollary 1 as a special
+  case.
+- **Believed:** the lower side of a pool from the item table; the two repairs of F.4.
+- **The premise carries the difficulty, more than covering does.** "Covers within budget" must hold for every edit,
+  and cases (h) and (i) show how it degrades: where an element can complete or relocate an item, the rate is
+  infinite and the theory returns the sign. That is correct behaviour, and it means the bounds have content only
+  for kinds whose items are made of the attacker's own elements.
+- **The payoff on EMBER is unknown, and the paper's own numbers point to a small one at the present budget.** From
+  §5.4's price list (pilot, one seed): the detector on the sums loses 7.8 points at 1% false positives. The items
+  the paper reports: 3.9 from the entry write (a copied signature: one write), and, measured before the entry write
+  was added, 2.1 from import addition, 1.4 from the header overwrites, and 0.2 from dropping the two-sided features.
+  A copied signature and a header field are case (i). An import bucket is a count; I expect its useful thresholds
+  to lie at a few imports (not checked), and an import costs a few dozen bytes, so any byte budget covers them.
+  What sizes could give back at 1% is therefore the 0.2 points, plus
+  whatever a count's constraint costs on the byte and string totals (unmeasured; leaving out append moved detection
+  by at most 0.4). At 0.1% false positives the two-sided features are worth 5.2 points, the one item the paper says
+  stands out above retraining noise. Whether sizes can recover part of it depends on *why* those features are
+  two-sided: through a rename or a header write (infinite rate, nothing to gain) or through bounded in-place writes
+  and normalization (finite rate).
+- **What would settle it, and it is data, so I stop here:** reading the stored derived table of the sums for the
+  two-sided sums, operation by operation, and classing each as infinite rate or finite. No run, no training. Only
+  if a meaningful share is finite would a detector be worth training.
+- **Where the theory has value whatever EMBER says.** (1) It states what the sign table discards and when nothing
+  is lost: where one element can flip a feature, every positive budget is unlimited, and the direction is the whole
+  truth. That is a reason, inside the theory, for why directions are the right object for structural features.
+  (2) A domain whose budgets are small against its totals (counts and means over traffic, a limit on added
+  components) would use the intervals directly. (3) The item table gets a role in the theory (pools).
+
+### F.7 Decisions for the user
+
+1. Is the note's core (steps 1-6) the statement you had in mind, or is something else meant by "bounds on size"?
+2. The premise is stated per edit and kind by kind, which keeps the result parallel to Theorem 1 but leaves the
+   boundary effects of case (h) as an infinite rate. The alternative is to state it for the net change of a whole
+   sequence, with an allowance per kind for boundary items: tighter, one more constant per kind, and the instance
+   must then argue about sequences. I would keep the simple form until an instance needs the other.
+3. The two repairs of F.4: wait for evidence that a feature needs them (my advice), or work them out now.
+4. May I read the stored derived table to class the two-sided sums (F.6)? It decides whether EMBER can show
+   anything, and it is the cheapest way to kill or keep the application.

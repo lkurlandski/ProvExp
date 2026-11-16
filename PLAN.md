@@ -566,6 +566,9 @@ records of the §5 reviews, the table remake and the ERDALT check, is in
    effects and the host (a consequence of Proposition 1), threat models add up (behind §5.4's per-operation
    reading). **Bounds on size instead of signs is open and wanted by the user** ("an incredibly meaningful
    direction"); direction A' (graveyard, 2026-11-02) predates the present framework and does not settle it.
+   *Session 75:* the user chose bounds on size (the four small ideas are set aside). The mathematics note is
+   `theory-analysis.md`, part F, waiting for the user's review and four decisions (F.7); no experiment and no
+   manuscript text before that.
    (c) *Follow-ups, not started:* the instance-level work for Lemma 1 (the population's clauses as counts over
    items, the derived table rebuilt, the nine in-place and append operations confirmed, the four layout-moving ones
    decided; only then §4.4's "closure is checked rather than proven" changes); `monotone_violations` called in

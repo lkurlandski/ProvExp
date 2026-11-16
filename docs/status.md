@@ -139,10 +139,12 @@ in `docs/archive/status-log-2026-11-14-s63.md`).
 
 ## Waiting on the user
 
-- **The theory track continues (`docs/resume-prompt.md`):** the next session's first business is to choose a
-  direction with the user: one of the remaining ideas (item size; the blind spot of a learned table; side effects and
-  the host; threat models add up: `theory-analysis.md` C.3-C.6), bounds on size instead of signs (the user: "an
-  incredibly meaningful direction", not abandoned; starting points in part E), or a new one from brainstorming.
+- **Bounds on size: the mathematics note waits for the user's review** (`theory-analysis.md`, part F; session 75).
+  The user chose this direction; the four small ideas (C.3-C.6) are set aside for the user or another session. The
+  note has the objects in order (cost, priced signature, rates, bounded sums, the corner rule, the worst corner), the
+  hunt on Algorithm 1, and four decisions (F.7): whether this is the statement meant; the premise per edit or per
+  sequence; the two repairs for the shared budget; and whether Claude may read the stored derived table to class the
+  two-sided sums as bounded or not, which decides whether EMBER can show anything. Nothing is in the manuscript.
 - **The user's close read of Lemma 1 and the readout rule** (§3.3, Table 1, Appendix C), when convenient.
 - **Follow-ups from session 74, none started** (PLAN.md, next step 8):
   - instance-level work for Lemma 1: the population's clauses as counts over items, the derived table rebuilt, the
@@ -177,6 +179,17 @@ in `docs/archive/status-log-2026-11-14-s63.md`).
 
 ## Session log
 
+- **2026-11-16 (session 75, Fable): bounds on size, the mathematics note.** The user chose the direction and asked
+  that the A' archive be read with caution. Part F of `theory-analysis.md`: A' re-read (its failure was an exact
+  solver over a detector not built for a certificate, at a budget above the file's size on half the files; its
+  "too loose" was never separated from "truly movable"); the statement (a priced signature that covers within
+  budget gives each additive sum an interval from its rates, the readout rule carries a box to two corners, and a
+  score monotone in what it reads is certified by one evaluation at the worst corner; Theorem 1 and Corollary 1 are
+  the case of an unlimited budget), proved in the note; the hunt on Algorithm 1 (dead: one budget shared across
+  kinds, the corner rule on the values that occur only, "the worst case is a pure edit" in general; the one
+  systematic loss: the sums share a budget and the box forgets it). Said plainly: all of it is elementary
+  (intervals after signs), and the paper's price list points to a small payoff on EMBER at the present byte budget
+  (one write or a few bytes flip the features whose constraints cost most). No experiment, no manuscript change.
 - **2026-11-16 (session 74, Fable): the theory session.** *Stage 1, the proof audit:* Proposition 1, Theorem 1 and
   Corollary 1 correct with complete proofs. Three small new corrections (the ratio rule lost $b \ge 0$ in session
   53b's fix; Table 7's caption wrong for a min pool under a replacement; §3.2's lead) and proof notes 1-4 applied
