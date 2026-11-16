@@ -560,6 +560,7 @@ check of the constraints on the saved trees.
 | monotone, up to 3,000 rounds | 87.2 | 71.8 | 98.2 | 92.1 | 1,567 | 79.7% | 0 |
 | monotone, method `basic`, all features per split | 87.1 | 72.3 | 99.1 | 94.9 | 2,018 | 81.3% | 0 |
 | monotone, method `intermediate`, all features per split | 87.5 | 72.1 | 98.8 | 94.0 | 1,734 | 80.9% | 0 |
+| monotone, method `advanced`, all features per split | 87.8 | 71.5 | 99.5 | 97.0 | 2,313 | 80.9% | 0 |
 
 Against the predictions of §4 (one seed; retraining alone moves these numbers by a few tenths at 1% FPR and more at
 0.1%):
@@ -569,11 +570,13 @@ Against the predictions of §4 (one seed; retraining alone moves these numbers b
    (Before the entry write the same detector lost 0.2; the ten sums the entry write frees account for the rest.) It
    remains an upper estimate of Proposition E's part, since it drops every two-sided sum, free or not.
 2. **Experiment 2: held at the low end, and the gain is the rounds, not the constraint method.** Predicted +1 to +3;
-   measured +1.5 at 1% FPR and +3.7 at 0.1% from letting training run until the validation metric stops improving
-   (1,567 rounds; the 500 cap was binding). `intermediate` against its control `basic` is +0.4 and -0.2, within
+   measured +1.5 at 1% FPR and +3.7 at 0.1% from training up to 3,000 rounds and keeping the round with the best
+   validation AUC (1,567; the 500 cap was binding: `train_gbdt` has no early stopping, it trains every round and keeps
+   the best). The unconstrained, drop-only and fixed-only detectors also peak at the 500 cap (best iteration 500, 499,
+   500), so they too may gain from more rounds. `intermediate` against its control `basic` is +0.4 and -0.2, within
    retraining noise. The grid over `num_leaves` and `min_data_in_leaf` was not run. The monotone detector now fits
-   its training files at 98 to 99% (1% FPR), so what remains is not underfitting. `advanced` was not run (command in
-   `docs/resume-prompt-fable.md`); given `intermediate`, I expect no effect.
+   its training files at 98 to 99% (1% FPR), so what remains is not underfitting. `advanced` (run in session 73, predicted no effect): +0.7 and -0.8 against `basic`, within
+   retraining noise, as predicted.
 3. **Experiment 3: held.** Predicted 76 to 85; measured 79.7. An unconstrained detector on the 203 fixed sums alone,
    unevadable with no constraint, detects 79.7% at 1% FPR; the 1,978 one-sided sums add 7.5 points to it (87.2).
 4. **The constraints hold structurally:** zero violations in every monotone model.
@@ -584,3 +587,24 @@ were the 500-round cap (learner); 4.3 to 4.6 points remain between the detector 
 (91.8) and the best monotone detector (87.2 to 87.5): benign evidence in sums the attacker can only raise, plus
 whatever a better learner would still find. At 0.1% FPR: 5.6, 3.7, and about 6.5. The scale-up should train the
 monotone detectors without the 500-round cap; that changes Table 5's monotone rows (85.7 to about 87.2 here).
+
+### 8.1 Correction: every detector under the same cap (session 72, later the same day)
+
+In §8 I read the monotone detector's +1.5 points as "1.5 points of the cost were the 500-round cap". That compared a
+monotone detector at up to 3,000 rounds with an unconstrained one at 500. Like for like
+(`table-rounds.json` beside `table.json`; hypothesis before the run: the unconstrained detector gains under 0.5 at 1%
+FPR, **missed**, it gains 0.6; "the gap shrinks by about a point" held, 0.9):
+
+| Detector | 500 cap, 1% / 0.1% | 3,000 cap, 1% / 0.1% | best round | validation AUC at 500 / 1,000 / 2,000 / 3,000 |
+|---|---|---|---|---|
+| unconstrained | 93.5 / 84.4 | 94.1 / 85.1 | 2,836 | .99601 / .99625 / .99638 / .99642 |
+| two-sided sums dropped | 91.8 / 78.8 | 92.9 / 75.0 | 2,810 | .99475 / .99508 / .99527 / .99533 |
+| fixed sums only | 79.7 / 57.7 | 82.1 / 59.8 | 1,978 | .98313 / .98428 / .98481 / .98466 |
+| monotone | 85.7 / 68.1 | 87.2 / 71.8 | 1,567 | .98880 / .98970 / .99004 / .98997 |
+
+Every detector gains from more rounds, the constrained and the restricted ones more than the unconstrained one. The
+cost of robustness is 7.8 / 16.3 points under the 500 cap and 6.9 / 13.3 under the 3,000 cap. The split of §8 under
+one cap of 3,000 (1% FPR): 1.2 in the two-sided sums, 5.7 between the detector with them dropped and the monotone one;
+the fixed sums alone 82.1, the one-sided sums adding 5.1. No reading of §8 changes in kind; each number moves by up to
+about a point. One seed, a 10% training subsample; the 0.1% column moves by several points from retraining alone (the
+dropped detector falls 3.8 there with more rounds).
