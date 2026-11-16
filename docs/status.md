@@ -147,12 +147,16 @@ in `docs/archive/status-log-2026-11-14-s63.md`).
 
 ## Waiting on the user
 
-- **Resubmit the rest of the scale-up** (session 74), on the tigris head node from the repository root (the finished
-  steps and the gate left out; the queued catalogue check, hand table and trial table are reused):
-  `SKIP="3-directions/derived 3-directions/gate 1-audit/population 1-audit/item-checks 1-audit/escapes 1-audit/deviations train 4-detectors/price-list" bash pipeline/submit.sh`
-  (after `scancel` of any pending job it would otherwise reuse). First resubmission failed on two bugs, both fixed
-  (2a42a34: files with fewer than 16 directory entries; 384f0d7: secml's `~/secml-data` race); `train` and
-  `price-list` finished.
+- **Resubmit the rest of the scale-up** (session 76), on the tigris head node from the repository root (everything
+  finished left out; the queue is empty):
+  `SKIP="3-directions/derived 3-directions/gate 1-audit/population 1-audit/item-checks 1-audit/escapes 1-audit/deviations 1-audit/catalogue-checks 1-audit/hand-table 3-directions/trial train train-trial 4-detectors/adversarial-training 4-detectors/price-list" bash pipeline/submit.sh`
+  Session 76: the defenses' material (job 1018609) is complete, all ten shards (79113 valid of 80,000 attack runs) despite SLURM's
+  OUT_OF_MEMORY: 224 of 80,000 runs (all `gamma_sections`/`gamma_api`, on 117 files; not large ones, median 131 KB;
+  87 of them also break other secml attacks) lost to OOM-killed workers and counted as invalid; list in
+  `artifacts/scaleup/4-detectors/material/lost.txt`. Accepted as attack failures (the pilot's run 133 had one too);
+  the cause (a runaway allocation in GAMMA on malformed headers) is a hypothesis, not checked. The toolkit on the
+  evaluation set will meet the same files: lost runs count as not evaded (`LostTask` in its rows), each costing a
+  45-min stall at the task's end. Earlier: 2a42a34, 384f0d7 (session 74's two fixes).
   Report failures as they come (logs in `logs/<name>_<id>.out` and `artifacts/scaleup/<stage>/logs/`). Once the
   first adaptive and toolkit tasks finish, shorten their 24 h walltime limits from the measured times.
 - **`git push`** from the server that has the session-74 commits, then `git pull` on the other machine.
