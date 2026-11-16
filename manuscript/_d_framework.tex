@@ -383,40 +383,52 @@ that key is added, falls when one is removed, and stays when an item is replaced
 \Cref{tab:fw:signs} in Appendix~\ref{sec:fw:proofs} lists these forms.
 
 \begin{table}[t]
-  \caption{Direction rules of the readout forms of \Cref{sec:fw:model}: the direction of a feature from the
-  directions $d$ of the sums it reads. A presence bit $[s_k > 0]$ is monotone.
-  A ratio reads 0 when $b = 0$; it requires $a \ge 0$ and $b \ge 0$, and $a = 0$ whenever $b = 0$.}
+  \caption{The readout forms of \Cref{sec:fw:model}, with the sums each rises with and falls with; the readout rule
+  \eqref{eq:fw:readout-rule} turns them into the feature's direction. A presence bit $[s_k > 0]$ is monotone.
+  A ratio reads 0 when $b = 0$; it requires $a \ge 0$ and $b \ge 0$, and $a = 0$ whenever $b = 0$. The bins $c_l$ of
+  a histogram are counts.}
   \label{tab:fw:readouts}
   \small
-  \begin{tabular}{@{}llc@{}}
+  \begin{tabular}{@{}llll@{}}
     \toprule
-    Readout & Formula & Direction \\
+    Readout & Formula & Rises with & Falls with \\
     \midrule
-    identity & $s_k$ & $d_k$ \\
-    monotone & $g(s_k)$, $g$ nondecreasing & $d_k$ \\
-    distinct count & $\#\{q : s_q > 0\}$ & $\bigcup_q d_q$ \\
-    ratio & $a / b$, or 0 if $b = 0$ & $d_a \cup (-d_b)$ \\
-    normalized bin & bin / total & as the ratio \\
-    any other & a function of $s_{K_j}$ & $\mathsf{fixed}$ if every $d_k$ is, else $\mathsf{both}$ \\
+    identity & $s_k$ & $s_k$ & \\
+    monotone & $g(s_k)$, $g$ nondecreasing & $s_k$ & \\
+    distinct count & $\#\{q : s_q > 0\}$ & every $s_q$ & \\
+    ratio & $a / b$, or 0 if $b = 0$ & $a$ & $b$ \\
+    normalized bin & $c_i / \sum_l c_l$ & $c_i$ & every other $c_l$ \\
+    any other & a function of $s_{K_j}$ & & \\
     \bottomrule
   \end{tabular}
 \end{table}
 
-The readouts turn the directions of sums into directions of features. Flipping a direction, written $-d$, exchanges up
-and down, and the union of two directions is again a direction: $\mathsf{up} \cup \mathsf{down} = \mathsf{both}$, and
-a direction united with itself or with $\mathsf{fixed}$ is unchanged. Each readout form of \Cref{sec:fw:model} has a
-rule that gives its feature a direction from the directions of the sums it reads, and \Cref{tab:fw:readouts} lists
-them. The identity, a nondecreasing function of one sum such as a presence bit, and a distinct count, which is a
-total of presence bits, move with the sums they read. A ratio can rise only if its numerator can rise or its denominator can fall,
-which is the union of the numerator's direction and the denominator's, flipped. A readout of any other form gets the
-rule that holds for every readout, since a readout depends only on its support (Definition~\ref{def:fw:readout}): its
-feature is fixed if every sum in the support is fixed, and can move either way otherwise.
+The readouts turn the directions of sums into directions of features, by one rule. Flipping a direction, written
+$-d$, exchanges up and down, and the union of two directions is again a direction:
+$\mathsf{up} \cup \mathsf{down} = \mathsf{both}$, and a direction united with itself or with $\mathsf{fixed}$ is
+unchanged. A readout \emph{rises with} a set $P_j$ of the sums in its support and \emph{falls with} a set $N_j$ if
+its value does not fall whenever the sums in $P_j$ rise or stay, those in $N_j$ fall or stay, and the other sums in
+its support, $O_j$, stay. A sum that the readout rises with passes its direction on to the feature, a sum that it
+falls with passes its direction flipped, and any other sum passes both. The \emph{readout rule} gives the feature the
+union of these directions:
+\begin{equation}
+  \label{eq:fw:readout-rule}
+  \bigcup_{k \in P_j} d_k \;\cup \bigcup_{k \in N_j} (-d_k) \;\cup \bigcup_{k \in O_j} \big(d_k \cup (-d_k)\big).
+\end{equation}
+\Cref{tab:fw:readouts} lists the sums that each readout form of \Cref{sec:fw:model} rises and falls with. The
+identity, a nondecreasing function of one sum such as a presence bit, and a distinct count, which is a total of
+presence bits, rise with the sums they read and get their directions. A ratio rises with its numerator and falls
+with its denominator, so it can rise only if the numerator can rise or the denominator can fall. A bin's share of a
+histogram rises with its own count and falls with every other. A readout of any other form has all its sums in
+$O_j$: its feature is fixed if every sum in the support is fixed, and can move either way otherwise. The rule is not
+limited to these forms. A total or a difference of sums, a mean, and the larger of several sums each rise and fall
+with sums that can be read off their formulas.
 
 \definition[Derived table]
 \label{def:fw:derived}
 {
-The \emph{derived table} $D_\Delta$ of a signature $\Delta$ gives each feature $j$ the direction that the rule of its
-readout returns from the directions $d_k$ of the sums $k$ in its support $K_j$.
+The \emph{derived table} $D_\Delta$ of a signature $\Delta$ gives each feature $j$ the direction that the readout
+rule \eqref{eq:fw:readout-rule} returns from the directions $d_k$ of the sums $k$ in its support $K_j$.
 }
 
 \theorem[Sound directions]
@@ -430,7 +442,7 @@ the change $x'_j - \varphi_j(z)$ of every feature $j$ has a sign in $(D_\Delta)_
 }
 
 \noindent For one edit, the signature gives the edit a delta made of changes in $\Delta$, the direction of each sum
-bounds the sum's change because the sum is totally ordered, and the rule of each readout turns these bounds into a
+bounds the sum's change because the sum is totally ordered, and the readout rule turns these bounds into a
 bound on the feature. A sequence of
 edits passes through intermediate inputs, and closure keeps each of them in $Z$, so the bound holds at every step. It
 also holds for the sequence as a whole, because adding up changes keeps them within a direction: two rises make a
