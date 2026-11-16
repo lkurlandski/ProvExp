@@ -12,8 +12,8 @@
 # out with SKIP the finished steps that do not skip their work (3-directions/derived recomputes its tables).
 # The gate (3-directions/gate) stops every detector, attack and result if the derived tables' check is not clean
 # (session 70's rule): read the check with the user, decide, then rerun this script.
-# Knobs: SKIP (steps to leave out, e.g. SKIP="1-audit/item-checks 4-detectors/price-list"), DRY=1 (print, submit
-# nothing). The job IDs are written to logs/submit-<date>.txt.
+# Knobs: SKIP (steps or job names to leave out, e.g. SKIP="1-audit/item-checks 4-detectors/price-list"; `train`
+# leaves out the first training job but not `train-trial`), DRY=1 (print, submit nothing). The job IDs are written to logs/submit-<date>.txt.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 OUT_ROOT="${OUT_ROOT:-artifacts/scaleup}"
@@ -26,10 +26,13 @@ if ! command -v sbatch &> /dev/null; then echo "No sbatch here: run this on the 
 
 submit() {  # step, then "deps" (space-separated job IDs, may be empty), then sbatch's extra arguments; prints the ID
   local step=$1 deps=$2 id name a; shift 2
-  if [[ " $SKIP " == *" $step "* ]]; then echo "  (skipped: $step)" >&2; echo ""; return; fi
   name=$(sed -n 's/^#SBATCH --job-name=//p' "pipeline/$step/run.sh")
   for a in "$@"; do if [[ $a == --job-name=* ]]; then name=${a#--job-name=}; fi; done
-  id=$(squeue -h -u "$USER" -n "$name" -t PENDING,RUNNING,CONFIGURING -o %A | sort -u | head -1)
+  if [[ " $SKIP " == *" $step "* || " $SKIP " == *" $name "* ]]; then
+    echo "  (skipped: $step, $name)" >&2; echo ""; return
+  fi
+  # %F: the array's job ID (a task's own ID, %A, would make a dependency wait for that task alone)
+  id=$(squeue -h -u "$USER" -n "$name" -t PENDING,RUNNING,CONFIGURING -o %F | sort -u | head -1)
   if [[ -n $id ]]; then
     echo "$id  $step  ($name already queued; reused)" | tee -a "$RECORD" >&2
     echo "$id"
