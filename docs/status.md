@@ -8,7 +8,7 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
 `docs/archive/status-log-2026-11-12-to-13-s43-54.md`, sessions 55-58 in `docs/archive/status-log-2026-11-13-s55-58.md`, sessions 59-60 in
 `docs/archive/status-log-2026-11-13-s59-60.md`, sessions 61-62 in `docs/archive/status-log-2026-11-14-s61-62.md`).
 
-## Current state (2026-11-16, through session 72)
+## Current state (2026-11-16, through session 73)
 
 - **Framework (§2-3):** rewritten; the user is reasonably satisfied. Open: the user's holistic read of Sound
   Directions after round 4 (finetuning only).
@@ -134,16 +134,9 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
 
 ## Waiting on the user
 
-- **The cost of robustness (sessions 71-72, Fable):** step 1 is done at pilot scale
-  (`docs/evidence/fable-cost-of-robustness.md` §8, §8.1; *Where the cost lies* rewritten in an Opus session).
-  **Boosting rounds stay at 500 for every detector (user)**; the round comparisons were pilot-only (10% of the
-  training files) and do not inform the full-scale choice. The paragraph's 3,000-round aside is cut. **Step 2 (the
-  converse of Corollary 1) is done, with a negative outcome (session 73; the findings file's §9, for the user to
-  read):** the converse is false in general (Algorithm 1's own extractor is a counterexample: an item that feeds two
-  moving sums), the stop rule applies, no theorem and nothing in the manuscript. Open for the user: whether to add
-  the two-sentence "least sound table" remark (§9.5; would need a count from existing catalogue outputs) and a
-  citation of Wang et al. 2022 in §6. Correction recorded: Gimenez et al.'s Proposition 2 is an existential
-  converse (the manuscript's §6 already says so; my notes had "sufficiency only").
+- **The proof notes (`docs/evidence/proof-notes.md`):** five small corrections to §3.3 and Appendix C, each with
+  old and new text, none applied. The user approves or rejects each. After that, if the user wants it: the theory
+  audit and ideas phase of the original prompt (`git show 0563ef0:docs/fable-theory-prompt.md`), findings file only.
 - **Before cloning on the cluster:** `git push` (main is ahead of origin), then copy what a clone does not bring
   (`SETUP.md` §4: the split index files and the scale-up's file lists; `check.sh` stops without them).
 - **The head-node session** (`docs/resume-prompt.md`) needs the user at the cluster: `SETUP.md`, `check.sh`, the "TO
@@ -168,22 +161,13 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
 
 ## Session log
 
-- **2026-11-16 (session 73, Fable): cost of robustness, step 2.** Literature check (Gimenez et al., Incer et al.,
-  Chen et al. in `papers/`; Wang et al. 2022 downloaded; abstract-interpretation completeness by search only), then
-  the mathematics. Outcome negative: unevadable is equivalent to "no single change lowers the score" under a realized
-  signature (elementary; the one-sided form of Wang et al.'s Proposition 1), and table-monotone is strictly stronger
-  whenever one item feeds two moving sums by amounts no identity ties (`size - records` on Algorithm 1). Two
-  definitions needed and bundling not a remark: the stop rule applies. Note for the user: the findings file's §9. No
-  experiment, no code, no manuscript change.
-
-- **2026-11-16 (session 72, Fable): cost of robustness, step 1's experiments.** ruff and mypy pass on session 71's
-  code; `4-detectors/cost-split` run at pilot scale (`basic`, `intermediate`; `advanced` not run) and added to the
-  pipeline READMEs. Results and the reading against the predictions: the findings file's §8. Zero structural
-  violations in every monotone model. The user approved the paragraph plan for *Where the cost lies* and moved the
-  drafting to Opus (Fable credits). Later the same day: I read the monotone detector's gain from 3,000 rounds as a
-  share of the cost without training the other detectors the same way, and reported pilot-subsample round
-  comparisons as if they bore on the full training set; both corrected (§8.1 and its caveat). The user: confusing and
-  misleading; rounds stay at 500. Resume prompt rewritten for step 2.
+- **2026-11-16 (sessions 72-73, Fable): the cost of robustness, closed and reverted.** Step 1 (three pilot
+  experiments, a rewrite of *Where the cost lies*) and step 2 (the converse of Corollary 1: false in general) gave no
+  theoretical result. The user lost confidence in the work; on their instruction the manuscript paragraph, the
+  `cost-split` step and `train_classic.py --param` were reverted to their state before the Fable sessions (3944894).
+  Kept: `provexp.models.gbdt.monotone_violations` with its tests, session 70's scale-up commits, and the proof notes.
+  The record is `docs/archive/fable-cost-of-robustness.md` (not to be used for the paper without the user's say).
+  Boosting rounds stay at 500 for every detector (user).
 - **2026-11-15 (session 71): repository readied for the head node.** `SETUP.md` §4 lists what a clone does not
   bring and how to copy it; `check.sh` checks for it; the audit stage's order states which list each step reads.
 - **2026-11-15 (session 70): the two open scale-up questions decided.** (1) The derived table's corpus. Read what
