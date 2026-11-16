@@ -41,7 +41,7 @@ The order (each step's inputs are the outputs above it):
    (the attacked files' bytes in one SQLite file beside the lists; optional, it only speeds up loading);
 2. `3-directions/derived` (from the training list, checked against the evaluation set), `3-directions/gate`; `1-audit/*` (the catalogue check's edits feed the trial); `3-directions/trial`;
 3. `4-detectors/train` (Table 5, the expert set, trial);
-4. `4-detectors/adversarial-training` (the material, array), then `4-detectors/learned` (PV, ERDALT, adversarial
+4. `4-detectors/adversarial-training` (the material, array; `REPAIR=` mends finished shards from a list of lost tasks), then `4-detectors/learned` (PV, ERDALT, adversarial
    training, the leave-one-out folds; GPUs), then `4-detectors/iterated`;
 5. `5-attacks/toolkit`, `5-attacks/adaptive` (arrays), `5-attacks/mab-malware`;
 6. `6-results`.

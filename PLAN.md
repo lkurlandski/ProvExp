@@ -555,7 +555,22 @@ records of the §5 reviews, the table remake and the ERDALT check, is in
    Also done at scale: `train` (the five detectors without the trial) and `price-list`. Two bugs found at scale and
    fixed (session 74): files with fewer than 16 data directory entries (24 of the 2,000 evaluation files) crashed the
    entry writes (catalogue check, escapes); secml's data directory raced across array tasks.
-   **Next:** the rest of the chain, resubmitted (`SKIP=...` in `docs/status.md`); then read it (step 5).
+   (13) **GAMMA on files LIEF cannot rebuild (session 77, user).** Also done at scale: the catalogue check, the hand
+   table, the trial table and the trial detector, and the defenses' material (job 1018609; ~2 h per shard on 36
+   cores). The material lost 224 of 80,000 runs (all `gamma_sections`/`gamma_api`, 117 files) to OOM-killed
+   workers, each costing a 45-min stall. Cause: LIEF's rebuild, which both GAMMA attacks run on every query, runs
+   away on some malformed files (output padded to a garbage section offset, 2 GiB; failed allocations; parser
+   crashes); 38 of 40 lost files fail a plain LIEF round trip, 0 of 40 controls; the rest were collateral. Decided
+   (user): prevent it rather than catch the OOM, and do not count these as attack failures. Each start file gets
+   one LIEF round trip in a capped child process before the attacks (`provexp.attacks.lief_check`, ~1 s per file,
+   never per perturbed binary); where it fails, the two GAMMA attacks are *not applicable* to the file (no run,
+   counted apart; the other six attack it). In the toolkit and the material; `attack_training.py --repair` mends the
+   finished material from the lost list. No other attack rebuilds through LIEF (adaptive search and MAB-Malware use
+   their own writers). **Open (user):** `6-results`' per-attack "still detected" divides by all evaluation malware,
+   so a not-applicable file counts as still detected in a GAMMA column; recommended: divide by the files the attack
+   applies to and report the not-applicable count beside it.
+   **Next:** the repair, then the rest of the chain (two commands in `docs/status.md`); walltime limits shortened
+   from measured times as jobs finish (queues faster); then read it (step 5).
 4. **While the scale-up runs: §2's closing and contribution 4 against §5** (old step 2 (c)). §2 says §5 "uses them to
    attack malware detectors and to build robust ones"; in §5 the attack is an instrument. The mock's contribution 4 is
    stale ("four to six points", "learned constraints"). Writing only.

@@ -176,3 +176,17 @@ In `StringExtractor.__init__`: `email_addr` repeats `mac_addr`'s pattern, so the
 `HKLM`); `.click(` is the unescaped pattern `.click`; the key `onlick` is misspelt (its pattern is right). Our handling (user,
 session 66): the three patterns fixed, v3's names kept (`StringExtractorFixed`, installed by `fix_quirks`); the fix
 changes a feature on 411 of the 2,000 test files.
+
+## 13. LIEF: rebuilding a malformed PE runs away in memory (found 2026-11-16, session 77)
+
+**Issue title:** `PE::Binary::write_to_bytes` pads the output to garbage section offsets and exhausts memory
+
+On some malformed PE files, LIEF 1.0.0 (aarch64, Python 3.14) parses the file, but rebuilding it after adding one
+section (or one import, with `Builder.config_t().imports = True`) either returns a 2 GiB output, throws
+`std::bad_alloc` under an 8 GiB address-space cap, or segfaults in the parser. Section headers with
+`PointerToRawData + SizeOfRawData` past 3.5 GiB reproduce it on any well-formed file
+(`tests/test_lief_check.py::garbage_offset`); in EMBER2024's training malware, 38 of 40 files lost to it fail, 0 of 40
+controls. secml-malware's GAMMA attacks rebuild through LIEF on every query, so inside a worker pool such a file
+OOM-kills its worker. Not reported yet (check the newest LIEF first). Our handling (user, session 77): each start file
+gets one round trip in a capped child process (`provexp.attacks.lief_check`); where it fails, the GAMMA attacks are not
+applicable to the file, counted apart from attack failures.

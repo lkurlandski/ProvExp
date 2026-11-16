@@ -9,16 +9,18 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
 `docs/archive/status-log-2026-11-13-s59-60.md`, sessions 61-62 in `docs/archive/status-log-2026-11-14-s61-62.md`, session 63
 in `docs/archive/status-log-2026-11-14-s63.md`, sessions 64-65 in `docs/archive/status-log-2026-11-14-s64-65.md`).
 
-## Current state (2026-11-16, through session 76)
+## Current state (2026-11-16, through session 77)
 
 - **Scale-up running on tigris (session 74).** Setup done (`SETUP.md`, `pipeline/systems/tigris.sh`); everything is
   submitted by `bash pipeline/submit.sh` (SLURM dependencies; `3-directions/gate` before the detectors). Done:
   featurization (sums, expert), the file store, the derived tables, population, item checks, escapes, deviations. The
   gate stopped the chain on the derived check (PLAN.md decision 12: the training table is a strict superset of the
   evaluation set's, 361 cells, 98 directions); the user chose the training table. Also done: `train` (five detectors;
-  unconstrained test AUC 0.998) and `price-list`. The first resubmission failed on two bugs, both fixed (below); the
-  user resubmits the rest: the catalogue check, hand table and trial table, the trial detector, the defenses'
-  material, the learned defenses, iterated training, the attacks and the results.
+  unconstrained test AUC 0.998) and `price-list`. The first resubmission failed on two bugs, both fixed. The second
+  (session 77) finished the catalogue check, hand table, trial table, trial detector and the defenses' material, but
+  SLURM marked the material OUT_OF_MEMORY: GAMMA runs lost to LIEF's runaway rebuild, now prevented (PLAN.md step 3
+  (13)). The user resubmits the material's repair and the rest: the learned defenses, iterated training, the attacks
+  and the results.
 - **Framework (§2-3):** rewritten; the user is reasonably satisfied. Open: the user's holistic read of Sound
   Directions after round 4 (finetuning only). **Session 74 (the theory session):** proofs audited (correct; seven
   small corrections applied); two additions to §3.3, each approved after a brief look and not yet read closely by the
@@ -147,12 +149,12 @@ in `docs/archive/status-log-2026-11-14-s63.md`, sessions 64-65 in `docs/archive/
 
 ## Waiting on the user
 
-- **Resubmit the rest of the scale-up** (session 76), on the tigris head node from the repository root (the queue is
-  empty), in two commands: first the repair of the defenses' material, then the chain (which reuses the queued repair
-  by its job name, `defenses-material`):
-  `REPAIR=artifacts/scaleup/4-detectors/material/lost.txt sbatch --cpus-per-task=8 --mem=64G --time=0-03:00:00 pipeline/4-detectors/adversarial-training/run.sh`
-  `SKIP="3-directions/derived 3-directions/gate 1-audit/population 1-audit/item-checks 1-audit/escapes 1-audit/deviations 1-audit/catalogue-checks 1-audit/hand-table 3-directions/trial train train-trial 4-detectors/price-list" bash pipeline/submit.sh`
-  Session 76: the material's job (1018609) finished all ten shards, but 224 of 80,000 GAMMA runs (117 files) were
+- **The scale-up is queued (submitted by the user, session 77):** the material's repair (array 1020777; shards 1-9
+  repaired: 192 lost tasks not applicable, 2 re-run and valid; shard 0 running), then `learned` (1020791, 1020792),
+  `iterated` (1020793), `toolkit` (1020794), `adaptive` (1020795), `mab-malware` (1020796), `6-results` (1020797).
+  The next session checks in (`docs/resume-prompt.md`): failures as they come; walltime limits shortened from the
+  measured times (table in the resume prompt) so jobs queue faster.
+  Session 77: the material's job (1018609) finished all ten shards, but 224 of 80,000 GAMMA runs (117 files) were
   lost to OOM-killed workers. Cause found: LIEF's rebuild runs away on some malformed files (output padded to a
   garbage section offset, 2 GiB; failed allocations; parser crashes): 38 of 40 lost files fail LIEF's round trip,
   0 of 40 controls; the other lost runs were collateral (two heavy files, ~7 GB and 4-8 min per run, finish alone).
@@ -162,9 +164,8 @@ in `docs/archive/status-log-2026-11-14-s63.md`, sessions 64-65 in `docs/archive/
   (24 lost, all not applicable) and the toolkit (3 files). Diagnostics: `artifacts/scaleup/diag/gamma-oom/`.
   **Open for the user:** `6-results`' per-attack "still detected" divides by all evaluation malware, so a file a
   GAMMA attack is not applicable to counts as still detected in that attack's column (the any-attack numbers are
-  unaffected: the other six attack it). Earlier: 2a42a34, 384f0d7 (session 74's two fixes).
-  Report failures as they come (logs in `logs/<name>_<id>.out` and `artifacts/scaleup/<stage>/logs/`). Once the
-  first adaptive and toolkit tasks finish, shorten their 24 h walltime limits from the measured times.
+  unaffected: the other six attack it). Recommended: divide by the files the attack applies to. Settle before
+  `6-results` runs (1020797), or rerun it after (cheap).
 - **`git push`** from the server that has the session-74 commits, then `git pull` on the other machine.
 - Number-free rebuttal text fixes (R4, R5, R15, R21) are step 4 (while the scale-up runs).
 - **Bounds on size: the mathematics is written; the user decides, with Opus, what enters the manuscript**
@@ -207,6 +208,15 @@ in `docs/archive/status-log-2026-11-14-s63.md`, sessions 64-65 in `docs/archive/
 
 Two sessions were numbered 74: the head node on tigris, and the theory session. The two tracks have separate resume
 prompts: `docs/resume-prompt.md` (the scale-up) and `docs/resume-prompt-theory.md` (theory).
+
+- **2026-11-16 (session 77, Opus, scale-up track): the GAMMA OOM traced and prevented.** The material's array
+  (1018609) finished every shard but was marked OUT_OF_MEMORY: 224 GAMMA runs on 117 files lost to killed workers,
+  45-min stalls. First recommended accepting them as failures; the user wanted the failure prevented and not counted.
+  Diagnostic jobs (`artifacts/scaleup/diag/gamma-oom/`): LIEF's rebuild runs away on malformed files (38 of 40 lost
+  files fail a round trip, 0 of 40 controls); the two others are heavy (~7 GB, 4-8 min) and were collateral.
+  `provexp.attacks.lief_check` (430ef83): once per start file, GAMMA not applicable where it fails, in the toolkit
+  and the material; `--repair` for the finished shards; smoke-tested. PLAN.md step 3 (13). Open: the per-attack
+  denominator in `6-results`. Walltime limits to be shortened as jobs finish (the user).
 
 - **2026-11-16 (session 76, Fable): bounds on size, reviewed, read against EMBER, and handed off.** The user
   confirmed the statement, allowed the read, and found F.3 more complicated than needed. *The read* (pilot's derived
