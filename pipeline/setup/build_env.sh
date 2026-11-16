@@ -1,6 +1,7 @@
 #!/bin/bash
 #SBATCH --account=admalware
-#SBATCH --partition=sporc
+#SBATCH --partition=tigris
+#SBATCH --constraint=gg
 #SBATCH --job-name=build-env
 #SBATCH --output=./logs/%x_%j.out
 #SBATCH --nodes=1

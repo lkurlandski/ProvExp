@@ -1,13 +1,14 @@
 #!/bin/bash
 #SBATCH --account=admalware
-#SBATCH --partition=sporc
+#SBATCH --partition=tigris
+#SBATCH --constraint=gg
 #SBATCH --job-name=hand-table
 #SBATCH --output=./logs/%x_%j.out
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
-#SBATCH --cpus-per-task=36
+#SBATCH --cpus-per-task=72
 #SBATCH --time=1-00:00:00
-#SBATCH --mem=32G
+#SBATCH --mem=200G
 #
 # The files that show each error of the hand-written table (Section 5.2, Table 3): the structure witnesses (entry
 # section, Rich header, relocations and exports past the end), the overlay and signature witnesses (appends past a

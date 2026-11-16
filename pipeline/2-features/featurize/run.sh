@@ -1,13 +1,14 @@
 #!/bin/bash
 #SBATCH --account=admalware
-#SBATCH --partition=sporc
+#SBATCH --partition=tigris
+#SBATCH --constraint=gg
 #SBATCH --job-name=featurize
 #SBATCH --output=./logs/%x_%j.out
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
-#SBATCH --cpus-per-task=36
+#SBATCH --cpus-per-task=72
 #SBATCH --time=2-00:00:00
-#SBATCH --mem=64G
+#SBATCH --mem=200G
 #
 # Feature stores: every file of the splits through each extractor (EMBER's, the re-encoding over sums, the expert set).
 # One SimpleDB shard (~1,024 files) per worker; an interrupted run resumes where it stopped.

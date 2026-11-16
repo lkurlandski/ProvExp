@@ -1,14 +1,16 @@
 #!/bin/bash
 #SBATCH --account=admalware
-#SBATCH --partition=sporc
+#SBATCH --partition=tigris
+#SBATCH --array=0-8
+#SBATCH --constraint=gh
 #SBATCH --job-name=learned
 #SBATCH --output=./logs/%x_%j.out
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
 #SBATCH --cpus-per-task=36
-#SBATCH --gpus-per-node=4
+#SBATCH --gpus-per-node=1
 #SBATCH --time=2-00:00:00
-#SBATCH --mem=320G
+#SBATCH --mem=200G
 #
 # The defenses learned from the toolkit attacks' outputs (§5.3, Table 4; Appendix D, Table 10), every one from the same
 # material (4-detectors/adversarial-training, merged here first) and on the full training split's complete files:
@@ -22,13 +24,15 @@
 # unconstrained detector's gain; 6-results reads it for §5.3.
 # The ERDALT trainings run in parallel, one per visible GPU (CUDA_VISIBLE_DEVICES; unset: all), each loading the store
 # (~25-30 GB); the GBDTs train meanwhile on the CPU, one at a time. A model whose predictions exist is skipped.
+# As a job array (the header's 0-8, tigris: one GH200 per node), task i trains only the i-th ERDALT model (erdalt, then
+# the eight erdalt-loo-<a>); task 0 also trains every GBDT. The first task to arrive merges the material, under a lock.
 # Inputs: 4-detectors/material/shards (4-detectors/adversarial-training), 4-detectors/unconstrained (4-detectors/train),
 # 2-features/sums, 3-directions/loose.
 # Output: $OUT_ROOT/4-detectors/<name>/ (the registry's names); PV's selections in 4-detectors/pv-selection/.
 # Knobs: DEFENSES (default "adversarial-training pv erdalt loo"), SHARDS (the material's, default 10), EPOCHS (ERDALT,
 # default 310), LIMIT (files per split; smoke tests). Cost (pilot, run 133 on 10% of the split: ERDALT ~25 min on one
 # GPU, a GBDT ~1-10 min): ERDALT ~4-5 h per model on the full split, nine of them; ten GBDTs ~20-40 min each.
-# SCALE-UP TO CONFIRM: GPUs per node, time, memory.
+# SCALE-UP TO CONFIRM: time, memory.
 set -euo pipefail
 cd "${SLURM_SUBMIT_DIR:-$(dirname "$0")/../../..}"
 source pipeline/common.sh
@@ -48,6 +52,11 @@ if [[ -n "${LIMIT:-}" ]]; then LIMIT_ARG=(--limit "$LIMIT"); fi
 others() { local h=$1 a out=""; for a in $ATTACKS; do [[ $a != "$h" ]] && out="$out $a"; done; echo $out; }
 wants() { [[ " $DEFENSES " == *" $1 "* ]]; }
 
+TASK="${SLURM_ARRAY_TASK_ID:-}"  # empty: every model in this job
+
+mkdir -p "$MAT"
+exec 9> "$MAT/.merge.lock"
+flock 9  # array tasks: one merges, the others wait for it and then find the merge done
 if [[ ! -f $MAT/sums/X.npy ]]; then
   echo "Merging the material's $SHARDS shards. Log: $OUT/logs/material-merge.log"
   python pipeline/4-detectors/adversarial-training/attack_training.py \
@@ -57,11 +66,15 @@ if [[ ! -f $MAT/sums/X.npy ]]; then
     &> "$OUT/logs/material-merge.log"
   tail -1 "$OUT/logs/material-merge.log"
 fi
+flock -u 9
 
 # ERDALT, in the background: one lane per visible GPU, the jobs dealt round-robin.
 ERDALT_JOBS=()
 if wants erdalt; then ERDALT_JOBS+=("erdalt:$ATTACKS"); fi
 if wants loo; then for h in $ATTACKS; do ERDALT_JOBS+=("erdalt-loo-$h:$(others "$h")"); done; fi
+if [[ -n $TASK ]]; then  # an array task: its one model, if any
+  if [[ $TASK -lt ${#ERDALT_JOBS[@]} ]]; then ERDALT_JOBS=("${ERDALT_JOBS[$TASK]}"); else ERDALT_JOBS=(); fi
+fi
 if [[ -n "${CUDA_VISIBLE_DEVICES+set}" ]]; then
   IFS=", " read -r -a GPU_IDS <<< "$CUDA_VISIBLE_DEVICES"
 else
@@ -139,7 +152,11 @@ pv() {  # name, tag, attacks...
     --monotone "$SEL/pv$tag.monotone.tsv"
 }
 
-echo "GBDTs on the CPU, $NUM_WORKERS threads."
+if [[ -n $TASK && $TASK != 0 ]]; then
+  DEFENSES=""  # the GBDTs are task 0's
+else
+  echo "GBDTs on the CPU, $NUM_WORKERS threads."
+fi
 if wants adversarial-training; then
   gbdt adversarial-training \
     --neutralize "$DIR/reencoded.neutralize.txt" \

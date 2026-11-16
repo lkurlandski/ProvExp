@@ -1,13 +1,14 @@
 #!/bin/bash
 #SBATCH --account=admalware
-#SBATCH --partition=sporc
+#SBATCH --partition=tigris
+#SBATCH --constraint=gg
 #SBATCH --job-name=escapes
 #SBATCH --output=./logs/%x_%j.out
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
-#SBATCH --cpus-per-task=36
+#SBATCH --cpus-per-task=72
 #SBATCH --time=0-04:00:00
-#SBATCH --mem=32G
+#SBATCH --mem=200G
 #
 # The escape audit: single writes of loader-ignored header fields (outside the threat model) on files of the
 # population, and the population clauses they trip. Needs 1-audit/population. Pilot: run 137, ~1 min on 150 files.

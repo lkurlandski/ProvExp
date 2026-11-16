@@ -1,13 +1,14 @@
 #!/bin/bash
 #SBATCH --account=admalware
-#SBATCH --partition=sporc
+#SBATCH --partition=tigris
+#SBATCH --constraint=gg
 #SBATCH --job-name=population
 #SBATCH --output=./logs/%x_%j.out
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
-#SBATCH --cpus-per-task=36
+#SBATCH --cpus-per-task=72
 #SBATCH --time=0-04:00:00
-#SBATCH --mem=32G
+#SBATCH --mem=200G
 #
 # Which clause of the population check each file fails (incomplete, unusual layout), and whether it is in the
 # population. Pilot: run 136, ~3 min on 2,000 files at 16 workers.

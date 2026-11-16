@@ -1,6 +1,7 @@
 #!/bin/bash
 #SBATCH --account=admalware
-#SBATCH --partition=sporc
+#SBATCH --partition=tigris
+#SBATCH --constraint=gg
 #SBATCH --job-name=adaptive
 #SBATCH --output=./logs/%x_%A_%a.out
 #SBATCH --array=0-80
@@ -8,7 +9,7 @@
 #SBATCH --ntasks-per-node=1
 #SBATCH --cpus-per-task=36
 #SBATCH --time=1-00:00:00
-#SBATCH --mem=64G
+#SBATCH --mem=100G
 #
 # The adaptive attack: a beam search over the threat model's operations (M_full, `ent` included) against each detector,
 # every candidate scored by extracting it (5,000 candidates, checkpoints at 200, 1,000, 2,000; session 63), optionally

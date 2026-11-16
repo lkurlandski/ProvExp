@@ -1,6 +1,7 @@
 #!/bin/bash
 #SBATCH --account=admalware
-#SBATCH --partition=sporc
+#SBATCH --partition=tigris
+#SBATCH --constraint=gg
 #SBATCH --job-name=toolkit
 #SBATCH --output=./logs/%x_%A_%a.out
 #SBATCH --array=0-20
@@ -8,7 +9,7 @@
 #SBATCH --ntasks-per-node=1
 #SBATCH --cpus-per-task=36
 #SBATCH --time=1-00:00:00
-#SBATCH --mem=64G
+#SBATCH --mem=100G
 #
 # Gimenez et al.'s eight toolkit attacks (secml-malware; low budget, a seed per (attack, file)) against the detectors,
 # under the scale-up's protocol (session 67): the evaluation set's malware (2-features/files/ts.parquet), each detector

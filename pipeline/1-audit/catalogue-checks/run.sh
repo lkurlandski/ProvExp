@@ -1,13 +1,14 @@
 #!/bin/bash
 #SBATCH --account=admalware
-#SBATCH --partition=sporc
+#SBATCH --partition=tigris
+#SBATCH --constraint=gg
 #SBATCH --job-name=catalogue-checks
 #SBATCH --output=./logs/%x_%j.out
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
-#SBATCH --cpus-per-task=36
+#SBATCH --cpus-per-task=72
 #SBATCH --time=0-12:00:00
-#SBATCH --mem=32G
+#SBATCH --mem=200G
 #
 # The catalogue check on the widened population: every operation applied by our own byte-level edits, with ordinary
 # and adversarial parameters, re-extracted and compared with the derived directions (sound), the population (closed)

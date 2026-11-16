@@ -1,13 +1,14 @@
 #!/bin/bash
 #SBATCH --account=admalware
-#SBATCH --partition=sporc
+#SBATCH --partition=tigris
+#SBATCH --constraint=gg
 #SBATCH --job-name=directions
 #SBATCH --output=./logs/%x_%j.out
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
-#SBATCH --cpus-per-task=36
+#SBATCH --cpus-per-task=72
 #SBATCH --time=0-04:00:00
-#SBATCH --mem=32G
+#SBATCH --mem=200G
 #
 # The derived direction tables over the re-encoding over sums (Theorem 1): per threat model, the direction each
 # operation can move each feature, from the item tables of the files; `strict` for the population before R7's widening,

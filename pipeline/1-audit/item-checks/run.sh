@@ -1,13 +1,14 @@
 #!/bin/bash
 #SBATCH --account=admalware
-#SBATCH --partition=sporc
+#SBATCH --partition=tigris
+#SBATCH --constraint=gg
 #SBATCH --job-name=item-checks
 #SBATCH --output=./logs/%x_%j.out
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
-#SBATCH --cpus-per-task=36
+#SBATCH --cpus-per-task=72
 #SBATCH --time=1-00:00:00
-#SBATCH --mem=64G
+#SBATCH --mem=200G
 #
 # The item layer's checks (Appendix D, Table 9; Section 5.1): the readouts over the item table reproduce every feature
 # bit for bit, also for the sums extractor (exact); single-byte flips of the header and of each directory's data move

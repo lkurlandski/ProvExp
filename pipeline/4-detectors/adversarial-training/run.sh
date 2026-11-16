@@ -1,6 +1,7 @@
 #!/bin/bash
 #SBATCH --account=admalware
-#SBATCH --partition=sporc
+#SBATCH --partition=tigris
+#SBATCH --constraint=gg
 #SBATCH --job-name=defenses-material
 #SBATCH --output=./logs/%x_%A_%a.out
 #SBATCH --array=0-9
@@ -8,7 +9,7 @@
 #SBATCH --ntasks-per-node=1
 #SBATCH --cpus-per-task=36
 #SBATCH --time=0-12:00:00
-#SBATCH --mem=64G
+#SBATCH --mem=100G
 #
 # The learned defenses' material, once (protocol item 5, session 67). FOR ACADEMIC SECURITY RESEARCH ONLY: published
 # secml-malware attacks against our own undefended detector, on our own training samples, to build the defenses the

@@ -1,13 +1,14 @@
 #!/bin/bash
 #SBATCH --account=admalware
-#SBATCH --partition=sporc
+#SBATCH --partition=tigris
+#SBATCH --constraint=gg
 #SBATCH --job-name=deviations
 #SBATCH --output=./logs/%x_%j.out
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
-#SBATCH --cpus-per-task=36
+#SBATCH --cpus-per-task=72
 #SBATCH --time=0-04:00:00
-#SBATCH --mem=32G
+#SBATCH --mem=200G
 #
 # The extractor audit's counts (Appendix D's deviations table): which of our deviations from EMBER v3 and which parser
 # heuristics apply to each file, in the population and outside it. Needs 1-audit/population. Session 65: ~7 min on

@@ -1,13 +1,14 @@
 #!/bin/bash
 #SBATCH --account=admalware
-#SBATCH --partition=sporc
+#SBATCH --partition=tigris
+#SBATCH --constraint=gg
 #SBATCH --job-name=trial
 #SBATCH --output=./logs/%x_%j.out
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
-#SBATCH --cpus-per-task=36
+#SBATCH --cpus-per-task=72
 #SBATCH --time=0-12:00:00
-#SBATCH --mem=64G
+#SBATCH --mem=200G
 #
 # The trial competitor's direction table (R18; protocol item 6, session 67): the table a practitioner gets by trying
 # the operations on files and looking, instead of deriving it. It learns from the evaluation set itself, which favours

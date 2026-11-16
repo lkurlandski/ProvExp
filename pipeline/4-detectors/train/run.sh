@@ -1,13 +1,14 @@
 #!/bin/bash
 #SBATCH --account=admalware
-#SBATCH --partition=sporc
+#SBATCH --partition=tigris
+#SBATCH --constraint=gg
 #SBATCH --job-name=train
 #SBATCH --output=./logs/%x_%j.out
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
-#SBATCH --cpus-per-task=36
+#SBATCH --cpus-per-task=72
 #SBATCH --time=1-00:00:00
-#SBATCH --mem=128G
+#SBATCH --mem=200G
 #
 # The detectors of Table 5 and the expert set (§5.2), on the full training split's complete files (--complete_only; the
 # protocol of session 67), each written to $OUT_ROOT/4-detectors/<name>/ (the registry's `scaleup` set) with its

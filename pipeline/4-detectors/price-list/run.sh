@@ -1,13 +1,14 @@
 #!/bin/bash
 #SBATCH --account=admalware
-#SBATCH --partition=sporc
+#SBATCH --partition=tigris
+#SBATCH --constraint=gg
 #SBATCH --job-name=price-list
 #SBATCH --output=./logs/%x_%j.out
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
-#SBATCH --cpus-per-task=36
+#SBATCH --cpus-per-task=72
 #SBATCH --time=2-00:00:00
-#SBATCH --mem=128G
+#SBATCH --mem=200G
 #
 # The price of each declaration (§4.3-4.4, §5.4's *Where the cost lies*; run 126 at pilot scale): the monotone
 # detector over sums retrained with the full catalogue minus one operation (and minus the three overwrites), each on
