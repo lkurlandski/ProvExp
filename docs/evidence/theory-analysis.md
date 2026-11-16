@@ -870,3 +870,45 @@ trained for it. Not proposed here; it is the user's decision whether that is wan
 operation can write (a name field, a slack range): a capacity per file, not a rate. A rate times 512 KB says nothing
 there. Decision 12's 96 printable counts under a rename may be of this kind (a guess: the files have not been
 identified and the table is on tigris).
+
+### G.4 The user's idea: a "somewhat monotone" detector (session 76)
+
+**The idea (user).** The monotone detector is robust because its score never falls along the directions the table
+allows. If the framework also says how far each feature can move, the constraint could be relaxed: a score that is
+"somewhat monotone" might stay robust, represent more, and lose fewer detections at the same false-positive rate.
+
+**It is step 6 of F.3 put to use.** A relaxed score has no guarantee by construction; its guarantee is per file: the
+file is certified if the lowest score the attacker can reach from it is above the threshold (for a score monotone
+in each feature it reads, in any direction: the worst corner). The number reported becomes certified detection at a
+budget, not detection.
+
+**Without a bound on size the relaxation cannot help (argued, elementary).** Let $h$ be any score and
+$C(\mathbf{x})$ the set of vectors the sign table allows from $\mathbf{x}$. Let
+$h^{\downarrow}(\mathbf{x}) = \inf_{\mathbf{x}' \in C(\mathbf{x})} h(\mathbf{x}')$, the lowest score the table lets
+the attacker reach. Then (i) $h^{\downarrow} \le h$; (ii) a file is certified for $h$ at threshold $t$ exactly when
+$h^{\downarrow}(\mathbf{x}) \ge t$; (iii) $h^{\downarrow}$ is monotone with respect to the table, because directions
+are closed under addition, so $C(\mathbf{x}') \subseteq C(\mathbf{x})$ for $\mathbf{x}' \in C(\mathbf{x})$. So the
+strictly monotone score $h^{\downarrow}$ detects, with a guarantee, exactly the files $h$ certifies, and flags no
+benign file that $h$ does not flag. Every relaxed detector whose guarantee rests on signs is matched or beaten by a
+strictly monotone one. Caveats: this is about what a score can represent, not about what training finds, and
+$h^{\downarrow}$ of a tree ensemble need not be a tree ensemble of the same size. Not the converse of Corollary 1
+closed in sessions 71-73 (that one, "unevadable implies monotone", is false); not looked for in the literature.
+
+**With a budget the argument fails, and that is where the idea lives.** The set reachable within budget $B$ is not
+closed in the same way (from an edited file the attacker's reach, counted from that file, goes further), so the
+lowest reachable score is not monotone, and a relaxed detector can truly do better than every strictly monotone
+one: it may, for instance, lower the score on a count far above anything the budget reaches from the file at hand.
+The gain is the room between how far the budget moves a feature and the scale on which the feature separates
+malware from benign files.
+
+**On EMBER that room is small where the cost is (the pilot's price list, one seed).** Of the 7.8 points at 1%
+false positives: 3.9 the copied signature and 1.4 the header fields (one write moves the feature across its range:
+no bound, nothing to relax); 2.1 import addition (an import costs a few dozen bytes, so even 1 KB buys dozens and
+512 KB thousands, and any split at "has this import" is crossed); the byte, window and string counts cost about
+nothing measurable (the threat model without appends: 0.3 points, within noise), and their reach at 512 KB is 12.8%
+to more than 100% of the file. What a relaxation could give back at 1% is a few tenths of a point. At 0.1% it is
+not known (the 5.2 points of the two-sided features, part of which no budget bounds, against about 3 points of
+noise). The scale-up's price list (on tigris, not read) could change the split.
+
+**Where it would pay:** an instance whose costly constraints sit on counts or totals that the budget moves little
+against their scale.
