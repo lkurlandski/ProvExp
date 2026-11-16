@@ -20,8 +20,10 @@ knowledge comes from trial, from an analyst's reading of the extractor, or from 
    edited input exactly, before the edit is applied, re-evaluating only the readouts whose support a changed sum is in.
 2. **Sound directions.** Signatures (the changes a threat model may make to each kind of item), the derived table
    (direction of each sum from the changes, of each feature from its readout's rule), Theorem 1 (sound over a
-   population, and for sequences of edits when the population is closed), and Corollary 1 (monotone detectors).
-   Format-free, with proofs.
+   population, and for sequences of edits when the population is closed), Lemma 1 (closure follows from the table
+   when the population is bounded by features no edit can raise; session 74), and Corollary 1 (monotone detectors).
+   The readout's direction comes from one rule, the sums it rises and falls with (session 74). Format-free, with
+   proofs.
 3. **Instantiation, on EMBER.** A template any instance follows (§4), filled in for EMBER 2024: 2,480 of 2,568
    features modeled and reproduced bit for bit, three repairs, a catalogue of twelve operations from the public
    toolkits, and every edit's predicted features checked against extracting them again (0 wrong).

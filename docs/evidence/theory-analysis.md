@@ -1,9 +1,11 @@
 # Theory analysis: the proof audit, and the theory in brief
 
-Session 74 (2026-11-16), carrying out `docs/resume-prompt.md`. Parts A and B are stage 1; part C opens stage 2.
-**Applied (user, session 74; commit d12ba89):** the three items of A.4 and proof notes 1-4 as placed in A.5. Not
-applied: A.4 item 2's optional second edit, and proof note 5, which is a change to a pipeline step and a sentence
-that depends on it.
+Session 74 (2026-11-16), carrying out `docs/archive/resume-prompt-2026-11-16-s74.md`. Parts A and B are stage 1
+(the audit), parts C to E stage 2 (ideas). **In the manuscript:** the three items of A.4 and proof notes 1-4
+(d12ba89); proof note 5's sentence in §5.1 as a prediction (4e67a96); C.1 as Lemma 1 (*Closure*) in §3.3 with its
+proof in Appendix C (f2f1fcf); C.2 as the readout rule, with Table 1, Definition 10 and Appendix C rewritten
+(c2fee51). The texts proposed in D.1 and D.2 were drafts; the manuscript has the final wording. The numbers below
+are those at the time of the audit; since then there is also Lemma 1, and the readout rule is Equation 11.
 Numbers are from `manuscript/main.aux`: Definitions 1-10, Proposition 1 (*Exact side effects*), Theorem 1 (*Sound
 directions*), Corollary 1 (*Robustness*), Table 1 (the readout rules), Table 7 (the sign table, Appendix C).
 
@@ -538,9 +540,12 @@ accepted. No measured number changes.
 
 ## E. What to do next
 
-- **C.1 (closure):** the theory is done and waits for the user's go to enter §3.3. The instance-level work
-  (D.1, decision 2) is a later session's.
-- **C.2 (one rule):** proved; the user decides whether Table 1 and its paragraph are rewritten as proposed in D.2.
+- **C.1 (closure): in the manuscript as Lemma 1.** The instance-level work (D.1, decision 2) is a later session's;
+  until then §4.4 says closure is checked.
+- **C.2 (one rule): in the manuscript as the readout rule.** The engine (`reach.py`) keeps the old rule for a
+  normalized bin, which is sound and gives the same table under free content.
+- **Both were approved after a brief look;** the user's close read is pending.
+- **Next session:** choose among C.3-C.6, bounds on size, or a new idea (`docs/resume-prompt.md`).
 - **Bounds on size: an open direction, not abandoned (user).** For the session that takes it up, what has changed
   since A' (Claude's reading, to be tested, not a promise):
   - A' asked whether a *fragile* detector can be certified. The question can now be what a *robust* detector may

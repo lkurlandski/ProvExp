@@ -28,7 +28,7 @@ them (below).
   The bullets below are the session-45 assessment that set this course, kept for its reasoning.
 
 - **§2-3 (the framework):** rewritten in the week of 2026-11-02; the user is reasonably satisfied. Pending: the user's
-  holistic read of Sound Directions.
+  holistic read of Sound Directions. Session 74 added Lemma 1 (*Closure*) and the readout rule (next step 8).
 - **§4:** drafted in the template structure, reviewed twice by Claude (sessions 38, 40); ~1,700 words against ~1,000.
 - **§5:** three findings (decision 10), drafted, reviewed per subsection and as a whole, tables remade (sessions
   41b-44). The user has not read it end to end.
@@ -553,6 +553,26 @@ records of the §5 reviews, the table remake and the ERDALT check, is in
    `docs/domain-selection-brainstorming.md`; no literature or selection work until the user opens it). A second
    instance would strengthen 5.2-5.3 most (decision 10).
 7. **The introduction, discussion, abstract, ethics and open science** last, once the body is settled.
+8. **The theory track (parallel to the scale-up; opened in session 74, 2026-11-16).** The user wants the paper's
+   theoretical contributions made stronger. Record: `docs/evidence/theory-analysis.md`; next session:
+   `docs/resume-prompt.md`.
+   (a) *Done:* the proof audit (seven small corrections to §3 and Appendix C); **Lemma 1 (*Closure*)** in §3.3: a
+   population bounded by features that the derived table does not allow to rise is closed, so closure follows from
+   covering and the table where the population is defined through items; **the readout rule**: one rule (the sums a
+   readout rises and falls with) in place of Table 1's six, used by Definition 10. The user approved both after a
+   brief look; a close read is pending.
+   (b) *Next:* choose a direction with the user. Candidates on record: item size (no monotone trade-off; tables
+   from different item maps combine), the blind spot of a table learned from attacks (a statement behind §5.3), side
+   effects and the host (a consequence of Proposition 1), threat models add up (behind §5.4's per-operation
+   reading). **Bounds on size instead of signs is open and wanted by the user** ("an incredibly meaningful
+   direction"); direction A' (graveyard, 2026-11-02) predates the present framework and does not settle it.
+   (c) *Follow-ups, not started:* the instance-level work for Lemma 1 (the population's clauses as counts over
+   items, the derived table rebuilt, the nine in-place and append operations confirmed, the four layout-moving ones
+   decided; only then §4.4's "closure is checked rather than proven" changes); `monotone_violations` called in
+   `4-detectors/train` before the scale-up trains (§5.1's blue sentence); optionally the tighter normalized-bin rule
+   in `reach.py`.
+   (d) *Closed in sessions 71-73, not to reopen without the user:* converses of Corollary 1, a bound on the cost of
+   robustness, extractor redesign for robustness.
 
 Open items (fix when the affected text is touched): **the checks recounted on the files below 4 MB** from stored
 outputs, no runs (decision 8 (iv); with the next item): 5.1's edit counts, Table 3's file counts, Appendix D's counts and

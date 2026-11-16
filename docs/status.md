@@ -12,7 +12,11 @@ in `docs/archive/status-log-2026-11-14-s63.md`).
 ## Current state (2026-11-16, through session 74)
 
 - **Framework (§2-3):** rewritten; the user is reasonably satisfied. Open: the user's holistic read of Sound
-  Directions after round 4 (finetuning only). Proofs audited in session 74 (correct; seven small corrections applied).
+  Directions after round 4 (finetuning only). **Session 74 (the theory session):** proofs audited (correct; seven
+  small corrections applied); two additions to §3.3, each approved after a brief look and not yet read closely by the
+  user: **Lemma 1 (*Closure*)**, a population bounded by features the table does not allow to rise is closed
+  (f2f1fcf), and **the readout rule**, one rule in place of Table 1's six, by the sums a readout rises and falls with
+  (c2fee51). Record: `docs/evidence/theory-analysis.md`.
 - **§4:** drafted in the new structure (lead, 4.1-4.4, Appendix D "The EMBER Instance"), then revised in session 38
   after Claude's review with the `humanistic-paper-review` skill (all eight findings applied; 4.3 split into
   *Operations* and *Signature*; 4.4 reordered). Second, lightweight review in session 40 (three findings, all
@@ -135,20 +139,20 @@ in `docs/archive/status-log-2026-11-14-s63.md`).
 
 ## Waiting on the user
 
-- **The theory session, stage 2 (session 74; `docs/evidence/theory-analysis.md`, parts C-E):**
-  - **C.1, closure as a consequence (D.1):** proved; the user: "close, but not quite ready" to enter §3.3 (the
-    statement first read as obvious; restated without the misleading $Z_0$). Nothing applied.
-  - **C.2, one rule for all readouts (D.2):** proved, every row of Table 1 checked (the normalized bin gets
-    tighter, nothing changes on EMBER); new text for §3.3's paragraph, Table 1 and Appendix C proposed, not applied.
-    The user decides.
-  - **Instance-level work for C.1, a later session (user):** the population's clauses written as counts over items,
-    the derived table rebuilt, the nine in-place and append operations confirmed, the four layout-moving ones
-    decided (D.1). §4.4 changes only after that.
-  - **Bounds on size instead of signs: an open direction (user: "incredibly meaningful"; A' does not settle it).**
-    A dedicated session after C.1 and C.2; starting points in part E. No sentence on intervals in the paper yet.
-- **Proof note 5:** the sentence is in §5.1's *Detectors* in blue with a `% SYNTHETIC, TO VERIFY EXPERIMENTALLY`
-  comment (4e67a96). Still to do before the scale-up's training: call `monotone_violations` in `4-detectors/train`
-  and record the count; the prose is updated when the result is read.
+- **The theory track continues (`docs/resume-prompt.md`):** the next session's first business is to choose a
+  direction with the user: one of the remaining ideas (item size; the blind spot of a learned table; side effects and
+  the host; threat models add up: `theory-analysis.md` C.3-C.6), bounds on size instead of signs (the user: "an
+  incredibly meaningful direction", not abandoned; starting points in part E), or a new one from brainstorming.
+- **The user's close read of Lemma 1 and the readout rule** (§3.3, Table 1, Appendix C), when convenient.
+- **Follow-ups from session 74, none started** (PLAN.md, next step 8):
+  - instance-level work for Lemma 1: the population's clauses as counts over items, the derived table rebuilt, the
+    nine in-place and append operations confirmed, the four layout-moving ones decided; §4.4's "closure is checked"
+    changes only then;
+  - `monotone_violations` called in `4-detectors/train` before the scale-up trains, so that §5.1's blue sentence
+    (proof note 5, `% SYNTHETIC, TO VERIFY EXPERIMENTALLY`) can be confirmed or reworded;
+  - optional: `reach.py`'s rule for a normalized bin is the old, looser one (sound; same table under free content).
+- **`make check` reports one overfull vertical box** (1 pt, the last pages of Appendix D) since c2fee51: the text
+  above reflowed. Left for the next edit of Appendix D.
 - **Before cloning on the cluster:** `git push` (main is ahead of origin), then copy what a clone does not bring
   (`SETUP.md` §4: the split index files and the scale-up's file lists; `check.sh` stops without them).
 - **The head-node session** (`docs/resume-prompt-head-node.md`) needs the user at the cluster: `SETUP.md`, `check.sh`, the "TO
@@ -173,22 +177,20 @@ in `docs/archive/status-log-2026-11-14-s63.md`).
 
 ## Session log
 
-- **2026-11-16 (session 74, Fable): the theory session, stage 1 (the proof audit).** Read §2-§4, §6, Appendices
-  B-C, the prior-work and proof notes, reviewer A's report and its triage. Proposition 1, Theorem 1 and Corollary 1
-  are correct with complete proofs. New, all small, with old and new text: the ratio rule lost $b \ge 0$ in session
-  53b's fix (counterexample: $b = -1$, $a$ from 1 to 2); Table 7's caption exchanges up and down for a min pool under
-  a replacement too, where it should not (the engine's `Min` rule is right); §3.2's lead. The five proof notes hold
-  (Gimenez et al.'s Proposition 1 and Severi et al.'s hashing remark checked in the PDFs); notes 1-2 fit in Appendix
-  C. The patterns paragraph is correct because thrember counts strings with a match (`re.search`), not matches. The
-  universality of Definition 5 was not reopened (settled in session 53b). Output: `docs/evidence/theory-analysis.md`
-  A and B; the oldest log entries (session 63) moved to the archive. **The user approved all eight corrections;**
-  seven applied to the manuscript (d12ba89: the three new ones, proof notes 1-4; `make check` clean), note 5 waits
-  (pipeline). **Stage 2 opened:** part C lists six candidates (closure as a consequence; one rule for all readouts;
-  item size, where monotonicity across refinements is false both ways; the blind spot of a learned table; side
-  effects independent of the host up to the readout; threat models add up) and what was weighed and not proposed.
-  **C.1 worked out** (D.1; see "Waiting on the user"); proof note 5's sentence added to §5.1 as a prediction.
-  Claude's first reason against bounds on size was incomplete (it had not checked the graveyard: the idea is A');
-  corrected in part C.
+- **2026-11-16 (session 74, Fable): the theory session.** *Stage 1, the proof audit:* Proposition 1, Theorem 1 and
+  Corollary 1 correct with complete proofs. Three small new corrections (the ratio rule lost $b \ge 0$ in session
+  53b's fix; Table 7's caption wrong for a min pool under a replacement; §3.2's lead) and proof notes 1-4 applied
+  (d12ba89); note 5's sentence in §5.1 as a prediction (4e67a96). *Stage 2, ideas:* six candidates, each tried
+  against Algorithm 1 first (`theory-analysis.md` part C). The user chose two. **C.1 became Lemma 1 (*Closure*)**
+  (f2f1fcf): first written as a prose paragraph pointing to the appendix, which the user rejected ("splits the
+  baby"); now a lemma in §3.3 with its proof in Appendix C. By reading the code, it would derive closure for nine of
+  EMBER's thirteen operations and leave the four that move the layout checked; that instance work is deferred.
+  **C.2 became the readout rule** (c2fee51): unnumbered, part of Definition 10; Table 1 lists what each form rises
+  and falls with; the normalized bin is tighter under restricted content, nothing changes on EMBER. Dead: a monotone
+  trade-off across item sizes (false both ways, two counterexamples). Mistakes of Claude's, corrected on the user's
+  questions: a lemma statement with a needless closed superset that made it read as obvious, and bounds on size
+  dismissed first with a weak reason and then by citing A' as a verdict (the user: A' was early, much has changed;
+  the direction stays open). The oldest log entries (session 63) moved to the archive.
 - **2026-11-16 (sessions 72-73, Fable): the cost of robustness, closed and reverted.** Step 1 (three pilot
   experiments, a rewrite of *Where the cost lies*) and step 2 (the converse of Corollary 1: false in general) gave no
   theoretical result. The user lost confidence in the work; on their instruction the manuscript paragraph, the

@@ -1,149 +1,144 @@
-# Resume: the theory session (proof audit first, then ideas to strengthen the theory)
+# Resume: the theory track, continued (first, choose a direction with the user)
 
-Written at the end of session 73 (2026-11-16). Self-contained; paste it into a fresh session or say "read
-`docs/resume-prompt.md` and carry it out". It is written for whichever model the user chooses. The head-node session
-for the scale-up is a separate track: `docs/resume-prompt-head-node.md`.
+Written at the end of session 74 (2026-11-16). Self-contained; paste it into a fresh session or say "read
+`docs/resume-prompt.md` and carry it out". The head-node session for the scale-up is a separate track:
+`docs/resume-prompt-head-node.md`.
 
-## 1. The job, and its order
+## 1. The job
 
-The user wants **the theoretical contributions of the paper made stronger**. This session does that in two stages,
-and the order is fixed:
+The user wants **the theoretical contributions of the paper made stronger**. Session 74 audited the proofs and added
+two things to §3.3. This session continues, and **its first business is a decision, made with the user: which
+direction to work on.** Do not start on any direction before the user has chosen. The choices:
 
-1. **The proof audit** (section 4). Complete it, write it to the output file, commit, and report to the user.
-2. **Brainstorming how to improve the theory** (section 5), only after the audit and **together with the user**:
-   present candidates briefly, let the user choose, and work out only what they choose.
+1. one of the four remaining ideas of session 74 (section 4);
+2. **bounds on size instead of signs** (section 5), which the user called "an incredibly meaningful direction";
+3. a new direction from brainstorming, if the user prefers to look further.
 
-The session's output is one findings file, `docs/evidence/theory-analysis.md`. **It does not edit the manuscript, the
-code, `PLAN.md` or the pipeline, and it runs no experiments.** Anything that would change the paper is proposed as
-old and new text and waits for the user.
+Open the session with a short message: where the theory stands (section 3, in a few lines), the choices with one
+plain sentence each, and your recommendation with its reason. Then wait.
 
-## 2. What went wrong before, so that it is not repeated
+## 2. How to work (rules the last sessions paid for)
 
-Sessions 71-73 (Claude Fable 5.2) were meant to strengthen the theory and did not. The user's judgement: the work
-went off the rails, produced poorly conceived ideas and unsuccessful experiments, and was confusing. Everything it
-changed in the manuscript and the pipeline has been reverted (commit 3944894). Concretely:
+- **Read first:** `docs/status.md`, `PLAN.md` ("Thesis", next step 8, "Settled decisions"), then
+  `docs/evidence/theory-analysis.md` in full (the record of session 74), then §3 and Appendices B-C of the
+  manuscript (`_d_framework.tex`, `_i2_types.tex`, `_j_proofs.tex`). §2, §4 and §6 when the direction needs them.
+  Paper numbers come from `manuscript/main.aux`.
+- **Stay on theory.** No experiments, no detector training, no extractor changes. If an idea needs data, say what
+  and why, and stop there. Reading code to check how the theory is used is fine. The manuscript is edited only with
+  the user's approval, in the way of section 6.
+- **Kill an idea cheaply before developing it.** Look for a counterexample on the extractor of Algorithm 1 (records,
+  tokens, elements) first. Report a dead idea as dead, with its counterexample.
+- **Check the graveyard and the archive before proposing or dismissing anything**, and then report both what failed
+  earlier and what has changed since. An old negative result is not a verdict (memory
+  `old-negative-results-are-not-verdicts`): in session 74 Claude dismissed bounds on size by pointing to direction
+  A', and the user objected, rightly.
+- **Say plainly when something is elementary, already published, or false.** Do not present elementary order theory
+  or another field's standard result as ours. The user accepts small results that remove a premise or factor rules
+  for reuse, when they are called what they are.
+- **Plain language first, then mathematics.** One idea per paragraph. State a result so that its content is visible:
+  in session 74 a lemma was first stated with a needless closed superset and read as obvious ("isn't a subset of a
+  closed set closed?"; it is not). If the user finds a statement obvious, suspect the statement.
+- **Do not promise.** Say what is proved, what is believed, and what is unknown, in those words.
+- **One idea at a time**, reported after each. No option menus with invented names; no subagents.
 
-- The session narrowed "strengthen the theory" to one question (what the monotone detector's cost in detection is a
-  cost of), then drifted from mathematics into pilot experiments and a rewrite of §5.4.
-- It proposed feature engineering as theory (sums "anchored" to content the attacker cannot write; verified
-  signatures). The user rejected both outright: a feature that is robust only until the attacker finds the anchor is
-  not a contribution, and extractor redesign is not what the paper is about.
-- It compared detectors trained under different settings and reported pilot-subsample numbers as if they bore on the
-  full training set. **Boosting rounds stay at 500 for every detector; do not reopen it.**
-- It gave an estimate of "even odds" for a second theorem and then spent a session finding the statement false.
+## 3. Where the theory stands
 
-Rules that follow, for this session:
+`manuscript/main.aux` has: Definitions 1-10, Proposition 1 (*Exact side effects*), Theorem 1 (*Sound directions*),
+**Lemma 1 (*Closure*)**, Corollary 1 (*Robustness*), Table 1 (the readout forms), Equation 11 (**the readout rule**),
+Table 7 (the sign table, Appendix C).
 
-- **Stay on the theory of §3 and Appendices B-C.** No experiments, no extractor changes, no detector training. If an
-  idea seems to need data, say what and why, and stop there.
-- **Kill an idea cheaply before developing it.** For every candidate result, first look for a counterexample on the
-  extractor of Algorithm 1 (records, tokens, elements). Several plausible statements die there in five minutes.
-- **Tell the user early and plainly** when an idea is elementary, already published, or false. Do not present
-  elementary order theory or another field's standard result as ours.
-- **Plain language first**, then mathematics. Short. One idea per paragraph. No option menus with invented names.
-- **Do not promise.** State what is proved, what is believed, and what is unknown, in those words.
+- **The proofs were audited in session 74** and are correct. Seven small corrections are applied.
+- **Lemma 1 (*Closure*), new.** If the population is the set of inputs on which some features stay at or below given
+  values, and the derived table does not allow these features to rise, the population is closed under the threat
+  model. So closure follows from covering and the table when the population is defined through items ("no item of an
+  unwanted form").
+- **The readout rule, new.** A readout rises with some of its sums, falls with others, and reads the rest in some
+  other way; the feature's direction is the union of what they pass on. It replaces Table 1's six rules, defines the
+  derived table (Definition 10), and covers totals, differences and means without new proofs. Unnumbered by the
+  user's decision: it is a factoring of elementary rules for reuse, not a result.
+- **The user approved both after a brief look and has not read them closely.** Expect comments on wording.
+- **Where the theory is thin** (`theory-analysis.md`, part B): it is silent on item size; covering is checked on a
+  corpus, not proven; the table is sound with nothing said about how loose it is; Corollary 1 is one-way;
+  Proposition 1 has no consequence inside the theory; §5.3's finding has no statement behind it.
 
-## 3. What is already known (do not redo)
+## 4. The remaining ideas of session 74
 
-The record of sessions 71-73 is `docs/archive/fable-cost-of-robustness.md`. **Do not read it by default** and do not
-take text from it into the paper; open a section only when checking one of the facts below.
+Each is in `theory-analysis.md`, part C, with the check on Algorithm 1 and the strongest argument against it. All are
+elementary and of remark size; none is proved in writing yet.
 
-- **A converse of Corollary 1 is false in general** (§9.4 there). "Every detector no edit can evade is monotone with
-  respect to the table" fails on Algorithm 1 under "add a record": the score *size − records* cannot be evaded and is
-  not monotone with respect to the table (compare 1 record of size 10 with 5 records of size 11). The cause is one
-  item feeding two sums that move by amounts no identity ties. It holds only on blocks where every contribution is
-  a unit count (the import buckets).
-- **Unevadable is equivalent to "no single change of the signature lowers the score"** when every change can be
-  carried out on its own. True, elementary, and the one-sided form of Proposition 1 of Wang et al., *Robust Learning
-  against Relational Adversaries*, NeurIPS 2022 (`papers/wang2022robust.pdf`; not in `main.bib`).
-- **Gimenez et al.'s Proposition 2 is already a converse** of an existential kind (every robust detector is a
-  monotone one after a post-processing built from the classifier). §6 of the manuscript says so correctly.
-- **The derived table on the sums is the least sound table** if every sign in it is witnessed by some edit (§9.5).
-  Two-line proof; it is the "region's tightness" that the paper mock lists as dropped.
-- **No bound on the cost of robustness can be computed from data without a learner** (§2.4): the in-sample ceiling
-  is 100% for every class of unevadable detectors.
-- **A relational refinement of the sign table** (evaluating a weighted total of sums on each change; the dual cone of
-  the change vectors) is sound and was declined by the user as machinery without payoff on EMBER. It is what ERDALT's
-  linear layer learns from examples.
-- **Five small corrections to §3.3 and Appendix C** are written up with old and new text in
-  `docs/evidence/proof-notes.md`. None is applied; the user decides each. The audit should confirm or correct them,
-  not rediscover them.
+- **C.3, item size.** The hoped-for monotone trade-off is **false both ways** (two counterexamples on record). What
+  survives: tables from different item maps can be intersected; the one-item limit is the least sound table by
+  definition; Proposition 1's delta only shrinks as items get finer. The user's stated interest. Touches the
+  "tightness" that the mock lists as dropped.
+- **C.4, the blind spot of a table learned from attacks.** It is exact for the attacks seen and silent on the same
+  operations with other content; the derived table for the same operations with any content is the difference. A
+  statement behind §5.3. Does not cover ERDALT's linear layer without the relational rule the user declined.
+- **C.5, side effects and the host.** The same delta changes every additive sum by the same amount on every host;
+  the host enters only through the sums a readout reads. A consequence of Proposition 1 that answers Pierazzi et
+  al.'s two-hosts remark.
+- **C.6, threat models add up.** The table of a union of threat models is the union of their tables, and on a
+  population closed under both no combination of operations moves a feature where no single one does. Behind §5.4's
+  per-operation reading; says what closure buys.
 
-## 4. Stage 1: the proof audit
+## 5. Bounds on size instead of signs
 
-Read fully, in this order: `manuscript/_c_background.tex` (§2), `manuscript/_d_framework.tex` (§3),
-`manuscript/_i2_types.tex` (Appendix B), `manuscript/_j_proofs.tex` (Appendix C), `manuscript/_e_instances.tex` (§4,
-for how the theory is used: signatures of operations stated as writes come from a record of the positions the parser
-reads and are *checked* on a corpus, not proven), `manuscript/_g_related_work.tex` (§6), `docs/evidence/r6-prior-work.md`,
-`docs/evidence/proof-notes.md`. Then `PLAN.md` ("Thesis", "Settled decisions") and `docs/paper-mock.md` (the
-contributions and "Dropped from the paper"). Paper numbers come from `manuscript/main.aux`: Definitions 1-10,
-Proposition 1 (*Exact side effects*), Theorem 1 (*Sound directions*), Corollary 1 (*Robustness*), Table 1 (the
-readout rules), Table 7 (the sign table).
+**Status: open, wanted by the user, not started.** The idea: bound how far a budget can move each sum and feature,
+not only which way, so that a detector may also rely on features that a realistic budget cannot move far.
 
-Check Proposition 1, Theorem 1 and Corollary 1, and everything they use: the sign table, the readout rules and the
-ratio's side condition, the total-order hypothesis, pools and their neutral elements, replacements against removal
-plus addition, sequences of edits and closure, the hashed-keys and patterns-under-extension paragraphs, and Appendix
-B. For each, one of four verdicts:
+- **What was tried.** Direction A' (`docs/graveyard.md`, dropped 2026-11-02): a sound region per file and budget,
+  with an exact solver over the trees. It certified nothing above 4 KB, against a budget of 5% of the file or 512 KB.
+  The user: that was "at a much earlier point. A lot has changed since then."
+- **What has changed since** (Claude's reading, untested): A' certified fragile detectors, and the question can now
+  be what a *robust* detector may read beyond the one-sided features; A' bounded features and lost precision in the
+  formulas, and detectors can now read the sums, where one added element moves one count by exactly one; the
+  signature gives a place to state what each change costs; the readout rule maps a box of sums to the interval
+  between two of its corners, unchanged.
+- **Obstacles to design around, not verdicts:** the domain has no natural small budget; a header field or a presence
+  bit covers its whole range with one write, and the pilot's price list puts most of the cost of robustness in the
+  constraints for imports and header writes; the guarantee would be per file and budget, not for every file of the
+  population.
+- **How to start, if chosen:** as Sound Directions round 4 did. A short note that settles the mathematics (the
+  objects in order, each with why the result needs it), a counterexample hunt on Algorithm 1, the user's review,
+  and only then any thought of an experiment. Read `docs/archive/a-prime/` only to learn what failed and why.
 
-- **Correct as stated**: one line.
-- **Wrong**: the smallest counterexample.
-- **A real gap**: right in spirit, but a careful formal-methods reviewer would ask for a change. The smallest fix, as
-  old and new text.
-- **Pedantic**: one line at the end, or dropped.
+## 6. How the manuscript was changed in session 74 (keep to it)
 
-Then half a page, in plain language: what the three results say together, what is new in them stated as strongly as
-is honest, and where the theory is thinner than the paper's claims. Write part A (audit) and part B (this half page)
-to the output file, commit, and **report to the user before going on**.
+1. The idea is worked out in `docs/evidence/theory-analysis.md` (statement, proof, the check on Algorithm 1, what
+   reading the code says about EMBER, proposed text).
+2. On the user's go, the text goes into the manuscript **uncommitted**; the user sees it as rendered text with a
+   list of the choices made, reviews, and approves the commit.
+3. A statement that belongs to the framework gets its own environment in §3 (`\lemma`, `\theorem`, ...) with the
+   proof in Appendix C. A paragraph in §3 that only points to the appendix was rejected ("splits the baby"): either
+   the idea is part of the framework, or its mention is much shorter.
+4. Prose with the project skill `paper-prose`; `make` and `make check` in `manuscript/`; small diffs.
 
-## 5. Stage 2: ideas to strengthen the theory (with the user)
+## 7. Follow-ups that are not this session's work
 
-"Stronger" means: a result that says more, a result that covers more (a larger class of extractors, weaker
-hypotheses), a result that gives a finding of §5 a theoretical footing, or a cleaner formulation that makes the
-existing results easier to appreciate.
+Listed in `docs/status.md` and PLAN.md, next step 8 (c). Do them only if the user asks.
 
-Open questions the original prompt raised and that have **not** been worked on:
+- The instance-level work for Lemma 1: the population's clauses as counts over items, the derived table rebuilt, the
+  nine in-place and append operations confirmed, the four layout-moving operations decided. §4.4 still says closure
+  is checked, and stays so until then.
+- `monotone_violations` called in `4-detectors/train` before the scale-up trains; §5.1's blue sentence waits for it.
+- Optional: the tighter rule for a normalized bin in `reach.py`.
+- One overfull vertical box of 1 pt in Appendix D since the readout rule went in.
 
-- **Learned versus derived constraints.** §5.3 finds that defenses learned from observed attacks miss edits they
-  never saw. Is there a short general statement behind it, so that 5.3 is a consequence and not only an observation?
-- **Closure and populations.** Theorem 1 needs a population closed under the threat model, and one write outside the
-  threat model can take an input out. What can be said without closure, or about the largest population on which a
-  table is sound?
-- **Item size and locality** (the user's stated interest). Items are hierarchical and the framework applies at every
-  granularity. Is there a precise statement of the trade-off between coarse and fine items, such as a monotonicity
-  result across refinements of the item map?
-- **The class itself.** Which extractors are sum-then-readout, what falls outside, and is there a characterization or
-  a clean extension?
-- **Proposition 1's own weight.** What does exactness enable beyond Theorem 1, for instance in relation to Pierazzi
-  et al.'s side-effect vector? No timing claims.
-- **A richer abstract domain than signs** (bounds on magnitude). Weigh it against the user's dislike of machinery and
-  against the declined relational rule.
+## 8. Settled; do not reopen without a strong, specific reason
 
-Already closed, see section 3: converses of Corollary 1, tightness of the table, bounds on the cost of robustness.
+- Closed in sessions 71-73: converses of Corollary 1 (false in general), bounds on the cost of robustness computed
+  from data, feature engineering as theory, boosting rounds (500 for every detector). The record,
+  `docs/archive/fable-cost-of-robustness.md`, is not read by default and not used for the paper.
+- That every feature mapping meets Definition 5 is a property of the framework, not a gap (user, session 53b).
+- The relational refinement of the sign table was declined as machinery without payoff on EMBER.
+- The formalization is a contribution; be harsh but fair about novelty; credit foundations without a
+  borrowed-versus-new ledger. Elegant fixes only, reusing a mechanism the framework has. Proofs carry the weight.
+- The framework is format-free: no PE specifics in §3. No timing claims, no effort claims, no packing motivation, no
+  sandbox execution, no extractor redesign for robustness.
+- Cited work in its authors' terms, checked against the PDF in `papers/`.
 
-How to run this stage: give the user a short list (at most six candidates; for each: the statement in plain words,
-whether you believe it and why, the check on Algorithm 1, what it would change in the paper, its cost in new
-concepts, and the strongest argument against it). The user chooses. Only then attempt a proof or a counterexample,
-one idea at a time, reporting after each. A clean failure is reported as a failure.
+## 9. Output and housekeeping
 
-## 6. Settled; do not reopen without a strong, specific reason
-
-- The formalization is a contribution; be harsh but fair about novelty. Credit foundations as foundations, never as
-  a borrowed-versus-new ledger that concedes each result (the novelty is the combination).
-- Elegant fixes only, for gaps a real reader cares about; prefer reusing a mechanism the framework has over a new
-  hypothesis or clause. Loophole findings no reader cares about are not problems.
-- Proofs carry the weight: no machinery or pages for assumptions that are checked on a corpus.
-- The framework is format-free: no PE specifics in §3. The domain is adversarial examples in practical security tasks.
-- No timing claims, no effort claims, no packing motivation, no sandbox execution, no extractor redesign for
-  robustness.
-- Dropped earlier for complexity, not for being wrong (the mock's "Dropped from the paper"): coupling, the region's
-  tightness, a cost theorem, the old Theorems 2-3. Bringing one back needs an explicit argument and the user's yes.
-- Portray cited work in its authors' terms and check every claim about it against the PDF in `papers/`; mark
-  anything from memory as such.
-
-## 7. Output and housekeeping
-
-- `docs/evidence/theory-analysis.md`: A. proof audit; B. the theory in brief; C. candidate ideas (after the user has
-  seen A and B); D. proofs or counterexamples for the ideas the user chose; E. what to do next, in a few sentences.
-  Commit after each part. Do not push.
-- At the end, update `docs/status.md` (its "Waiting on the user" entry for the proof notes and its session log).
-- Do not spawn subagents.
+- Continue `docs/evidence/theory-analysis.md` with new parts (F onward) for this session's ideas; commit after each
+  part. Do not push.
+- At the end: `docs/status.md`, PLAN.md's next step 8, `docs/README.md` if a document was added, and this file
+  rewritten for the session after.
