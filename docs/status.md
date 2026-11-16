@@ -145,7 +145,10 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
   audit and ideas phase of the original prompt (`git show 0563ef0:docs/fable-theory-prompt.md`), findings file only.
 - **Resubmit the rest of the scale-up** (session 74), on the tigris head node from the repository root (the finished
   steps and the gate left out; the queued catalogue check, hand table and trial table are reused):
-  `SKIP="3-directions/derived 3-directions/gate 1-audit/population 1-audit/item-checks 1-audit/escapes 1-audit/deviations" bash pipeline/submit.sh`.
+  `SKIP="3-directions/derived 3-directions/gate 1-audit/population 1-audit/item-checks 1-audit/escapes 1-audit/deviations train 4-detectors/price-list" bash pipeline/submit.sh`
+  (after `scancel` of any pending job it would otherwise reuse). First resubmission failed on two bugs, both fixed
+  (2a42a34: files with fewer than 16 directory entries; 384f0d7: secml's `~/secml-data` race); `train` and
+  `price-list` finished.
   Report failures as they come (logs in `logs/<name>_<id>.out` and `artifacts/scaleup/<stage>/logs/`). Once the
   first adaptive and toolkit tasks finish, shorten their 24 h walltime limits from the measured times.
 - **`git push`** from the server that has the session-74 commits, then `git pull` on the other machine.
