@@ -43,3 +43,5 @@ tasks() {  # number of shards
 }
 
 echo "System $SYSTEM, $NUM_WORKERS workers, outputs under $OUT_ROOT."
+echo "Threads per process: OMP $OMP_NUM_THREADS, OpenBLAS $OPENBLAS_NUM_THREADS, polars $POLARS_MAX_THREADS;" \
+  "cores visible $(env -u OMP_NUM_THREADS -u OMP_THREAD_LIMIT nproc); process limit $(ulimit -u) (per user and node)."
