@@ -42,7 +42,7 @@ The order (each step's inputs are the outputs above it):
 2. `3-directions/derived` (from the training list, checked against the evaluation set), `3-directions/gate`; `1-audit/*` (the catalogue check's edits feed the trial); `3-directions/trial`;
 3. `4-detectors/train` (Table 5, the expert set, trial);
 4. `4-detectors/adversarial-training` (the material, array; `REPAIR=` mends finished shards from a list of lost tasks), then `4-detectors/learned` (PV, ERDALT, adversarial
-   training, the leave-one-out folds; GPUs), then `4-detectors/iterated`;
+   training, the leave-one-out folds; GPUs), then `4-detectors/iterated`; `4-detectors/monotone-check` any time after `train` and `learned` (not in `submit.sh`: `sbatch pipeline/4-detectors/monotone-check/run.sh`);
 5. `5-attacks/toolkit`, `5-attacks/adaptive` (arrays), `5-attacks/mab-malware`;
 6. `6-results`.
 
@@ -66,6 +66,7 @@ The order (each step's inputs are the outputs above it):
 | `4-detectors/learned` | (`train_classic.py`, `train_erdalt.py`, `pv_hole.py`) | yes (PV, ERDALT, adversarial training, leave-one-out) | runs 133, 135 |
 | `4-detectors/iterated` | (`adaptive.py --save_rows`, `train_classic.py`) | yes (two rounds) | none (R18 step 3) |
 | `4-detectors/price-list` | `price_list.py` | protocol session | run 126 |
+| `4-detectors/monotone-check` | `check_monotone.py` | no (reads the finished models; one core, minutes; confirms §5.1's sentence that no monotone tree violates its constraints) | none (checked by hand on the pilot's models) |
 | `5-attacks/toolkit` | `toolkit.py` (with `--escape`), `pv_attacks.py` (pilot only) | yes (array: detectors, escapes, folds, R19's donor control) | runs 81, 100, 123-124, 131, 133, 135 |
 | `5-attacks/adaptive` | `adaptive.py`, `expert_adaptive.py` | yes (array: escapes x shards, the expert set) | runs 127, 120, 143, 144 |
 | `5-attacks/mab-malware` | `mab.py` | yes (ours, the expert set, Zainab et al.'s setting) | runs 139, 144 |
