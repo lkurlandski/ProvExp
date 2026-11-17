@@ -52,7 +52,10 @@ realistic ones did. Realistic examples are costly to generate, and Lucas et al.~
 adversarial training of raw-binary detectors practical by generating problem-space examples in parallel on over 140
 workers, which brought the time for one training epoch from months to between one and ten days. Lucas et
 al.~\cite{lucas2024training} later trained raw-binary detectors without creating adversarial examples at all,
-and report detectors more robust than those of the earlier work with 91\% less computation on average. A
+and report detectors more robust than those of the earlier work with 91\% less computation on average.
+Tsingenopoulos et al.~\cite{tsingenopoulos2024train} harden a detector of dynamic-analysis reports with examples that a
+reinforcement-learning agent builds from a set of problem-space transformations the authors define, and claim a
+probabilistic guarantee of robustness against adversaries with those capabilities. A
 hardened detector resists the kinds of edits it was trained on. A defender can also build a detector that the attacker's
 edits cannot evade at all. If the edits can only raise each feature they touch, and the detector's score never falls
 when a feature rises, no sequence of edits lowers the score. Incer et al.~\cite{incer2018adversarially} built malware
