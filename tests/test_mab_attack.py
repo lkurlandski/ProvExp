@@ -12,10 +12,14 @@ from __future__ import annotations
 from multiprocessing import get_context
 from pathlib import Path
 from typing import Any
+from typing import Optional
 
+import pefile
 import pytest
 
 ROOT = Path(__file__).parent.parent
+from provexp.attacks.mab import checked_os  # noqa: E402
+from provexp.attacks.mab import checked_system  # noqa: E402
 from provexp.attacks.mab import donor_contents  # noqa: E402
 from provexp.attacks.mab import trace_run  # noqa: E402
 
@@ -36,6 +40,13 @@ def needs_files() -> None:
 def _smallest(files: list[Path], n: int) -> list[tuple[str, bytes]]:
     chosen = sorted(files, key=lambda f: f.stat().st_size)[:n]
     return [(f.name, f.read_bytes()) for f in chosen]
+
+
+def _parse(data: bytes) -> Optional[pefile.PE]:
+    try:
+        return pefile.PE(data=data)
+    except pefile.PEFormatError:
+        return None
 
 
 def _run(task: dict[str, Any]) -> dict[str, Any]:
@@ -91,3 +102,48 @@ class TestDonors:
         assert n == len(files) > 0
         assert all(f.stat().st_size > 0 for f in files)
         assert all(len(f.name.split("|")) == 3 for f in files)
+
+    def test_section_name_with_slash(self, tmp_path: Path) -> None:
+        # A COFF long-name reference such as '/4' cannot go into a file name as is; upstream loses the section.
+        needs_files()
+        name, pe = next((n, pe) for n, d in _smallest(GOODWARE, len(GOODWARE)) if (pe := _parse(d)) and pe.sections)
+        pe.sections[0].Name = b"/4\0\0\0\0\0\0"
+        renamed = bytes(pe.write())
+        n = donor_contents([(name, renamed)], tmp_path)
+        names = sorted(f.name.split("|")[1] for f in tmp_path.iterdir())
+        assert n == len(names) and "_4" in names
+
+
+################################################################################
+# Checked shell commands
+################################################################################
+
+class TestCheckedSystem:
+    def test_success(self, tmp_path: Path) -> None:
+        src, dst = tmp_path / "a", tmp_path / "b"
+        src.write_bytes(b"x")
+        assert checked_system(f"cp -p {src} {dst}") == 0
+        assert dst.read_bytes() == b"x"
+
+    @pytest.mark.parametrize("command", ["cp -p {d}/missing {d}/out", "mv {d}/missing {d}/out", "exit 3"])
+    def test_failure_raises(self, tmp_path: Path, command: str) -> None:
+        with pytest.raises(RuntimeError, match="shell command failed"):
+            checked_system(command.format(d=tmp_path))
+
+    def test_shell_not_started_is_retried(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        results = iter([-1, 0])
+        monkeypatch.setattr("provexp.attacks.mab.os.system", lambda _: next(results))
+        monkeypatch.setattr("provexp.attacks.mab.time.sleep", lambda _: None)
+        assert checked_system("true") == 0
+
+    def test_shell_never_started_raises(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.setattr("provexp.attacks.mab.os.system", lambda _: -1)
+        monkeypatch.setattr("provexp.attacks.mab.time.sleep", lambda _: None)
+        with pytest.raises(RuntimeError, match="status -1"):
+            checked_system("true", attempts=2)
+
+    def test_checked_os_leaves_os_alone(self) -> None:
+        import os
+        module = checked_os()
+        assert module.system is checked_system and os.system is not checked_system
+        assert module.path is os.path

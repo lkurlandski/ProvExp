@@ -12,6 +12,7 @@ from pathlib import Path
 import random
 import sys
 import time
+import types
 from typing import Any
 from typing import Callable
 from typing import Optional
@@ -25,8 +26,8 @@ from provexp.detectors import make_extractor
 from provexp.detectors import precondition_holds
 from provexp.models.erdalt import load_detector
 
-__all__ = ["ATTACK", "MABChannel", "MAB_DIR", "donor_contents", "final_file", "hash_evasive", "import_upstream",
-           "run_sync", "trace", "trace_run", "write_config"]
+__all__ = ["ATTACK", "MABChannel", "MAB_DIR", "checked_os", "checked_system", "donor_contents", "final_file",
+           "hash_evasive", "import_upstream", "run_sync", "trace", "trace_run", "write_config"]
 
 
 MAB_DIR = ROOT / "third_party" / "mab_malware"
@@ -39,10 +40,12 @@ def donor_contents(goodware: list[tuple[str, bytes]], out_dir: Path) -> int:
     Cut every section of every goodware file into `out_dir`, as upstream's process_benign_dataset.py does.
 
     Each file is named `{goodware name}|{section name}|{SizeOfRawData}` and holds the section's raw data (truncated at
-    the end of the file). As upstream, a file whose sections cannot all be cut (a name that is not UTF-8 or holds a
-    '/') keeps the sections cut before the failure. Unlike upstream, empty contents (sections with no raw data) are
-    skipped: upstream's section-append action repeats its content until it fills a section's slack, which never ends
-    for an empty one (arm.py, ArmSP.transfer), and an empty content adds nothing.
+    the end of the file). As upstream, a file whose sections cannot all be cut (a name that is not UTF-8) keeps the
+    sections cut before the failure. Unlike upstream, a '/' or '|' in a section name (COFF long-name references such
+    as `/4`) becomes '_', so that the file name holds it (upstream loses these sections; the section-append action
+    then names its section `_4`). Also unlike upstream, empty contents (sections with no raw data) are skipped:
+    upstream's section-append action repeats its content until it fills a section's slack, which never ends for an
+    empty one (arm.py, ArmSP.transfer), and an empty content adds nothing.
 
     Args:
         goodware: (name, bytes) of the donor goodware.
@@ -58,7 +61,7 @@ def donor_contents(goodware: list[tuple[str, bytes]], out_dir: Path) -> int:
             pe = pefile.PE(data=data)
             for section in pe.sections:
                 offset, size = section.PointerToRawData, section.SizeOfRawData
-                sname = section.Name.split(b"\0", 1)[0].decode("utf-8")
+                sname = section.Name.split(b"\0", 1)[0].decode("utf-8").replace("/", "_").replace("|", "_")
                 if not data[offset: offset + size]:
                     continue  # NOTE: see the docstring (upstream's endless loop on an empty content)
                 (out_dir / f"{name}|{sname}|{size}").write_bytes(data[offset: offset + size])
@@ -107,6 +110,41 @@ save_json_folder = output/cuckoo_json/
 """)
 
 
+def checked_system(command: str, attempts: int = 3) -> int:
+    """
+    `os.system` for upstream's file operations (`cp`, `mv`, `rm`), which never look at the result.
+
+    A shell that could not be started (status -1) is retried after a pause; any other failure raises. Upstream would
+    carry on: a failed copy crashes later on a missing file, a failed move silently loses an evasive file (scale-up
+    job 1030369_2 stopped on a copy that left no error message, i.e. a shell that never ran).
+
+    Args:
+        command: The shell command.
+        attempts: How many times to try starting the shell.
+
+    Returns:
+        0 (the command succeeded).
+    """
+    status = -1
+    for attempt in range(1, attempts + 1):
+        status = os.system(command)
+        if status != -1:
+            break
+        print(f"  shell could not start (try {attempt} of {attempts}): {command[:200]}", flush=True)
+        time.sleep(2.0 * attempt)
+    if status != 0:
+        raise RuntimeError(f"Upstream's shell command failed (status {status}): {command[:300]}")
+    return 0
+
+
+def checked_os() -> Any:
+    """A copy of the `os` module whose `system` is `checked_system`, to bind in upstream's modules."""
+    module = types.ModuleType("os_checked")
+    module.__dict__.update(os.__dict__)
+    setattr(module, "system", checked_system)
+    return module
+
+
 def import_upstream() -> dict[str, Any]:
     """Import upstream's modules from the run directory (the current one): they read its config at import time."""
     if not Path("conf/configure.ini").exists():
@@ -119,6 +157,9 @@ def import_upstream() -> dict[str, Any]:
     import utils  # type: ignore[import-not-found]
 
     utils.Utils.create_folders()
+    checked = checked_os()
+    for name in ("arm", "bandit", "sample", "samples_manager", "utils"):
+        setattr(sys.modules[name], "os", checked)  # upstream binds `os` per module (`from utils import *`)
     # NOTE: upstream also echoes every action to stdout; its log files in the run directory keep the full record.
     for h in list(utils.logger_rew.handlers):
         if type(h) is logging.StreamHandler:
