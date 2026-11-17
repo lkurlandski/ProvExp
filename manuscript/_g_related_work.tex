@@ -22,32 +22,26 @@ including edits no attack has tried.
 % them by hand.
 \paragraph{Constraints over features}
 A second line of work keeps the attack in feature space, where gradients and search are cheap, and restricts it to
-realizable feature vectors, those that a valid edit of the object can produce. The restriction is written as
-constraints over features: some features are immutable, and others are tied together, as a total must equal the sum of
-its parts. The attack perturbs a vector as usual and keeps or repairs only steps that satisfy the constraints.
-Simonetto et al.~\cite{simonetto2022unified} made this approach domain-independent. They define a
-grammar in which linear and non-linear relations among features can be written, and give two attacks that respect any
-constraint set written in it, which they apply to botnet detection, malware detection, credit scoring, and phishing.
-Chernikova and Oprea's FENCE~\cite{chernikova2022fence} does the same
-for network-traffic and malicious-domain classifiers, updating dependent features after each step so that they stay
-consistent. Kantchelian et al.~\cite{kantchelian2016evasion} find the nearest evading instance of a tree ensemble in
-feature space with a mixed integer program, to which the analyst can add dependencies among features that the extractor
-creates, such as features of which exactly one is nonzero.
+realizable feature vectors by constraints over features: some features are immutable, and others are tied together, as
+a total must equal the sum of its parts. Simonetto et al.~\cite{simonetto2022unified} made this approach
+domain-independent, with a grammar for linear and non-linear relations among features and attacks that respect any
+constraint set written in it, and Chernikova and Oprea's FENCE~\cite{chernikova2022fence} does the same for
+network-traffic and malicious-domain classifiers, updating dependent features after each step. Kantchelian et al.~\cite{kantchelian2016evasion} find the nearest evading instance of a tree ensemble with a
+mixed integer program, to which the analyst can add dependencies that the extractor creates, such as features of which
+exactly one is nonzero.
 
 All three take the constraints as input, which leaves open where the constraints come from. Dyrmishi et
-al.~\cite{dyrmishi2023empirical}, who compare hardening against such attacks with hardening against realistic ones,
-note that the attacker must write the constraints in analytical form, typically with a domain expert. For Windows
-malware, they took the immutable features from Microsoft's description of the executable format and the dependencies
-among features from sample files. Sheatsley et al.~\cite{sheatsley2021robustness} learn constraints from data around a
-few features chosen by hand, which reduces the expert's part but ties the constraints to the examples they were learned
-from. Bostani et al.~\cite{bostani2025level} learn dependencies among features from the feature vectors of many Android
-apps and use them to generate realizable feature-space examples for adversarial training, and they note that constraints
-learned from a finite sample describe only part of the realizable feature space.
-None of these derives the constraints from the extractor itself. A hand-written constraint is only as complete as its
-author's reading of the extractor, and a learned one can admit vectors that no edit reaches and exclude vectors that
-some edit does. We derive what these attacks take as input. For a sum-then-readout extractor and a declared set of
-edits, we compute from the extractor itself which way each feature can move, without an expert or a sample, and the
-result holds for every edit in the set, including edits no sample contains.
+al.~\cite{dyrmishi2023empirical} note that they must be written in analytical form, typically with a domain expert; for
+Windows malware, they took the immutable features from Microsoft's description of the executable format and the
+dependencies among features from sample files. Sheatsley et al.~\cite{sheatsley2021robustness} learn constraints from
+data as Boolean formulas, and show that a learned constraint set admitting only valid inputs reduces to memorizing the
+training data. Two works learn constraints to generate examples for adversarial training: Bostani et
+al.~\cite{bostani2025level} learn dependencies among features from many Android apps, and note that constraints learned
+from a finite sample describe only part of the realizable feature space; Labaca-Castro et
+al.~\cite{labaca2022realizable} estimate, for each EMBER feature, how likely a problem-space
+attack is to change it, and sample perturbations from these estimates as if the features were independent. None of
+these derives the constraints from the extractor itself. We do: for a declared set of edits, we compute which way each
+feature can move under any edit in the set, with neither an expert nor a sample.
 
 \paragraph{Robust and monotone detectors}
 Constraints tell an attacker which feature vectors to search. A defender can use the same knowledge to harden a detector
