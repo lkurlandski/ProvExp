@@ -6,9 +6,9 @@
 #SBATCH --output=./logs/%x_%j.out
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
-#SBATCH --cpus-per-task=72
+#SBATCH --cpus-per-task=16
 #SBATCH --time=0-08:00:00
-#SBATCH --mem=200G
+#SBATCH --mem=96G
 #
 # The scale-up's tables from the stored models and attack outputs (runs no attack). FOR ACADEMIC SECURITY RESEARCH
 # ONLY: reads outputs of attacks run against our own detectors.
@@ -23,7 +23,8 @@
 # Inputs: everything upstream (2-features, 3-directions/loose, 4-detectors, 5-attacks, 1-audit/catalogue); a missing
 # detector or attack output is left out of the tables, not an error.
 # Output: $OUT_ROOT/6-results/{tables,coverage,erdalt}/. Knobs: PARTS (default "tables coverage erdalt").
-# Cost: minutes, plus coverage's population check of the 10,000 training malware (~10-20 min on 36 cores).
+# Cost: minutes, plus coverage's population check of the 10,000 training malware (~10-20 min on 36 cores, so ~30-45 min
+# on the header's 16). Only coverage.py runs a pool; tables and erdalt run on one core, so more cores would sit idle.
 set -euo pipefail
 cd "${SLURM_SUBMIT_DIR:-$(dirname "$0")/../..}"
 source pipeline/common.sh
