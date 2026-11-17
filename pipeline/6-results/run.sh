@@ -30,7 +30,6 @@ cd "${SLURM_SUBMIT_DIR:-$(dirname "$0")/../..}"
 source pipeline/common.sh
 
 PARTS="${PARTS:-tables coverage erdalt}"
-DATA="${EMBER2024_DATA:-/shared/datasets/EMBER-2024/data}"
 DIR=$OUT_ROOT/3-directions/loose
 DET=$OUT_ROOT/4-detectors
 OUT=$OUT_ROOT/6-results
@@ -53,7 +52,6 @@ for part in $PARTS; do
         --stem M_full-pre-control \
         --adv_dir "$DET/material/sums" \
         --adv_features "$OUT_ROOT/2-features/sums" \
-        --db "$DATA/tr" \
         --holes "$DET/pv-selection/hole.csv" \
         --edits "$OUT_ROOT/1-audit/catalogue/edits.parquet" \
         --sizes 100 1000 10000 \
@@ -68,7 +66,6 @@ for part in $PARTS; do
         --features "$OUT_ROOT/2-features/sums" \
         --protocol scaleup \
         --pilot_files "$OUT_ROOT/2-features/files/ts.parquet" \
-        --db "$DATA/ts" \
         --outdir "$OUT/erdalt" \
         &> "$OUT/logs/erdalt.log"
       grep -E "weight_share_violating" "$OUT/logs/erdalt.log" ;;

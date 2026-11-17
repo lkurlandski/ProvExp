@@ -150,12 +150,12 @@ def main() -> None:
                         "min_delta_logit on one is an A1-A4 bug; on any other defense it is just the search working).")
     parser.add_argument("--features", type=Path, required=True, help="The feature store the defenses were trained on.")
     parser.add_argument("--pilot_files", type=Path, default=ROOT / "artifacts/experiments/e1/seed-0/zeros/files.parquet")
-    parser.add_argument("--db", type=Path, default=EMBER2024_DATA / "ts")
+    parser.add_argument("--db", type=Path, default=EMBER2024_DATA / "ts",
+                        help="The SimpleDB of --pilot_files (the pilot protocol; the scale-up reads the file store).")
     parser.add_argument("--protocol", choices=tuple(PROTOCOLS), default="pilot",
                         help="pilot: the pilot list and donors, thresholds on ts; scaleup: the evaluation list, --donors, "
                              "thresholds on vl (provexp.data.files.PROTOCOLS).")
     parser.add_argument("--donors", type=Path, default=None, help="Scale-up: the donor list (training goodware).")
-    parser.add_argument("--donor_db", type=Path, default=EMBER2024_DATA / "tr", help="The SimpleDB split of --donors.")
     parser.add_argument("--threat_model", choices=["M_add", "M_shift", "M_full"], default="M_full")
     parser.add_argument("--operations", nargs="*", default=None, help="Restrict to these operation names "
                         "(default: every operation of the threat model).")
@@ -210,7 +210,7 @@ def main() -> None:
         vector = extractor
     print(f"Scoring {args.score} ({vector.dim} features); operations {','.join(ops)}.", flush=True)
 
-    malware, goodware = load_attacked(args.protocol, args.pilot_files, args.db, args.donors, args.donor_db)
+    malware, goodware = load_attacked(args.protocol, args.pilot_files, args.db, args.donors)
     if args.num_malware is not None:
         malware = malware[: args.num_malware]
     if not 0 <= args.shard < args.num_shards:
@@ -231,7 +231,7 @@ def main() -> None:
               "queries": args.queries, "seed": args.seed, "budget_frac": args.budget_frac,
               "budget_min": args.budget_min, "beam": args.beam, "draws": args.draws, "patience": args.patience,
               "checkpoints": tuple(args.checkpoints), "score": args.score, "save_rows": args.save_rows,
-              "protocol": args.protocol, "donors": args.donors, "donor_db": args.donor_db}
+              "protocol": args.protocol, "donors": args.donors}
     tasks: list[tuple[str, str, float, list[tuple[int, int]], str, bytes, float, bool, bool]] = []
     for d, mdir in defenses.items():
         booster = padded_booster(mdir, vector.dim)

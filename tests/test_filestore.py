@@ -1,5 +1,6 @@
 """
-Tests for provexp.data.filestore and the loaders' use of it (provexp.data.files).
+Tests for provexp.data.filestore, its location (provexp.data.paths.file_store), and the loaders' use of it
+(provexp.data.files): the scale-up reads only the store and stops when it or a file is missing.
 """
 
 from __future__ import annotations
@@ -13,8 +14,11 @@ import pytest
 
 from provexp.data.filestore import STORE_NAME
 from provexp.data.filestore import FileStore
-from provexp.data.filestore import store_beside
 from provexp.data.files import FileReader
+from provexp.data.files import load_donors
+from provexp.data.files import load_evaluation
+from provexp.data.files import read_files
+from provexp.data.paths import file_store
 
 __all__: list[str] = []
 
@@ -60,19 +64,66 @@ class TestFileStore:
         with pytest.raises(RuntimeError):
             FileStore(tmp_path / STORE_NAME).get(name)
 
-    def test_store_beside(self, tmp_path: Path) -> None:
-        assert store_beside(tmp_path / "ts.parquet") is None
+
+
+class TestFileStoreLocation:
+
+    def test_unset_raises(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.delenv("FILE_STORE", raising=False)
+        with pytest.raises(RuntimeError, match="FILE_STORE is not set"):
+            file_store()
+
+    def test_missing_store_raises(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.setenv("FILE_STORE", str(tmp_path / STORE_NAME))
+        with pytest.raises(FileNotFoundError, match="No file store"):
+            file_store()
+        with pytest.raises(FileNotFoundError):
+            FileReader()
+
+    def test_set_and_present(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
         _write(tmp_path / STORE_NAME, [])
-        assert store_beside(tmp_path / "ts.parquet") == tmp_path / STORE_NAME
+        monkeypatch.setenv("FILE_STORE", str(tmp_path / STORE_NAME))
+        assert file_store() == tmp_path / STORE_NAME
 
 
 class TestFileReader:
 
-    def test_prefers_the_store(self, tmp_path: Path) -> None:
-        data = b"MZ held in the store"
-        name = _row(data)[0]
-        _write(tmp_path / STORE_NAME, [_row(data)])
-        pl.DataFrame({"name": [name], "label": [1]}).write_parquet(tmp_path / "ts.parquet")
-        # The SimpleDB directory does not exist: a read that fell back to it would fail.
-        reader = FileReader(tmp_path / "ts.parquet", tmp_path / "no-simpledb")
-        assert reader.get(name) == data
+    @pytest.fixture()
+    def held(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> list[tuple[str, bytes]]:
+        """Three files in a store FILE_STORE names, in a directory with no file list and no SimpleDB."""
+        files = [b"MZ" + bytes([i]) * 50 for i in range(3)]
+        _write(tmp_path / STORE_NAME, [_row(d) for d in files])
+        monkeypatch.setenv("FILE_STORE", str(tmp_path / STORE_NAME))
+        return [(_row(d)[0], d) for d in files]
+
+    def test_reads_the_named_store(self, held: list[tuple[str, bytes]]) -> None:
+        reader = FileReader()
+        for name, data in held:
+            assert reader.get(name) == data
+
+    def test_missing_file_raises(self, held: list[tuple[str, bytes]]) -> None:
+        with pytest.raises(KeyError):
+            FileReader().get("missing")
+
+    def test_read_files_checks_all_first(self, held: list[tuple[str, bytes]]) -> None:
+        names = [n for n, _ in held]
+        assert read_files(names) == held
+        with pytest.raises(KeyError, match="does not hold 2 of the 4"):
+            read_files(names[:2] + ["x", "y"])
+
+    def test_loaders_read_the_store(self, held: list[tuple[str, bytes]], tmp_path: Path) -> None:
+        names = [n for n, _ in held]
+        files = tmp_path / "lists" / "round-1.parquet"  # a list anywhere: the store's location is not inferred from it
+        files.parent.mkdir()
+        pl.DataFrame({"name": names, "label": [1, 1, 0]}).write_parquet(files)
+        donors = tmp_path / "lists" / "donors.parquet"
+        pl.DataFrame({"name": names[2:], "label": [0]}).write_parquet(donors)
+        malware, goodware = load_evaluation(files, donors)
+        assert malware == held[:2] and goodware == held[2:]
+        assert load_donors(donors) == held[2:]
+
+    def test_loader_missing_file_raises(self, held: list[tuple[str, bytes]], tmp_path: Path) -> None:
+        files = tmp_path / "ts.parquet"
+        pl.DataFrame({"name": [held[0][0], "absent"], "label": [1, 1]}).write_parquet(files)
+        with pytest.raises(KeyError, match="does not hold 1"):
+            load_evaluation(files)

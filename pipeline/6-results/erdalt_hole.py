@@ -83,7 +83,8 @@ def main() -> None:
     parser.add_argument("--features", type=Path, default=ROOT / "artifacts" / "features" / "ember2024",
                         help="A store whose extractor gives the model's features (for the pilot gradients).")
     parser.add_argument("--pilot_files", type=Path, default=ROOT / "artifacts/experiments/e1/seed-0/zeros/files.parquet")
-    parser.add_argument("--db", type=Path, default=EMBER2024_DATA / "ts")
+    parser.add_argument("--db", type=Path, default=EMBER2024_DATA / "ts",
+                        help="The SimpleDB of --pilot_files (the pilot protocol; the scale-up reads the file store).")
     parser.add_argument("--protocol", choices=tuple(PROTOCOLS), default="pilot",
                         help="pilot: the pilot list's detected malware; scaleup: the evaluation set's malware.")
     parser.add_argument("--tol", type=float, default=1e-3, help="Entries of L (standardized units) below this are 0.")

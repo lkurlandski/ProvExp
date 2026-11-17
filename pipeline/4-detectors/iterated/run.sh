@@ -24,7 +24,8 @@
 #   appended (label 1).
 # Tested in 5-attacks with `ent` (the adaptive search over M_full) and MAB-Malware as held-out attacks; the paper's row
 # is iterated-2.
-# Inputs: 4-detectors/{adversarial-training,material} (4-detectors/learned), 2-features/sums, 3-directions/loose.
+# Inputs: 4-detectors/{adversarial-training,material} (4-detectors/learned), 2-features/sums, 3-directions/loose, and
+# the file store (FILE_STORE, which holds the training malware; 2-features/file-store).
 # Output: $OUT_ROOT/4-detectors/iterated/round-<k>/ (the search: adaptive.{parquet,json}, rows/<detector>/), and the
 # models $OUT_ROOT/4-detectors/iterated-<k>/. A finished search or model is skipped.
 # Knobs: ROUNDS (default 2), PER_ROUND (default 1000), QUERIES (default 5000), LIMIT (training files per split;
@@ -38,7 +39,6 @@ ROUNDS="${ROUNDS:-2}"
 PER_ROUND="${PER_ROUND:-1000}"
 QUERIES="${QUERIES:-5000}"
 LISTS=$OUT_ROOT/2-features/files
-DB="${DB:-${EMBER2024_DATA:-/shared/datasets/EMBER-2024/data}/tr}"
 SUMS=$OUT_ROOT/2-features/sums
 DIR=$OUT_ROOT/3-directions/loose
 OUT=$OUT_ROOT/4-detectors
@@ -75,7 +75,6 @@ pl.read_parquet(sys.argv[1]).filter(pl.col('label') == 1).sort('name')[(k - 1) *
       --defense "$previous=$OUT/$previous" \
       --protocol scaleup \
       --pilot_files "$R/files.parquet" \
-      --db "$DB" \
       --donors "$LISTS/tr-donors-0.parquet" \
       --save_rows \
       --num_workers "$NUM_WORKERS" \

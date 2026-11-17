@@ -133,7 +133,7 @@ class TestLoadAttacked:
         donors = tmp_path / "donors.parquet"
         pl.DataFrame({"name": ["a", "b"], "label": [0, 1]}).write_parquet(donors)
         with pytest.raises(ValueError, match="not goodware"):
-            load_donors(donors, tmp_path)
+            load_donors(donors)
 
 
 ################################################################################

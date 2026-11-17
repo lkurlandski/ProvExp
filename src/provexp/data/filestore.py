@@ -6,7 +6,8 @@ The SimpleDB holds each file inside a ~500 MB compressed shard, so reading one f
 1.4 s, session 69); an attack task that loads 1,000 malware and 100 donors spends ~25 minutes on it, with the node's
 other cores idle, and reads ~0.5 TB from the shared filesystem. The store holds the same bytes, one row per file, read
 in milliseconds. It is built once (`build_store`, each shard decompressed once) and opened read-only; each row carries
-the file's SHA-256, checked on every read.
+the file's SHA-256, checked on every read. Where it lives is one setting, FILE_STORE (`provexp.data.paths.file_store`);
+the loaders (`provexp.data.files`) read only from it, with no fallback to the SimpleDB.
 """
 
 from __future__ import annotations
@@ -18,14 +19,13 @@ from multiprocessing import get_context
 import os
 from pathlib import Path
 import sqlite3
-from typing import Optional
 
 import polars as pl
 import zstandard as zstd
 
 from provexp.data.simpledb import SimpleDB
 
-__all__ = ["STORE_NAME", "FileStore", "build_store", "store_beside"]
+__all__ = ["STORE_NAME", "FileStore", "build_store"]
 
 
 ################################################################################
@@ -33,14 +33,8 @@ __all__ = ["STORE_NAME", "FileStore", "build_store", "store_beside"]
 ################################################################################
 
 
-# The store's file name: it lives beside the file lists whose files it holds (`store_beside`).
+# The store's file name (pipeline/common.sh's FILE_STORE is $OUT_ROOT/2-features/files/files.sqlite).
 STORE_NAME = "files.sqlite"
-
-
-def store_beside(file_list: Path) -> Optional[Path]:
-    """The store in the directory of `file_list`, or None if there is none."""
-    path = Path(file_list).parent / STORE_NAME
-    return path if path.exists() else None
 
 
 class FileStore:

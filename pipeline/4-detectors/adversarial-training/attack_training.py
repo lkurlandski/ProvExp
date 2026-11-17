@@ -65,7 +65,6 @@ from provexp.attacks.toolkit import make_wrapper
 from provexp.attacks.toolkit import run_attack
 from provexp.data.files import FileReader
 from provexp.data.files import load_donors
-from provexp.data.paths import EMBER2024_DATA
 from provexp.data.tabular import load_manifest
 from provexp.detectors import make_extractor
 from provexp.parallel import map_watchdog
@@ -104,7 +103,7 @@ def shard_names(files: Path, shard: int, num_shards: int, num_malware: int | Non
 _W: dict[str, Any] = {}
 
 
-def _init_worker(features: Path, model: Path, rows: dict[str, Path], files: Path, db: Path, section_pop: list[Any],
+def _init_worker(features: Path, model: Path, rows: dict[str, Path], section_pop: list[Any],
                  api_calls: list[Any], seed: int, iterations: int, binaries: Path | None) -> None:
     """Build the per-worker extractors, detector wrapper, reader and attack donor pools once."""
     lief.logging.disable()
@@ -112,7 +111,7 @@ def _init_worker(features: Path, model: Path, rows: dict[str, Path], files: Path
     extractors = {store: make_extractor(path) for store, path in rows.items()}
     _W.update(wrapper=make_wrapper(model, extractor), extractors=extractors, section_pop=section_pop,
               api_calls=api_calls, seed=seed, iterations=iterations, binaries=binaries,
-              reader=FileReader(files, db), tmp=tempfile.mkdtemp(prefix="attack_training_w_"))
+              reader=FileReader(), tmp=tempfile.mkdtemp(prefix="attack_training_w_"))
 
 
 def _work(task: tuple[str, str]) -> dict[str, Any]:
@@ -205,7 +204,6 @@ def main() -> None:
     parser.add_argument("--merge", action="store_true", help="Only assemble the --num_shards shards of --outdir.")
     parser.add_argument("--files", type=Path, help="The training file list (its label-1 rows are attacked).")
     parser.add_argument("--donors", type=Path, help="The donor list (training goodware).")
-    parser.add_argument("--db", type=Path, default=EMBER2024_DATA / "tr", help="The SimpleDB of the TRAINING split.")
     parser.add_argument("--features", type=Path, help="The store whose extractor scores the target model.")
     parser.add_argument("--model", type=Path, help="The undefended detector the attacks target (its model.txt).")
     parser.add_argument("--rows", type=Path, nargs="+", help="The stores to save feature rows for (by directory name).")
@@ -250,7 +248,7 @@ def main() -> None:
             return
     lief.logging.disable()
     names = shard_names(args.files, args.shard, args.num_shards, args.num_malware)
-    goodware = load_donors(args.donors, args.db)
+    goodware = load_donors(args.donors)
     print(f"Shard {args.shard}/{args.num_shards}: {len(names)} training malware to attack, {len(goodware)} goodware "
           f"donors; rows for {sorted(rows)}.", flush=True)
     binaries = args.outdir / "binaries" if args.keep_binaries else None
@@ -262,7 +260,8 @@ def main() -> None:
         print(f"Repair: {len(candidates)} lost tasks of this shard in {args.repair.as_posix()}.", flush=True)
 
     # LIEF's round trip, once per file a LIEF-based attack would start from (provexp.attacks.lief_check).
-    reader = FileReader(args.files, args.db)
+    reader = FileReader()
+    reader.check(names)
     lief_names = sorted({name for atk, name in candidates if atk in LIEF_ATTACKS})
     reasons = dict(zip(lief_names, lief_round_trips((reader.get(n) for n in lief_names), args.num_workers)))
     bad = {n: r for n, r in reasons.items() if r is not None}
@@ -285,7 +284,7 @@ def main() -> None:
             t0 = time.time()
             with get_context("spawn").Pool(args.num_workers, initializer=_init_worker,
                                            initargs=(args.features, args.model / "model.txt" if args.model.is_dir()
-                                                     else args.model, rows, args.files, args.db, section_pop, api_calls,
+                                                     else args.model, rows, section_pop, api_calls,
                                                      args.seed, iterations, binaries)) as pool:
                 results = map_watchdog(pool, _work, tasks, lost=_lost, stall_timeout=args.stall_timeout)
             print(f"{len(tasks)} attack runs in {time.time() - t0:.0f}s on {args.num_workers} workers.", flush=True)

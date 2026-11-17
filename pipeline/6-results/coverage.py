@@ -233,7 +233,9 @@ def main() -> None:
                         default=[ROOT / "artifacts/experiments/a1/advtrain/generated",
                                  ROOT / "artifacts/experiments/a1/advtrain/generated-heldout"])
     parser.add_argument("--adv_features", type=Path, default=ROOT / "artifacts/features/ember2024")
-    parser.add_argument("--db", type=Path, default=EMBER2024_DATA / "tr")
+    # NOTE: unused since the training files come from the file store (FILE_STORE); still accepted because the queued
+    # 6-results job (1039060, session 82) runs its saved run.sh, which passes it. Remove after that job.
+    parser.add_argument("--db", type=Path, default=EMBER2024_DATA / "tr", help="Unused (the file store).")
     parser.add_argument("--holes", type=Path, nargs="*",
                         default=[ROOT / "artifacts/experiments/a_pv/derived-pre/hole-seen.csv",
                                  ROOT / "artifacts/experiments/a_pv/derived-pre/hole.csv"])
@@ -286,7 +288,7 @@ def main() -> None:
         if d.shape[0] != files.height:
             raise RuntimeError(f"{d.shape[0]} training vectors for {files.height} rows.")
         print(f"Training: {d.shape[0]} vectors on {files['name'].n_unique()} files; population check...", flush=True)
-        member_tr = population(sorted(set(files["name"].to_list())), args.db, args.num_workers)
+        member_tr = population(sorted(set(files["name"].to_list())), args.num_workers)
         in_pop = np.array([member_tr[n] for n in files["name"].to_list()])
         for label, mask in (("train_all", np.ones(len(in_pop), bool)), ("train_population", in_pop)):
             sub, att = d[mask], files["attack"].to_numpy()[mask]

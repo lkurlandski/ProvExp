@@ -13,9 +13,9 @@
 # The file store (session 69): the bytes of the files the attacks read again and again, in one SQLite file beside the
 # lists, $OUT_ROOT/2-features/files/files.sqlite. The SimpleDB decompresses a ~500 MB shard for every file it reads
 # (~1.4 s); an attack task loading 1,000 malware and 100 donors spent ~25 min on it with its other cores idle, and
-# the material step read each training file once per attack. The loaders (provexp.data.files) read from the store
-# whatever it holds and fall back to the SimpleDB, so the step is optional and the results do not depend on it (same
-# bytes; each row's SHA-256 is checked on every read).
+# the material step read each training file once per attack. The scale-up's loaders (provexp.data.files) read only
+# from the store, which FILE_STORE names (pipeline/common.sh), and stop if it or a file is missing: the step is
+# required. Same bytes as the SimpleDB; each row's SHA-256 is checked on every read.
 # Holds: the evaluation set (ts.parquet, 2,000 files), both donor sets, and the training malware the defenses' material
 # attacks (tr.parquet's label-1 rows, 10,000; MATERIAL=0 leaves them out). Each shard is decompressed once.
 # Input: the lists of 2-features/files. Output: files.sqlite and files.json (counts, size, seconds).

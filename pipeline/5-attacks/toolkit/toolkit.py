@@ -179,12 +179,12 @@ def main() -> None:
                         "defense `fallback` on files that fail the precondition check (repeatable).")
     parser.add_argument("--features", type=Path, required=True, help="The feature store the defenses were trained on.")
     parser.add_argument("--pilot_files", type=Path, default=ROOT / "artifacts/experiments/e1/seed-0/zeros/files.parquet")
-    parser.add_argument("--db", type=Path, default=EMBER2024_DATA / "ts")
+    parser.add_argument("--db", type=Path, default=EMBER2024_DATA / "ts",
+                        help="The SimpleDB of --pilot_files (the pilot protocol; the scale-up reads the file store).")
     parser.add_argument("--protocol", choices=tuple(PROTOCOLS), default="pilot",
                         help="pilot: the pilot list and donors, thresholds on ts; scaleup: the evaluation list, --donors, "
                              "thresholds on vl (provexp.data.files.PROTOCOLS).")
     parser.add_argument("--donors", type=Path, default=None, help="Scale-up: the donor list (training goodware).")
-    parser.add_argument("--donor_db", type=Path, default=EMBER2024_DATA / "tr", help="The SimpleDB split of --donors.")
     parser.add_argument("--attacks", nargs="+", default=list(ATTACKS), choices=list(ATTACKS))
     parser.add_argument("--seen", nargs="+", default=list(SEEN), choices=list(ATTACKS))
     parser.add_argument("--fpr", type=float, default=0.01)
@@ -216,7 +216,7 @@ def main() -> None:
             raise ValueError(f"--route {d}={fb}: both must be defenses, and the fallback must not be routed.")
     extractor = make_extractor(args.features)
 
-    malware, goodware = load_attacked(args.protocol, args.pilot_files, args.db, args.donors, args.donor_db)
+    malware, goodware = load_attacked(args.protocol, args.pilot_files, args.db, args.donors)
     if args.num_malware is not None:
         malware = malware[: args.num_malware]
     print(f"Pilot: {len(malware)} malware, {len(goodware)} goodware donors; {len(defenses)} defenses.", flush=True)

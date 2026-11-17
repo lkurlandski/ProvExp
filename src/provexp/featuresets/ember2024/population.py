@@ -8,9 +8,11 @@ from __future__ import annotations
 from multiprocessing import get_context
 from pathlib import Path
 from typing import Any
+from typing import Optional
 
 import pefile
 
+from provexp.data.files import FileReader
 from provexp.data.simpledb import SimpleDB
 from provexp.data.simpledb import SimpleDBReader
 from provexp.featuresets.ember2024.catalogue import DOS_HEADER_SIZE
@@ -101,19 +103,37 @@ def clauses(z: bytes, extractor: PEFeatureExtractor) -> dict[str, Any]:
 _W: dict[str, Any] = {}
 
 
-def _init(db: str) -> None:
-    _W["reader"] = SimpleDBReader(SimpleDB(Path(db), check=False))
+def _init(db: Optional[str]) -> None:
+    """One worker's reader (the file store, or the SimpleDB `db`) and extractor."""
+    if db is None:
+        _W["read"] = FileReader().get
+    else:
+        reader = SimpleDBReader(SimpleDB(Path(db), check=False))
+        _W["read"] = lambda name: bytes(reader.get(name).data)
     _W["extractor"] = fix_quirks(PEFeatureExtractor())
 
 
 def _precondition(name: str) -> tuple[str, bool]:
-    data = bytes(_W["reader"].get(name).data)
-    return name, bool(passes_precondition(_W["extractor"], data))
+    return name, bool(passes_precondition(_W["extractor"], _W["read"](name)))
 
 
-def population(names: list[str], db: Path, workers: int) -> dict[str, bool]:
-    """Whether each training file passes the precondition (the population of the plain layouts)."""
-    with get_context("spawn").Pool(workers, initializer=_init, initargs=(str(db),)) as pool:
+def population(names: list[str], workers: int, db: Optional[Path] = None) -> dict[str, bool]:
+    """
+    Whether each training file passes the precondition (the population of the plain layouts).
+
+    Args:
+        names: The files.
+        workers: Processes.
+        db: None reads the files from the file store (the scale-up; all of them must be there, checked first); a
+            SimpleDB directory reads them from it, one shard decompressed per file (the pilot's files only, which the
+            store does not hold).
+
+    Returns:
+        {name: passes}.
+    """
+    if db is None:
+        FileReader().check(names)
+    with get_context("spawn").Pool(workers, initializer=_init, initargs=(None if db is None else str(db),)) as pool:
         return dict(pool.map(_precondition, names, chunksize=8))
 
 
