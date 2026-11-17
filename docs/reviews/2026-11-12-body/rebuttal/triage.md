@@ -9,16 +9,16 @@ Commit 2e4c350. Verdicts: decided, dismiss, cheap fix, investigate.
 | R2 | "sound" rests on tested premises | investigate | trust | argument + 4-byte record fix: draft confirmed (session 58); probe and vocabulary check not needed |
 | R18 | learned baselines get less information | investigate | trial | experiment: trial row (trial + derived) and iterated adversarial training in the scale-up; reading for §5's lead and §5.3 after it (session 63) |
 | R6 | formal results are known techniques | cheap fix | | argument: session 50 stands; name self-maintainability |
-| R4 | one instance for a class claim | cheap fix | | argument (after scale-up; wording not yet reviewed) |
+| R4 | one instance for a class claim | cheap fix | | REJECTED by the user (session 80, 2026-11-17): §3.1 defines the extractor algebraically, so the class is not vague; §2 unchanged |
 | R20 | statistics cannot rank defenses | cheap fix | | methodology: thresholds from the validation split at scale-up |
 | R11 | table cells from different detectors | dismiss | | no change: the full run fixes it |
 | R19 | ERDALT port may be weak | investigate | erdalt | argument: training met the constraint, finding stands (session 58); donor control at scale-up |
 | R3 | hand-analysis evidence thin | cheap fix | | argument (after scale-up; wording not yet reviewed) |
 | R17 | Theorem 1 beyond its proof; class universal | cheap fix | | no change: session 53b stands (no universality sentence) |
-| R15 | threat model scope; no named attacker | cheap fix | | argument (after scale-up; wording not yet reviewed) |
+| R15 | threat model scope; no named attacker | cheap fix | | applied (session 80): attacker named and the code-level exclusion reworded in §4.3 (e3b98d3); the gain share on fixed features is not done |
 | R9 | what Proposition 1 enables | dismiss | | no change: settled (decision 12 (iii)) |
-| R5 | Pierazzi et al. portrayed loosely | cheap fix | | argument (after scale-up; wording not yet reviewed) |
-| R21 | prior work misattributed or missing | cheap fix | | argument (after scale-up; wording not yet reviewed) |
+| R5 | Pierazzi et al. portrayed loosely | cheap fix | | partly applied (session 80): §2 gives Pierazzi et al.'s closed-form reason (93ea886); the minimal-app credit in §6 REJECTED by the user; the TOPS version is not cited (it adds nothing) |
+| R21 | prior work misattributed or missing | cheap fix | | partly applied (session 80): query budget attributed to Gimenez et al.'s script (0ac171d); certified-defenses paragraph in §6 (51b166c); the citations of Kantchelian, Lucas 2024, Tsingenopoulos remain |
 | R12 | counts include unmodeled features | cheap fix | | argument (after scale-up; wording not yet reviewed) |
 | R14 | header-field overwrite never validated or used | investigate | attacks | methodology: covered by `--score real` (decision 12) |
 | R8 | expert-set comparison | cheap fix | | argument (after scale-up; wording not yet reviewed) |
