@@ -54,6 +54,7 @@ from provexp.attacks.adaptive import _init_worker
 from provexp.attacks.adaptive import _lost
 from provexp.attacks.adaptive import _parse_defenses
 from provexp.attacks.adaptive import padded_booster
+from provexp.attacks.adaptive import prepare_files
 from provexp.attacks.adaptive import target_buckets
 from provexp.data.files import PROTOCOLS
 from provexp.data.files import load_attacked
@@ -215,22 +216,14 @@ def main() -> None:
     if not 0 <= args.shard < args.num_shards:
         raise ValueError(f"--shard must lie in [0, {args.num_shards}), got {args.shard}.")
     malware = malware[args.shard :: args.num_shards]
-    # (name, the file the search starts from, the unescaped original). With an escape the start is the escaped file --
-    # the escape write is the attack's fixed first move, now an `ent` edit in the threat model -- and detection and
-    # evasion are counted from the unescaped original (detected original, undetected end file; R7, run 143).
-    attacks: list[tuple[str, bytes, bytes]] = []
+    # (name, the file the search starts from, the unescaped original, their vectors, their loose population checks).
+    # With an escape the start is the escaped file -- the escape write is the attack's fixed first move, now an `ent`
+    # edit in the threat model -- and detection and evasion are counted from the unescaped original (detected original,
+    # undetected end file; R7, run 143). The per-file work runs over the workers; each file is extracted once.
+    attacks = prepare_files(malware, args.score, args.escape, args.num_workers)
     if args.escape != "none":
-        for name, data in malware:
-            try:
-                out = ESCAPES[args.escape](pefile.PE(data=data), len(data))
-            except Exception:  # noqa: BLE001
-                out = None
-            if out is not None and not catalogue.passes_precondition(extractor, out):
-                attacks.append((name, out, data))
         print(f"Escape {args.escape}: {len(attacks)} of {len(malware)} malware written and out of the strict "
               "population; detection and evasion counted from the unescaped originals.", flush=True)
-    else:
-        attacks = [(name, data, data) for name, data in malware]
     print(f"Pilot: {len(attacks)} malware, {len(goodware)} goodware donors; threat model {args.threat_model}.",
           flush=True)
 
@@ -243,20 +236,16 @@ def main() -> None:
     for d, mdir in defenses.items():
         booster = padded_booster(mdir, vector.dim)
         tau = model_threshold(mdir, args.fpr, PROTOCOLS[args.protocol])
-        Xp = (np.stack([vector.feature_vector(start) for _, start, _ in attacks])  # type: ignore[no-untyped-call]
-              if isinstance(booster, ERDALTDetector) else None)
+        Xp = np.stack([v_start for _, _, _, _, v_start, _, _ in attacks]) if isinstance(booster, ERDALTDetector) else None
         targets = [(b, sign) for b in target_buckets(booster, extractor.feature_names, args.target_buckets, Xp)
                    for sign in (-1, 1)]
         detected = 0
-        for name, start, original in attacks:
-            p_orig = float(booster.predict(vector.feature_vector(original).reshape(1, -1))[0])  # type: ignore[no-untyped-call]
+        for name, start, original, v_orig, _, in_pop, start_in_pop in attacks:
+            p_orig = float(booster.predict(v_orig.reshape(1, -1))[0])
             if p_orig > tau:  # attack only what this defense detects on the unescaped original
                 # The guarantee covers a search only if the original and the file it starts from are both in the
                 # (loose) population: an `ent` escape keeps an original in it (run 142's closure check), SizeOfImage
                 # raised alone (image_size, not an operation of M_full) takes it out.
-                in_pop = catalogue.passes_precondition(extractor, original, loose=True)
-                start_in_pop = in_pop if start is original else catalogue.passes_precondition(extractor, start,
-                                                                                              loose=True)
                 tasks.append((d, str(mdir), tau, targets, name, start, p_orig, in_pop, start_in_pop))
                 detected += 1
         print(f"  {d}: tau={tau:.4f}, {detected} detected (unescaped original)", flush=True)

@@ -24,7 +24,10 @@ from provexp.attacks.adaptive import _tie_order  # noqa: E402
 from provexp.attacks.adaptive import bucket_names  # noqa: E402
 from provexp.attacks.adaptive import engine_predictors  # noqa: E402
 from provexp.attacks.adaptive import menu  # noqa: E402
+from provexp.attacks.adaptive import prepare_files  # noqa: E402
+from provexp.featuresets.ember2024 import catalogue  # noqa: E402
 from provexp.featuresets.ember2024.edits import add_section as write_section  # noqa: E402
+from provexp.featuresets.ember2024.escapes import WRITES as ESCAPES  # noqa: E402
 from provexp.featuresets.ember2024.hand import predict_add_section  # noqa: E402
 from provexp.featuresets.ember2024.hand import predict_append  # noqa: E402
 
@@ -194,3 +197,51 @@ class TestTieOrder:
         assert all(o[0] == 8 for o in orders)  # the strict minimum always first
         assert len(orders) > 1  # the eight tied entries are not left in index order
         assert tuple(_tie_order(logits, np.random.default_rng(3))) == tuple(_tie_order(logits, np.random.default_rng(3)))
+
+
+################################################################################
+# Setup
+################################################################################
+
+class TestPrepareFiles:
+
+    @staticmethod
+    def _serial_reference(malware: list[tuple[str, bytes]], escape: str) -> list[tuple[str, bytes, bytes, bool, bool]]:
+        # The setup as adaptive.py computed it before prepare_files (one file after another, in the main process).
+        attacks = []
+        for name, data in malware:
+            start = data
+            if escape != "none":
+                try:
+                    out = ESCAPES[escape](pefile.PE(data=data), len(data))
+                except Exception:  # noqa: BLE001
+                    out = None
+                if out is None or catalogue.passes_precondition(EXTRACTOR, out):
+                    continue
+                start = out
+            in_pop = catalogue.passes_precondition(EXTRACTOR, data, loose=True)
+            start_in_pop = in_pop if start is data else catalogue.passes_precondition(EXTRACTOR, start, loose=True)
+            attacks.append((name, start, data, in_pop, start_in_pop))
+        return attacks
+
+    @pytest.mark.parametrize("escape", ["none", "debug_entry"])
+    def test_workers_match_serial_reference(self, escape: str) -> None:
+        needs_files()
+        malware = [(f.name, f.read_bytes()) for f in FILES[:8]]
+        one = prepare_files(malware, "predicted", escape, 1)
+        two = prepare_files(malware, "predicted", escape, 2)
+        reference = self._serial_reference(malware, escape)
+        assert [p[0] for p in one] == [p[0] for p in two] == [r[0] for r in reference]
+        for a, b, r in zip(one, two, reference):
+            assert a[1] == b[1] == r[1] and a[2] == b[2] == r[2]  # start, original
+            assert a[5:] == b[5:] == r[3:]  # population checks
+            v_orig = EXTRACTOR.feature_vector(r[2])  # type: ignore[no-untyped-call]
+            v_start = EXTRACTOR.feature_vector(r[1])  # type: ignore[no-untyped-call]
+            for x, y in ((a[3], v_orig), (b[3], v_orig), (a[4], v_start), (b[4], v_start)):
+                assert np.array_equal(x, y, equal_nan=True)
+        if escape != "none":
+            assert len(reference) > 0  # the escape case must exercise escaped starts
+
+    def test_rejects_unknown_escape(self) -> None:
+        with pytest.raises(ValueError, match="Unknown escape"):
+            prepare_files([], "predicted", "nope", 1)

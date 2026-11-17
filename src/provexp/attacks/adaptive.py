@@ -25,6 +25,7 @@ from provexp.featuresets.ember2024 import catalogue
 from provexp.featuresets.ember2024.edits import add_section as write_section
 from provexp.featuresets.ember2024.edits import entry_write
 from provexp.featuresets.ember2024.edits import past_end as past_end_edit
+from provexp.featuresets.ember2024.escapes import WRITES as ESCAPES
 from provexp.featuresets.ember2024.features import PEFeatureExtractor
 from provexp.featuresets.ember2024.features import field_range
 from provexp.featuresets.ember2024.features import fix_quirks
@@ -39,8 +40,8 @@ from provexp.reach import predict
 
 __all__ = ["Donors", "Engine", "HDR_FIELDS", "Operation", "RealEngine", "THREAT", "add_imports", "add_section",
            "beam_search", "bucket_names", "engine_predictors", "full_menu", "greedy_search", "lief_preserves", "menu",
-           "padded_booster", "rename_section", "section_bucket", "set_header_fields", "target_buckets",
-           "zero_directory_entry"]
+           "padded_booster", "prepare_files", "rename_section", "section_bucket", "set_header_fields",
+           "target_buckets", "zero_directory_entry"]
 
 
 # The threat models' operation sets (pipeline/3-directions/derived/directions.py): additions, gap insertions, in-place overwrites.
@@ -908,6 +909,89 @@ def beam_search(booster: lightgbm.Booster, engine: Engine, z: bytes, tau: float,
     for q in checkpoints:
         row[f"evaded_at_{q}"] = evade_at is not None and evade_at <= q
     return row
+
+
+################################################################################
+# Setup: the per-file work before the search
+################################################################################
+
+# One prepared file: (name, the file the search starts from, the unescaped original, the original's feature vector,
+# the start's, whether the original is in the loose population, whether the start is).
+Prepared = tuple[str, bytes, bytes, np.ndarray, np.ndarray, bool, bool]
+
+_S: dict[str, Any] = {}
+
+
+def _init_setup(score: str, escape: str) -> None:
+    """Build the setup's extractors once per process."""
+    import lief
+    lief.logging.disable()
+    extractor = fix_quirks(PEFeatureExtractor())
+    _S.clear()
+    _S.update(extractor=extractor, vector=SumsFeatureExtractor() if score == "real" else extractor, escape=escape)
+
+
+def _prepare_file(data: bytes) -> Optional[tuple[Optional[bytes], np.ndarray, np.ndarray, bool, bool]]:
+    """
+    One file's setup: the escape write (if any), the feature vectors, and the loose population checks.
+
+    Returns:
+        (the escaped file, or None without an escape; the original's vector; the start's; the original's and the
+        start's loose population checks), or None for a file the escape leaves out (it cannot be written, or the
+        written file is still in the strict population, so the escape did not take it out).
+    """
+    extractor, vector, escape = _S["extractor"], _S["vector"], _S["escape"]
+    if escape != "none":
+        try:
+            out = ESCAPES[escape](pefile.PE(data=data), len(data))
+        except Exception:  # noqa: BLE001
+            out = None
+        if out is None or catalogue.passes_precondition(extractor, out):
+            return None
+        v_orig = vector.feature_vector(data)
+        in_pop = catalogue.passes_precondition(extractor, data, loose=True)
+        v_start = vector.feature_vector(out)
+        return out, v_orig, v_start, in_pop, catalogue.passes_precondition(extractor, out, loose=True)
+    v_orig = vector.feature_vector(data)
+    in_pop = catalogue.passes_precondition(extractor, data, loose=True)
+    return None, v_orig, v_orig, in_pop, in_pop
+
+
+def prepare_files(malware: list[tuple[str, bytes]], score: str, escape: str, num_workers: int) -> list[Prepared]:
+    """
+    The setup of every file, over `num_workers` processes (in this process when 1), in the input's order.
+
+    Each file is extracted once here, whatever the number of defenses; the defenses' scores are then a prediction per
+    defense on these vectors.
+
+    Args:
+        malware: (name, bytes) of the files to attack.
+        score: "real" (the sums extractor's vectors) or "predicted" (the thrember extractor's).
+        escape: An escape write of `ESCAPES`, or "none".
+        num_workers: Processes.
+
+    Returns:
+        The prepared files, without those the escape leaves out.
+    """
+    if escape != "none" and escape not in ESCAPES:
+        raise ValueError(f"Unknown escape {escape!r}; expected one of {sorted(ESCAPES)} or 'none'.")
+    if num_workers < 1:
+        raise ValueError(f"num_workers must be >= 1, got {num_workers}.")
+    blobs = [data for _, data in malware]
+    if num_workers == 1 or len(blobs) <= 1:
+        _init_setup(score, escape)
+        results = [_prepare_file(b) for b in blobs]
+    else:
+        from multiprocessing import get_context
+        with get_context("spawn").Pool(min(num_workers, len(blobs)), initializer=_init_setup,
+                                       initargs=(score, escape)) as pool:
+            results = pool.map(_prepare_file, blobs, chunksize=max(1, len(blobs) // (4 * num_workers)))
+    prepared: list[Prepared] = []
+    for (name, data), r in zip(malware, results):
+        if r is not None:
+            out, v_orig, v_start, in_pop, start_in_pop = r
+            prepared.append((name, data if out is None else out, data, v_orig, v_start, in_pop, start_in_pop))
+    return prepared
 
 
 _W: dict[str, Any] = {}
