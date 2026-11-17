@@ -7,7 +7,7 @@
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
 #SBATCH --cpus-per-task=72
-#SBATCH --time=0-04:00:00
+#SBATCH --time=0-00:45:00
 #SBATCH --mem=200G
 #
 # The extractor audit's counts (Appendix D's deviations table): which of our deviations from EMBER v3 and which parser

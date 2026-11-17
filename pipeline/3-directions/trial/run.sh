@@ -7,7 +7,7 @@
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
 #SBATCH --cpus-per-task=72
-#SBATCH --time=0-12:00:00
+#SBATCH --time=0-00:45:00
 #SBATCH --mem=200G
 #
 # The trial competitor's direction table (R18; protocol item 6, session 67): the table a practitioner gets by trying

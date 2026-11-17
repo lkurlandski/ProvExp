@@ -7,7 +7,7 @@
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
 #SBATCH --cpus-per-task=8
-#SBATCH --time=0-06:00:00
+#SBATCH --time=0-00:45:00
 #SBATCH --mem=32G
 #
 # The file store (session 69): the bytes of the files the attacks read again and again, in one SQLite file beside the

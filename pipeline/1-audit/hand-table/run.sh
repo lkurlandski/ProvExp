@@ -7,7 +7,7 @@
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
 #SBATCH --cpus-per-task=72
-#SBATCH --time=1-00:00:00
+#SBATCH --time=0-02:45:00
 #SBATCH --mem=200G
 #
 # The files that show each error of the hand-written table (Section 5.2, Table 3): the structure witnesses (entry

@@ -7,7 +7,7 @@
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
 #SBATCH --cpus-per-task=72
-#SBATCH --time=0-12:00:00
+#SBATCH --time=0-01:45:00
 #SBATCH --mem=200G
 #
 # The catalogue check on the widened population: every operation applied by our own byte-level edits, with ordinary

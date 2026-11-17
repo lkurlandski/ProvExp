@@ -7,7 +7,7 @@
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
 #SBATCH --cpus-per-task=72
-#SBATCH --time=0-04:00:00
+#SBATCH --time=0-00:45:00
 #SBATCH --mem=200G
 #
 # Which clause of the population check each file fails (incomplete, unusual layout), and whether it is in the

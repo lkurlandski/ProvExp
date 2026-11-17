@@ -7,7 +7,7 @@
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
 #SBATCH --cpus-per-task=72
-#SBATCH --time=1-00:00:00
+#SBATCH --time=0-00:45:00
 #SBATCH --mem=200G
 #
 # The detectors of Table 5 and the expert set (§5.2), on the full training split's complete files (--complete_only; the

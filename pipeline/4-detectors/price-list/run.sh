@@ -7,7 +7,7 @@
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
 #SBATCH --cpus-per-task=72
-#SBATCH --time=2-00:00:00
+#SBATCH --time=0-00:45:00
 #SBATCH --mem=200G
 #
 # The price of each declaration (§4.3-4.4, §5.4's *Where the cost lies*; run 126 at pilot scale): the monotone

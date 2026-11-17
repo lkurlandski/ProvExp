@@ -7,7 +7,7 @@
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
 #SBATCH --cpus-per-task=72
-#SBATCH --time=2-00:00:00
+#SBATCH --time=0-03:30:00
 #SBATCH --mem=200G
 #
 # Feature stores: every file of the splits through each extractor (EMBER's, the re-encoding over sums, the expert set).

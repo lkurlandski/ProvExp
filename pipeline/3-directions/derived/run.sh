@@ -7,7 +7,7 @@
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
 #SBATCH --cpus-per-task=72
-#SBATCH --time=0-04:00:00
+#SBATCH --time=0-01:30:00
 #SBATCH --mem=200G
 #
 # The derived direction tables over the re-encoding over sums (Theorem 1): per threat model, the direction each

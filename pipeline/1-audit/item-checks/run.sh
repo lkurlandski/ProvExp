@@ -7,7 +7,7 @@
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
 #SBATCH --cpus-per-task=72
-#SBATCH --time=1-00:00:00
+#SBATCH --time=0-00:45:00
 #SBATCH --mem=200G
 #
 # The item layer's checks (Appendix D, Table 9; Section 5.1): the readouts over the item table reproduce every feature
