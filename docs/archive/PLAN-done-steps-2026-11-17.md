@@ -86,3 +86,39 @@
    differences exactly the fixed features; Appendix D's *Changes to EMBER* with Table 8 (635eb6b; counts blue until
    `1-audit/deviations` runs at scale). The audit steps at scale all have a `run.sh` (`pipeline/1-audit/`), waiting
    only on the audit's file list (`FILES`): a protocol item, decided with the malware count.
+
+# PLAN.md's "Where the paper stands" as of session 62 (replaced 2026-11-17)
+
+- **R7 and the rebuttal have closed the pre-scale-up work (sessions 48-62).** The simulated review's top risk R7 is
+  resolved at pilot scale (no router, full widening, LIEF's overlay rule, run 143); R1, R6, R17, R2's code fix and
+  R19's check are done; the extractor question is decided (stay on pefile, one audit pass to come). What remains before
+  the scale-up: one last revisit of the review and rebuttal (anything else outside R18 and the scale-up?), the R18
+  decisions on their own track, and then the scale-up itself. The rebuttal's text fixes wait for the scale-up's numbers.
+  The bullets below are the session-45 assessment that set this course, kept for its reasoning.
+
+- **§2-3 (the framework):** rewritten in the week of 2026-11-02; the user is reasonably satisfied. Pending: the user's
+  holistic read of Sound Directions. Session 74 added Lemma 1 (*Closure*) and the readout rule (next step 8).
+- **§4:** drafted in the template structure, reviewed twice by Claude (sessions 38, 40); ~1,700 words against ~1,000.
+- **§5:** three findings (decision 10), drafted, reviewed per subsection and as a whole, tables remade (sessions
+  41b-44). The user has not read it end to end.
+- **§6:** drafted. **§1, §7, abstract, ethics, open science:** empty (last, by decision). Body ~13,000 words against
+  the mock's 11,000.
+- **Experiments:** complete at pilot scale (10% subsamples, one seed, 50 malware attacked).
+- **The holistic assessment (session 45, agreed by the user):** the framework is in good shape; what decides the paper
+  now is §5's evidence, held back by sample size more than by prose. 5.3 (observed attacks) is the strongest finding and
+  the one only the derivation makes (PV's hole named before any attack), but PV is judged on 9 files, ERDALT invites
+  "your port is weak" (AUC .88 against their 93%, one epoch), and every evasion comes from our own table-guided attack
+  (MAB-Malware, which renames sections, is absent). 5.4 (cost) has a solid expert-set comparison; the rest is a number
+  that needs seeds 0-2 and full splits; its 0 evaded follows from the theorem. 5.2 (hand analysis) is the weakest: our
+  own hand table, score drops that never cross the threshold (10 of 29), the expert set evaded on 2 of 8. Beyond §5:
+  one domain (the largest acceptance risk; the user's call when); Proposition 1 has no finding of its own (R9, §2's
+  attack promise); the 4 MB truncation decides the population the scale-up runs on; the body must eventually shrink,
+  but shortening before the scale-up would be redone. So the review and the scale-up come before the remaining polish.
+- **The simulated review of 2026-11-12** (`docs/reviews/2026-11-12-body/meta-review.md`): Weak accept (A, formal
+  methods), Weak reject (B, adversarial malware; C, robust ML), Weak accept (D, systems security). All four find the
+  idea new and value the PV hole and the cost result; all four call §3's results known techniques (IVM, sign-domain
+  abstract interpretation; R6), the EMBER premises tested rather than proven (R2), and one instance too few for a
+  class (R4). B, C and D's "one change" is the same: the routed system end to end (R7). Register R1-R21, the scale-up's
+  content (§7) and the writing actions (§8) in the meta-review. Triaged so far: R7 (decision 11), R1 (decision 12),
+  R6 (session 50: four citation edits in §3 and §6, `docs/evidence/r6-prior-work.md`).
+
