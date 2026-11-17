@@ -13,7 +13,10 @@ Per detector of the registry's `scaleup` set whose model exists:
     still detected    after each attack (each toolkit attack, the adaptive search, MAB-Malware) and after any of them,
                       at 1% and 0.1% FPR: the evaluation malware detected on the original and not evaded, over ALL the
                       evaluation set's malware (files outside the population counted; undetected ones count as not
-                      detected). An output counts only if it is valid and within the byte budget, as each attack's own
+                      detected), except the files an attack is not applicable to: the two GAMMA attacks, which rebuild
+                      the file through LIEF, are not applicable to the detected files LIEF cannot rebuild (no run; the
+                      toolkit job's lief_check.parquet), and those leave that attack's denominator and are reported
+                      beside it (`not_applicable`). After any attack the denominator stays all the malware. An output counts only if it is valid and within the byte budget, as each attack's own
                       `evaded`; at 0.1% FPR evasion is re-read from the stored scores (each attack lowers the score, and
                       one that stopped at the 1% threshold is below the 0.1% one too). Escapes: the same, per escape,
                       for the adaptive search and the toolkit attacks after the escape write.
@@ -21,7 +24,7 @@ Per detector of the registry's `scaleup` set whose model exists:
                       the threat model moves (the derived table's free features)
 
 Outputs, in `{outdir}/`: report.json, detection.csv, still_detected.csv (detector, escape, fpr, attack, malware,
-detected, still_detected, share).
+not_applicable, detected, attacked, evaded, still_detected, share).
 
 Usage:
     python pipeline/6-results/scaleup_tables.py --root artifacts/scaleup --outdir artifacts/scaleup/6-results/tables
@@ -40,6 +43,7 @@ from numpy import typing as npt
 import polars as pl
 from sklearn.metrics import roc_auc_score
 
+from provexp.attacks.lief_check import LIEF_ATTACKS
 from provexp.data.tabular import load_features
 from provexp.data.tabular import load_manifest
 from provexp.detectors import detection_at
@@ -48,7 +52,7 @@ from provexp.models.erdalt import load_detector
 from provexp.registry import ESCAPES
 from provexp.registry import scaleup_models
 
-__all__ = ["attack_outputs", "fixed_gain_share", "still_detected"]
+__all__ = ["attack_outputs", "fixed_gain_share", "not_applicable", "still_detected"]
 
 FPRS = (0.01, 0.001)
 
@@ -106,23 +110,60 @@ def attack_outputs(root: Path, escape: str = "none") -> pl.DataFrame:
     return pl.concat(parts)
 
 
-def still_detected(p_orig: dict[str, float], tau: float, outputs: pl.DataFrame, num_malware: int) -> dict[str, Any]:
-    """The malware detected on the original and evaded by no usable output, over all `num_malware` malware.
+def not_applicable(root: Path, escape: str = "none") -> pl.DataFrame:
+    """The (defense, attack, name) triples the toolkit did not run because the attack is not applicable to the file.
+
+    The two LIEF-based attacks are not applicable to the start files LIEF cannot rebuild (`provexp.attacks.lief_check`).
+    The check runs once per toolkit job on the start files every defense of that job attacks, so each name in a job's
+    `lief_check.parquet` pairs with each defense in its `results.parquet`.
+
+    Args:
+        root: The scale-up's output root.
+        escape: `none` for the plain attacks, or an escape write.
+
+    Returns:
+        One row per (defense, attack, file) not run; empty when no job recorded any.
+    """
+    att = root / "5-attacks" / "toolkit"
+    dirs = ([*sorted((att / "main").glob("*")), *sorted((att / "loo").glob("*"))]
+            if escape == "none" else [att / "escape" / escape])
+    parts: list[pl.DataFrame] = []
+    for d in dirs:
+        if not (d / "lief_check.parquet").exists() or not (d / "results.parquet").exists():
+            continue
+        names = pl.read_parquet(d / "lief_check.parquet").select("name")
+        results = pl.read_parquet(d / "results.parquet", columns=["defense", "attack"])
+        pairs = results.unique().filter(pl.col("attack").is_in(LIEF_ATTACKS))
+        parts.append(pairs.join(names, how="cross"))
+    if not parts:
+        return pl.DataFrame(schema={"defense": pl.Utf8, "attack": pl.Utf8, "name": pl.Utf8})
+    return pl.concat(parts).unique()
+
+
+def still_detected(p_orig: dict[str, float], tau: float, outputs: pl.DataFrame, num_malware: int,
+                   excluded: frozenset[str] = frozenset()) -> dict[str, Any]:
+    """The malware detected on the original and evaded by no usable output, over the malware the attack applies to.
 
     Args:
         p_orig: The detector's score of each evaluation malware (originals).
         tau: The threshold.
         outputs: This detector's outputs of one attack or a group of attacks (name, p_adv, usable).
-        num_malware: The evaluation set's malware: the denominator.
+        num_malware: The evaluation set's malware.
+        excluded: The files the attack is not applicable to (not run); the detected ones among them leave both the
+            detected files and the denominator.
 
     Returns:
-        detected, evaded, still_detected, share (still_detected / num_malware), attacked (files with an output row).
+        not_applicable, detected, attacked (files with an output row), evaded, still_detected, and share
+        (still_detected over num_malware less not_applicable).
     """
     detected = {n for n, p in p_orig.items() if p > tau}
+    skipped = detected & excluded
+    detected -= skipped
     evaded = set(outputs.filter(pl.col("usable") & (pl.col("p_adv") <= tau))["name"].to_list()) & detected
     still = len(detected) - len(evaded)
-    return {"detected": len(detected), "attacked": outputs["name"].n_unique(), "evaded": len(evaded),
-            "still_detected": still, "share": still / num_malware if num_malware else None}
+    denominator = num_malware - len(skipped)
+    return {"not_applicable": len(skipped), "detected": len(detected), "attacked": outputs["name"].n_unique(),
+            "evaded": len(evaded), "still_detected": still, "share": still / denominator if denominator else None}
 
 
 ################################################################################
@@ -178,6 +219,7 @@ def main() -> None:
                          list(load_manifest(Path(store))["feature_names"]))
 
     outputs = {e: attack_outputs(args.root, e) for e in ("none", *ESCAPES)}
+    skipped = {e: not_applicable(args.root, e) for e in ("none", *ESCAPES)}
     report: dict[str, Any] = {"files": files.as_posix(), "malware": len(malware), "max_drop": args.max_drop,
                               "detectors": {}}
     detection_rows: list[dict[str, Any]] = []
@@ -204,12 +246,15 @@ def main() -> None:
                 mine = out.filter(pl.col("defense") == name)
                 if escape != "none" and mine.height == 0:
                     continue
+                na = skipped[escape].filter(pl.col("defense") == name)
                 groups = {a: mine.filter(pl.col("attack") == a) for a in sorted(set(mine["attack"].to_list()))}
                 groups["any"] = mine
                 for attack, rows in groups.items():
+                    # After any attack, a file some attacks do not apply to still faces the others: no exclusion.
+                    excluded = frozenset(na.filter(pl.col("attack") == attack)["name"].to_list())
                     still_rows.append({"detector": name, "escape": escape, "fpr": fpr, "attack": attack,
                                        "malware": len(malware),
-                                       **still_detected(p_orig, tau, rows, len(malware))})
+                                       **still_detected(p_orig, tau, rows, len(malware), excluded)})
         mine = outputs["none"].filter(pl.col("defense") == name)
         # A check, not a result: the toolkit's own clean scores (from the bytes, at attack time) against the store's.
         # They differ only if the store was built by another extractor than the attacks used.
