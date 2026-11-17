@@ -36,8 +36,9 @@ them (below).
   number-dependent ones step 5.
 - **Theory (step 8):** bounds on size worked out (`docs/evidence/theory-analysis.md`, parts G-H); the user decides
   what enters the manuscript.
-- **The largest open risks:** one instance only (a second domain is step 6, the user's call), and ERDALT's strength
-  at scale (validation AUC 0.69-0.75 against the pilot's 0.88), which invites the straw-man objection.
+- **The largest open risks:** one instance only (a second domain is step 6, the user's call), and ERDALT at scale:
+  every model collapses to validation AUC ~0.70 (pilot 0.88) and misses its criterion, which invites the straw-man
+  objection; its own track since session 82 (`docs/resume-prompt-erdalt.md`).
 
 ## Next steps, in order
 
@@ -51,17 +52,20 @@ records of the §5 reviews, the table remake and the ERDALT check, is in
 2c. **The extractor question: decided (user, session 62) — stay on pefile.**
    Steps 1-2c in full: `docs/archive/PLAN-done-steps-2026-11-17.md`.
 3. **The scale-up: one protocol, every paper number from it** (designed with the user in sessions 63-78). The full
-   record, items (a)-(g) and (1)-(15) with every decision and its reasons, is `docs/scaleup-protocol.md`; "step 3 (g)"
+   record, items (a)-(g) and (1)-(16) with every decision and its reasons, is `docs/scaleup-protocol.md`; "step 3 (g)"
    and the like refer to it. In short: one seed (0); an evaluation set of 1,000 malware and 1,000 benign complete test
    files; every detector trained on the full training split's complete files, thresholds from the validation split,
    donors from training goodware; the toolkit, the adaptive search (5,000 extraction-scored candidates), MAB-Malware
    (three settings) and the escapes; the learned defenses from one shared material; the trial row and iterated
    adversarial training as competitors. Submitted on tigris by `pipeline/submit.sh`. Done at scale: everything through
    the defenses' material, `train`, `price-list`, the learned defenses' GBDTs, MAB-Malware's expert setting (rerun in
-   session 81 with the full donor set), `iterated`'s round 1 and `iterated-1`. Running: ERDALT, `iterated` round 2,
-   MAB-Malware `zainab`; then `toolkit`, `adaptive`, MAB-Malware `ours`, `6-results`. Session 81 fixed the thread
-   overload behind two failures and parallelized the adaptive search's setup (item (15)). **To watch:** ERDALT's
-   validation AUC and the epoch it selects (item (14)). **Next:** the chain finishes, then read it (step 5).
+   session 81 with the full donor set), `iterated`'s round 1 and `iterated-1`. Also done: `iterated` (both rounds,
+   `iterated-2`) and MAB-Malware `zainab`. Session 81 fixed the thread overload behind two failures and parallelized
+   the adaptive search's setup (item (15)). Session 82 (item (16)): the file store at one fixed location with no
+   fallback; ERDALT's collapse set apart as its own track; `toolkit`, `adaptive` and MAB-Malware `ours` resubmitted
+   without ERDALT (running or queued). **Next:** the experiments track (`docs/resume-prompt-experiments.md`) and the
+   ERDALT track (`docs/resume-prompt-erdalt.md`, which then runs ERDALT's attacks and `6-results`); then read it all
+   (step 5).
 4. **While the scale-up runs: §2's closing and contribution 4 against §5** (old step 2 (c)). §2 says §5 "uses them to
    attack malware detectors and to build robust ones"; in §5 the attack is an instrument. The mock's contribution 4 is
    stale ("four to six points", "learned constraints"). Writing only.

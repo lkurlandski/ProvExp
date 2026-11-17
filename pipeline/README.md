@@ -38,7 +38,7 @@ recompute, such as `3-directions/derived`). `DRY=1` prints the chain. The job ID
 The order (each step's inputs are the outputs above it):
 
 1. `2-features/featurize` (the stores, full splits), `2-features/files` (done: the lists), `2-features/file-store`
-   (the attacked files' bytes in one SQLite file beside the lists; optional, it only speeds up loading);
+   (the attacked files' bytes in one SQLite file, `FILE_STORE`; required: the scale-up reads its files only from it);
 2. `3-directions/derived` (from the training list, checked against the evaluation set), `3-directions/gate`; `1-audit/*` (the catalogue check's edits feed the trial); `3-directions/trial`;
 3. `4-detectors/train` (Table 5, the expert set, trial);
 4. `4-detectors/adversarial-training` (the material, array; `REPAIR=` mends finished shards from a list of lost tasks), then `4-detectors/learned` (PV, ERDALT, adversarial

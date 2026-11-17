@@ -10,8 +10,9 @@ conference cycles are not a planning constraint (user).
 
 ## Read first
 
-- **Every session, read only the resume prompt** the user names (`docs/resume-prompt.md`, the scale-up;
-  `docs/resume-prompt-theory.md`, the theory track): it is self-contained. Open `docs/status.md` (current state, what
+- **Every session, read only the resume prompt** the user names (`docs/resume-prompt.md`, general work and the index
+  of the tracks; `-experiments.md`, the cluster; `-erdalt.md`, ERDALT; `-theory.md`, theory; `-sonnet.md`, small
+  tasks): it is self-contained. Open `docs/status.md` (current state, what
   waits on the user), `PLAN.md` (thesis, next steps) and `docs/decisions.md` (the numbered standing decisions) by
   section when the task needs them, not whole by default. **Update `docs/status.md` at the end of every session**, and
   write the next resume prompt self-contained, so the next session needs nothing else to start.
