@@ -8,9 +8,11 @@ Our work builds on the formalization of problem-space attacks by Pierazzi et al.
 describe an attack as a sequence of transformations applied to an object under problem-space constraints, and relate the
 result to the feature space through the feature mapping, side-effect features included. For feature mappings that are
 neither differentiable nor invertible, those side effects generally cannot be computed in
-advance~\cite{pierazzi2020intriguing}, so attacks find them by applying a transformation and extracting the features of
-the result. Šrndić and Laskov's evasion of PDFrate~\cite{srndic2014practical} worked this way, as do the toolkits now
-used against Windows malware detectors~\cite{demetrio2021adversarial,demetrio2021functionality,song2022mab}. Such an
+advance~\cite{pierazzi2020intriguing}. Šrndić and Laskov, evading PDFrate~\cite{srndic2014practical}, found it
+infeasible to enumerate the dependencies among its features and account for their effects a priori, and accepted files
+whose features differed from those their attack had planned. The toolkits now used against Windows malware
+detectors~\cite{demetrio2021adversarial,demetrio2021functionality,song2022mab} instead find the side effects by applying
+a transformation and extracting the features of the result. Such an
 attack learns only about the edits its search reaches, and if it fails, other edits may still evade the detector. For
 sum-then-readout extractors (Definition~\ref{def:fw:extractor}), our work computes the side effects from the extractor
 itself: exactly for a given edit and, for every edit in a declared set, as the direction in which each feature can move,
