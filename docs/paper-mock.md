@@ -44,7 +44,7 @@ knowledge comes from trial, from an analyst's reading of the extractor, or from 
 | 3 Measuring Edits Across Feature Mappings | as drafted (sum-then-readout extractors; edits and side effects; sound directions); finetuning only | 3,500 (now ~4,050) |
 | 4 Instantiating the Framework | the template, EMBER in it (below); bookkeeping in an appendix | 1,000 |
 | 5 Evaluation | three findings: what hand analysis misses, what observed attacks miss, what robustness costs (below) | 3,200 |
-| 6 Related Work | as drafted; "margins" and old terms fixed | 1,000 (now ~1,470) |
+| 6 Related Work | as drafted; "margins" and old terms fixed | 1,000 (now ~1,280, accepted in session 84) |
 | 7 Discussion | what does not fit (global analyses, learned features), cost of instrumenting (no effort claims), other domains; limitation: code-level transformations are outside the threat models (decision 9) | 500 |
 | Appendix | symbols, types, proofs; the EMBER details §4 points to; other domains, one section each, if added | — |
 

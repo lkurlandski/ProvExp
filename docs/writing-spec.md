@@ -11,6 +11,15 @@ The "implied" notes are earlier readings, not instructions; several of them were
 
 ## Reaction log
 
+- **2026-11-17, §6 cut (session 84), drafted without the paper-prose skill.** Šrndić and Laskov rewording, approved.
+  *Constraints over features* at 321 words (plan ~300): approved; "it's okay that we weren't able to cut quite as
+  aggressively". First split of *Robust and monotone detectors*: "the prose comes off as a little choppy and
+  disconnected. Try to smooth it out without increasing the length too much"; the second version (sentences that lead
+  into each other: "Realizable examples are costly to generate" before Lucas et al., the three Chen et al. papers
+  together, "Rather than resist the edits it was trained on" as the opening) approved. *Certified defenses*: "whatever
+  the edits mean" is "a little informal and unclear"; replaced by "by the size of its edits rather than by their
+  kind", approved. *Incremental computation* at 118 words, approved. "We don't need to exactly hit our original
+  target. We just need to make significant progress to it."
 - **2026-11-08, §3.2 round 2 verdict.** "Quite satisfied." Hand edits only, for spacing and terseness: the lead
   shortened to "give $z'$ exactly (before the edit is applied) and thus the side effects of the transformation", "In
   other words" cut from Def 6, "the largest or smallest" instead of "the largest or, in a min pool, the smallest", and

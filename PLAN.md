@@ -29,7 +29,7 @@ them (below).
   after the scale-up.
 - **§5:** three findings (decision 10), drafted and reviewed per subsection; the user has not read it end to end. The
   review's R7 (decision 11: no router), R1 (decision 12: MAB-Malware) and R18 (the trial row) are written in.
-- **§6:** drafted. **§1, §7, abstract, ethics, open science:** empty, last by decision. Body ~13,000 words against
+- **§6:** drafted, cut to ~1,280 words in session 84 (mock 1,000; length accepted). **§1, §7, abstract, ethics, open science:** empty, last by decision. Body ~13,000 words against
   the mock's 11,000.
 - **The simulated review of 2026-11-12** (`docs/reviews/2026-11-12-body/meta-review.md`): two weak accepts, two weak
   rejects; register R1-R21, every item triaged (`rebuttal/triage.md`). Number-free text fixes are step 4, the

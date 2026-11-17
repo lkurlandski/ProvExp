@@ -10,7 +10,7 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
 in `docs/archive/status-log-2026-11-14-s63.md`, sessions 64-65 in `docs/archive/status-log-2026-11-14-s64-65.md`, sessions 66-76 in
 `docs/archive/status-log-2026-11-15-to-16-s66-76.md`).
 
-## Current state (2026-11-17, through session 82)
+## Current state (2026-11-17, through session 84)
 
 - **Scale-up running on tigris (session 74).** Setup done (`SETUP.md`, `pipeline/systems/tigris.sh`); everything is
   submitted by `bash pipeline/submit.sh` (SLURM dependencies; `3-directions/gate` before the detectors). Done:
@@ -94,6 +94,13 @@ in `docs/archive/status-log-2026-11-14-s63.md`, sessions 64-65 in `docs/archive/
   §3.1, incremental view maintenance carried to features in §3.2, abstract interpretation (Cousot and Cousot) after
   Theorem 1, §6's wrong contrast with incremental parsing replaced (abstract interpretation, Calzavara et al., the one
   new bib entry). About 140 words added.
+- **§6 Related Work (session 84): cut to 1,284 words** (from 1,843; mock 1,000), the user: "a reasonably appropriate
+  length". Paragraphs: *Problem-space attacks* (Šrndić and Laskov reworded), *Constraints over features* (Sheatsley
+  et al. corrected, Labaca-Castro et al. added), *Hardening by retraining* and *Monotone and verified detectors* (the
+  old *Robust and monotone detectors* split; Chen et al. 2021 cost-aware trees and Wang et al. 2022 added,
+  Tsingenopoulos et al. reworded), *Certified defenses* (Gibert et al. 2023 beside DRSM, Calzavara et al. moved in),
+  *Incremental computation* (provenance semirings dropped). The plan and its source checks:
+  `docs/archive/related-work-plan-2026-11-17-s84.md`.
 - **Documentation:** reorganized 2026-11-09, cleaned up 2026-11-12 (stale resume prompts, the §4 note archived; the
   §5.3 design doc moved to `docs/evidence/`); index `docs/README.md`.
 
@@ -204,6 +211,16 @@ in `docs/archive/status-log-2026-11-14-s63.md`, sessions 64-65 in `docs/archive/
 Two sessions were numbered 74: the head node on tigris, and the theory session. The two tracks have separate resume
 prompts: `docs/resume-prompt.md` (the scale-up) and `docs/resume-prompt-theory.md` (theory).
 
+- **2026-11-17 (session 84, Opus, manuscript): §6 cut by 30%, paragraph by paragraph, every change approved.**
+  Drafted without the paper-prose skill (user's choice). 1,843 -> 1,284 words. Commits: 5326f61 (Šrndić and Laskov
+  said accurately: side effects not accountable a priori, files built after the feature-space attack), 2508e74
+  (*Constraints over features* 427 -> 321; Sheatsley et al. corrected; Labaca-Castro et al. added, arXiv only),
+  9bf5471 (*Hardening by retraining* and *Monotone and verified detectors*, 768 -> 480; Chen et al. 2021, Wang et al.
+  2022 added; the first draft was judged choppy and smoothed), 078d3dd (*Certified defenses*; Gibert et al. 2023;
+  Calzavara et al. moved in; "whatever the edits mean" replaced as unclear), 083cf1b (*Incremental computation*, 297
+  -> 118). New bib entries: `labaca2022realizable`, `chen2021cost`, `wang2022robust`, `gibert2023certified`. The user
+  accepted missing a few targets ("significant progress" is what counts). Next writing session: the humanistic review
+  and polish of §3, §4, §5 (`docs/resume-prompt-writing.md`).
 - **2026-11-17 (session 83, Opus, manuscript).** Holistic assessment of §6 and a plan to cut it 30-40%: approved by
   the user ("excellent"), recorded in `docs/related-work-plan.md` with the user's guidance, answers, and source checks
   (Sheatsley et al.'s sentence in §6 is unsupported; Šrndić and Laskov's "worked this way" is inaccurate; Labaca-Castro
