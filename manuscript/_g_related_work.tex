@@ -1,6 +1,7 @@
 % Section 6, Related work (about 700 words; up to ~1,200 while drafting): problem-space attacks, constraints over
-% features, robust and monotone detectors, incremental computation and provenance. Abstract interpretation is cited
-% here and in Sound Directions (R6, 2026-11-12; notes in docs/evidence/r6-prior-work.md).
+% features, hardening by retraining, monotone and verified detectors, certified defenses, incremental computation.
+% Cut 30-40% in session 84 (2026-11-17) following docs/related-work-plan.md; abstract interpretation and incremental view
+% maintenance are credited in Sections 3.2-3.3, so the last paragraph keeps only the difference.
 % Spine: docs/writing-spec.md reaction log (2026-11-03).
 
 \paragraph{Problem-space attacks}
@@ -91,19 +92,11 @@ Calzavara et al.~\cite{calzavara2020certifying} certify decision trees by abstra
 given as rewriting rules that change individual features; the directions we compute are the kind of feature-space
 description that such certification takes as input.
 
-\paragraph{Incremental computation and provenance}
-Our side-effect computation uses machinery from databases and programming languages, fields that have long asked how a
-change to an input affects an output without recomputing the output. Incremental view maintenance updates an aggregate
-over a table after rows are inserted or deleted~\cite{gupta1995maintenance,koch2014dbtoaster}. Its update rules for sums
-and maxima are the rules by which an edit changes our sums and pools. Provenance semirings~\cite{green2007provenance}
-annotate each output of a query with the inputs that produced it, which is what our item table records for each
-feature. Self-adjusting computation~\cite{acar2002adaptive} and incremental parsing~\cite{wagner1998efficient} re-run
-only the part of a program or a parse that a change can reach, and incremental parsing reparses only as far around an
-edit as the parser's lookahead reaches, much as a write to a file can change only the scanned items around it, such as
-the strings and windows it overlaps, unless it lands on a position the parser reads to find other items. Each of these
-techniques updates the output after one edit that has been made. A defender does not know the attacker's edit, and asks
-instead about every edit the threat model allows, on every input of a population, before any content is chosen.
-Reasoning soundly about all executions of a program at once is the subject of abstract
-interpretation~\cite{cousot1977abstract}. Our framework applies this kind
-of reasoning to the extractor rather than to the model. It bounds which way each feature can move under every edit of a
-declared set, including writes to positions that locate items far from the write.
+\paragraph{Incremental computation}
+Our side-effect computation borrows the update rules of incremental view maintenance (\Cref{sec:fw:side-effects}), and
+our directions borrow the sound reasoning of abstract interpretation (\Cref{sec:fw:directions}). Self-adjusting
+computation~\cite{acar2002adaptive} and incremental parsing~\cite{wagner1998efficient} likewise re-run only the part of a
+program or a parse that a change can reach; in a binary format, the difference is that a write can land on a position
+the parser reads to locate items anywhere in the file. All of these techniques update the output after one edit that has
+been made. A defender does not know the attacker's edit, and asks instead about every edit the threat model allows, on
+every input of a population, before any content is chosen.
