@@ -27,7 +27,7 @@
 # Cost (pilot, run 133: 3,183 runs in 41 min at 16 workers, plus one 45-min stall): ~80k attack runs, ~700-900 CPU-h,
 # ~2.5 h per shard of 1,000 files on 36 cores; the binaries ~30-60 GB.
 # The two GAMMA attacks are not run on files LIEF cannot rebuild (provexp.attacks.lief_check; shards/<k>/lief_check.parquet).
-# Knobs: SHARDS (default 10; keep it equal to the --array size), FILES, DONORS, DB, ROWS (stores, default the sums and
+# Knobs: SHARDS (default 10; keep it equal to the --array size), FILES, DONORS, ROWS (stores, default the sums and
 # expert stores), NUM_MALWARE (smoke tests: only the list's first N), REPAIR (a file of lost tasks, `attack name` per
 # line: mend complete shards instead, re-running the lost tasks LIEF can rebuild; session 76:
 # REPAIR=$OUT_ROOT/4-detectors/material/lost.txt). Measured (session 76, 36 cores, 100G): ~2 h per shard.
@@ -39,7 +39,6 @@ SHARDS="${SHARDS:-10}"
 LISTS=$OUT_ROOT/2-features/files
 FILES="${FILES:-$LISTS/tr.parquet}"
 DONORS="${DONORS:-$LISTS/tr-donors-0.parquet}"
-DB="${DB:-${EMBER2024_DATA:-/shared/datasets/EMBER-2024/data}/tr}"
 SUMS=$OUT_ROOT/2-features/sums
 ROWS="${ROWS:-$SUMS $OUT_ROOT/2-features/expert}"
 MODEL=$OUT_ROOT/4-detectors/unconstrained
@@ -58,7 +57,6 @@ for k in $(tasks "$SHARDS"); do
     --outdir "$OUT" \
     --files "$FILES" \
     --donors "$DONORS" \
-    --db "$DB" \
     --features "$SUMS" \
     --model "$MODEL" \
     --rows $ROWS \

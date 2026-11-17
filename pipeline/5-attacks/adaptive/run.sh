@@ -24,7 +24,7 @@
 # not split (the identity check).
 # Output: $OUT_ROOT/5-attacks/adaptive/<escape>/shard-<k>/ (adaptive.parquet, adaptive.json; rows/ with SAVE_ROWS=1),
 # or <escape>/ itself with SHARDS=1; 6-results concatenates the shards. The expert set: $OUT_ROOT/5-attacks/adaptive/expert/.
-# Knobs: DETECTORS, ESCAPE_DETECTORS, MODELS (registry model set, default scaleup: 4-detectors/<name>), ESCAPES
+# Knobs: DETECTORS, ESCAPE_DETECTORS, TAG (see below), MODELS (registry model set, default scaleup: 4-detectors/<name>), ESCAPES
 # (default "none cert_entry debug_entry image_size"), SHARDS (default 20), QUERIES, CHECKPOINTS, NUM_MALWARE (default
 # all), DB, SAVE_ROWS, and PROTOCOL: scaleup (the default; session 67) attacks the evaluation set's malware (FILES,
 # default 2-features/files/ts.parquet), each detector on those it detects, with the training-goodware donor set DONORS
@@ -46,6 +46,9 @@ ESCAPES="${ESCAPES:-none cert_entry debug_entry image_size}"
 SHARDS="${SHARDS:-20}"
 QUERIES="${QUERIES:-5000}"
 CHECKPOINTS="${CHECKPOINTS:-200 1000 2000 5000}"
+# TAG: a run of some detectors apart from the rest (e.g. TAG=erdalt DETECTORS=erdalt ESCAPES=none EXPERT=0, session
+# 82) writes shard-<k>-<TAG>/, which 6-results reads beside shard-<k>/ (a (defense, file) found twice is an error).
+TAG="${TAG:-}"
 OUT=$OUT_ROOT/5-attacks/adaptive
 mkdir -p "$OUT/logs"
 PROTO=()  # the files, donors and thresholds (both searches)
@@ -88,6 +91,10 @@ for t in $(tasks "${#JOBS[@]}"); do
   if [[ $escape != none ]]; then ESCAPE=(--escape "$escape"); detectors=$ESCAPE_DETECTORS; fi
   dir=$OUT/$escape; log=$OUT/logs/adaptive-$escape.log
   if (( SHARDS > 1 )); then dir=$OUT/$escape/shard-$k; log=$OUT/logs/adaptive-$escape-$k.log; fi
+  if [[ -n $TAG ]]; then
+    if (( SHARDS == 1 )); then echo "TAG needs SHARDS > 1 (the output would replace $dir)." >&2; exit 1; fi
+    dir=$dir-$TAG; log=${log%.log}-$TAG.log
+  fi
   if [[ -f $dir/adaptive.json ]]; then echo "$dir exists; skipping."; continue; fi
   # shellcheck disable=SC2086
   read -ra DEFENSES <<< "$(python -m provexp.registry defenses --set "$MODELS" $detectors)"

@@ -1,5 +1,9 @@
 """
 Loading the attacked files: the detected malware and the goodware of a file list, as bytes.
+
+The scale-up reads every file from the file store (`provexp.data.paths.file_store`), never from the SimpleDB: a missing
+store or a file the store does not hold is an error, not a slow fallback. Only the pilot (`load_pilot`) reads the
+SimpleDB, whose files the store does not hold.
 """
 
 from __future__ import annotations
@@ -10,7 +14,7 @@ from typing import Optional
 import polars as pl
 
 from provexp.data.filestore import FileStore
-from provexp.data.filestore import store_beside
+from provexp.data.paths import file_store
 from provexp.data.simpledb import SimpleDB
 from provexp.data.simpledb import SimpleDBReader
 
@@ -18,41 +22,42 @@ __all__ = ["PROTOCOLS", "FileReader", "load_attacked", "load_donors", "load_eval
 
 
 class FileReader:
-    """
-    Reads files by name: from the file store beside a file list (`provexp.data.filestore`, 2-features/file-store) when
-    it holds them, else from the SimpleDB (which decompresses a whole shard per file).
-    """
+    """Reads files by name from the file store; a name the store does not hold raises KeyError."""
 
-    def __init__(self, file_list: Path, db_dir: Path) -> None:
-        path = store_beside(file_list)
-        self.store = FileStore(path) if path is not None else None
-        self.held = self.store.names() if self.store is not None else set()
-        self.db_dir = db_dir
-        self._reader: Optional[SimpleDBReader] = None
+    def __init__(self, store: Optional[Path] = None) -> None:
+        """
+        Args:
+            store: The store; None reads the one FILE_STORE names (`provexp.data.paths.file_store`).
+        """
+        self.store = FileStore(file_store() if store is None else store)
+        self.held = self.store.names()
+
+    def check(self, names: list[str]) -> None:
+        """Raise KeyError, naming how many and which, if the store does not hold every one of `names`."""
+        missing = sorted(set(names) - self.held)
+        if missing:
+            raise KeyError(f"The file store {self.store.path.as_posix()} does not hold {len(missing)} of the "
+                           f"{len(set(names))} files asked for, e.g. {missing[:3]}; rebuild it with "
+                           "pipeline/2-features/file-store/run.sh after the lists change.")
 
     def get(self, name: str) -> bytes:
         """The bytes of one file."""
-        if name in self.held:
-            assert self.store is not None
-            return self.store.get(name)
-        if self._reader is None:
-            self._reader = SimpleDBReader(SimpleDB(self.db_dir, check=False))
-        return bytes(self._reader.get(name).data)
+        return self.store.get(name)
 
 
-def read_files(names: list[str], file_list: Path, db_dir: Path) -> list[tuple[str, bytes]]:
+def read_files(names: list[str], store: Optional[Path] = None) -> list[tuple[str, bytes]]:
     """
-    The bytes of `names`, as (name, bytes) pairs in their order (`FileReader`).
+    The bytes of `names` from the file store, as (name, bytes) pairs in their order.
 
     Args:
-        names: The files to read.
-        file_list: The file list they come from (its directory may hold a store).
-        db_dir: The SimpleDB directory holding their bytes.
+        names: The files to read; all of them must be in the store (checked before any is read).
+        store: The store; None reads the one FILE_STORE names.
 
     Returns:
         The files.
     """
-    reader = FileReader(file_list, db_dir)
+    reader = FileReader(store)
+    reader.check(names)
     return [(n, reader.get(n)) for n in names]
 
 
@@ -75,36 +80,29 @@ def load_pilot(pilot_files: Path, db_dir: Path) -> tuple[list[tuple[str, bytes]]
     return malware, goodware
 
 
-def load_evaluation(files: Path, db_dir: Path, donors: Optional[Path] = None,
-                    donor_db_dir: Optional[Path] = None) -> tuple[list[tuple[str, bytes]], list[tuple[str, bytes]]]:
-    """The malware of an evaluation list and the goodware of a donor list, as (name, bytes) lists (the scale-up).
+def load_evaluation(files: Path, donors: Optional[Path] = None) -> tuple[list[tuple[str, bytes]],
+                                                                       list[tuple[str, bytes]]]:
+    """The malware of a file list and the goodware of a donor list, from the file store (the scale-up).
 
     Unlike load_pilot, no malware is filtered here: each attack attacks only the malware its detector detects.
 
     Args:
-        files: The evaluation list (pipeline/2-features/files: name, label).
-        db_dir: The SimpleDB directory holding its bytes (the test split).
+        files: The file list (name, label): the evaluation list, or a list of training malware.
         donors: A donor list (name; goodware of the training split), or None for an attack that takes no donors.
-        donor_db_dir: The SimpleDB directory holding the donors' bytes (required with `donors`).
 
     Returns:
         (malware, donors); donors is empty without a donor list.
     """
     names = pl.read_parquet(files).filter(pl.col("label") == 1)["name"].to_list()
-    malware = read_files(names, files, db_dir)
-    if donors is None:
-        return malware, []
-    if donor_db_dir is None:
-        raise ValueError("A donor list needs the SimpleDB directory of its split (donor_db_dir).")
-    return malware, load_donors(donors, donor_db_dir)
+    malware = read_files(names)
+    return malware, ([] if donors is None else load_donors(donors))
 
 
-def load_donors(donors: Path, db_dir: Path) -> list[tuple[str, bytes]]:
-    """The goodware of a donor list (name; training goodware), as (name, bytes) pairs in the list's order.
+def load_donors(donors: Path) -> list[tuple[str, bytes]]:
+    """The goodware of a donor list (name; training goodware), from the file store, in the list's order.
 
     Args:
         donors: The donor list.
-        db_dir: The SimpleDB directory holding their bytes.
 
     Returns:
         The donors.
@@ -112,7 +110,7 @@ def load_donors(donors: Path, db_dir: Path) -> list[tuple[str, bytes]]:
     df = pl.read_parquet(donors)
     if "label" in df.columns and (df["label"] != 0).any():
         raise ValueError(f"The donor list {donors.as_posix()} holds files that are not goodware.")
-    return read_files(df["name"].to_list(), donors, db_dir)
+    return read_files(df["name"].to_list())
 
 
 # The two setups the attacks run under: the pilot's (the pilot list, its malware pre-filtered by the old GBDT, the
@@ -122,16 +120,14 @@ PROTOCOLS = {"pilot": "ts", "scaleup": "vl"}
 
 
 def load_attacked(protocol: str, files: Path, db_dir: Path, donors: Optional[Path] = None,
-                  donor_db_dir: Optional[Path] = None, need_donors: bool = True) -> tuple[list[tuple[str, bytes]],
-                                                                                         list[tuple[str, bytes]]]:
+                  need_donors: bool = True) -> tuple[list[tuple[str, bytes]], list[tuple[str, bytes]]]:
     """The malware an attack starts from and its goodware donors, under one of PROTOCOLS.
 
     Args:
         protocol: "pilot" (load_pilot; `donors` must be None) or "scaleup" (load_evaluation).
         files: The file list (pilot list or evaluation list).
-        db_dir: The SimpleDB directory holding its bytes.
+        db_dir: The SimpleDB directory holding its bytes (the pilot only; the scale-up reads the file store).
         donors: The scale-up's donor list.
-        donor_db_dir: The SimpleDB directory holding the donors.
         need_donors: Whether the attack draws on donors (the scale-up then requires a donor list).
 
     Returns:
@@ -144,5 +140,5 @@ def load_attacked(protocol: str, files: Path, db_dir: Path, donors: Optional[Pat
     if protocol == "scaleup":
         if need_donors and donors is None:
             raise ValueError("The scale-up protocol needs a donor list (--donors).")
-        return load_evaluation(files, db_dir, donors, donor_db_dir)
+        return load_evaluation(files, donors)
     raise ValueError(f"protocol must be one of {tuple(PROTOCOLS)}, got {protocol!r}.")

@@ -25,7 +25,13 @@ in `docs/archive/status-log-2026-11-14-s63.md`, sessions 64-65 in `docs/archive/
   `OMP_NUM_THREADS` = cores kept by `common.sh`) killed `iterated`'s workers and MAB-Malware `zainab`'s shell; fixed,
   both restarted; the adaptive search's setup now runs over the workers (PLAN.md step 3 (15)). `iterated` round 1 and
   `iterated-1` done (none lost), round 2 running; MAB-Malware `expert` rerun with the full donor set, `zainab`
-  running; the rest waits on ERDALT and `iterated`.
+  running; the rest waits on ERDALT and `iterated`. **Session 82:** `iterated` finished (`iterated-2`; round 2: 972
+  detected, 515 evaded) and MAB-Malware `zainab` finished; the scale-up now reads every file from the file store
+  (`FILE_STORE`), stopping if it or a file is missing (c7481c3). **ERDALT collapses at scale** (all nine models:
+  validation AUC 0.85-0.87 at epoch 0-1, ~0.69-0.75 from epoch 40 on, the < 5 violations criterion never met); its
+  own track (`docs/resume-prompt-erdalt.md`). The other detectors' attacks were resubmitted without ERDALT and run
+  apart from it (`toolkit` 1046138, `adaptive` 1046139, MAB-Malware `ours` 1046140; aaefd75); ERDALT's attacks and
+  `6-results` are held. PLAN.md step 3 (16).
 - **Framework (§2-3):** rewritten; the user is reasonably satisfied. Open: the user's holistic read of Sound
   Directions after round 4 (finetuning only). **Session 74 (the theory session):** proofs audited (correct; seven
   small corrections applied); two additions to §3.3, each approved after a brief look and not yet read closely by the
@@ -161,14 +167,14 @@ in `docs/archive/status-log-2026-11-14-s63.md`, sessions 64-65 in `docs/archive/
 
 ## Waiting on the user
 
-- **The scale-up is running (session 81; nothing waits on the user until it finishes).** Jobs: `learned` 1020791
-  (task 0) and 1020792 (tasks 1-8), ERDALT only, ~30 h each, done ~midnight 2026-11-17; `iterated` 1039055 (round 2
-  since 14:08; ~16:00-17:00 expected; released by hand from its wait on `learned`: it reads only the GBDT side);
-  MAB-Malware 1039059 (`expert` done: 137/161 evaded; `zainab` running) and 1039058 (`ours`, waits on the
-  detectors); `toolkit` 1039056, `adaptive` 1039057, `6-results` 1039060 (waits on all). Record:
-  `logs/submit-20261117-124106.txt`. **Read with the user when ERDALT finishes:** its validation AUC is 0.69-0.75
-  (pilot 0.88) and no epoch had met the < 5 violations criterion by epoch ~185 of 310 (best 16); which epoch it
-  selects, and whether that makes a fair baseline.
+- **The scale-up's attacks are running without ERDALT (session 82).** `toolkit` 1046138 (19 tasks), `adaptive`
+  1046139 (81), MAB-Malware `ours` 1046140 (8 detectors), no dependencies; record `logs/submit-*-no-erdalt.txt`.
+  Next: `docs/resume-prompt-experiments.md`. The nine ERDALT models finish ~2026-11-18 early morning (the user let
+  them run to the end so the run to the authors' specification is complete).
+- **ERDALT (the user, with the ERDALT track):** every model collapsed (validation AUC ~0.70; criterion never met).
+  Leading hypothesis from the code: the violation penalty is a sum over all 79,121 vectors while BCE is a batch mean,
+  so it dominates from the first step (~25x the pilot's vectors). Diagnose with short runs, then decide: report as
+  specified, retrain with a fix, or retrain at their scale. `docs/resume-prompt-erdalt.md`.
 - Number-free rebuttal text fixes (R4, R5, R15, R21) are step 4 (while the scale-up runs).
 - **Bounds on size: the mathematics is written; the user decides, with Opus, what enters the manuscript**
   (`theory-analysis.md`, parts G and H; session 76; next theory session: `docs/resume-prompt-theory.md`).
@@ -200,7 +206,8 @@ in `docs/archive/status-log-2026-11-14-s63.md`, sessions 64-65 in `docs/archive/
    session 65; decided and applied in session 66),
    ~~the protocol items~~ (decided, session 67), ~~the remaining `run.sh` steps~~ (done, session 68), ~~lightweight
    optimization of the hot spots~~ (done, session 69), ~~the two open questions~~ (decided, session 70), ~~the
-   head-node session~~ (done, session 74); running.
+   head-node session~~ (done, session 74); running. Since session 82 in two tracks: the experiments
+   (`docs/resume-prompt-experiments.md`) and ERDALT (`docs/resume-prompt-erdalt.md`).
 4. While it runs: §2's closing and contribution 4 aligned with §5; the number-free text fixes R4, R5, R15, R21.
 5. After reading it: final numbers, then shortening §4-5 and §5's question-and-answer emphasis.
 6. A second domain decided with the scale-up's results in hand (the user's call).
@@ -208,8 +215,25 @@ in `docs/archive/status-log-2026-11-14-s63.md`, sessions 64-65 in `docs/archive/
 
 ## Session log
 
-Two sessions were numbered 74: the head node on tigris, and the theory session. The two tracks have separate resume
-prompts: `docs/resume-prompt.md` (the scale-up) and `docs/resume-prompt-theory.md` (theory).
+Two sessions were numbered 74: the head node on tigris, and the theory session. Since session 82 each track has its
+own resume prompt: `docs/resume-prompt-experiments.md` (the cluster), `docs/resume-prompt-erdalt.md` (ERDALT),
+`docs/resume-prompt-theory.md` (theory), `docs/resume-prompt-writing.md` (the manuscript); `docs/resume-prompt.md` holds
+general work and indexes them.
+
+- **2026-11-17 (session 82, Opus, scale-up track): the file store, ERDALT's collapse, the attacks without ERDALT.**
+  `iterated` finished (round 2: 972 detected, 515 evaded; 282 GiB of 300 at peak). Its rounds spent ~20 min each
+  before searching: the loaders found the file store only beside a file list, and `iterated`'s round lists live in
+  their own folders, so 1,000 files a round came silently from the SimpleDB (a shard decompressed per file). Fixed at
+  the user's direction: one location, `FILE_STORE` (`pipeline/common.sh`), and no fallback: a missing store or file
+  stops the job (c7481c3; verified on tigris: 1,100 files in 0.8 s, bytes identical, old and new adaptive search
+  identical). ERDALT read: all nine models collapse from AUC ~0.86 at epoch 1 to ~0.70 and never meet the criterion;
+  Claude first described the causes loosely (listing their own schedule as if ours); checked against the port, the
+  method is theirs apart from batch 256, the monotone output layer and validation-split selection; the leading
+  hypothesis is the summed penalty over 25x the vectors. The user set ERDALT aside for its own session and let the
+  models finish; the other attacks were cancelled and resubmitted without ERDALT (aaefd75: `TAG`, the toolkit's
+  leave-one-out split by family, a duplicate guard in the tables). The user was frustrated by long waits on
+  background cluster work (a verification job hung 25 min on a stdin script with a spawn pool while Claude waited):
+  do not watch the queue; check once and hand back. The resume prompt split into tracks (user).
 
 - **2026-11-17 (session 84, Opus, manuscript): §6 cut by 30%, paragraph by paragraph, every change approved.**
   Drafted without the paper-prose skill (user's choice). 1,843 -> 1,284 words. Commits: 5326f61 (Šrndić and Laskov

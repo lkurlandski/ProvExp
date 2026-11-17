@@ -201,12 +201,12 @@ def main() -> None:
     parser.add_argument("--model", type=Path, required=True, help="The monotone expert model directory (model.txt, ts_predictions.parquet).")
     parser.add_argument("--outdir", type=Path, required=True)
     parser.add_argument("--pilot_files", type=Path, default=ROOT / "artifacts/experiments/e1/seed-0/zeros/files.parquet")
-    parser.add_argument("--db", type=Path, default=EMBER2024_DATA / "ts")
+    parser.add_argument("--db", type=Path, default=EMBER2024_DATA / "ts",
+                        help="The SimpleDB of --pilot_files (the pilot protocol; the scale-up reads the file store).")
     parser.add_argument("--protocol", choices=tuple(PROTOCOLS), default="pilot",
                         help="pilot: the pilot list and donors, thresholds on ts; scaleup: the evaluation list, --donors, "
                              "thresholds on vl (provexp.data.files.PROTOCOLS).")
     parser.add_argument("--donors", type=Path, default=None, help="Scale-up: the donor list (training goodware).")
-    parser.add_argument("--donor_db", type=Path, default=EMBER2024_DATA / "tr", help="The SimpleDB split of --donors.")
     parser.add_argument("--fpr", type=float, default=0.01)
     parser.add_argument("--max_steps", type=int, default=12)
     args = parser.parse_args()
@@ -215,7 +215,7 @@ def main() -> None:
     extractor = make_extractor(args.features)
     booster = lightgbm.Booster(model_file=str(args.model / "model.txt"))
     tau = model_threshold(args.model, args.fpr, PROTOCOLS[args.protocol])
-    malware, _ = load_attacked(args.protocol, args.pilot_files, args.db, args.donors, args.donor_db, need_donors=False)
+    malware, _ = load_attacked(args.protocol, args.pilot_files, args.db, args.donors, need_donors=False)
     print(f"tau = {tau:.6f}; {len(malware)} pilot malware", flush=True)
 
     rows = []

@@ -98,7 +98,8 @@ def attack_outputs(root: Path, escape: str = "none") -> pl.DataFrame:
         parts.append(ad.select("defense", pl.lit("adaptive").alias("attack"), "name",
                                pl.col("p_adv_real").cast(pl.Float64).alias("p_adv"), pl.lit(True).alias("usable")))
     if escape == "none":
-        mab = _read([att / "mab-malware" / "results.parquet", att / "mab-malware" / "expert" / "results.parquet"])
+        mab = _read([att / "mab-malware" / "results.parquet", att / "mab-malware" / "expert" / "results.parquet",
+                     *sorted((att / "mab-malware").glob("ours-*/results.parquet"))])
         if mab is not None:
             parts.append(mab.select("defense", pl.lit("mab-malware").alias("attack"), "name",
                                     pl.col("p_adv").cast(pl.Float64),
@@ -107,7 +108,13 @@ def attack_outputs(root: Path, escape: str = "none") -> pl.DataFrame:
     if not parts:
         return pl.DataFrame(schema={"defense": pl.Utf8, "attack": pl.Utf8, "name": pl.Utf8, "p_adv": pl.Float64,
                                     "usable": pl.Boolean})
-    return pl.concat(parts)
+    out = pl.concat(parts)
+    # A detector run twice (e.g. in a main run and a TAG run, session 82) would count its files twice.
+    dup = out.filter(pl.struct("defense", "attack", "name").is_duplicated())
+    if dup.height:
+        raise RuntimeError(f"{dup.height} attack outputs appear more than once, e.g. "
+                           f"{dup.head(3).select('defense', 'attack', 'name').rows()}; a detector was run twice.")
+    return out
 
 
 def not_applicable(root: Path, escape: str = "none") -> pl.DataFrame:

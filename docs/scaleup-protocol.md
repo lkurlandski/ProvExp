@@ -1,7 +1,7 @@
 # The scale-up's protocol
 
 PLAN.md's step 3 in full, moved verbatim on 2026-11-17 so that the plan holds only what comes next. Every decision
-behind the scale-up, with its reasons: items (a)-(g) and (1)-(15). "PLAN.md step 3 (g)" or "step 3 (13)" anywhere in
+behind the scale-up, with its reasons: items (a)-(g) and (1)-(16). "PLAN.md step 3 (g)" or "step 3 (13)" anywhere in
 the project means the item of that label below. Open it when a task touches the scale-up's protocol, its jobs, or
 reading its results (PLAN.md step 5).
 
@@ -214,4 +214,27 @@ reading its results (PLAN.md step 5).
    (`artifacts/scaleup/diag/setup-pool/`; the identity check cannot run on tigris: its baseline and the pilot files
    were never copied). Measured: `iterated` round 1, 968 detected files searched in 55 min on 72 cores, none lost, 683
    evaded; `iterated-1` retrained in 7 min (test AUC 0.998).
-   **Next:** the chain finishes (walltimes for the attack steps from their measured tasks), then read it (step 5).
+   (16) **The file store at one location; ERDALT apart (session 82).** `iterated`'s rounds spent ~20 min each before
+   searching (round 2: 14:08 to ~14:30, then 88 min of search): the loaders looked for `files.sqlite` only beside the
+   file list they were given, and `iterated` writes each round's list into its round folder, so 1,000 training malware
+   a round were read from the SimpleDB, one shard decompressed per file, with no message. Decided (user): the code must
+   know where the store is, and an experiment that expects the store must stop if the store or a file is missing.
+   Now `pipeline/common.sh` exports `FILE_STORE` (`$OUT_ROOT/2-features/files/files.sqlite`), read by
+   `provexp.data.paths.file_store()`; `load_evaluation`, `load_donors`, `read_files`, `FileReader` and the population
+   check read only the store and check every name before reading (c7481c3). The pilot keeps its SimpleDB reads.
+   Verified on tigris (`artifacts/scaleup/diag/file_store.sh`, job 1045818): unset setting stops; 1,100 files in 0.8 s,
+   20/20 byte-identical; the population check identical (4 s vs 48 s); old and new adaptive search identical on 24
+   files. `iterated` measured: 3 h 24 min in all, 282 GiB of 300 at peak (230 in round 1), ~45% of its cores (long
+   tails: round 2's last 22 of 972 files took 32 of 88 min); round 2: 972 detected, 515 evaded.
+   **ERDALT collapses at scale.** All nine models: validation AUC 0.85-0.87 at epoch 0-1, ~0.69 by epoch 40, flat since
+   (0.69-0.75); violations from ~1.3 million to 16-42 at best, Gimenez et al.'s < 5 never met. The port is theirs apart
+   from batch 256 (theirs 16), the monotone output layer and selection on the validation split; the scale differs (1.76
+   million training files, 79,121 vectors against the pilot's 3,183 and their ~1,033). Leading hypothesis: the penalty
+   is a sum over every vector while BCE is a batch mean, so it dominates from the first step. The user let the models
+   finish and set ERDALT aside for its own session (`docs/resume-prompt-erdalt.md`). The other attacks run without it
+   (cancelled 1039056-58 and 1039060; resubmitted as `toolkit` 1046138 with `PARTS="main escape loo" LOO=pv`,
+   `adaptive` 1046139, MAB-Malware `ours` 1046140 at 8 cores, all with the eight other detectors; aaefd75): each search
+   is seeded per run, so a detector's results do not depend on the others in its run; ERDALT's runs go to their own
+   outputs (`TAG`; the toolkit's `loo/<family>-<attack>`), and `scaleup_tables.attack_outputs` stops if a (defense,
+   attack, file) appears twice. `6-results` is held until ERDALT's attacks have run.
+   **Next:** the experiments track (`docs/resume-prompt-experiments.md`) and the ERDALT track, then read it (step 5).

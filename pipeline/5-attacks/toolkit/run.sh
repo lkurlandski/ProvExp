@@ -4,7 +4,7 @@
 #SBATCH --constraint=gg
 #SBATCH --job-name=toolkit
 #SBATCH --output=./logs/%x_%A_%a.out
-#SBATCH --array=0-20
+#SBATCH --array=0-28
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
 #SBATCH --cpus-per-task=36
@@ -19,15 +19,15 @@
 #   main/<detector>   every detector of DETECTORS (Tables 4, 5 and 11)
 #   escape/<escape>   each escape write of ESCAPES first, then the eight attacks, against ESCAPE_DETECTORS (R7;
 #                     detection and evasion counted from the unescaped original, as the adaptive search does)
-#   loo/<attack>      the leave-one-out folds (Table 10): the held-out attack against pv-loo-<attack> and
-#                     erdalt-loo-<attack>
+#   loo/<family>-<attack>  the leave-one-out folds (Table 10): the held-out attack against <family>-loo-<attack>,
+#                     one job per family of LOO (pv, erdalt; split in session 82 so ERDALT's folds can run apart)
 #   donors-0/erdalt   R19's donor-overlap control: ERDALT attacked with donor set 0, the donors of its own material
-# 21 jobs with the defaults (keep --array=0-<jobs-1>; a task past the list exits). A job whose table.json exists is
+# 29 jobs with the defaults (keep --array=0-<jobs-1>; a task past the list exits). A job whose table.json exists is
 # skipped. 0.1% FPR is read from the same runs in 6-results (the attacks minimize the score; a file evaded at 1% FPR is
 # evaded at 0.1%).
 # Output: $OUT_ROOT/5-attacks/toolkit/<job>/ (results.parquet, table.json); logs in $OUT_ROOT/5-attacks/toolkit/logs/.
-# Knobs: DETECTORS, ESCAPES, ESCAPE_DETECTORS, PARTS (default "main escape loo donors"), MODELS (registry set, default
-# scaleup), FILES, NUM_MALWARE (smoke tests). Cost (pilot, run 133: ~1,500 runs in ~40 min at 16 workers): ~900
+# Knobs: DETECTORS, ESCAPES, ESCAPE_DETECTORS, PARTS (default "main escape loo donors"), LOO (the leave-one-out
+# families, default "pv erdalt"), MODELS (registry set, default scaleup), FILES, NUM_MALWARE (smoke tests). Cost (pilot, run 133: ~1,500 runs in ~40 min at 16 workers): ~900
 # detected malware x 8 attacks per detector, a few hours per job on 36 cores. SCALE-UP TO CONFIRM: time and memory.
 set -euo pipefail
 cd "${SLURM_SUBMIT_DIR:-$(dirname "$0")/../../..}"
@@ -37,6 +37,7 @@ DETECTORS="${DETECTORS:-unconstrained monotone-features monotone-sums additions-
 ESCAPES="${ESCAPES:-cert_entry debug_entry image_size}"
 ESCAPE_DETECTORS="${ESCAPE_DETECTORS:-unconstrained monotone-features monotone-sums}"
 PARTS="${PARTS:-main escape loo donors}"
+LOO="${LOO:-pv erdalt}"
 MODELS="${MODELS:-scaleup}"
 ATTACKS="gamma_sections gamma_api gamma_shift content_shift dos_extend header_fields padding format_exploit"
 LISTS=$OUT_ROOT/2-features/files
@@ -52,7 +53,7 @@ for part in $PARTS; do
   case $part in
     main) for d in $DETECTORS; do JOBS+=("main/$d"); done ;;
     escape) for e in $ESCAPES; do JOBS+=("escape/$e"); done ;;
-    loo) for h in $ATTACKS; do JOBS+=("loo/$h"); done ;;
+    loo) for fam in $LOO; do for h in $ATTACKS; do JOBS+=("loo/$fam-$h"); done; done ;;
     donors) JOBS+=("donors-0/erdalt") ;;
     *) echo "Unknown part $part (main escape loo donors)." >&2; exit 1 ;;
   esac
@@ -96,8 +97,8 @@ for k in $(tasks "${#JOBS[@]}"); do
     escape/*) attack "$job" "$LISTS/tr-donors-1.parquet" "$ATTACKS" "$ATTACKS" "$ESCAPE_DETECTORS" \
       --escape "${job#escape/}" ;;
     loo/*)
-      h=${job#loo/}
-      attack "$job" "$LISTS/tr-donors-1.parquet" "$h" "$(others "$h")" "pv-loo-$h erdalt-loo-$h" ;;
+      fam=${job#loo/}; fam=${fam%%-*}; h=${job#loo/"$fam"-}
+      attack "$job" "$LISTS/tr-donors-1.parquet" "$h" "$(others "$h")" "$fam-loo-$h" ;;
     donors-0/*) attack "$job" "$LISTS/tr-donors-0.parquet" "$ATTACKS" "$ATTACKS" erdalt ;;
   esac
 done

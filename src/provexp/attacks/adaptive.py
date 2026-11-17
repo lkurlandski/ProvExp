@@ -1006,7 +1006,7 @@ def _init_worker(config: dict[str, Any], malware: Optional[list[tuple[str, bytes
         if config.get("protocol", "pilot") == "pilot":
             _, goodware = load_pilot(config["pilot_files"], config["db"])
         else:
-            goodware = load_donors(config["donors"], config["donor_db"])
+            goodware = load_donors(config["donors"])
     extractor = fix_quirks(PEFeatureExtractor())
     engine = RealEngine(extractor, SumsFeatureExtractor()) if config.get("score") == "real" else Engine(extractor)
     _W.clear()

@@ -26,15 +26,15 @@ __all__: list[str] = []
 
 def main() -> None:
     parser = ArgumentParser(description=__doc__)
-    parser.add_argument("--out", type=Path, required=True, help=f"The store to write (named {STORE_NAME}, beside the "
-                        "lists, for the loaders to find it).")
+    parser.add_argument("--out", type=Path, required=True, help=f"The store to write (named {STORE_NAME}; "
+                        "pipeline/common.sh's FILE_STORE names it).")
     parser.add_argument("--list", action="append", required=True, help="LIST=SPLIT or LIST=SPLIT:malware (only its "
                         "label-1 rows); SPLIT names the SimpleDB under --data (tr, vl, ts). Repeatable.")
     parser.add_argument("--data", type=Path, default=EMBER2024_DATA, help="The SimpleDB root (one directory per split).")
     parser.add_argument("--num_workers", type=int, default=8, help="Processes reading shards (~1 GB of memory each).")
     args = parser.parse_args()
     if args.out.name != STORE_NAME:
-        raise ValueError(f"The store must be named {STORE_NAME} for the loaders to find it, got {args.out.name}.")
+        raise ValueError(f"The store must be named {STORE_NAME} (FILE_STORE in pipeline/common.sh), got {args.out.name}.")
     lists = []
     counts = {}
     for spec in args.list:

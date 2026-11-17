@@ -129,7 +129,7 @@ def trial_table(names: list[str], edits: list[Path], probes: list[Path], toolkit
         gen = ROOT / "artifacts/experiments/a1/advtrain/generated-seedperfile"
         files = pl.read_parquet(gen / "files.parquet").filter(pl.col("attack").is_in(list(ATTACKS)))
         d = adv_deltas(gen, ROOT / "artifacts/features/ember2024", list(ATTACKS), names)
-        member = population(sorted(set(files["name"].to_list())), EMBER2024_DATA / "tr", workers)
+        member = population(sorted(set(files["name"].to_list())), workers, db=EMBER2024_DATA / "tr")  # the pilot's files
         mask = np.array([member[n] for n in files["name"].to_list()])
         _add_deltas(d[mask], files["attack"].to_numpy()[mask], names, low, up)
         pv = pl.read_parquet(ROOT / "artifacts/experiments/a_pv/deltas.parquet")

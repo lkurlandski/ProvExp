@@ -4,6 +4,8 @@
 #   OUT_ROOT     where the stages write (default artifacts/scaleup; the identity check overrides it)
 #   NUM_WORKERS  processes per job (default: the job's SLURM_CPUS_PER_TASK, else the system's CORES; override with
 #                NUM_WORKERS=...)
+#   FILE_STORE   the file store the scale-up reads its files from (provexp.data.paths.file_store; default
+#                $OUT_ROOT/2-features/files/files.sqlite): the loaders stop if it or a file is missing
 #   PYTHONHASHSEED=0 (thrember's warning features depend on it)
 #   OMP_NUM_THREADS=1, OPENBLAS_NUM_THREADS=1, POLARS_MAX_THREADS=1: our parallelism is processes (workers do not share
 #                cores); a step that trains with threads passes the count explicitly (--num_threads, or OMP_NUM_THREADS
@@ -32,6 +34,7 @@ export OPENBLAS_NUM_THREADS=1
 export POLARS_MAX_THREADS="${POLARS_MAX_THREADS:-1}"
 NUM_WORKERS="${NUM_WORKERS:-${SLURM_CPUS_PER_TASK:-$CORES}}"
 export OUT_ROOT="${OUT_ROOT:-artifacts/scaleup}"  # exported: provexp.registry reads it
+export FILE_STORE="${FILE_STORE:-$OUT_ROOT/2-features/files/files.sqlite}"
 mkdir -p logs
 
 tasks() {  # number of shards

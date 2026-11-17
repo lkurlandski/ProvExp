@@ -59,8 +59,9 @@ copy them with `run/sync_artifacts.sh`.
 The commits must be on the remote first: `git push` on this server before cloning (the clone is otherwise the
 pilot's code). `pipeline/setup/check.sh` stops if the index files or the lists are missing.
 
-The attacks read their files from `artifacts/scaleup/2-features/files/files.sqlite` when it exists (the file store,
-`pipeline/2-features/file-store`; the same bytes as the SimpleDB, each row's SHA-256 checked on read): build it there
+The scale-up's attacks and defenses read their files only from the file store, `FILE_STORE` (set by
+`pipeline/common.sh` to `$OUT_ROOT/2-features/files/files.sqlite`; `pipeline/2-features/file-store`; the same bytes as
+the SimpleDB, each row's SHA-256 checked on read). They stop with an error if it is missing or lacks a file: build it
 after the lists, or copy it from this server.
 
 ## 5. The check
