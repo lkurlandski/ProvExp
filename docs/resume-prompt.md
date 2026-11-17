@@ -2,7 +2,7 @@
 
 Written in session 81 (2026-11-17). This prompt is self-contained: what the project is, where things stand, the rules
 that apply, and what the next session does. Only `CLAUDE.md` (loaded automatically) needs reading first. The theory
-track (bounds on size) is separate: `docs/resume-prompt-theory.md`; light tasks on Sonnet: `docs/resume-prompt-sonnet.md`.
+track (bounds on size) is separate: `docs/resume-prompt-theory.md`; the writing track (manuscript review): `docs/resume-prompt-writing.md`.
 
 ## 1. The project in brief
 
@@ -94,7 +94,7 @@ number. Its full record is `docs/scaleup-protocol.md`, items (a)-(g) and (1)-(15
    lowering printable-string counts; header-field writes moving the relocation flags), for §4.3.2's last sentence
    and §5.1's *Checking results* (PLAN.md, open items).
 8. **Writing while it runs (PLAN.md step 4):** §2's closing and contribution 4 aligned with §5 (session 80's C.6 note
-   in `docs/status.md`); the remaining review fixes are on the Sonnet track (`docs/resume-prompt-sonnet.md`).
+   in `docs/status.md`); the remaining review fixes are on the writing track (`docs/resume-prompt-writing.md`).
 9. **When the chain finishes:** read `6-results` with the user (step 5).
 
 ## 5. Noted for later

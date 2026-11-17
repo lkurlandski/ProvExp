@@ -209,12 +209,23 @@ prompts: `docs/resume-prompt.md` (the scale-up) and `docs/resume-prompt-theory.m
   no adversarial examples, 91% less computation) beside the 2023 adversarial training, whose sentence now says how
   that was made practical (over 140 workers, epoch from months to one to ten days; e79970a); Tsingenopoulos et al.
   (new bib entry `tsingenopoulos2024train`, arXiv 2402.19027; 501e463). **Tsingenopoulos et al. is the closest work;
-  close read done** (findings in `docs/resume-prompt-sonnet.md`, *Open*): the guarantee is a definition estimated by
+  close read done** (findings in `docs/resume-prompt-writing.md`, *Open*): the guarantee is a definition estimated by
   an RL attacker, the capability set and the side-effect propagation are hand-written, the edits are on the report
   not on binaries. A rewording of §6's sentence is proposed, not applied. The user chose the humanistic review for the
   next session: order §6, §3, §4, §5, §2; length is a later, separate pass (candidates to `docs/review-cuts.md`);
   Sonnet, because the user was at 92% of the week's usage. Still open: the Gibert et al. papers (not in `papers/`),
   Giri et al.'s author names, C.6.
+- **2026-11-17 (session 82, later, Sonnet, manuscript): the first §6 pass, then a change of plan.** The humanistic
+  pass on *Problem-space attacks* and *Constraints over features* gave five findings; the user said to apply all, and
+  all five are in `_g_related_work.tex`, **uncommitted, awaiting the user's verdict** (the Kantchelian sentence moved
+  beside the other methods that take constraints; "nothing checks" narrowed to "None of these derives the constraints
+  from the extractor itself"; a paragraph break at "All three take the constraints as input"; the first paragraph names
+  Pierazzi et al.'s condition and says what we compute; "realizable" for the paper's notion, "problem-space examples"
+  for Dyrmishi et al.'s and Lucas et al.'s). Quote-checked: Pierazzi et al. and Kantchelian et al.; not in `papers/`:
+  Šrndić and Laskov, FENCE, Sheatsley et al. **The user then judged §6 too long to be useful (1,843 words; the mock
+  says 1,000) and asked for the next session, on Opus, to assess its structure, organization and content as a whole and
+  to plan a 30-40% cut before any further sentence-level review.** The resume prompt is renamed
+  `docs/resume-prompt-writing.md` (was `-sonnet`) and starts with that task; the order §3, §4, §5, §2 follows it.
 - **2026-11-17 (session 81, Opus, scale-up track): the thread overload, MAB-Malware's shell, a parallel setup.**
   MAB-Malware `zainab` crashed (a `cp` that never ran) and `iterated` was losing workers; both on gg-a-016, where the
   user's threads reached 16,082 of 16,384: SLURM's `OMP_NUM_THREADS` = cores, kept by `common.sh`, gave each of 72
@@ -238,7 +249,7 @@ prompts: `docs/resume-prompt.md` (the scale-up) and `docs/resume-prompt-theory.m
   code, so it is ours), **accepted** (0ac171d), **the budget may be reconsidered later** (user); C.4(b) a *Certified
   defenses* paragraph in §6 (RS-Del, DRSM, Giri et al.; three bib entries; the user asked to keep the contrast with
   ours short), **accepted** (51b166c). Still to do: C.4(c), C.5, and the C.6 note (below); see
-  `docs/resume-prompt-sonnet.md`. **Findings:** `papers/gibert2024assessing.pdf` is the packing study (bib key
+  `docs/resume-prompt-writing.md`. **Findings:** `papers/gibert2024assessing.pdf` is the packing study (bib key
   `gibert2025assessing`), not the certified-detector papers of Gibert et al. (AISec 2023, IEEE Access 2024, as listed by
   Giri et al.), which are not in `papers/` (`% TODO cite` in §6); the R17 decision (no universality sentence) was
   already recorded in the triage table. Giri et al.'s bib author names ("K. A., Asmitha", "P., Vinod") are as printed;
