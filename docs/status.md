@@ -10,7 +10,7 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
 in `docs/archive/status-log-2026-11-14-s63.md`, sessions 64-65 in `docs/archive/status-log-2026-11-14-s64-65.md`, sessions 66-76 in
 `docs/archive/status-log-2026-11-15-to-16-s66-76.md`).
 
-## Current state (2026-11-17, through session 78)
+## Current state (2026-11-17, through session 81)
 
 - **Scale-up running on tigris (session 74).** Setup done (`SETUP.md`, `pipeline/systems/tigris.sh`); everything is
   submitted by `bash pipeline/submit.sh` (SLURM dependencies; `3-directions/gate` before the detectors). Done:
@@ -21,8 +21,11 @@ in `docs/archive/status-log-2026-11-14-s63.md`, sessions 64-65 in `docs/archive/
   (session 77) finished the catalogue check, hand table, trial table, trial detector and the defenses' material, but
   SLURM marked the material OUT_OF_MEMORY: GAMMA runs lost to LIEF's runaway rebuild, now prevented (PLAN.md step 3
   (13)). Session 78: the repair finished (79,121 valid rows, 216 not applicable); the learned defenses' GBDTs are
-  trained, the nine ERDALT models finish ~2026-11-17 midnight; iterated training, MAB-Malware's expert and zainab
-  settings are running; the rest waits on them (PLAN.md step 3 (14)).
+  trained, the nine ERDALT models finish ~2026-11-17 midnight. Session 81: a thread overload (SLURM's
+  `OMP_NUM_THREADS` = cores kept by `common.sh`) killed `iterated`'s workers and MAB-Malware `zainab`'s shell; fixed,
+  both restarted; the adaptive search's setup now runs over the workers (PLAN.md step 3 (15)). `iterated` round 1 and
+  `iterated-1` done (none lost), round 2 running; MAB-Malware `expert` rerun with the full donor set, `zainab`
+  running; the rest waits on ERDALT and `iterated`.
 - **Framework (§2-3):** rewritten; the user is reasonably satisfied. Open: the user's holistic read of Sound
   Directions after round 4 (finetuning only). **Session 74 (the theory session):** proofs audited (correct; seven
   small corrections applied); two additions to §3.3, each approved after a brief look and not yet read closely by the
@@ -151,13 +154,14 @@ in `docs/archive/status-log-2026-11-14-s63.md`, sessions 64-65 in `docs/archive/
 
 ## Waiting on the user
 
-- **The scale-up is running (session 78; nothing waits on the user until it finishes).** Jobs: `learned` 1020791
-  (task 0) and 1020792 (tasks 1-8), ERDALT only now, ~30 h each, done ~midnight 2026-11-17; `iterated` 1020793
-  (released from its wait on ERDALT: it reads only the GBDT side); MAB-Malware 1030368 (`ours`, waits on the
-  detectors) and 1030369 (`expert` done: 132/161 evaded; `zainab` running); `toolkit` 1020794, `adaptive` 1020795,
-  `6-results` 1030370 (waits on all). Record: `logs/submit-20261117-095052.txt`. **Read with the user when
-  ERDALT finishes:** its validation AUC is 0.69-0.75 (pilot 0.88) and no epoch had met the < 5 violations criterion
-  by epoch ~185 of 310 (best 16); which epoch it selects, and whether that makes a fair baseline.
+- **The scale-up is running (session 81; nothing waits on the user until it finishes).** Jobs: `learned` 1020791
+  (task 0) and 1020792 (tasks 1-8), ERDALT only, ~30 h each, done ~midnight 2026-11-17; `iterated` 1039055 (round 2
+  since 14:08; ~16:00-17:00 expected; released by hand from its wait on `learned`: it reads only the GBDT side);
+  MAB-Malware 1039059 (`expert` done: 137/161 evaded; `zainab` running) and 1039058 (`ours`, waits on the
+  detectors); `toolkit` 1039056, `adaptive` 1039057, `6-results` 1039060 (waits on all). Record:
+  `logs/submit-20261117-124106.txt`. **Read with the user when ERDALT finishes:** its validation AUC is 0.69-0.75
+  (pilot 0.88) and no epoch had met the < 5 violations criterion by epoch ~185 of 310 (best 16); which epoch it
+  selects, and whether that makes a fair baseline.
 - Number-free rebuttal text fixes (R4, R5, R15, R21) are step 4 (while the scale-up runs).
 - **Bounds on size: the mathematics is written; the user decides, with Opus, what enters the manuscript**
   (`theory-analysis.md`, parts G and H; session 76; next theory session: `docs/resume-prompt-theory.md`).
@@ -200,6 +204,15 @@ in `docs/archive/status-log-2026-11-14-s63.md`, sessions 64-65 in `docs/archive/
 Two sessions were numbered 74: the head node on tigris, and the theory session. The two tracks have separate resume
 prompts: `docs/resume-prompt.md` (the scale-up) and `docs/resume-prompt-theory.md` (theory).
 
+- **2026-11-17 (session 81, Opus, scale-up track): the thread overload, MAB-Malware's shell, a parallel setup.**
+  MAB-Malware `zainab` crashed (a `cp` that never ran) and `iterated` was losing workers; both on gg-a-016, where the
+  user's threads reached 16,082 of 16,384: SLURM's `OMP_NUM_THREADS` = cores, kept by `common.sh`, gave each of 72
+  workers ~380 threads. Fixed in `common.sh` (one thread per process; a startup line prints the settings), MAB's
+  shell commands checked, donor names with '/' kept (user; 484 -> 501 sections), `iterated` cancelled and restarted
+  at 300 GB (user), `expert` and `zainab` rerun. The adaptive search's per-file setup moved into its own worker pool
+  (the user's design; verified identical to the old code on a 40-file search) before round 2. PLAN.md step 3 (15).
+  The user was angry at the run of avoidable cluster failures caused by unchecked assumptions about the jobs'
+  environment and serial setup code; two CLAUDE.md rules added (parallel by design; read the job's environment).
 - **2026-11-17 (session 80, Sonnet, small tasks while the scale-up runs).** Committed: A.1 the 1 pt overfull vbox (a
   column break before Appendix E, with a comment; drop it once E and F hold text; 538c430); A.3 array logs
   `%x_%A_%a.out` for MAB-Malware's header and `learned`'s ERDALT array in `submit.sh` (8fefbc6); B.1

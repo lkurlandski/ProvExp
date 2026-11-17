@@ -51,14 +51,16 @@ records of the §5 reviews, the table remake and the ERDALT check, is in
 2c. **The extractor question: decided (user, session 62) — stay on pefile.**
    Steps 1-2c in full: `docs/archive/PLAN-done-steps-2026-11-17.md`.
 3. **The scale-up: one protocol, every paper number from it** (designed with the user in sessions 63-78). The full
-   record, items (a)-(g) and (1)-(14) with every decision and its reasons, is `docs/scaleup-protocol.md`; "step 3 (g)"
+   record, items (a)-(g) and (1)-(15) with every decision and its reasons, is `docs/scaleup-protocol.md`; "step 3 (g)"
    and the like refer to it. In short: one seed (0); an evaluation set of 1,000 malware and 1,000 benign complete test
    files; every detector trained on the full training split's complete files, thresholds from the validation split,
    donors from training goodware; the toolkit, the adaptive search (5,000 extraction-scored candidates), MAB-Malware
    (three settings) and the escapes; the learned defenses from one shared material; the trial row and iterated
    adversarial training as competitors. Submitted on tigris by `pipeline/submit.sh`. Done at scale: everything through
-   the defenses' material, `train`, `price-list`, the learned defenses' GBDTs, MAB-Malware's expert setting. Running:
-   ERDALT, `iterated`, MAB-Malware's other settings, `toolkit`, `adaptive`, then `6-results`. **To watch:** ERDALT's
+   the defenses' material, `train`, `price-list`, the learned defenses' GBDTs, MAB-Malware's expert setting (rerun in
+   session 81 with the full donor set), `iterated`'s round 1 and `iterated-1`. Running: ERDALT, `iterated` round 2,
+   MAB-Malware `zainab`; then `toolkit`, `adaptive`, MAB-Malware `ours`, `6-results`. Session 81 fixed the thread
+   overload behind two failures and parallelized the adaptive search's setup (item (15)). **To watch:** ERDALT's
    validation AUC and the epoch it selects (item (14)). **Next:** the chain finishes, then read it (step 5).
 4. **While the scale-up runs: §2's closing and contribution 4 against §5** (old step 2 (c)). §2 says §5 "uses them to
    attack malware detectors and to build robust ones"; in §5 the attack is an instrument. The mock's contribution 4 is

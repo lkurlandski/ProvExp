@@ -1,7 +1,7 @@
 # The scale-up's protocol
 
 PLAN.md's step 3 in full, moved verbatim on 2026-11-17 so that the plan holds only what comes next. Every decision
-behind the scale-up, with its reasons: items (a)-(g) and (1)-(14). "PLAN.md step 3 (g)" or "step 3 (13)" anywhere in
+behind the scale-up, with its reasons: items (a)-(g) and (1)-(15). "PLAN.md step 3 (g)" or "step 3 (13)" anywhere in
 the project means the item of that label below. Open it when a task touches the scale-up's protocol, its jobs, or
 reading its results (PLAN.md step 5).
 
@@ -194,4 +194,24 @@ reading its results (PLAN.md step 5).
    ~30 h per model, peak 91 GiB. **To watch:** ERDALT's validation AUC is 0.69-0.75 at scale (0.88 at the pilot)
    and no epoch had met Gimenez et al.'s criterion (< 5 violations; best 16) by epoch ~185 of 310; read the selected
    epoch when it finishes, since a weak ERDALT invites the straw-man objection.
+   (15) **Thread limits, MAB-Malware's shell, and a parallel setup (session 81).** MAB-Malware `zainab` (1030369_2)
+   crashed after 32 min on a copy that never happened, and `iterated` (1020793) was losing tasks (9 files of round 1,
+   ~29 dead workers): both ran on gg-a-016, where the user's processes and threads reached 16,082 of the per-user limit
+   of 16,384. Cause: SLURM on tigris starts each job with `OMP_NUM_THREADS` = its cores, which `common.sh` kept (it
+   only filled in a missing value), so each of `iterated`'s 72 workers built 72-thread OpenMP and OpenBLAS pools plus
+   polars' pools (~380 threads per worker); a shell could not start and threads could not spawn. Fixed: `common.sh`
+   sets OpenMP, OpenBLAS and polars to one thread per process (927dc5f) and prints the thread settings, cores and
+   process limit at every job's start (c6f6483); a worker now has 9 threads. MAB-Malware: upstream's ~60 unchecked
+   `os.system` file operations go through `checked_system` (a failed command raises; a shell that cannot start is
+   retried), and '/' or '|' in a donor section name becomes '_' (the user's choice): the donor set grows from 484 to
+   501 sections, since a `/4` name had also dropped every later section of its file (50f3e97); `expert` was rerun
+   for consistency (137/161 evaded, was 132). `iterated` was cancelled and restarted at 300 GB (7f1e249; it reached
+   196 GiB of 200, and 230 GiB in the restart). The adaptive search's per-file setup (escape write, extraction,
+   population checks) ran one file at a time in the main process, once per defense (~30 min for 1,000 files on 1 of
+   72 cores); `prepare_files` now runs it over `--num_workers` (7178180), each file extracted once; detector scores
+   stay one-row predictions in the main process. Verified: old and new code on the same search (40 evaluation
+   malware, two detectors, with and without the debug escape, 16 workers) give identical outputs apart from timing
+   (`artifacts/scaleup/diag/setup-pool/`; the identity check cannot run on tigris: its baseline and the pilot files
+   were never copied). Measured: `iterated` round 1, 968 detected files searched in 55 min on 72 cores, none lost, 683
+   evaded; `iterated-1` retrained in 7 min (test AUC 0.998).
    **Next:** the chain finishes (walltimes for the attack steps from their measured tasks), then read it (step 5).

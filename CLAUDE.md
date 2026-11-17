@@ -88,6 +88,16 @@ conference cycles are not a planning constraint (user).
   on few cores must be split; half an hour of loading before a day on the GPU need not. Do not over-engineer. After
   jobs finish, occasionally compare what they used with what they requested (`sacct`: Elapsed, TotalCPU, MaxRSS
   against Timelimit, AllocCPUS, ReqMem; `sstat` on a running `.batch` step) and right-size the headers.
+- **Design per-item work for parallel execution** (user, 2026-11-17, after `adaptive.py` extracted 1,000 files one by
+  one while 71 of 72 cores waited): an embarrassingly parallel loop that takes more than a few minutes, grows with the
+  inputs, or runs repeatedly goes through a worker pool, and the worker count is a knob (`--num_workers`), not a code
+  change. Check setup and post-processing loops too, not only the main computation.
+- **Never assume a job's environment; read it** (2026-11-17: SLURM on tigris sets `OMP_NUM_THREADS` to the job's
+  cores, which `common.sh` kept, so 72 workers each built 72-thread pools and exhausted the per-user process limit,
+  16,384 per node, killing workers and a co-located job). `common.sh` now pins OpenMP, OpenBLAS and polars to one
+  thread per process and prints each job's thread settings, cores and process limit at startup: read that line in the
+  first job of a new or changed step. Before submitting, work out the processes, threads, cores and memory a step
+  will actually use on the node.
 - **Explain plainly.** Lead with the plain-language version of an argument (what is computed, what it is compared
   with, why it matters); define terms and avoid dense shorthand. The user could not follow a jargon-heavy explanation
   (2026-10-12).
