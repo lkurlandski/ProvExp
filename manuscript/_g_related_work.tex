@@ -33,7 +33,10 @@ among features from sample files. Sheatsley et al.~\cite{sheatsley2021robustness
 few features chosen by hand, which reduces the expert's part but ties the constraints to the examples they were learned
 from. Bostani et al.~\cite{bostani2025level} learn dependencies among features from the feature vectors of many Android
 apps and use them to generate realizable feature-space examples for adversarial training, and they note that constraints
-learned from a finite sample describe only part of the realizable feature space. In each case, nothing checks the
+learned from a finite sample describe only part of the realizable feature space. Kantchelian et
+al.~\cite{kantchelian2016evasion} find the nearest evading instance of a tree ensemble in feature space with a mixed
+integer program, which can also express dependencies among features that the extraction creates, such as features of
+which exactly one is nonzero, but the dependencies are written by the analyst. In each case, nothing checks the
 constraints against the extractor that produces the features. A hand-written constraint is only as complete as its
 author's reading of the extractor, and a learned one can admit vectors that no edit reaches and exclude vectors that
 some edit does. We derive what these attacks take as input. For a sum-then-readout extractor and a declared set of
