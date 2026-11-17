@@ -21,16 +21,14 @@ attacks* 160; *Constraints over features* 424; *Robust and monotone detectors* 7
 *Incremental computation and provenance* 294. Sentence-level problems (a quote-checked humanistic pass on the first two
 paragraphs) were already found and fixed; do not redo that. The cut is about what the section is for.
 
-**The five edits of pass 1 are in the working tree, uncommitted, awaiting the user's verdict** (`git diff
-manuscript/_g_related_work.tex`). Ask for it first; commit what is approved and revert the rest
-(`git checkout -- manuscript/_g_related_work.tex` undoes all five; they are independent, so revert by hand if only some
-are rejected). They are: (1) Kantchelian et al.'s sentence moved up beside the other methods that take constraints as
-input, "All three take the constraints as input"; (2) "In each case, nothing checks the constraints against the
-extractor" replaced by "None of these derives the constraints from the extractor itself"; (3) a paragraph break at
-"All three take the constraints as input"; (4) *Problem-space attacks* now names Pierazzi et al.'s condition (feature
-mappings neither differentiable nor invertible, quote-checked) and ends on what our work computes, not "replaces this
-trial and error"; (5) "realizable" (§2's own term) in place of "realistic" where the paper's notion is meant, and
-"problem-space examples" for what Dyrmishi et al. and Lucas et al. mean.
+**The five edits of pass 1 are committed** (`d9fc35d`, approved by the user): (1) Kantchelian et al.'s sentence moved up
+beside the other methods that take constraints as input, "All three take the constraints as input"; (2) "In each case,
+nothing checks the constraints against the extractor" replaced by "None of these derives the constraints from the
+extractor itself"; (3) a paragraph break at "All three take the constraints as input"; (4) *Problem-space attacks* now
+names Pierazzi et al.'s condition (feature mappings neither differentiable nor invertible, quote-checked) and ends on
+what our work computes, not "replaces this trial and error"; (5) "realizable" (§2's own term) in place of "realistic"
+where the paper's notion is meant, and "problem-space examples" for what Dyrmishi et al. and Lucas et al. mean. The cut
+may rewrite them; keep what they fixed (the condition, the term, the narrower claim).
 
 **How to assess** (diagnose; propose; the user decides):
 

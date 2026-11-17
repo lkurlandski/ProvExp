@@ -217,7 +217,7 @@ prompts: `docs/resume-prompt.md` (the scale-up) and `docs/resume-prompt-theory.m
   Giri et al.'s author names, C.6.
 - **2026-11-17 (session 82, later, Sonnet, manuscript): the first §6 pass, then a change of plan.** The humanistic
   pass on *Problem-space attacks* and *Constraints over features* gave five findings; the user said to apply all, and
-  all five are in `_g_related_work.tex`, **uncommitted, awaiting the user's verdict** (the Kantchelian sentence moved
+  all five are in `_g_related_work.tex`, **committed with the user's approval (`d9fc35d`)** (the Kantchelian sentence moved
   beside the other methods that take constraints; "nothing checks" narrowed to "None of these derives the constraints
   from the extractor itself"; a paragraph break at "All three take the constraints as input"; the first paragraph names
   Pierazzi et al.'s condition and says what we compute; "realizable" for the paper's notion, "problem-space examples"
