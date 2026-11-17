@@ -10,7 +10,7 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
 in `docs/archive/status-log-2026-11-14-s63.md`, sessions 64-65 in `docs/archive/status-log-2026-11-14-s64-65.md`, sessions 66-76 in
 `docs/archive/status-log-2026-11-15-to-16-s66-76.md`).
 
-## Current state (2026-11-17, through session 81)
+## Current state (2026-11-17, through session 82)
 
 - **Scale-up running on tigris (session 74).** Setup done (`SETUP.md`, `pipeline/systems/tigris.sh`); everything is
   submitted by `bash pipeline/submit.sh` (SLURM dependencies; `3-directions/gate` before the detectors). Done:
@@ -204,6 +204,17 @@ in `docs/archive/status-log-2026-11-14-s63.md`, sessions 64-65 in `docs/archive/
 Two sessions were numbered 74: the head node on tigris, and the theory session. The two tracks have separate resume
 prompts: `docs/resume-prompt.md` (the scale-up) and `docs/resume-prompt-theory.md` (theory).
 
+- **2026-11-17 (session 82, Sonnet, manuscript).** C.4(c) done, one citation at a time with the user's verdict on each:
+  Kantchelian et al. (the constraint-taking feature-space attacks in §6, 81b6c45); Lucas et al. 2024 (GreedyBlock,
+  no adversarial examples, 91% less computation) beside the 2023 adversarial training, whose sentence now says how
+  that was made practical (over 140 workers, epoch from months to one to ten days; e79970a); Tsingenopoulos et al.
+  (new bib entry `tsingenopoulos2024train`, arXiv 2402.19027; 501e463). **Tsingenopoulos et al. is the closest work;
+  close read done** (findings in `docs/resume-prompt-sonnet.md`, *Open*): the guarantee is a definition estimated by
+  an RL attacker, the capability set and the side-effect propagation are hand-written, the edits are on the report
+  not on binaries. A rewording of §6's sentence is proposed, not applied. The user chose the humanistic review for the
+  next session: order §6, §3, §4, §5, §2; length is a later, separate pass (candidates to `docs/review-cuts.md`);
+  Sonnet, because the user was at 92% of the week's usage. Still open: the Gibert et al. papers (not in `papers/`),
+  Giri et al.'s author names, C.6.
 - **2026-11-17 (session 81, Opus, scale-up track): the thread overload, MAB-Malware's shell, a parallel setup.**
   MAB-Malware `zainab` crashed (a `cp` that never ran) and `iterated` was losing workers; both on gg-a-016, where the
   user's threads reached 16,082 of 16,384: SLURM's `OMP_NUM_THREADS` = cores, kept by `common.sh`, gave each of 72
