@@ -4,7 +4,10 @@
 #   OUT_ROOT     where the stages write (default artifacts/scaleup; the identity check overrides it)
 #   NUM_WORKERS  processes per job (default: the job's SLURM_CPUS_PER_TASK, else the system's CORES; override with
 #                NUM_WORKERS=...)
-#   PYTHONHASHSEED=0 (thrember's warning features depend on it), OMP_NUM_THREADS=1 (workers do not share cores)
+#   PYTHONHASHSEED=0 (thrember's warning features depend on it)
+#   OMP_NUM_THREADS=1, OPENBLAS_NUM_THREADS=1, POLARS_MAX_THREADS=1: our parallelism is processes (workers do not share
+#                cores); a step that trains with threads passes the count explicitly (--num_threads, or OMP_NUM_THREADS
+#                on its own command line)
 #   tasks N      the shards this job handles: $SLURM_ARRAY_TASK_ID in a job array, else all of 0..N-1
 
 if [[ -z "${SYSTEM:-}" ]]; then
@@ -20,7 +23,13 @@ source "pipeline/systems/$SYSTEM.sh"
 
 source env/bin/activate
 export PYTHONHASHSEED=0
-export OMP_NUM_THREADS="${OMP_NUM_THREADS:-1}"
+# NOTE: set unconditionally: SLURM on tigris starts every job with OMP_NUM_THREADS = its cores, so each of a job's N
+# workers built N-thread OpenMP and OpenBLAS pools, plus polars' pools sized to the node (~380 threads per worker at
+# 72 workers); the user's process limit (16,384 per node) ran out, workers died and shell commands failed to start
+# (jobs 1020793 and 1030369_2, 2026-11-17).
+export OMP_NUM_THREADS=1
+export OPENBLAS_NUM_THREADS=1
+export POLARS_MAX_THREADS="${POLARS_MAX_THREADS:-1}"
 NUM_WORKERS="${NUM_WORKERS:-${SLURM_CPUS_PER_TASK:-$CORES}}"
 export OUT_ROOT="${OUT_ROOT:-artifacts/scaleup}"  # exported: provexp.registry reads it
 mkdir -p logs
