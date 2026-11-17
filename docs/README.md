@@ -1,6 +1,7 @@
 # Documentation index
 
-Read `docs/status.md` and `PLAN.md` at the start of a session; everything else only when the session's task needs it.
+Read only the session's resume prompt at the start of a session (self-contained); open `docs/status.md`, `PLAN.md`,
+`docs/decisions.md` and everything else by section, only when the session's task needs it.
 Each entry says when it is worth opening. The manuscript (`manuscript/*.tex`) is the authority on the paper's content;
 where a document disagrees with it, the manuscript wins.
 
@@ -20,8 +21,9 @@ check `manuscript/main.aux` (`grep newlabel manuscript/main.aux`), and add the t
 
 | Document | What it is | Open it when |
 |---|---|---|
-| `PLAN.md` | thesis, where the paper stands, the decisions of 2026-11-09, next steps, settled decisions | every session |
-| `docs/status.md` | current state, what waits on the user, short session log | every session; update at the end |
+| `PLAN.md` | thesis, where the paper stands, next steps | when the task needs a step (by section) |
+| `docs/decisions.md` | the numbered standing decisions (of 2026-11-09 and after; "decision N") and the settled decisions | when a task touches one |
+| `docs/status.md` | current state, what waits on the user, short session log | when needed; update at the end of every session |
 | `pipeline/README.md` | the scale-up's stages and steps, and which step produces each result of the paper | before running or adding any experiment |
 | `SETUP.md` | from a fresh clone to a system that runs `pipeline/` (environment, dataset, system config, the check) | setting up a new machine or the clusters |
 | `docs/resume-prompt.md` | where the next session starts: the scale-up's last jobs on tigris (ERDALT's weak validation AUC read with the user, failures as they come, walltimes and a resource review from measured use, two small fixes, decision 12's follow-up, writing meanwhile) | starting the next main-line session |
@@ -81,6 +83,8 @@ or when changing an experiment. Run scripts are in `run/` (one per step, numbere
 | `docs/archive/resume-prompt-2026-11-14-s65.md` | the resume prompt of session 65 (written in session 64): the extractor audit pass (done in session 65: `docs/evidence/extractor-audit.md`; run.sh for every audit step) |
 | `docs/archive/status-log-2026-11-13-s59-60.md` | the status log of sessions 59-60 (R2's 4-byte Rich fix, the trial competitor built and run 144 scripted) |
 | `docs/archive/status-log-2026-11-14-s61-62.md` | the status log of sessions 61-62 (run 143 read, R7 done at pilot scale, the decisions before the scale-up, run 144 prepared) |
+| `docs/archive/status-log-2026-11-15-to-16-s66-76.md` | the status log of sessions 66-76 (the scale-up's protocol and steps, the cost-of-robustness detour, the head node, the theory sessions) |
+| `docs/archive/PLAN-done-steps-2026-11-17.md` | PLAN.md's next steps 1-2c in full (4 MB population, the simulated review, R7's widening, the extractor question), done |
 | `docs/archive/status-log-2026-11-14-s64-65.md` | the status log of sessions 64-65 (the refactoring into `pipeline/`, the extractor audit pass) |
 | `docs/archive/status-log-2026-11-14-s63.md` | the status log of session 63 (the review revisit closed and the scale-up's shape agreed; run 144 read and R18 decided) |
 | `docs/archive/status-log-2026-11-13-s55-58.md` | the status log of sessions 55-58 (R7's closure check and LIEF's overlay rule, `ent` in the attacks, run 143 cleared, the triage table) |

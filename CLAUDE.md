@@ -10,9 +10,11 @@ conference cycles are not a planning constraint (user).
 
 ## Read first
 
-- **Every session:** `docs/status.md` (current state, what waits on the user; **update it at the end of every
-  session**) and `PLAN.md` (thesis, decisions, next steps). The session's starting point: `docs/resume-prompt.md` (the scale-up) or
-  `docs/resume-prompt-theory.md` (the theory track).
+- **Every session, read only the resume prompt** the user names (`docs/resume-prompt.md`, the scale-up;
+  `docs/resume-prompt-theory.md`, the theory track): it is self-contained. Open `docs/status.md` (current state, what
+  waits on the user), `PLAN.md` (thesis, next steps) and `docs/decisions.md` (the numbered standing decisions) by
+  section when the task needs them, not whole by default. **Update `docs/status.md` at the end of every session**, and
+  write the next resume prompt self-contained, so the next session needs nothing else to start.
 - **Everything else only when the task needs it.** `docs/README.md` indexes every document, active, evidence, and
   archived, with when to open it. Do not read archived material by default; search it when a reason or a record is
   needed. The manuscript (`manuscript/*.tex`) is the authority on the paper's content.
@@ -75,7 +77,7 @@ conference cycles are not a planning constraint (user).
   the slowest case (user, 2026-10-26); otherwise smoke-test on a small slice and give the user a `run/` script.
 - **Resources in `run/` scripts:** default to at most 16 workers or threads (the user cut runs 38-40 down to these,
   2026-10-12); GPUs are whatever `CUDA_VISIBLE_DEVICES` makes visible (unset: all), one process per visible GPU
-  when separate processes train in parallel, never a custom `GPUS` variable (2026-11-11); the user may raise them, so
+  when separate processes train in parallel (each with `OMP_NUM_THREADS` = `NUM_WORKERS` / processes, at least 1), never a custom `GPUS` variable (2026-11-11); the user may raise them, so
   never enforce the cap in Python (2026-10-26). Every new script reads the worker count from the environment, `NUM_WORKERS="${NUM_WORKERS:-16}"`, and passes `"$NUM_WORKERS"` to the
   Python flag (`--workers`, `--num_workers`, ...), so the user can run `NUM_WORKERS=32 run/NNN_x.sh` (2026-11-03);
   in `pipeline/`, `common.sh` sets it (the system's cores; 16 here). Never edit a run script while `bash` runs it (bash reads it as it goes); a job submitted with `sbatch` runs SLURM's copy, so its script may be edited.

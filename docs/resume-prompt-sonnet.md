@@ -23,7 +23,8 @@ Ground rules for this session:
 Appendix D (`_j2_ember.tex`) since commit c2fee51. Fix it with the smallest change (e.g., a float placement or a
 break), not by cutting text or changing fonts, margins or spacing. Check: `make` and `make check` are clean.
 
-**A.2 The status log.** `docs/status.md`'s session log is past ten entries. Move sessions 66-70 to
+**A.2 The status log.** Done in session 79 (sessions 66-76 moved to
+`docs/archive/status-log-2026-11-15-to-16-s66-76.md`); skip it. Original task: `docs/status.md`'s session log is past ten entries. Move sessions 66-70 to
 `docs/archive/status-log-2026-11-15-s66-70.md` (same format as the other archive files), and add the file to the
 list in the header's first paragraph. Move text verbatim; do not edit it.
 
