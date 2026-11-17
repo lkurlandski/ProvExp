@@ -33,8 +33,9 @@ the intended one, such as importing the dependencies of an added API call, and t
 own. They also arise without consolidation, since one changed element of the object can be read by many features, and
 they are zero when an edit moves exactly the features it targets. When the feature mapping is neither differentiable
 nor invertible, as is usual in malware detection, the side effects of a transformation generally cannot be computed in
-advance~\cite{pierazzi2020intriguing}, and attacks find them by applying each candidate transformation and extracting
-the features of the result. Yet once a transformation is fully specified, consolidation included, the vector it
+advance, because the problem-space constraints cannot be expressed analytically in closed
+form~\cite{pierazzi2020intriguing}. Attacks find them by applying each candidate transformation and extracting the
+features of the result. Yet once a transformation is fully specified, consolidation included, the vector it
 produces is fixed by the feature mapping alone, so computing its side effects is a question about $\varphi$.
 
 % EXAMPLE (removed, D2): appending content to a file changes every feature normalized by the file's size, although
