@@ -157,7 +157,6 @@ in `docs/archive/status-log-2026-11-14-s63.md`, sessions 64-65 in `docs/archive/
   `6-results` 1030370 (waits on all). Record: `logs/submit-20261117-095052.txt`. **Read with the user when
   ERDALT finishes:** its validation AUC is 0.69-0.75 (pilot 0.88) and no epoch had met the < 5 violations criterion
   by epoch ~185 of 310 (best 16); which epoch it selects, and whether that makes a fair baseline.
-- **`git push`** from the server that has the session-74 commits, then `git pull` on the other machine.
 - Number-free rebuttal text fixes (R4, R5, R15, R21) are step 4 (while the scale-up runs).
 - **Bounds on size: the mathematics is written; the user decides, with Opus, what enters the manuscript**
   (`theory-analysis.md`, parts G and H; session 76; next theory session: `docs/resume-prompt-theory.md`).
