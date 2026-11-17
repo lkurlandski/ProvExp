@@ -79,18 +79,17 @@ deployed detectors use, such as EMBER's. We compute it for every feature of a su
 declared set of edits, so each construction can be applied to such feature sets.
 
 \paragraph{Certified defenses}
-Certified defenses bound the attacker by how far its edits can move the input, whatever the edits mean.
-RS-Del~\cite{huang2023rs} certifies a byte-sequence classifier such as MalConv against an adversary who inserts,
-deletes, or substitutes up to a given number of bytes, by classifying many randomly thinned copies of the input, and
-DRSM~\cite{saha2024drsm} certifies a MalConv variant against an adversary whose bytes are contiguous, by classifying
-windows of the input separately. Giri et al.~\cite{giri2026towards} smooth a LightGBM classifier on EMBER's features,
-ablating groups of features and adding noise, and certify a radius in feature space. These guarantees bound how much the
-attacker may edit, up to a radius in bytes (RS-Del reaches a certified accuracy of 91\% at 128 bytes) or in feature
-distance, and RS-Del's and Giri et al.'s hold only with high probability. Ours bounds what an edit can do, so it holds
-for every edit of the threat model, of any size, with no sampling; the price is that it covers only the kinds of edit
-the threat model declares, where theirs cover any edit within the radius.
-% TODO cite (R21): Gibert et al.'s certified detectors (AISec 2023, IEEE Access 2024, as listed by Giri et al.) are not in
-% papers/; papers/gibert2024assessing.pdf is the packing study (main.bib: gibert2025assessing), not these.
+Certified defenses bound the attacker by the size of its edits rather than by their kind.
+RS-Del~\cite{huang2023rs} certifies a byte-sequence classifier such as MalConv against a given number of inserted,
+deleted, or substituted bytes by classifying many randomly thinned copies of the input; DRSM~\cite{saha2024drsm} and
+Gibert et al.~\cite{gibert2023certified} certify against contiguous byte edits, such as a patch or an appended block, by
+classifying windows of the input separately; and Giri et al.~\cite{giri2026towards} smooth a LightGBM classifier on
+EMBER's features and certify a radius in feature space. These guarantees bound how much the attacker may edit, and
+RS-Del's and Giri et al.'s hold only with high probability. Ours bounds what an edit can do, so it holds for every edit
+of the threat model, of any size and without sampling, but only for the kinds of edit the threat model declares.
+Calzavara et al.~\cite{calzavara2020certifying} certify decision trees by abstract interpretation against an attacker
+given as rewriting rules that change individual features; the directions we compute are the kind of feature-space
+description that such certification takes as input.
 
 \paragraph{Incremental computation and provenance}
 Our side-effect computation uses machinery from databases and programming languages, fields that have long asked how a
@@ -105,8 +104,6 @@ the strings and windows it overlaps, unless it lands on a position the parser re
 techniques updates the output after one edit that has been made. A defender does not know the attacker's edit, and asks
 instead about every edit the threat model allows, on every input of a population, before any content is chosen.
 Reasoning soundly about all executions of a program at once is the subject of abstract
-interpretation~\cite{cousot1977abstract}. Calzavara et al.~\cite{calzavara2020certifying} use it to certify decision
-trees against an attacker specified as rewriting rules that change individual features. Our framework applies this kind
+interpretation~\cite{cousot1977abstract}. Our framework applies this kind
 of reasoning to the extractor rather than to the model. It bounds which way each feature can move under every edit of a
-declared set, including writes to positions that locate items far from the write, and the bounds it returns are the
-kind of feature-space description that such certification takes as input.
+declared set, including writes to positions that locate items far from the write.
