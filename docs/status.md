@@ -200,6 +200,30 @@ in `docs/archive/status-log-2026-11-14-s63.md`, sessions 64-65 in `docs/archive/
 Two sessions were numbered 74: the head node on tigris, and the theory session. The two tracks have separate resume
 prompts: `docs/resume-prompt.md` (the scale-up) and `docs/resume-prompt-theory.md` (theory).
 
+- **2026-11-17 (session 80, Sonnet, small tasks while the scale-up runs).** Committed: A.1 the 1 pt overfull vbox
+  (a column break before Appendix E, with a comment; drop it once E and F hold text; 538c430); A.3 array logs
+  `%x_%A_%a.out` for MAB-Malware's header and `learned`'s ERDALT array in `submit.sh` (8fefbc6); B.1
+  `4-detectors/monotone-check` (read-only; run on tigris with `sbatch pipeline/4-detectors/monotone-check/run.sh`;
+  not in `submit.sh`; pilot models: 0 violating leaf pairs in all seven monotone GBDTs, 10 s) (fee717d). A.2 was done
+  in session 79. **Uncommitted, waiting for the user's review (manuscript only):** C.1 §2's "broad class" scoped, with
+  what falls outside; C.2 Pierazzi's reason (closed form) in §2 and §6, their minimal-app estimate credited in §6 as the
+  precedent of Proposition 1, cited with the TOPS version beside the S&P one; C.3 the attacker named and the
+  code-level exclusion reworded in §4.3; C.4 the query budget attributed to Gimenez et al.'s released code, a *Certified
+  defenses* paragraph (RS-Del, DRSM), Kantchelian et al., Lucas et al. 2024, Tsingenopoulos et al. (three bib entries
+  added from the PDFs' front matter); C.5 one `humanistic-paper-review` pass on these passages and on §3.3's readout
+  rule, Table 1 and Lemma 1 (applied: five small fixes; the Lemma 1 example now says it is a case of the lemma itself,
+  since a count bounded above by 0 is an upper bound). **Open for the user:** (1) Gibert et al. and Giri et al. are not
+  in `papers/` (`% TODO cite` in §6); (2) the byte budget's origin (5% or 512 KB) is not recorded: check Gimenez et
+  al.'s repository (`% VERIFY` in §5.1); (3) the R17 sentence ("any mapping fits with one whole-input item; the results
+  are informative when items are local") is not in the text, although the task assumed it; I did not add it; (4)
+  whether all Pierazzi citations should move to the TOPS version (it is cited beside the S&P one only where I edited);
+  (5) the C.6 note below. **C.6 note, for the motivation discussion (nothing edited):** §2's closing says
+  \Cref{sec:evaluation} "uses them to attack malware detectors and to build robust ones". §5 shows three findings: hand
+  analysis misses side effects that come from how the parser locates structures; defenses learned from observed
+  attacks inherit those attacks' blind spots; with the directions known, robustness against the whole threat model
+  costs a measured few points of detection. In §5 the attack is an instrument that tests the directions and the
+  defenses, not a result. `docs/paper-mock.md`'s contribution 4 already states the three findings (the stale
+  "four to six points" wording is the only leftover; it is a number, to read after the scale-up).
 - **2026-11-17 (session 78, Opus, scale-up track): check-in, the denominator, and resources.** The repair
   finished (79,121 valid, 216 not applicable). The user chose the per-attack denominator of the files an attack
   applies to (eec804b) and tighter walltimes for the finished steps (36faebe). The user found `learned` holding 36
