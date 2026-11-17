@@ -54,8 +54,8 @@ An attack evades a detector when it drives a detected malware sample below the d
 5\% of the file or 512~KB, whichever is larger. We first run the eight toolkit attacks of
 \Cref{sec:instances:catalogue}, the published attacks a practitioner can run off the shelf, and the ones Gimenez et
 al.~\cite{gimenez2025certifiably} learn their defense from. They are black-box: each applies one kind of edit and tunes
-it with a genetic algorithm that sees only the detector's score, with 100 queries per file, as in Gimenez et al. A
-detector these attacks fail to evade may still fall to an attacker who knows the model and combines edits. We therefore
+it with a genetic algorithm that sees only the detector's score, with 100 queries per file, the low budget of the attack
+script that Gimenez et al. released. A detector these attacks fail to evade may still fall to an attacker who knows the model and combines edits. We therefore
 also implement a white-box adaptive attack, in the spirit of Tramèr et al.~\cite{tramer2020adaptive}, to test
 on real files whether a detector can be evaded where the directions say it can, and not where they say it cannot. It
 reads the detector's trees, combines any operations of the full threat model (\Cref{tab:instances:catalogue}) unless
