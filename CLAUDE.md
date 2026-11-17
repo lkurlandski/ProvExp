@@ -78,7 +78,12 @@ conference cycles are not a planning constraint (user).
   when separate processes train in parallel, never a custom `GPUS` variable (2026-11-11); the user may raise them, so
   never enforce the cap in Python (2026-10-26). Every new script reads the worker count from the environment, `NUM_WORKERS="${NUM_WORKERS:-16}"`, and passes `"$NUM_WORKERS"` to the
   Python flag (`--workers`, `--num_workers`, ...), so the user can run `NUM_WORKERS=32 run/NNN_x.sh` (2026-11-03);
-  in `pipeline/`, `common.sh` sets it (the system's cores; 16 here). Never edit a run script while it runs (bash reads it as it goes); sync its comments afterwards.
+  in `pipeline/`, `common.sh` sets it (the system's cores; 16 here). Never edit a run script while `bash` runs it (bash reads it as it goes); a job submitted with `sbatch` runs SLURM's copy, so its script may be edited.
+- **Request what a job uses for most of its life, not its peak phase** (user, 2026-11-17, after `learned` held 36
+  cores for ~30 h of single-core GPU training behind 25 min of GBDTs). Size cores to the actual parallelism (a
+  single-threaded process, e.g. one per GPU or one MAB-Malware run, uses one core). When phases differ greatly and both
+  are long, split them into separate jobs chained by dependencies: a day of 36-core CPU work then a day of GPU work
+  on few cores must be split; half an hour of loading before a day on the GPU need not. Do not over-engineer.
 - **Explain plainly.** Lead with the plain-language version of an argument (what is computed, what it is compared
   with, why it matters); define terms and avoid dense shorthand. The user could not follow a jargon-heavy explanation
   (2026-10-12).
