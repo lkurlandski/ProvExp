@@ -83,7 +83,9 @@ conference cycles are not a planning constraint (user).
   cores for ~30 h of single-core GPU training behind 25 min of GBDTs). Size cores to the actual parallelism (a
   single-threaded process, e.g. one per GPU or one MAB-Malware run, uses one core). When phases differ greatly and both
   are long, split them into separate jobs chained by dependencies: a day of 36-core CPU work then a day of GPU work
-  on few cores must be split; half an hour of loading before a day on the GPU need not. Do not over-engineer.
+  on few cores must be split; half an hour of loading before a day on the GPU need not. Do not over-engineer. After
+  jobs finish, occasionally compare what they used with what they requested (`sacct`: Elapsed, TotalCPU, MaxRSS
+  against Timelimit, AllocCPUS, ReqMem; `sstat` on a running `.batch` step) and right-size the headers.
 - **Explain plainly.** Lead with the plain-language version of an argument (what is computed, what it is compared
   with, why it matters); define terms and avoid dense shorthand. The user could not follow a jargon-heavy explanation
   (2026-10-12).

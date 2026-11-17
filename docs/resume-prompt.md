@@ -1,6 +1,6 @@
-# Resume: check in on the scale-up (failures, walltimes, then writing)
+# Resume: the scale-up's last jobs (ERDALT's reading, walltimes, resource review), then writing
 
-Written in session 77 (2026-11-16). This prompt is self-contained: what the project is, where things stand, the rules
+Written in session 78 (2026-11-17). This prompt is self-contained: what the project is, where things stand, the rules
 that apply, and what the next session does. Only `CLAUDE.md` (loaded automatically) needs reading first. The theory
 track (bounds on size) is separate: `docs/resume-prompt-theory.md`.
 
@@ -19,80 +19,75 @@ number.
 - **The scale-up runs on tigris** (RIT's aarch64 cluster; `SETUP.md`, `pipeline/systems/tigris.sh`).
   `bash pipeline/submit.sh` on the head node submits the chain with SLURM dependencies (a failure cancels what depends
   on it; a step already queued is reused by job name, so `scancel` what must be rerun; `SKIP` leaves out steps or job
-  names; `DRY=1` prints the chain). Job IDs: `logs/submit-<date>.txt` (latest: `logs/submit-20261116-*.txt` with
-  1020777 and 1020791-1020797). Logs: `logs/<name>_<id>.out` and `artifacts/scaleup/<stage>/logs/`.
-- **Done at scale:** featurization, the file store, the derived tables (decision 12: the training table), population,
-  item checks, escapes, deviations, the catalogue check, the hand table, the trial table, `train` (five detectors),
-  the trial detector, `price-list`, and the defenses' material (job 1018609, ten shards).
-- **Queued when session 77 ended** (submitted by the user): the material's repair (array 1020777; shards 1-9 done,
-  shard 0 running), then `4-detectors/learned` (1020791 task 0; 1020792 tasks 1-8, ERDALT on GPUs), `iterated`
-  (1020793), `5-attacks/toolkit` (1020794, 21 tasks), `adaptive` (1020795, 81 tasks), `mab-malware` (1020796),
-  `6-results` (1020797).
-- **Session 77's fix (PLAN.md step 3 (13); 430ef83).** The material lost 224 GAMMA runs to OOM-killed workers: LIEF's
-  rebuild runs away on some malformed files (2 GiB outputs, failed allocations, parser crashes). Now each start file
-  gets one LIEF round trip in a capped child process (`provexp.attacks.lief_check`); where it fails, the two GAMMA
-  attacks are *not applicable* to it (no run, counted as `not_applicable`; the other six attack it), in the toolkit
-  and the material. The repair (`attack_training.py --repair`, `run.sh` `REPAIR=`) turned 192 of shards 1-9's 194
-  lost tasks into not applicable and re-ran 2 (valid). Untested at scale: the check inside the toolkit's 21 tasks
-  (smoke-tested on 3 files) and `4-detectors/learned`'s split (task 0 at 36 cores; tasks 1-8 at 8 cores, material
-  merged under `flock`).
-- **Measured times, against the headers' limits** (for shortening walltimes, so jobs queue faster):
+  names, and must list every finished step, or each is resubmitted as a no-op job; `DRY=1` prints the chain). Latest
+  record: `logs/submit-20261117-095052.txt`. Logs: `logs/<name>_<id>.out` (array tasks currently share one file) and
+  `artifacts/scaleup/<stage>/logs/`.
+- **Done at scale:** everything through the defenses' material (repaired in session 77-78: 79,121 valid rows, 216
+  where a GAMMA attack is not applicable, none lost), and `learned`'s ten GBDTs (adversarial training, PV, the PV
+  leave-one-outs; ~25 min) plus MAB-Malware's `expert` setting (132 of 161 detected evaded, 8 min).
+- **Running or queued when session 78 ended:**
 
-  | Step | Measured | Limit (header) |
+  | Job | What | State |
   |---|---|---|
-  | `2-features/featurize` | 2 h 19 m | 2 days |
-  | `3-directions/derived` | 54 m | 4 h |
-  | `1-audit/{population,item-checks,escapes,deviations}` | 2-8 m | 4 h to 1 day |
-  | `1-audit/catalogue-checks` | 1 h 09 m | 12 h |
-  | `1-audit/hand-table` | 1 h 48 m | 1 day |
-  | `3-directions/trial` | 11 m | 12 h |
-  | `4-detectors/train` (five; trial alone) | 9 m; 5 m | 1 day |
-  | `4-detectors/price-list` | 12 m | 2 days |
-  | `4-detectors/adversarial-training` (per shard, 36 cores) | ~2 h 00-2 h 06 (incl. a 45-min stall now prevented) | 12 h |
-  | `learned`, `iterated`, `toolkit`, `adaptive`, `mab-malware`, `6-results` | not yet | 2 days / 2 days / 1 day x3 / 8 h |
+  | 1020791_0, 1020792_1-8 | the nine ERDALT models (old layout: task 0 still holds 36 cores) | running, ~30 h each, done ~midnight 2026-11-17 |
+  | 1020793 | `iterated` (two rounds of the beam + retraining) | running since 2026-11-17 ~09:55 (dependency on ERDALT removed: it reads only the GBDT side) |
+  | 1030369_2 | MAB-Malware `zainab` | running |
+  | 1030368_0 | MAB-Malware `ours` (nine detectors, 10 cores) | waits on `learned` and `iterated` |
+  | 1020794 (21), 1020795 (81) | `toolkit`, `adaptive` | wait on `learned` and `iterated` |
+  | 1030370 | `6-results` (16 cores) | waits on all |
+
+- **Session 78's changes (PLAN.md step 3 (13)-(14)):** per-attack "still detected" over the files the attack applies to
+  (eec804b; the user's choice); finished steps' walltimes = measured x1.5 (36faebe); `learned` split into a GBDT CPU job
+  and a 9-task ERDALT GPU array at 4 cores (23ac418; takes effect at the next submission); MAB-Malware an array of
+  one task per setting, one core per detector, and `6-results` at 16 cores (9f91013; already in the queue). The
+  `learned` split was tested only by a dry run of each part, not on the cluster.
 
 ## 3. Rules that apply (from the user; also in CLAUDE.md and the memory)
 
 - On the cluster's head node: at most two CPUs, light memory and IO; everything heavier through `sbatch` (diagnostic
-  jobs of a few minutes are fine; put their files under `artifacts/scaleup/diag/`, since `/tmp` is not shared).
+  jobs of a few minutes are fine; files under `artifacts/scaleup/diag/`, since `/tmp` is not shared).
+- **Resources (new, session 78):** request what a job uses for most of its life, sized to its real parallelism
+  (a single-threaded process uses one core); split long phases with very different needs into separate jobs, without
+  over-engineering; after jobs finish, compare use with request and right-size the headers. The user was rightly
+  angry that `learned` held 36 idle cores for ~30 h: check a design's core use before submitting it.
 - Explain plainly; state a hypothesis before running anything; report a failed check as such.
-- Prevent a failure at its source rather than absorbing it (session 77: the user rejected counting the LIEF losses as
-  attack failures and the 45-min stalls).
+- Prevent a failure at its source rather than absorbing it.
 - Ask before changing what a statistic or claim is for; the user decides protocol questions, Claude recommends.
-- Never edit a `run.sh` while it runs (SLURM copies a job's script at submission, so pending jobs keep the old one;
-  resubmissions reread it).
+- A script started with `bash` must not be edited while it runs; an `sbatch` job runs SLURM's copy (editing is safe),
+  but the Python it calls is read when each command starts, so Python changes reach pending jobs.
 - Commit to `main` in logical pieces (ruff and strict mypy on `src tests pipeline` must pass); do not push.
 
 ## 4. Next session
 
-1. **Check in:** `squeue -u $USER`, `sacct -u $USER -S 2026-11-16 -X --format=JobID%14,JobName%20,State%14,Elapsed,Timelimit,MaxRSS`.
-   Confirm the repair's shard 0 finished (`artifacts/scaleup/4-detectors/material/shards/0/report.json` has
-   `repair`), then that `learned` merged the material (expect ~79,100 valid rows and ~220 not applicable). A job marked
-   OUT_OF_MEMORY may still have finished its work: read its own logs before deciding (session 77's lesson).
-2. **Failures as they come:** read the logs, find the cause, fix, give the resubmission command (`SKIP` the finished
-   steps that recompute; cancel pending jobs that would be duplicated).
-3. **Walltime limits (the user wants these tighter, so jobs queue faster):** as tasks of `learned`, `iterated`,
-   `toolkit`, `adaptive` and `mab-malware` finish, take the slowest measured task, add a margin (about 1.5x, at least
-   30 min), lower the pending tasks' limits (`scontrol update JobId=<id>_<task> TimeLimit=...`, or the array's ID for
-   all pending tasks), and edit the `#SBATCH --time` headers of the finished steps for later submissions (from the
-   table above; not while a step's job is running from that script). Confirm the margins with the user first.
-4. **Open for the user:** `6-results`' per-attack "still detected" (`scaleup_tables.py`, `still_detected`) divides
-   by all evaluation malware, so a file a GAMMA attack is not applicable to counts as still detected in that column
-   (the any-attack numbers are unaffected). Recommended: divide by the files the attack applies to, with the
-   not-applicable count beside it. Must be settled before `6-results` runs, or rerun it afterwards (cheap).
-5. **Decision 12's follow-up:** identify the training files behind the derived table's new moves (a section rename
+1. **Check in:** `squeue -u $USER`; `sacct -u $USER -S 2026-11-17 -X --format=JobID%14,JobName%20,State%14,Elapsed,Timelimit,TotalCPU,AllocCPUS,MaxRSS,ReqMem`.
+   A job marked OUT_OF_MEMORY may still have finished its work: read its own logs before deciding.
+2. **ERDALT, with the user:** each model's selected epoch, validation AUC and whether it met the criterion
+   (`artifacts/scaleup/4-detectors/erdalt*/` summary; logs `4-detectors/logs/train-erdalt*.log`). At epoch ~185 of
+   310 all nine had AUC 0.69-0.75 (pilot 0.88) and no epoch with < 5 violations (best 16). If they end weak, the
+   comparison invites the straw-man objection: lay out options (e.g. the cause: 25x more perturbation vectors, the
+   batch size, the schedule) for the user; do not retrain without asking.
+3. **Failures as they come:** read the logs, find the cause, fix, give the resubmission command (`SKIP` every
+   finished step; cancel pending jobs that would be duplicated).
+4. **Walltimes and resource review:** as tasks of `iterated`, `toolkit`, `adaptive` and MAB-Malware finish, take the
+   slowest task, add ~1.5x (at least 30 min), confirm with the user, lower the pending tasks
+   (`scontrol update JobId=<id> TimeLimit=...`) and edit the headers. Also compare CPU use with allocation
+   (TotalCPU / (Elapsed x AllocCPUS)) and memory with request; `iterated`'s 200 GB is unmeasured.
+5. **Small fixes for the next submission:** MAB-Malware skips 2 of 486 donor sections whose names contain `/`
+   (COFF long-name references like `/4`; the file name built from the section name breaks): sanitize, consistently
+   across settings, i.e. not mid-run. Array tasks share one SLURM `.out` (`%x_%j.out`): use `%x_%A_%a.out` in the
+   array headers.
+6. **Decision 12's follow-up:** identify the training files behind the derived table's new moves (a section rename
    lowering printable-string counts; header-field writes moving the relocation flags), for §4.3.2's last sentence
    and §5.1's *Checking results* (PLAN.md, open items).
-6. **Writing while it runs (PLAN.md step 4):** §2's closing and contribution 4 aligned with §5; the number-free text
+7. **Writing while it runs (PLAN.md step 4):** §2's closing and contribution 4 aligned with §5; the number-free text
    fixes R4, R5, R15, R21. With the `paper-prose` skill, in small blocks with the user's review.
-7. **When the chain finishes:** read `6-results` with the user (step 5).
+8. **When the chain finishes:** read `6-results` with the user (step 5).
 
 ## 5. Noted for later
 
 - LIEF's runaway rebuild is drafted as `docs/upstream-issues.md` §13 (check the newest LIEF before reporting).
-- After the debug-entry escape, `gamma_api` (rebuilding through LIEF) no longer evaded the unconstrained smoke
-  detector on 3 files it evades unescaped; worth a look when the toolkit's escape rows are read (the LIEF check now
-  runs on the escaped file, so some of these may be not applicable).
+- After the debug-entry escape, `gamma_api` no longer evaded the unconstrained smoke detector on 3 files it evades
+  unescaped; worth a look when the toolkit's escape rows are read.
 - `mab.py` and `toolkit.py` stop with an error when a detector detects none of the malware (a smoke artifact).
 - Duplicate code to merge under the identity check: the section and import writers in
   `featuresets/ember2024/edits.py` and `attacks/adaptive.py`; the operation tuples in `attacks/adaptive.py` and

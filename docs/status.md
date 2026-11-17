@@ -9,7 +9,7 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
 `docs/archive/status-log-2026-11-13-s59-60.md`, sessions 61-62 in `docs/archive/status-log-2026-11-14-s61-62.md`, session 63
 in `docs/archive/status-log-2026-11-14-s63.md`, sessions 64-65 in `docs/archive/status-log-2026-11-14-s64-65.md`).
 
-## Current state (2026-11-16, through session 77)
+## Current state (2026-11-17, through session 78)
 
 - **Scale-up running on tigris (session 74).** Setup done (`SETUP.md`, `pipeline/systems/tigris.sh`); everything is
   submitted by `bash pipeline/submit.sh` (SLURM dependencies; `3-directions/gate` before the detectors). Done:
@@ -19,8 +19,9 @@ in `docs/archive/status-log-2026-11-14-s63.md`, sessions 64-65 in `docs/archive/
   unconstrained test AUC 0.998) and `price-list`. The first resubmission failed on two bugs, both fixed. The second
   (session 77) finished the catalogue check, hand table, trial table, trial detector and the defenses' material, but
   SLURM marked the material OUT_OF_MEMORY: GAMMA runs lost to LIEF's runaway rebuild, now prevented (PLAN.md step 3
-  (13)). The user resubmits the material's repair and the rest: the learned defenses, iterated training, the attacks
-  and the results.
+  (13)). Session 78: the repair finished (79,121 valid rows, 216 not applicable); the learned defenses' GBDTs are
+  trained, the nine ERDALT models finish ~2026-11-17 midnight; iterated training, MAB-Malware's expert and zainab
+  settings are running; the rest waits on them (PLAN.md step 3 (14)).
 - **Framework (§2-3):** rewritten; the user is reasonably satisfied. Open: the user's holistic read of Sound
   Directions after round 4 (finetuning only). **Session 74 (the theory session):** proofs audited (correct; seven
   small corrections applied); two additions to §3.3, each approved after a brief look and not yet read closely by the
@@ -149,23 +150,13 @@ in `docs/archive/status-log-2026-11-14-s63.md`, sessions 64-65 in `docs/archive/
 
 ## Waiting on the user
 
-- **The scale-up is queued (submitted by the user, session 77):** the material's repair (array 1020777; shards 1-9
-  repaired: 192 lost tasks not applicable, 2 re-run and valid; shard 0 running), then `learned` (1020791, 1020792),
-  `iterated` (1020793), `toolkit` (1020794), `adaptive` (1020795), `mab-malware` (1020796), `6-results` (1020797).
-  The next session checks in (`docs/resume-prompt.md`): failures as they come; walltime limits shortened from the
-  measured times (table in the resume prompt) so jobs queue faster.
-  Session 77: the material's job (1018609) finished all ten shards, but 224 of 80,000 GAMMA runs (117 files) were
-  lost to OOM-killed workers. Cause found: LIEF's rebuild runs away on some malformed files (output padded to a
-  garbage section offset, 2 GiB; failed allocations; parser crashes): 38 of 40 lost files fail LIEF's round trip,
-  0 of 40 controls; the other lost runs were collateral (two heavy files, ~7 GB and 4-8 min per run, finish alone).
-  Fixed (430ef83): `provexp.attacks.lief_check` checks each start file once in a capped child process; where LIEF
-  cannot rebuild it, the two GAMMA attacks are *not applicable* (no run, counted apart), in the toolkit and the
-  material; `--repair` re-runs the applicable lost tasks and marks the rest. Smoke-tested on a copy of shard 5
-  (24 lost, all not applicable) and the toolkit (3 files). Diagnostics: `artifacts/scaleup/diag/gamma-oom/`.
-  **Open for the user:** `6-results`' per-attack "still detected" divides by all evaluation malware, so a file a
-  GAMMA attack is not applicable to counts as still detected in that attack's column (the any-attack numbers are
-  unaffected: the other six attack it). Recommended: divide by the files the attack applies to. Settle before
-  `6-results` runs (1020797), or rerun it after (cheap).
+- **The scale-up is running (session 78; nothing waits on the user until it finishes).** Jobs: `learned` 1020791
+  (task 0) and 1020792 (tasks 1-8), ERDALT only now, ~30 h each, done ~midnight 2026-11-17; `iterated` 1020793
+  (released from its wait on ERDALT: it reads only the GBDT side); MAB-Malware 1030368 (`ours`, waits on the
+  detectors) and 1030369 (`expert` done: 132/161 evaded; `zainab` running); `toolkit` 1020794, `adaptive` 1020795,
+  `6-results` 1030370 (waits on all). Record: `logs/submit-20261117-095052.txt`. **Read with the user when
+  ERDALT finishes:** its validation AUC is 0.69-0.75 (pilot 0.88) and no epoch had met the < 5 violations criterion
+  by epoch ~185 of 310 (best 16); which epoch it selects, and whether that makes a fair baseline.
 - **`git push`** from the server that has the session-74 commits, then `git pull` on the other machine.
 - Number-free rebuttal text fixes (R4, R5, R15, R21) are step 4 (while the scale-up runs).
 - **Bounds on size: the mathematics is written; the user decides, with Opus, what enters the manuscript**
@@ -208,6 +199,16 @@ in `docs/archive/status-log-2026-11-14-s63.md`, sessions 64-65 in `docs/archive/
 
 Two sessions were numbered 74: the head node on tigris, and the theory session. The two tracks have separate resume
 prompts: `docs/resume-prompt.md` (the scale-up) and `docs/resume-prompt-theory.md` (theory).
+
+- **2026-11-17 (session 78, Opus, scale-up track): check-in, the denominator, and resources.** The repair
+  finished (79,121 valid, 216 not applicable). The user chose the per-attack denominator of the files an attack
+  applies to (eec804b) and tighter walltimes for the finished steps (36faebe). The user found `learned` holding 36
+  cores for ~30 h of single-core ERDALT training ("moronic"): split into a GBDT CPU job and a GPU array (23ac418);
+  MAB-Malware and `6-results` were oversized too, cancelled while pending and resubmitted right-sized (9f91013);
+  `iterated`'s dependency removed so it started ~14 h early. New CLAUDE.md rule: request what a job uses for most of
+  its life, split long phases with very different needs, review use against requests after jobs finish. Noted:
+  ERDALT's low validation AUC at scale (to read); MAB skips 2 of 486 donor sections (names with `/`); array tasks
+  share one SLURM `.out` (use `%x_%A_%a.out`).
 
 - **2026-11-16 (session 77, Opus, scale-up track): the GAMMA OOM traced and prevented.** The material's array
   (1018609) finished every shard but was marked OUT_OF_MEMORY: 224 GAMMA runs on 117 files lost to killed workers,

@@ -566,11 +566,18 @@ records of the §5 reviews, the table remake and the ERDALT check, is in
    never per perturbed binary); where it fails, the two GAMMA attacks are *not applicable* to the file (no run,
    counted apart; the other six attack it). In the toolkit and the material; `attack_training.py --repair` mends the
    finished material from the lost list. No other attack rebuilds through LIEF (adaptive search and MAB-Malware use
-   their own writers). **Open (user):** `6-results`' per-attack "still detected" divides by all evaluation malware,
-   so a not-applicable file counts as still detected in a GAMMA column; recommended: divide by the files the attack
-   applies to and report the not-applicable count beside it.
-   **Next:** the repair, then the rest of the chain (two commands in `docs/status.md`); walltime limits shortened
-   from measured times as jobs finish (queues faster); then read it (step 5).
+   their own writers). **Decided (user, session 78):** a toolkit attack's "still detected" share counts only the
+   files it applies to, with the not-applicable count beside it (eec804b); after any attack the denominator stays
+   all the malware. The repair finished: 79,121 valid rows, 216 not applicable, none lost again.
+   (14) **Resources sized to use (session 78, user).** `learned` held 36 cores for ~30 h of single-core GPU training
+   (ERDALT) behind 25 min of GBDTs, and MAB-Malware and `6-results` reserved 72 cores for one to nine single-threaded
+   processes. Now: `learned` is a CPU job for the GBDTs and a 9-task GPU array at 4 cores (23ac418); MAB-Malware an
+   array of one task per setting, one core per detector (9f91013); `6-results` 16 cores; the finished steps'
+   walltimes are their measured times x1.5 (36faebe). The rule is in CLAUDE.md. Measured: ERDALT ~5.8 min per epoch,
+   ~30 h per model, peak 91 GiB. **To watch:** ERDALT's validation AUC is 0.69-0.75 at scale (0.88 at the pilot)
+   and no epoch had met Gimenez et al.'s criterion (< 5 violations; best 16) by epoch ~185 of 310; read the selected
+   epoch when it finishes, since a weak ERDALT invites the straw-man objection.
+   **Next:** the chain finishes (walltimes for the attack steps from their measured tasks), then read it (step 5).
 4. **While the scale-up runs: §2's closing and contribution 4 against §5** (old step 2 (c)). §2 says §5 "uses them to
    attack malware detectors and to build robust ones"; in §5 the attack is an instrument. The mock's contribution 4 is
    stale ("four to six points", "learned constraints"). Writing only.
