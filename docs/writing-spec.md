@@ -453,3 +453,10 @@ The "implied" notes are earlier readings, not instructions; several of them were
   property with the −3 example, after asking "does this type of monoid have a standard name ...? If we're referring to
   an established type of algebraic structure, that could help us simplify our explanation" and "Rather than deeply
   explain things ourselves we can provide a lighter explanation and refer the reader to the Fuchs paper."
+
+**2026-11-17, §6 *Problem-space attacks*, cut from 160 to ~85 words** (Pierazzi et al.'s condition and their
+formalization removed as repeats of §2; Šrndić and Laskov dropped; "Problem-space attacks, as formalized by Pierazzi et
+al., search over transformations ... The toolkits ... work this way ... We compute the side effects from the extractor
+itself ..."): "This is one of the worst things I have ever seen you write. I do not approve it." Reverted.
+  The user, next turn: "The original paragraph wasn't that long to begin with, it read smoothly, and it emphasized the
+  correct ideas at an appropriate level." (The cut version read as abrupt and jarring, in cruder words.) Kept as is.

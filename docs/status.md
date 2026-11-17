@@ -204,6 +204,14 @@ in `docs/archive/status-log-2026-11-14-s63.md`, sessions 64-65 in `docs/archive/
 Two sessions were numbered 74: the head node on tigris, and the theory session. The two tracks have separate resume
 prompts: `docs/resume-prompt.md` (the scale-up) and `docs/resume-prompt-theory.md` (theory).
 
+- **2026-11-17 (session 83, Opus, manuscript).** Holistic assessment of §6 and a plan to cut it 30-40%: approved by
+  the user ("excellent"), recorded in `docs/related-work-plan.md` with the user's guidance, answers, and source checks
+  (Sheatsley et al.'s sentence in §6 is unsupported; Šrndić and Laskov's "worked this way" is inaccurate; Labaca-Castro
+  et al., Chen et al. 2021, Gibert et al. 2023 to add). Applying it failed: *Problem-space attacks* cut to ~85 words was
+  rejected outright (the original stays, user: it read smoothly and emphasized the right ideas), and *Constraints over
+  features* lost only 11 words net against a planned 140 (rejected as pointless). All manuscript edits were discarded;
+  §6 is as in `d9fc35d`. The user asked whether the paper-prose skill is holding the writing back (answered in the
+  terminal; the user's decision waits). Next: `docs/resume-prompt-writing.md`, the plan paragraph by paragraph.
 - **2026-11-17 (session 82, Sonnet, manuscript).** C.4(c) done, one citation at a time with the user's verdict on each:
   Kantchelian et al. (the constraint-taking feature-space attacks in §6, 81b6c45); Lucas et al. 2024 (GreedyBlock,
   no adversarial examples, 91% less computation) beside the 2023 adversarial training, whose sentence now says how
