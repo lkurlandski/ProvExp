@@ -74,12 +74,13 @@ TR=$(DETECTORS="unconstrained monotone-features monotone-sums additions-only exp
   submit 4-detectors/train "$F $G")
 TT=$(DETECTORS="trial" submit 4-detectors/train "$TR $T $G" --job-name=train-trial)
 AT=$(submit 4-detectors/adversarial-training "$TR")
-# learned: task 0 (the GBDTs and the first ERDALT model) at the header's size; tasks 1-8 train one ERDALT model each on
-# the GPU and need few cores.
-L0=$(submit 4-detectors/learned "$AT" --array=0)
-L1=$(submit 4-detectors/learned "$AT" --array=1-8 --cpus-per-task=8 --mem=120G --job-name=learned-erdalt)
+# learned: the GBDTs on a CPU node at the header's size; the nine ERDALT models as an array on GPU nodes, one model per
+# task, each a single process that needs one GPU and few cores.
+L0=$(submit 4-detectors/learned "$AT" --export=ALL,PART=gbdt)
+L1=$(submit 4-detectors/learned "$AT" --export=ALL,PART=erdalt --array=0-8 --constraint=gh --gpus-per-node=1 \
+  --cpus-per-task=4 --mem=128G --time=2-00:00:00 --job-name=learned-erdalt)
 L="$L0 $L1"
-IT=$(submit 4-detectors/iterated "$L0")  # reads only task 0's outputs (adversarial-training, the material)
+IT=$(submit 4-detectors/iterated "$L0")  # reads only the GBDT part's outputs (adversarial-training, the material)
 PL=$(submit 4-detectors/price-list "$TR")
 
 # 5. The attacks, on every detector.
