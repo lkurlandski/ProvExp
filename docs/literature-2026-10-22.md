@@ -125,7 +125,7 @@ for 4.3]**; Pierazzi et al. (formalization, side-effect features, ice-box) **[se
   attacks, they call it "not certifiably robust but only empirically robust" and "limited by its training dataset";
   "with enough adversarial examples, it converges to a robust classifier". The layer also drops features it cannot
   make monotone (automatic selection, no expert). Results (their Table 2, own dataset, EMBER features, 1,033
-  adversarial examples per method): ERDALT 93.0% AUC / 96.0% robust; ERDALT + adversarial training 85.5% / 100%;
+  adversarial examples in all, shared by every method; corrected session 90, earlier read as per method): ERDALT 93.0% AUC / 96.0% robust; ERDALT + adversarial training 85.5% / 100%;
   PV + RF 95.2% / 100%; adversarial training (GBT) 97.6% / 96.5%. ERDALT keeps a near-superset of PV's features
   (bytes 84.9% vs 0%, strings 94.2% vs 1.9%), by combining fragile ones. For us: Prop. 3 needs exactly the set of
   feature changes a threat model allows, known in advance; Theorem 2 computes its sign envelope, and the dependence

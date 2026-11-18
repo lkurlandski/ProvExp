@@ -106,3 +106,65 @@ retrain the nine with the fix, stated in Appendix D.
 
 R19's other asks come after the retrain: the share of training and test perturbation vectors with L delta < 0, and
 the donor-overlap control. ERDALT's attacks (resume prompt §5.4) wait for the retrained models.
+
+## Session 90 (2026-11-18): the retrain collapses too; the GPU diagnosis (approved by the user)
+
+`erdalt` on the new material (1169769_0), epoch: validation AUC, violations: 0: 0.843, 1.39M; 1: 0.846, 210k; 2:
+0.831, 17.9k; 3: 0.807, 7.4k; 5: 0.782, 5.9k; 7: 0.770, 4.2k. Old material at matched points: 5: 0.797, 4.8k; 10:
+0.764, 3.7k. The same course at matched epochs and at matched violations: **the hypothesis that the broken outputs
+caused the collapse is refuted.** The eight folds (1169770) were cancelled; `erdalt` runs to the end (its full course,
+and whether the criterion is ever met). Since the zero-violation PV reaches 0.92 on this material, a good model exists
+that ERDALT does not find.
+
+**Bug, or a weak method?** (the user's question.) For "the method": Gimenez et al.'s own Table 2 already has ERDALT
+below PV (0.930 against PV + RF 0.952; ERDALT + adversarial training 0.855; their monotone network alone 0.874); the
+port was checked against their released code (2026-10-27); the fall reproduces on two materials. For "something off":
+a zero-violation model at 0.92 exists, and their training setup was sized for a much smaller problem (below).
+
+**Their setup, reread (paper §5 and `train_model.py` at 0b6f222, session 90).** Training set 24,000 files (12,000
+malware from 120 families, 12,000 goodware); **1,033 adversarial examples in all** (the paper: "Each method has access
+to 1033 adversarial examples"; `docs/literature-2026-10-22.md` had misread it as per method); batch 16, so ~1,500
+steps per epoch and ~465,000 steps over `num_epochs = 310`. The 310 epochs are a constant in their script, not a
+paper hyperparameter. Each step's penalty sums over up to 152 loader batches of 16 vectors (2,432), i.e. all 1,033 of
+theirs. Ours: 1,764,552 training files (73x) at batch 256, ~6,900 steps per epoch, ~2.1M steps over 310 epochs; and
+the penalty sums over all 78,715 vectors (76x theirs) against a BCE that is a batch mean. So at the same weight w2,
+our penalty weighs ~76x more against the classification loss than theirs, and the 310-epoch ramp of w2 spans 4.6x
+their steps. Two parts of the port that were faithful to the letter are probably not faithful in effect: the penalty
+mass per step, and the length of the weight schedule.
+
+**Setup.** New material, full training split, seed 0, one change per task; 15 epochs of the 310-epoch schedule
+(`--epochs 15 --schedule_epochs 310`) unless stated. One GH200, 4 cores, 128G (the full run peaks at ~95 GB), 3 h
+(~10 min loading + ~5.8 min per epoch). The control is `erdalt`'s own first 15 epochs. Compared on validation AUC at
+matched violation counts, against the control and PV's 0.92. Script: `artifacts/scaleup/diag/erdalt/gpu/run.sh`
+(array 0-6), logs in `artifacts/scaleup/diag/erdalt/gpu/logs/<variant>.log`.
+
+| task | run | change | question |
+|---|---|---|---|
+| 0 | fixed | L frozen at PV's mask (identity, zero on the 1,209 lowered features; 1,359 kept); only the network trains | Can their network reach ~0.92 when handed a zero-violation L? |
+| 1 | pv-init | L starts at PV's mask and trains | Does their training keep a good L, or leave it? |
+| 2 | n1033 | a fixed seeded 1,033 of the 78,715 vectors (their count); violations over all 78,715 logged too | With their count, does it hold up, and how many unseen vectors does it violate? |
+| 3 | pscale | all vectors, w2 times 1033/78715 (their penalty mass per step) | Is the collapse the penalty's weight? |
+| 4 | cap | 2,432 vectors drawn per step (their code's cap) | Their code's rule applied to our count |
+| 5 | short | the whole weight schedule in 20 epochs (`--epochs 20 --schedule_epochs 20`) | Does a schedule sized to our data reach the criterion with a better AUC? |
+| 6 | robust | per-feature scale max(std, 0.9999 quantile of \|x - mean\|) | Are the heavy tails the problem? (Weak premise: the extreme values are validation files beyond anything in training, where \|z\| <= sqrt(n) ~ 1,300, and no linear scale pulls those in; kept because it is cheap.) |
+
+`--free_output` is left out (session 88: +0.06 on the slice, but it breaks monotonicity, so it cannot be the paper's
+ERDALT). n1033 and pscale have the same penalty mass per step and differ only in which vectors: together they
+separate "how many attacks were observed" from "how heavy the penalty is".
+
+**Hypothesis.** The penalty's weight is the main cause: pscale and n1033 stay well above the control at matched
+violations (near ~0.9), cap in between; fixed reaches ~0.88-0.92 (the network is not the limit; a monotone GBDT gets
+0.92 from the same features); n1033 violates many of the unseen vectors.
+- pscale near 0.9 and short at least as good: the port's penalty mass and schedule were unfaithful in effect;
+  retrain the nine with their per-step mass (and a schedule sized to our data), stated in Appendix D. ERDALT then
+  stands as a fair baseline, and the blind-spot claim rests on its violations of the unseen vectors.
+- pscale like the control, fixed high: their training does not find the good L that exists at this scale, a property
+  of the method; report ERDALT as specified with this evidence.
+- fixed low (~0.77): their network on these inputs is the limit (robust decides whether scaling helps): a monotone
+  network is weaker than a monotone GBDT here, a property of the method.
+
+**Code (session 90):** `train_erdalt` options `post_init="pv"`, `freeze_post`, `deltas_subsample` (with
+`violations_all` per epoch), `input_scale="quantile"` (`fit_quantile_scale`); CLI flags of the same names in
+`train_erdalt.py`; tests in `tests/test_erdalt.py::TestDiagnosisOptions`. Smoke test on 20,000 files per split, 2
+epochs (interactive job): every flag runs; PV's mask keeps 1,359 features with zero violations over all vectors; the
+AUC of a 2-epoch slice says nothing (the control is at 0.52 there too).
