@@ -31,7 +31,6 @@ source pipeline/common.sh
 LISTS=$OUT_ROOT/2-features/files
 FILES="${FILES:-$LISTS/ts.parquet}"
 EDITS="${EDITS:-$OUT_ROOT/1-audit/catalogue/edits.parquet}"
-DATA="${EMBER2024_DATA:-/shared/datasets/EMBER-2024/data}"
 OUT=$OUT_ROOT/3-directions/trial
 mkdir -p "$OUT/logs"
 if [[ ! -f $EDITS ]]; then echo "The catalogue's edits $EDITS are missing (1-audit/catalogue-checks)." >&2; exit 1; fi
@@ -39,11 +38,9 @@ if [[ ! -f $EDITS ]]; then echo "The catalogue's edits $EDITS are missing (1-aud
 if [[ ! -f $OUT/probe.parquet ]]; then
   echo "The stronger trial on $FILES, imports from donor set 0. Log: $OUT/logs/probe.log"
   python pipeline/3-directions/trial/trial_probe.py \
-    --db "$DATA/ts" \
     --files "$FILES" \
     --num_files "${NUM_FILES:-0}" \
     --donor_list "$LISTS/tr-donors-0.parquet" \
-    --donor_db "$DATA/tr" \
     --out "$OUT/probe.parquet" \
     --workers "$NUM_WORKERS" \
     &> "$OUT/logs/probe.log"

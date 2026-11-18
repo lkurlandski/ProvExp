@@ -77,6 +77,9 @@ from provexp.attacks.lief_check import DOS_ATTACKS
 from provexp.attacks.lief_check import LIEF_ATTACKS
 from provexp.attacks.lief_check import dos_header_extensible
 from provexp.attacks.lief_check import lief_round_trips
+from provexp.attacks.validity import output_invalid
+from provexp.attacks.validity import structure
+from provexp.attacks.validity import unreadable
 from provexp.data.files import PROTOCOLS
 from provexp.data.files import load_attacked
 from provexp.data.paths import EMBER2024_DATA
@@ -138,7 +141,7 @@ def _work(task: Task) -> dict[str, Any]:
     out_path = Path(_W["tmp"]) / f"{defense}.{name[:16]}.{atk}"
     start = time.time()
     p_clean = p_adv = float("nan")
-    added, ok, valid, error = 0, False, False, ""
+    added, ok, valid, error, invalid = 0, False, False, "", ""
     try:
         problem = build_attack(atk, wrapper, _W["section_pop"], _W["api_calls"], iterations=_W["iterations"])
         # NOTE: by default every run is reseeded with the same seed (Gimenez et al.'s protocol), so GAMMA's random
@@ -146,7 +149,11 @@ def _work(task: Task) -> dict[str, Any]:
         seed = file_seed(_W["seed"], atk, name) if _W["seed_per_file"] else _W["seed"]
         adv_bytes, p_clean, p_adv = run_attack(problem, wrapper, data, out_path, seed=seed)
         added, ok = len(adv_bytes) - len(data), True
-        valid = lief.PE.parse(list(adv_bytes)) is not None
+        # The paper's validity rule (provexp.attacks.validity): both parsers read the output and lose nothing the
+        # start file had. The start file passed the same check before any task was made.
+        original, why = structure(data)
+        invalid = (output_invalid(original, adv_bytes) or "") if original is not None else f"start file: {why}"
+        valid = not invalid
     except Exception as e:
         error = f"{type(e).__name__}: {str(e)[:200]}"
         print(f"  WARN {defense} {atk} {name[:12]}: {error}", flush=True)
@@ -155,8 +162,8 @@ def _work(task: Task) -> dict[str, Any]:
     over = added > cap
     return {"defense": defense, "attack": atk, "name": name, "tau": tau, "p_clean": p_clean, "p_adv": p_adv,
             "evaded": bool(ok and valid and not over and p_adv <= tau), "bytes_added": added, "over_budget": over,
-            "ok": ok, "valid": valid, "truncated": len(data) >= MAX_LENGTH, "precondition": pre, "error": error,
-            "seconds": time.time() - start, **extra}
+            "ok": ok, "valid": valid, "invalid_reason": invalid, "truncated": len(data) >= MAX_LENGTH,
+            "precondition": pre, "error": error, "seconds": time.time() - start, **extra}
 
 
 def _lost(task: Task) -> dict[str, Any]:
@@ -164,7 +171,7 @@ def _lost(task: Task) -> dict[str, Any]:
     defense, atk, name, data, tau, cap, pre, extra = task
     return {"defense": defense, "attack": atk, "name": name, "tau": tau, "p_clean": float("nan"),
             "p_adv": float("nan"), "evaded": False, "bytes_added": 0, "over_budget": False, "ok": False,
-            "valid": False, "truncated": len(data) >= MAX_LENGTH, "precondition": pre,
+            "valid": False, "invalid_reason": "", "truncated": len(data) >= MAX_LENGTH, "precondition": pre,
             "error": "LostTask: given up by the watchdog", "seconds": float("nan"), **extra}
 
 
@@ -300,7 +307,20 @@ def main() -> None:
         print(f"DOS header: {len(no_dos)} of {len(attacked)} attacked files cannot be extended; {DOS_ATTACKS} are not "
               f"applicable to them ({args.outdir}/dos_check.parquet).", flush=True)
 
+    # No attack applies to a start file one of the two parsers does not read: no output of it could count
+    # (provexp.attacks.validity).
+    attacked = sorted({i for d in defenses for i in detected[d]})
+    with get_context("spawn").Pool(args.num_workers) as pool:
+        unread = {i: r for i, r in zip(attacked, pool.map(unreadable, [starts[i] for i in attacked], chunksize=4))
+                  if r is not None}
+    pl.DataFrame({"name": [malware[i][0] for i in unread], "reason": list(unread.values())},
+                 schema={"name": pl.Utf8, "reason": pl.Utf8}).write_parquet(args.outdir / "unreadable.parquet")
+    print(f"Validity: {len(unread)} of {len(attacked)} attacked files are not read by both parsers; no attack is "
+          f"applicable to them ({args.outdir}/unreadable.parquet).", flush=True)
+
     def applicable(atk: str, i: int) -> bool:
+        if i in unread:
+            return False
         if atk in LIEF_ATTACKS and lief_reason.get(i) is not None:
             return False
         return atk not in DOS_ATTACKS or i not in no_dos
@@ -345,7 +365,10 @@ def main() -> None:
             entry["per_attack"][atk] = {"runs": a.height, "evaded": int(a["evaded"].sum()),
                                         "not_applicable": sum(not applicable(atk, i) for i in detected[d]),
                                         "failed": int((~a["ok"]).sum()), "over_budget": int(a["over_budget"].sum()),
-                                        "invalid": int((a["ok"] & ~a["valid"]).sum())}
+                                        "invalid": int((a["ok"] & ~a["valid"]).sum()),
+                                        # a working file our extractor misreads: a quirk to fix at the source
+                                        "invalid_pefile_only": int(a["invalid_reason"].str.starts_with("pefile only")
+                                                                   .sum())}
         for group, atks in (("seen", seen), ("held_out", held_out), ("all", list(args.attacks))):
             entry["groups"][group] = {
                 "all": group_evasion(r, atks),

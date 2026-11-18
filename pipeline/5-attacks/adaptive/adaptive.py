@@ -56,6 +56,7 @@ from provexp.attacks.adaptive import _parse_defenses
 from provexp.attacks.adaptive import padded_booster
 from provexp.attacks.adaptive import prepare_files
 from provexp.attacks.adaptive import target_buckets
+from provexp.attacks.validity import unreadable
 from provexp.data.files import PROTOCOLS
 from provexp.data.files import load_attacked
 from provexp.data.paths import EMBER2024_DATA
@@ -227,6 +228,18 @@ def main() -> None:
     print(f"Pilot: {len(attacks)} malware, {len(goodware)} goodware donors; threat model {args.threat_model}.",
           flush=True)
 
+    # No search applies to a start file one of the two parsers does not read: no end file of it could count
+    # (provexp.attacks.validity). Recorded in unreadable.parquet, left out of every defense's detected files.
+    with get_context("spawn").Pool(args.num_workers) as pool:
+        unread = dict(zip([a[0] for a in attacks], pool.map(unreadable, [a[1] for a in attacks], chunksize=2)))
+    unread = {n: r for n, r in unread.items() if r is not None}
+    args.outdir.mkdir(parents=True, exist_ok=True)
+    pl.DataFrame({"name": list(unread), "reason": list(unread.values())},
+                 schema={"name": pl.Utf8, "reason": pl.Utf8}).write_parquet(args.outdir / "unreadable.parquet")
+    print(f"Validity: {len(unread)} of {len(attacks)} start files are not read by both parsers; not applicable.",
+          flush=True)
+    not_applicable = {d: 0 for d in defenses}
+
     config = {"ops": ops, "pilot_files": args.pilot_files, "db": args.db, "search": args.search,
               "queries": args.queries, "seed": args.seed, "budget_frac": args.budget_frac,
               "budget_min": args.budget_min, "beam": args.beam, "draws": args.draws, "patience": args.patience,
@@ -242,7 +255,9 @@ def main() -> None:
         detected = 0
         for name, start, original, v_orig, _, in_pop, start_in_pop in attacks:
             p_orig = float(booster.predict(v_orig.reshape(1, -1))[0])
-            if p_orig > tau:  # attack only what this defense detects on the unescaped original
+            if p_orig > tau and name in unread:
+                not_applicable[d] += 1
+            elif p_orig > tau:  # attack only what this defense detects on the unescaped original
                 # The guarantee covers a search only if the original and the file it starts from are both in the
                 # (loose) population: an `ent` escape keeps an original in it (run 142's closure check), SizeOfImage
                 # raised alone (image_size, not an operation of M_full) takes it out.
@@ -268,7 +283,7 @@ def main() -> None:
     rows = [r for r in rows if r is not None]
     if args.save_rows:
         for d in defenses:
-            mine = [r for r in rows if r["defense"] == d]
+            mine = [r for r in rows if r["defense"] == d and r["valid"]]  # only end files that count train a defense
             out = args.outdir / "rows" / d
             out.mkdir(parents=True, exist_ok=True)
             np.save(out / "X.npy", np.asarray([r["phi"] for r in mine], dtype=np.float32).reshape(len(mine), -1))
@@ -290,10 +305,13 @@ def main() -> None:
     for d in defenses:
         r = results.filter(pl.col("defense") == d)
         detected = r.height
-        evaded = int(r["evaded"].sum()) if detected else 0
+        # An evasion counts only if its end file passes the validity rule.
+        evaded = int((r["evaded"] & r["valid"]).sum()) if detected else 0
         worst = float(r["min_delta_logit"].min() or 0.0) if detected else 0.0  # type: ignore[arg-type]
         report["defenses"][d] = {
-            "detected": detected, "lost": sum(x["defense"] == d for x in lost), "evaded": evaded, "rate": (evaded / detected) if detected else None,
+            "detected": detected, "lost": sum(x["defense"] == d for x in lost),
+            "not_applicable": not_applicable[d], "invalid": int((~r["valid"]).sum()) if detected else 0,
+            "evaded": evaded, "rate": (evaded / detected) if detected else None,
             "min_delta_logit": worst,
             "evaded_real": int(r["evaded_real"].sum()) if detected else 0,
             "carries_guarantee": d in args.sound,

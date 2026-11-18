@@ -16,7 +16,8 @@ Per detector of the registry's `scaleup` set whose model exists:
                       detected), except the files an attack is not applicable to: the two GAMMA attacks, which rebuild
                       the file through LIEF, are not applicable to the detected files LIEF cannot rebuild (no run; the
                       toolkit job's lief_check.parquet), the two that extend the DOS header to files whose PE header
-                      starts inside it (dos_check.parquet), and those leave that attack's denominator and are reported
+                      starts inside it (dos_check.parquet), no attack to files one of the two parsers does not read
+                      (unreadable.parquet; provexp.attacks.validity), and those leave that attack's denominator and are reported
                       beside it (`not_applicable`). After any attack the denominator stays all the malware. A run
                       given up after an hour without progress (map_watchdog; the toolkit's `LostTask` rows, the
                       adaptive search's lost.parquet) is discarded: its file leaves the detected files and the
@@ -101,8 +102,10 @@ def attack_outputs(root: Path, escape: str = "none") -> pl.DataFrame:
     ad = _read([ad_dir / "adaptive.parquet", *sorted(ad_dir.glob("shard-*/adaptive.parquet"))])
     if ad is not None:
         # The search keeps only candidates within the byte budget; its end file is extracted (--score real).
+        # Its end file counts only if it passes the validity rule (`valid`; outputs before session 85 lack it).
+        usable = pl.col("valid") if "valid" in ad.columns else pl.lit(True)
         parts.append(ad.select("defense", pl.lit("adaptive").alias("attack"), "name",
-                               pl.col("p_adv_real").cast(pl.Float64).alias("p_adv"), pl.lit(True).alias("usable")))
+                               pl.col("p_adv_real").cast(pl.Float64).alias("p_adv"), usable.alias("usable")))
     if escape == "none":
         mab = _read([att / "mab-malware" / "results.parquet", att / "mab-malware" / "expert" / "results.parquet",
                      *sorted((att / "mab-malware").glob("ours-*/results.parquet"))])
@@ -127,7 +130,8 @@ def not_applicable(root: Path, escape: str = "none") -> pl.DataFrame:
     """The (defense, attack, name) triples the toolkit did not run because the attack is not applicable to the file.
 
     The two LIEF-based attacks are not applicable to the start files LIEF cannot rebuild, the two that extend the DOS
-    header to those whose PE header starts inside it (`provexp.attacks.lief_check`). The checks run once per toolkit job
+    header to those whose PE header starts inside it (`provexp.attacks.lief_check`), and no attack to the start files one
+    of the two parsers does not read (`unreadable.parquet`, `provexp.attacks.validity`). The checks run once per toolkit job
     on the start files every defense of that job attacks, so each name in a job's `lief_check.parquet` or
     `dos_check.parquet` pairs with each defense in its `results.parquet`.
 
@@ -146,10 +150,25 @@ def not_applicable(root: Path, escape: str = "none") -> pl.DataFrame:
         if not (d / "results.parquet").exists():
             continue
         results = pl.read_parquet(d / "results.parquet", columns=["defense", "attack"]).unique()
-        for check, attacks in (("lief_check.parquet", LIEF_ATTACKS), ("dos_check.parquet", DOS_ATTACKS)):
+        every = tuple(results["attack"].unique().to_list())  # no attack applies to a file unreadable.parquet lists
+        for check, attacks in (("lief_check.parquet", LIEF_ATTACKS), ("dos_check.parquet", DOS_ATTACKS),
+                               ("unreadable.parquet", every)):
             if (d / check).exists():
                 names = pl.read_parquet(d / check).select("name")
                 parts.append(results.filter(pl.col("attack").is_in(attacks)).join(names, how="cross"))
+    # The adaptive search and MAB-Malware leave out the start files the parsers do not read (unreadable.parquet beside
+    # their results); each such file is not applicable to that attack for every defense of the run.
+    runs = [(d / "adaptive.parquet", d, "adaptive") for d in
+            [att.parent / "adaptive" / escape, *sorted((att.parent / "adaptive" / escape).glob("shard-*"))]]
+    if escape == "none":
+        mab = att.parent / "mab-malware"
+        runs += [(d / "results.parquet", d, "mab-malware") for d in [mab, mab / "expert", *sorted(mab.glob("ours-*"))]]
+    for results_file, d, attack in runs:
+        if (d / "unreadable.parquet").exists() and results_file.exists():
+            defenses = pl.read_parquet(results_file, columns=["defense"]).unique()
+            names = pl.read_parquet(d / "unreadable.parquet").select("name")
+            parts.append(defenses.with_columns(attack=pl.lit(attack)).select("defense", "attack")
+                         .join(names, how="cross"))
     if not parts:
         return pl.DataFrame(schema={"defense": pl.Utf8, "attack": pl.Utf8, "name": pl.Utf8})
     return pl.concat(parts).unique()
@@ -302,8 +321,14 @@ def main() -> None:
                 groups = {a: mine.filter(pl.col("attack") == a) for a in sorted(set(mine["attack"].to_list()))}
                 groups["any"] = mine
                 for attack, rows in groups.items():
-                    # After any attack, a file some attacks do not apply to still faces the others: no exclusion.
-                    excluded = frozenset(na.filter(pl.col("attack") == attack)["name"].to_list())
+                    # After any attack, a file some attacks do not apply to still faces the others; only a file no
+                    # attack applies to (e.g. one the parsers do not read) leaves the count.
+                    if attack == "any":
+                        faced = [a for a in groups if a != "any"]
+                        excluded = frozenset(na.filter(pl.col("attack").is_in(faced)).group_by("name").len()
+                                             .filter(pl.col("len") >= len(faced))["name"].to_list())
+                    else:
+                        excluded = frozenset(na.filter(pl.col("attack") == attack)["name"].to_list())
                     # A lost run leaves the count unless another counted output evades the file (also after any).
                     discarded = frozenset((gone if attack == "any" else gone.filter(pl.col("attack") == attack))
                                           ["name"].to_list())

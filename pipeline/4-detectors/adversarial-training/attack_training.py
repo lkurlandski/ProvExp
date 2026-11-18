@@ -58,6 +58,9 @@ from provexp.attacks.lief_check import DOS_ATTACKS
 from provexp.attacks.lief_check import LIEF_ATTACKS
 from provexp.attacks.lief_check import dos_header_extensible
 from provexp.attacks.lief_check import lief_round_trips
+from provexp.attacks.validity import output_invalid
+from provexp.attacks.validity import structure
+from provexp.attacks.validity import unreadable
 from provexp.attacks.toolkit import ATTACKS
 from provexp.attacks.toolkit import BUDGETS
 from provexp.attacks.toolkit import build_attack
@@ -120,18 +123,23 @@ def _work(task: tuple[str, str]) -> dict[str, Any]:
     """Run one (attack, file); return the adversarial file's feature rows, one per store, when it parses."""
     atk, name = task
     out_path = Path(_W["tmp"]) / f"{name[:16]}.{atk}"
-    row: dict[str, Any] = {"name": name, "attack": atk, "ok": False, "evaded": False, "p_clean": float("nan"),
-                           "p_adv": float("nan"), "bytes_added": 0, "phi": None}
+    row: dict[str, Any] = {"name": name, "attack": atk, "ok": False, "valid": False, "invalid_reason": "",
+                           "evaded": False, "p_clean": float("nan"), "p_adv": float("nan"), "bytes_added": 0, "phi": None}
     try:
         data = _W["reader"].get(name)
         problem = build_attack(atk, _W["wrapper"], _W["section_pop"], _W["api_calls"], iterations=_W["iterations"])
         adv_bytes, p_clean, p_adv = run_attack(problem, _W["wrapper"], data, out_path, seed=file_seed(_W["seed"], atk, name))
+        # The paper's validity rule (provexp.attacks.validity): an output that fails it trains no defense and is no
+        # evidence that a feature can be lowered (session 85: 894 broken outputs had emptied PV's feature set).
+        original, why = structure(data)
+        invalid = (output_invalid(original, adv_bytes) or "") if original is not None else f"original: {why}"
+        row.update(valid=not invalid, invalid_reason=invalid)
         phi = {store: x.feature_vector(adv_bytes).astype(np.float32) for store, x in _W["extractors"].items()}
         if _W["binaries"] is not None:
             target = _W["binaries"] / atk / f"{name}.zst"
             target.parent.mkdir(parents=True, exist_ok=True)
             target.write_bytes(zstd.compress(adv_bytes))
-        row.update(ok=True, evaded=bool(p_adv < 0.5), p_clean=p_clean, p_adv=p_adv,
+        row.update(ok=True, evaded=bool(not invalid and p_adv < 0.5), p_clean=p_clean, p_adv=p_adv,
                    bytes_added=len(adv_bytes) - len(data), phi=phi)
     except Exception as e:  # a file secml-malware cannot attack (e.g. an unparseable shift target) is skipped
         print(f"  WARN {atk} {name[:12]}: {type(e).__name__}: {str(e)[:120]}", flush=True)
@@ -144,7 +152,7 @@ def _lost(task: tuple[str, str]) -> dict[str, Any]:
     """The row for a task whose worker died: counted as attempted, not valid."""
     atk, name = task
     return {"name": name, "attack": atk, "ok": False, "evaded": False, "p_clean": float("nan"),
-            "p_adv": float("nan"), "bytes_added": 0, "phi": None, "lost": True}
+            "p_adv": float("nan"), "bytes_added": 0, "phi": None, "lost": True, "valid": False, "invalid_reason": ""}
 
 
 ################################################################################
@@ -187,7 +195,8 @@ def merge(outdir: Path, num_shards: int) -> dict[str, Any]:
                   total_attempted=sum(r["total_attempted"] for r in reports),
                   total_valid=sum(r["total_valid"] for r in reports),
                   per_attack={a: {k: sum(r["per_attack"][a].get(k, 0) for r in reports)
-                                  for k in ("attempted", "valid", "evaded", "not_applicable")} for a in attacks})
+                                  for k in ("attempted", "valid", "invalid", "invalid_pefile_only", "evaded",
+                                            "not_applicable")} for a in attacks})
     for store in stores:
         X = np.concatenate([np.load(s / store / "X.npy") for s in shards])
         files = pl.concat([pl.read_parquet(s / store / "files.parquet") for s in shards])
@@ -278,8 +287,13 @@ def main() -> None:
     no_dos = {n for n in sorted({name for atk, name in candidates if atk in DOS_ATTACKS})
               if not dos_header_extensible(reader.get(n))}
     print(f"DOS header: {len(no_dos)} files cannot be extended; {DOS_ATTACKS} are not applicable to them.", flush=True)
+    # No attack applies to an original one of the two parsers does not read (provexp.attacks.validity).
+    with get_context("spawn").Pool(args.num_workers) as pool:
+        unread = {n for n, r in zip(names, pool.map(unreadable, [reader.get(n) for n in names], chunksize=4))
+                  if r is not None}
+    print(f"Validity: {len(unread)} of {len(names)} files are not read by both parsers; no attack applies.", flush=True)
     skipped = [(atk, name) for atk, name in candidates
-               if (atk in LIEF_ATTACKS and name in bad) or (atk in DOS_ATTACKS and name in no_dos)]
+               if (atk in LIEF_ATTACKS and name in bad) or (atk in DOS_ATTACKS and name in no_dos) or name in unread]
     left_out = set(skipped)
     tasks = [t for t in candidates if t not in left_out]
 
@@ -298,13 +312,20 @@ def main() -> None:
                 results = map_watchdog(pool, _work, tasks, lost=_lost, stall_timeout=args.stall_timeout)
             print(f"{len(tasks)} attack runs in {time.time() - t0:.0f}s on {args.num_workers} workers.", flush=True)
 
-    valid = [r for r in results if r["ok"]]
+    valid = [r for r in results if r["ok"] and r["valid"]]  # only outputs that pass the validity rule are kept
+    # The outputs the rule rejects, with the reason: "pefile only" ones are the extractor's quirks to fix at the source.
+    pl.DataFrame([{"name": r["name"], "attack": r["attack"], "reason": r["invalid_reason"]} for r in results
+                  if r["ok"] and not r["valid"]], schema={"name": pl.Utf8, "attack": pl.Utf8, "reason": pl.Utf8}
+                 ).write_parquet(part / ("invalid.parquet" if args.repair is None else "invalid-repair.parquet"))
     files = pl.DataFrame([{"name": r["name"], "attack": r["attack"], "label": 1, "p_clean": r["p_clean"],
                            "p_adv": r["p_adv"], "bytes_added": r["bytes_added"]} for r in valid],
                          schema={"name": pl.Utf8, "attack": pl.Utf8, "label": pl.Int64, "p_clean": pl.Float64,
                                  "p_adv": pl.Float64, "bytes_added": pl.Int64})
     counts = {atk: {"attempted": sum(r["attack"] == atk for r in results),
-                    "valid": sum(r["attack"] == atk and r["ok"] for r in results),
+                    "valid": sum(r["attack"] == atk and r["ok"] and r["valid"] for r in results),
+                    "invalid": sum(r["attack"] == atk and r["ok"] and not r["valid"] for r in results),
+                    "invalid_pefile_only": sum(r["attack"] == atk and r["invalid_reason"].startswith("pefile only")
+                                               for r in results),
                     "evaded": sum(r["attack"] == atk and r["evaded"] for r in results),
                     "not_applicable": sum(a == atk for a, _ in skipped)}
               for atk in args.attacks}
@@ -326,6 +347,8 @@ def main() -> None:
             d = per_attack[atk]
             d["attempted"] -= c["not_applicable"]
             d["valid"] += c["valid"]
+            d["invalid"] = d.get("invalid", 0) + c["invalid"]
+            d["invalid_pefile_only"] = d.get("invalid_pefile_only", 0) + c["invalid_pefile_only"]
             d["evaded"] += c["evaded"]
             d["not_applicable"] = d.get("not_applicable", 0) + c["not_applicable"]
         report["total_valid"] += len(valid)

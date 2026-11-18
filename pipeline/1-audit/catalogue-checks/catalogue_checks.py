@@ -69,9 +69,9 @@ import pefile
 import polars as pl
 from tqdm import tqdm
 
-from provexp.data.paths import EMBER2024_DATA
-from provexp.data.simpledb import SimpleDB
-from provexp.data.simpledb import SimpleDBReader
+from provexp.attacks.validity import output_invalid
+from provexp.attacks.validity import structure
+from provexp.data.files import FileReader
 from provexp.featuresets.ember2024.catalogue import DEBUG_ENTRY
 from provexp.featuresets.ember2024.catalogue import HDR_FIELDS
 from provexp.featuresets.ember2024.catalogue import LOOSE_ENTRIES
@@ -317,7 +317,7 @@ def _violations(moves: dict[int, str], allowed: list[str]) -> list[tuple[int, st
 _STATE: dict[str, Any] = {}
 
 
-def _init_worker(db: Path, directions: Path, loose: bool) -> None:
+def _init_worker(directions: Path, loose: bool) -> None:
     warnings.filterwarnings("ignore")
     sums = SumsFeatureExtractor()
     d = pl.read_csv(directions, infer_schema=False).sort(pl.col("index").cast(pl.Int64))
@@ -325,7 +325,8 @@ def _init_worker(db: Path, directions: Path, loose: bool) -> None:
         raise RuntimeError(f"{directions} does not list the sums extractor's features in order.")
     ops = LOOSE_OPS if loose else OPS
     _STATE.update(
-        reader=SimpleDBReader(SimpleDB(db, check=False)), sums=sums, merged=fix_quirks(PEFeatureExtractor()),
+        reader=FileReader(), sums=sums,  # the scale-up's files come from the file store (FILE_STORE)
+        merged=fix_quirks(PEFeatureExtractor()),
         strict={op: [s or "" for s in d[f"op_{op}"].to_list()] for op in ops},
         pre={op: [s or "" for s in d[f"op_{op}_pre"].to_list()] for op in ops},
         loose=loose,
@@ -374,7 +375,7 @@ def _check_file(task: tuple[str, int]) -> list[dict[str, Any]]:
     name, seed = task
     merged: PEFeatureExtractor = _STATE["merged"]
     loose: bool = _STATE["loose"]
-    z = _STATE["reader"].get(name).data
+    z = _STATE["reader"].get(name)
     pe = _parse(z)
     if pe is None:
         return []
@@ -399,16 +400,20 @@ def _check_base(name: str, base: str, z: bytes, pe: pefile.PE, seed: int) -> lis
     rows: list[dict[str, Any]] = []
     modeled = ~np.array([n.startswith("pefilewarnings:") for n in merged.feature_names])
     rng = np.random.default_rng([seed, int(name[:8], 16)])
+    # The paper's validity rule (provexp.attacks.validity) decides whether an edit counts as evidence that a feature can
+    # move (`valid`; the trial table, coverage). The soundness check counts every edit, valid or not.
+    original, _ = structure(z)
     todo = instances(z, pe, table, rng) + (ent_instances(z, pe, rng) if loose else [])
     for op, label, edited, edits, declared in todo:
         row: dict[str, Any] = {"name": name, "base": base, "op": op, "instance": label, "applies": edited is not None,
-                               "precondition": pre, "parses": False, "changed": 0, "violations_strict": [],
+                               "precondition": pre, "parses": False, "valid": False, "changed": 0, "violations_strict": [],
                                "violations_pre": [], "c1": "", "c1_mismatches": 0, "precondition_after": None,
                                "declared": "", "declared_detail": [], "declared_seconds": 0.0, "extract_seconds": 0.0,
                                "seconds": 0.0}
         if edited is not None:
             t0 = time.perf_counter()
             row["parses"] = _parse(edited) is not None
+            row["valid"] = original is not None and output_invalid(original, edited) is None
             # P1, closure: the edited file passes the precondition whenever the original did.
             row["precondition_after"] = passes_precondition(merged, edited, loose=loose) if pre else None
             moves = observed_signs(before, np.asarray(sums.feature_vector(edited)))  # type: ignore[no-untyped-call]
@@ -456,7 +461,7 @@ def _check_chain(task: tuple[str, int]) -> list[dict[str, Any]]:
     """
     name, seed = task
     merged: PEFeatureExtractor = _STATE["merged"]
-    z = _STATE["reader"].get(name).data
+    z = _STATE["reader"].get(name)
     pe = _parse(z)
     if pe is None:
         return []
@@ -517,7 +522,6 @@ def chain_report(rows: list[dict[str, Any]]) -> dict[str, Any]:
 def main() -> None:
     parser = ArgumentParser(description=__doc__.split("\n\n")[1])
     parser.add_argument("--files", type=Path, default=Path("artifacts/experiments/e1/seed-0/zeros/files.parquet"))
-    parser.add_argument("--db", type=Path, default=EMBER2024_DATA / "ts")
     parser.add_argument("--directions", type=Path,
                         default=Path("artifacts/experiments/a_directions_derived_sums_pilot/directions_sums.csv"))
     parser.add_argument("--outdir", type=Path, required=True)
@@ -543,7 +547,7 @@ def main() -> None:
     if args.chained:
         t0 = time.perf_counter()
         chains: list[dict[str, Any]] = []
-        with get_context("forkserver").Pool(args.workers, initializer=_init_worker, initargs=(args.db, args.directions, args.loose)) as pool:
+        with get_context("forkserver").Pool(args.workers, initializer=_init_worker, initargs=(args.directions, args.loose)) as pool:
             for r in tqdm(pool.imap_unordered(_check_chain, [(f, args.seed) for f in files]), total=len(files),
                           mininterval=30, file=sys.stdout):
                 chains += r
@@ -560,7 +564,7 @@ def main() -> None:
 
     rows: list[dict[str, Any]] = []
     t0 = time.perf_counter()
-    with get_context("forkserver").Pool(args.workers, initializer=_init_worker, initargs=(args.db, args.directions, args.loose)) as pool:
+    with get_context("forkserver").Pool(args.workers, initializer=_init_worker, initargs=(args.directions, args.loose)) as pool:
         tasks = [(f, args.seed) for f in files]
         for r in tqdm(pool.imap_unordered(_check_file, tasks), total=len(files), mininterval=30, file=sys.stdout):
             rows += r

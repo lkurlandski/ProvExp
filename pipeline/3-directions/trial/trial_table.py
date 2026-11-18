@@ -117,12 +117,18 @@ def trial_table(names: list[str], edits: list[Path], probes: list[Path], toolkit
     low: dict[str, set[str]] = {f: set() for f in names}
     up: dict[str, set[str]] = {f: set() for f in names}
     for p in edits:
-        e = (pl.scan_parquet(p).select("op", "precondition", "parses", "moves")
-             .filter(pl.col("precondition") & pl.col("parses")).explode("moves").drop_nulls("moves")
+        # An edit counts as evidence only if its file passes the paper's validity rule (`valid`, provexp.attacks.validity;
+        # edits recorded before session 85 have only `parses`, pefile's view).
+        ok = "valid" if "valid" in pl.read_parquet_schema(p) else "parses"
+        e = (pl.scan_parquet(p).select("op", "precondition", pl.col(ok).alias("ok"), "moves")
+             .filter(pl.col("precondition") & pl.col("ok")).explode("moves").drop_nulls("moves")
              .select(("edit:" + pl.col("op")).alias("src"), "moves").unique().collect())
         _add_moves(e, low, up)
     for p in probes:
-        e = (pl.read_parquet(p).explode("moves").drop_nulls("moves")
+        probe = pl.read_parquet(p)
+        if "valid" in probe.columns:  # the validity rule, as for the edits
+            probe = probe.filter(pl.col("valid"))
+        e = (probe.explode("moves").drop_nulls("moves")
              .select(("probe:" + pl.col("op").str.replace(r"^ren\d+$", "ren")).alias("src"), "moves").unique())
         _add_moves(e, low, up)
     if toolkit:

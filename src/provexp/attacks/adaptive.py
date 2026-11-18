@@ -19,6 +19,8 @@ import numpy as np
 import pefile
 from sklearn.utils import murmurhash3_32
 
+from provexp.attacks.validity import output_invalid
+from provexp.attacks.validity import structure
 from provexp.data.files import load_donors
 from provexp.data.files import load_pilot
 from provexp.featuresets.ember2024 import catalogue
@@ -1043,6 +1045,13 @@ def _attack_file(task: tuple[str, str, float, list[tuple[int, int]], str, bytes,
     else:
         r = greedy_search(booster, engine, data, tau, make_menu, cfg["queries"], cfg["seed"], cap)
     best_file = r.pop("_best")
+    # The paper's validity rule (provexp.attacks.validity): the end file counts only if both parsers read it and lose
+    # nothing the start file had (start files the parsers do not read were left out before the search).
+    invalid = ""
+    if best_file != data:
+        original, why = structure(data)
+        invalid = (output_invalid(original, best_file) or "") if original is not None else f"start file: {why}"
+    r.update(valid=not invalid, invalid_reason=invalid)
     if cfg.get("save_rows"):
         # The best file's re-extracted feature row, in the store's layout (`--score real`), for adversarial training.
         r["phi"] = engine.score(best_file).astype(np.float32).tolist()

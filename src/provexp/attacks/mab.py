@@ -22,6 +22,8 @@ import lief
 import numpy as np
 import pefile
 
+from provexp.attacks.validity import output_invalid
+from provexp.attacks.validity import structure
 from provexp.data.paths import ROOT
 from provexp.detectors import make_extractor
 from provexp.detectors import precondition_holds
@@ -351,13 +353,16 @@ def _run_defense(task: dict[str, Any]) -> list[dict[str, Any]]:
         data = originals[name]
         out = final_file(s, u)
         # ok: the attack ran and its output (if any) could be scored; a file it never evaded has no output.
-        p_adv, added, ok, valid, pre_adv, error = float("nan"), 0, True, False, False, ""
+        p_adv, added, ok, valid, pre_adv, error, invalid = float("nan"), 0, True, False, False, "", ""
         if out is not None:
             adv = out.read_bytes()
             try:
                 p_adv = score(adv)
                 added = len(adv) - len(data)
-                valid = lief.PE.parse(list(adv)) is not None
+                # The paper's validity rule (provexp.attacks.validity); unreadable originals were left out before.
+                original, why = structure(data)
+                invalid = (output_invalid(original, adv) or "") if original is not None else f"original: {why}"
+                valid = not invalid
                 pre_adv = precondition_holds(adv)
             except Exception as e:  # noqa: BLE001
                 ok, error = False, f"{type(e).__name__}: {str(e)[:200]}"
@@ -366,7 +371,7 @@ def _run_defense(task: dict[str, Any]) -> list[dict[str, Any]]:
         rows.append({
             "defense": defense, "attack": ATTACK, "name": name, "tau": tau, "p_clean": score(data), "p_adv": p_adv,
             "evaded": bool(out is not None and ok and valid and added <= cap and p_adv <= tau), "bytes_added": added,
-            "over_budget": added > cap, "ok": ok, "valid": valid, "truncated": len(data) >= MAX_LENGTH,
+            "over_budget": added > cap, "ok": ok, "valid": valid, "invalid_reason": invalid, "truncated": len(data) >= MAX_LENGTH,
             "precondition": precondition_holds(data), "precondition_adv": pre_adv, "error": error,
             "seconds": seconds / max(1, len(sm.list_sample)), "pulls": s.pull_count,
             "queries": q["rewriter"] + q["minimizer"], "queries_minimizer": q["minimizer"],

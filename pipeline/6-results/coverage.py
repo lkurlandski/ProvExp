@@ -183,8 +183,9 @@ def bucket_union(names: list[str], deltas: npt.NDArray[np.float32], tol: float) 
 
 def witnessed(edits: Path) -> dict[str, set[str]]:
     """Per feature, the operations whose edits (on files in the population, parsed) lowered it on re-extraction."""
-    e = (pl.read_parquet(edits, columns=["op", "precondition", "parses", "moves"])
-         .filter(pl.col("precondition") & pl.col("parses")).explode("moves").drop_nulls("moves")
+    ok = "valid" if "valid" in pl.read_parquet_schema(edits) else "parses"  # the validity rule since session 85
+    e = (pl.read_parquet(edits, columns=["op", "precondition", ok, "moves"])
+         .filter(pl.col("precondition") & pl.col(ok)).explode("moves").drop_nulls("moves")
          .filter(pl.col("moves").str.ends_with(" -")).select("op", pl.col("moves").str.strip_suffix(" -").alias("f"))
          .unique())
     out: dict[str, set[str]] = {}

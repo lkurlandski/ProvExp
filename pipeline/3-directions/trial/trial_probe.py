@@ -20,11 +20,13 @@ The question is the opposite one of the trial table: for the features the derive
 catalogue edit lowered, can an edit of the threat model lower them at all? Bytes come from `catalogue.regions`, the
 domains the catalogue derives the in-place operations from, so every edit here is an instance of an operation.
 
-Outputs: one parquet, one row per (file, edit, content), with the moved features as "name +" / "name -".
+Outputs: one parquet, one row per (file, edit, content), with the moved features as "name +" / "name -" and `valid`
+(the edited file passes the paper's validity rule, provexp.attacks.validity). Files come from the file store
+(FILE_STORE).
 
 Usage:
-    PYTHONHASHSEED=0 python pipeline/3-directions/trial/trial_probe.py --db "$EMBER2024_DATA/ts" \
-        --files artifacts/explanation_set/ts.parquet --out artifacts/experiments/r18_trial/probe.parquet
+    PYTHONHASHSEED=0 python pipeline/3-directions/trial/trial_probe.py \
+        --files artifacts/scaleup/2-features/files/ts.parquet --out artifacts/scaleup/3-directions/trial/probe.parquet
 """
 
 from __future__ import annotations
@@ -42,9 +44,9 @@ import pefile
 import polars as pl
 from tqdm import tqdm
 
-from provexp.data.paths import EMBER2024_DATA
-from provexp.data.simpledb import SimpleDB
-from provexp.data.simpledb import SimpleDBReader
+from provexp.attacks.validity import output_invalid
+from provexp.attacks.validity import structure
+from provexp.data.files import FileReader
 from provexp.featuresets.ember2024.catalogue import passes_precondition
 from provexp.featuresets.ember2024.catalogue import regions
 from provexp.featuresets.ember2024.edits import add_imports
@@ -63,8 +65,8 @@ CONTENTS = ("zeros", "printable")
 _W: dict[str, Any] = {}
 
 
-def _init(db: str, libraries: list[Library], imports: int) -> None:
-    _W["reader"] = SimpleDBReader(SimpleDB(Path(db), check=False))
+def _init(libraries: list[Library], imports: int) -> None:
+    _W["reader"] = FileReader()  # the scale-up's files come from the file store (FILE_STORE)
     _W["libraries"], _W["imports"] = libraries, imports
     _W["extractor"] = fix_quirks(PEFeatureExtractor())
 
@@ -80,13 +82,14 @@ def _fill(label: str, n: int, rng: np.random.Generator) -> bytes:
 Library = tuple[bytes, list[bytes]]
 
 
-def donor_imports(db: Path, names: list[str], functions: int) -> list[Library]:
+def donor_imports(names: list[str], functions: int) -> list[Library]:
     """Every (library, functions) of the donors' import tables, at most `functions` named functions each."""
-    reader = SimpleDBReader(SimpleDB(db, check=False))
+    reader = FileReader()
+    reader.check(names)
     out: list[Library] = []
     for n in names:
         try:
-            pe = pefile.PE(data=bytes(reader.get(n).data), fast_load=True)
+            pe = pefile.PE(data=reader.get(n), fast_load=True)
             pe.parse_data_directories(directories=[pefile.DIRECTORY_ENTRY["IMAGE_DIRECTORY_ENTRY_IMPORT"]])
         except Exception:
             continue
@@ -121,6 +124,12 @@ def probe_file(x: PEFeatureExtractor, name: str, z: bytes, seed: int, libraries:
     except Exception:  # NOTE: a file the parser rejects is outside the population; nothing to probe.
         return []
     before = np.asarray(x.feature_vector(z))  # type: ignore[no-untyped-call]
+    # The paper's validity rule (provexp.attacks.validity): an edit counts as evidence only if its file passes it.
+    original, _ = structure(z)
+
+    def valid(edited: bytes) -> bool:
+        return original is not None and output_invalid(original, edited) is None
+
     rng = np.random.default_rng([seed, int(name[:8], 16)])
     edits: list[tuple[str, list[tuple[int, int]]]] = [(f"ren{i}", [r]) for i, r in enumerate(reg["ren"])]
     edits += [(op, [r for r in reg[op] if r[1] > r[0]]) for op in ("slk", "dos", "hdr")]
@@ -135,7 +144,7 @@ def probe_file(x: PEFeatureExtractor, name: str, z: bytes, seed: int, libraries:
             d = np.asarray(x.feature_vector(bytes(b))) - before  # type: ignore[no-untyped-call]
             moved = np.flatnonzero(np.abs(d) > 1e-9)
             rows.append({"name": name, "op": op, "content": label, "bytes": sum(hi - lo for lo, hi in ranges),
-                         "moves": [f"{x.feature_names[k]} {'+' if d[k] > 0 else '-'}" for k in moved]})
+                         "valid": valid(bytes(b)), "moves": [f"{x.feature_names[k]} {'+' if d[k] > 0 else '-'}" for k in moved]})
     if libraries:
         for j in rng.choice(len(libraries), size=min(imports, len(libraries)), replace=False):
             dll, funcs = libraries[int(j)]
@@ -145,13 +154,13 @@ def probe_file(x: PEFeatureExtractor, name: str, z: bytes, seed: int, libraries:
             d = np.asarray(x.feature_vector(edited)) - before  # type: ignore[no-untyped-call]
             moved = np.flatnonzero(np.abs(d) > 1e-9)
             rows.append({"name": name, "op": "imp", "content": "donor", "bytes": len(edited) - len(z),
-                         "moves": [f"{x.feature_names[k]} {'+' if d[k] > 0 else '-'}" for k in moved]})
+                         "valid": valid(edited), "moves": [f"{x.feature_names[k]} {'+' if d[k] > 0 else '-'}" for k in moved]})
     return rows
 
 
 def _task(task: tuple[str, int]) -> list[dict[str, Any]]:
     name, seed = task
-    return probe_file(_W["extractor"], name, bytes(_W["reader"].get(name).data), seed, _W["libraries"], _W["imports"])
+    return probe_file(_W["extractor"], name, _W["reader"].get(name), seed, _W["libraries"], _W["imports"])
 
 
 ################################################################################
@@ -160,7 +169,6 @@ def _task(task: tuple[str, int]) -> list[dict[str, Any]]:
 
 def main() -> None:
     parser = ArgumentParser(description=__doc__.split("\n\n")[1])
-    parser.add_argument("--db", type=Path, default=EMBER2024_DATA / "ts")
     parser.add_argument("--files", type=Path, required=True, help="A parquet with a `name` column.")
     parser.add_argument("--out", type=Path, required=True)
     parser.add_argument("--num_files", type=int, default=0, help="Only a seeded sample of N files (0: all).")
@@ -169,7 +177,6 @@ def main() -> None:
     parser.add_argument("--donors", type=int, default=0, help="Benign training files to draw imports from (0: none).")
     parser.add_argument("--donor_list", type=Path, default=None, help="Instead of --donors: a donor list (name; "
                         "benign training files, the scale-up's 2-features/files/tr-donors-0.parquet), every file used.")
-    parser.add_argument("--donor_db", type=Path, default=EMBER2024_DATA / "tr")
     parser.add_argument("--donor_meta", type=Path, default=Path("artifacts/features/ember2024/tr/meta.parquet"),
                         help="Metadata with name, label, truncated, status: where the benign donors are drawn from.")
     parser.add_argument("--imports", type=int, default=20, help="Donor libraries added per file, one edit each.")
@@ -195,7 +202,7 @@ def main() -> None:
             c = pl.read_parquet(cache)
             libraries = [(d, list(f)) for d, f in zip(c["library"].to_list(), c["functions"].to_list())]
         else:
-            libraries = donor_imports(args.donor_db, donors, args.functions)
+            libraries = donor_imports(donors, args.functions)
             cache.parent.mkdir(parents=True, exist_ok=True)
             pl.DataFrame({"library": [d for d, _ in libraries], "functions": [f for _, f in libraries]},
                          schema={"library": pl.Binary, "functions": pl.List(pl.Binary)}).write_parquet(cache)
@@ -207,13 +214,13 @@ def main() -> None:
     print(f"{len(names)} files, {args.workers} workers", flush=True)
     rows: list[dict[str, Any]] = []
     t0 = time.perf_counter()
-    with get_context("forkserver").Pool(args.workers, initializer=_init, initargs=(str(args.db), libraries, args.imports)) as pool:
+    with get_context("forkserver").Pool(args.workers, initializer=_init, initargs=(libraries, args.imports)) as pool:
         tasks = [(n, args.seed) for n in names.to_list()]
         for r in tqdm(pool.imap_unordered(_task, tasks, chunksize=2), total=len(tasks), mininterval=30, file=sys.stdout):
             rows += r
     args.out.parent.mkdir(parents=True, exist_ok=True)
     pl.DataFrame(rows, schema={"name": pl.String, "op": pl.String, "content": pl.String, "bytes": pl.Int64,
-                               "moves": pl.List(pl.String)}).write_parquet(args.out)
+                               "valid": pl.Boolean, "moves": pl.List(pl.String)}).write_parquet(args.out)
     print(f"{len({r['name'] for r in rows})} files in the population, {len(rows)} edits, "
           f"{time.perf_counter() - t0:.0f} s. Wrote {args.out.as_posix()}", flush=True)
 
