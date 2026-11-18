@@ -31,7 +31,9 @@ in `docs/archive/status-log-2026-11-14-s63.md`, sessions 64-65 in `docs/archive/
   validation AUC 0.85-0.87 at epoch 0-1, ~0.69-0.75 from epoch 40 on, the < 5 violations criterion never met); its
   own track (`docs/resume-prompt-erdalt.md`). The other detectors' attacks were resubmitted without ERDALT and run
   apart from it (`toolkit` 1046138, `adaptive` 1046139, MAB-Malware `ours` 1046140; aaefd75); ERDALT's attacks and
-  `6-results` are held. PLAN.md step 3 (16). **Session 85:** `toolkit` (19 tasks) and `adaptive` (81) finished;
+  `6-results` are held. PLAN.md step 3 (16). **Session 86 (local machine, ERDALT track):** Gimenez et al.'s code caps the
+  penalty at 2,432 perturbation vectors per step (152 batches of 16); ours uses all 79,121, ~33x more. Diagnosis
+  options added to `train_erdalt` (bbb487f); the diagnosis runs wait for a session on tigris. **Session 85:** `toolkit` (19 tasks) and `adaptive` (81) finished;
   MAB-Malware `ours` crashed on two zero-section malware (upstream bug, patched in 455f121) and was resubmitted
   (1131288). Then PV's collapse (5/1,000 detected) was traced to 894 broken outputs in the defenses' material (an
   upstream shift bug among them) and to PV's sample size; the shift bug is patched, the DOS-header attacks skip files

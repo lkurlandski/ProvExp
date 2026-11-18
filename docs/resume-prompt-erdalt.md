@@ -1,6 +1,9 @@
 # Resume: ERDALT's collapse at the scale-up (diagnose, then decide with the user)
 
-Written in session 82 (2026-11-17). Self-contained: only `CLAUDE.md` (loaded automatically) needs reading first. One
+Written in session 82 (2026-11-17), updated in session 86 (2026-11-18, on the local machine: it found the upstream
+penalty's per-step size and added the diagnosis options, but could read nothing from tigris). **Run this session on
+tigris** (the login node for reading, editing and `sbatch`; the runs on GPU nodes): the finished models, the material
+and the GPUs are only there. Pull first: the options are in commit bbb487f. Self-contained: only `CLAUDE.md` (loaded automatically) needs reading first. One
 of three tracks: this one (ERDALT), `docs/resume-prompt-experiments.md` (the rest of the scale-up on the cluster),
 `docs/resume-prompt.md` (general work and the index of the tracks).
 
@@ -54,6 +57,13 @@ against the pilot's 10% store) and the perturbation vectors (79,121 from the sha
 
 ## 4. The leading hypothesis (from the code; not yet tested)
 
+**Checked against their code in session 86** (`train_model.py`, fetched from GitHub): the penalty is
+`torch.sum(relu(-L delta))` summed over the batches of a shuffled delta loader of batch size 16, stopping after
+`count > 150`, so **at most 152 x 16 = 2,432 vectors per step**, a fresh draw each step; it is computed in train mode.
+They had ~1,033 vectors, so all of theirs entered every step, but the cap is in the code. Our port puts all 79,121 in
+every step, ~33x what their code would ever use. Drawing 2,432 per step is therefore **theirs, not a deviation**
+(our docstring's "all of them enter every step" was true only of their data size). Their BCE is a mean over 16 files.
+
 The two loss terms scale differently. BCE is a *mean* over a batch of 256 files; the violation penalty is a *sum* over
 every negative entry of every perturbation vector, all 79,121 of them, at every step (`train_erdalt`, the `l2` loop).
 With ~25x the pilot's vectors (~75x Gimenez et al.'s), the penalty dominates the loss from the first step (epoch 0:
@@ -67,11 +77,19 @@ penalty steps per epoch at 16x the data per step), the monotone output layer, th
 1. **Read the finished runs** (they finish ~2026-11-18 early morning; check `squeue -u $USER` once, do not watch the
    queue): each model's selected epoch, its validation AUC and violations, `met_criterion` (`metrics.json`). Also the
    learning rate over the epochs if recorded (if not, infer the halvings from the plateau rule).
-2. **Diagnose with short runs, one change at a time** (state the hypothesis first; each ~40 epochs on a subsample of
-   the training split, on a GPU node through `sbatch`, never on the head node): (a) as at scale (the control);
-   (b) the penalty normalized by the number of vectors, or the vectors subsampled to ~1,000-3,000 per step;
-   (c) batch size 16 (on the subsample); (d) their unconstrained output layer; (e) no learning-rate scheduler. The
-   change that keeps validation AUC near the early peak names the cause. Script the runs under
+2. **Diagnose with short runs, one change at a time** (state the hypothesis first; on a GPU node through `sbatch`,
+   never on the head node). `pipeline/4-detectors/train/train_erdalt.py` has the options (bbb487f; defaults keep the
+   current training): `--train_subsample N` (a seeded random N training files), `--epochs 40 --schedule_epochs 310`
+   (the first 40 epochs of the full weight ramp, so w2 reaches ~26 as in the collapse), `--deltas_per_step 2432`,
+   `--batch_size 16`, `--free_output`, `--no_lr_scheduler`; the history now records `l1` and `lr` per epoch. Runs,
+   each on `--train_subsample 200000` with validation in full: (a) the control (as at scale); (b) `--deltas_per_step
+   2432`; (c) b with `--batch_size 16` (their exact configuration; batch 16 with all vectors per step is too slow);
+   (d) `--free_output`; (e) `--no_lr_scheduler`. Estimate (from ~5.8 min per epoch at 1.76 M files, the penalty over
+   all vectors dominating): ~40 s per epoch for (a), (d), (e), ~30 min each; time (b) and (c) from their first epochs.
+   Hypothesis: (b) and (c) keep validation AUC near the early peak (0.85-0.87); (a), (d), (e) fall toward 0.70. First
+   check that (a) reproduces the collapse on the subsample; if it does not, the subsample cannot diagnose it. The
+   change that keeps validation AUC near the early peak names the cause. Use the new material if 1141847's merge is
+   done, else the old; say which. Script the runs under
    `artifacts/scaleup/diag/erdalt/` (template: `artifacts/scaleup/diag/file_store.sh`); put Python in files (a spawn
    pool started from a stdin script hangs), read each job's log a few minutes after it starts, and hand back to the
    user rather than waiting on the queue.
