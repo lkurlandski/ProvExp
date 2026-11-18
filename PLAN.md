@@ -65,7 +65,9 @@ records of the §5 reviews, the table remake and the ERDALT check, is in
    fallback; ERDALT's collapse set apart as its own track; `toolkit`, `adaptive` and MAB-Malware `ours` resubmitted
    without ERDALT. Session 85: `toolkit` and `adaptive` done; MAB-Malware `ours` patched for zero-section files and
    resubmitted; open: 3 lost adaptive searches (diagnostic queued) and PV's 5/1,000 detection at scale (the user's
-   call). **Next:** the experiments track (`docs/resume-prompt-experiments.md`) and the
+   call). Session 85 continued (item (17)): PV's collapse traced to broken outputs (an upstream shift bug among them)
+   and sample size; one validity rule for the paper to be decided; PV's sample-size experiment designed and deferred.
+   **Next:** the experiments track (`docs/resume-prompt-experiments.md`) and the
    ERDALT track (`docs/resume-prompt-erdalt.md`, which then runs ERDALT's attacks and `6-results`); then read it all
    (step 5).
 4. **While the scale-up runs: §2's closing and contribution 4 against §5** (old step 2 (c)). §2 says §5 "uses them to

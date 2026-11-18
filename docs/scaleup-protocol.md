@@ -238,3 +238,32 @@ reading its results (PLAN.md step 5).
    outputs (`TAG`; the toolkit's `loo/<family>-<attack>`), and `scaleup_tables.attack_outputs` stops if a (defense,
    attack, file) appears twice. `6-results` is held until ERDALT's attacks have run.
    **Next:** the experiments track (`docs/resume-prompt-experiments.md`) and the ERDALT track, then read it (step 5).
+   (17) **Attack failures, broken outputs, and PV's sample size (session 85).** *Done:* MAB-Malware's section-adding
+   action no longer crashes on files with no sections, and each run starts from an empty work directory (455f121;
+   `ours` resubmitted as 1131288). A run with no result an hour after the last other one finished is given up and its
+   file discarded (left out of the count and the denominator unless another counted output evades it) and reported;
+   acceptable while fewer than ~10 in 1,000 (user; ec2a5bd). Every header right-sized from `sacct` (ec2a5bd, 74da6eb,
+   and `hand-table`: file store and worker pools, it had held 72 cores at 2% for 108 min). *Found:* PV at scale keeps
+   201 features (pilot ~1,490), test AUC 0.61, 5/1,000 evaluation malware at 1% FPR. Two causes. (a) **Broken outputs
+   in the defenses' material** (`attack_training.py` kept any output whose attack ran): 894 of 79,121 (1.1%, from
+   ~430 of the 10,000 training malware): 716 from the two shift attacks on 358 files whose first section has file
+   offset 0 (e.g. `.textbss`; secml-malware inserts its padding at that offset, so in front of the MZ header: an
+   upstream bug), 45 DOS-extend/format-exploit outputs with an invalid e_lfanew, 133 that still parse but lose >= 10
+   import features (some broken in both parsers, some pefile-only: its 8,192-import cap on GAMMA's injected imports,
+   stricter import parsing). Without them PV keeps 1,341. On the evaluation set, 20 of the 1,000 malware have their
+   first section at offset 0. (b) **Sample size**: PV drops a feature once any output lowers it (kept: 100 training
+   malware ~1,450; 400 ~990; 1,000 ~640; 10,000 201; Gimenez et al. built from ~1,033 vectors, the pilot from 3,183).
+   Diagnostics: `artifacts/scaleup/diag/pv-scale/`, `pv_scale.py`, `pv_broken.py`, `not_pe_why.py`,
+   `imports_lost_why.py`. *Open (user, session 85):* one validity rule for the whole paper (an output counts, as an
+   evasion and as a defense's training evidence, only if it is valid; its exact form to be discussed); the attack
+   failures are too many to ignore (shift bug ~2-4% of files): investigate fixes before deciding (e.g. patching the
+   shift to insert where section content starts, checked byte-identical on files it already handled); every defense
+   learned from the material then retrained and re-attacked.
+   **Deferred experiment (approved by the user, run after the above): PV's usable features against sample size**, for
+   an appendix that explains why PV works less well than prior work suggests. On the cleaned material: (1) PV's kept
+   features against the number of training malware observed, 50 to 10,000 on a log scale, 20 random draws per size,
+   with confidence bands; (2) a model that predicts the curve: per feature j its lowering rate p_j (the share of
+   training malware some output of which lowers j), expected kept features E[K(n)] = sum_j (1 - p_j)^n, compared with
+   (1); (3) PV retrained at ~5 sizes x 3 draws, TPR at 1% FPR against n (~15 GBDTs, ~2 h; place Gimenez et al.'s
+   ~1,033 vectors and the pilot's 3,183 on the axis); (4) which feature groups go first, and the raw against the cleaned
+   material's curve. Starting points: `artifacts/scaleup/diag/pv_scale.py` (the rough curve), `pipeline/6-results/pv_hole.py`.
