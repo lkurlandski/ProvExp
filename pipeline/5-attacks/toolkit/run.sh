@@ -8,8 +8,8 @@
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
 #SBATCH --cpus-per-task=36
-#SBATCH --time=1-00:00:00
-#SBATCH --mem=100G
+#SBATCH --time=08:00:00
+#SBATCH --mem=64G
 #
 # Gimenez et al.'s eight toolkit attacks (secml-malware; low budget, a seed per (attack, file)) against the detectors,
 # under the scale-up's protocol (session 67): the evaluation set's malware (2-features/files/ts.parquet), each detector
@@ -28,7 +28,9 @@
 # Output: $OUT_ROOT/5-attacks/toolkit/<job>/ (results.parquet, table.json); logs in $OUT_ROOT/5-attacks/toolkit/logs/.
 # Knobs: DETECTORS, ESCAPES, ESCAPE_DETECTORS, PARTS (default "main escape loo donors"), LOO (the leave-one-out
 # families, default "pv erdalt"), MODELS (registry set, default scaleup), FILES, NUM_MALWARE (smoke tests). Cost (pilot, run 133: ~1,500 runs in ~40 min at 16 workers): ~900
-# detected malware x 8 attacks per detector, a few hours per job on 36 cores. SCALE-UP TO CONFIRM: time and memory.
+# detected malware x 8 attacks per detector, a few hours per job on 36 cores. Scale-up (job 1046138, session 85): the
+# slowest task 4 h 44 min (the debug-entry escape), at most 44 GiB, ~90% of the cores on the main and escape rows;
+# the leave-one-out folds attack 5-23 files and use ~5% of 36 cores (submit them apart with fewer cores if rerun).
 set -euo pipefail
 cd "${SLURM_SUBMIT_DIR:-$(dirname "$0")/../../..}"
 source pipeline/common.sh

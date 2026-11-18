@@ -14,7 +14,7 @@ __all__ = ["map_watchdog"]
 
 
 def map_watchdog(pool: Any, fn: Callable[[Any], Any], tasks: list[Any], lost: Callable[[Any], Any],
-                 stall_timeout: float = 2700.0, log_every: int = 50) -> list[Any]:
+                 stall_timeout: float = 3600.0, log_every: int = 50) -> list[Any]:
     """`pool.map(fn, tasks)` that survives a worker dying mid-task.
 
     A `multiprocessing.Pool` replaces a worker that dies (e.g. a segfault inside LIEF on a malformed file), but the task
@@ -27,8 +27,8 @@ def map_watchdog(pool: Any, fn: Callable[[Any], Any], tasks: list[Any], lost: Ca
         fn: The worker function.
         tasks: Its inputs, one per call.
         lost: Builds the result row for a task that never returned.
-        stall_timeout: Seconds without any completion before the unfinished tasks are declared lost (longer than the
-            slowest single attack).
+        stall_timeout: Seconds without any completion before the unfinished tasks are declared lost (one hour, the
+            user's limit, session 85: a task still running then is given up and its file discarded from the analysis).
         log_every: Print progress every this many completions.
 
     Returns:
@@ -50,7 +50,7 @@ def map_watchdog(pool: Any, fn: Callable[[Any], Any], tasks: list[Any], lost: Ca
                 print(f"  progress: {done}/{len(tasks)} tasks in {time.time() - t0:.0f}s", flush=True)
         elif time.time() - last > stall_timeout:
             for i in pending:
-                print(f"  LOST task {i} (no result after {stall_timeout:.0f}s of no progress; a worker likely died): "
+                print(f"  LOST task {i} (no result after {stall_timeout:.0f}s of no progress: over the limit, or its worker died): "
                       f"{str(tasks[i][:3])[:120]}", flush=True)
                 results[i] = lost(tasks[i])
             pool.terminate()

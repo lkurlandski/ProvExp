@@ -7,9 +7,9 @@
 #SBATCH --array=0-80
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
-#SBATCH --cpus-per-task=36
-#SBATCH --time=1-00:00:00
-#SBATCH --mem=100G
+#SBATCH --cpus-per-task=16
+#SBATCH --time=03:00:00
+#SBATCH --mem=64G
 #
 # The adaptive attack: a beam search over the threat model's operations (M_full, `ent` included) against each detector,
 # every candidate scored by extracting it (5,000 candidates, checkpoints at 200, 1,000, 2,000; session 63), optionally
@@ -34,7 +34,10 @@
 # all; a plain-search shard ~10-12 h on 36 cores, an escape shard ~4 h. Session 69 made a candidate ~3x cheaper
 # (~0.32 -> ~0.10 s: no unused prediction, faster strings), so about a third of that: ~2.5-3k CPU-h, a plain-search
 # shard ~3.5-4 h, an escape shard ~1.5 h; with 2-features/file-store, loading takes seconds instead of ~25 min.
-# SCALE-UP TO CONFIRM: time and memory.
+# Scale-up (job 1046139, session 85): on 36 cores a shard took at most 74 min and 63 GiB but used ~40% of its cores:
+# its longest search (~30 min) outlasts the shard's total work spread over 36 workers (~13-20 min), so most
+# workers wait on it. Hence 16 cores per shard (the same 20 shards): work over workers then about matches the
+# longest search. A search with no result an hour after the last other one finished is given up (lost.parquet).
 set -euo pipefail
 cd "${SLURM_SUBMIT_DIR:-$(dirname "$0")/../../..}"
 source pipeline/common.sh

@@ -216,8 +216,9 @@ def main() -> None:
     parser.add_argument("--num_shards", type=int, default=1)
     parser.add_argument("--num_workers", type=int, default=16, help="Processes over (attack, file) tasks.")
     parser.add_argument("--seed", type=int, default=0, help="The base of each (attack, file)'s own seed.")
-    parser.add_argument("--stall_timeout", type=float, default=2700.0,
-                        help="Seconds with no finished task before the unfinished ones count as lost (a dead worker).")
+    parser.add_argument("--stall_timeout", type=float, default=3600.0,
+                        help="Seconds with no finished task before the unfinished ones count as lost (over the limit, or a "
+                        "dead worker).")
     parser.add_argument("--repair", type=Path, default=None,
                         help="Mend a complete shard: re-run its lost tasks listed in this file (`attack name` lines).")
     args = parser.parse_args()

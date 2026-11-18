@@ -178,7 +178,7 @@ def main() -> None:
     parser.add_argument("--checkpoints", type=int, nargs="*", default=[200, 1000, 5000],
                         help="beam: query counts at which evasion is also reported.")
     parser.add_argument("--num_workers", type=int, default=1, help="Processes, one search per (defense, file).")
-    parser.add_argument("--stall_timeout", type=float, default=2700.0)
+    parser.add_argument("--stall_timeout", type=float, default=3600.0, help="Seconds without a finished search before the running ones are given up (map_watchdog); their files are listed in lost.parquet.")
     parser.add_argument("--score", choices=["predicted", "real"], default="predicted", help="predicted: candidates "
                         "scored by the computed effects, declined ones skipped (runs 108-133); real: every candidate "
                         "written and extracted with the sums extractor, none declined (RealEngine; needs a sums store).")
@@ -261,6 +261,10 @@ def main() -> None:
             rows.append(_attack_file(t))
             if (i + 1) % 10 == 0:
                 print(f"  progress: {i + 1}/{len(tasks)} tasks in {time.time() - t0:.0f}s", flush=True)
+    # A search given up by the watchdog has no row; its (defense, file) is recorded so that the tables can leave it out
+    # of the count and report how many were (user, session 85).
+    lost = [{"defense": t[0], "name": t[4]} for t, r in zip(tasks, rows) if r is None]
+    pl.DataFrame(lost, schema={"defense": pl.Utf8, "name": pl.Utf8}).write_parquet(args.outdir / "lost.parquet")
     rows = [r for r in rows if r is not None]
     if args.save_rows:
         for d in defenses:
@@ -289,7 +293,7 @@ def main() -> None:
         evaded = int(r["evaded"].sum()) if detected else 0
         worst = float(r["min_delta_logit"].min() or 0.0) if detected else 0.0  # type: ignore[arg-type]
         report["defenses"][d] = {
-            "detected": detected, "evaded": evaded, "rate": (evaded / detected) if detected else None,
+            "detected": detected, "lost": sum(x["defense"] == d for x in lost), "evaded": evaded, "rate": (evaded / detected) if detected else None,
             "min_delta_logit": worst,
             "evaded_real": int(r["evaded_real"].sum()) if detected else 0,
             "carries_guarantee": d in args.sound,

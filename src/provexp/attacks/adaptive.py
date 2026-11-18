@@ -1015,7 +1015,7 @@ def _init_worker(config: dict[str, Any], malware: Optional[list[tuple[str, bytes
 
 
 def _lost(task: tuple[str, str, float, list[tuple[int, int]], str, bytes, float, bool, bool]) -> None:
-    """A task whose worker died: dropped from the results (map_watchdog logs it as LOST)."""
+    """A search given up by the watchdog (over its limit, or its worker died): no row; the caller lists it as lost."""
     return None
 
 

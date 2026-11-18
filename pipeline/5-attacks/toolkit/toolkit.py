@@ -163,7 +163,7 @@ def _lost(task: Task) -> dict[str, Any]:
     return {"defense": defense, "attack": atk, "name": name, "tau": tau, "p_clean": float("nan"),
             "p_adv": float("nan"), "evaded": False, "bytes_added": 0, "over_budget": False, "ok": False,
             "valid": False, "truncated": len(data) >= MAX_LENGTH, "precondition": pre,
-            "error": "LostTask: worker died", "seconds": float("nan"), **extra}
+            "error": "LostTask: given up by the watchdog", "seconds": float("nan"), **extra}
 
 
 ################################################################################
@@ -197,8 +197,9 @@ def main() -> None:
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--seed_per_file", action="store_true",
                         help="Reseed each attack run with its own seed (a_advtrain.file_seed) instead of --seed.")
-    parser.add_argument("--stall_timeout", type=float, default=2700.0,
-                        help="Seconds with no finished task before the unfinished ones count as lost (a dead worker).")
+    parser.add_argument("--stall_timeout", type=float, default=3600.0,
+                        help="Seconds with no finished task before the unfinished ones count as lost (over the limit, or a "
+                        "dead worker).")
     parser.add_argument("--escape", choices=["none", *ESCAPES], default="none", help="A field write applied to every "
                         "malware before the attacks (R7); detection and evasion count from the unescaped original.")
     args = parser.parse_args()

@@ -16,7 +16,11 @@ Per detector of the registry's `scaleup` set whose model exists:
                       detected), except the files an attack is not applicable to: the two GAMMA attacks, which rebuild
                       the file through LIEF, are not applicable to the detected files LIEF cannot rebuild (no run; the
                       toolkit job's lief_check.parquet), and those leave that attack's denominator and are reported
-                      beside it (`not_applicable`). After any attack the denominator stays all the malware. An output counts only if it is valid and within the byte budget, as each attack's own
+                      beside it (`not_applicable`). After any attack the denominator stays all the malware. A run
+                      given up after an hour without progress (map_watchdog; the toolkit's `LostTask` rows, the
+                      adaptive search's lost.parquet) is discarded: its file leaves the detected files and the
+                      denominator unless another counted output evades it, and is reported (`discarded`; user,
+                      session 85). An output counts only if it is valid and within the byte budget, as each attack's own
                       `evaded`; at 0.1% FPR evasion is re-read from the stored scores (each attack lowers the score, and
                       one that stopped at the 1% threshold is below the 0.1% one too). Escapes: the same, per escape,
                       for the adaptive search and the toolkit attacks after the escape write.
@@ -24,7 +28,7 @@ Per detector of the registry's `scaleup` set whose model exists:
                       the threat model moves (the derived table's free features)
 
 Outputs, in `{outdir}/`: report.json, detection.csv, still_detected.csv (detector, escape, fpr, attack, malware,
-not_applicable, detected, attacked, evaded, still_detected, share).
+not_applicable, discarded, detected, attacked, evaded, still_detected, share).
 
 Usage:
     python pipeline/6-results/scaleup_tables.py --root artifacts/scaleup --outdir artifacts/scaleup/6-results/tables
@@ -52,7 +56,7 @@ from provexp.models.erdalt import load_detector
 from provexp.registry import ESCAPES
 from provexp.registry import scaleup_models
 
-__all__ = ["attack_outputs", "fixed_gain_share", "not_applicable", "still_detected"]
+__all__ = ["attack_outputs", "fixed_gain_share", "lost_runs", "not_applicable", "still_detected"]
 
 FPRS = (0.01, 0.001)
 
@@ -147,8 +151,34 @@ def not_applicable(root: Path, escape: str = "none") -> pl.DataFrame:
     return pl.concat(parts).unique()
 
 
+def lost_runs(root: Path, escape: str = "none") -> pl.DataFrame:
+    """The (defense, attack, name) runs the watchdog gave up: the toolkit's `LostTask` rows, the adaptive search's lost.
+
+    Args:
+        root: The scale-up's output root.
+        escape: `none` for the plain attacks, or an escape write.
+
+    Returns:
+        One row per lost run; empty when none was lost.
+    """
+    att = root / "5-attacks"
+    tk_dirs = ([*sorted((att / "toolkit" / "main").glob("*")), *sorted((att / "toolkit" / "loo").glob("*"))]
+               if escape == "none" else [att / "toolkit" / "escape" / escape])
+    parts: list[pl.DataFrame] = []
+    tk = _read([d / "results.parquet" for d in tk_dirs])
+    if tk is not None and "error" in tk.columns:
+        parts.append(tk.filter(pl.col("error").str.starts_with("LostTask")).select("defense", "attack", "name"))
+    ad_dir = att / "adaptive" / escape
+    ad = _read([ad_dir / "lost.parquet", *sorted(ad_dir.glob("shard-*/lost.parquet"))])
+    if ad is not None:
+        parts.append(ad.select("defense", pl.lit("adaptive").alias("attack"), "name"))
+    if not parts:
+        return pl.DataFrame(schema={"defense": pl.Utf8, "attack": pl.Utf8, "name": pl.Utf8})
+    return pl.concat(parts).unique()
+
+
 def still_detected(p_orig: dict[str, float], tau: float, outputs: pl.DataFrame, num_malware: int,
-                   excluded: frozenset[str] = frozenset()) -> dict[str, Any]:
+                   excluded: frozenset[str] = frozenset(), discarded: frozenset[str] = frozenset()) -> dict[str, Any]:
     """The malware detected on the original and evaded by no usable output, over the malware the attack applies to.
 
     Args:
@@ -158,18 +188,23 @@ def still_detected(p_orig: dict[str, float], tau: float, outputs: pl.DataFrame, 
         num_malware: The evaluation set's malware.
         excluded: The files the attack is not applicable to (not run); the detected ones among them leave both the
             detected files and the denominator.
+        discarded: The files whose run was given up (lost_runs); the detected ones among them that no counted output
+            evades leave both the detected files and the denominator.
 
     Returns:
-        not_applicable, detected, attacked (files with an output row), evaded, still_detected, and share
-        (still_detected over num_malware less not_applicable).
+        not_applicable, discarded, detected, attacked (files with an output row), evaded, still_detected, and share
+        (still_detected over num_malware less not_applicable and discarded).
     """
     detected = {n for n, p in p_orig.items() if p > tau}
     skipped = detected & excluded
     detected -= skipped
     evaded = set(outputs.filter(pl.col("usable") & (pl.col("p_adv") <= tau))["name"].to_list()) & detected
+    dropped = (detected & discarded) - evaded
+    detected -= dropped
     still = len(detected) - len(evaded)
-    denominator = num_malware - len(skipped)
-    return {"not_applicable": len(skipped), "detected": len(detected), "attacked": outputs["name"].n_unique(),
+    denominator = num_malware - len(skipped) - len(dropped)
+    return {"not_applicable": len(skipped), "discarded": len(dropped), "detected": len(detected),
+            "attacked": outputs["name"].n_unique(),
             "evaded": len(evaded), "still_detected": still, "share": still / denominator if denominator else None}
 
 
@@ -227,6 +262,11 @@ def main() -> None:
 
     outputs = {e: attack_outputs(args.root, e) for e in ("none", *ESCAPES)}
     skipped = {e: not_applicable(args.root, e) for e in ("none", *ESCAPES)}
+    lost = {e: lost_runs(args.root, e) for e in ("none", *ESCAPES)}
+    for e, x in lost.items():
+        if x.height:
+            print(f"  escape {e}: {x.height} runs given up (discarded): {x.group_by('defense', 'attack').len().rows()}",
+                  flush=True)
     report: dict[str, Any] = {"files": files.as_posix(), "malware": len(malware), "max_drop": args.max_drop,
                               "detectors": {}}
     detection_rows: list[dict[str, Any]] = []
@@ -254,14 +294,18 @@ def main() -> None:
                 if escape != "none" and mine.height == 0:
                     continue
                 na = skipped[escape].filter(pl.col("defense") == name)
+                gone = lost[escape].filter(pl.col("defense") == name)
                 groups = {a: mine.filter(pl.col("attack") == a) for a in sorted(set(mine["attack"].to_list()))}
                 groups["any"] = mine
                 for attack, rows in groups.items():
                     # After any attack, a file some attacks do not apply to still faces the others: no exclusion.
                     excluded = frozenset(na.filter(pl.col("attack") == attack)["name"].to_list())
+                    # A lost run leaves the count unless another counted output evades the file (also after any).
+                    discarded = frozenset((gone if attack == "any" else gone.filter(pl.col("attack") == attack))
+                                          ["name"].to_list())
                     still_rows.append({"detector": name, "escape": escape, "fpr": fpr, "attack": attack,
                                        "malware": len(malware),
-                                       **still_detected(p_orig, tau, rows, len(malware), excluded)})
+                                       **still_detected(p_orig, tau, rows, len(malware), excluded, discarded)})
         mine = outputs["none"].filter(pl.col("defense") == name)
         # A check, not a result: the toolkit's own clean scores (from the bytes, at attack time) against the store's.
         # They differ only if the store was built by another extractor than the attacks used.
