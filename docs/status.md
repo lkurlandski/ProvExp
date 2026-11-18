@@ -197,8 +197,13 @@ in `docs/archive/status-log-2026-11-14-s63.md`, sessions 64-65 in `docs/archive/
   outputs are not the extreme vectors (8.8% of the negative mass). **Session 89:** the broken outputs were the main
   pressure (features some vector lowers: 2,367 old, 1,209 new; PV, a zero-violation model, 0.553 -> 0.924 validation).
   ERDALT is retrained as specified on the new material: `erdalt` 1169769_[0] first, the eight folds 1169770_[1-8]
-  held. **Next ERDALT session: read `erdalt`'s course against PV's 0.92, then release or drop the eight**
-  (`docs/resume-prompt-erdalt.md`; record `docs/erdalt-diagnosis-plan.md`).
+  held. **Session 90:** the retrain collapses the same way (epoch 7: 0.770 at 4.2k violations; old epoch 10: 0.764 at
+  3.7k), so the broken outputs were not the cause; the eight folds were cancelled, `erdalt` runs to its end. Their
+  setup reread: 24,000 training files, 1,033 vectors in all, 310 epochs a constant of their script; our penalty weighs
+  ~76x more per step against the BCE and the schedule spans 4.6x their steps. **GPU diagnosis, 7 tasks** (L frozen or
+  started at PV's mask, 1,033 vectors, their penalty mass, their cap, a 20-epoch schedule, a quantile scale;
+  `artifacts/scaleup/diag/erdalt/gpu/run.sh`, approved, submitted by the user). **Next ERDALT session: read them**
+  (`docs/resume-prompt-erdalt.md`; record `docs/erdalt-diagnosis-plan.md`, "Session 90").
 - Number-free rebuttal text fixes (R4, R5, R15, R21) are step 4 (while the scale-up runs).
 - **Bounds on size: the mathematics is written; the user decides, with Opus, what enters the manuscript**
   (`theory-analysis.md`, parts G and H; session 76; next theory session: `docs/resume-prompt-theory.md`).

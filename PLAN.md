@@ -40,8 +40,9 @@ them (below).
   every model collapses to validation AUC ~0.70 (pilot 0.88) and misses its criterion, which invites the straw-man
   objection; its own track since session 82 (`docs/resume-prompt-erdalt.md`; session 88: short runs on a training
   slice could not reproduce the collapse; session 89: the broken outputs were the main pressure, PV on the new material
-  reaches validation 0.924 as a zero-violation model, and ERDALT is being retrained on the new material, `erdalt`
-  first, the eight folds held until its course is read).
+  reaches validation 0.924 as a zero-violation model; session 90: the retrain on the new material collapses too, and
+  the port turned out unfaithful in effect at our scale (penalty ~76x heavier per step, a schedule sized for their
+  24,000 files); a 7-task GPU diagnosis decides whether it is the port or the method).
 
 ## Next steps, in order
 

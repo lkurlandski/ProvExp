@@ -19,7 +19,7 @@ number.
 | Track | Prompt | State (session 84) |
 |---|---|---|
 | The scale-up's experiments on the cluster | `docs/resume-prompt-experiments.md` | `toolkit`, `adaptive` and MAB-Malware `ours` submitted without ERDALT, waiting for nodes; check them, fix failures, right-size, read |
-| ERDALT's collapse | `docs/resume-prompt-erdalt.md` | all nine models collapse to validation AUC ~0.70 and miss their criterion; diagnose with short runs, then the user decides; ERDALT's attacks and `6-results` wait on it |
+| ERDALT's collapse | `docs/resume-prompt-erdalt.md` | the retrain on the new material collapses too; a 7-task GPU diagnosis (port or method?) is read next, then the user decides the retrain; ERDALT's attacks and `6-results` wait on it |
 | Theory: bounds on size | `docs/resume-prompt-theory.md` (Opus) | mathematics done (`docs/evidence/theory-analysis.md`, part H); the user decides what enters the manuscript, H.5 first |
 | Writing: manuscript review | `docs/resume-prompt-writing.md` | §6 cut to 1,284 words (session 84); next the humanistic review and polish of §3, §4, §5, one subsection per pass; §2 after |
 | General work | this prompt | below |

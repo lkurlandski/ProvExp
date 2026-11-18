@@ -1,6 +1,6 @@
-# Resume: ERDALT retrained on the new material; check task 0, then release (or drop) the other eight
+# Resume: ERDALT's GPU diagnosis (7 short runs); read them against PV's 0.92 and decide the retrain
 
-Written in session 89 (2026-11-18, tigris). Self-contained: only `CLAUDE.md` (loaded automatically) needs reading
+Written in session 90 (2026-11-18, tigris). Self-contained: only `CLAUDE.md` (loaded automatically) needs reading
 first. One of three tracks: this one (ERDALT), `docs/resume-prompt-experiments.md` (the rest of the scale-up on the
 cluster), `docs/resume-prompt.md` (general work and the index of the tracks). The diagnosis record:
 `docs/erdalt-diagnosis-plan.md`.
@@ -21,56 +21,51 @@ vectors with L delta < 0, and a donor-overlap control).
 
 ## 2. Where things stand
 
-**The collapse (old material).** The nine scale-up models (`erdalt` and eight leave-one-out folds
-`erdalt-loo-<attack>`; 310 epochs, ~30 h each on a GH200) all fell from validation AUC ~0.85 (epoch 1) to ~0.70 as
-violations fell, criterion never met. Moved in session 89 to `artifacts/scaleup/superseded-s85/4-detectors/erdalt*`
-(logs in its `logs/train-erdalt*.log`). `erdalt`'s old course (epoch: AUC, violations): 0: 0.820, 1.33M; 1: 0.853,
-205k; 2: 0.833, 20k; 5: 0.797, 4.8k; 10: 0.764, 3.7k; 20: 0.736, 1.8k; 40: 0.696, 803; 275: 0.701, 39. The pilot's
-ERDALT (1,797 vectors, the 10% store) met the criterion at its last epoch: 3 violations, validation 0.911, test 0.881.
+**The collapse, twice.** The nine old-material models fell from validation AUC ~0.85 (epoch 1) to ~0.70 as violations
+fell, criterion never met (moved to `artifacts/scaleup/superseded-s85/4-detectors/erdalt*`). Retrained on the new
+material (`erdalt`, 1169769_0, one GH200; log `artifacts/scaleup/4-detectors/logs/train-erdalt.log`; job output
+`logs/learned-erdalt_1169769_0.out`), it falls the same way: epoch 0: 0.843, 1.39M violations; 1: 0.846, 210k; 2:
+0.831, 17.9k; 3: 0.807, 7.4k; 5: 0.782, 5.9k; 7: 0.770, 4.2k (old: 5: 0.797, 4.8k; 10: 0.764, 3.7k). Session 89's
+hypothesis (the broken outputs caused it) is refuted. The eight folds (1169770) were cancelled; `erdalt` runs to its
+end (~30 h from 2026-11-18 14:07; 95 GB of its 128G) for its full course and whether the criterion is ever met.
 
-**What session 89 found** (`docs/erdalt-diagnosis-plan.md`):
-- The hypothesis that the constraint forces L to discard directions (vectors cancelling in a nonnegative combination)
-  is refuted: a linear program finds no such combination among the 79,121 old or 78,715 new vectors (the cone is
-  pointed). The check needs the vectors divided by their per-feature std first: on raw vectors (up to 1.8e11) HiGHS
-  misses a planted opposite. Scripts: `artifacts/scaleup/diag/erdalt/lineality/` (`peek.py`, `lp.py`).
-- **The broken outputs were the main pressure.** The features some vector lowers: 2,367 in the old material, 1,209 in
-  the new. PV (a monotone GBDT on the never-lowered features) is a zero-violation ERDALT in disguise (L = identity
-  with zeros on the lowered features); its validation AUC went from 0.553 (old; test 0.610) to **0.924** (new; test
-  0.930; unconstrained GBDT 0.998). So on the new material a zero-violation model at 0.92 exists: **the benchmark a
-  fairly trained ERDALT should reach.**
-- Session 88's earlier findings (slice runs on a 200,000-file subsample, old material) stand but did not reproduce
-  the collapse: AUC tracked violations in every variant; their 2,432-vectors-per-step cap did not keep AUC up; their
-  free output layer was ~0.06 higher; the standardized inputs are extremely heavy-tailed (|z| up to 166,000, hashed
-  section sizes; validation logits +-1e5). Logs: `artifacts/scaleup/diag/erdalt/`.
+**The benchmark.** PV (a monotone GBDT on the 1,359 features no vector lowers) is a zero-violation ERDALT in disguise
+(L = identity with zeros on the 1,209 lowered features) and reaches validation 0.924 (test 0.930) on the new material.
+So a good zero-violation model exists; ERDALT does not find it. The cone of the vectors is pointed (session 89's LP),
+so nothing forces L to discard directions.
 
-**The retrain (submitted by the user, session 89), as specified, on the new material**
-(`artifacts/scaleup/4-detectors/material/sums`, merged by `learned` 1141848, which finished):
-- **1169769_[0]**: `erdalt` (all eight attacks), `PART=erdalt` of `pipeline/4-detectors/learned/run.sh`, one GH200,
-  4 cores, 128G, 2 days. Was pending on Priority at the end of session 89.
-- **1169770_[1-8]**: the eight leave-one-out folds, **submitted with `--hold`** (JobHeldUser).
-- Log: `artifacts/scaleup/4-detectors/logs/train-erdalt.log` (one `epoch=... vl_roc=... violations=... l1 l2 l3 lr`
-  line per epoch, ~5.8 min apart, after ~10 min of loading); job output `logs/learned-erdalt_1169769_0.out`.
+**Their setup, reread in session 90** (paper §5; `train_model.py` at commit 0b6f222 of
+github.com/PFGimenez/certifiably-robust-malware-detectors-by-design; the PDF is `papers/gimenez2025certifiably.pdf`):
+24,000 training files, **1,033 adversarial examples in all** (not per method, as our literature notes had it), batch
+16 (~1,500 steps per epoch, ~465k steps in all), `num_epochs = 310` a script constant, each step's penalty over all
+1,033 vectors. Ours: 1.76M files at batch 256 (~6,900 steps per epoch, ~2.1M in all), the penalty over all 78,715
+vectors against a batch-mean BCE: **~76x their penalty mass per step**, and a weight ramp over 4.6x their steps. Their
+own Table 2 has ERDALT at 0.930, below PV + RF at 0.952; their monotone network alone 0.874. The user's question:
+is ERDALT's poor showing a bug in the port or a weak method? The diagnosis decides.
+
+**The diagnosis** (approved by the user; `docs/erdalt-diagnosis-plan.md`, "Session 90", has the table, hypothesis
+and readings): `artifacts/scaleup/diag/erdalt/gpu/run.sh`, array 0-6, one GH200, 4 cores, 128G, 3 h each; new
+material, full training split, 15 epochs of the 310-epoch schedule unless stated; logs
+`artifacts/scaleup/diag/erdalt/gpu/logs/<variant>.log`, job outputs `logs/erdalt-diag_<job>_<task>.out`.
+0 fixed (L frozen at PV's mask), 1 pv-init (L starts there, trains), 2 n1033 (their vector count; also logs
+`violations_all` over all 78,715), 3 pscale (all vectors, w2 x 1033/78715: their mass), 4 cap (2,432 per step),
+5 short (the whole schedule in 20 epochs), 6 robust (quantile input scale). The control is `erdalt`'s own first 15
+epochs. Code: 3249398 (options in `train_erdalt`, tested; smoke-tested on a 20,000-file slice).
 
 ## 3. What this session does
 
-1. **Check 1169769_0** (`squeue -u $USER`, `sacct -j 1169769 --format=JobID,State,Elapsed,MaxRSS,AllocCPUS`): if it
-   has not started, say so and stop there. If it has, read the job output's startup line (threads, cores, process
-   limit) and the log's epochs.
-2. **Decide with the user whether to release the eight** (the user decides; Claude recommends). Hypothesis (session
-   89): the old collapse came mostly from the broken outputs, so `erdalt` stays near or above PV's 0.92 while
-   violations fall. Compare with the old course at matched epochs *and* at matched violation counts (above).
-   - Holding near or above ~0.90 through epochs ~15-20 (most of the old fall happened by epoch 10): recommend
-     `scontrol release 1169770`; the nine finish ~30 h later. Keep an eye on the end: the criterion (< 5 violations)
-     was met only at the last epoch on the pilot.
-   - Falling well below 0.92 as violations fall (the old course again): recommend `scancel 1169770` and the GPU
-     variants of `docs/erdalt-diagnosis-plan.md` (control, 2,432 vectors per step, a robust linear input scaling,
-     the free output layer reported separately), full training split, the first ~15 epochs of the 310-epoch
-     schedule, compared by AUC at matched violations against the 0.92 benchmark. Write that plan out for the user's
-     approval before running anything (a small `sbatch` array, one GH200 each, ~2 h).
-   - In between: lay out what it shows and let the user choose; letting `erdalt` run to the end costs nothing extra.
-3. **When the nine are done:** read them (selected epoch, validation AUC, violations, `met_criterion` in each
-   `metrics.json`); R19's asks (share of training and test vectors with L delta < 0; donor-overlap control).
-4. **Then ERDALT's attacks, held for this** (the other detectors' attacks run without it): `toolkit` with
+1. **Check the array** (`squeue -u $USER`; `sacct -j <job> --format=JobID,State,Elapsed,MaxRSS,AllocCPUS,TotalCPU`).
+   If it has not run, say so. Read each task's startup line and its log's epochs; right-size the header from sacct.
+2. **Read the seven against the control and PV's 0.92**, at matched violation counts (the curve of AUC against
+   violations), not only at matched epochs; for n1033 also `violations_all`. Hypothesis (session 90): the penalty
+   weight is the main cause, so pscale and n1033 stay near ~0.9 well above the control, cap in between; fixed reaches
+   ~0.88-0.92; n1033 violates many unseen vectors. The readings and what each implies are in the plan document.
+3. **Decide with the user** (Claude recommends): (a) the port was unfaithful in effect: retrain `erdalt` and the
+   eight folds with their per-step penalty mass (and a schedule sized to our data), stated in Appendix D; or (b) the
+   method: report ERDALT as specified, with the diagnosis as evidence that it is not our port. Either way, read
+   `erdalt`'s full course when it ends (selected epoch, `met_criterion` in its `metrics.json`).
+4. **When the final nine are done:** R19's asks (share of training and test vectors with L delta < 0; donor-overlap
+   control), then ERDALT's attacks, held for this (the other detectors' attacks run without it): `toolkit` with
    `DETECTORS=erdalt PARTS="main loo donors" LOO=erdalt` (`--array=0-9`); `adaptive` with `TAG=erdalt
    DETECTORS=erdalt ESCAPES=none EXPERT=0` (20 tasks, writes `none/shard-<k>-erdalt/`); MAB-Malware with
    `TAG=erdalt DETECTORS=erdalt SETTINGS=ours --array=0 --cpus-per-task=1` (writes `ours-erdalt/`); then `6-results`
