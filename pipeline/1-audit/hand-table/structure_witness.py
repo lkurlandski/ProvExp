@@ -48,9 +48,7 @@ import polars as pl
 from tqdm import tqdm
 
 from provexp.attacks.adaptive import add_section
-from provexp.data.paths import EMBER2024_DATA
-from provexp.data.simpledb import SimpleDB
-from provexp.data.simpledb import SimpleDBReader
+from provexp.data.files import FileReader
 from provexp.featuresets.ember2024.features import PEFeatureExtractor
 from provexp.featuresets.ember2024.features import fix_quirks
 
@@ -207,8 +205,8 @@ EDITS: dict[str, Callable[[bytes, Optional[bytes]], Optional[bytes]]] = {
 _STATE: dict[str, Any] = {}
 
 
-def _init_worker(db: Path, cases: list[str], donors: list[tuple[str, bytes]]) -> None:
-    """Open the database and build the extractor once per worker."""
+def _init_worker(cases: list[str], donors: list[tuple[str, bytes]]) -> None:
+    """Open the file store and build the extractor once per worker."""
     import lief
 
     lief.logging.disable()
@@ -216,7 +214,7 @@ def _init_worker(db: Path, cases: list[str], donors: list[tuple[str, bytes]]) ->
     extractor = fix_quirks(PEFeatureExtractor())
     names = extractor.feature_names
     _STATE.update(
-        reader=SimpleDBReader(SimpleDB(db, check=False)), extractor=extractor, names=names, cases=cases, donors=donors,
+        reader=FileReader(), extractor=extractor, names=names, cases=cases, donors=donors,
         idx={c: [i for i, n in enumerate(names) if n.startswith(PREFIXES[c])] for c in cases},
     )
 
@@ -224,7 +222,7 @@ def _init_worker(db: Path, cases: list[str], donors: list[tuple[str, bytes]]) ->
 def _witness_file(name: str) -> tuple[list[dict[str, Any]], list[str], list[str]]:
     """Every case on one file: the witness rows, the cases that apply to it, and log lines."""
     extractor, names = _STATE["extractor"], _STATE["names"]
-    z = _STATE["reader"].get(name).data
+    z = _STATE["reader"].get(name)
     rows: list[dict[str, Any]] = []
     applies: list[str] = []
     log: list[str] = []
@@ -265,7 +263,6 @@ def _witness_file(name: str) -> tuple[list[dict[str, Any]], list[str], list[str]
 def main() -> None:
     parser = ArgumentParser(description=__doc__.split("\n\n")[1])
     parser.add_argument("--files", type=Path, default=Path("artifacts/experiments/e1/seed-0/zeros/files.parquet"))
-    parser.add_argument("--db", type=Path, default=EMBER2024_DATA / "ts")
     parser.add_argument("--outdir", type=Path, required=True)
     parser.add_argument("--cases", nargs="+", default=list(EDITS), choices=list(EDITS))
     parser.add_argument("--donors", type=int, default=3, help="Donor Rich headers tried per file (rich_ext), smallest first.")
@@ -276,16 +273,17 @@ def main() -> None:
     if "status" in df.columns:
         df = df.filter(pl.col("status") == "ok")
     files = sorted(df["name"].to_list())
+    reader = FileReader()  # the scale-up's files come from the file store (FILE_STORE), never the SimpleDB
+    reader.check(files)
     donors: list[tuple[str, bytes]] = []
     if "rich_ext" in args.cases:
-        reader = SimpleDBReader(SimpleDB(args.db, check=False))
-        donors = sorted(((n, b) for n in files if (b := rich_block(reader.get(n).data)) is not None), key=lambda d: len(d[1]))
+        donors = sorted(((n, b) for n in files if (b := rich_block(reader.get(n))) is not None), key=lambda d: len(d[1]))
     print(f"{len(files)} files, {len(donors)} Rich header donors, {args.workers} workers", flush=True)
 
     rows: list[dict[str, Any]] = []
     applies = {case: 0 for case in args.cases}
     with get_context("forkserver").Pool(args.workers, initializer=_init_worker,
-                                        initargs=(args.db, args.cases, donors[: args.donors])) as pool:
+                                        initargs=(args.cases, donors[: args.donors])) as pool:
         for r, a, log in tqdm(pool.imap_unordered(_witness_file, files), total=len(files), mininterval=30, file=sys.stdout):
             rows += r
             for case in a:

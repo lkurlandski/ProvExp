@@ -84,15 +84,18 @@ def main() -> None:
     parser = ArgumentParser(description=__doc__.split("\n\n")[1])
     parser.add_argument("--files", type=Path, required=True, help="The file list the audit steps ran on (`name`).")
     parser.add_argument("--audit", type=Path, required=True, help="The audit stage's output root ($OUT_ROOT/1-audit).")
+    parser.add_argument("--hand_table", type=Path, default=None,
+                        help="The witnesses' folder (default: {audit}/hand-table).")
     parser.add_argument("--outdir", type=Path, required=True)
     args = parser.parse_args()
 
     files = pl.read_parquet(args.files)["name"].to_list()
     population = pl.read_parquet(args.audit / "population" / "files.parquet")
     edits = pl.read_parquet(args.audit / "catalogue" / "edits.parquet")
-    structure = pl.read_parquet(args.audit / "hand-table" / "structure" / "witnesses.parquet")
-    overlay = pl.read_parquet(args.audit / "hand-table" / "overlay" / "appends.parquet")
-    signature = pl.read_parquet(args.audit / "hand-table" / "signature" / "witnesses.parquet")
+    hand = args.hand_table if args.hand_table is not None else args.audit / "hand-table"
+    structure = pl.read_parquet(hand / "structure" / "witnesses.parquet")
+    overlay = pl.read_parquet(hand / "overlay" / "appends.parquet")
+    signature = pl.read_parquet(hand / "signature" / "witnesses.parquet")
 
     entropy = ("section:entropy_hash_", "section:max_entropy", "section:min_entropy")
     witnesses = {

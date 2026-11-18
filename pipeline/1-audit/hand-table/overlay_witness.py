@@ -23,7 +23,9 @@ Usage:
 from __future__ import annotations
 
 from argparse import ArgumentParser
+import hashlib
 import json
+from multiprocessing import get_context
 from pathlib import Path
 from typing import Any
 from typing import Optional
@@ -32,10 +34,8 @@ import numpy as np
 import pefile
 import polars as pl
 
-from provexp.data.paths import EMBER2024_DATA
+from provexp.data.files import FileReader
 from provexp.data.paths import ROOT
-from provexp.data.simpledb import SimpleDB
-from provexp.data.simpledb import SimpleDBReader
 from provexp.featuresets.ember2024.sums import BodyByteEntropyHistogram
 from provexp.featuresets.ember2024.sums import BodyByteHistogram
 from provexp.featuresets.ember2024.sums import BodyStrings
@@ -99,6 +99,55 @@ def body_counts(bytez: bytes, pe: pefile.PE) -> dict[str, np.ndarray]:
 
 
 ################################################################################
+# Workers
+################################################################################
+
+
+_W: dict[str, Any] = {}
+
+
+def _init_worker() -> None:
+    """Open the file store once per worker."""
+    _W["reader"] = FileReader()
+
+
+def _append_file(task: tuple[str, int, int, int]) -> list[dict[str, Any]]:
+    """Every append tried on one file: its rows (none if the file does not parse)."""
+    name, label, cap, seed = task
+    # NOTE: a generator per file (seeded by the run's seed and the file's name), so the rows do not depend on which
+    # worker takes which file; the pilot's runs drew from one generator in file order.
+    rng = np.random.default_rng([seed, int(hashlib.sha256(name.encode()).hexdigest()[:16], 16)])
+    bytez = _W["reader"].get(name)
+    pe = parse(bytez)
+    if pe is None:
+        return []
+    n = len(bytez)
+    past = extents_past_eof(pe, n)
+    sizes = {CONTROL}
+    for _, end in past:
+        if end - n + CONTROL <= cap:
+            sizes |= {end - n + 1, end - n + CONTROL}
+    before, ov0 = body_counts(bytez, pe), overlay_size(bytez, pe)
+    rows: list[dict[str, Any]] = []
+    for d in sorted(sizes):
+        edited = bytez + b"\x00" + rng.integers(0, 256, d - 1, dtype=np.uint8).tobytes()
+        pe2 = parse(edited)
+        if pe2 is None:
+            continue
+        after = body_counts(edited, pe2)
+        row: dict[str, Any] = {
+            "name": name, "label": label, "size": n, "kinds": ",".join(sorted({k for k, _ in past})),
+            "append": d, "overlay_before": ov0, "overlay_after": overlay_size(edited, pe2),
+        }
+        for group in before:
+            drop = np.clip(before[group] - after[group], 0, None)
+            row[f"drops_{group}"] = int((drop > 1e-9).sum())
+            row[f"dropped_{group}"] = float(drop.sum())
+        rows.append(row)
+    return rows
+
+
+################################################################################
 # Main
 ################################################################################
 
@@ -107,44 +156,22 @@ def main() -> None:
     parser = ArgumentParser(description=__doc__.split("\n\n")[1] if __doc__ else None)
     parser.add_argument("--outdir", type=Path, required=True)
     parser.add_argument("--pilot_files", type=Path, default=ROOT / "artifacts/experiments/e1/seed-0/zeros/files.parquet")
-    parser.add_argument("--db", type=Path, default=EMBER2024_DATA / "ts")
+    parser.add_argument("--workers", type=int, default=16, help="Processes, one file at a time each.")
     parser.add_argument("--cap", type=int, default=8 * 2**20, help="Largest append tried, in bytes.")
     parser.add_argument("--seed", type=int, default=0)
     args = parser.parse_args()
     if args.cap < CONTROL:
         raise ValueError(f"--cap must be at least {CONTROL}, got {args.cap}.")
+    if args.workers < 1:
+        raise ValueError(f"--workers must be >= 1, got {args.workers}.")
 
-    rng = np.random.default_rng(args.seed)
     df = pl.read_parquet(args.pilot_files).select("name", "label")
-    reader = SimpleDBReader(SimpleDB(args.db, check=False))
+    FileReader().check(df["name"].to_list())  # the scale-up's files come from the file store (FILE_STORE)
+    tasks = [(name, label, args.cap, args.seed) for name, label in df.iter_rows()]
     rows: list[dict[str, Any]] = []
-    for name, label in df.iter_rows():
-        bytez = reader.get(name).data
-        pe = parse(bytez)
-        if pe is None:
-            continue
-        n = len(bytez)
-        past = extents_past_eof(pe, n)
-        sizes = {CONTROL}
-        for _, end in past:
-            if end - n + CONTROL <= args.cap:
-                sizes |= {end - n + 1, end - n + CONTROL}
-        before, ov0 = body_counts(bytez, pe), overlay_size(bytez, pe)
-        for d in sorted(sizes):
-            edited = bytez + b"\x00" + rng.integers(0, 256, d - 1, dtype=np.uint8).tobytes()
-            pe2 = parse(edited)
-            if pe2 is None:
-                continue
-            after = body_counts(edited, pe2)
-            row: dict[str, Any] = {
-                "name": name, "label": label, "size": n, "kinds": ",".join(sorted({k for k, _ in past})),
-                "append": d, "overlay_before": ov0, "overlay_after": overlay_size(edited, pe2),
-            }
-            for group in before:
-                drop = np.clip(before[group] - after[group], 0, None)
-                row[f"drops_{group}"] = int((drop > 1e-9).sum())
-                row[f"dropped_{group}"] = float(drop.sum())
-            rows.append(row)
+    with get_context("spawn").Pool(args.workers, initializer=_init_worker) as pool:
+        for part in pool.imap(_append_file, tasks, chunksize=4):
+            rows += part
 
     out = pl.DataFrame(rows)
     args.outdir.mkdir(parents=True, exist_ok=True)
