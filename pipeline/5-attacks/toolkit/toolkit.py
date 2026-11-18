@@ -73,7 +73,9 @@ from provexp.attacks.toolkit import calibrated
 from provexp.attacks.toolkit import file_seed
 from provexp.attacks.toolkit import make_wrapper
 from provexp.attacks.toolkit import run_attack
+from provexp.attacks.lief_check import DOS_ATTACKS
 from provexp.attacks.lief_check import LIEF_ATTACKS
+from provexp.attacks.lief_check import dos_header_extensible
 from provexp.attacks.lief_check import lief_round_trips
 from provexp.data.files import PROTOCOLS
 from provexp.data.files import load_attacked
@@ -288,8 +290,20 @@ def main() -> None:
         print(f"LIEF round trip: {len(bad)} of {len(attacked)} attacked files cannot be rebuilt; {LIEF_ATTACKS} are not "
               f"applicable to them ({args.outdir}/lief_check.parquet).", flush=True)
 
+    # The attacks that extend the DOS header are not applicable to a file whose PE header starts inside it.
+    no_dos: dict[int, str] = {}
+    if any(a in DOS_ATTACKS for a in args.attacks):
+        attacked = sorted({i for d in defenses for i in detected[d]})
+        no_dos = {i: "e_lfanew below 0x40" for i in attacked if not dos_header_extensible(starts[i])}
+        pl.DataFrame({"name": [malware[i][0] for i in no_dos], "reason": list(no_dos.values())},
+                     schema={"name": pl.Utf8, "reason": pl.Utf8}).write_parquet(args.outdir / "dos_check.parquet")
+        print(f"DOS header: {len(no_dos)} of {len(attacked)} attacked files cannot be extended; {DOS_ATTACKS} are not "
+              f"applicable to them ({args.outdir}/dos_check.parquet).", flush=True)
+
     def applicable(atk: str, i: int) -> bool:
-        return atk not in LIEF_ATTACKS or lief_reason.get(i) is None
+        if atk in LIEF_ATTACKS and lief_reason.get(i) is not None:
+            return False
+        return atk not in DOS_ATTACKS or i not in no_dos
 
     caps = [max(int(args.budget_frac * len(data)), args.budget_min) for _, data in malware]
     tasks = [(d, atk, malware[i][0], starts[i], taus[d], caps[i], pre[i], extras[d, i])

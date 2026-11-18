@@ -13,7 +13,8 @@ Omitted from `secml_malware/`: notebooks, Dockerfile, docs, examples, and the pr
 (`secml_malware/data/trained/pretrained_malconv.pth`). Omitted from `secml/`: `update/` and the egg-info.
 
 The patches make them run on our environment (Python 3.14, NumPy 2, LIEF 1.0); none is needed because of the Python
-version itself. Install without dependencies (ours are in `requirements.txt`):
+version itself. One patch fixes an attack bug: secml-malware's content shift inserts its padding where section
+content starts, not at the first section's offset, which can be 0 (`utils/pe_operations.py`; `docs/upstream-issues.md` §14). Install without dependencies (ours are in `requirements.txt`):
 
     VIRTUAL_ENV=$PWD/env uv pip install --no-deps -e third_party/secml -e third_party/secml_malware
 

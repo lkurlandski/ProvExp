@@ -54,7 +54,9 @@ import lief
 import numpy as np
 import polars as pl
 
+from provexp.attacks.lief_check import DOS_ATTACKS
 from provexp.attacks.lief_check import LIEF_ATTACKS
+from provexp.attacks.lief_check import dos_header_extensible
 from provexp.attacks.lief_check import lief_round_trips
 from provexp.attacks.toolkit import ATTACKS
 from provexp.attacks.toolkit import BUDGETS
@@ -272,8 +274,14 @@ def main() -> None:
         part / ("lief_check.parquet" if args.repair is None else "lief_check-repair.parquet"))
     print(f"LIEF round trip: {len(bad)} of {len(lief_names)} files cannot be rebuilt; {LIEF_ATTACKS} are not "
           f"applicable to them.", flush=True)
-    skipped = [(atk, name) for atk, name in candidates if atk in LIEF_ATTACKS and name in bad]
-    tasks = [t for t in candidates if not (t[0] in LIEF_ATTACKS and t[1] in bad)]
+    # The attacks that extend the DOS header are not applicable to a file whose PE header starts inside it.
+    no_dos = {n for n in sorted({name for atk, name in candidates if atk in DOS_ATTACKS})
+              if not dos_header_extensible(reader.get(n))}
+    print(f"DOS header: {len(no_dos)} files cannot be extended; {DOS_ATTACKS} are not applicable to them.", flush=True)
+    skipped = [(atk, name) for atk, name in candidates
+               if (atk in LIEF_ATTACKS and name in bad) or (atk in DOS_ATTACKS and name in no_dos)]
+    left_out = set(skipped)
+    tasks = [t for t in candidates if t not in left_out]
 
     results: list[dict[str, Any]] = []
     if tasks:

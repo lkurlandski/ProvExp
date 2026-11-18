@@ -190,3 +190,26 @@ controls. secml-malware's GAMMA attacks rebuild through LIEF on every query, so 
 OOM-kills its worker. Not reported yet (check the newest LIEF first). Our handling (user, session 77): each start file
 gets one round trip in a capped child process (`provexp.attacks.lief_check`); where it fails, the GAMMA attacks are not
 applicable to the file, counted apart from attack failures.
+
+## 14. secml-malware: the content shift writes in front of the MZ header when the first section has no raw data (found 2026-11-18, session 85)
+
+**Issue title:** `shift_section_by` inserts its padding at `sections[0].offset`, which can be 0
+
+`secml_malware.utils.pe_operations.shift_section_by` (and `shift_section_by_using_lief`) insert the shift's padding at
+the first section's file offset and add the amount to every section's `PointerToRawData`. When the first section in the
+table has no raw data and offset 0 (e.g. `.textbss`, first in Visual C++ debug builds; also UPX0, Upack), the padding
+goes in front of the MZ header and neither pefile nor LIEF parses the result. Used by the content-shift, GAMMA-shift and
+format-exploit attacks. In EMBER2024: 358 of 10,000 training malware (716 broken outputs of the defenses' material), 20
+of the 1,000 evaluation malware. Patched (`third_party/secml_malware`, `# PATCH (ProvExp)`): the padding goes at the
+smallest non-zero section offset, where section content starts; byte-identical to upstream wherever upstream's offset
+already was that one (300/300 random training malware), and 354 of the 358 broken files now parse with every section's
+bytes intact at its new offset (`artifacts/scaleup/diag/shift_fix.py`, job 1138581). Not reported yet.
+
+## 15. secml-malware: the DOS-header extension assumes the PE header starts past the DOS header (found 2026-11-18, session 85)
+
+`shift_pe_header` inserts bytes at `e_lfanew` after writing the new `e_lfanew` at 0x3C. On a file whose PE header starts
+inside the DOS header (e_lfanew below 0x40, a known trick of tiny executables), the insertion lands in front of the
+0x3C field itself, so the written value moves and the field reads as padding; pefile rejects the file ("Invalid e_lfanew
+value"). Used by the DOS-extension and format-exploit attacks; 45 of the material's outputs (~25 training malware).
+Such a file has no DOS header to extend: our handling (user, session 85) marks these two attacks not applicable to it
+(`provexp.attacks.lief_check.dos_header_extensible`, `dos_check.parquet` beside `lief_check.parquet`).

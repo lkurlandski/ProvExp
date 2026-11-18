@@ -15,7 +15,8 @@ Per detector of the registry's `scaleup` set whose model exists:
                       evaluation set's malware (files outside the population counted; undetected ones count as not
                       detected), except the files an attack is not applicable to: the two GAMMA attacks, which rebuild
                       the file through LIEF, are not applicable to the detected files LIEF cannot rebuild (no run; the
-                      toolkit job's lief_check.parquet), and those leave that attack's denominator and are reported
+                      toolkit job's lief_check.parquet), the two that extend the DOS header to files whose PE header
+                      starts inside it (dos_check.parquet), and those leave that attack's denominator and are reported
                       beside it (`not_applicable`). After any attack the denominator stays all the malware. A run
                       given up after an hour without progress (map_watchdog; the toolkit's `LostTask` rows, the
                       adaptive search's lost.parquet) is discarded: its file leaves the detected files and the
@@ -47,6 +48,7 @@ from numpy import typing as npt
 import polars as pl
 from sklearn.metrics import roc_auc_score
 
+from provexp.attacks.lief_check import DOS_ATTACKS
 from provexp.attacks.lief_check import LIEF_ATTACKS
 from provexp.data.tabular import load_features
 from provexp.data.tabular import load_manifest
@@ -124,9 +126,10 @@ def attack_outputs(root: Path, escape: str = "none") -> pl.DataFrame:
 def not_applicable(root: Path, escape: str = "none") -> pl.DataFrame:
     """The (defense, attack, name) triples the toolkit did not run because the attack is not applicable to the file.
 
-    The two LIEF-based attacks are not applicable to the start files LIEF cannot rebuild (`provexp.attacks.lief_check`).
-    The check runs once per toolkit job on the start files every defense of that job attacks, so each name in a job's
-    `lief_check.parquet` pairs with each defense in its `results.parquet`.
+    The two LIEF-based attacks are not applicable to the start files LIEF cannot rebuild, the two that extend the DOS
+    header to those whose PE header starts inside it (`provexp.attacks.lief_check`). The checks run once per toolkit job
+    on the start files every defense of that job attacks, so each name in a job's `lief_check.parquet` or
+    `dos_check.parquet` pairs with each defense in its `results.parquet`.
 
     Args:
         root: The scale-up's output root.
@@ -140,12 +143,13 @@ def not_applicable(root: Path, escape: str = "none") -> pl.DataFrame:
             if escape == "none" else [att / "escape" / escape])
     parts: list[pl.DataFrame] = []
     for d in dirs:
-        if not (d / "lief_check.parquet").exists() or not (d / "results.parquet").exists():
+        if not (d / "results.parquet").exists():
             continue
-        names = pl.read_parquet(d / "lief_check.parquet").select("name")
-        results = pl.read_parquet(d / "results.parquet", columns=["defense", "attack"])
-        pairs = results.unique().filter(pl.col("attack").is_in(LIEF_ATTACKS))
-        parts.append(pairs.join(names, how="cross"))
+        results = pl.read_parquet(d / "results.parquet", columns=["defense", "attack"]).unique()
+        for check, attacks in (("lief_check.parquet", LIEF_ATTACKS), ("dos_check.parquet", DOS_ATTACKS)):
+            if (d / check).exists():
+                names = pl.read_parquet(d / check).select("name")
+                parts.append(results.filter(pl.col("attack").is_in(attacks)).join(names, how="cross"))
     if not parts:
         return pl.DataFrame(schema={"defense": pl.Utf8, "attack": pl.Utf8, "name": pl.Utf8})
     return pl.concat(parts).unique()

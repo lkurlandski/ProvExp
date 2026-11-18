@@ -21,11 +21,19 @@ import sys
 from typing import Iterable
 from typing import Optional
 
-__all__ = ["LIEF_ATTACKS", "MAX_OUTPUT", "lief_round_trip", "lief_round_trips"]
+__all__ = ["DOS_ATTACKS", "LIEF_ATTACKS", "MAX_OUTPUT", "dos_header_extensible", "lief_round_trip", "lief_round_trips"]
 
 
 # The toolkit attacks that rebuild the file through LIEF (secml-malware's c_gamma_sections_evasion, c_gammapi_evasion).
 LIEF_ATTACKS = ("gamma_sections", "gamma_api")
+
+# The toolkit attacks that extend the DOS header (secml-malware's shift_pe_header_by: CBlackBoxContentDOSExtensionProblem
+# and CBlackBoxFormatExploitEvasionProblem). They insert bytes where the PE header starts; on a file whose PE header
+# starts inside the DOS header (e_lfanew below 0x40, a known trick of tiny executables) that is in front of the
+# e_lfanew field itself, and no parser reads the result (session 85: 45 of 79,121 outputs). Such a file has no DOS
+# header to extend, so these attacks are not applicable to it.
+DOS_ATTACKS = ("dos_extend", "format_exploit")
+DOS_HEADER_SIZE = 0x40
 
 # NOTE: the largest rebuilt output the attacks accept. GAMMA holds each query's output as a list of Python ints and a
 # CArray, ~140 bytes of memory per output byte (session 76: 7.1 GB peak on a 51 MB output, several minutes per run).
@@ -35,8 +43,15 @@ MAX_OUTPUT = 64 * 2**20
 
 
 ################################################################################
-# The check
+# The checks
 ################################################################################
+
+
+def dos_header_extensible(data: bytes) -> bool:
+    """Whether the DOS header can be extended: the PE header starts past it (e_lfanew >= 0x40)."""
+    if len(data) < DOS_HEADER_SIZE:
+        return False
+    return int.from_bytes(data[0x3C:0x40], "little") >= DOS_HEADER_SIZE
 
 def lief_round_trip(data: bytes, memory_cap: int = 8 * 2**30, timeout: float = 120.0) -> Optional[str]:
     """Run GAMMA's two LIEF rebuilds on `data` in a separate process; None if both succeed, else the reason.

@@ -12,6 +12,7 @@ import struct
 import pefile
 import pytest
 
+from provexp.attacks.lief_check import dos_header_extensible
 from provexp.attacks.lief_check import lief_round_trip
 from provexp.attacks.lief_check import lief_round_trips
 
@@ -75,3 +76,14 @@ class TestLiefRoundTrip:
     def test_invalid_workers(self) -> None:
         with pytest.raises(ValueError):
             lief_round_trips([], workers=0)
+
+
+class TestDosHeaderExtensible:
+
+    @pytest.mark.parametrize("e_lfanew,expected", [(0x40, True), (0x80, True), (0x3C, False), (0x10, False), (0x4, False)])
+    def test_e_lfanew(self, e_lfanew: int, expected: bool) -> None:
+        data = bytearray(b"MZ" + bytes(0x3A)) + struct.pack("<I", e_lfanew) + bytes(0x100)
+        assert dos_header_extensible(bytes(data)) is expected
+
+    def test_too_short(self) -> None:
+        assert not dos_header_extensible(b"MZ" + bytes(0x20))
