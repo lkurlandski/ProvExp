@@ -90,7 +90,7 @@ A=$(submit 5-attacks/adaptive "$DETS")
 # MAB-Malware: one single-threaded run per detector. Task 0 (`ours`, nine detectors) gets one core per run; tasks 1-2
 # (`expert`, `zainab`: one detector each, both trained by the first training job) keep the header's 2 cores and start
 # as soon as that job is done.
-M0=$(submit 5-attacks/mab-malware "$DETS" --array=0 --cpus-per-task=10 --mem=96G)
+M0=$(submit 5-attacks/mab-malware "$DETS" --array=0 --cpus-per-task=10 --mem=144G --time=1-00:00:00)
 M1=$(submit 5-attacks/mab-malware "$TR" --array=1-2 --job-name=mab-malware-single)
 M="$M0 $M1"
 

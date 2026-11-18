@@ -8,7 +8,7 @@
 #SBATCH --ntasks-per-node=1
 #SBATCH --cpus-per-task=72
 #SBATCH --time=0-00:45:00
-#SBATCH --mem=200G
+#SBATCH --mem=128G
 #
 # The detectors of Table 5 and the expert set (§5.2), on the full training split's complete files (--complete_only; the
 # protocol of session 67), each written to $OUT_ROOT/4-detectors/<name>/ (the registry's `scaleup` set) with its
@@ -26,7 +26,8 @@
 # `trial` is skipped with a note while it is missing). A detector whose model.txt exists is skipped (rerun to resume).
 # Output: $OUT_ROOT/4-detectors/<name>/ (model.txt, metrics.json, {ts,vl}_predictions.parquet).
 # Knobs: DETECTORS (default all six), LIMIT (at most this many files per split; smoke tests). Resources: one GBDT at a time on NUM_WORKERS threads; the full split's sums
-# store is ~25-30 GB in memory. SCALE-UP TO CONFIRM: time and memory (head-node session).
+# store is ~25-30 GB in memory. Scale-up (session 85's sacct): 9 min and 94 GiB for five detectors; the
+# trial detector 5 min, 82 GiB.
 set -euo pipefail
 cd "${SLURM_SUBMIT_DIR:-$(dirname "$0")/../../..}"
 source pipeline/common.sh

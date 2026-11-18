@@ -6,9 +6,9 @@
 #SBATCH --output=./logs/%x_%j.out
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
-#SBATCH --cpus-per-task=72
-#SBATCH --time=2-00:00:00
-#SBATCH --mem=300G
+#SBATCH --cpus-per-task=48
+#SBATCH --time=0-07:00:00
+#SBATCH --mem=360G
 #
 # Iterated adversarial training (protocol item 7, session 67; R18, docs/evidence/r18-trial-competitor.md step 3): the
 # adversarially trained detector (4-detectors/adversarial-training, the toolkit's material appended) retrained on
@@ -30,7 +30,8 @@
 # models $OUT_ROOT/4-detectors/iterated-<k>/. A finished search or model is skipped.
 # Knobs: ROUNDS (default 2), PER_ROUND (default 1000), QUERIES (default 5000), LIMIT (training files per split;
 # smoke tests). Cost (session 67's estimate): ~0.5k CPU-h in all, ~7 h per round on 36 cores, ~30 min per retraining.
-# SCALE-UP TO CONFIRM: time and memory.
+# Scale-up (job 1039055, session 85): 3 h 24 min on 72 cores, 282 GiB of 300 GB (230 GiB in round 1), ~45% of the
+# cores (each round ends on a long tail). Hence 48 cores (~1.5x the rounds, ~5 h), 7 h, and memory with room.
 set -euo pipefail
 cd "${SLURM_SUBMIT_DIR:-$(dirname "$0")/../../..}"
 source pipeline/common.sh
