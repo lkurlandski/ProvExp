@@ -186,6 +186,17 @@ in `docs/archive/status-log-2026-11-14-s63.md`, sessions 64-65 in `docs/archive/
   detection-against-sample-size curve. Proposed: material filtered to outputs still read as a PE with their imports
   (the same rule for every learned defense, or PV only), PV and its folds retrained (minutes) and re-attacked, the
   curve for an appendix.
+  **Why the outputs break (session 85, `diag/pv-scale/not_pe_why.parquet`, `diag-imports-lost_1136394.out`):**
+  (a) 716 shift outputs (358 files, both shift attacks): the file has a section with file offset 0 (e.g. `.textbss`
+  first, Visual C++ debug builds); secml-malware's shift inserts its padding at the first section's offset, here 0, so
+  in front of the MZ header; neither pefile nor LIEF parses the result (an upstream bug; the published attack is
+  functionality-preserving only for files laid out as it assumes). (b) 45 DOS-extend/format-exploit outputs with an
+  invalid e_lfanew. (c) 133 outputs still parse but lose >= 10 import features: some genuinely broken (both parsers
+  lose the imports), some pefile-only losses LIEF does not share (pefile's 8,192-import cap on GAMMA's injected imports;
+  stricter import parsing), a few fragile originals recurring across attacks. The evaluation counts an output only if
+  LIEF parses it, so (a)-(b) never counted as evasions; (c) may have. The material kept any output whose attack ran.
+  User (session 85): broken outputs are inert and must not mark features non-robust; then a rigorous sample-size
+  analysis for an appendix.
 - **Three adaptive searches lost (session 85).** Shards 6 and 14 (every escape) had 3 (monotone detector, file)
   searches with no result 45 min after the last other search finished; they were dropped silently. Decided (user):
   a one-hour limit, the files discarded and reported (fine while fewer than 10); done in ec2a5bd (lost.parquet,
