@@ -47,9 +47,10 @@ is ERDALT's poor showing a bug in the port or a weak method? The diagnosis decid
 and readings): `artifacts/scaleup/diag/erdalt/gpu/run.sh`, array 0-6, one GH200, 4 cores, 128G, 3 h each; new
 material, full training split, 15 epochs of the 310-epoch schedule unless stated; logs
 `artifacts/scaleup/diag/erdalt/gpu/logs/<variant>.log`, job outputs `logs/erdalt-diag_<job>_<task>.out`.
-0 fixed (L frozen at PV's mask), 1 pv-init (L starts there, trains), 2 n1033 (their vector count; also logs
-`violations_all` over all 78,715), 3 pscale (all vectors, w2 x 1033/78715: their mass), 4 cap (2,432 per step),
-5 short (the whole schedule in 20 epochs), 6 robust (quantile input scale). The control is `erdalt`'s own first 15
+Ordered by importance (SLURM starts lower IDs first): 0 pscale (all vectors, w2 x 1033/78715: their mass), 1 n1033
+(their vector count; also logs `violations_all` over all 78,715), 2 fixed (L frozen at PV's mask), 3 short (the whole
+schedule in 20 epochs), 4 cap (2,432 per step), 5 pv-init (L starts at PV's mask, trains), 6 robust (quantile input
+scale). The control is `erdalt`'s own first 15
 epochs. Code: 3249398 (options in `train_erdalt`, tested; smoke-tested on a 20,000-file slice).
 
 ## 3. What this session does

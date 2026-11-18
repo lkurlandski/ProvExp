@@ -136,7 +136,8 @@ mass per step, and the length of the weight schedule.
 (`--epochs 15 --schedule_epochs 310`) unless stated. One GH200, 4 cores, 128G (the full run peaks at ~95 GB), 3 h
 (~10 min loading + ~5.8 min per epoch). The control is `erdalt`'s own first 15 epochs. Compared on validation AUC at
 matched violation counts, against the control and PV's 0.92. Script: `artifacts/scaleup/diag/erdalt/gpu/run.sh`
-(array 0-6), logs in `artifacts/scaleup/diag/erdalt/gpu/logs/<variant>.log`.
+(array 0-6, reordered by importance: 0 pscale, 1 n1033, 2 fixed, 3 short, 4 cap, 5 pv-init, 6 robust; the
+table's task numbers are the first order), logs in `artifacts/scaleup/diag/erdalt/gpu/logs/<variant>.log`.
 
 | task | run | change | question |
 |---|---|---|---|
