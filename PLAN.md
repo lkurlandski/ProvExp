@@ -39,8 +39,9 @@ them (below).
 - **The largest open risks:** one instance only (a second domain is step 6, the user's call), and ERDALT at scale:
   every model collapses to validation AUC ~0.70 (pilot 0.88) and misses its criterion, which invites the straw-man
   objection; its own track since session 82 (`docs/resume-prompt-erdalt.md`; session 88: short runs on a training
-  slice could not reproduce the collapse; next, a written diagnosis plan on the full split and new material, for the
-  user's approval).
+  slice could not reproduce the collapse; session 89: the broken outputs were the main pressure, PV on the new material
+  reaches validation 0.924 as a zero-violation model, and ERDALT is being retrained on the new material, `erdalt`
+  first, the eight folds held until its course is read).
 
 ## Next steps, in order
 

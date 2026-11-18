@@ -194,8 +194,11 @@ in `docs/archive/status-log-2026-11-14-s63.md`, sessions 64-65 in `docs/archive/
   Session 88's slice runs (200,000 training files) did not reproduce the collapse and were stopped; what they showed:
   AUC falls as violations fall in every variant, their vectors-per-step cap does not keep AUC up, the free output
   layer is ~0.06 AUC higher, the standardized inputs are extremely heavy-tailed (|z| up to 166,000), and the broken
-  outputs are not the extreme vectors (8.8% of the negative mass). **Next session: a written diagnosis plan (full
-  training split, new material) for the user's approval before any run** (`docs/resume-prompt-erdalt.md`).
+  outputs are not the extreme vectors (8.8% of the negative mass). **Session 89:** the broken outputs were the main
+  pressure (features some vector lowers: 2,367 old, 1,209 new; PV, a zero-violation model, 0.553 -> 0.924 validation).
+  ERDALT is retrained as specified on the new material: `erdalt` 1169769_[0] first, the eight folds 1169770_[1-8]
+  held. **Next ERDALT session: read `erdalt`'s course against PV's 0.92, then release or drop the eight**
+  (`docs/resume-prompt-erdalt.md`; record `docs/erdalt-diagnosis-plan.md`).
 - Number-free rebuttal text fixes (R4, R5, R15, R21) are step 4 (while the scale-up runs).
 - **Bounds on size: the mathematics is written; the user decides, with Opus, what enters the manuscript**
   (`theory-analysis.md`, parts G and H; session 76; next theory session: `docs/resume-prompt-theory.md`).
@@ -240,6 +243,16 @@ Two sessions were numbered 74: the head node on tigris, and the theory session. 
 own resume prompt: `docs/resume-prompt-experiments.md` (the cluster), `docs/resume-prompt-erdalt.md` (ERDALT),
 `docs/resume-prompt-theory.md` (theory), `docs/resume-prompt-writing.md` (the manuscript); `docs/resume-prompt.md` holds
 general work and indexes them.
+
+- **2026-11-18 (session 89, Opus, ERDALT track, tigris interactive job): plan, then the material explains most of
+  it.** A written plan (`docs/erdalt-diagnosis-plan.md`) proposed a ceiling: directions the attack vectors move both
+  ways, which L would have to discard. Refuted by a linear program (no cancelling combination among the 79,121 old or
+  78,715 new vectors; the raw scale broke the LP until the vectors were standardized, caught by a planted opposite).
+  Then: the new material (1141847 done, merged by `learned` 1141848, done) lowers 1,209 features instead of 2,367,
+  and PV, which is ERDALT with L zeroing the lowered features, goes from validation AUC 0.553 to 0.924 (test 0.930):
+  a zero-violation model at 0.92 exists. Decided with the user: no separate diagnosis; the old nine ERDALT models moved
+  to `superseded-s85/4-detectors/`; `erdalt` retrained first (1169769_[0]), the folds held (1169770_[1-8]) until its
+  course is read against 0.92. Scripts: `artifacts/scaleup/diag/erdalt/lineality/`.
 
 - **2026-11-18 (session 88, Opus, ERDALT track, tigris interactive job, one GH200 shard): slice diagnosis, stopped.**
   Six variants on a seeded 200,000-file training slice, old material (control, 2,432 vectors per step, + batch 16,
