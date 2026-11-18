@@ -59,7 +59,7 @@ pilot-scale numbers, and the scale-up (PLAN.md step 3; full record `docs/scaleup
 2. **MAB-Malware `ours` (1131288):** log `artifacts/scaleup/5-attacks/mab-malware/logs/mab-ours.log`; startup line;
    memory against the 128 GB estimate (`sstat -j 1131288_0.batch` while it runs). Expected ~5 h per detector at
    one process each (pilot timing). Its PV run attacks only 5 files.
-3. **The lost adaptive searches (1131285):** in job 1046139, shards 6 and 14 of every escape had 3 (monotone
+3. **The lost adaptive searches (1131285; the user's rule since ec2a5bd: one hour, then discarded and counted):** in job 1046139, shards 6 and 14 of every escape had 3 (monotone
    detector, file) searches with no result 45 min after the last other search finished (`map_watchdog`'s
    `stall_timeout`, 2700 s); `provexp.attacks.adaptive._lost` drops them, so the monotone rows miss those files
    silently. Other monotone searches there took at most ~20 min. The diagnostic reruns the two shards against the
@@ -70,14 +70,15 @@ pilot-scale numbers, and the scale-up (PLAN.md step 3; full record `docs/scaleup
    shards (delete their `adaptive.json`; the array task index is escape-major: shard k of escape e is 20e + k, so
    6, 14, 26, 34, 46, 54, 66, 74). If a worker died: find why first (LIEF's runaway rebuild, `docs/upstream-issues.md`
    §13, is a suspect). Discuss with the user before rerunning.
-4. **PV for the user** (status.md, *Waiting on the user*): at scale PV keeps 201 features (3,454 neutralized), has
-   test AUC 0.61, and at 1% FPR detects 5 of the 1,000 evaluation malware (leave-one-out folds 3-23); the pilot's PV
-   had 26.3% TPR. The user decides whether to report it as is or revisit PV's selection
-   (`4-detectors/pv-selection/report.json`, `logs/pv-selection.log`, `train-pv.log`).
-5. **Walltimes and resources** (propose, confirm with the user, then edit the headers): `toolkit` slowest 4 h 44 min,
-   70% of 36 cores, 44 GiB of 100 GB (suggest 8 h, 64 GB); `adaptive` slowest 74 min (inflated by the 45-min stall),
-   39% of its cores, 63 GiB of 100 GB (suggest 3 h, 80 GB; the low CPU use is the long tail of each shard). `iterated`:
-   3 h 24 min of 2 days, 282 GiB of 300 GB (lower its walltime; consider memory before any rerun).
+4. **PV: the user's decision on the proposal** (status.md, *Waiting on the user*, has the diagnosis: 894 broken
+   outputs and sample size). The user wants PV's behaviour understood, explained in the manuscript, and backed by an
+   appendix experiment. Proposed: filter the material to outputs still read as a PE with their imports (decide: all
+   learned defenses or PV only), retrain PV and its folds, re-attack them, and a curve of kept features and TPR
+   against the number of training malware (with and without the broken outputs). Scripts: `artifacts/scaleup/diag/
+   pv_scale.py`, `pv_broken.py`; selection `pipeline/6-results/pv_hole.py` (`--drop_import_loss` exists).
+5. **Resources:** headers changed in ec2a5bd (approved). `iterated`: 3 h 24 min of 2 days, 282 GiB of 300 GB (lower
+   its walltime; consider memory before any rerun). Toolkit task 9 (debug-entry escape) used 41% of its cores for
+   unknown reasons; if it recurs, `sstat` it while running.
 6. **Decision 12's follow-up:** the training files behind the derived table's new moves (a section rename lowering
    printable-string counts; header-field writes moving the relocation flags), for §4.3.2's last sentence and §5.1's
    *Checking results* (PLAN.md, open items).

@@ -173,15 +173,24 @@ in `docs/archive/status-log-2026-11-14-s63.md`, sessions 64-65 in `docs/archive/
 - **The scale-up's attacks without ERDALT (session 85).** `toolkit` 1046138 and `adaptive` 1046139 finished;
   MAB-Malware `ours` resubmitted as 1131288 (record `logs/submit-*-no-erdalt.txt`). Next:
   `docs/resume-prompt-experiments.md`.
-- **PV at scale is nearly blind (the user decides; session 85).** Trained on 201 features of the sums store (3,454
-  neutralized), it reaches test AUC 0.61 and validation AUC 0.55, and at 1% FPR detects 5 of the 1,000 evaluation
-  malware (the leave-one-out folds 3-23); at pilot scale it had 26.3% TPR. Its attack rows will rest on a handful of
-  files. Report as is, or revisit PV's selection at scale?
-- **Three adaptive searches lost (session 85).** In the plain search's shards 6 and 14 (and the same files in each
-  escape), 3 (monotone detector, file) searches had no result 45 min after the last other search finished; the
-  watchdog declared them lost and `_lost` drops them from the results, so the monotone rows miss 1-2 files per
-  shard. Diagnostic 1131285 reruns those shards against the monotone detectors with a 5 h stall limit: slow (then
-  raise `--stall_timeout`, rerun the 4 x 2 shards) or a dying worker (then find the cause).
+- **PV at scale is nearly blind; why, and what to do (the user decides; session 85).** PV keeps 201 features (pilot
+  ~1,490), test AUC 0.61, 5/1,000 evaluation malware at 1% FPR (pilot 26.3% TPR). Diagnostics
+  (`artifacts/scaleup/diag/pv-scale/{report,broken}.json`): (1) **broken outputs**: 894 of the 79,121 material
+  outputs (1.1%; mostly the two shift attacks, 358 each) are no longer read as a PE (`general:is_pe` falls) or lose
+  >= 10 import features; each "lowers" hundreds of features to zero, and PV drops any feature one output lowers.
+  Without them PV keeps 1,341. The material's "valid" means only that the attack ran; adversarial training, ERDALT and
+  `iterated` also train on these outputs. (2) **sample size**: kept falls with the training malware observed (100
+  files: ~1,450; 400: ~990; 1,000: ~640; 10,000: 201). (3) 1,347 of the 1,496 features no M_full edit can lower are
+  lowered by some output; without the broken outputs 217 (layout moves of the shift and LIEF-rebuilding attacks,
+  outside M_full). Not yet measured: PV's detection without the broken outputs (expect near the pilot's ~26%), and a
+  detection-against-sample-size curve. Proposed: material filtered to outputs still read as a PE with their imports
+  (the same rule for every learned defense, or PV only), PV and its folds retrained (minutes) and re-attacked, the
+  curve for an appendix.
+- **Three adaptive searches lost (session 85).** Shards 6 and 14 (every escape) had 3 (monotone detector, file)
+  searches with no result 45 min after the last other search finished; they were dropped silently. Decided (user):
+  a one-hour limit, the files discarded and reported (fine while fewer than 10); done in ec2a5bd (lost.parquet,
+  `discarded` in 6-results). Diagnostic 1131285 (5 h limit) tells whether they are slow or dying; the 8 affected shards
+  have no lost.parquet yet (write it from the diagnostic, or rerun those shards).
 - **ERDALT (the user, with the ERDALT track):** every model collapsed (validation AUC ~0.70; criterion never met).
   Leading hypothesis from the code: the violation penalty is a sum over all 79,121 vectors while BCE is a batch mean,
   so it dominates from the first step (~25x the pilot's vectors). Diagnose with short runs, then decide: report as
@@ -240,7 +249,12 @@ general work and indexes them.
   1131138: the 4 files, SA pulled on them, two runs identical, MAB tests pass); resubmitted as 1131288. Found: PV
   detects 5/1,000 (test AUC 0.61); 3 adaptive searches lost and dropped (diagnostic 1131285). MAB-Malware `zainab`
   read: at Zainab et al.'s setting (0.1% FPR, no byte cap) the unconstrained detector detects 867/1,000 and the attack
-  evades 455 (52%; they report 83%; Appendix D's sentence still has the pilot's numbers).
+  evades 455 (52%; they report 83%; Appendix D's sentence still has the pilot's numbers). Continued: the user
+  approved right-sized headers and a one-hour limit with lost runs discarded and reported (ec2a5bd: toolkit 8 h,
+  64 GB; adaptive 16 cores, 3 h, 64 GB, since a shard's longest search outlasted its work over 36 cores). Toolkit's
+  low CPU: the leave-one-out folds (5-23 files on 36 cores) and the debug-entry escape task (41%, cause not found;
+  shared a 144-core node with two other toolkit tasks). PV's collapse traced to broken outputs and sample size
+  (*Waiting on the user*). MAB `ours` 1131288 running (56 GB at 20 min).
 
 - **2026-11-17 (session 82, Opus, scale-up track): the file store, ERDALT's collapse, the attacks without ERDALT.**
   `iterated` finished (round 2: 972 detected, 515 evaded; 282 GiB of 300 at peak). Its rounds spent ~20 min each
