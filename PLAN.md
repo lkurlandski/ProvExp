@@ -63,10 +63,12 @@ records of the §5 reviews, the table remake and the ERDALT check, is in
    `iterated-2`) and MAB-Malware `zainab`. Session 81 fixed the thread overload behind two failures and parallelized
    the adaptive search's setup (item (15)). Session 82 (item (16)): the file store at one fixed location with no
    fallback; ERDALT's collapse set apart as its own track; `toolkit`, `adaptive` and MAB-Malware `ours` resubmitted
-   without ERDALT. Session 85: `toolkit` and `adaptive` done; MAB-Malware `ours` patched for zero-section files and
-   resubmitted; open: 3 lost adaptive searches (diagnostic queued) and PV's 5/1,000 detection at scale (the user's
-   call). Session 85 continued (item (17)): PV's collapse traced to broken outputs (an upstream shift bug among them)
-   and sample size; one validity rule for the paper to be decided; PV's sample-size experiment designed and deferred.
+   without ERDALT. Session 85 (item (17)): MAB-Malware's zero-section crash patched; a lost run is discarded after an
+   hour and reported; every header right-sized; PV's collapse traced to broken outputs (secml-malware's shift bug,
+   patched) and sample size; one validity rule for the whole paper (an output counts only if pefile and LIEF both read
+   it and neither loses a section or import); the learned defenses and every attack rerunning
+   (`logs/submit-20261118-s85.txt`); PV's sample-size experiment designed and deferred; ERDALT to be retrained on the
+   new material.
    **Next:** the experiments track (`docs/resume-prompt-experiments.md`) and the
    ERDALT track (`docs/resume-prompt-erdalt.md`, which then runs ERDALT's attacks and `6-results`); then read it all
    (step 5).

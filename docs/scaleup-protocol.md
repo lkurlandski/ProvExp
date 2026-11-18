@@ -274,4 +274,13 @@ reading its results (PLAN.md step 5).
    Because the fix changes nothing where upstream worked, only the broken (attack, file) pairs need re-running. The 45
    invalid-e_lfanew outputs come from files whose PE header overlaps the DOS header (e_lfanew 0x4-0x10, below 0x40):
    the DOS extension inserts bytes inside the DOS header, in front of the e_lfanew field itself; such a file has no
-   DOS stub to extend (not applicable, ~25 of 10,000 training malware). Not yet decided by the user.
+   DOS stub to extend (not applicable, ~25 of 10,000 training malware). *Decided and done (user):* the shift patched
+   (5170936; end to end, job 1140273: byte-identical to the material on 30 normal files x 4 attacks, every output of 30
+   previously broken files parses); the DOS-header attacks not applicable to those files (`dos_check.parquet`); **one
+   validity rule for the paper** (b87fec6, `provexp.attacks.validity`): an output counts as an evasion, as a defense's
+   training example, and as evidence that a feature can be lowered only if pefile and LIEF both read it and neither
+   loses a section, an imported DLL or an imported function the original had; a start file a parser does not read is
+   not applicable to any attack (`unreadable.parquet`); the reason names the parser, and "pefile only" rejections are
+   the extractor's quirks to fix at the source (user: a misread file must not propagate). The soundness check still
+   counts every edit. Checked on stored outputs (job 1141836): all 785 flagged rejected; 42 of 2,000 random (38 both
+   parsers, 4 pefile only). Rerun from the catalogue check and the material on (`logs/submit-20261118-s85.txt`).

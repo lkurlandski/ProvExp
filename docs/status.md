@@ -33,8 +33,11 @@ in `docs/archive/status-log-2026-11-14-s63.md`, sessions 64-65 in `docs/archive/
   apart from it (`toolkit` 1046138, `adaptive` 1046139, MAB-Malware `ours` 1046140; aaefd75); ERDALT's attacks and
   `6-results` are held. PLAN.md step 3 (16). **Session 85:** `toolkit` (19 tasks) and `adaptive` (81) finished;
   MAB-Malware `ours` crashed on two zero-section malware (upstream bug, patched in 455f121) and was resubmitted
-  (1131288). Open: 3 adaptive searches lost and silently dropped (diagnostic 1131285), and **PV detects 5 of the
-  1,000 evaluation malware** (test AUC 0.61).
+  (1131288). Then PV's collapse (5/1,000 detected) was traced to 894 broken outputs in the defenses' material (an
+  upstream shift bug among them) and to PV's sample size; the shift bug is patched, the DOS-header attacks skip files
+  they cannot extend, and one validity rule now decides for the whole paper whether an output counts (pefile and LIEF
+  both read it, no section or import lost; b87fec6). Every learned defense and every attack are being rerun
+  (`logs/submit-20261118-s85.txt`; PLAN.md step 3 (17)).
 - **Framework (§2-3):** rewritten; the user is reasonably satisfied. Open: the user's holistic read of Sound
   Directions after round 4 (finetuning only). **Session 74 (the theory session):** proofs audited (correct; seven
   small corrections applied); two additions to §3.3, each approved after a brief look and not yet read closely by the
@@ -170,52 +173,18 @@ in `docs/archive/status-log-2026-11-14-s63.md`, sessions 64-65 in `docs/archive/
 
 ## Waiting on the user
 
-- **Session 85's reruns are submitted** (`logs/submit-20261118-s85.txt`): one validity rule for the paper (b87fec6:
-  `provexp.attacks.validity`, an output counts only if pefile and LIEF both read it and neither loses a section or an
-  import; unreadable start files not applicable), the shift patch (5170936), the DOS-header check. Chain:
-  catalogue-checks 1141844 -> trial 1141845 -> train-trial 1141846; material 1141847 (10 shards) -> learned GBDTs 1141848
-  -> iterated 1141849; then toolkit 1141850, adaptive 1141851, MAB `ours` 1141852; MAB `expert`/`zainab` 1141853.
-  Old outputs in `artifacts/scaleup/superseded-s85/`. ERDALT (trained on the old material) and `6-results` held.
-
-- **The scale-up's attacks without ERDALT (session 85).** `toolkit` 1046138 and `adaptive` 1046139 finished;
-  MAB-Malware `ours` resubmitted as 1131288 (record `logs/submit-*-no-erdalt.txt`). Next:
-  `docs/resume-prompt-experiments.md`.
-- **PV at scale is nearly blind; why, and what to do (the user decides; session 85).** PV keeps 201 features (pilot
-  ~1,490), test AUC 0.61, 5/1,000 evaluation malware at 1% FPR (pilot 26.3% TPR). Diagnostics
-  (`artifacts/scaleup/diag/pv-scale/{report,broken}.json`): (1) **broken outputs**: 894 of the 79,121 material
-  outputs (1.1%; mostly the two shift attacks, 358 each) are no longer read as a PE (`general:is_pe` falls) or lose
-  >= 10 import features; each "lowers" hundreds of features to zero, and PV drops any feature one output lowers.
-  Without them PV keeps 1,341. The material's "valid" means only that the attack ran; adversarial training, ERDALT and
-  `iterated` also train on these outputs. (2) **sample size**: kept falls with the training malware observed (100
-  files: ~1,450; 400: ~990; 1,000: ~640; 10,000: 201). (3) 1,347 of the 1,496 features no M_full edit can lower are
-  lowered by some output; without the broken outputs 217 (layout moves of the shift and LIEF-rebuilding attacks,
-  outside M_full). Not yet measured: PV's detection without the broken outputs (expect near the pilot's ~26%), and a
-  detection-against-sample-size curve. Proposed: material filtered to outputs still read as a PE with their imports
-  (the same rule for every learned defense, or PV only), PV and its folds retrained (minutes) and re-attacked, the
-  curve for an appendix.
-  **Why the outputs break (session 85, `diag/pv-scale/not_pe_why.parquet`, `diag-imports-lost_1136394.out`):**
-  (a) 716 shift outputs (358 files, both shift attacks): the file has a section with file offset 0 (e.g. `.textbss`
-  first, Visual C++ debug builds); secml-malware's shift inserts its padding at the first section's offset, here 0, so
-  in front of the MZ header; neither pefile nor LIEF parses the result (an upstream bug; the published attack is
-  functionality-preserving only for files laid out as it assumes). (b) 45 DOS-extend/format-exploit outputs with an
-  invalid e_lfanew. (c) 133 outputs still parse but lose >= 10 import features: some genuinely broken (both parsers
-  lose the imports), some pefile-only losses LIEF does not share (pefile's 8,192-import cap on GAMMA's injected imports;
-  stricter import parsing), a few fragile originals recurring across attacks. The evaluation counts an output only if
-  LIEF parses it, so (a)-(b) never counted as evasions; (c) may have. The material kept any output whose attack ran.
-  User (session 85): broken outputs are inert and must not mark features non-robust; then a rigorous sample-size
-  analysis for an appendix.
-  **Done (5170936, user's decision):** the shift bug patched in secml-malware (byte-identical where upstream worked,
-  120/120; broken files now parse); the DOS-header attacks not applicable to files with e_lfanew < 0x40
-  (`dos_check.parquet`). **Waiting on the user:** the validity rule (one rule for evasion, defense training and
-  lowering evidence; Claude's recommendation in session 85's last answer: an output counts only if LIEF and pefile both
-  read it and neither loses a structure the original had; pefile-only failures logged as extractor quirks to patch).
-  Reruns follow it: the material's shift and format-exploit runs on the 358 files, the toolkit's on the 20 evaluation
-  files, then every learned defense retrained and re-attacked.
-- **Three adaptive searches lost (session 85).** Shards 6 and 14 (every escape) had 3 (monotone detector, file)
-  searches with no result 45 min after the last other search finished; they were dropped silently. Decided (user):
-  a one-hour limit, the files discarded and reported (fine while fewer than 10); done in ec2a5bd (lost.parquet,
-  `discarded` in 6-results). Diagnostic 1131285 (5 h limit) tells whether they are slow or dying; the 8 affected shards
-  have no lost.parquet yet (write it from the diagnostic, or rerun those shards).
+- **The scale-up's reruns after session 85's fixes are running** (`logs/submit-20261118-s85.txt`; next:
+  `docs/resume-prompt-experiments.md`). Chain: catalogue-checks 1141844 -> trial 1141845 -> train-trial 1141846;
+  material 1141847 (10 shards) -> learned GBDTs 1141848 -> iterated 1141849; then toolkit 1141850, adaptive 1141851,
+  MAB `ours` 1141852; MAB `expert`/`zainab` 1141853. Expected ~10-12 h. Old outputs in
+  `artifacts/scaleup/superseded-s85/`. Then read the results with the user; `6-results` waits on ERDALT.
+- **ERDALT must be retrained on the new material** before its attacks (its nine models used the old one, with 894
+  broken outputs); the ERDALT track decides how (collapse diagnosis first).
+- **Deferred, approved by the user (session 85): PV's sample-size experiment** for an appendix explaining why PV works
+  less well than prior work suggests (design in `docs/scaleup-protocol.md`, item (17)). Run after the reruns.
+- **Extractor quirks the validity rule exposes** ("pefile only" rejections: ~0.2% of outputs in session 85's sample,
+  e.g. pefile's 8,192-import cap): list them from the reruns (`invalid.parquet`, `invalid_pefile_only`) and decide with
+  the user which to patch in the extractor (CLAUDE.md: no result may rest on a quirk).
 - **ERDALT (the user, with the ERDALT track):** every model collapsed (validation AUC ~0.70; criterion never met).
   Leading hypothesis from the code: the violation penalty is a sum over all 79,121 vectors while BCE is a batch mean,
   so it dominates from the first step (~25x the pilot's vectors). Diagnose with short runs, then decide: report as
@@ -279,7 +248,17 @@ general work and indexes them.
   64 GB; adaptive 16 cores, 3 h, 64 GB, since a shard's longest search outlasted its work over 36 cores). Toolkit's
   low CPU: the leave-one-out folds (5-23 files on 36 cores) and the debug-entry escape task (41%, cause not found;
   shared a 144-core node with two other toolkit tasks). PV's collapse traced to broken outputs and sample size
-  (*Waiting on the user*). MAB `ours` 1131288 running (56 GB at 20 min).
+  (*Waiting on the user*). Then, with the user: the lost searches were slow, not dying (79, 61, 60 min, none
+  evaded); `hand-table` reads the file store over pools (108 min -> 8 min, reports identical, dea644c); the broken
+  outputs traced (secml-malware's shift writing in front of the MZ header on 358 training / 20 evaluation files whose
+  first section has offset 0; the DOS extension on files with e_lfanew < 0x40; import tables lost); the shift patched
+  (5170936; byte-identical where upstream worked, 120/120), the DOS attacks not applicable to those files; one validity
+  rule for the paper (b87fec6, `provexp.attacks.validity`; on stored outputs all 785 flagged rejected, 42 of 2,000
+  random; full suite 1,770 passed); PV's sample-size experiment designed and deferred (protocol item (17)). MAB `ours`
+  1131288 cancelled (old rule); the affected steps rerun (`logs/submit-20261118-s85.txt`), old outputs in
+  `artifacts/scaleup/superseded-s85/`. Claude's lapse: a diagnostic without a main guard spun 23 min unnoticed until
+  the user asked; the memory now covers it. Settings: `/shared/rc/admalware/provexp` always readable and writable
+  (`.claude/settings.local.json`).
 
 - **2026-11-17 (session 82, Opus, scale-up track): the file store, ERDALT's collapse, the attacks without ERDALT.**
   `iterated` finished (round 2: 972 detected, 515 evaded; 282 GiB of 300 at peak). Its rounds spent ~20 min each

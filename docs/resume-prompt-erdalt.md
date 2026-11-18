@@ -29,6 +29,15 @@ post-processed vectors) fell from ~1.3 million at epoch 0 to 16-42 at best; none
 (< 5), so the code keeps the epoch with the fewest violations (`src/provexp/models/erdalt.py`, `train_erdalt`), an AUC
 ~0.70 model. The GBDTs on the same data reach 0.998; the pilot's ERDALT reached 0.883 (Gimenez et al. report 93.0%).
 
+**Session 85 (experiments track) changed ERDALT's training data.** The defenses' material held 894 broken outputs
+(1.1%; secml-malware's shift writing in front of the MZ header, DOS extensions on files with e_lfanew < 0x40, lost
+import tables); PV's collapse traced to them. Now one validity rule decides for the whole paper whether an output
+counts (`provexp.attacks.validity`: pefile and LIEF both read it, neither loses a section or an import; b87fec6), the
+shift is patched (5170936), and the material is being rebuilt (job 1141847, `logs/submit-20261118-s85.txt`). The nine
+ERDALT models above were trained on the old material, so **every ERDALT model must be retrained on the new material**
+(`4-detectors/material`, once 1141847 and its merge are done) whatever the diagnosis decides; the diagnosis runs may
+use either material, but say which. ERDALT's attacks must also run under the new rule (the attack code has it).
+
 ## 3. What is ours and what is theirs (checked in session 82)
 
 `src/provexp/models/erdalt.py` ports their `train_model.py` ("M_monotonic"), following the paper where the two differ.
@@ -70,7 +79,7 @@ penalty steps per epoch at 16x the data per step), the monotone output layer, th
    specified with the collapse as a finding about the method at scale; retrain with the identified fix (a deviation
    to state in Appendix D); or retrain matching their scale (vectors per step). Keep R19's other asks in view: report
    the share of training and test perturbation vectors with L(delta) < 0; the donor-overlap control.
-4. **Retrain only with the user's go-ahead** (~30 h per model on 9 GPUs at the current setup; `pipeline/4-detectors/
+4. **Retrain only with the user's go-ahead, on the new material** (~30 h per model on 9 GPUs at the current setup; `pipeline/4-detectors/
    learned/run.sh` with `PART=erdalt`, an array of 9 on GPU nodes as in `pipeline/submit.sh`).
 5. **Then ERDALT's attacks, which were held for this** (session 82; the other detectors' attacks run without it):
    `toolkit` with `DETECTORS=erdalt PARTS="main loo donors" LOO=erdalt` (10 jobs: its main row, eight folds, the
