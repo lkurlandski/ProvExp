@@ -10,9 +10,11 @@ import torch
 
 from provexp.models.erdalt import ERDALT
 from provexp.models.erdalt import ERDALTDetector
+from provexp.models.erdalt import fit_quantile_scale
 from provexp.models.erdalt import load_detector
 from provexp.models.erdalt import num_violations
 from provexp.models.erdalt import project_monotone
+from provexp.models.erdalt import pv_mask
 from provexp.models.erdalt import save_erdalt
 from provexp.models.erdalt import train_erdalt
 from provexp.models.mlp import Standardize
@@ -99,6 +101,71 @@ class TestTraining:
         assert summary["met_criterion"]
         assert num_violations(model, torch.from_numpy(D)) < 5
         assert summary["vl_roc"] > 0.6
+
+
+class TestDiagnosisOptions:
+
+    @staticmethod
+    def _data() -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+        rng = np.random.default_rng(0)
+        X = rng.normal(size=(256, 6)).astype(np.float32)
+        y = (X[:, 2] + X[:, 3] > 0).astype(np.int64)
+        D = np.abs(rng.normal(size=(30, 6))).astype(np.float32)
+        D[:, 0] *= -1.0
+        D[:, 1] *= rng.choice([-1.0, 1.0], size=30).astype(np.float32)
+        return X, y, D
+
+    def test_pv_mask_keeps_the_never_lowered_features(self) -> None:
+        _, _, D = self._data()
+        assert pv_mask(D).tolist() == [False, False, True, True, True, True]
+
+    def test_frozen_pv_post_has_no_violation_and_does_not_move(self) -> None:
+        X, y, D = self._data()
+        model, summary = train_erdalt(X, y, X, y, D, device=torch.device("cpu"), hidden=8, batch_size=64, epochs=3,
+                                      learning_rate=1e-2, post_init="pv", freeze_post=True)
+        expected = torch.diag(torch.tensor([0.0, 0.0, 1.0, 1.0, 1.0, 1.0]))
+        assert torch.equal(model.layer1.weight.detach(), expected)
+        assert all(h["violations"] == 0 for h in summary["history"])
+        assert summary["met_criterion"] and summary["post_init"] == "pv" and summary["freeze_post"]
+
+    def test_pv_init_trains_l(self) -> None:
+        X, y, D = self._data()
+        model, _ = train_erdalt(X, y, X, y, D, device=torch.device("cpu"), hidden=8, batch_size=64, epochs=2,
+                                learning_rate=1e-2, post_init="pv")
+        assert model.layer1.weight.requires_grad
+        assert not torch.equal(model.layer1.weight.detach(), torch.diag(torch.tensor([0.0, 0.0, 1, 1, 1, 1])))
+
+    def test_subsample_logs_violations_over_all_vectors(self) -> None:
+        X, y, D = self._data()
+        _, summary = train_erdalt(X, y, X, y, D, device=torch.device("cpu"), hidden=8, batch_size=64, epochs=2,
+                                  deltas_subsample=10)
+        assert summary["num_deltas"] == 10 and summary["num_deltas_all"] == 30
+        assert all(h["violations_all"] >= h["violations"] for h in summary["history"])
+
+    @pytest.mark.parametrize("bad", [0, 31])
+    def test_subsample_out_of_range_is_an_error(self, bad: int) -> None:
+        X, y, D = self._data()
+        with pytest.raises(ValueError):
+            train_erdalt(X, y, X, y, D, device=torch.device("cpu"), epochs=1, deltas_subsample=bad)
+
+    def test_quantile_scale_is_the_larger_of_std_and_quantile(self) -> None:
+        rng = np.random.default_rng(0)
+        X = rng.normal(size=(10_000, 3)).astype(np.float32)
+        X[:300, 0] = 50.0  # a fat tail: the 0.99 quantile of |x - mean| (~48) exceeds the std (~8.5)
+        X[0, 1] = 1e6  # one huge outlier: the std (~1e4) exceeds the quantile
+        X[:, 2] = 0.0
+        X[:5, 2] = 1.0  # sparse: the quantile is |mean|, far below the std
+        std = fit_quantile_scale(X, q=0.99)
+        dev = np.abs(X.astype(np.float64) - X.astype(np.float64).mean(axis=0))
+        expected = np.maximum(np.quantile(dev, 0.99, axis=0), X.astype(np.float64).std(axis=0))
+        assert np.allclose(std.std.numpy(), expected, rtol=1e-4)  # type: ignore[operator]
+        assert float(std.std[0]) > 3 * float(X[:, 0].std())  # type: ignore[index]
+
+    def test_quantile_scale_trains(self) -> None:
+        X, y, D = self._data()
+        _, summary = train_erdalt(X, y, X, y, D, device=torch.device("cpu"), hidden=8, batch_size=64, epochs=1,
+                                  input_scale="quantile")
+        assert summary["input_scale"] == "quantile"
 
 
 ################################################################################

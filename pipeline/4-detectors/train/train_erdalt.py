@@ -84,6 +84,13 @@ def main() -> None:
     parser.add_argument("--free_output", action="store_true", help="Leave the output layer unconstrained (their code).")
     parser.add_argument("--no_lr_scheduler", action="store_true", help="Keep the learning rate fixed.")
     parser.add_argument("--penalty_scale", type=float, default=1.0, help="A factor on the penalty weight w2 (diagnosis).")
+    parser.add_argument("--post_init", choices=("identity", "pv"), default="identity",
+                        help="L's start: the identity (theirs) or PV's mask, zero on every lowered feature (diagnosis).")
+    parser.add_argument("--freeze_post", action="store_true", help="Keep L at its start; train only the network.")
+    parser.add_argument("--deltas_subsample", type=int, default=None,
+                        help="Train on a fixed seeded draw of this many perturbation vectors (diagnosis).")
+    parser.add_argument("--input_scale", choices=("std", "quantile"), default="std",
+                        help="Divide by the std (theirs) or a high quantile of |x - mean| (diagnosis).")
     args = parser.parse_args()
     if args.deltas is None and args.adv_dir is None:
         raise ValueError("Give --deltas, --adv_dir, or both.")
@@ -133,7 +140,9 @@ def main() -> None:
                                   batch_size=args.batch_size, epochs=args.epochs,
                                   deltas_per_step=args.deltas_per_step, schedule_epochs=args.schedule_epochs,
                                   monotone_output=not args.free_output, lr_scheduler=not args.no_lr_scheduler,
-                                  penalty_scale=args.penalty_scale)
+                                  penalty_scale=args.penalty_scale, post_init=args.post_init,
+                                  freeze_post=args.freeze_post, deltas_subsample=args.deltas_subsample,
+                                  input_scale=args.input_scale)
     def _logits(X: npt.NDArray[np.float32]) -> npt.NDArray[np.float64]:
         with torch.no_grad():
             Xd = torch.from_numpy(X).to(device)

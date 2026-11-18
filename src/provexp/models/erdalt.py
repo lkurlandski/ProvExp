@@ -49,6 +49,8 @@ __all__ = [
     "load_erdalt",
     "is_erdalt",
     "fit_temperature",
+    "fit_quantile_scale",
+    "pv_mask",
     "load_detector",
 ]
 
@@ -117,6 +119,32 @@ def num_violations(model: ERDALT, deltas: Tensor, batch_size: int = 1024) -> int
 # Training
 ################################################################################
 
+def fit_quantile_scale(X: npt.NDArray[np.float32], q: float = 0.9999, rows: int = 200_000, seed: int = 0) -> Standardize:
+    """
+    The training mean, and per feature the larger of the standard deviation and the `q` quantile of |x - mean| (on a
+    seeded draw of at most `rows` rows). A diagnosis option: the map stays linear, so ERDALT's guarantee holds, but
+    on heavy-tailed features nearly every standardized value lands within +-1 instead of reaching |z| ~ 1e5. Never
+    below the std, so no value grows: on a sparse feature the quantile can be |mean|, far below the std.
+    """
+    if not 0 < q <= 1:
+        raise ValueError(f"q must be in (0, 1], got {q}.")
+    base = fit_standardize(X)
+    mean = base.mean.double().numpy()  # type: ignore[operator]
+    std = base.std.double().numpy()  # type: ignore[operator]
+    idx = np.arange(X.shape[0])
+    if X.shape[0] > rows:
+        idx = np.sort(np.random.default_rng(seed).choice(X.shape[0], rows, replace=False))
+    dev = np.abs(np.asarray(X[idx], dtype=np.float64) - mean).astype(np.float32)  # NOTE: float32 halves the copy
+    scale = np.quantile(dev, q, axis=0).astype(np.float64)
+    scale = np.maximum(scale, std)
+    return Standardize(torch.from_numpy(mean), torch.from_numpy(scale))
+
+
+def pv_mask(deltas: npt.NDArray[np.float32]) -> npt.NDArray[np.bool_]:
+    """The features no perturbation vector lowers (PV's selection): L = diag(mask) maps every vector to >= 0."""
+    return np.asarray((deltas >= 0).all(axis=0), dtype=np.bool_)
+
+
 @torch.no_grad()
 def _logits(model: nn.Module, X: Tensor, batch_size: int = 8192) -> Tensor:
     model.eval()
@@ -142,6 +170,10 @@ def train_erdalt(
     monotone_output: bool = True,
     lr_scheduler: bool = True,
     penalty_scale: float = 1.0,
+    post_init: str = "identity",
+    freeze_post: bool = False,
+    deltas_subsample: Optional[int] = None,
+    input_scale: str = "std",
 ) -> tuple[ERDALT, dict[str, Any]]:
     """
     Train ERDALT and keep the epoch with the best validation ROC-AUC among those with < `max_violations` violations.
@@ -158,6 +190,12 @@ def train_erdalt(
         monotone_output: Project the output layer to be monotone too (ours); False leaves it free (their code).
         lr_scheduler: Halve the learning rate after 20 epochs without a better validation ROC-AUC (theirs).
         penalty_scale: A factor on the violation penalty's weight w2 throughout (1.0: theirs; diagnosis runs).
+        post_init: "identity" (theirs) or "pv": L starts as diag(PV's mask over all of `deltas`), zero on every
+            feature some vector lowers, so that it starts with no violation (diagnosis).
+        freeze_post: Keep L at its initial value; only the network above it trains (diagnosis).
+        deltas_subsample: Train on a fixed seeded draw of this many of `deltas` (diagnosis: fewer observed vectors);
+            the violations over all of them are logged too (`violations_all`), the ones the model never saw.
+        input_scale: "std" (theirs) or "quantile" (`fit_quantile_scale`; diagnosis).
 
     Returns:
         The model (eval mode, on `device`) and a training summary (selected epoch, its ROC-AUC and violations, and
@@ -165,19 +203,39 @@ def train_erdalt(
     """
     if penalty_scale <= 0:
         raise ValueError(f"penalty_scale must be positive, got {penalty_scale}.")
+    if post_init not in ("identity", "pv"):
+        raise ValueError(f"post_init must be 'identity' or 'pv', got {post_init!r}.")
+    if input_scale not in ("std", "quantile"):
+        raise ValueError(f"input_scale must be 'std' or 'quantile', got {input_scale!r}.")
+    if deltas_subsample is not None and not 0 < deltas_subsample <= deltas.shape[0]:
+        raise ValueError(f"deltas_subsample must be in [1, {deltas.shape[0]}], got {deltas_subsample}.")
     if deltas.ndim != 2 or deltas.shape[1] != X_tr.shape[1]:
         raise ValueError(f"deltas has shape {deltas.shape}, expected (*, {X_tr.shape[1]}).")
     torch.manual_seed(seed)
     generator = torch.Generator().manual_seed(seed)
 
-    model = ERDALT(fit_standardize(X_tr), hidden, monotone_output).to(device)
+    standardize = fit_standardize(X_tr) if input_scale == "std" else fit_quantile_scale(X_tr, seed=seed)
+    model = ERDALT(standardize, hidden, monotone_output).to(device)
+    if post_init == "pv":
+        keep = torch.from_numpy(pv_mask(deltas).astype(np.float32)).to(device)
+        with torch.no_grad():
+            model.layer1.weight.copy_(torch.diag(keep))
+        print(f"L starts at PV's mask: {int(keep.sum())} of {keep.shape[0]} features kept.", flush=True)
+    if freeze_post:
+        model.layer1.weight.requires_grad_(False)
+    D_all: Optional[Tensor] = None
+    if deltas_subsample is not None and deltas_subsample < deltas.shape[0]:
+        D_all = torch.from_numpy(np.ascontiguousarray(deltas, dtype=np.float32)).to(device)
+        rows = np.sort(np.random.default_rng(seed).choice(deltas.shape[0], deltas_subsample, replace=False))
+        deltas = deltas[rows]
+        print(f"Training on a seeded {deltas.shape[0]} of the {D_all.shape[0]} perturbation vectors.", flush=True)
     Xtr = torch.from_numpy(np.ascontiguousarray(X_tr)).to(device)
     ytr = torch.from_numpy(y_tr.astype(np.float32)).to(device)
     Xvl = torch.from_numpy(np.ascontiguousarray(X_vl)).to(device)
     D = torch.from_numpy(np.ascontiguousarray(deltas, dtype=np.float32)).to(device)
     mask = 1.0 - torch.eye(Xtr.shape[1], device=device)
 
-    optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
+    optimizer = torch.optim.Adam([p for p in model.parameters() if p.requires_grad], lr=learning_rate)
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode="max", factor=0.5, patience=20)
     n_schedule = epochs if schedule_epochs is None else schedule_epochs
     if n_schedule < epochs:
@@ -211,9 +269,14 @@ def train_erdalt(
         lr = float(optimizer.param_groups[0]["lr"])
         if lr_scheduler:
             scheduler.step(roc)
-        history.append({"epoch": epoch, "vl_roc": roc, "violations": viol, "l1": float(l1.detach()),
-                        "l2": float(l2.detach()), "l3": float(l3.detach()), "lr": lr})
-        print(f"epoch={epoch} vl_roc={roc:.5f} violations={viol} l1={float(l1.detach()):.4g} "
+        record: dict[str, Any] = {"epoch": epoch, "vl_roc": roc, "violations": viol, "l1": float(l1.detach()),
+                                  "l2": float(l2.detach()), "l3": float(l3.detach()), "lr": lr}
+        extra = ""
+        if D_all is not None:
+            record["violations_all"] = num_violations(model, D_all)
+            extra = f" violations_all={record['violations_all']}"
+        history.append(record)
+        print(f"epoch={epoch} vl_roc={roc:.5f} violations={viol}{extra} l1={float(l1.detach()):.4g} "
               f"l2={float(l2.detach()):.4g} l3={float(l3.detach()):.4g} lr={lr:.3g}", flush=True)
         key = (viol < max_violations, roc if viol < max_violations else -viol, -viol, epoch)
         if best is None or key[:3] > best[:3]:
@@ -227,7 +290,9 @@ def train_erdalt(
                "met_criterion": best[0], "num_deltas": int(D.shape[0]), "batch_size": batch_size, "epochs": epochs,
                "learning_rate": learning_rate, "hidden": hidden, "max_violations": max_violations,
                "deltas_per_step": deltas_per_step, "schedule_epochs": n_schedule, "monotone_output": monotone_output,
-               "lr_scheduler": lr_scheduler, "penalty_scale": penalty_scale,
+               "lr_scheduler": lr_scheduler, "penalty_scale": penalty_scale, "post_init": post_init,
+               "freeze_post": freeze_post, "deltas_subsample": deltas_subsample, "input_scale": input_scale,
+               "num_deltas_all": int(D_all.shape[0]) if D_all is not None else int(D.shape[0]),
                "history": history}
     if not best[0]:
         print(f"WARNING: no epoch has < {max_violations} violations; kept epoch {best[3]} (fewest).", flush=True)
