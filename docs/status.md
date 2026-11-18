@@ -197,6 +197,13 @@ in `docs/archive/status-log-2026-11-14-s63.md`, sessions 64-65 in `docs/archive/
   LIEF parses it, so (a)-(b) never counted as evasions; (c) may have. The material kept any output whose attack ran.
   User (session 85): broken outputs are inert and must not mark features non-robust; then a rigorous sample-size
   analysis for an appendix.
+  **Done (5170936, user's decision):** the shift bug patched in secml-malware (byte-identical where upstream worked,
+  120/120; broken files now parse); the DOS-header attacks not applicable to files with e_lfanew < 0x40
+  (`dos_check.parquet`). **Waiting on the user:** the validity rule (one rule for evasion, defense training and
+  lowering evidence; Claude's recommendation in session 85's last answer: an output counts only if LIEF and pefile both
+  read it and neither loses a structure the original had; pefile-only failures logged as extractor quirks to patch).
+  Reruns follow it: the material's shift and format-exploit runs on the 358 files, the toolkit's on the 20 evaluation
+  files, then every learned defense retrained and re-attacked.
 - **Three adaptive searches lost (session 85).** Shards 6 and 14 (every escape) had 3 (monotone detector, file)
   searches with no result 45 min after the last other search finished; they were dropped silently. Decided (user):
   a one-hour limit, the files discarded and reported (fine while fewer than 10); done in ec2a5bd (lost.parquet,
