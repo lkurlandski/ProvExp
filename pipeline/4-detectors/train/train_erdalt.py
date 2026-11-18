@@ -75,6 +75,14 @@ def main() -> None:
     parser.add_argument("--epochs", type=int, default=310)
     parser.add_argument("--limit", type=int, default=None, help="At most this many samples per split (smoke tests).")
     parser.add_argument("--complete_only", action="store_true", help="Only files below 4,000,000 bytes, in every split.")
+    parser.add_argument("--train_subsample", type=int, default=None,
+                        help="Train on a seeded random sample of this many training files (diagnosis runs).")
+    parser.add_argument("--deltas_per_step", type=int, default=None, help="Perturbation vectors drawn per step for "
+                        "the penalty (default: all; their code: at most 2,432).")
+    parser.add_argument("--schedule_epochs", type=int, default=None,
+                        help="Length of the loss weights' schedule (default --epochs).")
+    parser.add_argument("--free_output", action="store_true", help="Leave the output layer unconstrained (their code).")
+    parser.add_argument("--no_lr_scheduler", action="store_true", help="Keep the learning rate fixed.")
     args = parser.parse_args()
     if args.deltas is None and args.adv_dir is None:
         raise ValueError("Give --deltas, --adv_dir, or both.")
@@ -114,10 +122,16 @@ def main() -> None:
         data[split] = (np.ascontiguousarray(np.asarray(X)[:, keep]), meta["label"].to_numpy().astype(np.int64), meta)
         print(f"Loaded {split}: {data[split][0].shape}", flush=True)
     (X_tr, y_tr, _), (X_vl, y_vl, meta_vl), (X_ts, y_ts, meta_ts) = data["tr"], data["vl"], data["ts"]
+    if args.train_subsample is not None and args.train_subsample < X_tr.shape[0]:
+        rows = np.sort(np.random.default_rng(args.seed).choice(X_tr.shape[0], args.train_subsample, replace=False))
+        X_tr, y_tr = np.ascontiguousarray(X_tr[rows]), y_tr[rows]
+        print(f"Training on a random {X_tr.shape[0]} of the training files.", flush=True)
 
     device = torch.device(args.device)
     model, summary = train_erdalt(X_tr, y_tr, X_vl, y_vl, D, seed=args.seed, device=device,
-                                  batch_size=args.batch_size, epochs=args.epochs)
+                                  batch_size=args.batch_size, epochs=args.epochs,
+                                  deltas_per_step=args.deltas_per_step, schedule_epochs=args.schedule_epochs,
+                                  monotone_output=not args.free_output, lr_scheduler=not args.no_lr_scheduler)
     def _logits(X: npt.NDArray[np.float32]) -> npt.NDArray[np.float64]:
         with torch.no_grad():
             Xd = torch.from_numpy(X).to(device)
@@ -141,6 +155,7 @@ def main() -> None:
         "neutralize": args.neutralize.resolve().as_posix() if args.neutralize else None,
         "num_features": len(names),
         "num_samples": {split: int(d[0].shape[0]) for split, d in data.items()},
+        "train_subsample": args.train_subsample,
         "attacks": args.attacks,
         "deltas": sources,
         "training": summary,

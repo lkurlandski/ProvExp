@@ -65,8 +65,9 @@ class ERDALT(nn.Module):
     the post-processed perturbation vector L(delta / std), which is post(x + delta) - post(x).
     """
 
-    def __init__(self, standardize: Standardize, hidden: int = 800) -> None:
+    def __init__(self, standardize: Standardize, hidden: int = 800, monotone_output: bool = True) -> None:
         super().__init__()
+        self.monotone_output = monotone_output
         d = int(standardize.mean.shape[0])  # type: ignore[index]
         self.standardize = standardize
         self.layer1 = nn.Linear(d, d, bias=False)
@@ -97,8 +98,10 @@ class ERDALT(nn.Module):
 
 @torch.no_grad()
 def project_monotone(model: ERDALT) -> None:
-    """Replace each negative weight w above the post-processing with exp(w - 5) > 0 (theirs, plus the output layer)."""
-    for layer in (model.layer2, model.layer3, model.fc4):
+    """Replace each negative weight w above the post-processing with exp(w - 5) > 0 (theirs, plus the output layer
+    unless `model.monotone_output` is False, as in their released code)."""
+    layers = (model.layer2, model.layer3, model.fc4) if model.monotone_output else (model.layer2, model.layer3)
+    for layer in layers:
         w = layer.weight
         w.copy_(torch.where(w < 0, torch.exp(w - 5.0), w))
 
@@ -134,6 +137,10 @@ def train_erdalt(
     learning_rate: float = 1e-4,
     delta_batch: int = 4096,
     max_violations: int = 5,
+    deltas_per_step: Optional[int] = None,
+    schedule_epochs: Optional[int] = None,
+    monotone_output: bool = True,
+    lr_scheduler: bool = True,
 ) -> tuple[ERDALT, dict[str, Any]]:
     """
     Train ERDALT and keep the epoch with the best validation ROC-AUC among those with < `max_violations` violations.
@@ -143,6 +150,12 @@ def train_erdalt(
         deltas: The observed perturbation vectors phi(z') - phi(z), raw (unstandardized), one per row.
         delta_batch: Perturbation vectors per penalty term; all of them enter every step (their code takes up to 152
             batches of 16, i.e. all of theirs), split only to bound memory.
+        deltas_per_step: If given, each step's penalty sums over a fresh random draw of this many perturbation vectors
+            instead of all of them (their code: at most 152 batches of 16, 2,432 per step, from a shuffled loader).
+        schedule_epochs: The length of the loss weights' linear schedule (default `epochs`); a longer one with fewer
+            `epochs` runs the start of the full schedule (diagnosis runs).
+        monotone_output: Project the output layer to be monotone too (ours); False leaves it free (their code).
+        lr_scheduler: Halve the learning rate after 20 epochs without a better validation ROC-AUC (theirs).
 
     Returns:
         The model (eval mode, on `device`) and a training summary (selected epoch, its ROC-AUC and violations, and
@@ -153,7 +166,7 @@ def train_erdalt(
     torch.manual_seed(seed)
     generator = torch.Generator().manual_seed(seed)
 
-    model = ERDALT(fit_standardize(X_tr), hidden).to(device)
+    model = ERDALT(fit_standardize(X_tr), hidden, monotone_output).to(device)
     Xtr = torch.from_numpy(np.ascontiguousarray(X_tr)).to(device)
     ytr = torch.from_numpy(y_tr.astype(np.float32)).to(device)
     Xvl = torch.from_numpy(np.ascontiguousarray(X_vl)).to(device)
@@ -162,7 +175,10 @@ def train_erdalt(
 
     optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode="max", factor=0.5, patience=20)
-    w1, w2, w3 = (np.linspace(a, b, epochs) for a, b in ((0.5, 1.0), (0.5, 200.0), (0.5, 1.0)))
+    n_schedule = epochs if schedule_epochs is None else schedule_epochs
+    if n_schedule < epochs:
+        raise ValueError(f"schedule_epochs ({n_schedule}) is shorter than epochs ({epochs}).")
+    w1, w2, w3 = (np.linspace(a, b, n_schedule) for a, b in ((0.5, 1.0), (0.5, 200.0), (0.5, 1.0)))
 
     best: Optional[tuple[bool, float, int, int]] = None  # (meets criterion, roc, -violations, epoch)
     best_state: Optional[dict[str, Tensor]] = None
@@ -174,8 +190,11 @@ def train_erdalt(
             idx = order[i:i + batch_size]
             l1 = F.binary_cross_entropy_with_logits(model(Xtr[idx]), ytr[idx])
             l2 = torch.zeros((), device=device)
-            for j in range(0, D.shape[0], delta_batch):
-                l2 = l2 + F.relu(-model.post_delta(D[j:j + delta_batch])).sum()
+            Ds = D
+            if deltas_per_step is not None and deltas_per_step < D.shape[0]:
+                Ds = D[torch.randperm(D.shape[0], generator=generator)[:deltas_per_step].to(device)]
+            for j in range(0, Ds.shape[0], delta_batch):
+                l2 = l2 + F.relu(-model.post_delta(Ds[j:j + delta_batch])).sum()
             l3 = torch.sqrt(torch.sum((model.layer1.weight * mask) ** 2) + 1e-16)
             loss = w1[epoch] * l1 + w2[epoch] * l2 + w3[epoch] * l3
             optimizer.zero_grad(set_to_none=True)
@@ -184,10 +203,13 @@ def train_erdalt(
             project_monotone(model)
         roc = float(roc_auc_score(y_vl, _logits(model, Xvl).cpu().numpy()))
         viol = num_violations(model, D)
-        scheduler.step(roc)
-        history.append({"epoch": epoch, "vl_roc": roc, "violations": viol, "l2": float(l2.detach()),
-                        "l3": float(l3.detach())})
-        print(f"epoch={epoch} vl_roc={roc:.5f} violations={viol} l2={float(l2.detach()):.4g} l3={float(l3.detach()):.4g}", flush=True)
+        lr = float(optimizer.param_groups[0]["lr"])
+        if lr_scheduler:
+            scheduler.step(roc)
+        history.append({"epoch": epoch, "vl_roc": roc, "violations": viol, "l1": float(l1.detach()),
+                        "l2": float(l2.detach()), "l3": float(l3.detach()), "lr": lr})
+        print(f"epoch={epoch} vl_roc={roc:.5f} violations={viol} l1={float(l1.detach()):.4g} "
+              f"l2={float(l2.detach()):.4g} l3={float(l3.detach()):.4g} lr={lr:.3g}", flush=True)
         key = (viol < max_violations, roc if viol < max_violations else -viol, -viol, epoch)
         if best is None or key[:3] > best[:3]:
             best = key
@@ -199,6 +221,8 @@ def train_erdalt(
     summary = {"epoch": best[3], "vl_roc": history[best[3]]["vl_roc"], "violations": history[best[3]]["violations"],
                "met_criterion": best[0], "num_deltas": int(D.shape[0]), "batch_size": batch_size, "epochs": epochs,
                "learning_rate": learning_rate, "hidden": hidden, "max_violations": max_violations,
+               "deltas_per_step": deltas_per_step, "schedule_epochs": n_schedule, "monotone_output": monotone_output,
+               "lr_scheduler": lr_scheduler,
                "history": history}
     if not best[0]:
         print(f"WARNING: no epoch has < {max_violations} violations; kept epoch {best[3]} (fewest).", flush=True)
@@ -252,7 +276,8 @@ class ERDALTDetector:
         d = len(self.feature_names)
         state = torch.load(Path(mdir) / "model.pt", map_location="cpu", weights_only=True)
         std = Standardize(state["standardize.mean"], state["standardize.std"])
-        self.model = ERDALT(std, int(config["hidden"]))
+        monotone_output = bool(config["training"].get("monotone_output", True)) if "training" in config else True
+        self.model = ERDALT(std, int(config["hidden"]), monotone_output)
         self.model.load_state_dict(state)
         self.model.eval()
         self.width = d
