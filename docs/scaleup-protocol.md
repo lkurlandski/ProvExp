@@ -267,3 +267,11 @@ reading its results (PLAN.md step 5).
    (1); (3) PV retrained at ~5 sizes x 3 draws, TPR at 1% FPR against n (~15 GBDTs, ~2 h; place Gimenez et al.'s
    ~1,033 vectors and the pilot's 3,183 on the axis); (4) which feature groups go first, and the raw against the cleaned
    material's curve. Starting points: `artifacts/scaleup/diag/pv_scale.py` (the rough curve), `pipeline/6-results/pv_hole.py`.
+   *Fixes investigated (session 85, `artifacts/scaleup/diag/shift_fix.py`, job 1138581):* inserting the content shift's
+   padding at the smallest non-zero section offset (where section content starts) instead of the first section's
+   offset gives, on 300 random training malware, output byte-identical to upstream's (300/300); on the 358 broken files,
+   354 now parse in pefile and LIEF with every section's bytes intact at its new offset (4 stay broken, as upstream).
+   Because the fix changes nothing where upstream worked, only the broken (attack, file) pairs need re-running. The 45
+   invalid-e_lfanew outputs come from files whose PE header overlaps the DOS header (e_lfanew 0x4-0x10, below 0x40):
+   the DOS extension inserts bytes inside the DOS header, in front of the e_lfanew field itself; such a file has no
+   DOS stub to extend (not applicable, ~25 of 10,000 training malware). Not yet decided by the user.
