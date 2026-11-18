@@ -19,8 +19,9 @@ version itself. Install without dependencies (ours are in `requirements.txt`):
 
 `mab_malware/` (MAB-Malware, Song et al., AsiaCCS 2022) keeps only the attack's core: the MCTS and GP rewriters, the
 Cuckoo and VM tooling, `chart/`, its tests, `workflow.png` and `MalConv.py` are omitted. It is not installed; our
-driver `scripts/mab_attack.py` imports it from the run directory (upstream reads `conf/configure.ini` from the current
+driver `src/provexp/attacks/mab.py` imports it from the run directory (upstream reads `conf/configure.ini` from the current
 directory at import time). Patches, each marked `# PATCH (ProvExp)`: the unused `pexpect` import dropped; the bundled
 models (torch, ember) no longer imported, since the detector is ours; the donor-content listing sorted, so that runs
-are reproducible across file systems. Upstream's threads and polled folders are replaced in the driver, not here.
+are reproducible across file systems. The section-adding action returns a file with no sections unchanged (it indexed an
+empty section table; scale-up job 1046140). Upstream's threads and polled folders are replaced in the driver, not here.
 The upstream repository states no license: keep this copy private, and link upstream in any public release.

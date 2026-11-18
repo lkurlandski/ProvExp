@@ -10,6 +10,7 @@ import logging
 import os
 from pathlib import Path
 import random
+import shutil
 import sys
 import time
 import types
@@ -303,9 +304,13 @@ def trace(sm: Any, bandit: Any) -> dict[str, Any]:
 
 
 def _prepare(task: dict[str, Any]) -> dict[str, bytes]:
-    """Fill a run directory (config, malware, donor contents), make it the current one, and seed both generators."""
+    """Fill a fresh run directory (config, malware, donor contents), make it the current one, and seed both generators."""
     workdir = Path(task["workdir"])
-    workdir.mkdir(parents=True, exist_ok=True)
+    # NOTE: a run directory left by an earlier run holds its evasive and minimized files, which final_file would take
+    # for this run's results; it is removed first.
+    if workdir.exists():
+        shutil.rmtree(workdir)
+    workdir.mkdir(parents=True)
     write_config(workdir / "conf" / "configure.ini", task["max_pull"], task["max_length"])
     (workdir / "data" / "malware").mkdir(parents=True, exist_ok=True)
     originals: dict[str, bytes] = {}
