@@ -167,3 +167,11 @@ Follow `/home/lk3591/Documents/code/SSViT/exeformer/exeformer.py` (ignore that i
 - **Experiments may use domain knowledge selectively** where it protects their integrity (decided 2026-10-07): e.g., a
   PE-aware perturbation operator or loader-safe edit rules. Keep it inside the experiment, say why it is needed, and
   never let it into the model.
+- **A method from another paper is ported for its effect, not its letter** (user, 2026-11-18, after ERDALT). Before
+  the first run of a borrowed defense, attack, or training method, tabulate their setup against ours (training files,
+  adversarial or attack examples, features, batch size, steps per epoch and in all, whether each loss term is a sum or
+  a mean, the selection criterion) from their paper *and* code, and rescale the hyperparameters those differences
+  touch; state each rescaling. A constant in their script is sized to their data, not part of the method. When a
+  borrowed method underperforms, make this comparison before any other diagnosis. (ERDALT, ported literally: 310
+  epochs and a penalty summed over every vector; theirs 24,000 files and 1,033 vectors, ours 1.76M and 78,715, so the
+  penalty weighed ~76x more per step; it collapsed for sessions 82-90 before the comparison was made.)

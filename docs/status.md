@@ -202,7 +202,9 @@ in `docs/archive/status-log-2026-11-14-s63.md`, sessions 64-65 in `docs/archive/
   setup reread: 24,000 training files, 1,033 vectors in all, 310 epochs a constant of their script; our penalty weighs
   ~76x more per step against the BCE and the schedule spans 4.6x their steps. **GPU diagnosis, 7 tasks** (L frozen or
   started at PV's mask, 1,033 vectors, their penalty mass, their cap, a 20-epoch schedule, a quantile scale;
-  `artifacts/scaleup/diag/erdalt/gpu/run.sh`, approved, submitted by the user). **Next ERDALT session: read them**
+  `artifacts/scaleup/diag/erdalt/gpu/run.sh`, approved; submitted by the user as 1179478_[0-6], tasks ordered by
+  importance). Lesson recorded (CLAUDE.md, global memory): port another paper's method for its effect, not its
+  letter; PV gets the same setup comparison (`docs/resume-prompt-experiments.md`, next session item 6). **Next ERDALT session: read them**
   (`docs/resume-prompt-erdalt.md`; record `docs/erdalt-diagnosis-plan.md`, "Session 90").
 - Number-free rebuttal text fixes (R4, R5, R15, R21) are step 4 (while the scale-up runs).
 - **Bounds on size: the mathematics is written; the user decides, with Opus, what enters the manuscript**

@@ -44,7 +44,8 @@ own Table 2 has ERDALT at 0.930, below PV + RF at 0.952; their monotone network 
 is ERDALT's poor showing a bug in the port or a weak method? The diagnosis decides.
 
 **The diagnosis** (approved by the user; `docs/erdalt-diagnosis-plan.md`, "Session 90", has the table, hypothesis
-and readings): `artifacts/scaleup/diag/erdalt/gpu/run.sh`, array 0-6, one GH200, 4 cores, 128G, 3 h each; new
+and readings), **submitted by the user as 1179478_[0-6]** (2026-11-18, end of session 90):
+`artifacts/scaleup/diag/erdalt/gpu/run.sh`, array 0-6, one GH200, 4 cores, 128G, 3 h each; new
 material, full training split, 15 epochs of the 310-epoch schedule unless stated; logs
 `artifacts/scaleup/diag/erdalt/gpu/logs/<variant>.log`, job outputs `logs/erdalt-diag_<job>_<task>.out`.
 Ordered by importance (SLURM starts lower IDs first): 0 pscale (all vectors, w2 x 1033/78715: their mass), 1 n1033
@@ -55,8 +56,10 @@ epochs. Code: 3249398 (options in `train_erdalt`, tested; smoke-tested on a 20,0
 
 ## 3. What this session does
 
-1. **Check the array** (`squeue -u $USER`; `sacct -j <job> --format=JobID,State,Elapsed,MaxRSS,AllocCPUS,TotalCPU`).
-   If it has not run, say so. Read each task's startup line and its log's epochs; right-size the header from sacct.
+1. **Check the array** (`squeue -u $USER`; `sacct -j 1179478 --format=JobID,State,Elapsed,MaxRSS,AllocCPUS,TotalCPU`;
+   also 1169769_0, `erdalt`'s full run). If the tasks have not run, say so. Read each task's startup line (job
+   output) and its log's epochs (`epoch=... vl_roc=... violations=...`); right-size the header from sacct. The user
+   resumes once they have finished or made good progress: read what is there, partial runs included.
 2. **Read the seven against the control and PV's 0.92**, at matched violation counts (the curve of AUC against
    violations), not only at matched epochs; for n1033 also `violations_all`. Hypothesis (session 90): the penalty
    weight is the main cause, so pscale and n1033 stay near ~0.9 well above the control, cap in between; fixed reaches
@@ -75,6 +78,11 @@ epochs. Code: 3249398 (options in `train_erdalt`, tested; smoke-tested on a 20,0
    other detectors' reruns on the new material are done.
 
 ## 4. Rules that apply
+
+**The lesson of this track (user, session 90; in CLAUDE.md and the global memory):** a method from another paper is
+ported for its effect, not its letter. Tabulate their setup against ours and rescale what the differences touch
+before the first run, and before diagnosing a weak result. Whatever the retrain uses, state each rescaling against
+their setup in Appendix D.
 
 Think a run through before starting it: what it is compared with, whether its setup can reproduce the effect under
 study, and what each outcome would mean; a hypothesis before every run; check a new analysis on a planted case before

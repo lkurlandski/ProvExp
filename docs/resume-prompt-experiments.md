@@ -91,8 +91,21 @@ models were trained on the old material; the ERDALT track retrains them on the n
    PV against the pilot; MAB `zainab` against Zainab et al.'s 83%; the superseded run's 52% is in
    `superseded-s85/5-attacks/mab-malware/zainab/`).
 5. **Then:** the ERDALT track retrains ERDALT on the new material and runs its attacks
-   (`docs/resume-prompt-erdalt.md` §5), then `6-results` (`sbatch pipeline/6-results/run.sh`).
-6. **Later, approved:** PV's sample-size experiment (protocol item (17)); decision 12's follow-up (PLAN.md, open
+   (`docs/resume-prompt-erdalt.md`; session 90: the literal port collapsed because their setup was far smaller than
+   ours, and a 7-task diagnosis, 1179478, decides the retrain), then `6-results` (`sbatch pipeline/6-results/run.sh`).
+6. **PV's setup against Gimenez et al.'s (asked by the user, session 90; CLAUDE.md: "ported for its effect, not its
+   letter").** ERDALT's collapse came from porting it literally to a setup ~75x larger than theirs; PV comes from the
+   same paper, so check it the same way before its results are read as final. Their setup (paper §5,
+   `papers/gimenez2025certifiably.pdf`; code github.com/PFGimenez/certifiably-robust-malware-detectors-by-design,
+   `feature_selection.py`, read at 0b6f222): 24,000 training files, **1,033 adversarial examples in all** (shared by
+   every method), PV keeps the features no vector lowers, then a random forest (0.952 AUC), monotone GBT (0.867) or
+   GBT (0.938). Ours: 1.76M files, 78,715 vectors, a monotone GBDT with our own hyperparameters. Tabulate the
+   differences (vector count, which outputs count as vectors, the model and its hyperparameters, any thresholds in
+   their selection code) and decide with the user whether to adjust anything, e.g. whether "lowered by any of 78,715
+   vectors" is the same rule as "by any of 1,033" in effect (more vectors can only drop more features; PV's
+   sample-size experiment, protocol item (17), measures exactly this and should be read in this light). Recommend; the
+   user decides.
+7. **Later, approved:** PV's sample-size experiment (protocol item (17)); decision 12's follow-up (PLAN.md, open
    items: the training files behind the derived table's new moves).
 
 ## 5. Rules that apply (from the user; also in CLAUDE.md and the memory)
@@ -107,6 +120,8 @@ models were trained on the old material; the ERDALT track retrains them on the n
 - A code change is live for every job that starts Python after it is saved: risky changes go in a `git worktree`
   (`PYTHONPATH=<worktree>/src`), verified, then fast-forwarded; do not edit code a queued job will import without
   thinking through which jobs pick it up.
+- A method from another paper is ported for its effect, not its letter: tabulate their setup against ours and
+  rescale what the differences touch, before the first run and before diagnosing a weak result (session 90).
 - Explain plainly; a hypothesis before running anything; report failed checks as such; fix failures at their source.
   The user decides protocol questions; Claude recommends. Commit to `main` in logical pieces (ruff, strict mypy); do
   not push.
