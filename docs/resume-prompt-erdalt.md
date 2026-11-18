@@ -1,9 +1,14 @@
 # Resume: ERDALT's collapse at the scale-up (diagnose, then decide with the user)
 
 Written in session 82 (2026-11-17), updated in session 86 (2026-11-18, on the local machine: it found the upstream
-penalty's per-step size and added the diagnosis options, but could read nothing from tigris). **Run this session on
-tigris** (the login node for reading, editing and `sbatch`; the runs on GPU nodes): the finished models, the material
-and the GPUs are only there. Pull first: the options are in commit bbb487f. Self-contained: only `CLAUDE.md` (loaded automatically) needs reading first. One
+penalty's per-step size and added the diagnosis options) and session 87 (2026-11-18, on tigris: it read the nine
+finished models, §2, and found the penalty small from epoch 2 on, §4; it could not run the diagnosis because its
+interactive job had no GPU). **This session runs in an interactive job on a tigris GPU node** (the user starts it with
+a GPU): **run the diagnosis locally in this session, not through `sbatch`** (user, 2026-11-18). First check what the
+job actually has: `nvidia-smi`, `env/bin/python -c "import torch; print(torch.cuda.device_count())"`, `nproc`, and
+`scontrol show job $SLURM_JOB_ID | grep TRES` (session 87's job showed 72 CPUs in its cpuset but was allocated 16 and
+no GPU; use what the allocation says). If no GPU is visible, stop and tell the user. Self-contained: only `CLAUDE.md`
+(loaded automatically) needs reading first. One
 of three tracks: this one (ERDALT), `docs/resume-prompt-experiments.md` (the rest of the scale-up on the cluster),
 `docs/resume-prompt.md` (general work and the index of the tracks).
 
@@ -27,10 +32,15 @@ epochs at ~5.8 min (~30 h). Logs: `artifacts/scaleup/4-detectors/logs/train-erda
 (`metrics.json` with the training summary and history, predictions). The user chose to let them finish (session 82).
 
 Every model collapsed the same way. Validation ROC-AUC peaked at epoch 0-1 (0.85-0.87), fell to ~0.69 by epoch 40,
-and has moved less than 0.01 since epoch 200 (0.69-0.75 at epochs 255-290). Violations (negative entries of the
-post-processed vectors) fell from ~1.3 million at epoch 0 to 16-42 at best; none reached Gimenez et al.'s criterion
-(< 5), so the code keeps the epoch with the fewest violations (`src/provexp/models/erdalt.py`, `train_erdalt`), an AUC
-~0.70 model. The GBDTs on the same data reach 0.998; the pilot's ERDALT reached 0.883 (Gimenez et al. report 93.0%).
+and moved less than 0.01 after epoch 200. Violations (negative entries of the post-processed vectors) fell from ~1.3
+million at epoch 0 to 16-40 at best; none reached Gimenez et al.'s criterion (< 5), so the code kept the epoch with the
+fewest violations (`src/provexp/models/erdalt.py`, `train_erdalt`), an AUC ~0.70 model. The GBDTs on the same data
+reach 0.998; the pilot's ERDALT reached 0.883 (Gimenez et al. report 93.0%).
+
+**All nine finished (read in session 87; old material).** Selected epoch, validation AUC, violations; `met_criterion`
+false for all: `erdalt` 275, 0.701, 39; leave-one-out folds content_shift 193, 0.746, 37; dos_extend 236, 0.710, 40;
+format_exploit 191, 0.712, 34; gamma_api 233, 0.752, 29; gamma_sections 215, 0.690, 34; gamma_shift 212, 0.701, 27;
+header_fields 212, 0.692, 28; padding 171, 0.723, 16. Their history has no `lr` or `l1` (those came with bbb487f).
 
 **Session 85 (experiments track) changed ERDALT's training data.** The defenses' material held 894 broken outputs
 (1.1%; secml-malware's shift writing in front of the MZ header, DOS extensions on files with e_lfanew < 0x40, lost
@@ -72,13 +82,24 @@ discriminative directions; once AUC falls, ReduceLROnPlateau halves the learning
 improvement, which may freeze the model where it collapsed. Other candidates: the batch size (256 vs 16: 16x fewer
 penalty steps per epoch at 16x the data per step), the monotone output layer, the training split's size.
 
+**What session 87 found in `erdalt`'s history weakens the "dominates throughout" form of this.** The penalty `l2` is
+huge only at the start: 18,801 at epoch 0, 316 at epoch 1, 5.7 at epoch 2, 0.55 at epoch 5, 0.32 at epoch 20, 0.05 at
+epoch 40, ~1e-7 by epoch 275. Validation AUC falls *after* the penalty is already small: 0.853 (epoch 1), 0.833 (2),
+0.797 (5), 0.764 (10), 0.736 (20), 0.696 (40), then flat at ~0.70. (`l3`, the off-diagonal norm, 58 -> 31.) Two
+readings remain, and run (b) separates both from the alternatives: **early damage** (the huge first-epoch penalty
+flattens the layer and training never recovers) or **steady pressure** (the penalty's weight w2 keeps rising, ~26 by
+epoch 40, so even a small penalty keeps squeezing the discriminative directions). Session 87 proposed to the user an
+extra run (f): all vectors per step but the penalty weight scaled down ~10x (needs a small new option on
+`train_erdalt`, e.g. `--penalty_scale`); add it only if the user agrees. Note also: violations stay in the tens while
+`l2` is ~1e-7, so the remaining violations are tiny negative entries.
+
 ## 5. What this session does
 
-1. **Read the finished runs** (they finish ~2026-11-18 early morning; check `squeue -u $USER` once, do not watch the
-   queue): each model's selected epoch, its validation AUC and violations, `met_criterion` (`metrics.json`). Also the
-   learning rate over the epochs if recorded (if not, infer the halvings from the plateau rule).
-2. **Diagnose with short runs, one change at a time** (state the hypothesis first; on a GPU node through `sbatch`,
-   never on the head node). `pipeline/4-detectors/train/train_erdalt.py` has the options (bbb487f; defaults keep the
+1. **Check the session's resources** (header) and whether the material rebuild (1141847) and its merge are done
+   (`squeue -u $USER` once; `artifacts/scaleup/4-detectors/material`). The finished models are read (§2).
+2. **Diagnose with short runs, one change at a time** (state the hypothesis first; **locally in this interactive GPU
+   job**, in the background with logs, one GPU per run; if the job has several GPUs, run several at once with
+   `CUDA_VISIBLE_DEVICES` per run). `pipeline/4-detectors/train/train_erdalt.py` has the options (bbb487f; defaults keep the
    current training): `--train_subsample N` (a seeded random N training files), `--epochs 40 --schedule_epochs 310`
    (the first 40 epochs of the full weight ramp, so w2 reaches ~26 as in the collapse), `--deltas_per_step 2432`,
    `--batch_size 16`, `--free_output`, `--no_lr_scheduler`; the history now records `l1` and `lr` per epoch. Runs,
@@ -90,15 +111,19 @@ penalty steps per epoch at 16x the data per step), the monotone output layer, th
    check that (a) reproduces the collapse on the subsample; if it does not, the subsample cannot diagnose it. The
    change that keeps validation AUC near the early peak names the cause. Use the new material if 1141847's merge is
    done, else the old; say which. Script the runs under
-   `artifacts/scaleup/diag/erdalt/` (template: `artifacts/scaleup/diag/file_store.sh`); put Python in files (a spawn
-   pool started from a stdin script hangs), read each job's log a few minutes after it starts, and hand back to the
-   user rather than waiting on the queue.
+   `artifacts/scaleup/diag/erdalt/` (one `run.sh` that runs the variants; take the exact `train_erdalt.py` arguments
+   for the main `erdalt` model, inputs included, from `pipeline/4-detectors/learned/run.sh` and add the options);
+   put Python in files (a spawn pool started from a stdin script hangs), read each run's log a few minutes after it
+   starts, and watch the runs to the end in this session (they are local, ~30 min each), comparing the per-epoch
+   `vl_roc`, `l1`, `l2`, `lr` across variants.
 3. **Lay the options out for the user** (the user decides protocol questions; Claude recommends): report ERDALT as
    specified with the collapse as a finding about the method at scale; retrain with the identified fix (a deviation
    to state in Appendix D); or retrain matching their scale (vectors per step). Keep R19's other asks in view: report
    the share of training and test perturbation vectors with L(delta) < 0; the donor-overlap control.
-4. **Retrain only with the user's go-ahead, on the new material** (~30 h per model on 9 GPUs at the current setup; `pipeline/4-detectors/
-   learned/run.sh` with `PART=erdalt`, an array of 9 on GPU nodes as in `pipeline/submit.sh`).
+4. **Retrain only with the user's go-ahead, on the new material** (~30 h per model on 9 GPUs at the current setup;
+   `pipeline/4-detectors/learned/run.sh` with `PART=erdalt`). Nine 30-h models do not fit one interactive job: ask
+   the user whether to run them locally (one per visible GPU; the script does this) or as the array of 9 on GPU nodes
+   (`pipeline/submit.sh`). The user's "run locally, not `sbatch`" was said for this session's work.
 5. **Then ERDALT's attacks, which were held for this** (session 82; the other detectors' attacks run without it):
    `toolkit` with `DETECTORS=erdalt PARTS="main loo donors" LOO=erdalt` (10 jobs: its main row, eight folds, the
    donor control; `--array=0-9`); `adaptive` with `TAG=erdalt DETECTORS=erdalt ESCAPES=none EXPERT=0` (20 tasks,
@@ -111,6 +136,6 @@ penalty steps per epoch at 16x the data per step), the monotone output layer, th
 
 Explain plainly; a hypothesis before every run; report a failed check as such. Do not retrain or change the protocol
 without the user. On tigris: head node light only (two CPUs); request what a job uses for most of its life; read each
-job's startup line. Commit to `main` in logical pieces (ruff and strict mypy on `src tests pipeline`); do not push.
+job's startup line. In the interactive job, use only its allocation (cores and GPUs from `scontrol`, not `nproc`). Commit to `main` in logical pieces (ruff and strict mypy on `src tests pipeline`); do not push.
 At the end: update `docs/status.md` and PLAN.md, rewrite this prompt for the next ERDALT session (or archive it when
 the track is done, `docs/archive/resume-prompt-erdalt-<date>-s<N>.md`, with its line in `docs/README.md`).

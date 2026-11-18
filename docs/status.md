@@ -33,7 +33,10 @@ in `docs/archive/status-log-2026-11-14-s63.md`, sessions 64-65 in `docs/archive/
   apart from it (`toolkit` 1046138, `adaptive` 1046139, MAB-Malware `ours` 1046140; aaefd75); ERDALT's attacks and
   `6-results` are held. PLAN.md step 3 (16). **Session 86 (local machine, ERDALT track):** Gimenez et al.'s code caps the
   penalty at 2,432 perturbation vectors per step (152 batches of 16); ours uses all 79,121, ~33x more. Diagnosis
-  options added to `train_erdalt` (bbb487f); the diagnosis runs wait for a session on tigris. **Session 85:** `toolkit` (19 tasks) and `adaptive` (81) finished;
+  options added to `train_erdalt` (bbb487f); the diagnosis runs wait for a session on tigris. **Session 87 (tigris,
+  ERDALT track):** all nine models finished at validation AUC 0.69-0.75 with 16-40 violations (criterion never met);
+  the penalty is small from epoch 2 on while AUC keeps falling, so "it dominates throughout" is too strong; the
+  diagnosis waits for an interactive job with a GPU (session 87's had none), run locally. **Session 85:** `toolkit` (19 tasks) and `adaptive` (81) finished;
   MAB-Malware `ours` crashed on two zero-section malware (upstream bug, patched in 455f121) and was resubmitted
   (1131288). Then PV's collapse (5/1,000 detected) was traced to 894 broken outputs in the defenses' material (an
   upstream shift bug among them) and to PV's sample size; the shift bug is patched, the DOS-header attacks skip files
@@ -188,9 +191,11 @@ in `docs/archive/status-log-2026-11-14-s63.md`, sessions 64-65 in `docs/archive/
   e.g. pefile's 8,192-import cap): list them from the reruns (`invalid.parquet`, `invalid_pefile_only`) and decide with
   the user which to patch in the extractor (CLAUDE.md: no result may rest on a quirk).
 - **ERDALT (the user, with the ERDALT track):** every model collapsed (validation AUC ~0.70; criterion never met).
-  Leading hypothesis from the code: the violation penalty is a sum over all 79,121 vectors while BCE is a batch mean,
-  so it dominates from the first step (~25x the pilot's vectors). Diagnose with short runs, then decide: report as
-  specified, retrain with a fix, or retrain at their scale. `docs/resume-prompt-erdalt.md`.
+  Leading hypothesis from the code: the violation penalty is a sum over all 79,121 vectors (their code caps it at
+  2,432 per step) while BCE is a batch mean. The penalty is huge only in epochs 0-1 (session 87), so either early
+  damage or the rising penalty weight. Diagnose with short runs, locally in an interactive GPU job (the user starts
+  one), then decide: report as specified, retrain with a fix, or retrain at their scale.
+  `docs/resume-prompt-erdalt.md`.
 - Number-free rebuttal text fixes (R4, R5, R15, R21) are step 4 (while the scale-up runs).
 - **Bounds on size: the mathematics is written; the user decides, with Opus, what enters the manuscript**
   (`theory-analysis.md`, parts G and H; session 76; next theory session: `docs/resume-prompt-theory.md`).
@@ -235,6 +240,14 @@ Two sessions were numbered 74: the head node on tigris, and the theory session. 
 own resume prompt: `docs/resume-prompt-experiments.md` (the cluster), `docs/resume-prompt-erdalt.md` (ERDALT),
 `docs/resume-prompt-theory.md` (theory), `docs/resume-prompt-writing.md` (the manuscript); `docs/resume-prompt.md` holds
 general work and indexes them.
+
+- **2026-11-18 (session 87, Opus, ERDALT track, tigris interactive job): the nine models read; no GPU.** All nine
+  ERDALT models finished (old material): validation AUC 0.690-0.752, 16-40 violations, `met_criterion` false
+  everywhere (per model in `docs/resume-prompt-erdalt.md` §2). `erdalt`'s history: the penalty `l2` falls from 18,801
+  (epoch 0) to 5.7 (epoch 2) and 0.05 (epoch 40) while AUC falls 0.853 -> 0.696, so the collapse continues after the
+  penalty is small (early damage, or the rising weight w2). The interactive job (1142565) had 16 CPUs and no GPU, so
+  no diagnosis ran; the user starts one with a GPU and wants the runs local, not `sbatch`. A run (f) (all vectors,
+  penalty ~10x smaller) proposed, not yet agreed.
 
 - **2026-11-18 (session 85, Opus, scale-up track): toolkit and adaptive done; MAB-Malware fixed and resubmitted.**
   `toolkit` (19 tasks, slowest 4 h 44 min, 70% of its cores, 44 GiB of 100) and `adaptive` (81 tasks, slowest 74 min,
