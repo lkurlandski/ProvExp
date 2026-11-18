@@ -141,6 +141,7 @@ def train_erdalt(
     schedule_epochs: Optional[int] = None,
     monotone_output: bool = True,
     lr_scheduler: bool = True,
+    penalty_scale: float = 1.0,
 ) -> tuple[ERDALT, dict[str, Any]]:
     """
     Train ERDALT and keep the epoch with the best validation ROC-AUC among those with < `max_violations` violations.
@@ -156,11 +157,14 @@ def train_erdalt(
             `epochs` runs the start of the full schedule (diagnosis runs).
         monotone_output: Project the output layer to be monotone too (ours); False leaves it free (their code).
         lr_scheduler: Halve the learning rate after 20 epochs without a better validation ROC-AUC (theirs).
+        penalty_scale: A factor on the violation penalty's weight w2 throughout (1.0: theirs; diagnosis runs).
 
     Returns:
         The model (eval mode, on `device`) and a training summary (selected epoch, its ROC-AUC and violations, and
         whether any epoch met the violation criterion).
     """
+    if penalty_scale <= 0:
+        raise ValueError(f"penalty_scale must be positive, got {penalty_scale}.")
     if deltas.ndim != 2 or deltas.shape[1] != X_tr.shape[1]:
         raise ValueError(f"deltas has shape {deltas.shape}, expected (*, {X_tr.shape[1]}).")
     torch.manual_seed(seed)
@@ -179,6 +183,7 @@ def train_erdalt(
     if n_schedule < epochs:
         raise ValueError(f"schedule_epochs ({n_schedule}) is shorter than epochs ({epochs}).")
     w1, w2, w3 = (np.linspace(a, b, n_schedule) for a, b in ((0.5, 1.0), (0.5, 200.0), (0.5, 1.0)))
+    w2 = w2 * penalty_scale
 
     best: Optional[tuple[bool, float, int, int]] = None  # (meets criterion, roc, -violations, epoch)
     best_state: Optional[dict[str, Tensor]] = None
@@ -222,7 +227,7 @@ def train_erdalt(
                "met_criterion": best[0], "num_deltas": int(D.shape[0]), "batch_size": batch_size, "epochs": epochs,
                "learning_rate": learning_rate, "hidden": hidden, "max_violations": max_violations,
                "deltas_per_step": deltas_per_step, "schedule_epochs": n_schedule, "monotone_output": monotone_output,
-               "lr_scheduler": lr_scheduler,
+               "lr_scheduler": lr_scheduler, "penalty_scale": penalty_scale,
                "history": history}
     if not best[0]:
         print(f"WARNING: no epoch has < {max_violations} violations; kept epoch {best[3]} (fewest).", flush=True)
