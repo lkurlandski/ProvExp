@@ -28,7 +28,7 @@ check `manuscript/main.aux` (`grep newlabel manuscript/main.aux`), and add the t
 | `pipeline/README.md` | the scale-up's stages and steps, and which step produces each result of the paper | before running or adding any experiment |
 | `SETUP.md` | from a fresh clone to a system that runs `pipeline/` (environment, dataset, system config, the check) | setting up a new machine or the clusters |
 | `docs/resume-prompt.md` | general work and the index of the tracks (since session 82): §2's closing and contribution 4 against §5, what waits on the user, the theory follow-ups; a table of the tracks and their prompts | starting a session when no track is named, or to see where each track stands |
-| `docs/resume-prompt-experiments.md` | the scale-up's attacks on the cluster (session 82): `toolkit`, `adaptive` and MAB-Malware `ours` running without ERDALT; startup lines, failures, walltimes and resources, `zainab`'s result, decision 12's follow-up, then `6-results` | starting a cluster session |
+| `docs/resume-prompt-experiments.md` | the scale-up's attacks on the cluster (session 85): MAB-Malware `ours` resubmitted, the lost adaptive searches' diagnostic, PV's near-blindness at scale for the user, walltimes and resources, decision 12's follow-up, then `6-results` | starting a cluster session |
 | `docs/resume-prompt-erdalt.md` | ERDALT's collapse at the scale-up (session 82): what is theirs and what is ours, the summed-penalty hypothesis, short diagnostic runs, the options for the user; then ERDALT's held attacks and `6-results` | starting the ERDALT session |
 | `docs/resume-prompt-writing.md` | the writing track (Opus): the humanistic review and polish of §3, §4, §5, one subsection per pass, one fix at a time (cuts go to `docs/review-cuts.md` for a later length pass); §2 after, its closing waits for a discussion | starting a writing session |
 | `docs/resume-prompt-theory.md` | where the next theory session starts (on Opus): bounds on size, the mathematics done (`theory-analysis.md`, part H), the user's decision on what enters the manuscript first | starting the next theory session |
@@ -73,6 +73,7 @@ or when changing an experiment. Run scripts are in `run/` (one per step, numbere
 | Folder or file | Contents |
 |---|---|
 | `docs/archive/related-work-plan-2026-11-17-s84.md` | §6's assessment and 30-40% cut plan (session 83), the user's guidance on related work, source checks (Šrndić and Laskov, FENCE, Sheatsley et al., Dyrmishi et al., Bostani et al., Simonetto et al.), and the close reading of Tsingenopoulos et al.; applied in session 84 |
+| `docs/archive/resume-prompt-experiments-2026-11-17-s82.md` | the experiments resume prompt of session 85 (written in session 82): check the attacks run without ERDALT (done in session 85: `toolkit` and `adaptive` finished, MAB-Malware's zero-section crash patched and `ours` resubmitted, `zainab` read; found PV's 5/1,000 detection and 3 lost adaptive searches) |
 | `docs/archive/resume-prompt-2026-11-17-s84-writing.md` | the writing resume prompt of session 84 (written in session 83): apply the §6 cut plan (done: 1,843 -> 1,284 words) |
 | `docs/archive/status-log-2026-11-12.md` | the session log, sessions 41-42 (search, don't read) |
 | `docs/archive/status-log-2026-11-10-to-11.md` | the session log, sessions 29-39 (search, don't read) |

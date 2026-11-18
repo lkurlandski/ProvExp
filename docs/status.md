@@ -10,7 +10,7 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
 in `docs/archive/status-log-2026-11-14-s63.md`, sessions 64-65 in `docs/archive/status-log-2026-11-14-s64-65.md`, sessions 66-76 in
 `docs/archive/status-log-2026-11-15-to-16-s66-76.md`).
 
-## Current state (2026-11-17, through session 84)
+## Current state (2026-11-18, through session 85)
 
 - **Scale-up running on tigris (session 74).** Setup done (`SETUP.md`, `pipeline/systems/tigris.sh`); everything is
   submitted by `bash pipeline/submit.sh` (SLURM dependencies; `3-directions/gate` before the detectors). Done:
@@ -31,7 +31,10 @@ in `docs/archive/status-log-2026-11-14-s63.md`, sessions 64-65 in `docs/archive/
   validation AUC 0.85-0.87 at epoch 0-1, ~0.69-0.75 from epoch 40 on, the < 5 violations criterion never met); its
   own track (`docs/resume-prompt-erdalt.md`). The other detectors' attacks were resubmitted without ERDALT and run
   apart from it (`toolkit` 1046138, `adaptive` 1046139, MAB-Malware `ours` 1046140; aaefd75); ERDALT's attacks and
-  `6-results` are held. PLAN.md step 3 (16).
+  `6-results` are held. PLAN.md step 3 (16). **Session 85:** `toolkit` (19 tasks) and `adaptive` (81) finished;
+  MAB-Malware `ours` crashed on two zero-section malware (upstream bug, patched in 455f121) and was resubmitted
+  (1131288). Open: 3 adaptive searches lost and silently dropped (diagnostic 1131285), and **PV detects 5 of the
+  1,000 evaluation malware** (test AUC 0.61).
 - **Framework (§2-3):** rewritten; the user is reasonably satisfied. Open: the user's holistic read of Sound
   Directions after round 4 (finetuning only). **Session 74 (the theory session):** proofs audited (correct; seven
   small corrections applied); two additions to §3.3, each approved after a brief look and not yet read closely by the
@@ -167,10 +170,18 @@ in `docs/archive/status-log-2026-11-14-s63.md`, sessions 64-65 in `docs/archive/
 
 ## Waiting on the user
 
-- **The scale-up's attacks are running without ERDALT (session 82).** `toolkit` 1046138 (19 tasks), `adaptive`
-  1046139 (81), MAB-Malware `ours` 1046140 (8 detectors), no dependencies; record `logs/submit-*-no-erdalt.txt`.
-  Next: `docs/resume-prompt-experiments.md`. The nine ERDALT models finish ~2026-11-18 early morning (the user let
-  them run to the end so the run to the authors' specification is complete).
+- **The scale-up's attacks without ERDALT (session 85).** `toolkit` 1046138 and `adaptive` 1046139 finished;
+  MAB-Malware `ours` resubmitted as 1131288 (record `logs/submit-*-no-erdalt.txt`). Next:
+  `docs/resume-prompt-experiments.md`.
+- **PV at scale is nearly blind (the user decides; session 85).** Trained on 201 features of the sums store (3,454
+  neutralized), it reaches test AUC 0.61 and validation AUC 0.55, and at 1% FPR detects 5 of the 1,000 evaluation
+  malware (the leave-one-out folds 3-23); at pilot scale it had 26.3% TPR. Its attack rows will rest on a handful of
+  files. Report as is, or revisit PV's selection at scale?
+- **Three adaptive searches lost (session 85).** In the plain search's shards 6 and 14 (and the same files in each
+  escape), 3 (monotone detector, file) searches had no result 45 min after the last other search finished; the
+  watchdog declared them lost and `_lost` drops them from the results, so the monotone rows miss 1-2 files per
+  shard. Diagnostic 1131285 reruns those shards against the monotone detectors with a 5 h stall limit: slow (then
+  raise `--stall_timeout`, rerun the 4 x 2 shards) or a dying worker (then find the cause).
 - **ERDALT (the user, with the ERDALT track):** every model collapsed (validation AUC ~0.70; criterion never met).
   Leading hypothesis from the code: the violation penalty is a sum over all 79,121 vectors while BCE is a batch mean,
   so it dominates from the first step (~25x the pilot's vectors). Diagnose with short runs, then decide: report as
@@ -219,6 +230,17 @@ Two sessions were numbered 74: the head node on tigris, and the theory session. 
 own resume prompt: `docs/resume-prompt-experiments.md` (the cluster), `docs/resume-prompt-erdalt.md` (ERDALT),
 `docs/resume-prompt-theory.md` (theory), `docs/resume-prompt-writing.md` (the manuscript); `docs/resume-prompt.md` holds
 general work and indexes them.
+
+- **2026-11-18 (session 85, Opus, scale-up track): toolkit and adaptive done; MAB-Malware fixed and resubmitted.**
+  `toolkit` (19 tasks, slowest 4 h 44 min, 70% of its cores, 44 GiB of 100) and `adaptive` (81 tasks, slowest 74 min,
+  39% of its cores, 63 GiB of 100) finished, no errors. MAB-Malware `ours` (1046140) crashed in 3 min: 2 of the 1,000
+  evaluation malware have NumberOfSections 0 and upstream's section-adding action indexed an empty section table
+  (2 more declare 4 sections pefile cannot read, already handled upstream). Patched to return such files unchanged,
+  and each run now clears its work directory, which held the crashed run's evasive files (455f121; diagnostic
+  1131138: the 4 files, SA pulled on them, two runs identical, MAB tests pass); resubmitted as 1131288. Found: PV
+  detects 5/1,000 (test AUC 0.61); 3 adaptive searches lost and dropped (diagnostic 1131285). MAB-Malware `zainab`
+  read: at Zainab et al.'s setting (0.1% FPR, no byte cap) the unconstrained detector detects 867/1,000 and the attack
+  evades 455 (52%; they report 83%; Appendix D's sentence still has the pilot's numbers).
 
 - **2026-11-17 (session 82, Opus, scale-up track): the file store, ERDALT's collapse, the attacks without ERDALT.**
   `iterated` finished (round 2: 972 detected, 515 evaded; 282 GiB of 300 at peak). Its rounds spent ~20 min each
