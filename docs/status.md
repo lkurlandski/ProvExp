@@ -170,6 +170,13 @@ in `docs/archive/status-log-2026-11-14-s63.md`, sessions 64-65 in `docs/archive/
 
 ## Waiting on the user
 
+- **Session 85's reruns are submitted** (`logs/submit-20261118-s85.txt`): one validity rule for the paper (b87fec6:
+  `provexp.attacks.validity`, an output counts only if pefile and LIEF both read it and neither loses a section or an
+  import; unreadable start files not applicable), the shift patch (5170936), the DOS-header check. Chain:
+  catalogue-checks 1141844 -> trial 1141845 -> train-trial 1141846; material 1141847 (10 shards) -> learned GBDTs 1141848
+  -> iterated 1141849; then toolkit 1141850, adaptive 1141851, MAB `ours` 1141852; MAB `expert`/`zainab` 1141853.
+  Old outputs in `artifacts/scaleup/superseded-s85/`. ERDALT (trained on the old material) and `6-results` held.
+
 - **The scale-up's attacks without ERDALT (session 85).** `toolkit` 1046138 and `adaptive` 1046139 finished;
   MAB-Malware `ours` resubmitted as 1131288 (record `logs/submit-*-no-erdalt.txt`). Next:
   `docs/resume-prompt-experiments.md`.

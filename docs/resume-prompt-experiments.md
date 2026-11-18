@@ -53,37 +53,17 @@ pilot-scale numbers, and the scale-up (PLAN.md step 3; full record `docs/scaleup
 
 ## 4. Next session
 
-1. **Check in once:** `squeue -u $USER`; `sacct -u $USER -S 2026-11-18 -X --format=JobID%16,JobName%20,State%14,
-   Elapsed,Timelimit,AllocCPUS,ReqMem` (MaxRSS and TotalCPU are on the `.batch` steps: drop `-X`). Grep new logs for
-   `LOST task`, `could not spawn`, `Resource temporarily unavailable`, `Traceback`.
-2. **MAB-Malware `ours` (1131288):** log `artifacts/scaleup/5-attacks/mab-malware/logs/mab-ours.log`; startup line;
-   memory against the 128 GB estimate (`sstat -j 1131288_0.batch` while it runs). Expected ~5 h per detector at
-   one process each (pilot timing). Its PV run attacks only 5 files.
-3. **The lost adaptive searches (1131285; the user's rule since ec2a5bd: one hour, then discarded and counted):** in job 1046139, shards 6 and 14 of every escape had 3 (monotone
-   detector, file) searches with no result 45 min after the last other search finished (`map_watchdog`'s
-   `stall_timeout`, 2700 s); `provexp.attacks.adaptive._lost` drops them, so the monotone rows miss those files
-   silently. Other monotone searches there took at most ~20 min. The diagnostic reruns the two shards against the
-   monotone detectors with `PYTHONFAULTHANDLER=1` and a 5 h stall limit; logs `artifacts/scaleup/diag/adaptive-lost/
-   shard-{6,14}.log`, outputs beside them (`seconds` per search). Hypothesis: slow searches (large files, all 5,000
-   candidates spent), not dying workers. If slow: raise the stall limit in `pipeline/5-attacks/adaptive/run.sh`
-   (`--stall_timeout`), consider making a lost task a row marked lost rather than dropping it, and rerun the affected
-   shards (delete their `adaptive.json`; the array task index is escape-major: shard k of escape e is 20e + k, so
-   6, 14, 26, 34, 46, 54, 66, 74). If a worker died: find why first (LIEF's runaway rebuild, `docs/upstream-issues.md`
-   §13, is a suspect). Discuss with the user before rerunning.
-4. **PV: the user's decision on the proposal** (status.md, *Waiting on the user*, has the diagnosis: 894 broken
-   outputs and sample size). The user wants PV's behaviour understood, explained in the manuscript, and backed by an
-   appendix experiment. Proposed: filter the material to outputs still read as a PE with their imports (decide: all
-   learned defenses or PV only), retrain PV and its folds, re-attack them, and a curve of kept features and TPR
-   against the number of training malware (with and without the broken outputs). Scripts: `artifacts/scaleup/diag/
-   pv_scale.py`, `pv_broken.py`; selection `pipeline/6-results/pv_hole.py` (`--drop_import_loss` exists).
-5. **Resources:** headers changed in ec2a5bd (approved). `iterated`: 3 h 24 min of 2 days, 282 GiB of 300 GB (lower
-   its walltime; consider memory before any rerun). Toolkit task 9 (debug-entry escape) used 41% of its cores for
-   unknown reasons; if it recurs, `sstat` it while running.
-6. **Decision 12's follow-up:** the training files behind the derived table's new moves (a section rename lowering
-   printable-string counts; header-field writes moving the relocation flags), for §4.3.2's last sentence and §5.1's
-   *Checking results* (PLAN.md, open items).
-7. **When the attacks finish and ERDALT's track has run its attacks:** `6-results` (`sbatch pipeline/6-results/run.sh`),
-   then read the results with the user (PLAN.md step 5).
+1. **The reruns** (`logs/submit-20261118-s85.txt`; status.md, *Waiting on the user*, first item). Check once:
+   `squeue -u $USER`; sacct since 2026-11-18. Read each job's startup line and its log a few minutes after it starts
+   (a job's pool must sit under a main guard; session 85 lost 23 min to one that did not). New lines to read: the
+   material's and the toolkit's `Validity: N of M ... not read by both parsers` and `DOS header: ...`, the tables'
+   `invalid` / `invalid_pefile_only` counts (the extractor's quirks, to fix at the source), `invalid.parquet` per
+   material shard. Expected: the material's invalid outputs ~2% of attempts (diag job 1141836: 42 of 2,000 before the
+   shift patch), PV keeping ~1,300 features and detecting near the pilot's ~26%.
+2. **When the attacks finish:** walltimes and memory against the headers; then ERDALT's track runs its attacks (its
+   models were trained on the old material: retrain first) and `6-results`.
+3. **Deferred, approved:** PV's sample-size experiment (`docs/scaleup-protocol.md`, item (17)).
+4. **Decision 12's follow-up** (PLAN.md, open items).
 
 ## 5. Noted for later
 
