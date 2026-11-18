@@ -38,8 +38,9 @@ them (below).
   what enters the manuscript.
 - **The largest open risks:** one instance only (a second domain is step 6, the user's call), and ERDALT at scale:
   every model collapses to validation AUC ~0.70 (pilot 0.88) and misses its criterion, which invites the straw-man
-  objection; its own track since session 82 (`docs/resume-prompt-erdalt.md`; session 87: all nine read, diagnosis
-  next in an interactive GPU job).
+  objection; its own track since session 82 (`docs/resume-prompt-erdalt.md`; session 88: short runs on a training
+  slice could not reproduce the collapse; next, a written diagnosis plan on the full split and new material, for the
+  user's approval).
 
 ## Next steps, in order
 

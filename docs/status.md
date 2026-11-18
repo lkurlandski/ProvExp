@@ -191,11 +191,11 @@ in `docs/archive/status-log-2026-11-14-s63.md`, sessions 64-65 in `docs/archive/
   e.g. pefile's 8,192-import cap): list them from the reruns (`invalid.parquet`, `invalid_pefile_only`) and decide with
   the user which to patch in the extractor (CLAUDE.md: no result may rest on a quirk).
 - **ERDALT (the user, with the ERDALT track):** every model collapsed (validation AUC ~0.70; criterion never met).
-  Leading hypothesis from the code: the violation penalty is a sum over all 79,121 vectors (their code caps it at
-  2,432 per step) while BCE is a batch mean. The penalty is huge only in epochs 0-1 (session 87), so either early
-  damage or the rising penalty weight. Diagnose with short runs, locally in an interactive GPU job (the user starts
-  one), then decide: report as specified, retrain with a fix, or retrain at their scale.
-  `docs/resume-prompt-erdalt.md`.
+  Session 88's slice runs (200,000 training files) did not reproduce the collapse and were stopped; what they showed:
+  AUC falls as violations fall in every variant, their vectors-per-step cap does not keep AUC up, the free output
+  layer is ~0.06 AUC higher, the standardized inputs are extremely heavy-tailed (|z| up to 166,000), and the broken
+  outputs are not the extreme vectors (8.8% of the negative mass). **Next session: a written diagnosis plan (full
+  training split, new material) for the user's approval before any run** (`docs/resume-prompt-erdalt.md`).
 - Number-free rebuttal text fixes (R4, R5, R15, R21) are step 4 (while the scale-up runs).
 - **Bounds on size: the mathematics is written; the user decides, with Opus, what enters the manuscript**
   (`theory-analysis.md`, parts G and H; session 76; next theory session: `docs/resume-prompt-theory.md`).
@@ -240,6 +240,16 @@ Two sessions were numbered 74: the head node on tigris, and the theory session. 
 own resume prompt: `docs/resume-prompt-experiments.md` (the cluster), `docs/resume-prompt-erdalt.md` (ERDALT),
 `docs/resume-prompt-theory.md` (theory), `docs/resume-prompt-writing.md` (the manuscript); `docs/resume-prompt.md` holds
 general work and indexes them.
+
+- **2026-11-18 (session 88, Opus, ERDALT track, tigris interactive job, one GH200 shard): slice diagnosis, stopped.**
+  Six variants on a seeded 200,000-file training slice, old material (control, 2,432 vectors per step, + batch 16,
+  free output layer, no LR scheduler, penalty weight x0.1; `--penalty_scale` added to `train_erdalt`). The slice does
+  not reproduce the collapse (per-epoch schedule, 9x fewer steps per epoch), so the runs cannot name the cause; the
+  user judged that they were started without being thought through and stopped them at epoch ~21. Findings (old
+  material): AUC tracks violations across variants; the cap (b) peaks at 0.81 and slides; free output ~0.88; inputs
+  heavy-tailed (hashed section sizes; validation logits +-1e5); the 894 broken outputs carry 8.8% of the penalty's
+  negative mass and none of the most extreme vectors (valid GAMMA outputs in `section:vsize_hash_48`). Scripts and
+  logs: `artifacts/scaleup/diag/erdalt/`. Next: a written plan first (`docs/resume-prompt-erdalt.md` §5).
 
 - **2026-11-18 (session 87, Opus, ERDALT track, tigris interactive job): the nine models read; no GPU.** All nine
   ERDALT models finished (old material): validation AUC 0.690-0.752, 16-40 violations, `met_criterion` false
