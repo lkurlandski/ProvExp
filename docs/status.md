@@ -10,7 +10,7 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
 in `docs/archive/status-log-2026-11-14-s63.md`, sessions 64-65 in `docs/archive/status-log-2026-11-14-s64-65.md`, sessions 66-76 in
 `docs/archive/status-log-2026-11-15-to-16-s66-76.md`).
 
-## Current state (2026-11-19, through session 97)
+## Current state (2026-11-19, through session 98)
 
 - **Session 94:** every detector but ERDALT retrained and attacked on the new material (unread); ERDALT retrained with
   settings rescaled to its authors' setup (`erdalt` running, the folds held). One prompt for all experiments now:
@@ -246,6 +246,16 @@ own resume prompt: `docs/resume-prompt-experiments.md` (the cluster), `docs/resu
 `docs/resume-prompt-theory.md` (theory), `docs/resume-prompt-writing.md` (the manuscript); `docs/resume-prompt.md` holds
 general work and indexes them.
 
+- **2026-11-19 (session 98, Opus, writing track): Appendix C holds proofs only.** The user chose the principle: the
+  appendix proves what the body states; definitions and the conditions of stated results go in the body; commentary is
+  cut. Applied (f84cfd4, 29ae165): the sign of a change defined in Definition 7; three lemmas stated in the body, proofs
+  in C.2/C.3: Lemma 1 *Directions of sums* (§3.3, after the totally-ordered paragraph), Lemma 2 *Readout rule* (after
+  Table 1's paragraph), Lemma 3 *Closure* (was Lemma 1); the helper "totals keep their sign" folded into Proposition
+  2's proof; the pool-default condition in Table 1's caption; Table 7, its justification and *Hashed keys* switched
+  off (`\iffalse` in `_j_proofs.tex`; Appendix A's $Q$ removed); the remark that scores reading sums are covered cut;
+  §3.4's recap sentence ("Theorem 1 supplies the sound table ...") cut, the Gimenez bridge sentence kept. Words: §3
+  3,692 to 3,769; Appendix C rendered 1,154 to ~890. Next: cut §3 to 3,000-3,250 by trimming explanation and
+  analysis ("let the math do more of the talking"), `docs/resume-prompt-writing.md`.
 - **2026-11-19 (session 97, Opus, writing track): §3 cut by 12%; the body/appendix split reopened.** Cut plan per
   subsection, every item decided by the user, applied in 652c1af: shorter roadmap; the three analogies shortened (Gray
   et al., incremental view maintenance, abstract interpretation; §6 unchanged); Proposition 1's repeats removed and

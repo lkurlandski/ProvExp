@@ -11,6 +11,13 @@ The "implied" notes are earlier readings, not instructions; several of them were
 
 ## Reaction log
 
+- **2026-11-19, body/appendix split of §3 (session 98).** Chose "Appendix C holds proofs only" (definitions and
+  conditions of stated results in the body, commentary cut). On turning Table 7 into a stated lemma: "The table was
+  meant to be illustrative and I feel like this takes the mathy-stuff too far" (cut it, kept in an `\iffalse` block).
+  On the lemma behind Theorem 1: "I would rather keep the Lemma in the main body and leave its proof in the Appendix";
+  then asked the same for the readout rule, and to fold a one-use helper lemma into the proof that used it. Kept the
+  sentence bridging Gimenez et al. to direction tables once Claude gave its value; cut the recap sentence. Next round:
+  "we'll let the math do more of the talking", trimming explanations and analysis rather than easy cuts.
 - **2026-11-19, §3 cut (session 97).** Plan per subsection with exact replacement text; most items approved,
   two small cuts denied (the free-monoid sentence after equation (6), "They do not form a vector"). Analogies:
   "Shorten" for all three. Lemma 1: shorten in place, not move. Second round proposed moving a counterexample to the

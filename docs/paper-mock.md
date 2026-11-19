@@ -19,8 +19,9 @@ knowledge comes from trial, from an analyst's reading of the extractor, or from 
    with a support), and Proposition 1: an edit's delta and the item table of the input give the features of the
    edited input exactly, before the edit is applied, re-evaluating only the readouts whose support a changed sum is in.
 2. **Sound directions.** Signatures (the changes a threat model may make to each kind of item), the derived table
-   (direction of each sum from the changes, of each feature from its readout's rule), Theorem 1 (sound over a
-   population, and for sequences of edits when the population is closed), Lemma 1 (closure follows from the table
+   (direction of each sum from the changes, of each feature from its readout's rule), Lemmas 1-2 (each sum moves in
+   its direction; the readout rule), Theorem 1 (sound over a population), Proposition 2 (sequences of edits on a
+   closed population; session 96), Lemma 3 (closure follows from the table
    when the population is bounded by features no edit can raise; session 74), and Corollary 1 (monotone detectors).
    The readout's direction comes from one rule, the sums it rises and falls with (session 74). Format-free, with
    proofs.
