@@ -26,7 +26,7 @@ definition or result. Run on Opus. Use no subagents unless the user asks.
    bookkeeping (field-level detail, quirk patches, how each EMBER feature group maps to items) can live in the
    appendix; commentary that nothing needs is cut. Body sentences are never moved to the appendix to save words
    (session 97); a split decided up front is a different matter, but ask.
-2. **Then review and tighten §4** the way §3 was done in session 99: a ranked plan with exact old and new text, the
+2. **Then review and tighten §4** with the project skill `cut-to-length` (the process of session 99): a ranked plan with exact old and new text, the
    words each item saves, and for each item its effect on (i) the correctness and strength of the claims, (ii) a
    doctorate-level reader's comprehension and appreciation, (iii) flow, in that order of importance; propose a
    cheaper fix where a cut costs (i) or (ii); list the items from least to most disruptive. A word target for §4 is
