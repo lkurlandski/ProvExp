@@ -47,7 +47,7 @@ EMBER's 88 parser warnings are flags, each set when the parser reports a particu
 do not model which parts of the file cause it. A feature without items can be dropped, which leaves a
 sum-then-readout extractor on the remaining features (Definition~\ref{def:fw:extractor}), or kept and given the
 direction $\mathsf{both}$, which is always sound. A monotone detector reads no feature marked $\mathsf{both}$
-(\Cref{sec:fw:directions}), so for a detector the two choices coincide. We drop the warnings. Earlier versions of EMBER did
+(\Cref{sec:fw:robust}), so for a detector the two choices coincide. We drop the warnings. Earlier versions of EMBER did
 not compute them~\cite{joyce2025ember},
 and a detector trained without them loses no detection (0.1 points more at a 1\% false-positive rate). % run 126 (pilot)
 We also change one rule of EMBER's parser: it starts the overlay where the last section or data directory ends, and we

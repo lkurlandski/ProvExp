@@ -64,8 +64,8 @@ contributions, which the next paragraph proves.
 
 \paragraph{Directions of sums (Definition~\ref{def:fw:sum-direction}).}
 Let $B = \pi(z) - I^-$ be the kept items, and list the changes of $C$ as $(\tau_i, c_i \to c'_i)$ for
-$i = 1, \dots, m$. By \eqref{eq:fw:made-of} and \eqref{eq:fw:homomorphism}, and since an absent content contributes the
-neutral element, every sum $k$ satisfies
+$i = 1, \dots, m$. Since the delta is made of these changes (Definition~\ref{def:fw:signature}), folding a union
+combines the folds, and an absent content contributes the neutral element, every sum $k$ satisfies
 \[
   \begin{aligned}
     s_k(z) &= \sigma(B)_k \star_k \nu_{\tau_1}(c_1)_k \star_k \dots \star_k \nu_{\tau_m}(c_m)_k, \\
@@ -77,7 +77,10 @@ monoid is totally ordered, and its operation is commutative, so replacing any on
 one never makes the result smaller. If no change in $\Delta$ lowers $k$, that is, $\nu_\tau(c')_k \ge \nu_\tau(c)_k$
 for every change, then replacing the old values by the new ones, one at a time, gives $s_k(z') \ge s_k(z)$; if none
 raises $k$, then $s_k(z') \le s_k(z)$; and if neither, the two are equal. The change of
-$s_k$ therefore has a sign in $d_k$, for every totally ordered sum.
+$s_k$ therefore has a sign in $d_k$, for every totally ordered sum. Additive sums and pools are totally ordered:
+$a \le b$ implies $a + c \le b + c$, $\max(a, c) \le \max(b, c)$, and $\min(a, c) \le \min(b, c)$. A min pool needs no
+rule of its own: its neutral element is $+\infty$, so by Definition~\ref{def:fw:sum-direction} a removal raises it and
+an addition lowers it, as removing or adding a value does to a minimum.
 
 The directions of \Cref{tab:fw:signs} follow from Definition~\ref{def:fw:sum-direction}. A count receives 1 from an
 item with its key and the neutral element $0$ otherwise, so an addition raises it, a removal lowers it, a replacement
@@ -118,8 +121,8 @@ touches the pool, so that it is a real number; this readout is nondecreasing onl
 contribution to a max pool, or at least every contribution to a min pool, and otherwise the feature takes the last
 row. A distinct count is a total of presence bits and rises with each of its sums. For a ratio, the values that
 occur are $a \ge 0$ with $b > 0$, and $a = b = 0$, where it reads 0. Among the first, $a/b$ does not fall when $a$
-rises or stays and $b$ falls or stays. The pair $(0, 0)$ can be compared only with pairs that have $a = 0$, and the
-ratio reads 0 on all of them. So the ratio rises with $a$ and falls with $b$. A normalized bin
+rises or stays and $b$ falls or stays. A change from $(0, 0)$ in which $b$ falls or stays keeps $b = 0$, hence
+$a = 0$, and a change to $(0, 0)$ in which $a$ rises or stays starts from $a = 0$; the ratio reads 0 at both ends. So the ratio rises with $a$ and falls with $b$. A normalized bin
 $c_i / \sum_l c_l$, which reads 0 when every count is 0, does not fall when $c_i$ rises or stays and every other
 count falls or stays: if $c_i$ is 0 afterwards, it was 0 before, and otherwise the share is
 $1 / (1 + \sum_{l \ne i} c_l / c_i)$ afterwards and at most that before. The last row puts every sum in $O_j$, where
@@ -133,7 +136,7 @@ under $\mathcal{M}$, and let $\mathbf{x}' = \varphi(T(z))$ for a finite sequence
 transformations in $\mathcal{M}$. The inputs $z_0 = z$ and $z_i = T_i(z_{i-1})$ all lie in $Z$, by closure and
 induction on $i$, so each step changes feature $j$ with a sign in $(D_\Delta)_j$ by the first part. The change
 $x'_j - \varphi_j(z)$ is the total of these steps' changes, and a direction is closed under addition, so it has a sign
-in $(D_\Delta)_j$. Without closure, a step can leave $Z$, and the signature says nothing about the steps after it.
+in $(D_\Delta)_j$. Without closure, a step can leave $Z$, and the table says nothing about the steps after it.
 
 \paragraph{Proof of Lemma~\ref{lem:fw:closure}.}
 Let $z \in Z$ and $T \in \mathcal{M}$. The first part of the proof of Theorem~\ref{thm:fw:directions} does not use

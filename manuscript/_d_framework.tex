@@ -11,8 +11,8 @@ totals, and compute each feature by a formula over a few totals. \Cref{sec:fw:mo
 and shows that this description and a record the extractor writes while it runs give the exact change of every
 feature, side effects included, before the edit is applied: the totals are updated from the record, and only the
 formulas that read a changed total are evaluated again. \Cref{sec:fw:directions} bounds, without applying any edit,
-the direction in which each feature can move under all the edits a threat model allows. A detector whose score cannot
-fall in those directions cannot be evaded by any of those edits.
+the direction in which each feature can move under all the edits a threat model allows, and \Cref{sec:fw:robust}
+shows that a detector whose score cannot fall in those directions cannot be evaded by any sequence of those edits.
 Appendix~\ref{sec:symbols} lists the notation, Appendix~\ref{sec:types} is a short introduction to the algebra that
 \Cref{sec:fw:model} uses, and Appendix~\ref{sec:fw:proofs} holds the proofs.
 
@@ -292,9 +292,9 @@ deltas one by one. Yet an attacker searching for an evasive edit, and a defender
 need to know what all the edits of the set can do. This subsection computes, for every feature, the directions in which
 the edits of such a set can move it. It needs only the item tables of the inputs and a description of which kinds of
 item the edits change, and no delta. It then proves that these directions are sound: no edit of the set moves a feature
-in a direction they exclude. One table of directions thus accounts for every edit of the set at once. It tells an
-attacker which features the edits can move, and which way. It also lets a defender build a detector whose score cannot
-fall in the directions the table allows, and no edit of the set can evade such a detector.
+in a direction they exclude. One table of directions thus accounts for every edit of the set at once: it tells an
+attacker which features the edits can move, and which way, and \Cref{sec:fw:robust} turns it into detectors that no
+sequence of these edits can evade.
 
 \definition[Threat models and directions]
 \label{def:fw:directions}
@@ -362,23 +362,18 @@ sum $k$ under $\Delta$ is $\mathsf{fixed}$ if no change in $\Delta$ raises or lo
 it, $\mathsf{down}$ if none raises it, and $\mathsf{both}$ otherwise.
 }
 
-\noindent The direction of a sum bounds its change under every edit whose delta is made of changes in $\Delta$, as long
-as a larger contribution never makes the sum's total smaller. On an additive sum, the edit changes $s_k$ by the total of
-$\nu_\tau(c')_k - \nu_\tau(c)_k$ over its changes
-(Proposition~\ref{prop:fw:side-effects}(i)). If no change lowers the sum, every term of this total is non-negative, and
-so is the total. On a max pool, if no change lowers $k$, every item that contributes to $k$ is either kept or replaced
-by one that contributes at least as much, and added items only bring in more values. The largest value therefore cannot
-fall, and by the same argument it cannot rise if no change raises $k$. A min pool needs no rule of its own: its neutral
-element is $+\infty$, so by the definition a removal raises it and an addition lowers it, as removing or adding a value
-does to a minimum. Not every monoid behaves this way. If a sum were a product of signed values, a change that raised
-an item's contribution from 1 to 2 would take a total of $-3$ to $-6$, and the direction would say up while the sum
-fell. The directions need a \emph{totally ordered} monoid~\cite{fuchs1963partially}, in which any two values can be
-compared and a larger value never makes the result smaller ($a \le b$ implies $a \star_k c \le b \star_k c$).
-Additive sums and pools are totally ordered, and Theorem~\ref{thm:fw:directions} below holds for every extractor whose
-sums are. The direction depends on the contribution functions and the changes in $\Delta$, not on any
-input.
-For the contributions common in feature sets, it follows from their form: the count of a key rises when an item with
-that key is added, falls when one is removed, and stays when an item is replaced by one with the same key.
+\noindent The direction of a sum bounds its change under every edit whose delta is made of changes in $\Delta$,
+provided the sum's monoid is \emph{totally ordered}~\cite{fuchs1963partially}: any two values can be compared, and a
+larger value never makes the result smaller ($a \le b$ implies $a \star_k c \le b \star_k c$). The edit replaces the
+old contribution of each change by its new one, and if no change in $\Delta$ lowers the sum, no replacement makes the
+total smaller. Additive sums and pools are totally ordered, and Theorem~\ref{thm:fw:directions} below holds for every
+extractor whose sums are. Not every monoid is: if a sum were a product of signed values, a change that raised an
+item's contribution from 1 to 2 would take a total of $-3$ to $-6$, and the direction would say up while the sum fell.
+Appendix~\ref{sec:fw:proofs} gives the argument in full.
+
+The direction of a sum depends on the contribution functions and the changes in $\Delta$, not on any input. For the
+contributions common in feature sets, it follows from their form: the count of a key rises when an item with that key
+is added, falls when one is removed, and stays when an item is replaced by one with the same key.
 \Cref{tab:fw:signs} in Appendix~\ref{sec:fw:proofs} lists these forms.
 
 \begin{table}[t]
@@ -402,26 +397,22 @@ that key is added, falls when one is removed, and stays when an item is replaced
   \end{tabular}
 \end{table}
 
-The readouts turn the directions of sums into directions of features, by one rule. Flipping a direction, written
-$-d$, exchanges up and down, and the union of two directions is again a direction:
-$\mathsf{up} \cup \mathsf{down} = \mathsf{both}$, and a direction united with itself or with $\mathsf{fixed}$ is
-unchanged. A readout \emph{rises with} a set $P_j$ of the sums in its support and \emph{falls with} a set $N_j$ if
-its value does not fall whenever the sums in $P_j$ rise or stay, those in $N_j$ fall or stay, and the other sums in
-its support, $O_j$, stay. A sum that the readout rises with passes its direction on to the feature, a sum that it
-falls with passes its direction flipped, and any other sum passes both. The \emph{readout rule} gives the feature the
-union of these directions:
+A feature's direction follows from the directions of the sums it reads. A ratio $a / b$ can rise only if $a$ can rise
+or $b$ can fall, so its direction is the direction of $a$ united with the direction of $b$ flipped, where flipping,
+written $-d$, exchanges up and down, and $\mathsf{up} \cup \mathsf{down} = \mathsf{both}$. In general, a readout
+\emph{rises with} a set $P_j$ of the sums in its support and \emph{falls with} a set $N_j$ if its value does not fall
+whenever the sums in $P_j$ rise or stay and those in $N_j$ fall or stay, while the rest of its support, $O_j$, stays.
+The \emph{readout rule} gives the feature the directions of the sums in $P_j$, the flipped directions of those in
+$N_j$, and both orientations of those in $O_j$:
 \begin{equation}
   \label{eq:fw:readout-rule}
   \bigcup_{k \in P_j} d_k \;\cup \bigcup_{k \in N_j} (-d_k) \;\cup \bigcup_{k \in O_j} \big(d_k \cup (-d_k)\big).
 \end{equation}
-\Cref{tab:fw:readouts} lists the sums that each readout form of \Cref{sec:fw:model} rises and falls with. The
-identity, a nondecreasing function of one sum such as a presence bit, and a distinct count, which is a total of
-presence bits, rise with the sums they read and get their directions. A ratio rises with its numerator and falls
-with its denominator, so it can rise only if the numerator can rise or the denominator can fall. A bin's share of a
-histogram rises with its own count and falls with every other. A readout of any other form has all its sums in
-$O_j$: its feature is fixed if every sum in the support is fixed, and can move either way otherwise. The rule is not
-limited to these forms. A total or a difference of sums, a mean, and the larger of several sums each rise and fall
-with sums that can be read off their formulas.
+\Cref{tab:fw:readouts} lists the sums that each readout form of \Cref{sec:fw:model} rises and falls with, and
+Appendix~\ref{sec:fw:proofs} proves each row. A readout of any other form has all its sums in $O_j$: its feature is
+fixed if every sum in its support is fixed, and can move either way otherwise. The rule is not limited to the forms of
+the table: a total or a difference of sums, a mean, and the larger of several sums each rise and fall with sums that
+can be read off their formulas.
 
 \definition[Derived table]
 \label{def:fw:derived}
@@ -446,7 +437,20 @@ bound on the feature. A sequence of
 edits passes through intermediate inputs, and closure keeps each of them in $Z$, so the bound holds at every step. It
 also holds for the sequence as a whole, because adding up changes keeps them within a direction: two rises make a
 rise, and a rise followed by no change is a rise. Without closure, an intermediate input can leave $Z$, and the table
-says nothing about the steps after it.
+says nothing about the steps after it; \Cref{sec:fw:robust} shows how the table itself establishes closure.
+
+Reasoning about every edit at once through a few abstract values is the idea of abstract
+interpretation~\cite{cousot1977abstract}, whose introductory example is the rule of signs: the sign of a product
+follows from the signs of its factors, without the numbers. A direction is such a sign, and like the rule of signs it
+is sound but may be loose. What the directions abstract here is not a value the extractor computes but the change of
+a feature under every edit of a threat model, and they are computed from the kinds of items the edits change.
+
+\subsection{Robust by Construction}
+\label{sec:fw:robust}
+
+A sound table bounds how the features of an input can move under the edits of a threat model. A defender needs more:
+a detector whose score no sequence of these edits can lower. Two things give it. The population must be closed, so
+that the table applies at every step of the sequence, and the score must not fall in any direction the table allows.
 
 Closure need not be assumed separately. A population is usually defined by a condition on its inputs, and when the
 condition is a bound on features of the extractor, the derived table says whether an edit can break it.
@@ -462,26 +466,19 @@ $+$, then $Z$ is closed under $\mathcal{M}$.
 
 \noindent The first claim of Theorem~\ref{thm:fw:directions} holds without closure. Applied to an input of $Z$ and a
 feature of $J$, it says that the edit does not raise the feature, so the feature stays at or below its bound and the
-edited input is in $Z$. The same holds for lower bounds on features that the table does not allow to fall. A
-population of the inputs that hold no item of some unwanted form is of this kind: the number of such items is a sum,
-read by the identity and bounded by 0, and it cannot rise if no change in $\Delta$ adds such an item or turns another
-item into one. The table that gives each feature its direction then also shows that the edits cannot leave the
-population.
+edited input is in $Z$. A population of the inputs that hold no item of some unwanted form is of this kind: the number
+of such items is a sum, read by the identity and bounded by 0, and it cannot rise if no change in $\Delta$ adds such
+an item or turns another item into one. Lower bounds on features that the table does not allow to fall work the same
+way.
 
-Reasoning about every edit at once through a few abstract values is the idea of abstract
-interpretation~\cite{cousot1977abstract}, whose introductory example is the rule of signs: the sign of a product
-follows from the signs of its factors, without the numbers. A direction is such a sign, and like the rule of signs it
-is sound but may be loose. What the directions abstract here is not a value the extractor computes but the change of
-a feature under every edit of a threat model, and they are computed from the kinds of items the edits change.
-
-A sound table also gives detectors that the threat model cannot evade. Let $h: \mathcal{X} \to \mathbb{R}$ be a
+A sound table on a closed population gives detectors that the threat model cannot evade. Let $h: \mathcal{X} \to \mathbb{R}$ be a
 detector's malware score. Gimenez et al.\ prove that a detector whose score never falls as the features rise cannot be
 evaded when the attacker's edits can only raise the features~\cite{gimenez2025certifiably}. A direction table says
 which features the edits can only raise, which they can only lower, and which they cannot change, so it says how the
 score must behave. We call $h$ \emph{monotone with respect to} $D$ if $h(\mathbf{x}') \ge h(\mathbf{x})$ whenever the
-change $x'_j - x_j$ of every feature $j$ has a sign in $D_j$. A gradient-boosted tree trained with monotone
-constraints, increasing in the up features, decreasing in the down features, unconstrained in the fixed features, and
-reading no feature marked both, is such a score.
+change $x'_j - x_j$ of every feature $j$ has a sign in $D_j$. Such a score is, for instance, a gradient-boosted tree
+trained with monotone constraints: increasing in the up features, decreasing in the down features, unconstrained in
+the fixed features, and reading no feature marked both.
 
 \corollary[Robustness]
 \label{cor:fw:robustness}
@@ -489,3 +486,8 @@ reading no feature marked both, is such a score.
 Let $D$ be sound for $\mathcal{M}$ over a population $Z$ closed under $\mathcal{M}$, and let $h$ be monotone with
 respect to $D$. Then $h(\mathbf{x}') \ge h(\varphi(z))$ for every $z \in Z$ and every $\mathbf{x}' \in \mathcal{R}(z)$.
 }
+
+\noindent The guarantee needs no attack to be run: it covers every sequence of edits in the threat model, of any
+length and with any content, and not only those an attack happens to try. Theorem~\ref{thm:fw:directions} supplies
+the sound table and Lemma~\ref{lem:fw:closure} the closed population. What the guarantee costs in detection is
+measured in \Cref{sec:eval:detectors}.

@@ -41,7 +41,7 @@ knowledge comes from trial, from an analyst's reading of the extractor, or from 
 |---|---|---|
 | 1 Introduction | last | 1,000 |
 | 2 Background and Motivation | as drafted, adjusted to the alignment option the user picks (below) | 950 |
-| 3 Measuring Edits Across Feature Mappings | as drafted (sum-then-readout extractors; edits and side effects; sound directions); finetuning only | 3,500 (now ~4,050) |
+| 3 Measuring Edits Across Feature Mappings | as drafted (sum-then-readout extractors; edits and side effects; sound directions; robust by construction, split from sound directions in session 94); finetuning only | 3,500 (now ~4,050) |
 | 4 Instantiating the Framework | the template, EMBER in it (below); bookkeeping in an appendix | 1,000 |
 | 5 Evaluation | three findings: what hand analysis misses, what observed attacks miss, what robustness costs (below) | 3,200 |
 | 6 Related Work | as drafted; "margins" and old terms fixed | 1,000 (now ~1,280, accepted in session 84) |
