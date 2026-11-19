@@ -11,6 +11,12 @@ The "implied" notes are earlier readings, not instructions; several of them were
 
 ## Reaction log
 
+- **2026-11-19, §3 cut by trimming explanation (session 99).** First plan (22 items, −593 words) called "an
+  excellent first-pass analysis"; asked for each cut to be assessed for (i) mathematical correctness and strength,
+  (ii) the reader's comprehension and appreciation (doctorate-level security, privacy, ML researchers), (iii) flow, in
+  that order, with improvements that keep most of each cut, listed least to most disruptive. Approved every revised
+  item: "It's okay that we didn't quite hit 3250." Implied: a cut that drops a scope statement, a soundness caveat, or
+  a back-referenced term is worth a few words to keep.
 - **2026-11-19, body/appendix split of §3 (session 98).** Chose "Appendix C holds proofs only" (definitions and
   conditions of stated results in the body, commentary cut). On turning Table 7 into a stated lemma: "The table was
   meant to be illustrative and I feel like this takes the mathy-stuff too far" (cut it, kept in an `\iffalse` block).

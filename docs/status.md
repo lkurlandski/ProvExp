@@ -10,7 +10,7 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
 in `docs/archive/status-log-2026-11-14-s63.md`, sessions 64-65 in `docs/archive/status-log-2026-11-14-s64-65.md`, sessions 66-76 in
 `docs/archive/status-log-2026-11-15-to-16-s66-76.md`).
 
-## Current state (2026-11-19, through session 98)
+## Current state (2026-11-19, through session 99)
 
 - **Session 94:** every detector but ERDALT retrained and attacked on the new material (unread); ERDALT retrained with
   settings rescaled to its authors' setup (`erdalt` running, the folds held). One prompt for all experiments now:
@@ -246,6 +246,16 @@ own resume prompt: `docs/resume-prompt-experiments.md` (the cluster), `docs/resu
 `docs/resume-prompt-theory.md` (theory), `docs/resume-prompt-writing.md` (the manuscript); `docs/resume-prompt.md` holds
 general work and indexes them.
 
+- **2026-11-19 (session 99, Opus, writing track): §3 cut to 3,312 words (from 3,769).** Plan of 22 items, each
+  assessed for the math, the reader, and the flow at the user's request, revised where a cut cost the first two, and
+  approved as revised (d9f77b8). Cut: restatements of Definitions 4, 8, 10 and equation (11) in words, the gloss
+  sentences around Definitions 1-3, the "common contributions" paragraph (one example sentence kept), the long
+  explanation after Theorem 1 (now: Lemma 1 bounds each sum, Lemma 2 the feature), the four-sentence lead-in to
+  Proposition 1 (one sentence kept; the user had called Prop 1 "abrupt" before). Kept on purpose: "whatever content
+  the edits write", the table's looseness stated next to the prior-work constraints, the coarse direction of "any
+  other" readouts, "no inverse" in §3.1 (§3.2 refers to it), "Without closure ..." after Proposition 2, whose reason is
+  now "each direction is closed under adding changes". 62 words above the 3,250 ceiling; the user accepted that.
+  Next: §4 with Appendix D, `docs/resume-prompt-writing.md`.
 - **2026-11-19 (session 98, Opus, writing track): Appendix C holds proofs only.** The user chose the principle: the
   appendix proves what the body states; definitions and the conditions of stated results go in the body; commentary is
   cut. Applied (f84cfd4, 29ae165): the sign of a change defined in Definition 7; three lemmas stated in the body, proofs
