@@ -10,7 +10,7 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
 in `docs/archive/status-log-2026-11-14-s63.md`, sessions 64-65 in `docs/archive/status-log-2026-11-14-s64-65.md`, sessions 66-76 in
 `docs/archive/status-log-2026-11-15-to-16-s66-76.md`).
 
-## Current state (2026-11-19, through session 94)
+## Current state (2026-11-19, through session 95)
 
 - **Session 94:** every detector but ERDALT retrained and attacked on the new material (unread); ERDALT retrained with
   settings rescaled to its authors' setup (`erdalt` running, the folds held). One prompt for all experiments now:
@@ -212,7 +212,7 @@ in `docs/archive/status-log-2026-11-14-s63.md`, sessions 64-65 in `docs/archive/
   only with a result behind it. On EMBER at the paper's budget nothing can be shown (read from the pilot's table;
   the scale-up's price list and derived table are on tigris, unread). A budget curve would be a new experiment (the
   user's call).
-- **The user's close read of Lemma 1 and the readout rule** (§3.3, Table 1, Appendix C), when convenient.
+- **The user's close read of §3.3 and §3.4** (the readout rule, Table 1, Lemma 1, Appendix C), when convenient.
 - **Follow-ups from session 74, none started** (PLAN.md, next step 8):
   - instance-level work for Lemma 1: the population's clauses as counts over items, the derived table rebuilt, the
     nine in-place and append operations confirmed, the four layout-moving ones decided; §4.4's "closure is checked"
@@ -246,6 +246,15 @@ own resume prompt: `docs/resume-prompt-experiments.md` (the cluster), `docs/resu
 `docs/resume-prompt-theory.md` (theory), `docs/resume-prompt-writing.md` (the manuscript); `docs/resume-prompt.md` holds
 general work and indexes them.
 
+- **2026-11-19 (session 95, Opus, writing track): §3.3 with its appendix material; §3.4 split off.** Review pass:
+  eight findings, all approved. At the user's suggestion §3.3 was split: §3.3 *Sound Directions* (signatures,
+  directions of sums, readout rule, Theorem 1, abstract interpretation) and §3.4 *Robust by Construction* (closure and
+  Lemma 1, monotone detectors, Corollary 1, a closing paragraph). The totally-ordered condition now leads its
+  paragraph (cases moved to Appendix C); the readout rule is introduced from the ratio; Lemma 1's example follows its
+  own case; Appendix C checks that additive sums and pools are totally ordered and names its reasons; $P_j, N_j, O_j$
+  added to the symbol table (0587b86). Word counts: §3 4,390 to 4,320, Appendix C 1,320 to 1,385. `docs/review-cuts.md`
+  started. Next (user): the holistic review of §3 with Appendices A-C, then reorganize Appendix C, then cut §3 by ~20%,
+  then §4 (`docs/resume-prompt-writing.md`).
 - **2026-11-19 (session 94, Opus, ERDALT and experiments, tigris interactive job): round 2 read; the retrain.**
   Round 2 (1239145_[7-10], quantile scale) read: robust-short 0.914 validation / 0.919 test at 769 violations (the
   violations plateau from epoch 9); robust-pscale 0.951 / 0.956 at 40k; robust-fixed 0.82 and still rising (not a

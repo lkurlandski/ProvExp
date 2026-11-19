@@ -20,7 +20,7 @@ number.
 |---|---|---|
 | The scale-up's experiments on the cluster, ERDALT included (since session 94) | `docs/resume-prompt-experiments.md` | every detector but ERDALT retrained and attacked (unread); ERDALT retrained with settings rescaled to its authors' setup (`erdalt` running, eight folds held); next: check `erdalt` and release the folds, three open questions (the toolkit evading the guaranteed detectors, PV's setup, reading every result), then ERDALT's attacks and `6-results` |
 | Theory: bounds on size | `docs/resume-prompt-theory.md` (Opus) | mathematics done (`docs/evidence/theory-analysis.md`, part H); the user decides what enters the manuscript, H.5 first |
-| Writing: manuscript review | `docs/resume-prompt-writing.md` | §3.1 reviewed and polished (session 92); next §3.2, then §3.3, §4, §5, one subsection per pass; §2 after |
+| Writing: manuscript review | `docs/resume-prompt-writing.md` | §3.1-3.4 reviewed with their appendix material (sessions 92-95); next the holistic review of §3, reorganize Appendix C, cut §3 by ~20%, then §4, §5; §2 after |
 | General work | this prompt | below |
 
 ## 3. General work (no cluster, no numbers)
