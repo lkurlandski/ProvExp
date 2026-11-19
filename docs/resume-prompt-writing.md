@@ -1,83 +1,75 @@
-# Resume prompt (writing track): the holistic review of §3, then reorganize Appendix C, then cut §3 by ~20%
+# Resume prompt (writing track): cut §3 by ~20%, then §4 with Appendix D
 
-Written 2026-11-19 (end of session 95). Nothing here depends on the scale-up on tigris. Read `CLAUDE.md` and this
-prompt. Then read all of §3 (`manuscript/_d_framework.tex`, ~4,320 words) and its appendices: Appendix A *Symbol
-Table* (`_i_symbols.tex`), Appendix B *Types, Monoids, and Folds* (`_i2_types.tex`, ~390 words) and Appendix C *Proofs
-for the Framework* (`_j_proofs.tex`, ~1,385 words). Open `manuscript/_c_background.tex` (§2, which the reader is
-assumed to have read carefully) only where the work needs it. Run on Opus. Use no subagents unless the user asks.
+Written 2026-11-19 (end of session 96). Nothing here depends on the scale-up on tigris. Read `CLAUDE.md` and this
+prompt. Then read all of §3 (`manuscript/_d_framework.tex`, ~4,210 words) and its appendices: Appendix A *Symbol
+Table* (`_i_symbols.tex`), Appendix B *Types, Monoids, and Folds* (`_i2_types.tex`) and Appendix C *Proofs for the
+Framework* (`_j_proofs.tex`, ~1,335 words). Read `docs/review-cuts.md`. Open `manuscript/_c_background.tex` (§2) and
+`_g_related_work.tex` (§6) only where a cut touches them. Run on Opus. Use no subagents unless the user asks.
 
 ## Where the writing stands
 
-- **§6 Related Work is done for now** (session 84). Do not reopen it unless the user asks.
-- **§3 now has four subsections**, each reviewed together with its appendix material:
-  - §3.1 *Sum-then-Readout Extractors* (session 92, 0185d58). The user rejected one finding: the sentence after
-    Definition 1 on why the item map drops positions stays as it is, so do not raise it again.
-  - §3.2 *Edits and Their Side Effects* (session 93, 2eec34b, 0c0da24).
-  - §3.3 *Sound Directions* and §3.4 *Robust by Construction*, split in session 95 (0587b86). §3.3 holds the
-    signatures, the directions of sums, the readout rule, Theorem 1, and the abstract-interpretation paragraph. §3.4
-    holds closure and Lemma 1, monotone detectors and Corollary 1, plus a closing paragraph (the guarantee needs no
-    attack and covers every sequence of edits; §5.4 measures its cost). The user has not read §3.3 and §3.4 closely
-    yet.
+- **§6 Related Work is done for now** (session 84). Change it only where a §3 cut moves credit there (see below), and
+  ask first.
+- **§3 has four subsections**, each reviewed with its appendix material (sessions 92-95), then reviewed whole in
+  session 96:
+  - §3.1 *Sum-then-Readout Extractors*. Since session 96 it opens by defining "extractor" (the code that computes a
+    feature mapping), and Definition 3 defines an item's *contribution* and the sums it *touches* (non-neutral
+    contribution). The user rejected one finding in session 92: the sentence after Definition 1 on why the item map
+    drops positions stays as it is; do not raise it again.
+  - §3.2 *Edits and Their Side Effects*.
+  - §3.3 *Sound Directions*: Definition 7 (threat model, population, directions, sound table; "closed" is no longer
+    here), Definition 8 (*item changes* and signatures: "item change" is the operation on one item, plain "change" is
+    how much a value moves), Definition 9 (directions of sums), Table 1, Definition 10 (*Readout rule and derived
+    table*, equation (11)), Theorem 1 (now only: the derived table is sound for one edit), abstract interpretation.
+  - §3.4 *Sequences and Robust Detectors* (title chosen "for now", session 96): closure defined in the lead,
+    Proposition 2 (*Sequences of edits*, for any sound table on a closed population), closure checked directly (as §4.4
+    does) or proven by Lemma 1, monotone detectors, Corollary 1, closing paragraph.
+  - Appendix C has three subsections, one per body subsection: C.1 *Edits and Their Side Effects*, C.2 *Sound
+    Directions*, C.3 *Sequences and Robust Detectors*.
+- **Appendix B stays** as a stand-alone crash course on §3's background; light repetition of its definitions in §3 is
+  fine (user, session 96). Do not propose trimming it.
 - **The split that worked** (sessions 93 and 95): the body keeps the statements, the conditions a reviewer would test,
   and the reason each result holds in a few plain sentences, with a pointer to Appendix C. The appendix keeps the
-  derivations, with each step stated and definitions named instead of cited by equation number. The user does not
-  want examples in the appendix by default.
+  derivations, with each step stated and definitions named instead of cited by equation number. No examples in the
+  appendix by default.
 - **The paper-prose skill is not used** (user, session 92). Draft fixes without it and do not ask about it.
-- What the user said about earlier drafts is in `docs/writing-spec.md` (top entries). Read it as evidence of taste,
-  not as rules.
+- What the user said about earlier drafts is in `docs/writing-spec.md` (top entries; session 96's is the newest). Read
+  it as evidence of taste, not as rules.
 
 ## How to work
 
-- Use ranked findings with exact quotes, and get a verdict on each before applying anything. The user usually approves
-  the small fixes together; apply them in one go. Then run `make` and `make check` in `manuscript/`, read the rendered
-  text (pdftotext), commit, and report what changed with word counts (`texcount -brief`) before and after.
-- For a large rewrite, or if the user asks, go back to one fix at a time with the old and new text.
+- The user approves small changes that improve clarity and consistency directly; run larger changes to the language,
+  structure, or claims by them first, explained plainly with the options and a recommendation (session 96).
+- Use ranked findings or plan items with exact quotes, and get a verdict on each before applying anything. Apply the
+  approved small fixes in one go, then run `make` and `make check` in `manuscript/`, read the rendered text
+  (pdftotext), commit, and report what changed with word counts (`texcount -brief`) before and after.
+- For a large rewrite, or if the user asks, go one fix at a time with the old and new text.
 - When a fix rewrites prose, rewrite the passage so that it flows at its new length.
-- Do not apply a "this passage does not earn its place" finding. Add a line to `docs/review-cuts.md` instead; one
-  entry is there already (Appendix C, *Patterns under extension*, which nothing refers to).
 - Take numbers and cross-references from the compiled PDF (`manuscript/main.aux`), with the title alongside.
 
 ## The task, in order
 
-1. **The holistic review of all of §3 with Appendices A-C.** Read §3 as one piece. Look for:
-   - recurring sentence patterns across the subsections;
-   - overlap or gaps between subsections, and between the body and the appendices;
-   - whether the four subsections hand off to each other (the §3 roadmap paragraph was updated for §3.4 only in
-     passing).
-
-   Use `humanistic-paper-review`. Report the term ledger as its own block. These items were collected in sessions
-   92-95:
-   - "element" means an input's unit, a neutral element, a member of $\mathcal{S}$, and a loop kind in Algorithm 1.
-   - "extractor" is used in Definition 1 before Definition 5 defines it.
-   - Edit vs transformation: "An edit applies a transformation", "the side effects of $T$", and Definition 7's "a set
-     of transformations …, the single edits the attacker may apply".
-   - Sums vs totals: "the old total", "rule for totals".
-   - "contributes to" means "contributes a non-neutral value" but is never defined.
-   - "delta of a pair of inputs" (Definition 6) vs "the delta of one edit".
-   - The entries of $I^-$ are "items" in the body but "pairs" in the appendix proof.
-   - "change" means both an item change $c \to c'$ (Definition 8) and the change of a feature's value (Definition 7,
-     Theorem 1).
-   - Three verb pairs for related ideas: a change "raises/lowers" a sum, a readout "rises with/falls with" sums, and
-     directions are "up/down".
-   - "monotone" names a Table 1 row (a nondecreasing $g$), "monotone with respect to $D$" (the detector), and Gimenez et
-     al.'s notion.
-
-   Also decide with the user whether Appendix B gets the same treatment as Appendix C. It has not been reviewed
-   against §3.1.
-2. **Reorganize Appendix C** (user, session 95). It is now a flat run of `\paragraph`s in this order: the proof of
-   Proposition 1, *Computing part (ii)*, *Directions*, Table 7 (the sign table), *Directions of sums*, *Hashed keys*,
-   *Patterns under extension*, *The readout rule*, then the proofs of Theorem 1, Lemma 1 and Corollary 1. Propose a
-   structure before moving anything, for example one block per body subsection (§3.2, §3.3, §3.4) in the body's order,
-   with the supporting lemmas before the proofs that use them. Show the outline and get approval first.
-3. **Cut §3 by about 20%** (user, session 95): from ~4,320 words to ~3,450, which is about the mock's budget of 3,500.
-   First present a plan per subsection: where the words go and what each cut costs the reader. Moving material to the
-   appendix counts, but only where the split rule above allows it. Then apply the cuts after approval. The holistic
-   review will already have found some of the cuts; fold them in rather than counting twice. For §6 (session 84), a
-   30% cut planned paragraph by paragraph worked, with every change approved.
-4. Then **§4 Instantiating the Framework** (`_e_instances.tex`, ~1,900 words) with Appendix D *The EMBER Instance*
+1. **Cut §3 by about 20%** (user, session 95): from ~4,210 words to ~3,450, about the mock's budget of 3,500. First
+   present a plan per subsection: where the words go and what each cut costs the reader. Moving material to the
+   appendix counts, but only where the split rule above allows it. Get approval, then apply. For §6 (session 84), a
+   30% cut planned paragraph by paragraph worked, with every change approved. Fold in the logged candidates in
+   `docs/review-cuts.md`:
+   - Appendix C *Patterns under extension* (nothing refers to it) and *Computing part (ii)* (all of it is in the
+     body). These are appendix words and do not count toward §3's budget, but decide them in the same pass.
+   - §3.2, the paragraph "The proposition gives the side effects of an edit exactly": two repeats (~50 words). When
+     cutting it, its "a sum to which an item of the delta contributes" becomes "a sum that an item of the delta
+     touches" (the session-96 term fix left this paragraph alone).
+   - The three analogy passages: Gray et al.'s distributive/algebraic classes (§3.1 readout paragraph, ~120 words),
+     incremental view maintenance (end of §3.2), abstract interpretation (end of §3.3). The user: cutting all three
+     is an option, since §6 may be adjusted (its *Incremental computation* paragraph cites §3.2 and §3.3 for them),
+     but "shortening all three might be a better approach". Present both with their costs.
+   - Session 96's patterns: trim "not X but Y" and "thus/therefore" sentences only where they do not help, cautiously
+     (several remaining ones sit in the paragraphs above).
+2. Then **§4 Instantiating the Framework** (`_e_instances.tex`, ~1,830 words) with Appendix D *The EMBER Instance*
    (`_j2_ember.tex`), using the same method: review each subsection, split and polish its appendix material, then a
-   final pass over both together. After that comes **§5 Evaluation** (`_f_evaluation.tex`, ~4,100 words; the numbers
-   are pilot values, so do not sync them; the user has not read §5 end to end).
+   final pass over both together. §4.4 *Population* now carries the closure argument that §3.4 points to ("Closure is
+   checked rather than proven"); keep the two consistent. After that comes **§5 Evaluation** (`_f_evaluation.tex`,
+   ~4,100 words; the numbers are pilot values, so do not sync them; the user has not read §5 end to end).
 
 §2 comes in a later session. Its closing sentence and contribution 4 of `docs/paper-mock.md` wait for the user's
 discussion of the motivation (the prepared note is the *C.6 note* in `docs/status.md`'s session-80 entry). Not in this
@@ -90,6 +82,7 @@ round: the abstract, introduction, discussion, ethics, open science.
   user's decision.
 - Giri et al.'s author names in `main.bib` (`giri2026towards`) are as printed ("K. A., Asmitha", "P., Vinod"); check.
 - The byte budget (5% of the file or 512 KB) may be reconsidered later. Do nothing about it now.
+- §3.4's title, *Sequences and Robust Detectors*, was taken "for now".
 
 ## At the end
 

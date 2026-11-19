@@ -10,7 +10,7 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
 in `docs/archive/status-log-2026-11-14-s63.md`, sessions 64-65 in `docs/archive/status-log-2026-11-14-s64-65.md`, sessions 66-76 in
 `docs/archive/status-log-2026-11-15-to-16-s66-76.md`).
 
-## Current state (2026-11-19, through session 95)
+## Current state (2026-11-19, through session 96)
 
 - **Session 94:** every detector but ERDALT retrained and attacked on the new material (unread); ERDALT retrained with
   settings rescaled to its authors' setup (`erdalt` running, the folds held). One prompt for all experiments now:
@@ -246,6 +246,17 @@ own resume prompt: `docs/resume-prompt-experiments.md` (the cluster), `docs/resu
 `docs/resume-prompt-theory.md` (theory), `docs/resume-prompt-writing.md` (the manuscript); `docs/resume-prompt.md` holds
 general work and indexes them.
 
+- **2026-11-19 (session 96, Opus, writing track): the holistic review of §3; §3.3/§3.4 refactored; Appendix C
+  reorganized.** Nine findings plus a term ledger. Approved and applied (a8e5318): "item change" for Definition 8's
+  sense of change; the readout rule moved into Definition 10 (*Readout rule and derived table*); a shorter §3.3 lead
+  and roadmap; pointer trims; small term fixes (extractor defined at §3.1's start, *contribution* and *touches* in
+  Definition 3, Table 1's row "nondecreasing", also in Appendix D). Discussed, then applied (c476f31, 20c5fb1):
+  Theorem 1 keeps only the one-edit claim; closure and the sequence claim (new Proposition 2, *Sequences of edits*, for
+  any sound table) moved to §3.4, renamed *Sequences and Robust Detectors* (title "for now"); closure is checked
+  directly (as §4.4 does) or proven by Lemma 1, no longer "need not be assumed" (no result in §4/§5 used the lemma).
+  Appendix C now has C.1-C.3, one per body subsection (a95f946). Appendix B: the user rejected trimming it (a
+  stand-alone crash course; light repetition in §3 is fine). Cuts logged in `docs/review-cuts.md`, not applied. Word
+  counts: §3 4,320 to 4,207, Appendix C 1,385 to 1,335. Next: cut §3 to ~3,450 (`docs/resume-prompt-writing.md`).
 - **2026-11-19 (session 95, Opus, writing track): §3.3 with its appendix material; §3.4 split off.** Review pass:
   eight findings, all approved. At the user's suggestion §3.3 was split: §3.3 *Sound Directions* (signatures,
   directions of sums, readout rule, Theorem 1, abstract interpretation) and §3.4 *Robust by Construction* (closure and

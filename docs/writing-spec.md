@@ -11,6 +11,14 @@ The "implied" notes are earlier readings, not instructions; several of them were
 
 ## Reaction log
 
+- **2026-11-19, §3 holistic review (session 96).** Approved most findings outright; asked to discuss the ones that
+  change structure or claims before applying (closure claim vs §4, splitting one edit from sequences, the analogy
+  paragraphs). "I approve all small/minor suggestions that improve clarity and consistency. Larger and more significant
+  changes to the language should be run by me." Appendix B: "I envision this appendix being a stand-alone crash-course
+  on the background material of section 3. It's okay if section 3 lightly repeats the definitions from this appendix."
+  Analogy paragraphs (Gray et al., view maintenance, abstract interpretation): cutting all three is an option since §6
+  may adjust, "shortening all three might be a better approach"; decide in the cutting session. On "not X but Y" and
+  "thus" sentences: remove those that do not help, cautiously, not as a requirement.
 - **2026-11-17, §6 cut (session 84), drafted without the paper-prose skill.** Šrndić and Laskov rewording, approved.
   *Constraints over features* at 321 words (plan ~300): approved; "it's okay that we weren't able to cut quite as
   aggressively". First split of *Robust and monotone detectors*: "the prose comes off as a little choppy and
