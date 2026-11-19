@@ -50,7 +50,7 @@ after the last section, header fields, imports, libraries, exports, the certific
 which contains the program's entry point.
 
 \paragraph{Readouts.} \Cref{tab:ember:readouts} lists the features that EMBER reads through each form of
-\Cref{tab:fw:readouts}. The monotone readouts are the presence of exports; the pools, to whose values EMBER adds a 0, so
+\Cref{tab:fw:readouts}. The nondecreasing readouts are the presence of exports; the pools, to whose values EMBER adds a 0, so
 that its minima are 0 on every file and its maxima never fall below 0 (the entropy and size-ratio pools also take the
 overlay's value); and single values that default to 0 when a file lacks the item, such as whether it has
 relocations. Each ratio divides by a total that counts its numerator's items, the strings or the file's bytes, so the
@@ -72,7 +72,7 @@ and the number of libraries becomes a distinct count.
     \midrule
     identity & file size, counts of strings and sections, header fields, data directories, Rich header, overlay size,
       hashed buckets of sections, imports, and exports \\
-    monotone & exports present, largest and smallest section entropy, has relocations, signature fields \\
+    nondecreasing & exports present, largest and smallest section entropy, has relocations, signature fields \\
     distinct count & number of libraries \\
     ratio & average string length, overlay and largest or smallest section size over file size \\
     normalized bin & byte histogram, byte-entropy histogram, printable characters \\

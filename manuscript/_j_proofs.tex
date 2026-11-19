@@ -12,7 +12,7 @@ $s_k(z) = \sigma(B)_k \star_k \sigma(I^-)_k$ and $s_k(z') = \sigma(B)_k \star_k 
 sum, $\star_k$ is the addition of real numbers, and subtracting the first equation from the second gives
 $s_k(z') - s_k(z) = \sigma(I^+)_k - \sigma(I^-)_k$. (ii) On any sum, the second equation and
 \eqref{eq:fw:homomorphism} give $s_k(z') = \sigma(B \uplus I^+)_k$. (iii) The first claim is
-Definition~\ref{def:fw:extractor} applied to $z'$. For the second, suppose every pair of $I^-$ and $I^+$ contributes
+Definition~\ref{def:fw:extractor} applied to $z'$. For the second, suppose every item of $I^-$ and $I^+$ contributes
 $e_k$ to every sum $k \in K_j$. Then $s_k(z) = s_k(z') = \sigma(B)_k$ on $K_j$, and Definition~\ref{def:fw:readout}
 gives $\rho_j(\mathbf{s}(z)) = \rho_j(\mathbf{s}(z'))$, which is $\varphi_j(z) = \varphi_j(z')$ by
 Definition~\ref{def:fw:extractor}.
@@ -30,11 +30,11 @@ closed under addition: if every term of a finite total has a sign in a direction
 non-negative terms is non-negative, a total of zeros is zero, and $\mathsf{both}$ allows every sign). A total whose
 terms have signs in several directions has a sign in their union, which is again a direction. Below, an edit takes
 $z \in Z$ to $z' = T(z)$ with $T \in \mathcal{M}$, and, since $\Delta$ covers $\mathcal{M}$ over $Z$, it has a delta
-$(I^-, I^+)$ made of a multiset $C$ of changes in $\Delta$. \Cref{tab:fw:signs} lists the directions of common
+$(I^-, I^+)$ made of a multiset $C$ of item changes in $\Delta$. \Cref{tab:fw:signs} lists the directions of common
 contributions, which the next paragraph proves.
 
 \begin{table}[h]
-  \caption{Directions that common contributions give their sums under each change: adding, removing, or replacing an
+  \caption{Directions that common contributions give their sums under each item change: adding, removing, or replacing an
   item, with any new content or with a restricted one. Under additions and removals, a min pool follows the max pool
   with up and down exchanged; under a replacement it moves as the max pool does.}
   \label{tab:fw:signs}
@@ -63,7 +63,7 @@ contributions, which the next paragraph proves.
 \end{table}
 
 \paragraph{Directions of sums (Definition~\ref{def:fw:sum-direction}).}
-Let $B = \pi(z) - I^-$ be the kept items, and list the changes of $C$ as $(\tau_i, c_i \to c'_i)$ for
+Let $B = \pi(z) - I^-$ be the kept items, and list the item changes of $C$ as $(\tau_i, c_i \to c'_i)$ for
 $i = 1, \dots, m$. Since the delta is made of these changes (Definition~\ref{def:fw:signature}), folding a union
 combines the folds, and an absent content contributes the neutral element, every sum $k$ satisfies
 \[
@@ -72,10 +72,10 @@ combines the folds, and an absent content contributes the neutral element, every
     s_k(z') &= \sigma(B)_k \star_k \nu_{\tau_1}(c'_1)_k \star_k \dots \star_k \nu_{\tau_m}(c'_m)_k.
   \end{aligned}
 \]
-The two expressions differ only in that each change contributes its new value in place of its old one. The sum's
+The two expressions differ only in that each item change contributes its new value in place of its old one. The sum's
 monoid is totally ordered, and its operation is commutative, so replacing any one of the values it combines by a larger
-one never makes the result smaller. If no change in $\Delta$ lowers $k$, that is, $\nu_\tau(c')_k \ge \nu_\tau(c)_k$
-for every change, then replacing the old values by the new ones, one at a time, gives $s_k(z') \ge s_k(z)$; if none
+one never makes the result smaller. If no item change in $\Delta$ lowers $k$, that is, $\nu_\tau(c')_k \ge \nu_\tau(c)_k$
+for every item change, then replacing the old values by the new ones, one at a time, gives $s_k(z') \ge s_k(z)$; if none
 raises $k$, then $s_k(z') \le s_k(z)$; and if neither, the two are equal. The change of
 $s_k$ therefore has a sign in $d_k$, for every totally ordered sum. Additive sums and pools are totally ordered:
 $a \le b$ implies $a + c \le b + c$, $\max(a, c) \le \max(b, c)$, and $\min(a, c) \le \min(b, c)$. A min pool needs no

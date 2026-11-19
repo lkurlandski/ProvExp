@@ -9,8 +9,7 @@ The feature mappings we study find pieces of their input, add up what each piece
 totals, and compute each feature by a formula over a few totals. \Cref{sec:fw:model} defines this class of
 \emph{sum-then-readout extractors}. \Cref{sec:fw:side-effects} describes an edit by the pieces it removes and adds,
 and shows that this description and a record the extractor writes while it runs give the exact change of every
-feature, side effects included, before the edit is applied: the totals are updated from the record, and only the
-formulas that read a changed total are evaluated again. \Cref{sec:fw:directions} bounds, without applying any edit,
+feature, side effects included, before the edit is applied. \Cref{sec:fw:directions} bounds, without applying any edit,
 the direction in which each feature can move under all the edits a threat model allows, and \Cref{sec:fw:robust}
 shows that a detector whose score cannot fall in those directions cannot be evaded by any sequence of those edits.
 Appendix~\ref{sec:symbols} lists the notation, Appendix~\ref{sec:types} is a short introduction to the algebra that
@@ -21,8 +20,8 @@ Appendix~\ref{sec:symbols} lists the notation, Appendix~\ref{sec:types} is a sho
 
 % Spine: docs/archive/framework/framework-design.md, Section 11 (approved 2026-11-05). Notation: lowercase Greek for the maps of the
 % factorization (pi, sigma, rho, nu); calligraphic for the spaces they connect (Z, V, S, X); tau for kinds.
-We call the pieces \emph{items}, the running totals \emph{sums}, and the formula of each feature its
-\emph{readout}. Each of the three stages is a map, and the feature mapping is their composition:
+We call the code that computes a feature mapping its \emph{extractor}, the pieces it finds \emph{items}, the running
+totals \emph{sums}, and the formula of each feature its \emph{readout}. Each of the three stages is a map, and the feature mapping is their composition:
 \begin{equation}
   \label{eq:fw:factorization}
   \mathcal{Z} \xrightarrow{\;\pi\;} \mathcal{V} \xrightarrow{\;\sigma\;} \mathcal{S}
@@ -113,9 +112,9 @@ since an extractor can keep one count for every key of an open vocabulary, as th
 \definition[Contributions]
 \label{def:fw:contributions}
 {
-Each kind $\tau$ has a \emph{contribution function} $\nu_\tau$, which maps the content of an item of kind $\tau$ to an
-element of $\mathcal{S}$: the value that the item adds to each sum. The value is the neutral element $e_k$ on every
-sum $k$ that the item does not touch, and an item touches finitely many sums. The \emph{fold}
+Each kind $\tau$ has a \emph{contribution function} $\nu_\tau$, which maps the content of an item of kind $\tau$ to
+the item's \emph{contribution}, a value in $\mathcal{S}$ that holds what the item adds to each sum. The item
+\emph{touches} the sums $k$ on which its contribution is not the neutral element $e_k$, and it touches finitely many. The \emph{fold}
 $\sigma: \mathcal{V} \to \mathcal{S}$ combines the contributions of the pairs in a multiset $B$,
 \begin{equation}
   \label{eq:fw:fold}
@@ -141,7 +140,7 @@ In algebraic terms, $\mathcal{V}$ is the free commutative monoid on the kinds an
 homomorphism from it to $\mathcal{S}$ that agrees with the contribution functions on single items
 (Appendix~\ref{sec:types}). Additive sums and pools differ in one respect that matters below: whether an item's
 contribution can be taken out again. $(\mathbb{R}, +)$ is a group, in which every value has an inverse, so removing an
-item from an additive sum means subtracting its contribution, and the new total follows from the old total and the
+item from an additive sum means subtracting its contribution, and the new value follows from the old value and the
 item. The maximum and the minimum have no inverse: when the item that holds the maximum is removed, the old maximum
 does not say which value takes its place. Gray et al.\ make the same observation for databases, where a maximum is
 easy to keep current as rows are inserted but not as they are deleted~\cite{gray1997data}. This is why the item table we
@@ -172,8 +171,6 @@ and a nondecreasing function of one sum, such as a presence bit, which is 1 when
 key of an open vocabulary, such as the number of distinct keys whose count is positive ($x_4$ in
 \Cref{alg:fw:extractor}). Such a readout is not algebraic, since no fixed number of values per group gives the number
 of distinct keys, but it still follows from the sums, which keep one count per key.
-\Cref{sec:fw:side-effects} needs nothing of a readout beyond its support, and \Cref{sec:fw:directions} gives each
-of these forms a rule for the direction in which it moves (\Cref{tab:fw:readouts}).
 
 \definition[Sum-then-readout extractor]
 \label{def:fw:extractor}
@@ -203,7 +200,7 @@ its value, and the rest of this section computes from it.
 An edit applies a transformation $T$ to an input $z$ and gives $z' = T(z)$. Its side effects are usually found by
 applying the edit and extracting the features of $z'$. This subsection describes an edit instead by its delta, the
 items it removes and adds, and proves that the delta and the item table of $z$ give the features of $z'$ exactly (before the edit is
-applied) and thus the side effects of $T$.
+applied) and thus the edit's side effects.
 
 \definition[Item delta]
 \label{def:fw:delta}
@@ -219,7 +216,7 @@ each time it occurs there. The items in $I^-$ are \emph{removed} from $\pi(z)$ a
 }
 
 \noindent The delta is part of the edit's description: an edit states, from $z$ and the content it writes, which items
-it destroys and which it creates, so its delta is known before $z'$ is formed, and the definition fixes what a correct
+it destroys and which it creates, so its delta, a delta of $(z, z')$, is known before $z'$ is formed, and the definition fixes what a correct
 delta is. It records kinds and contents, not positions. An item that moves without changing its content is in neither
 part, and an item whose content changes is one removal and one addition. The features lose nothing by this, since they
 see the input only through its items (Definition~\ref{def:fw:extractor}). A position that an item stores is part of its
@@ -253,9 +250,9 @@ Consequently, writing $s_k(z)$ for the value of sum $k$ in $\mathbf{s}(z)$,
 }
 
 \noindent Part (i) is the update an additive sum allows: subtract the contributions of the removed items from the old
-total and add those of the added items. Every other sum is recomputed by part (ii), by folding the contributions of the
-kept and the added items, since a pool has no subtraction (\Cref{sec:fw:model}), nor does any other monoid without
-inverses, and its old value alone does not determine the new one. The item table of $z$ lists the contribution of every
+value and add those of the added items. Every other sum is recomputed by part (ii), by folding the contributions of the
+kept and the added items, since a pool, like any monoid without inverses, has no subtraction (\Cref{sec:fw:model}).
+The item table of $z$ lists the contribution of every
 item, hence of the kept ones, and the contribution functions give those of the added items. Part (iii) holds because a
 readout sees only the sums in its support: if no item of the delta contributes anything but the neutral element to
 them, they are the same in $z$ and $z'$. Appendix~\ref{sec:fw:proofs} gives the proof.
@@ -271,7 +268,7 @@ item table and the delta, before the transformation is applied. Part (iii) also 
 all: only those whose support contains a sum to which an item of the delta contributes.
 
 Computing the features of $z'$ this way can also be cheaper than extracting them. The update needs only the item table
-of $z$ and the delta, changes only the sums to which an item of the delta contributes, and evaluates again only the
+of $z$ and the delta, changes only the sums that an item of the delta touches, and evaluates again only the
 readouts whose support contains one of these sums; a pool from which the edit removes nothing needs only its old value
 and the contributions of the added items. Databases keep stored aggregates current in the same way: a view
 that totals a table is updated from the inserted and deleted rows instead of being recomputed, a technique known as
@@ -285,23 +282,20 @@ rule lacks for maxima and minima, the values that remain after a removal.
 % Spine: docs/archive/framework/framework-design.md, Section 14 (2026-11-05). Review sprint (docs/archive/framework/sprint-framework-review.md),
 % 2026-11-08: round 3 from the gated plan; 2026-11-09: round 4 from docs/archive/framework/sound-directions-math.md, in blocks with the
 % user's review after each (block 1: lead, Def 7, Omega).
-Proposition~\ref{prop:fw:side-effects} computes the change of every feature from the delta of one edit. A set of edits
-has one delta per edit. Each delta depends on the content the edit writes and on the input it is applied to, so it
-cannot be computed before the content is chosen. A set that allows any content has too many edits to compute their
-deltas one by one. Yet an attacker searching for an evasive edit, and a defender who must withstand every edit, both
-need to know what all the edits of the set can do. This subsection computes, for every feature, the directions in which
-the edits of such a set can move it. It needs only the item tables of the inputs and a description of which kinds of
-item the edits change, and no delta. It then proves that these directions are sound: no edit of the set moves a feature
-in a direction they exclude. One table of directions thus accounts for every edit of the set at once: it tells an
-attacker which features the edits can move, and which way, and \Cref{sec:fw:robust} turns it into detectors that no
-sequence of these edits can evade.
+Proposition~\ref{prop:fw:side-effects} computes the change of every feature from the delta of one edit. Each delta
+depends on the content the edit writes and on the input it is applied to, so a set of edits that allows any content
+has too many deltas to compute one by one. Yet an attacker searching for an evasive edit, and a defender who must
+withstand every edit, both need to know what all the edits of the set can do. This subsection computes, for every
+feature, the directions in which the edits of such a set can move it, and proves that these directions are sound: no
+edit of the set moves a feature in a direction they exclude. One table of directions accounts for every edit of the set
+at once, and tells an attacker which features the edits can move, and which way.
 
 \definition[Threat models and directions]
 \label{def:fw:directions}
 {
-A \emph{threat model} $\mathcal{M}$ is a set of transformations $T: \mathcal{Z} \to \mathcal{Z}$, the single edits
+A \emph{threat model} $\mathcal{M}$ is a set of transformations $T: \mathcal{Z} \to \mathcal{Z}$, each an edit
 the attacker may apply to an input. The transformations $\mathcal{T}$ of \Cref{sec:background} are their finite
-sequences, the edits applied one after another. A \emph{population} is a subset
+sequences, applied one after another. A \emph{population} is a subset
 $Z \subseteq \mathcal{Z}$ of inputs, and it is \emph{closed} under $\mathcal{M}$ if no transformation in $\mathcal{M}$
 takes an input of $Z$ outside $Z$. A \emph{direction} is one of four sets of signs that the change of a value can
 have: $\mathsf{fixed} = \{0\}$, $\mathsf{up} = \{0, +\}$, $\mathsf{down} = \{-, 0\}$, and $\mathsf{both} = \{-, 0,
@@ -322,13 +316,13 @@ sums only through the contributions of the items it removes and adds, and a cont
 kind and content. Knowing which items of each kind the edits may remove, add, or replace is therefore enough to know
 which way each sum can move, whatever content the edits write.
 
-\definition[Changes and signatures]
+\definition[Item changes and signatures]
 \label{def:fw:signature}
 {
-A \emph{change} (an addition, a removal, or a replacement of one item) on the items of kind $\tau$, written
+An \emph{item change} (an addition, a removal, or a replacement of one item) on the items of kind $\tau$, written
 $c \to c'$, takes an item of kind $\tau$ with content $c$ to one of the same kind with content $c'$, where either
 content may be absent, written $\bot$, but not both: $\bot \to c'$ \emph{adds} an item, $c \to \bot$ \emph{removes}
-one, and $c \to c'$ \emph{replaces} one in place. A delta $(I^-, I^+)$ is \emph{made of} a multiset $C$ of changes,
+one, and $c \to c'$ \emph{replaces} one in place. A delta $(I^-, I^+)$ is \emph{made of} a multiset $C$ of item changes,
 each paired with the kind $\tau$ of its items, if
 \begin{equation}
   \label{eq:fw:made-of}
@@ -337,9 +331,9 @@ each paired with the kind $\tau$ of its items, if
     I^+ &= \mset{(\tau, c') : (\tau, c \to c') \in C,\ c' \neq \bot}.
   \end{aligned}
 \end{equation}
-A \emph{signature} $\Delta$ assigns each kind $\tau$ a set $\Delta_\tau$ of changes on the items of kind $\tau$. It
-\emph{covers} $\mathcal{M}$ over $Z$ if every transformation in $\mathcal{M}$, applied to any input of $Z$, has a delta
-made of changes in $\Delta$.
+A \emph{signature} $\Delta$ assigns each kind $\tau$ a set $\Delta_\tau$ of item changes on the items of kind $\tau$.
+It \emph{covers} $\mathcal{M}$ over $Z$ if every transformation in $\mathcal{M}$, applied to any input of $Z$, has a
+delta made of item changes in $\Delta$.
 }
 
 \noindent A replacement has the same delta as a removal and an addition of the same kind, but the signature keeps it
@@ -347,7 +341,7 @@ apart. An edit that may remove items of a kind and may add others can move their
 replaces items, one for one, leaves the count unchanged. The set $\Delta_\tau$ can also restrict the new content of a
 replacement, for instance to contents that extend the old one by appending elements.
 
-\noindent A transformation defined by the items it adds and removes gives these changes directly. One defined by the
+\noindent A transformation defined by the items it adds and removes gives these item changes directly. One defined by the
 positions it writes, such as overwriting a range of positions with any content, gets them from the item tables of the
 inputs in $Z$, which record the items each position belongs to. Computing them
 is the work of instrumenting a particular extractor (\Cref{sec:instances}).
@@ -356,29 +350,29 @@ is the work of instrumenting a particular extractor (\Cref{sec:instances}).
 \label{def:fw:sum-direction}
 {
 Let $\Delta$ be a signature, and let an absent content contribute the neutral element, $\nu_\tau(\bot) = \mathbf{e}$.
-A change $c \to c'$ on the items of kind $\tau$ \emph{raises} sum $k$ if $\nu_\tau(c')_k > \nu_\tau(c)_k$,
+An item change $c \to c'$ on the items of kind $\tau$ \emph{raises} sum $k$ if $\nu_\tau(c')_k > \nu_\tau(c)_k$,
 \emph{lowers} it if $\nu_\tau(c')_k < \nu_\tau(c)_k$, and leaves it unchanged otherwise. The \emph{direction} $d_k$ of
-sum $k$ under $\Delta$ is $\mathsf{fixed}$ if no change in $\Delta$ raises or lowers $k$, $\mathsf{up}$ if none lowers
+sum $k$ under $\Delta$ is $\mathsf{fixed}$ if no item change in $\Delta$ raises or lowers $k$, $\mathsf{up}$ if none lowers
 it, $\mathsf{down}$ if none raises it, and $\mathsf{both}$ otherwise.
 }
 
-\noindent The direction of a sum bounds its change under every edit whose delta is made of changes in $\Delta$,
+\noindent The direction of a sum bounds its change under every edit whose delta is made of item changes in $\Delta$,
 provided the sum's monoid is \emph{totally ordered}~\cite{fuchs1963partially}: any two values can be compared, and a
 larger value never makes the result smaller ($a \le b$ implies $a \star_k c \le b \star_k c$). The edit replaces the
-old contribution of each change by its new one, and if no change in $\Delta$ lowers the sum, no replacement makes the
-total smaller. Additive sums and pools are totally ordered, and Theorem~\ref{thm:fw:directions} below holds for every
-extractor whose sums are. Not every monoid is: if a sum were a product of signed values, a change that raised an
+old contribution of each item change by its new one, and if no item change in $\Delta$ lowers the sum, no replacement
+makes the sum smaller. Additive sums and pools are totally ordered, and Theorem~\ref{thm:fw:directions} below holds for
+every extractor whose sums are. Not every monoid is: if a sum were a product of signed values, an item change that raised an
 item's contribution from 1 to 2 would take a total of $-3$ to $-6$, and the direction would say up while the sum fell.
 Appendix~\ref{sec:fw:proofs} gives the argument in full.
 
-The direction of a sum depends on the contribution functions and the changes in $\Delta$, not on any input. For the
+The direction of a sum depends on the contribution functions and the item changes in $\Delta$, not on any input. For the
 contributions common in feature sets, it follows from their form: the count of a key rises when an item with that key
 is added, falls when one is removed, and stays when an item is replaced by one with the same key.
 \Cref{tab:fw:signs} in Appendix~\ref{sec:fw:proofs} lists these forms.
 
 \begin{table}[t]
   \caption{The readout forms of \Cref{sec:fw:model}, with the sums each rises with and falls with; the readout rule
-  \eqref{eq:fw:readout-rule} turns them into the feature's direction. A presence bit $[s_k > 0]$ is monotone.
+  \eqref{eq:fw:readout-rule} turns them into the feature's direction. The function $g$ is nondecreasing, as a presence bit $[s_k > 0]$ is.
   A ratio reads 0 when $b = 0$; it requires $a \ge 0$ and $b \ge 0$, and $a = 0$ whenever $b = 0$. The bins $c_l$ of
   a histogram are counts.}
   \label{tab:fw:readouts}
@@ -388,7 +382,7 @@ is added, falls when one is removed, and stays when an item is replaced by one w
     Readout & Formula & Rises with & Falls with \\
     \midrule
     identity & $s_k$ & $s_k$ & \\
-    monotone & $g(s_k)$, $g$ nondecreasing & $s_k$ & \\
+    nondecreasing & $g(s_k)$ & $s_k$ & \\
     distinct count & $\#\{q : s_q > 0\}$ & every $s_q$ & \\
     ratio & $a / b$, or 0 if $b = 0$ & $a$ & $b$ \\
     normalized bin & $c_i / \sum_l c_l$ & $c_i$ & every other $c_l$ \\
@@ -399,27 +393,28 @@ is added, falls when one is removed, and stays when an item is replaced by one w
 
 A feature's direction follows from the directions of the sums it reads. A ratio $a / b$ can rise only if $a$ can rise
 or $b$ can fall, so its direction is the direction of $a$ united with the direction of $b$ flipped, where flipping,
-written $-d$, exchanges up and down, and $\mathsf{up} \cup \mathsf{down} = \mathsf{both}$. In general, a readout
-\emph{rises with} a set $P_j$ of the sums in its support and \emph{falls with} a set $N_j$ if its value does not fall
-whenever the sums in $P_j$ rise or stay and those in $N_j$ fall or stay, while the rest of its support, $O_j$, stays.
-The \emph{readout rule} gives the feature the directions of the sums in $P_j$, the flipped directions of those in
-$N_j$, and both orientations of those in $O_j$:
+written $-d$, exchanges up and down, and $\mathsf{up} \cup \mathsf{down} = \mathsf{both}$. The definition below states
+this rule for every readout.
+
+\definition[Readout rule and derived table]
+\label{def:fw:derived}
+{
+A readout $\rho_j$ \emph{rises with} a set $P_j \subseteq K_j$ of sums and \emph{falls with} a set $N_j \subseteq K_j$
+if its value does not fall whenever the sums in $P_j$ rise or stay, those in $N_j$ fall or stay, and the rest of its
+support, $O_j$, stays. The \emph{derived table} $D_\Delta$ of a signature $\Delta$ gives each feature $j$ the union of the
+directions $d_k$ of the sums in $P_j$, the flipped directions of those in $N_j$, and both orientations of those in
+$O_j$, by the \emph{readout rule}
 \begin{equation}
   \label{eq:fw:readout-rule}
-  \bigcup_{k \in P_j} d_k \;\cup \bigcup_{k \in N_j} (-d_k) \;\cup \bigcup_{k \in O_j} \big(d_k \cup (-d_k)\big).
+  (D_\Delta)_j = \bigcup_{k \in P_j} d_k \;\cup \bigcup_{k \in N_j} (-d_k) \;\cup \bigcup_{k \in O_j} \big(d_k \cup (-d_k)\big).
 \end{equation}
-\Cref{tab:fw:readouts} lists the sums that each readout form of \Cref{sec:fw:model} rises and falls with, and
+}
+
+\noindent \Cref{tab:fw:readouts} lists the sums that each readout form of \Cref{sec:fw:model} rises and falls with, and
 Appendix~\ref{sec:fw:proofs} proves each row. A readout of any other form has all its sums in $O_j$: its feature is
 fixed if every sum in its support is fixed, and can move either way otherwise. The rule is not limited to the forms of
 the table: a total or a difference of sums, a mean, and the larger of several sums each rise and fall with sums that
 can be read off their formulas.
-
-\definition[Derived table]
-\label{def:fw:derived}
-{
-The \emph{derived table} $D_\Delta$ of a signature $\Delta$ gives each feature $j$ the direction that the readout
-rule \eqref{eq:fw:readout-rule} returns from the directions $d_k$ of the sums $k$ in its support $K_j$.
-}
 
 \theorem[Sound directions]
 \label{thm:fw:directions}
@@ -431,7 +426,7 @@ If $Z$ is moreover closed under $\mathcal{M}$, then for every $z \in Z$ and ever
 the change $x'_j - \varphi_j(z)$ of every feature $j$ has a sign in $(D_\Delta)_j$.
 }
 
-\noindent For one edit, the signature gives the edit a delta made of changes in $\Delta$, the direction of each sum
+\noindent For one edit, the signature gives the edit a delta made of item changes in $\Delta$, the direction of each sum
 bounds the sum's change because the sum is totally ordered, and the readout rule turns these bounds into a
 bound on the feature. A sequence of
 edits passes through intermediate inputs, and closure keeps each of them in $Z$, so the bound holds at every step. It
@@ -467,7 +462,7 @@ $+$, then $Z$ is closed under $\mathcal{M}$.
 \noindent The first claim of Theorem~\ref{thm:fw:directions} holds without closure. Applied to an input of $Z$ and a
 feature of $J$, it says that the edit does not raise the feature, so the feature stays at or below its bound and the
 edited input is in $Z$. A population of the inputs that hold no item of some unwanted form is of this kind: the number
-of such items is a sum, read by the identity and bounded by 0, and it cannot rise if no change in $\Delta$ adds such
+of such items is a sum, read by the identity and bounded by 0, and it cannot rise if no item change in $\Delta$ adds such
 an item or turns another item into one. Lower bounds on features that the table does not allow to fall work the same
 way.
 
