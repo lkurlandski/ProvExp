@@ -11,8 +11,8 @@ totals, and compute each feature by a formula over a few totals. \Cref{sec:fw:mo
 and shows that this description and a record the extractor writes while it runs give the exact change of every
 feature, side effects included, before the edit is applied: the totals are updated from the record, and only the
 formulas that read a changed total are evaluated again. \Cref{sec:fw:directions} bounds, without applying any edit,
-the direction in which each feature can move under the edits a threat model allows, whether they are stated by the
-pieces they change or by the positions they write, and shows that a detector whose score cannot fall in those directions cannot be evaded by those edits.
+the direction in which each feature can move under all the edits a threat model allows. A detector whose score cannot
+fall in those directions cannot be evaded by any of those edits.
 Appendix~\ref{sec:symbols} lists the notation, Appendix~\ref{sec:types} is a short introduction to the algebra that
 \Cref{sec:fw:model} uses, and Appendix~\ref{sec:fw:proofs} holds the proofs.
 
@@ -21,9 +21,8 @@ Appendix~\ref{sec:symbols} lists the notation, Appendix~\ref{sec:types} is a sho
 
 % Spine: docs/archive/framework/framework-design.md, Section 11 (approved 2026-11-05). Notation: lowercase Greek for the maps of the
 % factorization (pi, sigma, rho, nu); calligraphic for the spaces they connect (Z, V, S, X); tau for kinds.
-We call the pieces of the input that a feature mapping analyzes \emph{items}, the running totals to which each item
-contributes \emph{sums}, and the formula that computes a feature from a few sums its \emph{readout}. Each of the three
-stages is a map, and the feature mapping is their composition:
+We call the pieces \emph{items}, the running totals \emph{sums}, and the formula of each feature its
+\emph{readout}. Each of the three stages is a map, and the feature mapping is their composition:
 \begin{equation}
   \label{eq:fw:factorization}
   \mathcal{Z} \xrightarrow{\;\pi\;} \mathcal{V} \xrightarrow{\;\sigma\;} \mathcal{S}
@@ -31,7 +30,7 @@ stages is a map, and the feature mapping is their composition:
   \qquad
   \varphi = \rho \circ \sigma \circ \pi,
 \end{equation}
-where $\mathcal{V}$ holds the multisets of items and $\mathcal{S}$ the values of the sums
+where $\mathcal{V}$ holds the multisets of the items' kinds and contents and $\mathcal{S}$ the values of the sums
 (Definitions~\ref{def:fw:item}--\ref{def:fw:contributions}). Only the item map $\pi$ depends on the format of the
 input; $\sigma$ and $\rho$ are arithmetic. We separate the stages because an attacker's edit is simple to describe at
 the first, by the items it adds and removes, and hard to describe at the last, where one item can move many features.
@@ -43,7 +42,7 @@ An input $z \in \mathcal{Z}$ is a finite sequence of \emph{elements}. A feature 
 \emph{kinds}. An \emph{item} of $z$ is a pair $\iota = (\tau, M)$ of a kind $\tau$ and a nonempty set $M$ of
 positions of $z$, its \emph{members}, and its \emph{content} $z[M]$ is the sequence of the elements at those
 positions, in order. The extractor finds a set $I(z)$ of items in each input. With $\mathcal{V}$, the set of finite
-multisets of kinds and contents, the \emph{item map} $\pi: \mathcal{Z} \to \mathcal{V}$ takes $z$ to the
+multisets of pairs of a kind and a content, the \emph{item map} $\pi: \mathcal{Z} \to \mathcal{V}$ takes $z$ to the
 multiset of the kinds and contents of its items,
 \begin{equation}
   \label{eq:fw:items}
@@ -107,10 +106,8 @@ and the neutral element $\mathbf{e}$ of $\mathcal{S}$ holds $e_k$ on every sum.
 Max and min pools are together called \emph{pools}, and each keeps the largest or the smallest value it receives. The
 operation $\oplus$ is how the extractor updates its running totals: combining the sums with an item's contribution adds
 the contribution to every additive sum and keeps the larger or the smaller value in every pool. In
-\Cref{alg:fw:extractor}, \textit{largest} is a max pool and the other sums are additive. Other monoids fit the framework
-too: \Cref{sec:fw:side-effects} recomputes such a sum as it recomputes a pool, and \Cref{sec:fw:directions} applies to
-it when a larger value never makes its total smaller. The set $K$ may be large, since an extractor can keep one count
-for every key of an open vocabulary, as the token loop of
+\Cref{alg:fw:extractor}, \textit{largest} is a max pool and the other sums are additive. The set $K$ may be large,
+since an extractor can keep one count for every key of an open vocabulary, as the token loop of
 \Cref{alg:fw:extractor} does.
 
 \definition[Contributions]
@@ -119,12 +116,12 @@ for every key of an open vocabulary, as the token loop of
 Each kind $\tau$ has a \emph{contribution function} $\nu_\tau$, which maps the content of an item of kind $\tau$ to an
 element of $\mathcal{S}$: the value that the item adds to each sum. The value is the neutral element $e_k$ on every
 sum $k$ that the item does not touch, and an item touches finitely many sums. The \emph{fold}
-$\sigma: \mathcal{V} \to \mathcal{S}$ combines the contributions of the members of a multiset $B$,
+$\sigma: \mathcal{V} \to \mathcal{S}$ combines the contributions of the pairs in a multiset $B$,
 \begin{equation}
   \label{eq:fw:fold}
   \sigma(B) = \bigoplus_{(\tau, c) \in B} \nu_\tau(c),
 \end{equation}
-where $\bigoplus$ combines its terms with the operation $\oplus$ of \eqref{eq:fw:oplus}. Each member counts as often as
+where $\bigoplus$ combines its terms with the operation $\oplus$ of \eqref{eq:fw:oplus}. Each pair counts as often as
 it occurs, and the empty multiset goes to $\mathbf{e}$. The \emph{sums of} $z$ are $\mathbf{s}(z) = \sigma(\pi(z))$.
 }
 
@@ -132,7 +129,7 @@ it occurs, and the empty multiset goes to $\mathbf{e}$. The \emph{sums of} $z$ a
 contributes 1 to \textit{records}, its length to \textit{size} and to \textit{largest}, and the neutral element to
 every other sum. A contribution depends only on the item's kind and content, never on the rest of the input. The sums
 of $z$ are the totals once every item has been added. They do not form a vector, since their entries lie in different
-monoids and a pool cannot be subtracted from.
+monoids.
 
 Because every $\mathbb{M}_k$ is associative and commutative, the fold does not depend on the order in which the
 extractor visits the items, and folding the union of two multisets combines their folds:
@@ -147,7 +144,7 @@ contribution can be taken out again. $(\mathbb{R}, +)$ is a group, in which ever
 item from an additive sum means subtracting its contribution, and the new total follows from the old total and the
 item. The maximum and the minimum have no inverse: when the item that holds the maximum is removed, the old maximum
 does not say which value takes its place. Gray et al.\ make the same observation for databases, where a maximum is
-easy to keep current as rows are inserted but not as they are deleted~\cite{gray1997data}. This is why the record we
+easy to keep current as rows are inserted but not as they are deleted~\cite{gray1997data}. This is why the item table we
 define below keeps every item, and not only the totals.
 
 \definition[Readouts]
@@ -160,18 +157,21 @@ sum leaves the feature as it was. The readouts of all $n$ features form the map 
 from $\mathcal{S}$ to $\mathcal{X}$.
 }
 
-\noindent Gray et al.\ sort aggregate functions by whether they can be computed in parts~\cite{gray1997data}. Split
-the items into two groups. An aggregate is \emph{distributive} if its value over all the items follows from its values
-over the two groups: the total of all items is the total of the first group plus the total of the second, and counts,
-maxima, and minima combine in the same way. An aggregate is \emph{algebraic} if a fixed number of values computed over
-each group suffices to obtain it. An average is algebraic but not distributive, since the average of all items is not
-the average of the two groups' averages unless the groups have the same size, yet it follows from each group's total
-and count. Sums are distributive aggregates, which is why the extractor can add up items one at a time, and readouts
-compute the rest from them, as the last lines of \Cref{alg:fw:extractor} do. Many kinds of features reduce to this
-shape: the identity, which returns a sum or a pool; the ratio of two sums; a bin of a histogram divided by the
+\noindent Sums hold what can be added up one item at a time, and readouts compute every other feature from them.
+The division follows Gray et al.'s classes of aggregate functions, which ask what an aggregate over all the items needs
+from two groups that split them~\cite{gray1997data}. An aggregate is \emph{distributive} if its value over all the
+items follows from its values over the two groups: the total of all items is the total of the first group plus the
+total of the second, and counts, maxima, and minima combine in the same way. An aggregate is \emph{algebraic} if a
+fixed number of values computed over each group suffices to obtain it. An average is algebraic but not distributive,
+since the average of all items is not the average of the two groups' averages unless the groups have the same size,
+yet it follows from each group's total and count. Sums are distributive aggregates, which is why the extractor can add
+up items one at a time, and a readout of a fixed set of sums is an algebraic one, as $x_1$ and $x_2$ in
+\Cref{alg:fw:extractor} are. Many kinds of features reduce to this shape: the identity, which returns a sum or a pool; the ratio of two sums; a bin of a histogram divided by the
 histogram's total; the entropy of a histogram; a standard deviation, from a count, a total, and a total of squares;
-and a nondecreasing function of one sum, such as a presence bit, which is 1 when a count is positive. Most read a
-fixed handful of sums. Some read a whole family, such as the number of distinct keys whose count is positive ($x_4$ in \Cref{alg:fw:extractor}).
+and a nondecreasing function of one sum, such as a presence bit, which is 1 when a count is positive. A readout can also read a whole family of sums, one for each
+key of an open vocabulary, such as the number of distinct keys whose count is positive ($x_4$ in
+\Cref{alg:fw:extractor}). Such a readout is not algebraic, since no fixed number of values per group gives the number
+of distinct keys, but it still follows from the sums, which keep one count per key.
 \Cref{sec:fw:side-effects} needs nothing of a readout beyond its support, and \Cref{sec:fw:directions} gives each
 of these forms a rule for the direction in which it moves (\Cref{tab:fw:readouts}).
 
@@ -188,10 +188,12 @@ functions $\nu_\tau$, and readouts $\rho_j$ such that $\varphi = \rho \circ \sig
 }
 
 \noindent A feature mapping that computes a few of its features in some other way is a sum-then-readout extractor on
-the remaining features, and the results below apply to those. To
-\emph{instrument} an extractor is to write down its items, contributions, and readouts, so that the pass that computes
-the features also records the \emph{item table} of $z$: every item in $I(z)$ with its kind, its members, and its
-contribution. The rest of this section computes from the item table.
+the remaining features, and the results below apply to those.
+
+To \emph{instrument} an extractor is to make its items, contributions, and readouts explicit in its code, once for the
+extractor, so that the pass that computes the features of $z$ also records its \emph{item table}: every item in $I(z)$
+with its kind, its members, and its contribution. The item table keeps what the sums lose, which items gave each sum
+its value, and the rest of this section computes from it.
 
 \subsection{Edits and Their Side Effects}
 \label{sec:fw:side-effects}
@@ -253,7 +255,8 @@ of multisets combines their folds. Part (i) follows on an additive sum, where ev
 the contribution of the removed items from $s_k(z)$ leaves that of the kept items, and adding the contribution of the
 added items gives $s_k(z')$. Part (ii) is the second decomposition read on a pool, which cannot be updated in the same
 way, since the maximum has no subtraction. The old maximum does not say whether a removed item held it, nor which
-contribution is the largest among those that remain, and the same holds for a minimum. The item table of $z$ lists the
+contribution is the largest among those that remain, and the same holds for a minimum. A sum in any other monoid without subtraction is recomputed in the same way, by
+folding the contributions of the kept and the added items. The item table of $z$ lists the
 contribution of every item, hence of the kept ones, and the contribution functions give those of the added items. This
 is why the item table keeps every item and not only the sums. When the edit removes nothing, $B = \pi(z)$, and the old
 value combined with the contributions of the added items suffices. In part (iii), the first claim is
