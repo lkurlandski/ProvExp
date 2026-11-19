@@ -4,6 +4,9 @@
 This appendix proves the results of \Cref{sec:framework}. Throughout, an edit takes $z$ to $z'$ with item delta
 $(I^-, I^+)$.
 
+\subsection{Edits and Their Side Effects}
+\label{sec:fw:proofs:side-effects}
+
 \paragraph{Proof of Proposition~\ref{prop:fw:side-effects}.}
 Let $B = \pi(z) - I^-$. Since $I^- \subseteq \pi(z)$, $\pi(z) = B \uplus I^-$, and by Definition~\ref{def:fw:delta},
 $\pi(z') = B \uplus I^+$. Folding a union combines the folds \eqref{eq:fw:homomorphism}, so
@@ -23,15 +26,38 @@ functions give those of $I^+$. The old value of a pool cannot stand in for them,
 removed item held it, nor which value is the largest or smallest among those that remain. When $I^- = \emptyset$,
 $B = \pi(z)$, and $s_k(z') = s_k(z) \star_k \sigma(I^+)_k$ needs only the old value.
 
-\paragraph{Directions.}
+\subsection{Sound Directions}
+\label{sec:fw:proofs:directions}
+
+\paragraph{Signs and directions.}
 The sign of the change of a value from $a$ to $a'$ is $+$ if $a' > a$, $-$ if $a' < a$, and $0$ if the two are equal,
 which also covers a pool that no item touches, whose value is infinite. Every direction contains $0$, and each is
 closed under addition: if every term of a finite total has a sign in a direction $d$, so does the total (a total of
 non-negative terms is non-negative, a total of zeros is zero, and $\mathsf{both}$ allows every sign). A total whose
-terms have signs in several directions has a sign in their union, which is again a direction. Below, an edit takes
-$z \in Z$ to $z' = T(z)$ with $T \in \mathcal{M}$, and, since $\Delta$ covers $\mathcal{M}$ over $Z$, it has a delta
-$(I^-, I^+)$ made of a multiset $C$ of item changes in $\Delta$. \Cref{tab:fw:signs} lists the directions of common
-contributions, which the next paragraph proves.
+terms have signs in several directions has a sign in their union, which is again a direction.
+
+
+\paragraph{Directions of sums (Definition~\ref{def:fw:sum-direction}).}
+Let an edit take $z \in Z$ to $z' = T(z)$ with $T \in \mathcal{M}$. Since $\Delta$ covers $\mathcal{M}$ over $Z$, the
+edit has a delta $(I^-, I^+)$ made of a multiset $C$ of item changes in $\Delta$. Let $B = \pi(z) - I^-$ be the kept
+items, and list the item changes of $C$ as $(\tau_i, c_i \to c'_i)$ for
+$i = 1, \dots, m$. Since the delta is made of these changes (Definition~\ref{def:fw:signature}), folding a union
+combines the folds, and an absent content contributes the neutral element, every sum $k$ satisfies
+\[
+  \begin{aligned}
+    s_k(z) &= \sigma(B)_k \star_k \nu_{\tau_1}(c_1)_k \star_k \dots \star_k \nu_{\tau_m}(c_m)_k, \\
+    s_k(z') &= \sigma(B)_k \star_k \nu_{\tau_1}(c'_1)_k \star_k \dots \star_k \nu_{\tau_m}(c'_m)_k.
+  \end{aligned}
+\]
+The two expressions differ only in that each item change contributes its new value in place of its old one. The sum's
+monoid is totally ordered, and its operation is commutative, so replacing any one of the values it combines by a larger
+one never makes the result smaller. If no item change in $\Delta$ lowers $k$, that is, $\nu_\tau(c')_k \ge \nu_\tau(c)_k$
+for every item change, then replacing the old values by the new ones, one at a time, gives $s_k(z') \ge s_k(z)$; if none
+raises $k$, then $s_k(z') \le s_k(z)$; and if neither, the two are equal. The change of
+$s_k$ therefore has a sign in $d_k$, for every totally ordered sum. Additive sums and pools are totally ordered:
+$a \le b$ implies $a + c \le b + c$, $\max(a, c) \le \max(b, c)$, and $\min(a, c) \le \min(b, c)$. A min pool needs no
+rule of its own: its neutral element is $+\infty$, so by Definition~\ref{def:fw:sum-direction} a removal raises it and
+an addition lowers it, as removing or adding a value does to a minimum.
 
 \begin{table}[h]
   \caption{Directions that common contributions give their sums under each item change: adding, removing, or replacing an
@@ -62,26 +88,6 @@ contributions, which the next paragraph proves.
   $^{\dagger}$Only on the buckets that the keys in $Q$ hash to, with the signs those keys give.
 \end{table}
 
-\paragraph{Directions of sums (Definition~\ref{def:fw:sum-direction}).}
-Let $B = \pi(z) - I^-$ be the kept items, and list the item changes of $C$ as $(\tau_i, c_i \to c'_i)$ for
-$i = 1, \dots, m$. Since the delta is made of these changes (Definition~\ref{def:fw:signature}), folding a union
-combines the folds, and an absent content contributes the neutral element, every sum $k$ satisfies
-\[
-  \begin{aligned}
-    s_k(z) &= \sigma(B)_k \star_k \nu_{\tau_1}(c_1)_k \star_k \dots \star_k \nu_{\tau_m}(c_m)_k, \\
-    s_k(z') &= \sigma(B)_k \star_k \nu_{\tau_1}(c'_1)_k \star_k \dots \star_k \nu_{\tau_m}(c'_m)_k.
-  \end{aligned}
-\]
-The two expressions differ only in that each item change contributes its new value in place of its old one. The sum's
-monoid is totally ordered, and its operation is commutative, so replacing any one of the values it combines by a larger
-one never makes the result smaller. If no item change in $\Delta$ lowers $k$, that is, $\nu_\tau(c')_k \ge \nu_\tau(c)_k$
-for every item change, then replacing the old values by the new ones, one at a time, gives $s_k(z') \ge s_k(z)$; if none
-raises $k$, then $s_k(z') \le s_k(z)$; and if neither, the two are equal. The change of
-$s_k$ therefore has a sign in $d_k$, for every totally ordered sum. Additive sums and pools are totally ordered:
-$a \le b$ implies $a + c \le b + c$, $\max(a, c) \le \max(b, c)$, and $\min(a, c) \le \min(b, c)$. A min pool needs no
-rule of its own: its neutral element is $+\infty$, so by Definition~\ref{def:fw:sum-direction} a removal raises it and
-an addition lowers it, as removing or adding a value does to a minimum.
-
 The directions of \Cref{tab:fw:signs} follow from Definition~\ref{def:fw:sum-direction}. A count receives 1 from an
 item with its key and the neutral element $0$ otherwise, so an addition raises it, a removal lowers it, a replacement
 that keeps the key leaves it unchanged, and one that may change the key can move it either way. An extension does not
@@ -105,7 +111,7 @@ matches. The same holds on the left for constructs that look before the match. A
 boundary, for example, can gain a match when a string is extended on the right and lose one when it is prefixed with
 a letter.
 
-\paragraph{The readout rule \eqref{eq:fw:readout-rule}.}
+\paragraph{The readout rule (Definition~\ref{def:fw:derived}).}
 Suppose every sum $k$ that feature $j$ reads changes with a sign in $d_k$, from the values $\mathbf{a}$ to the values
 $\mathbf{b}$, and let $D_j$ be the direction that the rule returns. If $D_j$ does not contain $-$, then no $d_k$ with
 $k \in P_j$ contains $-$, no $d_k$ with $k \in N_j$ contains $+$, and every $d_k$ with $k \in O_j$ is
@@ -130,14 +136,18 @@ the rule is Definition~\ref{def:fw:readout}: if every sum in $K_j$ is fixed, $\r
 and after the edit.
 
 \paragraph{Proof of Theorem~\ref{thm:fw:directions}.}
-For one edit, the paragraph on the directions of sums shows that every sum $k$ changes with a sign in $d_k$, and the
+The paragraph on the directions of sums shows that every sum $k$ changes with a sign in $d_k$, and the
 readout rule of feature $j$ then gives its change a sign in $(D_\Delta)_j$, so $D_\Delta$ is sound.
+
+\subsection{Sequences and Robust Detectors}
+\label{sec:fw:proofs:sequences}
 
 \paragraph{Proof of Proposition~\ref{prop:fw:sequences}.}
 Let $\mathbf{x}' = \varphi(T(z))$ for a finite sequence $T = T_m \circ \dots \circ T_1$ of transformations in
 $\mathcal{M}$. The inputs $z_0 = z$ and $z_i = T_i(z_{i-1})$ all lie in $Z$, by closure and induction on $i$, so each
 step changes feature $j$ with a sign in $D_j$, since $D$ is sound. The change $x'_j - \varphi_j(z)$ is the total of
-these steps' changes, and a direction is closed under addition, so it has a sign in $D_j$. Without closure, a step can
+these steps' changes, and a direction is closed under addition (Appendix~\ref{sec:fw:proofs:directions}), so it has a sign in
+$D_j$. Without closure, a step can
 leave $Z$, and the table says nothing about the steps after it.
 
 \paragraph{Proof of Lemma~\ref{lem:fw:closure}.}
