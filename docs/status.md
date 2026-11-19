@@ -10,8 +10,11 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
 in `docs/archive/status-log-2026-11-14-s63.md`, sessions 64-65 in `docs/archive/status-log-2026-11-14-s64-65.md`, sessions 66-76 in
 `docs/archive/status-log-2026-11-15-to-16-s66-76.md`).
 
-## Current state (2026-11-18, through session 85)
+## Current state (2026-11-19, through session 94)
 
+- **Session 94:** every detector but ERDALT retrained and attacked on the new material (unread); ERDALT retrained with
+  settings rescaled to its authors' setup (`erdalt` running, the folds held). One prompt for all experiments now:
+  `docs/resume-prompt-experiments.md`. The older detail below is kept for its history.
 - **Scale-up running on tigris (session 74).** Setup done (`SETUP.md`, `pipeline/systems/tigris.sh`); everything is
   submitted by `bash pipeline/submit.sh` (SLURM dependencies; `3-directions/gate` before the detectors). Done:
   featurization (sums, expert), the file store, the derived tables, population, item checks, escapes, deviations. The
@@ -178,41 +181,26 @@ in `docs/archive/status-log-2026-11-14-s63.md`, sessions 64-65 in `docs/archive/
 
 ## Waiting on the user
 
-- **The scale-up's reruns after session 85's fixes are running** (`logs/submit-20261118-s85.txt`; next:
-  `docs/resume-prompt-experiments.md`). Chain: catalogue-checks 1141844 -> trial 1141845 -> train-trial 1141846;
-  material 1141847 (10 shards) -> learned GBDTs 1141848 -> iterated 1141849; then toolkit 1141850, adaptive 1141851,
-  MAB `ours` 1141852; MAB `expert`/`zainab` 1141853. Expected ~10-12 h. Old outputs in
-  `artifacts/scaleup/superseded-s85/`. Then read the results with the user; `6-results` waits on ERDALT.
-- **ERDALT must be retrained on the new material** before its attacks (its nine models used the old one, with 894
-  broken outputs); the ERDALT track decides how (collapse diagnosis first).
+- **The scale-up's reruns are done; ERDALT's retrain runs** (session 94; next: `docs/resume-prompt-experiments.md`,
+  which now covers every experiment, ERDALT included). Session 85's chain all COMPLETED (catalogue, trial, material,
+  learned GBDTs, `iterated`, toolkit, adaptive, MAB-Malware `ours`/`expert`/`zainab`), not yet read with the user.
+  ERDALT retrained with its settings rescaled to its authors' setup (b9edda9): `erdalt` running, the eight folds held
+  until its first epochs look right (the user releases them). Three open questions for the next session: the toolkit
+  evaded the guaranteed detectors (monotone-features 3/803, monotone-sums 1/802); PV's setup against Gimenez et al.'s
+  (its result depends on the vector count, as ERDALT's criterion did); reading every result. Then ERDALT's attacks and
+  `6-results`.
 - **Deferred, approved by the user (session 85): PV's sample-size experiment** for an appendix explaining why PV works
   less well than prior work suggests (design in `docs/scaleup-protocol.md`, item (17)). Run after the reruns.
 - **Extractor quirks the validity rule exposes** ("pefile only" rejections: ~0.2% of outputs in session 85's sample,
   e.g. pefile's 8,192-import cap): list them from the reruns (`invalid.parquet`, `invalid_pefile_only`) and decide with
   the user which to patch in the extractor (CLAUDE.md: no result may rest on a quirk).
-- **ERDALT (the user, with the ERDALT track):** every model collapsed (validation AUC ~0.70; criterion never met).
-  Session 88's slice runs (200,000 training files) did not reproduce the collapse and were stopped; what they showed:
-  AUC falls as violations fall in every variant, their vectors-per-step cap does not keep AUC up, the free output
-  layer is ~0.06 AUC higher, the standardized inputs are extremely heavy-tailed (|z| up to 166,000), and the broken
-  outputs are not the extreme vectors (8.8% of the negative mass). **Session 89:** the broken outputs were the main
-  pressure (features some vector lowers: 2,367 old, 1,209 new; PV, a zero-violation model, 0.553 -> 0.924 validation).
-  ERDALT is retrained as specified on the new material: `erdalt` 1169769_[0] first, the eight folds 1169770_[1-8]
-  held. **Session 90:** the retrain collapses the same way (epoch 7: 0.770 at 4.2k violations; old epoch 10: 0.764 at
-  3.7k), so the broken outputs were not the cause; the eight folds were cancelled, `erdalt` runs to its end. Their
-  setup reread: 24,000 training files, 1,033 vectors in all, 310 epochs a constant of their script; our penalty weighs
-  ~76x more per step against the BCE and the schedule spans 4.6x their steps. **GPU diagnosis, 7 tasks** (L frozen or
-  started at PV's mask, 1,033 vectors, their penalty mass, their cap, a 20-epoch schedule, a quantile scale;
-  `artifacts/scaleup/diag/erdalt/gpu/run.sh`, approved; submitted by the user as 1179478_[0-6], tasks ordered by
-  importance). Lesson recorded (CLAUDE.md, global memory): port another paper's method for its effect, not its
-  letter; PV gets the same setup comparison (`docs/resume-prompt-experiments.md`, next session item 6). **Session 91:
-  read; the cause is the input scale, not the penalty.** Only the quantile input scale (robust) holds: validation 0.938
-  and test 0.940 at 7.5k violations (control 0.81; PV 0.924); L frozen at PV's mask under the std scale fails outright
-  (0.40-0.55); a 76x lighter penalty slows the fall but does not stop it; with their 1,033 vectors L violates ~11M
-  entries of all vectors. `erdalt` 1169769_0 cancelled by the user (epoch 192: 0.728, 30-120 violations, never met).
-  New `--schedule_per_step` (loss weights interpolated within each epoch; 1b663c2). **Round 2** (tasks 7-10 of the same
-  script: robust-short, robust-fixed, robust-n1033, robust-pscale; 2 cores), submitted by the user. **Next ERDALT
-  session: read round 2, then decide the retrain with the user** (`docs/resume-prompt-erdalt.md`; record
-  `docs/erdalt-diagnosis-plan.md`, "Session 91").
+- **ERDALT (sessions 82-94; record `docs/erdalt-diagnosis-plan.md`):** ported literally it collapsed at scale
+  (validation AUC 0.84 -> 0.73, criterion never met). Cause: the port, chiefly the input scale (their std, fitted on
+  24,000 files, lets a few of our 1.76M heavy-tailed files dominate the monotone network); with a quantile scale it
+  holds (round 2: 0.914 at 769 violations with their literal weight; 0.951 at 40k with their per-step penalty mass;
+  their 1,033 vectors leave ~4.4% of all entries violated). Retrain decided with the user (session 94): quantile scale,
+  their per-step penalty mass and criterion rate per vector, their number of steps (68 epochs, per step), LR patience
+  4; each rescaling to be stated in Appendix D. The track is archived once the retrain is verified.
 - Number-free rebuttal text fixes (R4, R5, R15, R21) are step 4 (while the scale-up runs).
 - **Bounds on size: the mathematics is written; the user decides, with Opus, what enters the manuscript**
   (`theory-analysis.md`, parts G and H; session 76; next theory session: `docs/resume-prompt-theory.md`).
@@ -244,8 +232,8 @@ in `docs/archive/status-log-2026-11-14-s63.md`, sessions 64-65 in `docs/archive/
    session 65; decided and applied in session 66),
    ~~the protocol items~~ (decided, session 67), ~~the remaining `run.sh` steps~~ (done, session 68), ~~lightweight
    optimization of the hot spots~~ (done, session 69), ~~the two open questions~~ (decided, session 70), ~~the
-   head-node session~~ (done, session 74); running. Since session 82 in two tracks: the experiments
-   (`docs/resume-prompt-experiments.md`) and ERDALT (`docs/resume-prompt-erdalt.md`).
+   head-node session~~ (done, session 74); running. One track again since session 94, ERDALT included
+   (`docs/resume-prompt-experiments.md`).
 4. While it runs: §2's closing and contribution 4 aligned with §5; the number-free text fixes R4, R5, R15, R21.
 5. After reading it: final numbers, then shortening §4-5 and §5's question-and-answer emphasis.
 6. A second domain decided with the scale-up's results in hand (the user's call).
@@ -258,6 +246,16 @@ own resume prompt: `docs/resume-prompt-experiments.md` (the cluster), `docs/resu
 `docs/resume-prompt-theory.md` (theory), `docs/resume-prompt-writing.md` (the manuscript); `docs/resume-prompt.md` holds
 general work and indexes them.
 
+- **2026-11-19 (session 94, Opus, ERDALT and experiments, tigris interactive job): round 2 read; the retrain.**
+  Round 2 (1239145_[7-10], quantile scale) read: robust-short 0.914 validation / 0.919 test at 769 violations (the
+  violations plateau from epoch 9); robust-pscale 0.951 / 0.956 at 40k; robust-fixed 0.82 and still rising (not a
+  ceiling); robust-n1033 0.971 / 0.973, 8.8M of the 202M entries of all vectors violated. No run met the criterion.
+  Their criterion (< 5 violated entries over 1,033 vectors) is also sized to their data. With the user: the retrain
+  rescales each setting to keep their method's effect (quantile scale, w2 x 1,033 / our vectors, criterion x our
+  vectors / 1,033, their ~465,000 steps = 68 epochs per step, LR patience 4; `--reference_vectors`,
+  `--scale_criterion`, `--max_violations`, `--lr_patience`; b9edda9; smoke-tested). The user submits `erdalt` first
+  and the folds held. Session 85's chain found all finished (unread); the ERDALT track folded into one holistic
+  `docs/resume-prompt-experiments.md` (the old one archived).
 - **2026-11-19 (session 93, Opus, writing track): §3.2 and its appendix material.** Review pass: eight findings and
   the out-of-scope note, all approved and applied together (2eec34b): where a delta comes from (the edit states it, so
   it is known before $z'$ exists), Proposition 1 (ii) now covers every non-additive sum, the repeated pool/item-table

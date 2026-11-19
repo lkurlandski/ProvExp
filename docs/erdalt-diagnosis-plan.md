@@ -221,7 +221,7 @@ steps each, the first one 0.5 -> 11. `train_erdalt(schedule_per_step=True)` (`--
 interpolates linearly within each epoch: the same values at whole epochs, the same endpoints. Tasks 7 and 10 use it,
 so they still differ only in w2; task 7 now differs from round 1's `short` in the scale and the smoothing together.
 
-## Session 93 (2026-11-19): round 2 read
+## Session 94 (2026-11-19): round 2 read; the retrain
 
 All four tasks of 1239145 completed (sacct: 13 min n1033, 52 min fixed, 2 h 04 min for the two 20-epoch runs; MaxRSS
 ~96 GB of 128G; TotalCPU ~ Elapsed, one busy core of 2: the header fits). Startup lines as expected (OMP 1, 2 cores).
@@ -247,3 +247,14 @@ variant and leaves ~4.4% of all entries of the unseen vectors negative.
 **The criterion is also a constant sized to their data.** "< 5 violated entries" counts over all vectors; theirs are
 1,033, ours 78,715 (76x). The same rate per vector is < ~380 for us; robust-short's 769 is 2x above it, robust-pscale's
 40k is 100x above. Rescaling it is the porting rule's "selection criteria" item; it must be stated in Appendix D.
+
+**The retrain (decided with the user, session 94).** `erdalt` and the eight folds, in `pipeline/4-detectors/learned`
+(b9edda9), each setting rescaled to keep their method's effect: the quantile input scale; w2 x 1,033 / the vectors a
+model sees (`--reference_vectors 1033`); the criterion < 5 x our vectors / 1,033 (`--scale_criterion`: < 381 for
+`erdalt`, ~330-370 for a fold); the schedule over their ~465,000 steps (68 epochs, `--schedule_per_step`); the learning
+rate's patience 20 -> 4 epochs (their 20 epochs are ~30,000 steps, 4.35 of ours). Batch 256 kept (theirs 16). Smoke
+test (2,000 files per split, 2 epochs, a fold): runs end to end, every setting saved in `erdalt.json`. Expected:
+validation AUC ~0.93-0.95; violations uncertain (robust-pscale: 40k after 138k steps, still falling), the criterion
+met with less than even odds. The user submits `erdalt` (array task 0) first and the eight folds (1-8) held, released
+once `erdalt`'s first epochs look right. The ERDALT track is folded into `docs/resume-prompt-experiments.md`; this
+record and the track's prompt are archived once the retrain is verified.

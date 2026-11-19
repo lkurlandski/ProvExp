@@ -16,7 +16,7 @@
 #   pv                     Gimenez et al.'s PV: the features some output lowered dropped (selected among EMBER's
 #                          features, the re-encoding's sums dropped as for unconstrained), the rest monotone increasing
 #   erdalt                 Gimenez et al.'s ERDALT from the outputs' perturbation vectors, on a GPU, rescaled to keep
-#                          their method's effect on our data (session 93; docs/erdalt-diagnosis-plan.md; Appendix D).
+#                          their method's effect on our data (session 94; docs/erdalt-diagnosis-plan.md; Appendix D).
 #                          Theirs: 24,000 training files at batch 16 (~1,500 steps per epoch), 310 epochs (~465,000
 #                          steps), 1,033 vectors, std scale. Ours: 1.76M files at batch 256 (~6,900 steps per epoch),
 #                          ~78,700 vectors (fewer in a fold). Rescaled: the schedule to their number of steps (68
@@ -40,7 +40,7 @@
 # 2-features/sums, 3-directions/loose.
 # Output: $OUT_ROOT/4-detectors/<name>/ (the registry's names); PV's selections in 4-detectors/pv-selection/.
 # Knobs: PART (gbdt, erdalt, or all; default all), DEFENSES (default "adversarial-training pv erdalt loo"), SHARDS (the material's, default 10), EPOCHS (ERDALT,
-# default 68), LIMIT (files per split; smoke tests). Cost (scale-up, sessions 78 and 93): ERDALT ~10 min loading and
+# default 68), LIMIT (files per split; smoke tests). Cost (scale-up, sessions 78 and 94): ERDALT ~10 min loading and
 # ~5.7 min per epoch on a GH200, ~6.7 h per model at 68 epochs, nine of them in parallel; the ten GBDTs ~25 min in all.
 set -euo pipefail
 cd "${SLURM_SUBMIT_DIR:-$(dirname "$0")/../../..}"

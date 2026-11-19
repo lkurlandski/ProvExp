@@ -43,7 +43,9 @@ them (below).
   reaches validation 0.924 as a zero-violation model; session 90: the retrain on the new material collapses too, and
   the port turned out unfaithful in effect at our scale (penalty ~76x heavier per step, a schedule sized for their
   24,000 files); session 91: the 7-task diagnosis points to the port, chiefly the input scale: with a quantile
-  scale ERDALT reaches validation 0.938 at 7.5k violations; round 2 checks whether it holds down to the criterion).
+  scale ERDALT reaches validation 0.938 at 7.5k violations; session 94: round 2 holds the AUC under the quantile
+  scale but no run meets the criterion; retrained with every setting rescaled to their setup, criterion included,
+  each to be stated in Appendix D; the track folded into `docs/resume-prompt-experiments.md`).
 
 ## Next steps, in order
 
@@ -74,9 +76,10 @@ records of the §5 reviews, the table remake and the ERDALT check, is in
    it and neither loses a section or import); the learned defenses and every attack rerunning
    (`logs/submit-20261118-s85.txt`); PV's sample-size experiment designed and deferred; ERDALT to be retrained on the
    new material.
-   **Next:** the experiments track (`docs/resume-prompt-experiments.md`) and the
-   ERDALT track (`docs/resume-prompt-erdalt.md`, which then runs ERDALT's attacks and `6-results`); then read it all
-   (step 5).
+   Session 94: the reruns all finished (unread); ERDALT retrained with settings rescaled to their setup (`erdalt`
+   first, the folds held). **Next:** `docs/resume-prompt-experiments.md`, now for every experiment: check ERDALT and
+   release its folds; the toolkit's evasions of the guaranteed detectors, PV's setup, reading every result; ERDALT's
+   attacks and `6-results`; then step 5.
 4. **While the scale-up runs: §2's closing and contribution 4 against §5** (old step 2 (c)). §2 says §5 "uses them to
    attack malware detectors and to build robust ones"; in §5 the attack is an instrument. The mock's contribution 4 is
    stale ("four to six points", "learned constraints"). Writing only.

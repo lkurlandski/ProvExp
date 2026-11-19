@@ -1,5 +1,9 @@
 # Resume: ERDALT's diagnosis, round 2 (4 short runs, quantile input scale); then decide the retrain with the user
 
+> **Superseded (session 94):** the ERDALT track is folded into `docs/resume-prompt-experiments.md`, which covers
+> every experiment. Round 2 was read and the retrain submitted (`docs/erdalt-diagnosis-plan.md`, "Session 94").
+> Archive this prompt once the retrain is verified.
+
 Written in session 91 (2026-11-19, tigris). Self-contained: only `CLAUDE.md` (loaded automatically) needs reading
 first. One of three tracks: this one (ERDALT), `docs/resume-prompt-experiments.md` (the rest of the scale-up on the
 cluster), `docs/resume-prompt.md` (general work and the index of the tracks). The diagnosis record:
