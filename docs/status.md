@@ -258,6 +258,15 @@ own resume prompt: `docs/resume-prompt-experiments.md` (the cluster), `docs/resu
 `docs/resume-prompt-theory.md` (theory), `docs/resume-prompt-writing.md` (the manuscript); `docs/resume-prompt.md` holds
 general work and indexes them.
 
+- **2026-11-19 (session 92, Opus, writing track): §3.1's humanistic-review pass.** Eight findings; the user
+  approved 1-3 and 5-8, rejected 4 (the sentence on why the item map drops positions stays), deferred the recurring
+  patterns and the term ledger (the overloaded "element", "extractor" before Definition 5) to a holistic review of all
+  of §3, and asked to fix the out-of-scope note too. Applied together, without the paper-prose skill (the user no longer
+  finds it helpful), in 0185d58: the item table now has its own closing paragraph, after the partial-extractor caveat;
+  "members" now means only an item's positions (multiset entries are "pairs"); the readout paragraph leads with its
+  claim, and the distinct count is no longer called algebraic (Gray's analogy overreached); the roadmap's last sentence
+  is split; $\mathcal{V}$ is described one way; two repetitions were cut; the remark on other monoids left §3.1 (§3.3
+  already states the totally-ordered condition, and §3.2 gained one sentence: such a sum is recomputed like a pool).
 - **2026-11-19 (session 91, Opus, ERDALT track, tigris): the diagnosis read; the input scale is the cause.** All
   seven tasks of 1179478 finished. Session 90's hypothesis (the penalty's weight) refuted: with their penalty mass per
   step (pscale) the AUC still falls (0.878 -> 0.824; +0.03-0.09 over the control at matched epochs, about even at

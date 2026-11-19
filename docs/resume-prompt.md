@@ -21,7 +21,7 @@ number.
 | The scale-up's experiments on the cluster | `docs/resume-prompt-experiments.md` | `toolkit`, `adaptive` and MAB-Malware `ours` submitted without ERDALT, waiting for nodes; check them, fix failures, right-size, read |
 | ERDALT's collapse | `docs/resume-prompt-erdalt.md` | the diagnosis (session 91) points to the port's input scale (quantile scale: 0.938 at 7.5k violations); round 2 (tasks 7-10) is read next, then the user decides the retrain; ERDALT's attacks and `6-results` wait on it |
 | Theory: bounds on size | `docs/resume-prompt-theory.md` (Opus) | mathematics done (`docs/evidence/theory-analysis.md`, part H); the user decides what enters the manuscript, H.5 first |
-| Writing: manuscript review | `docs/resume-prompt-writing.md` | §6 cut to 1,284 words (session 84); next the humanistic review and polish of §3, §4, §5, one subsection per pass; §2 after |
+| Writing: manuscript review | `docs/resume-prompt-writing.md` | §3.1 reviewed and polished (session 92); next §3.2, then §3.3, §4, §5, one subsection per pass; §2 after |
 | General work | this prompt | below |
 
 ## 3. General work (no cluster, no numbers)
