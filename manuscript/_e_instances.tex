@@ -153,8 +153,8 @@ declare the changes that follow.
 \subsection{Population}
 \label{sec:instances:population}
 
-The signature covers the threat model only over a population, and Theorem~\ref{thm:fw:directions} needs that population
-closed under the threat model. Ours is the complete PE files with a plain layout. A file is complete when everything
+The signature covers the threat model only over a population, and Proposition~\ref{prop:fw:sequences} needs that
+population closed under the threat model. Ours is the complete PE files with a plain layout. A file is complete when everything
 the parser locates lies within it, except the debug data and the signature, which may lie past its end: the entry write
 can point either there, and the population must stay closed under it. Its layout is plain when the sections lie within the image that the loader
 maps and the headers hold only headers. On other files an edit can change items that no operation declares. Appending to an

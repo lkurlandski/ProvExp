@@ -11,7 +11,7 @@ totals, and compute each feature by a formula over a few totals. \Cref{sec:fw:mo
 and shows that this description and a record the extractor writes while it runs give the exact change of every
 feature, side effects included, before the edit is applied. \Cref{sec:fw:directions} bounds, without applying any edit,
 the direction in which each feature can move under all the edits a threat model allows, and \Cref{sec:fw:robust}
-shows that a detector whose score cannot fall in those directions cannot be evaded by any sequence of those edits.
+extends the bound to sequences of edits and shows that a detector whose score cannot fall in those directions cannot be evaded by any sequence of those edits.
 Appendix~\ref{sec:symbols} lists the notation, Appendix~\ref{sec:types} is a short introduction to the algebra that
 \Cref{sec:fw:model} uses, and Appendix~\ref{sec:fw:proofs} holds the proofs.
 
@@ -296,8 +296,7 @@ at once, and tells an attacker which features the edits can move, and which way.
 A \emph{threat model} $\mathcal{M}$ is a set of transformations $T: \mathcal{Z} \to \mathcal{Z}$, each an edit
 the attacker may apply to an input. The transformations $\mathcal{T}$ of \Cref{sec:background} are their finite
 sequences, applied one after another. A \emph{population} is a subset
-$Z \subseteq \mathcal{Z}$ of inputs, and it is \emph{closed} under $\mathcal{M}$ if no transformation in $\mathcal{M}$
-takes an input of $Z$ outside $Z$. A \emph{direction} is one of four sets of signs that the change of a value can
+$Z \subseteq \mathcal{Z}$ of inputs. A \emph{direction} is one of four sets of signs that the change of a value can
 have: $\mathsf{fixed} = \{0\}$, $\mathsf{up} = \{0, +\}$, $\mathsf{down} = \{-, 0\}$, and $\mathsf{both} = \{-, 0,
 +\}$. A \emph{direction table} $D$ assigns each feature $j$ a direction $D_j$. It is \emph{sound} for $\mathcal{M}$
 over $Z$ if, for every transformation in $\mathcal{M}$ and every input of $Z$, the change of every feature $j$ has a
@@ -420,19 +419,12 @@ can be read off their formulas.
 \label{thm:fw:directions}
 {
 Let $\varphi$ be a sum-then-readout extractor whose sums are totally ordered, $\mathcal{M}$ a threat model, $Z$ a
-population, and $\Delta$ a
-signature that covers $\mathcal{M}$ over $Z$. Then the derived table $D_\Delta$ is sound for $\mathcal{M}$ over $Z$.
-If $Z$ is moreover closed under $\mathcal{M}$, then for every $z \in Z$ and every $\mathbf{x}' \in \mathcal{R}(z)$,
-the change $x'_j - \varphi_j(z)$ of every feature $j$ has a sign in $(D_\Delta)_j$.
+population, and $\Delta$ a signature that covers $\mathcal{M}$ over $Z$. Then the derived table $D_\Delta$ is sound
+for $\mathcal{M}$ over $Z$.
 }
 
-\noindent For one edit, the signature gives the edit a delta made of item changes in $\Delta$, the direction of each sum
-bounds the sum's change because the sum is totally ordered, and the readout rule turns these bounds into a
-bound on the feature. A sequence of
-edits passes through intermediate inputs, and closure keeps each of them in $Z$, so the bound holds at every step. It
-also holds for the sequence as a whole, because adding up changes keeps them within a direction: two rises make a
-rise, and a rise followed by no change is a rise. Without closure, an intermediate input can leave $Z$, and the table
-says nothing about the steps after it; \Cref{sec:fw:robust} shows how the table itself establishes closure.
+\noindent The signature gives each edit a delta made of item changes in $\Delta$, the direction of each sum bounds the
+sum's change because the sum is totally ordered, and the readout rule turns these bounds into a bound on the feature.
 
 Reasoning about every edit at once through a few abstract values is the idea of abstract
 interpretation~\cite{cousot1977abstract}, whose introductory example is the rule of signs: the sign of a product
@@ -443,12 +435,26 @@ a feature under every edit of a threat model, and they are computed from the kin
 \subsection{Robust by Construction}
 \label{sec:fw:robust}
 
-A sound table bounds how the features of an input can move under the edits of a threat model. A defender needs more:
-a detector whose score no sequence of these edits can lower. Two things give it. The population must be closed, so
-that the table applies at every step of the sequence, and the score must not fall in any direction the table allows.
+A sound table bounds how the features of an input can move under one edit of a threat model. A defender needs more:
+a detector whose score no sequence of these edits can lower. Two things give it. The table must apply at every step of
+the sequence, and the score must not fall in any direction the table allows. The first holds if the population is
+\emph{closed} under $\mathcal{M}$: no transformation in $\mathcal{M}$ takes an input of $Z$ outside $Z$.
 
-Closure need not be assumed separately. A population is usually defined by a condition on its inputs, and when the
-condition is a bound on features of the extractor, the derived table says whether an edit can break it.
+\proposition[Sequences of edits]
+\label{prop:fw:sequences}
+{
+Let $D$ be sound for $\mathcal{M}$ over a population $Z$ closed under $\mathcal{M}$. Then for every $z \in Z$ and
+every $\mathbf{x}' \in \mathcal{R}(z)$, the change $x'_j - \varphi_j(z)$ of every feature $j$ has a sign in $D_j$.
+}
+
+\noindent A sequence of edits passes through intermediate inputs, and closure keeps each of them in $Z$, so the bound
+holds at every step. It also holds for the sequence as a whole, because adding up changes keeps them within a
+direction: two rises make a rise, and a rise followed by no change is a rise. Without closure, an intermediate input
+can leave $Z$, and the table says nothing about the steps after it.
+
+Closure can be checked directly, by applying edits to inputs of the population and testing whether the results remain
+in it, as \Cref{sec:instances:population} does. When the population is defined by bounds on features of the extractor,
+the derived table can prove closure instead.
 
 \lemma[Closure]
 \label{lem:fw:closure}
@@ -459,8 +465,7 @@ $\Delta$ be a signature that covers $\mathcal{M}$ over $Z$. If no direction $(D_
 $+$, then $Z$ is closed under $\mathcal{M}$.
 }
 
-\noindent The first claim of Theorem~\ref{thm:fw:directions} holds without closure. Applied to an input of $Z$ and a
-feature of $J$, it says that the edit does not raise the feature, so the feature stays at or below its bound and the
+\noindent Applied to an input of $Z$ and a feature of $J$, Theorem~\ref{thm:fw:directions} says that the edit does not raise the feature, so the feature stays at or below its bound and the
 edited input is in $Z$. A population of the inputs that hold no item of some unwanted form is of this kind: the number
 of such items is a sum, read by the identity and bounded by 0, and it cannot rise if no item change in $\Delta$ adds such
 an item or turns another item into one. Lower bounds on features that the table does not allow to fall work the same
@@ -484,5 +489,5 @@ respect to $D$. Then $h(\mathbf{x}') \ge h(\varphi(z))$ for every $z \in Z$ and 
 
 \noindent The guarantee needs no attack to be run: it covers every sequence of edits in the threat model, of any
 length and with any content, and not only those an attack happens to try. Theorem~\ref{thm:fw:directions} supplies
-the sound table and Lemma~\ref{lem:fw:closure} the closed population. What the guarantee costs in detection is
+the sound table, and Lemma~\ref{lem:fw:closure} or a direct check the closed population. What the guarantee costs in detection is
 measured in \Cref{sec:eval:detectors}.

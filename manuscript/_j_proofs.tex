@@ -131,23 +131,24 @@ and after the edit.
 
 \paragraph{Proof of Theorem~\ref{thm:fw:directions}.}
 For one edit, the paragraph on the directions of sums shows that every sum $k$ changes with a sign in $d_k$, and the
-readout rule of feature $j$ then gives its change a sign in $(D_\Delta)_j$, so $D_\Delta$ is sound. Let $Z$ be closed
-under $\mathcal{M}$, and let $\mathbf{x}' = \varphi(T(z))$ for a finite sequence $T = T_m \circ \dots \circ T_1$ of
-transformations in $\mathcal{M}$. The inputs $z_0 = z$ and $z_i = T_i(z_{i-1})$ all lie in $Z$, by closure and
-induction on $i$, so each step changes feature $j$ with a sign in $(D_\Delta)_j$ by the first part. The change
-$x'_j - \varphi_j(z)$ is the total of these steps' changes, and a direction is closed under addition, so it has a sign
-in $(D_\Delta)_j$. Without closure, a step can leave $Z$, and the table says nothing about the steps after it.
+readout rule of feature $j$ then gives its change a sign in $(D_\Delta)_j$, so $D_\Delta$ is sound.
+
+\paragraph{Proof of Proposition~\ref{prop:fw:sequences}.}
+Let $\mathbf{x}' = \varphi(T(z))$ for a finite sequence $T = T_m \circ \dots \circ T_1$ of transformations in
+$\mathcal{M}$. The inputs $z_0 = z$ and $z_i = T_i(z_{i-1})$ all lie in $Z$, by closure and induction on $i$, so each
+step changes feature $j$ with a sign in $D_j$, since $D$ is sound. The change $x'_j - \varphi_j(z)$ is the total of
+these steps' changes, and a direction is closed under addition, so it has a sign in $D_j$. Without closure, a step can
+leave $Z$, and the table says nothing about the steps after it.
 
 \paragraph{Proof of Lemma~\ref{lem:fw:closure}.}
-Let $z \in Z$ and $T \in \mathcal{M}$. The first part of the proof of Theorem~\ref{thm:fw:directions} does not use
-closure, and gives the change $\varphi_j(T(z)) - \varphi_j(z)$ a sign in $(D_\Delta)_j$ for every feature $j$. For
-$j \in J$ this direction does not contain $+$, so $\varphi_j(T(z)) \le \varphi_j(z) \le t_j$, and $T(z) \in Z$. With
-$\ge$ and $-$ in place of $\le$ and $+$, the same argument gives the lemma for lower bounds.
+Let $z \in Z$ and $T \in \mathcal{M}$. Theorem~\ref{thm:fw:directions} gives the change
+$\varphi_j(T(z)) - \varphi_j(z)$ a sign in $(D_\Delta)_j$ for every feature $j$. For $j \in J$ this direction does not
+contain $+$, so $\varphi_j(T(z)) \le \varphi_j(z) \le t_j$, and $T(z) \in Z$. With $\ge$ and $-$ in place of $\le$
+and $+$, the same argument gives the lemma for lower bounds.
 
 \paragraph{Proof of Corollary~\ref{cor:fw:robustness}.}
-The second part of the proof of Theorem~\ref{thm:fw:directions} uses only that the table is sound and that $Z$ is
-closed, so it holds for $D$: for every $z \in Z$ and $\mathbf{x}' \in \mathcal{R}(z)$, the change $x'_j - \varphi_j(z)$
-of every feature $j$ has a sign in $D_j$. Since $h$ is monotone with respect to $D$, $h(\mathbf{x}') \ge
+By Proposition~\ref{prop:fw:sequences}, for every $z \in Z$ and $\mathbf{x}' \in \mathcal{R}(z)$, the change
+$x'_j - \varphi_j(z)$ of every feature $j$ has a sign in $D_j$. Since $h$ is monotone with respect to $D$, $h(\mathbf{x}') \ge
 h(\varphi(z))$. This is the argument of Gimenez et al.'s Proposition~1~\cite{gimenez2025certifiably}, with the preorder
 ``$z'$ is reachable from $z$'' and, in place of the order $\le$ on the features, the order that $D$ defines, under
 which two vectors that differ in a fixed feature are not comparable. A score that reads sums instead of features is covered by
