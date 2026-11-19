@@ -12,6 +12,7 @@ from provexp.models.erdalt import ERDALT
 from provexp.models.erdalt import ERDALTDetector
 from provexp.models.erdalt import fit_quantile_scale
 from provexp.models.erdalt import load_detector
+from provexp.models.erdalt import loss_weights
 from provexp.models.erdalt import num_violations
 from provexp.models.erdalt import project_monotone
 from provexp.models.erdalt import pv_mask
@@ -160,6 +161,25 @@ class TestDiagnosisOptions:
         expected = np.maximum(np.quantile(dev, 0.99, axis=0), X.astype(np.float64).std(axis=0))
         assert np.allclose(std.std.numpy(), expected, rtol=1e-4)  # type: ignore[operator]
         assert float(std.std[0]) > 3 * float(X[:, 0].std())  # type: ignore[index]
+
+    @pytest.mark.parametrize("n", [1, 2, 20, 310])
+    def test_loss_weights_match_the_per_epoch_schedule_at_whole_epochs(self, n: int) -> None:
+        expected = [np.linspace(a, b, n) for a, b in ((0.5, 1.0), (0.5, 200.0), (0.5, 1.0))]
+        for e in range(n):
+            assert np.allclose(loss_weights(float(e), n), [w[e] for w in expected])
+        assert np.allclose(loss_weights(float(n + 3), n), [w[-1] for w in expected])
+
+    def test_loss_weights_interpolate_within_an_epoch(self) -> None:
+        w0, w1 = loss_weights(0.0, 20, 0.5), loss_weights(1.0, 20, 0.5)
+        mid = loss_weights(0.5, 20, 0.5)
+        assert np.allclose(mid, [(a + b) / 2 for a, b in zip(w0, w1)])
+        assert np.isclose(loss_weights(19.0, 20, 0.5)[1], 100.0)
+
+    def test_schedule_per_step_trains_and_is_recorded(self) -> None:
+        X, y, D = self._data()
+        _, summary = train_erdalt(X, y, X, y, D, device=torch.device("cpu"), hidden=8, batch_size=64, epochs=2,
+                                  schedule_per_step=True)
+        assert summary["schedule_per_step"] and len(summary["history"]) == 2
 
     def test_quantile_scale_trains(self) -> None:
         X, y, D = self._data()

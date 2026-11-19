@@ -50,6 +50,7 @@ __all__ = [
     "is_erdalt",
     "fit_temperature",
     "fit_quantile_scale",
+    "loss_weights",
     "pv_mask",
     "load_detector",
 ]
@@ -151,6 +152,30 @@ def _logits(model: nn.Module, X: Tensor, batch_size: int = 8192) -> Tensor:
     return torch.cat([model(X[i:i + batch_size]) for i in range(0, X.shape[0], batch_size)])
 
 
+def loss_weights(t: float, n_schedule: int, penalty_scale: float = 1.0) -> tuple[float, float, float]:
+    """
+    The loss weights (w1, w2, w3) at position `t` (in epochs) of their linear schedule over `n_schedule` epochs.
+
+    w1: 0.5 -> 1, w2: 0.5 -> 200 (times `penalty_scale`), w3: 0.5 -> 1, reaching the end value at epoch
+    `n_schedule - 1` (as `np.linspace(a, b, n_schedule)` at whole epochs) and holding it after.
+
+    Args:
+        t: The position in epochs; whole numbers give their per-epoch values, fractions interpolate between them.
+        n_schedule: The schedule's length in epochs.
+        penalty_scale: A factor on w2.
+
+    Returns:
+        (w1, w2, w3).
+    """
+    if n_schedule < 1:
+        raise ValueError(f"n_schedule must be positive, got {n_schedule}.")
+    if t < 0:
+        raise ValueError(f"t must be nonnegative, got {t}.")
+    f = min(t / (n_schedule - 1), 1.0) if n_schedule > 1 else 0.0
+    w1, w2, w3 = (a + (b - a) * f for a, b in ((0.5, 1.0), (0.5, 200.0), (0.5, 1.0)))
+    return w1, w2 * penalty_scale, w3
+
+
 def train_erdalt(
     X_tr: npt.NDArray[np.float32],
     y_tr: npt.NDArray[np.int64],
@@ -174,6 +199,7 @@ def train_erdalt(
     freeze_post: bool = False,
     deltas_subsample: Optional[int] = None,
     input_scale: str = "std",
+    schedule_per_step: bool = False,
 ) -> tuple[ERDALT, dict[str, Any]]:
     """
     Train ERDALT and keep the epoch with the best validation ROC-AUC among those with < `max_violations` violations.
@@ -196,6 +222,9 @@ def train_erdalt(
         deltas_subsample: Train on a fixed seeded draw of this many of `deltas` (diagnosis: fewer observed vectors);
             the violations over all of them are logged too (`violations_all`), the ones the model never saw.
         input_scale: "std" (theirs) or "quantile" (`fit_quantile_scale`; diagnosis).
+        schedule_per_step: Interpolate the loss weights linearly within each epoch, from this epoch's value to the
+            next's, instead of holding them for the whole epoch (theirs). Same endpoints; it matters on short
+            schedules, where the per-epoch jumps are large (`loss_weights`).
 
     Returns:
         The model (eval mode, on `device`) and a training summary (selected epoch, its ROC-AUC and violations, and
@@ -240,8 +269,7 @@ def train_erdalt(
     n_schedule = epochs if schedule_epochs is None else schedule_epochs
     if n_schedule < epochs:
         raise ValueError(f"schedule_epochs ({n_schedule}) is shorter than epochs ({epochs}).")
-    w1, w2, w3 = (np.linspace(a, b, n_schedule) for a, b in ((0.5, 1.0), (0.5, 200.0), (0.5, 1.0)))
-    w2 = w2 * penalty_scale
+    steps_per_epoch = -(-Xtr.shape[0] // batch_size)
 
     best: Optional[tuple[bool, float, int, int]] = None  # (meets criterion, roc, -violations, epoch)
     best_state: Optional[dict[str, Tensor]] = None
@@ -249,8 +277,10 @@ def train_erdalt(
     for epoch in range(epochs):
         model.train()
         order = torch.randperm(Xtr.shape[0], generator=generator).to(device)
-        for i in range(0, Xtr.shape[0], batch_size):
+        for step, i in enumerate(range(0, Xtr.shape[0], batch_size)):
             idx = order[i:i + batch_size]
+            t = epoch + step / steps_per_epoch if schedule_per_step else float(epoch)
+            w1, w2, w3 = loss_weights(t, n_schedule, penalty_scale)
             l1 = F.binary_cross_entropy_with_logits(model(Xtr[idx]), ytr[idx])
             l2 = torch.zeros((), device=device)
             Ds = D
@@ -259,9 +289,9 @@ def train_erdalt(
             for j in range(0, Ds.shape[0], delta_batch):
                 l2 = l2 + F.relu(-model.post_delta(Ds[j:j + delta_batch])).sum()
             l3 = torch.sqrt(torch.sum((model.layer1.weight * mask) ** 2) + 1e-16)
-            loss = w1[epoch] * l1 + w2[epoch] * l2 + w3[epoch] * l3
+            loss = w1 * l1 + w2 * l2 + w3 * l3
             optimizer.zero_grad(set_to_none=True)
-            loss.backward()
+            loss.backward()  # type: ignore[no-untyped-call]
             optimizer.step()
             project_monotone(model)
         roc = float(roc_auc_score(y_vl, _logits(model, Xvl).cpu().numpy()))
@@ -292,6 +322,7 @@ def train_erdalt(
                "deltas_per_step": deltas_per_step, "schedule_epochs": n_schedule, "monotone_output": monotone_output,
                "lr_scheduler": lr_scheduler, "penalty_scale": penalty_scale, "post_init": post_init,
                "freeze_post": freeze_post, "deltas_subsample": deltas_subsample, "input_scale": input_scale,
+               "schedule_per_step": schedule_per_step,
                "num_deltas_all": int(D_all.shape[0]) if D_all is not None else int(D.shape[0]),
                "history": history}
     if not best[0]:

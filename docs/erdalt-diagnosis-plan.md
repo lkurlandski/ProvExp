@@ -169,3 +169,54 @@ violations (near ~0.9), cap in between; fixed reaches ~0.88-0.92 (the network is
 `train_erdalt.py`; tests in `tests/test_erdalt.py::TestDiagnosisOptions`. Smoke test on 20,000 files per split, 2
 epochs (interactive job): every flag runs; PV's mask keeps 1,359 features with zero violations over all vectors; the
 AUC of a 2-epoch slice says nothing (the control is at 0.52 there too).
+
+## Session 91 (2026-11-19): the diagnosis read; the input scale, not the penalty, is the cause
+
+All seven tasks of 1179478 completed (sacct: 13 min for n1033 and cap, 45 min to 2 h for the others; MaxRSS 63-96 GB
+of 128G; TotalCPU ~ Elapsed, one busy core of 4). Validation AUC at the last epoch and selected test AUC; the control
+(`erdalt`) is 0.843 at 1.39M violations, 0.807 at 7.4k, 0.770 at 4.2k (epoch 7). No task met the criterion.
+
+| run | epoch 0 | last epoch | violations, last | test AUC (selected) | reading |
+|---|---|---|---|---|---|
+| pscale | 0.878 | 0.824 | 111k | 0.831 | a 76x lighter penalty: violations stay high and the AUC still falls; no better than the control at matched violations (~0.84 at 110k) |
+| n1033 | 0.917 (0.934 at 1) | 0.824 | 87 (of the 1,033); ~11.0M over all 78,715 | 0.858 | falls as its own violations fall; violates ~8x more entries of all vectors than the control after one epoch |
+| fixed | 0.547 | 0.396 | 0 | 0.590 | the network cannot use PV's 1,359 features at all (PV's GBDT: 0.924), and gets worse |
+| short | 0.843 | 0.744 | 593 | 0.755 | the control, faster |
+| cap | 0.828 | 0.733 | 70k | 0.749 | below the control |
+| pv-init | 0.866 | 0.749 | 3.0k | 0.758 | leaves the good L and falls like the control |
+| robust | 0.905 | **0.938** | 7.5k | **0.940** | rises while violations fall; 0.13 above the control at matched violations, above PV's 0.924 |
+
+**The hypothesis is refuted.** The penalty's weight is not the main cause: with 1/76 of it (pscale) the AUC falls just
+the same at matched violations, and with no penalty at all (fixed) the network fails outright. What all failing runs
+share is the input scale, and the one run that changes it (robust: per-feature scale max(std, 0.9999 quantile of
+|x - mean|)) is the one that holds: validation 0.938 and test 0.940 at 7.5k violations, against the control's 0.81.
+Its temperature also falls from 400-10,000 to 67 (validation logits up to 2,025 instead of 1e4-3e5): with the std
+scale, the heavy-tailed features of a few validation files dominate the monotone network's output. The premise noted
+as weak in the table above (no linear scale pulls the extremes in) was wrong in effect.
+
+**In the porting lesson's terms.** Their std scale is fitted on 24,000 files; ours on 1.76M, whose features reach
+1.8e11: the scale is a constant sized to their data (the feature set is the same EMBER family). The quantile scale is
+linear and per feature, so monotonicity, L's meaning (the vectors are divided by the same scale) and Proposition 3 are
+untouched. Not yet checked: that the std on a 24,000-file sample of ours behaves like theirs (a cheap check of the
+claim that the difference is the data size, not only the tails).
+
+**Open, so not yet the retrain:** robust has not met the criterion (7.5k violations at epoch 14 of 310); whether its
+AUC holds down to < 5 violations is the question that decides the retrain. Round 2 (prepared, not submitted; same
+script, `--array=7-9`, 2 cores): 7 robust-short (quantile scale, the whole schedule in 20 epochs: is the criterion met,
+at what AUC?), 8 robust-fixed (quantile scale, L frozen at PV's mask: the network's ceiling at zero violations), 9
+robust-n1033 (quantile scale, their 1,033 vectors: violations of the unseen ones, the blind-spot evidence).
+Hypothesis: robust-short reaches the criterion or near it (< 100) at validation ~0.90-0.93; robust-fixed ~0.90-0.92;
+robust-n1033 keeps ~0.93 but violates millions of entries of the unseen vectors.
+
+**Correction and a fourth task (session 91, after the user's question).** "pscale no better than the control" was too
+strong. At matched epochs pscale is clearly better (+0.035 at epoch 0, +0.055 at 3, +0.086 at 7); at matched
+violations it is about +0.015 near 200k and about -0.015 near 110k, and it never got below 110k in 15 epochs. So the
+lighter penalty slows the fall rather than removing it. The user leans to keeping their per-step penalty mass (the
+effect-faithful choice under the porting rule), so round 2 adds task 10, robust-pscale: the quantile scale with
+w2 x 1033/78715 and task 7's 20-epoch schedule, so 7 and 10 differ only in the weight.
+
+**Per-step schedule (session 91, the user's suggestion).** The loss weights were held for a whole epoch (theirs: 310
+increments of w2 of ~0.65, every ~1,500 steps). On a 20-epoch schedule that is 20 jumps of ~10.5 held for ~6,900
+steps each, the first one 0.5 -> 11. `train_erdalt(schedule_per_step=True)` (`--schedule_per_step`; `loss_weights`)
+interpolates linearly within each epoch: the same values at whole epochs, the same endpoints. Tasks 7 and 10 use it,
+so they still differ only in w2; task 7 now differs from round 1's `short` in the scale and the smoothing together.

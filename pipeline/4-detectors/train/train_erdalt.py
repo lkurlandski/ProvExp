@@ -82,6 +82,8 @@ def main() -> None:
     parser.add_argument("--schedule_epochs", type=int, default=None,
                         help="Length of the loss weights' schedule (default --epochs).")
     parser.add_argument("--free_output", action="store_true", help="Leave the output layer unconstrained (their code).")
+    parser.add_argument("--schedule_per_step", action="store_true",
+                        help="Interpolate the loss weights within each epoch instead of holding them (theirs).")
     parser.add_argument("--no_lr_scheduler", action="store_true", help="Keep the learning rate fixed.")
     parser.add_argument("--penalty_scale", type=float, default=1.0, help="A factor on the penalty weight w2 (diagnosis).")
     parser.add_argument("--post_init", choices=("identity", "pv"), default="identity",
@@ -142,7 +144,7 @@ def main() -> None:
                                   monotone_output=not args.free_output, lr_scheduler=not args.no_lr_scheduler,
                                   penalty_scale=args.penalty_scale, post_init=args.post_init,
                                   freeze_post=args.freeze_post, deltas_subsample=args.deltas_subsample,
-                                  input_scale=args.input_scale)
+                                  input_scale=args.input_scale, schedule_per_step=args.schedule_per_step)
     def _logits(X: npt.NDArray[np.float32]) -> npt.NDArray[np.float64]:
         with torch.no_grad():
             Xd = torch.from_numpy(X).to(device)
