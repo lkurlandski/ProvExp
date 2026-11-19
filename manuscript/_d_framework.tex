@@ -214,7 +214,7 @@ $I^- \subseteq \pi(z)$ and
   \label{eq:fw:delta}
   \pi(z') = \big(\pi(z) - I^-\big) \uplus I^+,
 \end{equation}
-where $-$ removes each element of $I^-$ once for each time it occurs there and $\uplus$ adds each element of $I^+$ for
+where $-$ removes each pair of $I^-$ once for each time it occurs there and $\uplus$ adds each pair of $I^+$ for
 each time it occurs there. The items in $I^-$ are \emph{removed} from $\pi(z)$ and those in $I^+$ are \emph{added}.
 }
 
@@ -252,16 +252,13 @@ Consequently, writing $s_k(z)$ for the value of sum $k$ in $\mathbf{s}(z)$,
 \end{enumerate}
 }
 
-\noindent Part (i) follows on an additive sum, where every value is a real number: subtracting the contribution of the
-removed items from $s_k(z)$ leaves that of the kept items, and adding the contribution of the added items gives
-$s_k(z')$. Part (ii) is the second decomposition itself, which every other sum needs, since a pool has no subtraction
-(\Cref{sec:fw:model}), nor does any other monoid without inverses. The item table of $z$ lists the contribution of
-every item, hence of the kept ones, and the contribution functions give those of the added items. When the edit
-removes nothing, $B = \pi(z)$, and the old value combined with the contributions of the added items suffices.
-
-In part (iii), the first claim is Definition~\ref{def:fw:extractor} for $z'$. The second follows from Definition~\ref{def:fw:readout}: a readout depends
-only on the sums in its support, and if no item of the delta contributes anything but the neutral element to them, these
-sums are the same in $z$ and $z'$.
+\noindent Part (i) is the update an additive sum allows: subtract the contributions of the removed items from the old
+total and add those of the added items. Every other sum is recomputed by part (ii), by folding the contributions of the
+kept and the added items, since a pool has no subtraction (\Cref{sec:fw:model}), nor does any other monoid without
+inverses, and its old value alone does not determine the new one. The item table of $z$ lists the contribution of every
+item, hence of the kept ones, and the contribution functions give those of the added items. Part (iii) holds because a
+readout sees only the sums in its support: if no item of the delta contributes anything but the neutral element to
+them, they are the same in $z$ and $z'$. Appendix~\ref{sec:fw:proofs} gives the proof.
 
 The proposition gives the side effects of an edit exactly. An edit that aimed at the change $\boldsymbol{\delta}^*$
 has the side effects $\boldsymbol{\eta} = \varphi(z') - \varphi(z) - \boldsymbol{\delta}^*$ (\Cref{sec:background}).
@@ -275,7 +272,8 @@ all: only those whose support contains a sum to which an item of the delta contr
 
 Computing the features of $z'$ this way can also be cheaper than extracting them. The update needs only the item table
 of $z$ and the delta, changes only the sums to which an item of the delta contributes, and evaluates again only the
-readouts whose support contains one of these sums. Databases keep stored aggregates current in the same way: a view
+readouts whose support contains one of these sums; a pool from which the edit removes nothing needs only its old value
+and the contributions of the added items. Databases keep stored aggregates current in the same way: a view
 that totals a table is updated from the inserted and deleted rows instead of being recomputed, a technique known as
 incremental view maintenance~\cite{gupta1995maintenance,koch2014dbtoaster}. Writing an extractor as a fold over its
 items lets this technique apply to features. Part (i) is its rule for totals, and the item table supplies what the

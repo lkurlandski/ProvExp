@@ -5,19 +5,23 @@ This appendix proves the results of \Cref{sec:framework}. Throughout, an edit ta
 $(I^-, I^+)$.
 
 \paragraph{Proof of Proposition~\ref{prop:fw:side-effects}.}
-Let $B = \pi(z) - I^-$. Since $I^- \subseteq \pi(z)$, $\pi(z) = B \uplus I^-$, and by \eqref{eq:fw:delta},
-$\pi(z') = B \uplus I^+$. By \eqref{eq:fw:homomorphism}, $\mathbf{s}(z) = \sigma(B) \oplus \sigma(I^-)$ and
-$\mathbf{s}(z') = \sigma(B) \oplus \sigma(I^+)$. (i) For an additive sum $k$, both are sums of real numbers, so
-$s_k(z') - s_k(z) = \sigma(I^+)_k - \sigma(I^-)_k$, which is (i).
-(ii) For any other sum $k$, $s_k(z') = \sigma(B \uplus I^+)_k$. The item table of $z$ lists the contribution of every item
-of $\pi(z)$, hence those of $B$, and the contributions of $I^+$ follow from the contribution functions. The old value
-does not suffice: let $\nu(c) = c$ on a pool, and let $z_1$ and $z_2$ have items contributing $\{5, 3\}$ and
-$\{5, 5\}$. Both have $s_k = 5$, and the same delta, removing one item of value 5, gives 3 for $z_1$ and 5 for $z_2$.
-If $I^- = \emptyset$, then $B = \pi(z)$ and $s_k(z') = s_k(z) \oplus \sigma(I^+)_k$. (iii) The first part is
-\eqref{eq:fw:extractor} applied to $z'$. For the second, if every element of $I^-$ and $I^+$ contributes the neutral
-element to every sum in $K_j$, then $\sigma(I^-)$ and $\sigma(I^+)$ are neutral on $K_j$, so $\mathbf{s}(z)$ and
-$\mathbf{s}(z')$ both agree with $\sigma(B)$ on $K_j$. By Definition~\ref{def:fw:readout},
-$\rho_j(\mathbf{s}(z)) = \rho_j(\mathbf{s}(z'))$, and by \eqref{eq:fw:extractor}, $\varphi_j(z) = \varphi_j(z')$.
+Let $B = \pi(z) - I^-$. Since $I^- \subseteq \pi(z)$, $\pi(z) = B \uplus I^-$, and by Definition~\ref{def:fw:delta},
+$\pi(z') = B \uplus I^+$. Folding a union combines the folds \eqref{eq:fw:homomorphism}, so
+$\mathbf{s}(z) = \sigma(B) \oplus \sigma(I^-)$ and $\mathbf{s}(z') = \sigma(B) \oplus \sigma(I^+)$; on one sum $k$,
+$s_k(z) = \sigma(B)_k \star_k \sigma(I^-)_k$ and $s_k(z') = \sigma(B)_k \star_k \sigma(I^+)_k$. (i) On an additive
+sum, $\star_k$ is the addition of real numbers, and subtracting the first equation from the second gives
+$s_k(z') - s_k(z) = \sigma(I^+)_k - \sigma(I^-)_k$. (ii) On any sum, the second equation and
+\eqref{eq:fw:homomorphism} give $s_k(z') = \sigma(B \uplus I^+)_k$. (iii) The first claim is
+Definition~\ref{def:fw:extractor} applied to $z'$. For the second, suppose every pair of $I^-$ and $I^+$ contributes
+$e_k$ to every sum $k \in K_j$. Then $s_k(z) = s_k(z') = \sigma(B)_k$ on $K_j$, and Definition~\ref{def:fw:readout}
+gives $\rho_j(\mathbf{s}(z)) = \rho_j(\mathbf{s}(z'))$, which is $\varphi_j(z) = \varphi_j(z')$ by
+Definition~\ref{def:fw:extractor}.
+
+\paragraph{Computing part (ii).}
+The item table of $z$ lists the contribution of every item of $\pi(z)$, hence those of $B$, and the contribution
+functions give those of $I^+$. The old value of a pool cannot stand in for them, since it does not say whether a
+removed item held it, nor which value is the largest or smallest among those that remain. When $I^- = \emptyset$,
+$B = \pi(z)$, and $s_k(z') = s_k(z) \star_k \sigma(I^+)_k$ needs only the old value.
 
 \paragraph{Directions.}
 The sign of the change of a value from $a$ to $a'$ is $+$ if $a' > a$, $-$ if $a' < a$, and $0$ if the two are equal,
