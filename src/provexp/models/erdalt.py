@@ -200,6 +200,7 @@ def train_erdalt(
     deltas_subsample: Optional[int] = None,
     input_scale: str = "std",
     schedule_per_step: bool = False,
+    lr_patience: int = 20,
 ) -> tuple[ERDALT, dict[str, Any]]:
     """
     Train ERDALT and keep the epoch with the best validation ROC-AUC among those with < `max_violations` violations.
@@ -214,7 +215,7 @@ def train_erdalt(
         schedule_epochs: The length of the loss weights' linear schedule (default `epochs`); a longer one with fewer
             `epochs` runs the start of the full schedule (diagnosis runs).
         monotone_output: Project the output layer to be monotone too (ours); False leaves it free (their code).
-        lr_scheduler: Halve the learning rate after 20 epochs without a better validation ROC-AUC (theirs).
+        lr_scheduler: Halve the learning rate after `lr_patience` epochs without a better validation ROC-AUC (theirs).
         penalty_scale: A factor on the violation penalty's weight w2 throughout (1.0: theirs; diagnosis runs).
         post_init: "identity" (theirs) or "pv": L starts as diag(PV's mask over all of `deltas`), zero on every
             feature some vector lowers, so that it starts with no violation (diagnosis).
@@ -225,11 +226,15 @@ def train_erdalt(
         schedule_per_step: Interpolate the loss weights linearly within each epoch, from this epoch's value to the
             next's, instead of holding them for the whole epoch (theirs). Same endpoints; it matters on short
             schedules, where the per-epoch jumps are large (`loss_weights`).
+        lr_patience: Epochs without a better validation ROC-AUC before the learning rate halves (theirs: 20, i.e.
+            ~30,000 steps of their ~1,500 per epoch).
 
     Returns:
         The model (eval mode, on `device`) and a training summary (selected epoch, its ROC-AUC and violations, and
         whether any epoch met the violation criterion).
     """
+    if lr_patience < 1:
+        raise ValueError(f"lr_patience must be at least 1, got {lr_patience}.")
     if penalty_scale <= 0:
         raise ValueError(f"penalty_scale must be positive, got {penalty_scale}.")
     if post_init not in ("identity", "pv"):
@@ -265,7 +270,7 @@ def train_erdalt(
     mask = 1.0 - torch.eye(Xtr.shape[1], device=device)
 
     optimizer = torch.optim.Adam([p for p in model.parameters() if p.requires_grad], lr=learning_rate)
-    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode="max", factor=0.5, patience=20)
+    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode="max", factor=0.5, patience=lr_patience)
     n_schedule = epochs if schedule_epochs is None else schedule_epochs
     if n_schedule < epochs:
         raise ValueError(f"schedule_epochs ({n_schedule}) is shorter than epochs ({epochs}).")
@@ -322,7 +327,7 @@ def train_erdalt(
                "deltas_per_step": deltas_per_step, "schedule_epochs": n_schedule, "monotone_output": monotone_output,
                "lr_scheduler": lr_scheduler, "penalty_scale": penalty_scale, "post_init": post_init,
                "freeze_post": freeze_post, "deltas_subsample": deltas_subsample, "input_scale": input_scale,
-               "schedule_per_step": schedule_per_step,
+               "schedule_per_step": schedule_per_step, "lr_patience": lr_patience,
                "num_deltas_all": int(D_all.shape[0]) if D_all is not None else int(D.shape[0]),
                "history": history}
     if not best[0]:

@@ -92,7 +92,17 @@ def main() -> None:
     parser.add_argument("--deltas_subsample", type=int, default=None,
                         help="Train on a fixed seeded draw of this many perturbation vectors (diagnosis).")
     parser.add_argument("--input_scale", choices=("std", "quantile"), default="std",
-                        help="Divide by the std (theirs) or a high quantile of |x - mean| (diagnosis).")
+                        help="Divide by the std (theirs) or a high quantile of |x - mean| (ours at scale).")
+    parser.add_argument("--max_violations", type=int, default=5,
+                        help="The selection criterion: an epoch qualifies with fewer violated entries (theirs: 5).")
+    parser.add_argument("--reference_vectors", type=int, default=None,
+                        help="Their number of perturbation vectors (1,033): w2 is multiplied by it over ours, so the "
+                        "penalty, a sum over every vector, weighs per step what it did in their training.")
+    parser.add_argument("--scale_criterion", action="store_true",
+                        help="With --reference_vectors: --max_violations times ours over theirs (the same rate of "
+                        "violated entries per vector).")
+    parser.add_argument("--lr_patience", type=int, default=20,
+                        help="Epochs without a better validation ROC-AUC before the learning rate halves (theirs: 20).")
     args = parser.parse_args()
     if args.deltas is None and args.adv_dir is None:
         raise ValueError("Give --deltas, --adv_dir, or both.")
@@ -123,6 +133,19 @@ def main() -> None:
             sources[adv_dir.name] = int(parts[-1].shape[0])
     D = np.concatenate(parts)
     print(f"Perturbation vectors: {sources} ({D.shape[0]} in all).", flush=True)
+    n_seen = D.shape[0] if args.deltas_subsample is None else min(args.deltas_subsample, D.shape[0])
+    penalty_scale = args.penalty_scale
+    max_violations = args.max_violations
+    if args.scale_criterion and args.reference_vectors is None:
+        raise ValueError("--scale_criterion needs --reference_vectors.")
+    if args.reference_vectors is not None:
+        if args.reference_vectors < 1:
+            raise ValueError(f"--reference_vectors must be positive, got {args.reference_vectors}.")
+        penalty_scale *= args.reference_vectors / n_seen
+        if args.scale_criterion:
+            max_violations = max(1, round(args.max_violations * n_seen / args.reference_vectors))
+        print(f"Their {args.reference_vectors} vectors against our {n_seen}: w2 x {penalty_scale:.6g}, "
+              f"criterion < {max_violations} violations.", flush=True)
 
     data = {}
     for split in ("tr", "vl", "ts"):
@@ -142,9 +165,11 @@ def main() -> None:
                                   batch_size=args.batch_size, epochs=args.epochs,
                                   deltas_per_step=args.deltas_per_step, schedule_epochs=args.schedule_epochs,
                                   monotone_output=not args.free_output, lr_scheduler=not args.no_lr_scheduler,
-                                  penalty_scale=args.penalty_scale, post_init=args.post_init,
+                                  penalty_scale=penalty_scale, post_init=args.post_init,
                                   freeze_post=args.freeze_post, deltas_subsample=args.deltas_subsample,
-                                  input_scale=args.input_scale, schedule_per_step=args.schedule_per_step)
+                                  input_scale=args.input_scale, schedule_per_step=args.schedule_per_step,
+                                  max_violations=max_violations, lr_patience=args.lr_patience)
+    summary["reference_vectors"] = args.reference_vectors
     def _logits(X: npt.NDArray[np.float32]) -> npt.NDArray[np.float64]:
         with torch.no_grad():
             Xd = torch.from_numpy(X).to(device)

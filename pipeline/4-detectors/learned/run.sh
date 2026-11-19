@@ -15,24 +15,33 @@
 #   adversarial-training   the unconstrained detector retrained with every valid output appended (label 1)
 #   pv                     Gimenez et al.'s PV: the features some output lowered dropped (selected among EMBER's
 #                          features, the re-encoding's sums dropped as for unconstrained), the rest monotone increasing
-#   erdalt                 Gimenez et al.'s ERDALT from the outputs' perturbation vectors (their 310-epoch schedule, epoch
-#                          chosen by their criterion; run 133's settings), on a GPU
+#   erdalt                 Gimenez et al.'s ERDALT from the outputs' perturbation vectors, on a GPU, rescaled to keep
+#                          their method's effect on our data (session 93; docs/erdalt-diagnosis-plan.md; Appendix D).
+#                          Theirs: 24,000 training files at batch 16 (~1,500 steps per epoch), 310 epochs (~465,000
+#                          steps), 1,033 vectors, std scale. Ours: 1.76M files at batch 256 (~6,900 steps per epoch),
+#                          ~78,700 vectors (fewer in a fold). Rescaled: the schedule to their number of steps (68
+#                          epochs, per step); w2 x 1,033 / our vectors (the penalty sums over every vector, so it weighs
+#                          per step what theirs did); the criterion < 5 violated entries x our vectors / 1,033 (the
+#                          same rate per vector, < 381 for all of them); the learning rate's patience 20 epochs ->
+#                          4 (~30,000 steps, theirs); the input scale max(std, 0.9999 quantile of |x - mean|) per
+#                          feature, since their std, fitted on 24,000 files, lets a few of our 1.76M heavy-tailed
+#                          files dominate the monotone network (still linear per feature: Proposition 3 holds).
 #   pv-loo-<a>, erdalt-loo-<a>   the leave-one-out folds: PV and ERDALT learned without attack <a>'s outputs (Table 10)
 # PV's selection (pv_hole.py) also reports its hole against the derived table (M_full, features), weighted by the
 # unconstrained detector's gain; 6-results reads it for §5.3.
 # Two parts (PART: gbdt, erdalt, or both, the default), submitted as separate jobs because they need different machines:
 #   gbdt     the GBDTs on the CPU, one at a time with every core (the header: a CPU node, 36 cores; ~25 min measured)
 #   erdalt   one ERDALT model per visible GPU (CUDA_VISIBLE_DEVICES; unset: all), each a single process that keeps one
-#            core busy feeding its GPU and loads the store (peak ~91 GiB, ~35 GiB while training; ~30 h on a GH200)
+#            core busy feeding its GPU and loads the store (peak ~96 GB, ~35 GiB while training; ~6.7 h on a GH200)
 # As a job array, task i trains only the i-th ERDALT model (erdalt, then the eight erdalt-loo-<a>). pipeline/submit.sh
-# submits the gbdt part at the header's size and the erdalt part as an array of 9 on GPU nodes with 4 cores each.
+# submits the gbdt part at the header's size and the erdalt part as an array of 9 on GPU nodes with 2 cores each.
 # Whichever job arrives first merges the material, under a lock. A model whose predictions exist is skipped.
 # Inputs: 4-detectors/material/shards (4-detectors/adversarial-training), 4-detectors/unconstrained (4-detectors/train),
 # 2-features/sums, 3-directions/loose.
 # Output: $OUT_ROOT/4-detectors/<name>/ (the registry's names); PV's selections in 4-detectors/pv-selection/.
 # Knobs: PART (gbdt, erdalt, or all; default all), DEFENSES (default "adversarial-training pv erdalt loo"), SHARDS (the material's, default 10), EPOCHS (ERDALT,
-# default 310), LIMIT (files per split; smoke tests). Cost (scale-up, session 78): ERDALT ~5.8 min per epoch on a GH200,
-# ~30 h per model at 310 epochs, nine of them in parallel; the ten GBDTs ~25 min in all.
+# default 68), LIMIT (files per split; smoke tests). Cost (scale-up, sessions 78 and 93): ERDALT ~10 min loading and
+# ~5.7 min per epoch on a GH200, ~6.7 h per model at 68 epochs, nine of them in parallel; the ten GBDTs ~25 min in all.
 set -euo pipefail
 cd "${SLURM_SUBMIT_DIR:-$(dirname "$0")/../../..}"
 source pipeline/common.sh
@@ -41,7 +50,7 @@ PART="${PART:-all}"
 DEFENSES="${DEFENSES:-adversarial-training pv erdalt loo}"
 case $PART in all | gbdt | erdalt) ;; *) echo "Unknown PART $PART (gbdt erdalt all)." >&2; exit 1 ;; esac
 SHARDS="${SHARDS:-10}"
-EPOCHS="${EPOCHS:-310}"
+EPOCHS="${EPOCHS:-68}"
 ATTACKS="gamma_sections gamma_api gamma_shift content_shift dos_extend header_fields padding format_exploit"
 SUMS=$OUT_ROOT/2-features/sums
 DIR=$OUT_ROOT/3-directions/loose
@@ -102,6 +111,11 @@ erdalt_lane() {  # lane index; trains every lane-th job on its GPU
       --model_dir "$OUT/$name" \
       --complete_only \
       --epochs "$EPOCHS" \
+      --schedule_per_step \
+      --input_scale quantile \
+      --reference_vectors 1033 \
+      --scale_criterion \
+      --lr_patience 4 \
       --batch_size 256 \
       --seed 0 \
       "${LIMIT_ARG[@]}" \
@@ -113,7 +127,7 @@ if [[ ${#ERDALT_JOBS[@]} -gt 0 ]]; then
   if [[ ${#GPU_IDS[@]} -lt 1 ]]; then echo "No visible GPU for ERDALT (CUDA_VISIBLE_DEVICES)." >&2; exit 1; fi
   echo "ERDALT: ${#ERDALT_JOBS[@]} models on GPUs ${GPU_IDS[*]}, in the background."
   for ((lane = 0; lane < ${#GPU_IDS[@]}; lane++)); do
-    OMP_NUM_THREADS=4 erdalt_lane "$lane" &
+    OMP_NUM_THREADS=2 erdalt_lane "$lane" &
     LANES+=($!)
   done
 fi

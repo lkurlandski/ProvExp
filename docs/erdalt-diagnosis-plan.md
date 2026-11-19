@@ -220,3 +220,30 @@ increments of w2 of ~0.65, every ~1,500 steps). On a 20-epoch schedule that is 2
 steps each, the first one 0.5 -> 11. `train_erdalt(schedule_per_step=True)` (`--schedule_per_step`; `loss_weights`)
 interpolates linearly within each epoch: the same values at whole epochs, the same endpoints. Tasks 7 and 10 use it,
 so they still differ only in w2; task 7 now differs from round 1's `short` in the scale and the smoothing together.
+
+## Session 93 (2026-11-19): round 2 read
+
+All four tasks of 1239145 completed (sacct: 13 min n1033, 52 min fixed, 2 h 04 min for the two 20-epoch runs; MaxRSS
+~96 GB of 128G; TotalCPU ~ Elapsed, one busy core of 2: the header fits). Startup lines as expected (OMP 1, 2 cores).
+No task met the criterion (< 5 violated entries).
+
+| run | epoch 0 | last epoch | violations, last | test AUC (selected) | hypothesis |
+|---|---|---|---|---|---|
+| robust-short (w2 -> 200, 20 epochs, per step) | 0.861 | 0.914 | 769 (plateau ~800-1,300 from epoch 9) | 0.919 | AUC in range; < 100 violations **failed** |
+| robust-pscale (w2 -> 2.6, otherwise as above) | 0.911 | 0.951 (0.954 at 18) | 40k (88k at epoch 1) | 0.956 | as predicted: higher AUC, far from the criterion |
+| robust-fixed (L frozen at PV's mask) | 0.723 | 0.819, still rising ~0.0015/epoch | 0 | 0.831 | **failed** (predicted 0.90-0.92) |
+| robust-n1033 (their 1,033 vectors) | 0.959 | 0.971 (own: 577) | 545 own; **8.8M of the 202M entries over all 78,715 vectors (~4.4%)** | 0.973 | as predicted |
+
+Reading. (1) The quantile scale removes the collapse under the literal penalty too: robust-short's AUC dips to 0.868 by
+epoch 5 and then rises to 0.914 as w2 reaches 200, where the std-scale `short` fell to 0.744. (2) Under the heavy
+penalty the violations stop falling near ~800 from epoch 9 on while w2 still doubles: the last few hundred entries
+resist the penalty (not yet looked at: which vectors and features carry them). (3) With their per-step penalty mass,
+20 epochs are 138k steps against their ~465k, and violations end 100x above robust-short's. (4) robust-fixed shows the
+monotone network learns PV's features slowly (constant lr 1e-4); 15 epochs are not its ceiling, so it does not bound
+what ERDALT can reach; it does show the std scale was what made `fixed` fail outright (0.40 -> 0.82). (5) robust-n1033
+is the blind-spot evidence in its plainest form: trained on their count of vectors it scores higher than any other
+variant and leaves ~4.4% of all entries of the unseen vectors negative.
+
+**The criterion is also a constant sized to their data.** "< 5 violated entries" counts over all vectors; theirs are
+1,033, ours 78,715 (76x). The same rate per vector is < ~380 for us; robust-short's 769 is 2x above it, robust-pscale's
+40k is 100x above. Rescaling it is the porting rule's "selection criteria" item; it must be stated in Appendix D.

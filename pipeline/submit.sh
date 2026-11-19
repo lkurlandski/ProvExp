@@ -78,7 +78,7 @@ AT=$(submit 4-detectors/adversarial-training "$TR")
 # task, each a single process that needs one GPU and few cores.
 L0=$(submit 4-detectors/learned "$AT" --export=ALL,PART=gbdt)
 L1=$(submit 4-detectors/learned "$AT" --export=ALL,PART=erdalt --array=0-8 --constraint=gh --gpus-per-node=1 \
-  --output=./logs/%x_%A_%a.out --cpus-per-task=4 --mem=128G --time=2-00:00:00 --job-name=learned-erdalt)
+  --output=./logs/%x_%A_%a.out --cpus-per-task=2 --mem=128G --time=0-09:00:00 --job-name=learned-erdalt)
 L="$L0 $L1"
 IT=$(submit 4-detectors/iterated "$L0")  # reads only the GBDT part's outputs (adversarial-training, the material)
 PL=$(submit 4-detectors/price-list "$TR")
