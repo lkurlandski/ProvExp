@@ -204,8 +204,15 @@ in `docs/archive/status-log-2026-11-14-s63.md`, sessions 64-65 in `docs/archive/
   started at PV's mask, 1,033 vectors, their penalty mass, their cap, a 20-epoch schedule, a quantile scale;
   `artifacts/scaleup/diag/erdalt/gpu/run.sh`, approved; submitted by the user as 1179478_[0-6], tasks ordered by
   importance). Lesson recorded (CLAUDE.md, global memory): port another paper's method for its effect, not its
-  letter; PV gets the same setup comparison (`docs/resume-prompt-experiments.md`, next session item 6). **Next ERDALT session: read them**
-  (`docs/resume-prompt-erdalt.md`; record `docs/erdalt-diagnosis-plan.md`, "Session 90").
+  letter; PV gets the same setup comparison (`docs/resume-prompt-experiments.md`, next session item 6). **Session 91:
+  read; the cause is the input scale, not the penalty.** Only the quantile input scale (robust) holds: validation 0.938
+  and test 0.940 at 7.5k violations (control 0.81; PV 0.924); L frozen at PV's mask under the std scale fails outright
+  (0.40-0.55); a 76x lighter penalty slows the fall but does not stop it; with their 1,033 vectors L violates ~11M
+  entries of all vectors. `erdalt` 1169769_0 cancelled by the user (epoch 192: 0.728, 30-120 violations, never met).
+  New `--schedule_per_step` (loss weights interpolated within each epoch; 1b663c2). **Round 2** (tasks 7-10 of the same
+  script: robust-short, robust-fixed, robust-n1033, robust-pscale; 2 cores), submitted by the user. **Next ERDALT
+  session: read round 2, then decide the retrain with the user** (`docs/resume-prompt-erdalt.md`; record
+  `docs/erdalt-diagnosis-plan.md`, "Session 91").
 - Number-free rebuttal text fixes (R4, R5, R15, R21) are step 4 (while the scale-up runs).
 - **Bounds on size: the mathematics is written; the user decides, with Opus, what enters the manuscript**
   (`theory-analysis.md`, parts G and H; session 76; next theory session: `docs/resume-prompt-theory.md`).
@@ -251,6 +258,17 @@ own resume prompt: `docs/resume-prompt-experiments.md` (the cluster), `docs/resu
 `docs/resume-prompt-theory.md` (theory), `docs/resume-prompt-writing.md` (the manuscript); `docs/resume-prompt.md` holds
 general work and indexes them.
 
+- **2026-11-19 (session 91, Opus, ERDALT track, tigris): the diagnosis read; the input scale is the cause.** All
+  seven tasks of 1179478 finished. Session 90's hypothesis (the penalty's weight) refuted: with their penalty mass per
+  step (pscale) the AUC still falls (0.878 -> 0.824; +0.03-0.09 over the control at matched epochs, about even at
+  matched violations); L frozen at PV's mask under the std scale reaches only 0.40-0.55; the 20-epoch schedule, the
+  cap and the PV start all fall like the control. The quantile scale alone holds (validation 0.938, test 0.940 at
+  7.5k violations; temperature 67 instead of 400-10,000): the std scale, fitted on 1.76M heavy-tailed files instead of
+  their 24,000, lets a few files' extreme values dominate the monotone network. Their 1,033 vectors leave ~11M
+  violated entries over all vectors (the blind-spot evidence). The user cancelled `erdalt` 1169769_0, wants to keep
+  their per-step penalty mass, and asked for a per-step weight schedule (`--schedule_per_step`, 1b663c2). Round 2
+  (tasks 7-10, quantile scale: 20-epoch per-step schedule; L frozen at PV's mask; 1,033 vectors; their penalty mass
+  with the per-step schedule) submitted by the user. Right-sized: 2 cores (round 1 used one).
 - **2026-11-18 (session 89, Opus, ERDALT track, tigris interactive job): plan, then the material explains most of
   it.** A written plan (`docs/erdalt-diagnosis-plan.md`) proposed a ceiling: directions the attack vectors move both
   ways, which L would have to discard. Refuted by a linear program (no cancelling combination among the 79,121 old or

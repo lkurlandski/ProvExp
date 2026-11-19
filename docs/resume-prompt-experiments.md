@@ -92,7 +92,7 @@ models were trained on the old material; the ERDALT track retrains them on the n
    `superseded-s85/5-attacks/mab-malware/zainab/`).
 5. **Then:** the ERDALT track retrains ERDALT on the new material and runs its attacks
    (`docs/resume-prompt-erdalt.md`; session 90: the literal port collapsed because their setup was far smaller than
-   ours, and a 7-task diagnosis, 1179478, decides the retrain), then `6-results` (`sbatch pipeline/6-results/run.sh`).
+   ours; session 91: the diagnosis points to the input scale, and a second round, tasks 7-10, decides the retrain), then `6-results` (`sbatch pipeline/6-results/run.sh`).
 6. **PV's setup against Gimenez et al.'s (asked by the user, session 90; CLAUDE.md: "ported for its effect, not its
    letter").** ERDALT's collapse came from porting it literally to a setup ~75x larger than theirs; PV comes from the
    same paper, so check it the same way before its results are read as final. Their setup (paper §5,

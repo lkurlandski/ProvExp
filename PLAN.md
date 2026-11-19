@@ -42,7 +42,8 @@ them (below).
   slice could not reproduce the collapse; session 89: the broken outputs were the main pressure, PV on the new material
   reaches validation 0.924 as a zero-violation model; session 90: the retrain on the new material collapses too, and
   the port turned out unfaithful in effect at our scale (penalty ~76x heavier per step, a schedule sized for their
-  24,000 files); a 7-task GPU diagnosis decides whether it is the port or the method).
+  24,000 files); session 91: the 7-task diagnosis points to the port, chiefly the input scale: with a quantile
+  scale ERDALT reaches validation 0.938 at 7.5k violations; round 2 checks whether it holds down to the criterion).
 
 ## Next steps, in order
 
