@@ -23,16 +23,6 @@ Definition~\ref{def:fw:extractor}.
 \subsection{Sound Directions}
 \label{sec:fw:proofs:directions}
 
-\lemma[Totals]
-\label{lem:fw:totals}
-{
-If every term of a finite total of real numbers has a sign in a direction $d$, so does the total.
-}
-
-\paragraph{Proof.}
-A total of non-negative terms is non-negative, a total of non-positive terms is non-positive, a total of zeros is
-zero, and $\mathsf{both}$ allows every sign.
-
 \paragraph{Proof of Lemma~\ref{lem:fw:sum-direction}.}
 Let an edit take $z \in Z$ to $z' = T(z)$ with $T \in \mathcal{M}$. Since $\Delta$ covers $\mathcal{M}$ over $Z$, the
 edit has a delta $(I^-, I^+)$ made of a multiset $C$ of item changes in $\Delta$. Let $B = \pi(z) - I^-$ be the kept
@@ -103,16 +93,7 @@ chosen sign is found by brute force. Hashing therefore does not hide from the at
 moves, which answers Severi et al.'s remark that hashing resists targeting~\cite{severi2021explanation}.
 \fi
 
-\lemma[Readout rule]
-\label{lem:fw:readout}
-{
-Let $\Delta$ be a signature, and let the readout of feature $j$ rise with $P_j$ and fall with $N_j$
-(Definition~\ref{def:fw:derived}). If every sum $k \in K_j$ changes with a sign in $d_k$, the change of feature $j$
-has a sign in $(D_\Delta)_j$. Each readout of \Cref{tab:fw:readouts} rises with the sums of its column \emph{Rises
-with} and falls with those of its column \emph{Falls with}.
-}
-
-\paragraph{Proof.}
+\paragraph{Proof of Lemma~\ref{lem:fw:readout}.}
 Suppose every sum $k$ that feature $j$ reads changes with a sign in $d_k$, from the values $\mathbf{a}$ to the values
 $\mathbf{b}$, and let $D_j$ be the direction that the rule returns. If $D_j$ does not contain $-$, then no $d_k$ with
 $k \in P_j$ contains $-$, no $d_k$ with $k \in N_j$ contains $+$, and every $d_k$ with $k \in O_j$ is
@@ -148,7 +129,8 @@ $(D_\Delta)_j$, so $D_\Delta$ is sound.
 Let $\mathbf{x}' = \varphi(T(z))$ for a finite sequence $T = T_m \circ \dots \circ T_1$ of transformations in
 $\mathcal{M}$. The inputs $z_0 = z$ and $z_i = T_i(z_{i-1})$ all lie in $Z$, by closure and induction on $i$, so each
 step changes feature $j$ with a sign in $D_j$, since $D$ is sound. The change $x'_j - \varphi_j(z)$ is the total of
-these steps' changes, so it has a sign in $D_j$ by Lemma~\ref{lem:fw:totals}.
+these steps' changes, each with a sign in $D_j$. A total of non-negative changes is non-negative, a total of
+non-positive changes is non-positive, and a total of zeros is zero, so the total has a sign in $D_j$.
 
 \paragraph{Proof of Lemma~\ref{lem:fw:closure}.}
 Let $z \in Z$ and $T \in \mathcal{M}$. Theorem~\ref{thm:fw:directions} gives the change

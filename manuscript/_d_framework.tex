@@ -401,9 +401,18 @@ $O_j$, by the \emph{readout rule}
 \end{equation}
 }
 
-\noindent \Cref{tab:fw:readouts} lists the sums that each readout form of \Cref{sec:fw:model} rises and falls with, and
-Lemma~\ref{lem:fw:readout} in Appendix~\ref{sec:fw:proofs} proves the rule and each row. A readout of any other form has all its sums in $O_j$: its feature is
-fixed if every sum in its support is fixed, and can move either way otherwise.
+\noindent \Cref{tab:fw:readouts} lists the sums that each readout form of \Cref{sec:fw:model} rises and falls with.
+A readout of any other form has all its sums in $O_j$: its feature is fixed if every sum in its support is fixed, and
+can move either way otherwise. Appendix~\ref{sec:fw:proofs} proves the following lemma.
+
+\lemma[Readout rule]
+\label{lem:fw:readout}
+{
+Let $\Delta$ be a signature, and let the readout of feature $j$ rise with $P_j$ and fall with $N_j$. If every sum
+$k \in K_j$ changes with a sign in $d_k$, the change of feature $j$ has a sign in $(D_\Delta)_j$. Each readout of
+\Cref{tab:fw:readouts} rises with the sums of its column \emph{Rises with} and falls with those of its column
+\emph{Falls with}.
+}
 
 \theorem[Sound directions]
 \label{thm:fw:directions}
