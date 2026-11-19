@@ -23,15 +23,17 @@ Definition~\ref{def:fw:extractor}.
 \subsection{Sound Directions}
 \label{sec:fw:proofs:directions}
 
-\paragraph{Signs and directions.}
-The sign of the change of a value from $a$ to $a'$ is $+$ if $a' > a$, $-$ if $a' < a$, and $0$ if the two are equal,
-which also covers a pool that no item touches, whose value is infinite. Every direction contains $0$, and each is
-closed under addition: if every term of a finite total has a sign in a direction $d$, so does the total (a total of
-non-negative terms is non-negative, a total of zeros is zero, and $\mathsf{both}$ allows every sign). A total whose
-terms have signs in several directions has a sign in their union, which is again a direction.
+\lemma[Totals]
+\label{lem:fw:totals}
+{
+If every term of a finite total of real numbers has a sign in a direction $d$, so does the total.
+}
 
+\paragraph{Proof.}
+A total of non-negative terms is non-negative, a total of non-positive terms is non-positive, a total of zeros is
+zero, and $\mathsf{both}$ allows every sign.
 
-\paragraph{Directions of sums (Definition~\ref{def:fw:sum-direction}).}
+\paragraph{Proof of Lemma~\ref{lem:fw:sum-direction}.}
 Let an edit take $z \in Z$ to $z' = T(z)$ with $T \in \mathcal{M}$. Since $\Delta$ covers $\mathcal{M}$ over $Z$, the
 edit has a delta $(I^-, I^+)$ made of a multiset $C$ of item changes in $\Delta$. Let $B = \pi(z) - I^-$ be the kept
 items, and list the item changes of $C$ as $(\tau_i, c_i \to c'_i)$ for
@@ -48,11 +50,14 @@ monoid is totally ordered, and its operation is commutative, so replacing any on
 one never makes the result smaller. If no item change in $\Delta$ lowers $k$, that is, $\nu_\tau(c')_k \ge \nu_\tau(c)_k$
 for every item change, then replacing the old values by the new ones, one at a time, gives $s_k(z') \ge s_k(z)$; if none
 raises $k$, then $s_k(z') \le s_k(z)$; and if neither, the two are equal. The change of
-$s_k$ therefore has a sign in $d_k$, for every totally ordered sum. Additive sums and pools are totally ordered:
+$s_k$ therefore has a sign in $d_k$. Additive sums and pools are totally ordered:
 $a \le b$ implies $a + c \le b + c$, $\max(a, c) \le \max(b, c)$, and $\min(a, c) \le \min(b, c)$. A min pool needs no
 rule of its own: its neutral element is $+\infty$, so by Definition~\ref{def:fw:sum-direction} a removal raises it and
 an addition lowers it, as removing or adding a value does to a minimum.
 
+% Table 7 (directions of common contributions) and its justification, cut 2026-11-19 (user, session 98): the table
+% was meant as an illustration, which a proofs appendix does not hold. Kept here, switched off.
+\iffalse
 \begin{table}[h]
   \caption{Directions that common contributions give their sums under each item change: adding, removing, or replacing an
   item, with any new content or with a restricted one. Under additions and removals, a min pool follows the max pool
@@ -96,8 +101,18 @@ definition. Enumerating part of $Q$ yields witnesses; once
 they cover every pair, the answer is exact. With a few dozen buckets, a key that lands in a chosen bucket with a
 chosen sign is found by brute force. Hashing therefore does not hide from the attacker which features a chosen key
 moves, which answers Severi et al.'s remark that hashing resists targeting~\cite{severi2021explanation}.
+\fi
 
-\paragraph{The readout rule (Definition~\ref{def:fw:derived}).}
+\lemma[Readout rule]
+\label{lem:fw:readout}
+{
+Let $\Delta$ be a signature, and let the readout of feature $j$ rise with $P_j$ and fall with $N_j$
+(Definition~\ref{def:fw:derived}). If every sum $k \in K_j$ changes with a sign in $d_k$, the change of feature $j$
+has a sign in $(D_\Delta)_j$. Each readout of \Cref{tab:fw:readouts} rises with the sums of its column \emph{Rises
+with} and falls with those of its column \emph{Falls with}.
+}
+
+\paragraph{Proof.}
 Suppose every sum $k$ that feature $j$ reads changes with a sign in $d_k$, from the values $\mathbf{a}$ to the values
 $\mathbf{b}$, and let $D_j$ be the direction that the rule returns. If $D_j$ does not contain $-$, then no $d_k$ with
 $k \in P_j$ contains $-$, no $d_k$ with $k \in N_j$ contains $+$, and every $d_k$ with $k \in O_j$ is
@@ -108,10 +123,10 @@ $\rho_j(\mathbf{b}) \le \rho_j(\mathbf{a})$, and if it contains neither, the fea
 change of the feature has a sign in $D_j$.
 
 It remains to check the entries of \Cref{tab:fw:readouts}. The identity and a nondecreasing function $g(s_k)$, such
-as a presence bit $[s_k > 0]$, rise with $s_k$. A feature that returns a pool returns a default value when no item
-touches the pool, so that it is a real number; this readout is nondecreasing only if the default is at most every
-contribution to a max pool, or at least every contribution to a min pool, and otherwise the feature takes the last
-row. A distinct count is a total of presence bits and rises with each of its sums. For a ratio, the values that
+as a presence bit $[s_k > 0]$, rise with $s_k$. A feature that returns a pool, with a default value in place of
+the pool's infinite value when no item touches it, rises with the pool under the condition in the caption of
+\Cref{tab:fw:readouts}: the default then sits below every value a max pool can take, or above every value a min pool
+can take. A distinct count is a total of presence bits and rises with each of its sums. For a ratio, the values that
 occur are $a \ge 0$ with $b > 0$, and $a = b = 0$, where it reads 0. Among the first, $a/b$ does not fall when $a$
 rises or stays and $b$ falls or stays. A change from $(0, 0)$ in which $b$ falls or stays keeps $b = 0$, hence
 $a = 0$, and a change to $(0, 0)$ in which $a$ rises or stays starts from $a = 0$; the ratio reads 0 at both ends. So the ratio rises with $a$ and falls with $b$. A normalized bin
@@ -122,8 +137,9 @@ the rule is Definition~\ref{def:fw:readout}: if every sum in $K_j$ is fixed, $\r
 and after the edit.
 
 \paragraph{Proof of Theorem~\ref{thm:fw:directions}.}
-The paragraph on the directions of sums shows that every sum $k$ changes with a sign in $d_k$, and the
-readout rule of feature $j$ then gives its change a sign in $(D_\Delta)_j$, so $D_\Delta$ is sound.
+By Lemma~\ref{lem:fw:sum-direction}, every sum $k$ changes with a sign in $d_k$ under every edit of $\mathcal{M}$ on
+an input of $Z$, and Lemma~\ref{lem:fw:readout} then gives the change of every feature $j$ a sign in
+$(D_\Delta)_j$, so $D_\Delta$ is sound.
 
 \subsection{Sequences and Robust Detectors}
 \label{sec:fw:proofs:sequences}
@@ -132,8 +148,7 @@ readout rule of feature $j$ then gives its change a sign in $(D_\Delta)_j$, so $
 Let $\mathbf{x}' = \varphi(T(z))$ for a finite sequence $T = T_m \circ \dots \circ T_1$ of transformations in
 $\mathcal{M}$. The inputs $z_0 = z$ and $z_i = T_i(z_{i-1})$ all lie in $Z$, by closure and induction on $i$, so each
 step changes feature $j$ with a sign in $D_j$, since $D$ is sound. The change $x'_j - \varphi_j(z)$ is the total of
-these steps' changes, and a direction is closed under addition (Appendix~\ref{sec:fw:proofs:directions}), so it has a sign in
-$D_j$.
+these steps' changes, so it has a sign in $D_j$ by Lemma~\ref{lem:fw:totals}.
 
 \paragraph{Proof of Lemma~\ref{lem:fw:closure}.}
 Let $z \in Z$ and $T \in \mathcal{M}$. Theorem~\ref{thm:fw:directions} gives the change
@@ -146,6 +161,4 @@ By Proposition~\ref{prop:fw:sequences}, for every $z \in Z$ and $\mathbf{x}' \in
 $x'_j - \varphi_j(z)$ of every feature $j$ has a sign in $D_j$. Since $h$ is monotone with respect to $D$, $h(\mathbf{x}') \ge
 h(\varphi(z))$. This is the argument of Gimenez et al.'s Proposition~1~\cite{gimenez2025certifiably}, with the preorder
 ``$z'$ is reachable from $z$'' and, in place of the order $\le$ on the features, the order that $D$ defines, under
-which two vectors that differ in a fixed feature are not comparable. A score that reads sums instead of features is covered by
-the same argument, since a sum under the identity readout is a feature, and the readout rule gives it the
-direction of the sum.
+which two vectors that differ in a fixed feature are not comparable.

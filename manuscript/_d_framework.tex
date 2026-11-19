@@ -278,7 +278,8 @@ edit of the set moves a feature in a direction they exclude.
 A \emph{threat model} $\mathcal{M}$ is a set of transformations $T: \mathcal{Z} \to \mathcal{Z}$, each an edit
 the attacker may apply to an input. The transformations $\mathcal{T}$ of \Cref{sec:background} are their finite
 sequences, applied one after another. A \emph{population} is a subset
-$Z \subseteq \mathcal{Z}$ of inputs. A \emph{direction} is one of four sets of signs that the change of a value can
+$Z \subseteq \mathcal{Z}$ of inputs. The \emph{sign} of the change of a value from $a$ to $a'$ is $+$ if $a' > a$,
+$-$ if $a' < a$, and $0$ if $a' = a$. A \emph{direction} is one of four sets of signs that the change of a value can
 have: $\mathsf{fixed} = \{0\}$, $\mathsf{up} = \{0, +\}$, $\mathsf{down} = \{-, 0\}$, and $\mathsf{both} = \{-, 0,
 +\}$. A \emph{direction table} $D$ assigns each feature $j$ a direction $D_j$. It is \emph{sound} for $\mathcal{M}$
 over $Z$ if, for every transformation in $\mathcal{M}$ and every input of $Z$, the change of every feature $j$ has a
@@ -338,23 +339,33 @@ it, $\mathsf{down}$ if none raises it, and $\mathsf{both}$ otherwise.
 
 \noindent The direction of a sum bounds its change under every edit whose delta is made of item changes in $\Delta$,
 provided the sum's monoid is \emph{totally ordered}~\cite{fuchs1963partially}: any two values can be compared, and a
-larger value never makes the result smaller ($a \le b$ implies $a \star_k c \le b \star_k c$). The edit replaces the
-old contribution of each item change by its new one, and if no item change in $\Delta$ lowers the sum, no replacement
-makes the sum smaller. Additive sums and pools are totally ordered, and Theorem~\ref{thm:fw:directions} below holds for
-every extractor whose sums are. Not every monoid is: if a sum were a product of signed values, an item change that raised an
-item's contribution from 1 to 2 would take a total of $-3$ to $-6$, and the direction would say up while the sum fell.
-Appendix~\ref{sec:fw:proofs} gives the argument in full.
+larger value never makes the result smaller ($a \le b$ implies $a \star_k c \le b \star_k c$).
+
+\lemma[Directions of sums]
+\label{lem:fw:sum-direction}
+{
+Let $\Delta$ be a signature that covers a threat model $\mathcal{M}$ over a population $Z$, and let sum $k$ be totally
+ordered. Then for every $T \in \mathcal{M}$ and every $z \in Z$, the change from $s_k(z)$ to $s_k(T(z))$ has a sign
+in $d_k$.
+}
+
+\noindent The edit replaces the old contribution of each item change by its new one, and if no item change in
+$\Delta$ lowers the sum, no replacement makes the sum smaller. Additive sums and pools are totally ordered, and
+Theorem~\ref{thm:fw:directions} below holds for every extractor whose sums are. Not every monoid is: if a sum were a
+product of signed values, an item change that raised an item's contribution from 1 to 2 would take a total of $-3$ to
+$-6$, and the direction would say up while the sum fell. Appendix~\ref{sec:fw:proofs} gives the proof.
 
 The direction of a sum depends on the contribution functions and the item changes in $\Delta$, not on any input. For the
 contributions common in feature sets, it follows from their form: the count of a key rises when an item with that key
 is added, falls when one is removed, and stays when an item is replaced by one with the same key.
-\Cref{tab:fw:signs} in Appendix~\ref{sec:fw:proofs} lists these forms.
 
 \begin{table}[t]
   \caption{The readout forms of \Cref{sec:fw:model}, with the sums each rises with and falls with; the readout rule
   \eqref{eq:fw:readout-rule} turns them into the feature's direction. The function $g$ is nondecreasing, as a presence bit $[s_k > 0]$ is.
   A ratio reads 0 when $b = 0$; it requires $a \ge 0$ and $b \ge 0$, and $a = 0$ whenever $b = 0$. The bins $c_l$ of
-  a histogram are counts.}
+  a histogram are counts. A feature that returns a pool reads a default value when no item touches the pool; it rises with
+the pool only if the default is at most every contribution to a max pool, or at least every contribution to a min
+pool, and takes the last row otherwise.}
   \label{tab:fw:readouts}
   \small
   \begin{tabular}{@{}llll@{}}
@@ -391,7 +402,7 @@ $O_j$, by the \emph{readout rule}
 }
 
 \noindent \Cref{tab:fw:readouts} lists the sums that each readout form of \Cref{sec:fw:model} rises and falls with, and
-Appendix~\ref{sec:fw:proofs} proves each row. A readout of any other form has all its sums in $O_j$: its feature is
+Lemma~\ref{lem:fw:readout} in Appendix~\ref{sec:fw:proofs} proves the rule and each row. A readout of any other form has all its sums in $O_j$: its feature is
 fixed if every sum in its support is fixed, and can move either way otherwise.
 
 \theorem[Sound directions]
@@ -464,6 +475,5 @@ respect to $D$. Then $h(\mathbf{x}') \ge h(\varphi(z))$ for every $z \in Z$ and 
 }
 
 \noindent The guarantee needs no attack to be run: it covers every sequence of edits in the threat model, of any
-length and with any content, and not only those an attack happens to try. Theorem~\ref{thm:fw:directions} supplies
-the sound table, and Lemma~\ref{lem:fw:closure} or a direct check the closed population. What the guarantee costs in detection is
+length and with any content, and not only those an attack happens to try. What the guarantee costs in detection is
 measured in \Cref{sec:eval:detectors}.
