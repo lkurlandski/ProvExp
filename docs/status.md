@@ -10,7 +10,7 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
 in `docs/archive/status-log-2026-11-14-s63.md`, sessions 64-65 in `docs/archive/status-log-2026-11-14-s64-65.md`, sessions 66-76 in
 `docs/archive/status-log-2026-11-15-to-16-s66-76.md`).
 
-## Current state (2026-11-19, through session 96)
+## Current state (2026-11-19, through session 97)
 
 - **Session 94:** every detector but ERDALT retrained and attacked on the new material (unread); ERDALT retrained with
   settings rescaled to its authors' setup (`erdalt` running, the folds held). One prompt for all experiments now:
@@ -246,6 +246,16 @@ own resume prompt: `docs/resume-prompt-experiments.md` (the cluster), `docs/resu
 `docs/resume-prompt-theory.md` (theory), `docs/resume-prompt-writing.md` (the manuscript); `docs/resume-prompt.md` holds
 general work and indexes them.
 
+- **2026-11-19 (session 97, Opus, writing track): §3 cut by 12%; the body/appendix split reopened.** Cut plan per
+  subsection, every item decided by the user, applied in 652c1af: shorter roadmap; the three analogies shortened (Gray
+  et al., incremental view maintenance, abstract interpretation; §6 unchanged); Proposition 1's repeats removed and
+  "touches" in (iii); §3.3 lead and the "rule is not limited" sentence cut; Lemma 1 kept in the body, its explanation
+  tightened; Appendix C drops *Patterns under extension*, *Computing part (ii)* and a repeated sentence. Rejected: 1b
+  (the free-monoid sentence stays) and 1c ("do not form a vector" stays). Words: §3 4,207 to 3,692, Appendix C 1,335
+  to 1,154. A second round proposed moving the product counterexample to Appendix C; the user: body sentences are
+  never moved to the appendix to save words. Asked what Appendix C's non-proof paragraphs are for and why definitions
+  appear there; the user decided to revisit what goes in the appendix and what stays in the body in a new session
+  (`docs/resume-prompt-writing.md`).
 - **2026-11-19 (session 96, Opus, writing track): the holistic review of §3; §3.3/§3.4 refactored; Appendix C
   reorganized.** Nine findings plus a term ledger. Approved and applied (a8e5318): "item change" for Definition 8's
   sense of change; the readout rule moved into Definition 10 (*Readout rule and derived table*); a shorter §3.3 lead

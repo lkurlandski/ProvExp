@@ -11,6 +11,13 @@ The "implied" notes are earlier readings, not instructions; several of them were
 
 ## Reaction log
 
+- **2026-11-19, §3 cut (session 97).** Plan per subsection with exact replacement text; most items approved,
+  two small cuts denied (the free-monoid sentence after equation (6), "They do not form a vector"). Analogies:
+  "Shorten" for all three. Lemma 1: shorten in place, not move. Second round proposed moving a counterexample to the
+  appendix: "We can't just cut sentences from the main section and place them in the appendix. That's confusing and
+  creates more problems than it solves." On Appendix C: "I thought this would be all proofs, but it looks like there
+  are some random other paragraphs"; "Why are there definitions in the appendix?" Decided to revisit the body/appendix
+  split in a new session.
 - **2026-11-19, §3 holistic review (session 96).** Approved most findings outright; asked to discuss the ones that
   change structure or claims before applying (closure claim vs §4, splitting one edit from sequences, the analogy
   paragraphs). "I approve all small/minor suggestions that improve clarity and consistency. Larger and more significant
