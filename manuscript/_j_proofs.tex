@@ -20,12 +20,6 @@ $e_k$ to every sum $k \in K_j$. Then $s_k(z) = s_k(z') = \sigma(B)_k$ on $K_j$, 
 gives $\rho_j(\mathbf{s}(z)) = \rho_j(\mathbf{s}(z'))$, which is $\varphi_j(z) = \varphi_j(z')$ by
 Definition~\ref{def:fw:extractor}.
 
-\paragraph{Computing part (ii).}
-The item table of $z$ lists the contribution of every item of $\pi(z)$, hence those of $B$, and the contribution
-functions give those of $I^+$. The old value of a pool cannot stand in for them, since it does not say whether a
-removed item held it, nor which value is the largest or smallest among those that remain. When $I^- = \emptyset$,
-$B = \pi(z)$, and $s_k(z') = s_k(z) \star_k \sigma(I^+)_k$ needs only the old value.
-
 \subsection{Sound Directions}
 \label{sec:fw:proofs:directions}
 
@@ -103,14 +97,6 @@ they cover every pair, the answer is exact. With a few dozen buckets, a key that
 chosen sign is found by brute force. Hashing therefore does not hide from the attacker which features a chosen key
 moves, which answers Severi et al.'s remark that hashing resists targeting~\cite{severi2021explanation}.
 
-\paragraph{Patterns under extension.}
-Let a feature count the strings that match a regular expression $P$ that uses no construct looking past the end of
-the match (end anchors, word boundaries after the match, lookahead). Whether $P$ matches a substring then depends
-only on that substring, which extending the string on the right does not change, so such an extension can only add
-matches. The same holds on the left for constructs that look before the match. A pattern that begins with a word
-boundary, for example, can gain a match when a string is extended on the right and lose one when it is prefixed with
-a letter.
-
 \paragraph{The readout rule (Definition~\ref{def:fw:derived}).}
 Suppose every sum $k$ that feature $j$ reads changes with a sign in $d_k$, from the values $\mathbf{a}$ to the values
 $\mathbf{b}$, and let $D_j$ be the direction that the rule returns. If $D_j$ does not contain $-$, then no $d_k$ with
@@ -147,8 +133,7 @@ Let $\mathbf{x}' = \varphi(T(z))$ for a finite sequence $T = T_m \circ \dots \ci
 $\mathcal{M}$. The inputs $z_0 = z$ and $z_i = T_i(z_{i-1})$ all lie in $Z$, by closure and induction on $i$, so each
 step changes feature $j$ with a sign in $D_j$, since $D$ is sound. The change $x'_j - \varphi_j(z)$ is the total of
 these steps' changes, and a direction is closed under addition (Appendix~\ref{sec:fw:proofs:directions}), so it has a sign in
-$D_j$. Without closure, a step can
-leave $Z$, and the table says nothing about the steps after it.
+$D_j$.
 
 \paragraph{Proof of Lemma~\ref{lem:fw:closure}.}
 Let $z \in Z$ and $T \in \mathcal{M}$. Theorem~\ref{thm:fw:directions} gives the change
