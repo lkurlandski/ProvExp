@@ -258,6 +258,15 @@ own resume prompt: `docs/resume-prompt-experiments.md` (the cluster), `docs/resu
 `docs/resume-prompt-theory.md` (theory), `docs/resume-prompt-writing.md` (the manuscript); `docs/resume-prompt.md` holds
 general work and indexes them.
 
+- **2026-11-19 (session 93, Opus, writing track): §3.2 and its appendix material.** Review pass: eight findings and
+  the out-of-scope note, all approved and applied together (2eec34b): where a delta comes from (the edit states it, so
+  it is known before $z'$ exists), Proposition 1 (ii) now covers every non-additive sum, the repeated pool/item-table
+  point cut, exactness tied back to §2, "can move" instead of "can have side effects". The user then set the method for
+  the rest of §3: each subsection is polished together with its proofs in Appendix C (split, appendix review, joint
+  final pass). For §3.2 (0c0da24): the body keeps what each part means, Appendix C the proof (part (ii) derived,
+  $\star_k$ for one sum, definitions named, "pair") and *Computing part (ii)*; the pool example removed at the user's
+  request; symbol table range bug fixed and $B$ added. Word counts: §3 4,389 to 4,390, Appendix C 1,308 to 1,320.
+  Next: §3.3 with its appendix material (`docs/resume-prompt-writing.md`).
 - **2026-11-19 (session 92, Opus, writing track): §3.1's humanistic-review pass.** Eight findings; the user
   approved 1-3 and 5-8, rejected 4 (the sentence on why the item map drops positions stays), deferred the recurring
   patterns and the term ledger (the overloaded "element", "extractor" before Definition 5) to a holistic review of all
