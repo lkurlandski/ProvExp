@@ -21,19 +21,18 @@ definition or result. Run on Opus. Use no subagents unless the user asks.
 
 ## The task
 
-1. **Settle what Appendix D holds**, with the user, before cutting. It is not a proofs appendix. Propose the split by
-   the §3 principle adapted: what a reader needs to follow §4's claims and §5's experiments stays in the body; PE
-   bookkeeping (field-level detail, quirk patches, how each EMBER feature group maps to items) can live in the
-   appendix; commentary that nothing needs is cut. Body sentences are never moved to the appendix to save words
-   (session 97); a split decided up front is a different matter, but ask.
-2. **Then review and tighten §4** with the project skill `cut-to-length` (the process of session 99): a ranked plan with exact old and new text, the
-   words each item saves, and for each item its effect on (i) the correctness and strength of the claims, (ii) a
-   doctorate-level reader's comprehension and appreciation, (iii) flow, in that order of importance; propose a
-   cheaper fix where a cut costs (i) or (ii); list the items from least to most disruptive. A word target for §4 is
-   for the user to set (the mock's budget is in `docs/paper-mock.md`); ask.
-3. Get a verdict on each item before applying. Small clarity fixes the user approves directly; changes to claims or
-   structure go to them first with options and a recommendation. Apply approved items in one go, run `make` and
-   `make check` in `manuscript/`, read the rendered text (pdftotext), commit, and report word counts before and after.
+The user's order (end of session 99): **first the humanistic review of §4, then the `cut-to-length` skill.** The user
+decides how the two skills are used together; do not propose combining them.
+
+1. **Humanistic review of §4**: run the `humanistic-paper-review` skill on `_e_instances.tex` (diagnosis only, ranked
+   findings with exact quotes). Present the findings and get the user's verdicts before changing any text.
+2. **Then cut §4 with the project skill `cut-to-length`.** A word target for §4 is for the user to set (the mock's
+   budget is in `docs/paper-mock.md`); ask.
+3. **What Appendix D holds** is not settled. It is not a proofs appendix; the §3 principle adapted would keep in the
+   body what a reader needs to follow §4's claims and §5's experiments and leave PE bookkeeping (field-level detail,
+   quirk patches, how each EMBER feature group maps to items) to the appendix. Body sentences are never moved to the
+   appendix to save words (session 97). Raise it with the user when the review or the cut touches it; do not settle
+   it alone.
 
 PE specifics are allowed in §4 where they serve the experiment, never in the framework; format minutiae turn
 reviewers off (CLAUDE.md).
