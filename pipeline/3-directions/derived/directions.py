@@ -124,7 +124,7 @@ def feature_rule(group: str, name: str, regexes: dict[str, str]) -> Rule:
     """The provisional rule for one feature (see the module docstring and the threat-model doc, Section 2)."""
     if group == "general":
         if name == "size":
-            return Rule(signs(app="+", sec="+", imp="+", ext="+", shf="+"), "file size grows with every addition")
+            return Rule(signs(app="+", sec="+", imp="+", ext="+", shf="+", hgr="+"), "file size grows with every addition")
         if name == "entropy":
             return Rule(every("+-"), "entropy readout over the byte histogram")
         if name in ("is_pe", "start_byte_0", "start_byte_1"):
@@ -163,7 +163,7 @@ def feature_rule(group: str, name: str, regexes: dict[str, str]) -> Rule:
                     "optional_header_SizeOfInitializedData", "optional_header_SizeOfUninitializedData"):
             return Rule(signs(sec="+", imp="+"), "declared delta of an added section")
         if name == "optional_header_SizeOfHeaders":
-            return Rule(signs(ext="+"), "the DOS extension grows the headers")
+            return Rule(signs(ext="+", hgr="+"), "the DOS extension and header growth grow the headers")
         if name == "dos_e_lfanew":
             return Rule(signs(ext="+"), "the DOS extension moves the PE header forward")
         if name in ("file_header_TimeDateStamp", "file_header_NumberOfSymbols", "file_header_PointerToSymbolTable",
@@ -217,7 +217,7 @@ def feature_rule(group: str, name: str, regexes: dict[str, str]) -> Rule:
         if name.startswith(("import_", "iat_")):
             return Rule(signs(imp="+-"), "the import directory moves to a new section")
         if name.startswith("security_"):
-            return Rule(signs(ext="+", shf="+", rsg="-"), "a file offset: insertions move it, removal zeroes it")
+            return Rule(signs(ext="+", shf="+", hgr="+", rsg="-"), "a file offset: insertions move it, removal zeroes it")
         if name.startswith("debug_"):
             return Rule(signs(rdb="-"), "removal zeroes it")
         return Rule(signs(), "not written by any operation")

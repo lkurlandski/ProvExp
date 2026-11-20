@@ -71,11 +71,13 @@ __all__ = [
     "write_section",
     "write_imports",
     "write_gap",
+    "write_header_growth",
     "write_rename",
     "write_zero_entry",
     "predict_add_section",
     "predict_add_imports",
     "predict_insert_gap",
+    "predict_header_growth",
     "predict_rename",
     "predict_zero_entry",
     "written_add_section",
@@ -345,7 +347,7 @@ def _fields(profiles: Mapping[tuple[str, str], KindProfile], group: str, names: 
 def declared_changes(profiles: Mapping[tuple[str, str], KindProfile], regex_monotone: Sequence[bool], strict: bool,
                      loose: bool = False) -> dict[str, list[Change]]:
     """
-    The declared operations (append, add a section, add imports, the two insertions) as item changes.
+    The declared operations (append, add a section, add imports, the three insertions) as item changes.
 
     Args:
         profiles: The kinds' vocabulary (to resolve field names to entries).
@@ -420,7 +422,12 @@ def declared_changes(profiles: Mapping[tuple[str, str], KindProfile], regex_mono
         # content can create, change, or end one.
         Change("flag", "rich_pair"),
     ]
-    return {"app": app, "sec": sec, "imp": imp, "ext": ext, "shf": insertion + body + body_grow}
+    # Header growth: the gap joins the headers (below the raised SizeOfHeaders), so it is not body; the unclaimed run
+    # before the first section's data, if any, moves intact.
+    hgr = insertion + [
+        Change("modify", "field", group="header", families=frozenset(), entries=_fields(profiles, "header", ["SizeOfHeaders"], UP)),
+    ]
+    return {"app": app, "sec": sec, "imp": imp, "ext": ext, "shf": insertion + body + body_grow, "hgr": hgr}
 
 
 def _align_up(x: int, a: int) -> int:
@@ -695,23 +702,79 @@ def write_gap(z: bytes, at_pe_header: bool, gap: bytes) -> Optional[Written]:
             return None
         at = min(data)
 
-    def moved_offset(offset: int) -> int:
-        return offset + k if offset >= at else offset
-
     # NOTE: on a truncated file the first section's data can start past the end; the gap then goes at the end (as the
     # original writer's slicing put it, runs 107 and 117), and the pointers past `at` are still raised.
     edits = [ByteEdit(min(at, len(z)), min(at, len(z)), gap)]
     if at_pe_header:
         edits.append(_field(0x3C, "<I", at + k))
-        edits.append(_field(moved_offset(field_range(oh, "SizeOfHeaders")[0]), "<I", oh.SizeOfHeaders + k))
+        edits.append(_field(_moved_offset(field_range(oh, "SizeOfHeaders")[0], at, k), "<I", oh.SizeOfHeaders + k))
+    edits += _raise_pointers(pe, at, k)
+    return Written(_apply(z, edits), edits, {"at": at, "shift": k})
+
+
+def write_header_growth(z: bytes, gap: bytes) -> Optional[Written]:
+    """
+    Grow the headers (`hgr`): insert a gap of a multiple of FileAlignment bytes where the headers end (at SizeOfHeaders)
+    and raise SizeOfHeaders, PointerToRawData, and the certificate table's offset past it. The gap joins the headers,
+    after the section table, so that new section headers fit (`new_section_slot`); everything past it, including any
+    unclaimed run before the first section's data, moves intact.
+
+    Returns:
+        The written operation (layout: at, shift), or None if the gap is empty or not a multiple of FileAlignment, the
+        image is low-alignment or has no sections, a section's raw data starts inside the headers, the section table
+        runs past them, the grown headers would reach the first section's RVA (the loader maps the headers below it),
+        or a data directory other than the certificate table lies between the headers' end and the first section's RVA
+        (pefile reads it from the header region, whose bytes the gap would move).
+    """
+    pe = _parse(z, fast=True)
+    if pe is None or not pe.sections:
+        return None
+    oh = pe.OPTIONAL_HEADER
+    fa = oh.FileAlignment or 0x200
+    if not gap or len(gap) % fa or oh.SectionAlignment < PAGE:
+        # NOTE: a low-alignment image is mapped flat: moving raw data off its virtual address is not loader-safe.
+        return None
+    k, at = len(gap), int(oh.SizeOfHeaders)
+    first_rva = min(s.VirtualAddress for s in pe.sections)
+    if at + k > first_rva or any(s.SizeOfRawData and s.PointerToRawData < at for s in pe.sections):
+        return None
+    table_end = pe.DOS_HEADER.e_lfanew + 4 + 20 + pe.FILE_HEADER.SizeOfOptionalHeader + 40 * pe.FILE_HEADER.NumberOfSections
+    if table_end > at:
+        # NOTE: a section table that runs past SizeOfHeaders (seen with hundreds of sections) would be split by the gap.
+        return None
+    if any(i != SECURITY_ENTRY and d.Size and d.VirtualAddress < first_rva and d.VirtualAddress + d.Size > at
+           for i, d in enumerate(oh.DATA_DIRECTORY)):
+        return None
+    edits = [ByteEdit(min(at, len(z)), min(at, len(z)), gap)]
+    edits.append(_field(_moved_offset(field_range(oh, "SizeOfHeaders")[0], at, k), "<I", at + k))
+    edits += _raise_pointers(pe, at, k)
+    return Written(_apply(z, edits), edits, {"at": at, "shift": k})
+
+
+def _moved_offset(offset: int, at: int, k: int) -> int:
+    """Where a byte at `offset` lies after `k` bytes are inserted at `at`."""
+    return offset + k if offset >= at else offset
+
+
+def _raise_pointers(pe: pefile.PE, at: int, k: int) -> list[ByteEdit]:
+    """
+    Raise the file offsets past an insertion of `k` bytes at `at` (in the inserted file's coordinates): the sections'
+    PointerToRawData and the certificate table's offset.
+
+    NOTE: the debug entries' PointerToRawData (a file offset the loader never reads; pefile reads the CodeView payload
+    through it, which no feature uses) is left stale, as the toolkits leave it: the entries lie in a section's data, so
+    raising it would write inside a section body, which the insertions do not declare (user, session 102).
+    """
+    edits: list[ByteEdit] = []
     for s in pe.sections:
         if s.SizeOfRawData and s.PointerToRawData >= at:
-            edits.append(_field(moved_offset(s.get_file_offset() + 20), "<I", s.PointerToRawData + k))
+            edits.append(_field(_moved_offset(s.get_file_offset() + 20, at, k), "<I", s.PointerToRawData + k))
+    oh = pe.OPTIONAL_HEADER
     if len(oh.DATA_DIRECTORY) > SECURITY_ENTRY:
         security = oh.DATA_DIRECTORY[SECURITY_ENTRY]
         if security.Size and security.VirtualAddress >= at:
-            edits.append(_field(moved_offset(security.get_file_offset()), "<I", security.VirtualAddress + k))
-    return Written(_apply(z, edits), edits, {"at": at, "shift": k})
+            edits.append(_field(_moved_offset(security.get_file_offset(), at, k), "<I", security.VirtualAddress + k))
+    return edits
 
 
 def write_rename(pe: pefile.PE, z: bytes, index: int, name: bytes) -> Written:
@@ -916,6 +979,24 @@ def predict_insert_gap(extractor: PEFeatureExtractor, table: ItemTable, z: bytes
         if b"Rich" in written.new[0x80:pe.OPTIONAL_HEADER.get_file_offset() + (k if at_pe_header else 0)]:
             excluded += table.of_group("richheader")
     kept = _kept(table, len(z), removed, excluded)
+    return predict_structural(table, z, written.edits, removed, added, kept, extractor.recognizers)
+
+
+def predict_header_growth(extractor: PEFeatureExtractor, table: ItemTable, z: bytes, gap: bytes) -> Optional[Prediction]:
+    """
+    `hgr`, written by `write_header_growth` and declared as `shf`'s insertion is: every item past the gap moves with its
+    bytes, the sections and the certificate table (whose pointers are rewritten) are declared moved, and SizeOfHeaders, a
+    feature, is re-read. The gap lies past the optional header, outside the range pefile searches for a Rich header.
+    """
+    written = write_header_growth(z, gap)
+    if written is None:
+        return None
+    insertion = written.edits[0]
+    moving = [i for i in table.of_group("section") if i.kind == "section"] + [i for i in table.of_group("authenticode") if i.kind == "certificate_table"]
+    # NOTE: an item the gap splits is left to the engine, which declines (as in `_declare_section`).
+    moving = [i for i in moving if not splits(i, insertion)]
+    removed, added = moving, _move(extractor, moving, insertion, z)
+    kept = _kept(table, len(z), removed)
     return predict_structural(table, z, written.edits, removed, added, kept, extractor.recognizers)
 
 

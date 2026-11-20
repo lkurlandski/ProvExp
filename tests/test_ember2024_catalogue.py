@@ -22,9 +22,12 @@ from provexp.featuresets.ember2024.catalogue import SECURITY_ENTRY
 from provexp.featuresets.ember2024.catalogue import plain_layout
 from provexp.featuresets.ember2024.catalogue import predict_add_imports
 from provexp.featuresets.ember2024.catalogue import predict_add_section
+from provexp.featuresets.ember2024.catalogue import new_section_slot
+from provexp.featuresets.ember2024.catalogue import predict_header_growth
 from provexp.featuresets.ember2024.catalogue import predict_insert_gap
 from provexp.featuresets.ember2024.catalogue import predict_rename
 from provexp.featuresets.ember2024.catalogue import predict_zero_entry
+from provexp.featuresets.ember2024.catalogue import write_header_growth
 from provexp.featuresets.ember2024.catalogue import write_section
 from provexp.featuresets.ember2024.catalogue import written_add_imports
 from provexp.featuresets.ember2024.catalogue import written_add_section
@@ -33,6 +36,7 @@ from provexp.featuresets.ember2024.catalogue import written_zero_entry
 from provexp.featuresets.ember2024.features import PEFeatureExtractor
 from provexp.featuresets.ember2024.features import field_range
 from provexp.featuresets.ember2024.features import fix_quirks
+from provexp.featuresets.ember2024.sums import SumsFeatureExtractor
 from provexp.reach import Prediction
 
 warnings.filterwarnings("ignore", category=SyntaxWarning)
@@ -161,6 +165,11 @@ class TestDeclaredOperations:
         fa = _pe(sample).OPTIONAL_HEADER.FileAlignment or 0x200
         _check_exact(extractor, predict_insert_gap(extractor, extractor.item_table(sample), sample, at_pe_header, fill * fa))
 
+    @pytest.mark.parametrize("fill", [b"\x00", b"A"])
+    def test_header_growth(self, extractor: PEFeatureExtractor, sample: bytes, fill: bytes) -> None:
+        fa = _pe(sample).OPTIONAL_HEADER.FileAlignment or 0x200
+        _check_exact(extractor, predict_header_growth(extractor, extractor.item_table(sample), sample, fill * fa))
+
     @pytest.mark.parametrize("name", [b"", b".data", b"\xff\xfe.x"])
     def test_rename(self, extractor: PEFeatureExtractor, sample: bytes, name: bytes) -> None:
         _check_exact(extractor, predict_rename(extractor, extractor.item_table(sample), sample, 0, name))
@@ -203,3 +212,56 @@ class TestWrittenOnly:
     def test_zero_entry(self, extractor: PEFeatureExtractor, sample: bytes, index: int) -> None:
         p = predict_zero_entry(extractor, extractor.item_table(sample), sample, index)
         assert written_zero_entry(sample, index) == _new(p)
+
+
+################################################################################
+# Header growth
+################################################################################
+
+
+class TestHeaderGrowth:
+
+    @staticmethod
+    def _grown(sample: bytes, slots: int) -> tuple[pefile.PE, bytes, int]:
+        """The file with the headers grown by enough FileAlignment units for `slots` section headers (skip if not)."""
+        pe = _pe(sample)
+        fa = pe.OPTIONAL_HEADER.FileAlignment or 0x200
+        k = -(-40 * slots // fa) * fa
+        written = write_header_growth(sample, b"\x00" * k)
+        if written is None:
+            pytest.skip("The headers cannot grow on this file.")
+        return pe, written.new, k
+
+    def test_layout(self, sample: bytes) -> None:
+        pe, z, k = self._grown(sample, 1)
+        new = _pe(z)
+        at = pe.OPTIONAL_HEADER.SizeOfHeaders
+        assert new.OPTIONAL_HEADER.SizeOfHeaders == at + k
+        assert new.OPTIONAL_HEADER.SizeOfHeaders <= min(s.VirtualAddress for s in new.sections)
+        for s, t in zip(pe.sections, new.sections, strict=True):
+            assert t.PointerToRawData == s.PointerToRawData + (k if s.SizeOfRawData else 0)
+            assert t.get_data() == s.get_data()
+        assert z[at + k:] == sample[at:]
+        assert z[at:at + k] == b"\x00" * k
+
+    def test_makes_room(self, sample: bytes) -> None:
+        """Thirty section headers fit after the growth, one after another, when the headers past the table are free."""
+        pe, z, _ = self._grown(sample, 30)
+        end = pe.DOS_HEADER.e_lfanew + 24 + pe.FILE_HEADER.SizeOfOptionalHeader + 40 * pe.FILE_HEADER.NumberOfSections
+        if any(sample[end:pe.OPTIONAL_HEADER.SizeOfHeaders]):
+            pytest.skip("The headers past the section table hold data.")
+        for _ in range(30):
+            new = _pe(z)
+            slot = new_section_slot(new, z)
+            assert slot is not None
+            n = new.FILE_HEADER.NumberOfSections + 1
+            header = b".pv\x00\x00\x00\x00\x00" + b"\x00" * 32
+            z = z[:slot[0]] + header + z[slot[0] + 40:]
+            offset = new.FILE_HEADER.get_file_offset() + 2
+            z = z[:offset] + struct.pack("<H", n) + z[offset + 2:]
+
+    @pytest.mark.parametrize("fill", [b"\x00", b"A"])
+    def test_sums_exact(self, sample: bytes, fill: bytes) -> None:
+        extractor = SumsFeatureExtractor()
+        fa = _pe(sample).OPTIONAL_HEADER.FileAlignment or 0x200
+        _check_exact(extractor, predict_header_growth(extractor, extractor.item_table(sample), sample, fill * fa))

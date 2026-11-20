@@ -7,7 +7,7 @@ The expert extractor is instrumented (provexp.featuresets.ember2024.expert: item
 engine (provexp.reach.directions) reads it like the EMBER extractor. The operations are the twelve of the full threat
 model; their item changes over the expert kinds are:
 
-    app/ext/shf   append and the two gap insertions change no expert feature (no section or import is added or removed,
+    app/ext/shf/hgr  append and the three gap insertions change no expert feature (no section or import is added or removed,
                   and the features are offset-independent);
     sec/imp       add a section (any name) and add imports: the added items contribute up (counts, sums), no down;
     ren           rename a section: in place over the name field, which decides a section's family, so a named
@@ -53,6 +53,7 @@ STRUCTURAL: dict[str, list[Change]] = {
     "app": [],
     "ext": [],
     "shf": [],
+    "hgr": [],
     "sec": [Change("add", "section")],
     "imp": [Change("add", "section"), Change("add", "import_desc")],
 }

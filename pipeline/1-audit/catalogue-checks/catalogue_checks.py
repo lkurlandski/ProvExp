@@ -23,10 +23,10 @@ The edits do exactly the declared operation and nothing else, unlike LIEF's writ
 (assumption A4, pipeline/5-attacks/adaptive/adaptive.py): an added section's header goes into zero bytes after the section table, its
 data at the end of the file or before the overlay (the attacker's choice; both layouts are tried on files with an
 overlay); an import section holds a copy of the import descriptors plus the new ones, and the IMPORT entry points to
-it; an insertion (`ext` at e_lfanew, `shf` before the first section's data) adds a multiple of FileAlignment and raises
-the pointers past it (e_lfanew, SizeOfHeaders for `ext`, PointerToRawData, the certificate table's offset). Fields the
-loader ignores (debug data pointers, PointerToSymbolTable) are left as they are, as the toolkits leave them. An
-operation that does not apply to a file (no room for a section header, no debug entry, headers that cannot grow) is
+it; an insertion (`ext` at e_lfanew, `shf` before the first section's data, `hgr` at SizeOfHeaders) adds a multiple of
+FileAlignment and raises the pointers past it (e_lfanew for `ext`, SizeOfHeaders for `ext` and `hgr`, PointerToRawData,
+the certificate table's offset). Fields the loader ignores (debug data pointers, PointerToSymbolTable) are left as they
+are, as the toolkits leave them. An operation that does not apply to a file (no room for a section header, no debug entry, headers that cannot grow) is
 recorded as such.
 
 For the in-place operations and appends, the C1 engine (provexp.reach.predict, thrember's features with merged
@@ -79,6 +79,7 @@ from provexp.featuresets.ember2024.catalogue import SECURITY_ENTRY
 from provexp.featuresets.ember2024.catalogue import passes_precondition
 from provexp.featuresets.ember2024.catalogue import predict_add_imports
 from provexp.featuresets.ember2024.catalogue import predict_add_section
+from provexp.featuresets.ember2024.catalogue import predict_header_growth
 from provexp.featuresets.ember2024.catalogue import predict_insert_gap
 from provexp.featuresets.ember2024.catalogue import predict_rename
 from provexp.featuresets.ember2024.catalogue import predict_zero_entry
@@ -89,6 +90,7 @@ from provexp.featuresets.ember2024.edits import add_imports
 from provexp.featuresets.ember2024.edits import add_section
 from provexp.featuresets.ember2024.edits import entry_write as _entry_write
 from provexp.featuresets.ember2024.edits import forged_rich
+from provexp.featuresets.ember2024.edits import grow_headers
 from provexp.featuresets.ember2024.edits import insert_gap
 from provexp.featuresets.ember2024.edits import into_overlay as _into_overlay
 from provexp.featuresets.ember2024.edits import past_end as _past_end
@@ -103,7 +105,7 @@ from provexp.reach import predict
 
 __all__ = ["LOOSE_OPS", "OPS", "escaped", "instances", "observed_signs"]
 
-OPS = ("app", "sec", "imp", "ext", "shf", "slk", "dos", "hdr", "chk", "ren", "rdb", "rsg")
+OPS = ("app", "sec", "imp", "ext", "shf", "hgr", "slk", "dos", "hdr", "chk", "ren", "rdb", "rsg")
 LOOSE_OPS = OPS + ("ent",)
 
 SCN_CODE, SCN_DATA = 0x00000020, 0x00000040
@@ -210,6 +212,13 @@ def instances(z: bytes, pe: pefile.PE, table: ItemTable, rng: np.random.Generato
         out.append(("ext", label, insert_gap(z, True, gap), None, declared_gap(True, gap)))
     for label, gap in gaps:
         out.append(("shf", label, insert_gap(z, False, gap), None, declared_gap(False, gap)))
+
+    # hgr: the same gaps, where the headers end (SizeOfHeaders rises).
+    def declared_growth(gap: bytes) -> Declared:
+        return lambda e: predict_header_growth(e, table, z, gap)
+
+    for label, gap in gaps:
+        out.append(("hgr", label, grow_headers(z, gap), None, declared_growth(gap)))
 
     # The in-place operations, over the regions the catalogue derives them from.
     reg = regions(pe, z, table)

@@ -14,12 +14,13 @@ import pefile
 from provexp.featuresets.ember2024.catalogue import DEBUG_ENTRY
 from provexp.featuresets.ember2024.catalogue import SECURITY_ENTRY
 from provexp.featuresets.ember2024.catalogue import write_gap
+from provexp.featuresets.ember2024.catalogue import write_header_growth
 from provexp.featuresets.ember2024.catalogue import write_imports
 from provexp.featuresets.ember2024.catalogue import write_section
 from provexp.reach import ByteEdit
 
 __all__ = ["CODE_CHARACTERISTICS", "DATA_CHARACTERISTICS", "IMPORT_ENTRY", "add_imports", "add_section", "entry_write",
-           "forged_rich", "in_section", "insert_gap", "into_overlay", "past_end"]
+           "forged_rich", "grow_headers", "in_section", "insert_gap", "into_overlay", "past_end"]
 
 
 SCN_CODE, SCN_DATA = 0x00000020, 0x00000040
@@ -51,6 +52,12 @@ def add_imports(z: bytes, library: bytes, functions: list[bytes], before_overlay
 def insert_gap(z: bytes, at_pe_header: bool, gap: bytes) -> Optional[bytes]:
     """Insert a gap (`ext` before the PE header, `shf` before the first section's data; `catalogue.write_gap`)."""
     written = write_gap(z, at_pe_header, gap)
+    return None if written is None else written.new
+
+
+def grow_headers(z: bytes, gap: bytes) -> Optional[bytes]:
+    """Grow the headers (`hgr`; `catalogue.write_header_growth`): a gap at SizeOfHeaders, which rises with it."""
+    written = write_header_growth(z, gap)
     return None if written is None else written.new
 
 

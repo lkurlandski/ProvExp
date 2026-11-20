@@ -57,19 +57,24 @@ def compare(table: dict[str, dict[str, str]], check: dict[str, dict[str, str]]) 
     """
     if list(table) != list(check):
         raise ValueError("The two tables do not list the same features in the same order.")
-    out: dict[str, Any] = {"features": len(table)}
+    # NOTE: tables derived before an operation was added lack its columns; only the operations both have are compared.
+    first_a, first_b = next(iter(table.values())), next(iter(check.values()))
+    ops = [op for op in OPS if f"op_{op}" in first_a and f"op_{op}" in first_b]
+    out: dict[str, Any] = {"features": len(table), "ops_compared": ops,
+                           "ops_only_in_table": [op for op in OPS if f"op_{op}" in first_a and op not in ops],
+                           "ops_only_in_check": [op for op in OPS if f"op_{op}" in first_b and op not in ops]}
     for variant, suffix in (("population", "_pre"), ("strict", "")):
         differing = 0
         lacking: list[dict[str, str]] = []
         for feature, row in table.items():
-            for op in OPS:
+            for op in ops:
                 a, b = row[f"op_{op}{suffix}"], check[feature][f"op_{op}{suffix}"]
                 differing += set(a) != set(b)
                 if not set(b) <= set(a):
                     lacking.append({"feature": feature, "op": op, "table": a, "check": b})
         directions = {tm: [f"{f} {row[f'{tm}{suffix}']} -> {check[f][f'{tm}{suffix}']}" for f, row in table.items()
                            if row[f"{tm}{suffix}"] != check[f][f"{tm}{suffix}"]] for tm in THREAT_MODELS}
-        out[variant] = {"cells": len(table) * len(OPS), "cells_differing": differing, "cells_table_lacks": lacking,
+        out[variant] = {"cells": len(table) * len(ops), "cells_differing": differing, "cells_table_lacks": lacking,
                         "directions_differing": directions}
     return out
 

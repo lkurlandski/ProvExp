@@ -12,11 +12,11 @@ __all__ = ["ADD", "HEADER_WRITES", "INSERT", "OPS", "OVERWRITE", "Signs", "THREA
 
 
 # `ent` (the certificate and debug entries set to any value; R7) changes nothing unless --loose derives it.
-OPS = ("app", "sec", "imp", "ext", "shf", "slk", "dos", "hdr", "chk", "ren", "rdb", "rsg", "ent")
+OPS = ("app", "sec", "imp", "ext", "shf", "hgr", "slk", "dos", "hdr", "chk", "ren", "rdb", "rsg", "ent")
 
 
 ADD = ("app", "sec", "imp")
-INSERT = ("ext", "shf")
+INSERT = ("ext", "shf", "hgr")
 OVERWRITE = ("slk", "dos", "hdr", "chk", "ren", "rdb", "rsg", "ent")
 
 
@@ -29,7 +29,7 @@ THREAT_MODELS: dict[str, tuple[str, ...]] = {
 
 # Operations that write bytes in place inside the header region (an added section's table entry and counts, an
 # insertion's pointer updates, and the overwrites other than slack).
-HEADER_WRITES = ("sec", "imp", "ext", "shf", "dos", "hdr", "chk", "ren", "rdb", "rsg", "ent")
+HEADER_WRITES = ("sec", "imp", "ext", "shf", "hgr", "dos", "hdr", "chk", "ren", "rdb", "rsg", "ent")
 
 
 Signs = dict[str, str]  # op -> "", "+", "-", or "+-"
