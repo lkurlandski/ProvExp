@@ -24,7 +24,9 @@ from typing import Optional
 __all__ = ["DOS_ATTACKS", "LIEF_ATTACKS", "MAX_OUTPUT", "dos_header_extensible", "lief_round_trip", "lief_round_trips"]
 
 
-# The toolkit attacks that rebuild the file through LIEF (secml-malware's c_gamma_sections_evasion, c_gammapi_evasion).
+# The toolkit attacks that rebuilt the file through LIEF (secml-malware's c_gamma_sections_evasion, c_gammapi_evasion)
+# until session 103; our writers make their edits since (provexp.attacks.toolkit.gamma_start gates them). Kept to read
+# the earlier runs' lief_check.parquet.
 LIEF_ATTACKS = ("gamma_sections", "gamma_api")
 
 # The toolkit attacks that extend the DOS header (secml-malware's shift_pe_header_by: CBlackBoxContentDOSExtensionProblem
