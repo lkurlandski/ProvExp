@@ -258,3 +258,22 @@ validation AUC ~0.93-0.95; violations uncertain (robust-pscale: 40k after 138k s
 met with less than even odds. The user submits `erdalt` (array task 0) first and the eight folds (1-8) held, released
 once `erdalt`'s first epochs look right. The ERDALT track is folded into `docs/resume-prompt-experiments.md`; this
 record and the track's prompt are archived once the retrain is verified.
+
+## Session 100 (2026-11-20): the retrain read; accurate, the criterion not met; folds released
+
+`erdalt` (job 1239349_0, 6 h 41 min; 2 cores of which ~1 used, MaxRSS 96 GB of 128 GB, limit 9 h: header kept) printed
+"Their 1033 vectors against our 78715: w2 x 0.0131233, criterion < 381 violations". Validation ROC-AUC 0.922 at epoch
+0, 0.952-0.958 through epoch 23, then rising with each learning-rate halving (patience 4: epochs 24, 35, 42, 48, 59) to
+0.978; violations 708k at epoch 0, 216k at 1, ~100k at 12, ~50k at 40, 35-40k from epoch 59, still falling slowly. **No
+epoch met the criterion**; kept epoch 64 (fewest violations): validation 0.9779, **35,594 violations** (0.018% of the
+78,715 x 2,568 = 202M entries; the rescaled criterion allows 381, ~0.0002%, so ~90x over). **Test ROC-AUC 0.981**
+(accuracy 0.933, recall 0.910). Logits reach +-8,007 on validation; temperature 266.9 (no effect at a 1%-FPR
+threshold). Against the prediction: the AUC beat the expected 0.93-0.95; the criterion was missed, as judged likely.
+
+Decision (user, session 100, on Claude's recommendation): keep these settings and release the eight folds (job
+1239350, released 2026-11-20). Reasons: the settings follow from the setup comparison and were fixed before the run, so
+retuning the penalty after seeing the result would tune a baseline post hoc; "at our scale ERDALT does not reach its own
+criterion in their number of steps" is a reportable result, and the attacks test whether the residual violations are
+exploitable; the trade-off is already measured (their literal w2: 769 violations at 0.914, round 2) and goes into
+Appendix D. The track's prompt is archived (`docs/archive/resume-prompt-erdalt-2026-11-19-s91.md`); this record stays
+as evidence (moving it under `docs/evidence/` is the user's call).

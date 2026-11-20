@@ -10,8 +10,13 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
 in `docs/archive/status-log-2026-11-14-s63.md`, sessions 64-65 in `docs/archive/status-log-2026-11-14-s64-65.md`, sessions 66-76 in
 `docs/archive/status-log-2026-11-15-to-16-s66-76.md`).
 
-## Current state (2026-11-19, through session 99)
+## Current state (2026-11-20, through session 100)
 
+- **Session 100 (experiments):** ERDALT's rescaled retrain read: validation 0.978, test 0.981, its criterion not met
+  (35,594 violations against 381); kept as is, the eight folds released (job 1239350). The toolkit's four evasions of
+  the guaranteed detectors located: all GAMMA (LIEF rebuild), all valid; one file fails the precondition, two files are
+  open (`714d2a7d...` gamma_sections, both detectors; `34089080...` gamma_api, monotone-features). Next session, on an
+  interactive node: `docs/resume-prompt-experiments.md`.
 - **Session 94:** every detector but ERDALT retrained and attacked on the new material (unread); ERDALT retrained with
   settings rescaled to its authors' setup (`erdalt` running, the folds held). One prompt for all experiments now:
   `docs/resume-prompt-experiments.md`. The older detail below is kept for its history.
@@ -181,26 +186,22 @@ in `docs/archive/status-log-2026-11-14-s63.md`, sessions 64-65 in `docs/archive/
 
 ## Waiting on the user
 
-- **The scale-up's reruns are done; ERDALT's retrain runs** (session 94; next: `docs/resume-prompt-experiments.md`,
-  which now covers every experiment, ERDALT included). Session 85's chain all COMPLETED (catalogue, trial, material,
-  learned GBDTs, `iterated`, toolkit, adaptive, MAB-Malware `ours`/`expert`/`zainab`), not yet read with the user.
-  ERDALT retrained with its settings rescaled to its authors' setup (b9edda9): `erdalt` running, the eight folds held
-  until its first epochs look right (the user releases them). Three open questions for the next session: the toolkit
-  evaded the guaranteed detectors (monotone-features 3/803, monotone-sums 1/802); PV's setup against Gimenez et al.'s
-  (its result depends on the vector count, as ERDALT's criterion did); reading every result. Then ERDALT's attacks and
-  `6-results`.
+- **The scale-up's reruns are done, unread with the user; ERDALT's folds run** (session 100; next:
+  `docs/resume-prompt-experiments.md`). Open: (a) the toolkit's GAMMA evasions of monotone-features (3/803) and
+  monotone-sums (1/802): reproduce the two open files and list every feature that fell; the user's view (session 100):
+  LIEF's rebuild can have unexpected consequences, which is why the adaptive search writes its own edits, and GAMMA may
+  need the same; (b) PV's setup against Gimenez et al.'s; (c) reading every result. Then ERDALT's attacks (once the
+  folds finish) and `6-results`.
 - **Deferred, approved by the user (session 85): PV's sample-size experiment** for an appendix explaining why PV works
   less well than prior work suggests (design in `docs/scaleup-protocol.md`, item (17)). Run after the reruns.
 - **Extractor quirks the validity rule exposes** ("pefile only" rejections: ~0.2% of outputs in session 85's sample,
   e.g. pefile's 8,192-import cap): list them from the reruns (`invalid.parquet`, `invalid_pefile_only`) and decide with
   the user which to patch in the extractor (CLAUDE.md: no result may rest on a quirk).
-- **ERDALT (sessions 82-94; record `docs/erdalt-diagnosis-plan.md`):** ported literally it collapsed at scale
-  (validation AUC 0.84 -> 0.73, criterion never met). Cause: the port, chiefly the input scale (their std, fitted on
-  24,000 files, lets a few of our 1.76M heavy-tailed files dominate the monotone network); with a quantile scale it
-  holds (round 2: 0.914 at 769 violations with their literal weight; 0.951 at 40k with their per-step penalty mass;
-  their 1,033 vectors leave ~4.4% of all entries violated). Retrain decided with the user (session 94): quantile scale,
-  their per-step penalty mass and criterion rate per vector, their number of steps (68 epochs, per step), LR patience
-  4; each rescaling to be stated in Appendix D. The track is archived once the retrain is verified.
+- **ERDALT (sessions 82-100; record `docs/erdalt-diagnosis-plan.md`):** settled. Ported literally it collapsed at
+  scale; the port was the cause (chiefly the input scale). Retrained with every setting rescaled to their setup:
+  validation 0.978, test 0.981, 35,594 violations against the rescaled criterion of 381 (not met). Kept as is (user,
+  session 100); Appendix D states each rescaling and the measured trade-off (their literal w2: 769 violations at
+  0.914). Open: whether to move the record under `docs/evidence/`.
 - Number-free rebuttal text fixes (R4, R5, R15, R21) are step 4 (while the scale-up runs).
 - **Bounds on size: the mathematics is written; the user decides, with Opus, what enters the manuscript**
   (`theory-analysis.md`, parts G and H; session 76; next theory session: `docs/resume-prompt-theory.md`).
@@ -242,10 +243,19 @@ in `docs/archive/status-log-2026-11-14-s63.md`, sessions 64-65 in `docs/archive/
 ## Session log
 
 Two sessions were numbered 74: the head node on tigris, and the theory session. Since session 82 each track has its
-own resume prompt: `docs/resume-prompt-experiments.md` (the cluster), `docs/resume-prompt-erdalt.md` (ERDALT),
+own resume prompt: `docs/resume-prompt-experiments.md` (the cluster), `docs/resume-prompt-erdalt.md` (ERDALT; archived
+in session 100),
 `docs/resume-prompt-theory.md` (theory), `docs/resume-prompt-writing.md` (the manuscript); `docs/resume-prompt.md` holds
 general work and indexes them.
 
+- **2026-11-20 (session 100, Opus, experiments track): ERDALT read, folds released; the monotone evasions located.**
+  `erdalt` (1239349_0) finished in 6 h 41 min: validation 0.922 -> 0.978, test 0.981 (expected 0.93-0.95), no epoch
+  under 381 violations (kept epoch 64: 35,594, still falling slowly; logits up to +-8,007, temperature 267). The user
+  agreed to keep the settings and released the folds. ERDALT's prompt archived. The toolkit's evasions of the
+  guaranteed detectors are all GAMMA outputs that pass the validity rule: `714d2a7d...` (gamma_sections; both
+  detectors, 467-520 KB added), `34089080...` (gamma_api, monotone-features), and `eb61a5bd...` (gamma_api; fails
+  the precondition, outside the guarantee). The toolkit keeps no outputs, so the check needs a rerun. Suspected: LIEF's
+  rebuild changes more than the declared edit (unchecked). Next session on an interactive node.
 - **2026-11-19 (session 99, Opus, writing track): §3 cut to 3,312 words (from 3,769).** Plan of 22 items, each
   assessed for the math, the reader, and the flow at the user's request, revised where a cut cost the first two, and
   approved as revised (d9f77b8). Cut: restatements of Definitions 4, 8, 10 and equation (11) in words, the gloss

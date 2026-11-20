@@ -36,16 +36,12 @@ them (below).
   number-dependent ones step 5.
 - **Theory (step 8):** bounds on size worked out (`docs/evidence/theory-analysis.md`, parts G-H); the user decides
   what enters the manuscript.
-- **The largest open risks:** one instance only (a second domain is step 6, the user's call), and ERDALT at scale:
-  every model collapses to validation AUC ~0.70 (pilot 0.88) and misses its criterion, which invites the straw-man
-  objection; its own track since session 82 (`docs/resume-prompt-erdalt.md`; session 88: short runs on a training
-  slice could not reproduce the collapse; session 89: the broken outputs were the main pressure, PV on the new material
-  reaches validation 0.924 as a zero-violation model; session 90: the retrain on the new material collapses too, and
-  the port turned out unfaithful in effect at our scale (penalty ~76x heavier per step, a schedule sized for their
-  24,000 files); session 91: the 7-task diagnosis points to the port, chiefly the input scale: with a quantile
-  scale ERDALT reaches validation 0.938 at 7.5k violations; session 94: round 2 holds the AUC under the quantile
-  scale but no run meets the criterion; retrained with every setting rescaled to their setup, criterion included,
-  each to be stated in Appendix D; the track folded into `docs/resume-prompt-experiments.md`).
+- **The largest open risks:** one instance only (a second domain is step 6, the user's call), and the guarantee's
+  evasions at scale: the toolkit's GAMMA attacks evaded monotone-features (3 / 803) and monotone-sums (1 / 802), all
+  valid outputs; one file fails the precondition, two are open. GAMMA rebuilds the file through LIEF, which may change
+  more than the declared edit (suspected: outside the threat model, not a soundness failure; unchecked). ERDALT is
+  settled (sessions 82-100, `docs/erdalt-diagnosis-plan.md`): ported for effect it reaches validation 0.978, test
+  0.981, but misses its own rescaled criterion (35,594 violations against 381); kept as is, the folds running.
 
 ## Next steps, in order
 
@@ -76,10 +72,12 @@ records of the §5 reviews, the table remake and the ERDALT check, is in
    it and neither loses a section or import); the learned defenses and every attack rerunning
    (`logs/submit-20261118-s85.txt`); PV's sample-size experiment designed and deferred; ERDALT to be retrained on the
    new material.
-   Session 94: the reruns all finished (unread); ERDALT retrained with settings rescaled to their setup (`erdalt`
-   first, the folds held). **Next:** `docs/resume-prompt-experiments.md`, now for every experiment: check ERDALT and
-   release its folds; the toolkit's evasions of the guaranteed detectors, PV's setup, reading every result; ERDALT's
-   attacks and `6-results`; then step 5.
+   Session 94: the reruns all finished (unread); ERDALT retrained with settings rescaled to their setup. Session 100:
+   `erdalt` read (validation 0.978, test 0.981, criterion not met: 35,594 violations against 381), kept as is, the
+   eight folds released; the monotone detectors' four toolkit evasions located (all GAMMA, LIEF's rebuild suspected).
+   **Next:** `docs/resume-prompt-experiments.md`, on an interactive node: reproduce the GAMMA evasions and decide
+   whether GAMMA's edits go through our own byte-level writers (as the adaptive search's do); PV's setup; reading
+   every result; ERDALT's attacks and `6-results`; then step 5.
 4. **While the scale-up runs: §2's closing and contribution 4 against §5** (old step 2 (c)). §2 says §5 "uses them to
    attack malware detectors and to build robust ones"; in §5 the attack is an instrument. The mock's contribution 4 is
    stale ("four to six points", "learned constraints"). Writing only.
