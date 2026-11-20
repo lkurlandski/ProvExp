@@ -62,8 +62,9 @@ acceptable (prototyping); the current round's numbers go into the manuscript mea
   session 102: `ext` and `shf` writing body bytes on two files whose table runs into the body).
 - **The file store holds all 20,000 training files** (user: the SimpleDB is fast to iterate, slow by name; files read
   by name repeatedly belong in the store). **Not yet on `main`:** the derivation reading from the store by default
-  (commit b7b104a on branch `hgr`, worktree `../ProvExp-hgr`); fast-forward `main` to it once job 1243542 has finished
-  (its four Python runs each read `directions.py` when they start).
+  (the one commit on branch `hgr` ahead of `main`, "Directions: read the files from the file store by default";
+  worktree `../ProvExp-hgr`); rebase it onto `main` and fast-forward `main` to it once job 1243542 has finished (its
+  four Python runs each read `directions.py` when they start).
 - **Running at the end of session 102** (`logs/submit-*-s102-hgr.txt`): `directions` **1243542** (the strict and loose
   tables and the evaluation-set check, from the SimpleDB; ~55 min), `catalogue-checks` **1243543** (afterok; ~1.5 h),
   `file-store` **1243547** (~15 min). Before-images for comparison: `artifacts/scaleup/diag/before-s102/`
@@ -85,8 +86,8 @@ $USER` once): until tasks 5-8 have started, do not merge changes to what they im
    The population size from `3-directions/logs/directions-loose.log`/`g3.json` (`precondition_files`) against the old
    run's. (b) The catalogue check (`artifacts/scaleup/1-audit/catalogue/report.json`): expected `pass: True`,
    `closed: True`, `hgr` exact; any violation is a finding to trace, not to discard. (c) The store
-   (`2-features/files/files.json`: 22,200 stored). Then fast-forward `main` to the worktree's b7b104a (the derivation
-   reads the store) if 1243542 has finished. Right-size the three headers from sacct.
+   (`2-features/files/files.json`: 22,200 stored). Then rebase `hgr` onto `main` and fast-forward `main` to it (the
+   derivation reads the store) if 1243542 has finished. Right-size the three headers from sacct.
 2. **GAMMA written by our writers.** In `src/provexp/attacks/toolkit.py`, subclass or wrap secml-malware's
    `CGammaSectionsEvasionProblem.apply_feasible_manipulations` and `CGammaAPIEvasionProblem`'s (vendored in
    `third_party/secml_malware/`; do not edit upstream code) so the chosen edit is written by `catalogue.write_section`

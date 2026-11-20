@@ -119,7 +119,7 @@ reports the population.
 **The file store holds every training file** (user: the SimpleDB is for sequential passes; files read by name
 repeatedly belong in the store). `2-features/file-store/run.sh` now stores all of `tr.parquet` (`TRAINING=all`, the
 default; commit 079862f); the derivation reads from the store by default (`--db` reads a SimpleDB; identical outputs on
-20 files; commit b7b104a on branch `hgr`, merged into `main` only after job 1243542 has finished).
+20 files; the commit "Directions: read the files from the file store by default" on branch `hgr`, merged into `main` only after job 1243542 has finished).
 
 **Submitted** (`logs/submit-*-s102-hgr.txt`): `directions` 1243542 (240G), `catalogue-checks` 1243543 (afterok; 80G,
 2 h), `file-store` 1243547 (48G). Both started jobs' logs read: healthy.
