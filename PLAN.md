@@ -37,9 +37,9 @@ them (below).
 - **Theory (step 8):** bounds on size worked out (`docs/evidence/theory-analysis.md`, parts G-H); the user decides
   what enters the manuscript.
 - **The largest open risks:** one instance only (a second domain is step 6, the user's call), and the guarantee's
-  evasions at scale: the toolkit's GAMMA attacks evaded monotone-features (3 / 803) and monotone-sums (1 / 802), all
-  valid outputs; one file fails the precondition, two are open. GAMMA rebuilds the file through LIEF, which may change
-  more than the declared edit (suspected: outside the threat model, not a soundness failure; unchecked). ERDALT is
+  evasions at scale: the toolkit's four GAMMA evasions of the guaranteed detectors were LIEF's relayout, outside the
+  threat model (session 101); GAMMA now writes through our writers (session 103) and the four are gone, but every
+  number moves with the reruns (the guaranteed detectors retrain on the changed M_full table). ERDALT is
   settled (sessions 82-100, `docs/erdalt-diagnosis-plan.md`): ported for effect it reaches validation 0.978, test
   0.981, but misses its own rescaled criterion (35,594 violations against 381); kept as is, the folds running.
 
@@ -81,9 +81,14 @@ records of the §5 reviews, the table remake and the ERDALT check, is in
    Session 102 (item (19)): header growth added as a fourteenth operation (`hgr`); a fifth layout clause (the section
    table within SizeOfHeaders) closes the population table's only violations; the file store holds every training
    file; the derivation and the catalogue check rerun (1243542, 1243543).
-   **Next:** `docs/resume-prompt-experiments.md`: read the reruns (tables against `diag/before-s102/`, the catalogue
-   check's verdicts), merge the store-reading derivation; the GAMMA wrapper and the set-based rule; then the reruns
-   (the user's call); PV's setup; reading every result; ERDALT's attacks and `6-results`; then step 5.
+   Session 103 (item (20)): the reruns read (catalogue check passes; M_full changed: 352 body features both -> up, so
+   the guaranteed detectors and the price list retrain in the reruns); GAMMA written by our writers, not applicable
+   where no header growth makes room (option A, user); the toolkit part held on branch `hgr` until ERDALT's folds 5-8
+   start.
+   **Next:** `docs/resume-prompt-experiments.md`: merge `hgr`; the set-based validity rule; then the reruns (the user's
+   call: toolkit, material, learned defenses and their attacks, the guaranteed detectors and price list, MAB's
+   validity, the adaptive search with `hgr`); PV's setup; reading every result; ERDALT's attacks and `6-results`; then
+   step 5.
 4. **While the scale-up runs: §2's closing and contribution 4 against §5** (old step 2 (c)). §2 says §5 "uses them to
    attack malware detectors and to build robust ones"; in §5 the attack is an instrument. The mock's contribution 4 is
    stale ("four to six points", "learned constraints"). Writing only.

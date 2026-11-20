@@ -10,8 +10,16 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
 in `docs/archive/status-log-2026-11-14-s63.md`, sessions 64-65 in `docs/archive/status-log-2026-11-14-s64-65.md`, sessions 66-76 in
 `docs/archive/status-log-2026-11-15-to-16-s66-76.md`).
 
-## Current state (2026-11-20, through session 102)
+## Current state (2026-11-20, through session 103)
 
+- **Session 103 (experiments):** session 102's reruns read. The catalogue check passes (`pass`, `closed`, `exact`;
+  the `ext`/`shf` violations gone). M_add and M_shift unchanged; M_full changed (352 body features both -> up, as the
+  fifth clause drops 24 training files): the guaranteed detectors and the price list are retrained in the reruns
+  (user). GAMMA now writes through our writers (option A, user: not applicable where no header growth makes room;
+  headers grown only when needed): the catalogue part on `main`, the toolkit and pipeline commits held on branch `hgr`
+  until ERDALT's tasks 5-8 start. Smoke: every output valid, session 101's four evasions gone, the import attack weaker
+  without LIEF's rebuild. Record: `docs/evidence/gamma-lief-relayout.md`, section 6. Next:
+  `docs/resume-prompt-experiments.md` (merge `hgr`, the validity rule by sets, then the reruns).
 - **Session 102 (experiments):** header growth added to the catalogue as a fourteenth operation, `hgr` (user; exact
   predictor, tests, hand rules; on 40 files no direction changes). A pre-existing soundness gap found and closed: the
   2026-11-18 catalogue check had `pass: False` (two files whose section table runs into the body); a fifth layout
@@ -199,17 +207,16 @@ in `docs/archive/status-log-2026-11-14-s63.md`, sessions 64-65 in `docs/archive/
 
 ## Waiting on the user
 
-- **The scale-up's reruns are done, unread with the user; ERDALT's folds run** (job 1239350). Session 101 settled the
-  GAMMA evasions (`docs/evidence/gamma-lief-relayout.md`) and the user decided: GAMMA written by our writers, the
-  validity rule by sets, reruns after; the current round's numbers go into the manuscript meanwhile. Session 102 added
-  header growth (`hgr`) and a fifth layout clause; their reruns run (1243542, 1243543). Next session
-  (`docs/resume-prompt-experiments.md`): read those, then the GAMMA wrapper and the set-based rule, stopping at each
-  result. Still open: PV's setup against Gimenez et al.'s; reading every result with the user; ERDALT's attacks (once
-  the folds finish) and `6-results`.
-- **Session 103: GAMMA through our writers, option A (user): not applicable where no header growth makes room.**
-  Record: `docs/evidence/gamma-lief-relayout.md`, section 6. The catalogue part is on `main`; the toolkit and pipeline
-  commits wait on branch `hgr` (worktree `../ProvExp-hgr`) until ERDALT's tasks 5-8 (job 1239350) have started, then
-  rebase and fast-forward `main`. Next: the validity rule by sets (resume prompt item 3), then the reruns.
+- **The scale-up's current results are unread with the user; ERDALT's folds run** (job 1239350, tasks 5-8 pending at
+  the end of session 103). Decided so far: GAMMA through our writers (done in session 103, option A), the validity
+  rule by sets (next), reruns after; the current round's numbers go into the manuscript meanwhile. Next session
+  (`docs/resume-prompt-experiments.md`): merge `hgr` once tasks 5-8 have started, the set-based rule, then the reruns
+  (the user's call on what and when). Still open: PV's setup against Gimenez et al.'s; reading every result with the
+  user; ERDALT's attacks (once the folds finish) and `6-results`.
+- **Held on branch `hgr` (worktree `../ProvExp-hgr`): GAMMA through our writers** (session 103; two commits, "Toolkit:
+  GAMMA's sections and imports written by our writers ..." and "Pipeline: GAMMA's room check ..."). They change
+  `provexp.attacks.toolkit`, which ERDALT's folds import when they start: rebase onto `main` and fast-forward once
+  tasks 5-8 of job 1239350 are running. Record: `docs/evidence/gamma-lief-relayout.md`, section 6.
 - **TO DO in the reruns: retrain monotone-features and monotone-sums, then their attacks and the price list**
   (decided, user, session 103). Session 102's rerun of the direction tables changed M_full (M_add and M_shift are
   byte-identical): 352 body features (256 `body_byteentropy`, 96 `body_strings` printable distribution) go from
@@ -219,7 +226,9 @@ in `docs/archive/status-log-2026-11-14-s63.md`, sessions 64-65 in `docs/archive/
   (they drop more than they need to); the retrain makes every number come from one table.
 - **For the writing track (session 102):** the paper's operations table gains a fourteenth operation (header growth,
   a shift), and §4.4's population gains a fifth layout clause (the section table ends within the headers); GAMMA
-  becomes additions plus, on files without header room, a shift.
+  becomes additions plus, on files without header room, a shift. Session 103: GAMMA is not applicable where no growth
+  makes room (192 of 1,000 test malware for the section attack, 114 for the import attack; a sentence with the
+  applicability rule), and the import attack is weaker without LIEF's rebuild (worth a sentence once the rerun is read).
 - **Deferred, approved by the user (session 85): PV's sample-size experiment** for an appendix explaining why PV works
   less well than prior work suggests (design in `docs/scaleup-protocol.md`, item (17)). Run after the reruns.
 - **Extractor quirks the validity rule exposes** ("pefile only" rejections: ~0.2% of outputs in session 85's sample,
@@ -276,6 +285,19 @@ in session 100),
 `docs/resume-prompt-theory.md` (theory), `docs/resume-prompt-writing.md` (the manuscript); `docs/resume-prompt.md` holds
 general work and indexes them.
 
+- **2026-11-20 (session 103, Opus, experiments track): the reruns read; GAMMA through our writers.** Interactive node
+  (16 cores). Session 102's reruns: catalogue check passes; M_full changed (352 body features both -> up; the fifth
+  clause drops 24 training files on which `ren` wrote body bytes), so the guaranteed detectors and the price list are
+  retrained in the reruns (user); the store holds 22,000 distinct files (the prompt's 22,200 double-counted the donors).
+  `hgr`'s store-reading derivation merged; `directions` 280G and `file-store` 64G (peaks sat at their requests).
+  GAMMA: the section attack always writes all 30 donors (75 at the literature budget), the import attack needs one
+  slot; after growth 804 files fit 75, 192 fit fewer than 30, 114 none. Options weighed with the user (not applicable,
+  write what fits, shrink the donors, LIEF fallback, a new operation); option A chosen. Implemented: multi-library
+  import writer, slot count and smallest growth (`catalogue`, on `main`); GAMMA's problems through our writers with a
+  structural assertion, the room check replacing LIEF's round trip in the toolkit and material steps, `header_growth`
+  per row, `toolkit_split` mapping (held on `hgr`). Checks: matches the independent room count on 1,000 files; full
+  suite 2,013 passed; smoke 10-50 s per run, every output valid; session 101's four evasions gone (three not
+  applicable, one no longer evades). The import attack evades less without LIEF's rebuild (13/20 vs 15/20 in the smoke).
 - **2026-11-20 (session 102, Opus, experiments track): header growth (`hgr`); a soundness gap closed; the store.**
   Interactive node (16 cores); code in a worktree (`../ProvExp-hgr`, branch `hgr`) while ERDALT's folds start. The
   user chose a fourteenth operation over a variant of `shf`, and to leave the debug offsets stale (raising them writes

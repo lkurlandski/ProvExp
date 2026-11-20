@@ -18,7 +18,7 @@ number.
 
 | Track | Prompt | State (session 84) |
 |---|---|---|
-| The scale-up's experiments on the cluster, ERDALT included (since session 94) | `docs/resume-prompt-experiments.md` | every detector but ERDALT retrained and attacked (unread); ERDALT retrained with settings rescaled to its authors' setup (`erdalt` running, eight folds held); next: check `erdalt` and release the folds, three open questions (the toolkit evading the guaranteed detectors, PV's setup, reading every result), then ERDALT's attacks and `6-results` |
+| The scale-up's experiments on the cluster, ERDALT included (since session 94) | `docs/resume-prompt-experiments.md` | GAMMA writes through our writers (session 103; held on branch `hgr` until ERDALT's folds 5-8 start); next: merge it, the validity rule by sets, the reruns (the guaranteed detectors retrain on the changed M_full table), PV's setup, reading every result, ERDALT's attacks and `6-results` |
 | Theory: bounds on size | `docs/resume-prompt-theory.md` (Opus) | mathematics done (`docs/evidence/theory-analysis.md`, part H); the user decides what enters the manuscript, H.5 first |
 | Writing: manuscript review | `docs/resume-prompt-writing.md` | §3 cut to 3,312 words (session 99); next: §4 with Appendix D under the body/appendix split, then §5; §2 after |
 | General work | this prompt | below |

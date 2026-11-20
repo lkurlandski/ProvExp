@@ -299,3 +299,11 @@ reading its results (PLAN.md step 5).
    catalogue check's 2,000, `ext` and `shf`). The file store holds all 20,000 training files and the derivation reads
    from it. Reruns of the derivation and the catalogue check submitted (1243542, 1243543). Record:
    `docs/evidence/gamma-lief-relayout.md`, section 5.
+   (20) **GAMMA through our writers; the guaranteed detectors retrained (session 103).** *Decided (user):* GAMMA's
+   search is unchanged; each query's sections (`sec`, characteristics 0 as LIEF writes them, after the overlay) and
+   imports (`imp`, one section for every library) are written by our writers; a file whose headers lack room for the
+   attack's section headers (30 donors, or 1 import section) has them grown by the smallest gap (`hgr`, recorded per
+   output as `header_growth`; such outputs lie in M_shift); where no growth makes room the attack is not applicable
+   (`room_check.parquet`; 192 of 1,000 test malware for the section attack, 114 for the import attack). *Decided
+   (user):* monotone-features, monotone-sums and the price list retrain on the rerun M_full table (352 body features
+   both -> up after the fifth clause). Record: `docs/evidence/gamma-lief-relayout.md`, section 6.
