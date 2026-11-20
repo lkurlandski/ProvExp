@@ -77,3 +77,49 @@ first section's RVA (the loader's limit; SectionAlignment >= page): >= 30 slots 
 
 Pre-existing, found on the way: `catalogue.write_gap` raises the certificate table's offset but not the debug entries'
 `PointerToRawData` (a file offset); harmless to loading, to fix with the growth variant.
+
+## 5. Session 102: header growth, a fifth layout clause, the file store
+
+Session 102 (2026-11-20, tigris interactive node; scripts in `artifacts/scaleup/diag/`: `hgr_room.py`,
+`hgr_room_ts.py`, `hgr_room_why.py`, `catalogue_violations.py`, `insertion_body.py`, `table_past_headers.py`; smoke
+outputs in `diag/hgr-derive-smoke/`, `diag/derive-store-smoke/`; the tables and catalogue report before the reruns in
+`diag/before-s102/`).
+
+**Decided (user):** header growth is a **fourteenth operation, `hgr`**, not a variant of `shf` (its gap lies in the
+headers, as `ext`'s does; `shf`'s is body). The debug entries' `PointerToRawData` stays stale: it lies in a section's
+data, so raising it would write body bytes under every insertion (the body sums would turn "both" under M_shift and
+M_full); the loader never reads it, and no feature reads pefile's debug payload.
+
+**`hgr`** (`catalogue.write_header_growth`, `predict_header_growth`; commit dec4fb1): a FileAlignment-multiple gap
+inserted at SizeOfHeaders, which rises by the gap; PointerToRawData and the certificate offset past it rise
+(`_raise_pointers`, shared with `write_gap`, whose bytes are unchanged). Refused when the image is low-alignment or has
+no sections, a section's data starts in the headers, the section table runs past them, the grown headers would reach
+the first section's RVA, or a data directory lies between the headers' end and the first RVA. Declared: the insertion
+plus SizeOfHeaders up (no body change). In M_shift and M_full. Exact on all test fixtures for both extractors; hand
+rules (size, SizeOfHeaders, security offset), expert table (no change), catalogue-check instances (zeros, random,
+printable). On 40 training files the loose table derived with and without `hgr` is identical in every shared cell, every
+threat-model direction and every detector input file; G3 shows only "stricter" cells.
+
+**Header room for GAMMA's 30 sections** (test malware, 1,000): 97 fit already, 711 more after `hgr` (808 in all, not
+session 101's 992, which ignored data after the table). The other 192: data right after the section table 85 (6 bound
+imports), a section's data inside the headers 52, the first RVA too low for 30 headers 42, a directory in the gap
+region 8, no sections or low alignment 3.
+
+**A pre-existing soundness gap, closed by a precondition clause.** The catalogue check of 2026-11-18 (job 1141844)
+reported `pass: False`, unrecorded until now: `ext` (32 edits, 232 feature moves) and `shf` (24, 115) violated the
+population table, all on two files (`689c564a...`, `cfd2a0b8...`; originals and escaped copies) with hundreds of
+sections, whose section table runs past SizeOfHeaders (0x400) into the run before the first section's data, which the
+sums extractor counts as body; the insertions' PointerToRawData updates write those body bytes. *Decided (user):* a
+fifth `plain_layout` clause, "the section table ends within SizeOfHeaders" (`catalogue.section_table_end`; mirrored as
+`table_past_headers` in `population.clauses`; commit 9c0e970). Closure is expected to hold (no operation moves the
+table past SizeOfHeaders); the rerun checks it. Not checked: whether Windows loads such files (the clause does not
+depend on it). The count over the training and test sets stalled (random reads from the SimpleDB); the derivation's log
+reports the population.
+
+**The file store holds every training file** (user: the SimpleDB is for sequential passes; files read by name
+repeatedly belong in the store). `2-features/file-store/run.sh` now stores all of `tr.parquet` (`TRAINING=all`, the
+default; commit 079862f); the derivation reads from the store by default (`--db` reads a SimpleDB; identical outputs on
+20 files; commit b7b104a on branch `hgr`, merged into `main` only after job 1243542 has finished).
+
+**Submitted** (`logs/submit-*-s102-hgr.txt`): `directions` 1243542 (240G), `catalogue-checks` 1243543 (afterok; 80G,
+2 h), `file-store` 1243547 (48G). Both started jobs' logs read: healthy.

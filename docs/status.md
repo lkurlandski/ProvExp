@@ -10,8 +10,15 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
 in `docs/archive/status-log-2026-11-14-s63.md`, sessions 64-65 in `docs/archive/status-log-2026-11-14-s64-65.md`, sessions 66-76 in
 `docs/archive/status-log-2026-11-15-to-16-s66-76.md`).
 
-## Current state (2026-11-20, through session 101)
+## Current state (2026-11-20, through session 102)
 
+- **Session 102 (experiments):** header growth added to the catalogue as a fourteenth operation, `hgr` (user; exact
+  predictor, tests, hand rules; on 40 files no direction changes). A pre-existing soundness gap found and closed: the
+  2026-11-18 catalogue check had `pass: False` (two files whose section table runs into the body); a fifth layout
+  clause takes such files out of the population (user). The file store now holds all 20,000 training files; the
+  derivation reads from it (branch `hgr`, merged after job 1243542). Running: `directions` 1243542, `catalogue-checks`
+  1243543, `file-store` 1243547. GAMMA's wrapper (item 2) and the set-based validity rule (item 3) not started. Record:
+  `docs/evidence/gamma-lief-relayout.md`, section 5. Next: `docs/resume-prompt-experiments.md`.
 - **Session 101 (experiments):** the guaranteed detectors' four toolkit evasions reproduced exactly and explained: all
   outside the threat model through LIEF's rebuild (relocated resources, a destroyed ordinal import, rewritten
   directories), no soundness failure. The validity rule compares counts and misses losses hidden by additions: ~1-2% of
@@ -193,11 +200,15 @@ in `docs/archive/status-log-2026-11-14-s63.md`, sessions 64-65 in `docs/archive/
 ## Waiting on the user
 
 - **The scale-up's reruns are done, unread with the user; ERDALT's folds run** (job 1239350). Session 101 settled the
-  GAMMA evasions (`docs/evidence/gamma-lief-relayout.md`) and the user decided: GAMMA written by our writers with a
-  header-growth variant of `shf`, the validity rule by sets, reruns after; the current round's numbers go into the
-  manuscript meanwhile. Next session (`docs/resume-prompt-experiments.md`): implement both in a worktree, stopping at
-  each result. Still open: PV's setup against Gimenez et al.'s; reading every result with the user; ERDALT's attacks
-  (once the folds finish) and `6-results`.
+  GAMMA evasions (`docs/evidence/gamma-lief-relayout.md`) and the user decided: GAMMA written by our writers, the
+  validity rule by sets, reruns after; the current round's numbers go into the manuscript meanwhile. Session 102 added
+  header growth (`hgr`) and a fifth layout clause; their reruns run (1243542, 1243543). Next session
+  (`docs/resume-prompt-experiments.md`): read those, then the GAMMA wrapper and the set-based rule, stopping at each
+  result. Still open: PV's setup against Gimenez et al.'s; reading every result with the user; ERDALT's attacks (once
+  the folds finish) and `6-results`.
+- **For the writing track (session 102):** the paper's operations table gains a fourteenth operation (header growth,
+  a shift), and §4.4's population gains a fifth layout clause (the section table ends within the headers); GAMMA
+  becomes additions plus, on files without header room, a shift.
 - **Deferred, approved by the user (session 85): PV's sample-size experiment** for an appendix explaining why PV works
   less well than prior work suggests (design in `docs/scaleup-protocol.md`, item (17)). Run after the reruns.
 - **Extractor quirks the validity rule exposes** ("pefile only" rejections: ~0.2% of outputs in session 85's sample,
@@ -254,6 +265,15 @@ in session 100),
 `docs/resume-prompt-theory.md` (theory), `docs/resume-prompt-writing.md` (the manuscript); `docs/resume-prompt.md` holds
 general work and indexes them.
 
+- **2026-11-20 (session 102, Opus, experiments track): header growth (`hgr`); a soundness gap closed; the store.**
+  Interactive node (16 cores); code in a worktree (`../ProvExp-hgr`, branch `hgr`) while ERDALT's folds start. The
+  user chose a fourteenth operation over a variant of `shf`, and to leave the debug offsets stale (raising them writes
+  body bytes). `hgr` written, declared, predicted exactly, tested; on 40 files the derived table is unchanged but for its
+  new column. Room for GAMMA's 30 headers: 808 of 1,000 test malware (session 101's 992 ignored data after the table).
+  The 2026-11-18 catalogue check's `pass: False` traced to two files whose section table runs past SizeOfHeaders into
+  the body; the user approved a fifth layout clause. The store now holds every training file (the user: the SimpleDB
+  is slow by name); the derivation reads it (held on `hgr` until 1243542 finishes). Submitted 1243542, 1243543,
+  1243547; logs healthy. A diagnostic wrote briefly to `/scratch/lk3591/provexp` (a stale link target), moved.
 - **2026-11-20 (session 101, Opus, experiments track): the GAMMA evasions explained; two decisions.** Interactive
   node (16 cores). The four toolkit evasions of the guaranteed detectors reproduced exactly (the toolkit's functions,
   seeds and donors); in each, the declared edit alone raises the score and the drop comes from LIEF's relayout (the

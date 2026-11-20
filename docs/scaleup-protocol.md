@@ -291,3 +291,11 @@ reading its results (PLAN.md step 5).
    byte-level writers, with a header-growth variant of `shf` added to the catalogue (a shift); the validity rule
    compares sets; reruns of the toolkit, the material, the learned defenses and their attacks after; the current
    round's numbers go into the manuscript meanwhile. Record and plan: `docs/evidence/gamma-lief-relayout.md`.
+
+   (19) **Header growth, a fifth layout clause, every training file in the store (session 102).** *Decided (user):*
+   header growth is a fourteenth operation, `hgr` (in M_shift and M_full; its gap joins the headers), not a variant of
+   `shf`; the debug entries' file offsets stay stale (raising them writes body bytes). A fifth `plain_layout` clause,
+   the section table ends within SizeOfHeaders, closes the population table's only violations (two files of the
+   catalogue check's 2,000, `ext` and `shf`). The file store holds all 20,000 training files and the derivation reads
+   from it. Reruns of the derivation and the catalogue check submitted (1243542, 1243543). Record:
+   `docs/evidence/gamma-lief-relayout.md`, section 5.
