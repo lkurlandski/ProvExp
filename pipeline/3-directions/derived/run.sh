@@ -18,10 +18,10 @@
 # (ts.parquet) as a check, and compare_tables.py reports whether the evaluation set shows a move the tables lack.
 # Output: $OUT_ROOT/3-directions/{strict,loose}/ (directions_sums.csv, <threat model>.{neutralize.txt,monotone.tsv}),
 # the check's tables $OUT_ROOT/3-directions/check/{strict,loose}/ and its reports check/{strict,loose}.json.
-# Knobs: FILES and DB (the corpus and its split's database), CHECK_FILES and CHECK_DB (the check's; CHECK_FILES=""
-# skips it), LIMIT (only the first N files of each list; smoke tests).
+# Knobs: FILES and CHECK_FILES (the corpus and the check's; CHECK_FILES="" skips it), DB and CHECK_DB (a SimpleDB to
+# read them from instead of the file store, which holds both lists since session 102), LIMIT (only the first N files
+# of each list; smoke tests).
 # Cost (job 1011166, 2026-11-16): 54 min on 72 cores, 38 CPU-h, peak 200.5 GiB (memory: the vocabularies).
-# Reads the training files by name from the SimpleDB (slow random access); moving them to the file store is open.
 set -euo pipefail
 cd "${SLURM_SUBMIT_DIR:-$(dirname "$0")/../../..}"
 source pipeline/common.sh
@@ -29,20 +29,22 @@ source pipeline/common.sh
 OUT=$OUT_ROOT/3-directions
 LISTS=$OUT_ROOT/2-features/files
 FILES="${FILES:-$LISTS/tr.parquet}"
-DB="${DB:-$EMBER2024_DATA/tr}"
+DB="${DB:-}"
 CHECK_FILES="${CHECK_FILES-$LISTS/ts.parquet}"
-CHECK_DB="${CHECK_DB:-$EMBER2024_DATA/ts}"
+CHECK_DB="${CHECK_DB:-}"
 LIMIT="${LIMIT:-0}"
 mkdir -p "$OUT/logs"
 
-derive() {  # variant, file list, database, output directory, log
+derive() {  # variant, file list, database (empty: the file store), output directory, log
   LOOSE=()
   if [[ $1 == loose ]]; then LOOSE=(--loose); fi
+  READ=()
+  if [[ -n $3 ]]; then READ=(--db "$3"); fi
   python pipeline/3-directions/derived/directions.py \
     --extractor sums \
     "${LOOSE[@]}" \
     --files "$2" \
-    --db "$3" \
+    "${READ[@]}" \
     --limit "$LIMIT" \
     --outdir "$4" \
     --workers "$NUM_WORKERS" \

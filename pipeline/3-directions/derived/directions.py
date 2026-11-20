@@ -56,6 +56,7 @@ from multiprocessing import Pool
 from pathlib import Path
 import re
 from typing import Any
+from typing import Callable
 from typing import NamedTuple
 from typing import Optional
 import warnings
@@ -63,7 +64,7 @@ import warnings
 import pefile
 import polars as pl
 
-from provexp.data.paths import EMBER2024_DATA
+from provexp.data.files import FileReader
 from provexp.data.simpledb import SimpleDB
 from provexp.data.simpledb import SimpleDBReader
 from provexp.featuresets.ember2024.catalogue import PAST_END_KINDS
@@ -251,15 +252,20 @@ def feature_rule(group: str, name: str, regexes: dict[str, str]) -> Rule:
 # Derived directions (--derive)
 ################################################################################
 
-_READER: Optional[SimpleDBReader] = None
+_READ: Optional[Callable[[str], bytes]] = None
 _LOOSE = False
 # The merged variant is the sums extractor: its features start with the merged extractor's, in the same layout.
 _EXTRACTORS: dict[str, PEFeatureExtractor] = {"original": PEFeatureExtractor(), "merged": SumsFeatureExtractor()}
 
 
-def _init(db: str, loose: bool = False) -> None:
-    global _READER, _LOOSE
-    _READER = SimpleDBReader(SimpleDB(Path(db), check=False))
+def _init(db: Optional[str], loose: bool = False) -> None:
+    """One worker's reader: the file store (`db` None), or a SimpleDB (slow to read by name: one shard per file)."""
+    global _READ, _LOOSE
+    if db is None:
+        _READ = FileReader().get
+    else:
+        reader = SimpleDBReader(SimpleDB(Path(db), check=False))
+        _READ = lambda name: bytes(reader.get(name).data)  # noqa: E731
     _LOOSE = loose
 
 
@@ -271,8 +277,8 @@ def _past_end(table: Any) -> list[tuple[str, str]]:
 
 def collect(name: str) -> dict[str, Any]:
     """One file: the vocabulary and the in-place operations' changes, per import variant, and the kinds past the end."""
-    assert _READER is not None
-    bytez = _READER.get(name).data
+    assert _READ is not None
+    bytez = _READ(name)
     try:
         pe = pefile.PE(data=bytez)
     except (pefile.PEFormatError, AttributeError):
@@ -352,7 +358,9 @@ def main_derive(args: Any) -> None:
     past_end_files: Counter[tuple[str, str]] = Counter()
     num_pe = num_pre = 0
     failing: list[dict[str, Any]] = []
-    with Pool(args.workers, initializer=_init, initargs=(str(args.db), args.loose)) as pool:
+    if args.db is None:
+        FileReader().check(names)
+    with Pool(args.workers, initializer=_init, initargs=(None if args.db is None else str(args.db), args.loose)) as pool:
         for i, rec in enumerate(pool.imap_unordered(collect, names, chunksize=1)):
             num_pe += rec["is_pe"]
             pre = rec["precondition"]
@@ -513,7 +521,8 @@ def main() -> None:
     parser.add_argument("--derive", action="store_true", help="Derive the directions (C4): the default, kept for the "
                         "older run scripts.")
     parser.add_argument("--files", type=Path, default=Path("artifacts/experiments/e1/seed-0/zeros/files.parquet"), help="derive: the corpus (a `name` column).")
-    parser.add_argument("--db", type=Path, default=EMBER2024_DATA / "ts")
+    parser.add_argument("--db", type=Path, default=None, help="derive: a SimpleDB to read the files from (slow by "
+                        "name; the pilot's files); default: the file store (FILE_STORE).")
     parser.add_argument("--workers", type=int, default=1)
     parser.add_argument("--limit", type=int, default=0, help="derive: only the first N files (0: all).")
     parser.add_argument("--loose", action="store_true", help="derive: the widened population and threat model (R7): the "
