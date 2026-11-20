@@ -63,6 +63,7 @@ __all__ = [
     "regions",
     "file_region_changes",
     "declared_changes",
+    "section_table_end",
     "plain_layout",
     "precondition",
     "passes_precondition",
@@ -434,6 +435,11 @@ def _align_up(x: int, a: int) -> int:
     return (x + a - 1) // a * a if a else x
 
 
+def section_table_end(pe: pefile.PE) -> int:
+    """The file offset where the section table ends (after NumberOfSections headers of 40 bytes)."""
+    return int(pe.DOS_HEADER.e_lfanew + 4 + 20 + pe.FILE_HEADER.SizeOfOptionalHeader + 40 * pe.FILE_HEADER.NumberOfSections)
+
+
 def plain_layout(pe: pefile.PE) -> bool:
     """
     The layout clauses of the precondition (run 104, G7): the file's layout is one in which the operations move only what
@@ -444,6 +450,9 @@ def plain_layout(pe: pefile.PE) -> bool:
           would otherwise lower it);
         - the headers hold only the headers: the PE header starts past the DOS header, and no section's raw data starts
           before the PE header (writing or moving header fields would otherwise move DOS fields or that section);
+        - the section table ends within SizeOfHeaders (otherwise the table runs into the body, which the sums
+          re-encoding counts, and the insertions' pointer updates write body bytes: two files of the 2,000 in the
+          catalogue check, with hundreds of sections; session 102);
         - pefile's overlay starts where a section's raw data (or the optional header) ends, not at the end of a data
           directory's declared extent (a section inserted there would split an unclaimed body run). Under LIEF's
           overlay rule (installed by `features` since 2026-11-13, R7) this clause always holds.
@@ -458,6 +467,8 @@ def plain_layout(pe: pefile.PE) -> bool:
         return False
     e_lfanew = pe.DOS_HEADER.e_lfanew
     if e_lfanew < DOS_HEADER_SIZE or any(s.SizeOfRawData and section_data_range(s)[0] < e_lfanew for s in sections):
+        return False
+    if section_table_end(pe) > oh.SizeOfHeaders:
         return False
     overlay = pe.get_overlay_data_start_offset()
     if overlay is not None:
@@ -738,8 +749,7 @@ def write_header_growth(z: bytes, gap: bytes) -> Optional[Written]:
     first_rva = min(s.VirtualAddress for s in pe.sections)
     if at + k > first_rva or any(s.SizeOfRawData and s.PointerToRawData < at for s in pe.sections):
         return None
-    table_end = pe.DOS_HEADER.e_lfanew + 4 + 20 + pe.FILE_HEADER.SizeOfOptionalHeader + 40 * pe.FILE_HEADER.NumberOfSections
-    if table_end > at:
+    if section_table_end(pe) > at:
         # NOTE: a section table that runs past SizeOfHeaders (seen with hundreds of sections) would be split by the gap.
         return None
     if any(i != SECURITY_ENTRY and d.Size and d.VirtualAddress < first_rva and d.VirtualAddress + d.Size > at

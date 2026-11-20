@@ -95,6 +95,12 @@ class TestPlainLayout:
             pytest.skip("No section with raw data.")
         assert not plain_layout(_pe(_put(sample, s.get_file_offset() + 20, 0)))
 
+    def test_section_table_past_headers(self, sample: bytes) -> None:
+        pe = _pe(sample)
+        lo, _ = field_range(pe.OPTIONAL_HEADER, "SizeOfHeaders")
+        end = pe.DOS_HEADER.e_lfanew + 24 + pe.FILE_HEADER.SizeOfOptionalHeader + 40 * pe.FILE_HEADER.NumberOfSections
+        assert not plain_layout(_pe(_put(sample, lo, end - 8)))
+
     def test_overlay_past_last_raw_data(self, sample: bytes) -> None:
         pe = _pe(sample)
         n = len(sample)

@@ -6,7 +6,7 @@ clauses one by one on every file of a list, so that the files outside it can be 
     - incomplete: an item, a data directory, or a section is located (at least in part) past the end of the file;
     - unusual layout: one of `catalogue.plain_layout`'s clauses fails (a section's virtual range beyond SizeOfImage,
       SizeOfImage larger than the sections need, the PE header inside the DOS header, a section's raw data inside the
-      headers, the overlay starting at a data directory's extent).
+      headers, the section table past SizeOfHeaders, the overlay starting at a data directory's extent).
 A file can fail both; it counts as incomplete then. Files are read one shard at a time (each shard of the SimpleDB once).
 
 Outputs, in `{outdir}/`:

@@ -19,6 +19,7 @@ from provexp.featuresets.ember2024.catalogue import DOS_HEADER_SIZE
 from provexp.featuresets.ember2024.catalogue import SECURITY_ENTRY
 from provexp.featuresets.ember2024.catalogue import passes_precondition
 from provexp.featuresets.ember2024.catalogue import precondition
+from provexp.featuresets.ember2024.catalogue import section_table_end
 from provexp.featuresets.ember2024.features import PEFeatureExtractor
 from provexp.featuresets.ember2024.features import fix_quirks
 from provexp.featuresets.ember2024.features import rva_ranges
@@ -32,7 +33,8 @@ __all__ = ["LAYOUT", "PAST_END", "clauses", "has_overrun_section", "population"]
 ################################################################################
 
 
-LAYOUT = ["vrange_beyond_image", "image_too_large", "lfanew_in_dos", "section_in_headers", "overlay_at_directory"]
+LAYOUT = ["vrange_beyond_image", "image_too_large", "lfanew_in_dos", "section_in_headers", "table_past_headers",
+          "overlay_at_directory"]
 PAST_END = ["item_past_end", "directory_past_end", "section_past_end"]
 
 
@@ -68,6 +70,7 @@ def clauses(z: bytes, extractor: PEFeatureExtractor) -> dict[str, Any]:
     e_lfanew = pe.DOS_HEADER.e_lfanew
     row["lfanew_in_dos"] = e_lfanew < DOS_HEADER_SIZE
     row["section_in_headers"] = any(s.SizeOfRawData and section_data_range(s)[0] < e_lfanew for s in sections)
+    row["table_past_headers"] = section_table_end(pe) > oh.SizeOfHeaders
     overlay = pe.get_overlay_data_start_offset()
     row["overlay_at_directory"] = False
     if overlay is not None:
