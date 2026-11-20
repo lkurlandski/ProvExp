@@ -124,3 +124,42 @@ only after job 1243542 has finished).
 
 **Submitted** (`logs/submit-*-s102-hgr.txt`): `directions` 1243542 (240G), `catalogue-checks` 1243543 (afterok; 80G,
 2 h), `file-store` 1243547 (48G). Both started jobs' logs read: healthy.
+
+## 6. Session 103: the reruns read; GAMMA through our writers
+
+Session 103 (2026-11-20, tigris interactive node; scripts in `artifacts/scaleup/diag/s103/`).
+
+**Session 102's reruns.** M_add and M_shift's detector inputs are byte-identical to the before-image; M_full's are not:
+352 body features (256 `body_byteentropy`, 96 `body_strings` printable distribution) go from "both" to "up", because
+the fifth clause removes the 24 training files (18,474 -> 18,450 in the population) on which `ren` wrote body bytes
+through a section table running into the body (608 population cells, all `ren`). The current guaranteed detectors stay
+sound (they drop more than they must); *decided (user):* retrain them, their attacks and the price list in the reruns.
+The catalogue check passes (`pass`, `closed`, `exact`; `ext` 32 -> 0 and `shf` 24 -> 0 violations; `hgr` exact). The
+store holds 22,000 files (the 200 donors are training files).
+
+**What GAMMA writes.** The section attack writes every donor section on every query (30 at the low budget, 75 at the
+literature one), a zero gene as an empty section; the API attack needs one section (the import table). LIEF gives the
+sections characteristics 0, consecutive empty sections the same RVA, and does not raise SizeOfInitializedData.
+Header slots on the 1,000 test malware (`gamma_room.py`): today 0: 283, 1-29: 620, 30+: 97; after the largest growth
+0: 114, 1-29: 78, 30-74: 4, 75+: 804. In the current results the section attack evades 1 file over five detectors (it
+is mostly over the byte budget, as under LIEF: 590 of 950); the import attack carries the toolkit's numbers (598 on
+unconstrained, 52 of them on the 114 files with no slot even after growth).
+
+**Decided (user): option A.** Where no growth makes room for the attack's section headers, the attack is not
+applicable to the file (no run, no row; `room_check.parquet`), as files LIEF could not rebuild were before. The
+headers grow only when they lack room, by the smallest gap (`catalogue.grow_headers_for`: 512-1,536 bytes on the 711
+test malware that need it); those outputs lie in M_shift (`header_growth` per row). Rejected: writing the sections
+that fit (a weaker attack per file, under GAMMA's name), shrinking the donor list per file (a per-file budget), LIEF
+for the rest (the rebuild this replaces); noted for later: an operation that reaches files with no room (e.g. growing
+the last section), the only way to recover the 114 files for the import attack.
+
+**Implemented** (branch `hgr`; the catalogue commit on `main`, the toolkit and pipeline commits held until ERDALT's
+tasks 5-8 have started): `catalogue.write_import_libraries` (one section, one descriptor per library; `write_imports`
+delegates, same bytes), `section_slots`, `grow_headers_for`; `toolkit.gamma_start`, `gamma_room` (pooled), the two
+problems (`_gamma_problems`: search unchanged; sections after the overlay with characteristics 0; imports skipped when
+the library already has them, ordinals skipped) and `structure_kept` (an assertion on every output); the pipeline's
+toolkit and material steps gate GAMMA by the room check. Checks: the slot count and growth match the independent count
+on 1,000 files; tests (catalogue, `test_toolkit_gamma.py`; full suite 2,013 passed); smoke (`gamma_smoke.py`, 28 runs,
+and the toolkit step on 24 malware): 10-50 s per run as under LIEF, every output valid, every in-population original's
+output in the population. Session 101's four evasions: three not applicable, the fourth no longer evades (0.964).
+The import attack is weaker without LIEF's rebuild on some files (p_adv 0.68 vs 0.04, 0.79 vs 0.09, 0.51 vs 0.20).

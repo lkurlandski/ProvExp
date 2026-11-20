@@ -206,6 +206,10 @@ in `docs/archive/status-log-2026-11-14-s63.md`, sessions 64-65 in `docs/archive/
   (`docs/resume-prompt-experiments.md`): read those, then the GAMMA wrapper and the set-based rule, stopping at each
   result. Still open: PV's setup against Gimenez et al.'s; reading every result with the user; ERDALT's attacks (once
   the folds finish) and `6-results`.
+- **Session 103: GAMMA through our writers, option A (user): not applicable where no header growth makes room.**
+  Record: `docs/evidence/gamma-lief-relayout.md`, section 6. The catalogue part is on `main`; the toolkit and pipeline
+  commits wait on branch `hgr` (worktree `../ProvExp-hgr`) until ERDALT's tasks 5-8 (job 1239350) have started, then
+  rebase and fast-forward `main`. Next: the validity rule by sets (resume prompt item 3), then the reruns.
 - **TO DO in the reruns: retrain monotone-features and monotone-sums, then their attacks and the price list**
   (decided, user, session 103). Session 102's rerun of the direction tables changed M_full (M_add and M_shift are
   byte-identical): 352 body features (256 `body_byteentropy`, 96 `body_strings` printable distribution) go from
