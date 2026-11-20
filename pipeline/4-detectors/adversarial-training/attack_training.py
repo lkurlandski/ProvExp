@@ -17,16 +17,17 @@ the donors of the section and import attacks. The target is `--model`, scored wi
 The work splits into shards (`--shard k --num_shards N`: every N-th malware from the k-th), one per SLURM array task;
 a shard whose report.json exists is skipped. `--merge` then assembles the shards.
 
-The two GAMMA attacks rebuild the file through LIEF; on files LIEF cannot rebuild (checked once per file,
-provexp.attacks.lief_check) they are not applicable: not run, and counted as `not_applicable`, not as attempted.
+The two GAMMA attacks write their edits with our byte-level writers (provexp.attacks.toolkit, session 103), growing
+the headers first where they lack room for the new section headers (`hgr`); where no growth makes room (checked once
+per file, `gamma_start`) the attack is not applicable: not run, and counted as `not_applicable`, not as attempted.
 `--repair LOST` mends a complete shard whose run lost tasks to dead workers (LOST: lines `attack name`, as the LOST log
-lines name them; session 76's 4-detectors/material/lost.txt): the lost tasks LIEF can rebuild are run again and their
-rows appended, the others become not applicable; the shard's report records the repair, so a second one is a no-op.
+lines name them; session 76's 4-detectors/material/lost.txt): the lost tasks that apply are run again and their rows
+appended, the others become not applicable; the shard's report records the repair, so a second one is a no-op.
 
 Outputs:
     {outdir}/shards/{k}/<store>/X.npy, files.parquet   a shard's rows, one directory per store of `--rows`
     {outdir}/shards/{k}/report.json                    the shard's counts
-    {outdir}/shards/{k}/lief_check.parquet             the shard's files LIEF cannot rebuild, and why
+    {outdir}/shards/{k}/room_check.parquet             the shard's files a GAMMA attack does not apply to, and why
     {outdir}/binaries/<attack>/<name>.zst              each valid adversarial file, zstd-compressed (`--keep_binaries`)
     {outdir}/<store>/X.npy, files.parquet, report.json  after `--merge`: the rows train_classic.py --augment,
                                                         train_erdalt.py --adv_dir and pv_hole.py --adv_dir read
@@ -55,9 +56,7 @@ import numpy as np
 import polars as pl
 
 from provexp.attacks.lief_check import DOS_ATTACKS
-from provexp.attacks.lief_check import LIEF_ATTACKS
 from provexp.attacks.lief_check import dos_header_extensible
-from provexp.attacks.lief_check import lief_round_trips
 from provexp.attacks.validity import output_invalid
 from provexp.attacks.validity import structure
 from provexp.attacks.validity import unreadable
@@ -66,6 +65,7 @@ from provexp.attacks.toolkit import BUDGETS
 from provexp.attacks.toolkit import build_attack
 from provexp.attacks.toolkit import build_donor_pools
 from provexp.attacks.toolkit import file_seed
+from provexp.attacks.toolkit import gamma_room
 from provexp.attacks.toolkit import make_wrapper
 from provexp.attacks.toolkit import run_attack
 from provexp.data.files import FileReader
@@ -124,7 +124,8 @@ def _work(task: tuple[str, str]) -> dict[str, Any]:
     atk, name = task
     out_path = Path(_W["tmp"]) / f"{name[:16]}.{atk}"
     row: dict[str, Any] = {"name": name, "attack": atk, "ok": False, "valid": False, "invalid_reason": "",
-                           "evaded": False, "p_clean": float("nan"), "p_adv": float("nan"), "bytes_added": 0, "phi": None}
+                           "evaded": False, "p_clean": float("nan"), "p_adv": float("nan"), "bytes_added": 0, "phi": None,
+                           "header_growth": False}
     try:
         data = _W["reader"].get(name)
         problem = build_attack(atk, _W["wrapper"], _W["section_pop"], _W["api_calls"], iterations=_W["iterations"])
@@ -140,7 +141,8 @@ def _work(task: tuple[str, str]) -> dict[str, Any]:
             target.parent.mkdir(parents=True, exist_ok=True)
             target.write_bytes(zstd.compress(adv_bytes))
         row.update(ok=True, evaded=bool(not invalid and p_adv < 0.5), p_clean=p_clean, p_adv=p_adv,
-                   bytes_added=len(adv_bytes) - len(data), phi=phi)
+                   bytes_added=len(adv_bytes) - len(data), phi=phi,
+                   header_growth=bool(getattr(problem, "header_growth", False)))
     except Exception as e:  # a file secml-malware cannot attack (e.g. an unparseable shift target) is skipped
         print(f"  WARN {atk} {name[:12]}: {type(e).__name__}: {str(e)[:120]}", flush=True)
     finally:
@@ -152,7 +154,8 @@ def _lost(task: tuple[str, str]) -> dict[str, Any]:
     """The row for a task whose worker died: counted as attempted, not valid."""
     atk, name = task
     return {"name": name, "attack": atk, "ok": False, "evaded": False, "p_clean": float("nan"),
-            "p_adv": float("nan"), "bytes_added": 0, "phi": None, "lost": True, "valid": False, "invalid_reason": ""}
+            "p_adv": float("nan"), "bytes_added": 0, "phi": None, "lost": True, "valid": False, "invalid_reason": "",
+            "header_growth": False}
 
 
 ################################################################################
@@ -196,7 +199,7 @@ def merge(outdir: Path, num_shards: int) -> dict[str, Any]:
                   total_valid=sum(r["total_valid"] for r in reports),
                   per_attack={a: {k: sum(r["per_attack"][a].get(k, 0) for r in reports)
                                   for k in ("attempted", "valid", "invalid", "invalid_pefile_only", "evaded",
-                                            "not_applicable")} for a in attacks})
+                                            "header_growth", "not_applicable")} for a in attacks})
     for store in stores:
         X = np.concatenate([np.load(s / store / "X.npy") for s in shards])
         files = pl.concat([pl.read_parquet(s / store / "files.parquet") for s in shards])
@@ -271,18 +274,27 @@ def main() -> None:
         candidates = [t for t in candidates if t in lost]
         print(f"Repair: {len(candidates)} lost tasks of this shard in {args.repair.as_posix()}.", flush=True)
 
-    # LIEF's round trip, once per file a LIEF-based attack would start from (provexp.attacks.lief_check).
+    # The donor pools (GAMMA's room check needs the number of donor sections).
+    with tempfile.TemporaryDirectory(prefix="attack_training_") as tmp:
+        iterations, how_many = BUDGETS[args.budget]
+        section_pop, api_calls = build_donor_pools(goodware, Path(tmp), how_many=how_many)
+    print(f"Budget {args.budget}: {iterations} iterations; donor pools: {len(section_pop)} sections, "
+          f"{len(api_calls)} API groups.", flush=True)
+    # GAMMA's room, once per file (provexp.attacks.toolkit.gamma_start): where the headers cannot hold the new section
+    # headers even after growing them, the attack is not applicable.
     reader = FileReader()
     reader.check(names)
-    lief_names = sorted({name for atk, name in candidates if atk in LIEF_ATTACKS})
-    reasons = dict(zip(lief_names, lief_round_trips((reader.get(n) for n in lief_names), args.num_workers)))
-    bad = {n: r for n, r in reasons.items() if r is not None}
+    room_names = sorted({name for _, name in candidates})
+    room = dict(zip(room_names, gamma_room((reader.get(n) for n in room_names), sorted({a for a, _ in candidates}),
+                                           len(section_pop), args.num_workers)))
+    bad = {(a, n): r for n in room_names for a, r in room[n].items() if r is not None}
     part.mkdir(parents=True, exist_ok=True)
-    pl.DataFrame({"name": list(bad), "reason": list(bad.values())},
-                 schema={"name": pl.Utf8, "reason": pl.Utf8}).write_parquet(
-        part / ("lief_check.parquet" if args.repair is None else "lief_check-repair.parquet"))
-    print(f"LIEF round trip: {len(bad)} of {len(lief_names)} files cannot be rebuilt; {LIEF_ATTACKS} are not "
-          f"applicable to them.", flush=True)
+    pl.DataFrame({"name": [n for _, n in bad], "attack": [a for a, _ in bad], "reason": list(bad.values())},
+                 schema={"name": pl.Utf8, "attack": pl.Utf8, "reason": pl.Utf8}).write_parquet(
+        part / ("room_check.parquet" if args.repair is None else "room_check-repair.parquet"))
+    for a in sorted({a for a, _ in bad}):
+        print(f"GAMMA room: {a} is not applicable to {sum(k[0] == a for k in bad)} of {len(room_names)} files.",
+              flush=True)
     # The attacks that extend the DOS header are not applicable to a file whose PE header starts inside it.
     no_dos = {n for n in sorted({name for atk, name in candidates if atk in DOS_ATTACKS})
               if not dos_header_extensible(reader.get(n))}
@@ -293,24 +305,19 @@ def main() -> None:
                   if r is not None}
     print(f"Validity: {len(unread)} of {len(names)} files are not read by both parsers; no attack applies.", flush=True)
     skipped = [(atk, name) for atk, name in candidates
-               if (atk in LIEF_ATTACKS and name in bad) or (atk in DOS_ATTACKS and name in no_dos) or name in unread]
+               if (atk, name) in bad or (atk in DOS_ATTACKS and name in no_dos) or name in unread]
     left_out = set(skipped)
     tasks = [t for t in candidates if t not in left_out]
 
     results: list[dict[str, Any]] = []
     if tasks:
-        with tempfile.TemporaryDirectory(prefix="attack_training_") as tmp:
-            iterations, how_many = BUDGETS[args.budget]
-            section_pop, api_calls = build_donor_pools(goodware, Path(tmp), how_many=how_many)
-            print(f"Budget {args.budget}: {iterations} iterations; donor pools: {len(section_pop)} sections, "
-                  f"{len(api_calls)} API groups.", flush=True)
-            t0 = time.time()
-            with get_context("spawn").Pool(args.num_workers, initializer=_init_worker,
-                                           initargs=(args.features, args.model / "model.txt" if args.model.is_dir()
-                                                     else args.model, rows, section_pop, api_calls,
-                                                     args.seed, iterations, binaries)) as pool:
-                results = map_watchdog(pool, _work, tasks, lost=_lost, stall_timeout=args.stall_timeout)
-            print(f"{len(tasks)} attack runs in {time.time() - t0:.0f}s on {args.num_workers} workers.", flush=True)
+        t0 = time.time()
+        with get_context("spawn").Pool(args.num_workers, initializer=_init_worker,
+                                       initargs=(args.features, args.model / "model.txt" if args.model.is_dir()
+                                                 else args.model, rows, section_pop, api_calls,
+                                                 args.seed, iterations, binaries)) as pool:
+            results = map_watchdog(pool, _work, tasks, lost=_lost, stall_timeout=args.stall_timeout)
+        print(f"{len(tasks)} attack runs in {time.time() - t0:.0f}s on {args.num_workers} workers.", flush=True)
 
     valid = [r for r in results if r["ok"] and r["valid"]]  # only outputs that pass the validity rule are kept
     # The outputs the rule rejects, with the reason: "pefile only" ones are the extractor's quirks to fix at the source.
@@ -327,6 +334,7 @@ def main() -> None:
                     "invalid_pefile_only": sum(r["attack"] == atk and r["invalid_reason"].startswith("pefile only")
                                                for r in results),
                     "evaded": sum(r["attack"] == atk and r["evaded"] for r in results),
+                    "header_growth": sum(r["attack"] == atk and r.get("header_growth", False) for r in results),
                     "not_applicable": sum(a == atk for a, _ in skipped)}
               for atk in args.attacks}
     if args.repair is None:
@@ -350,6 +358,7 @@ def main() -> None:
             d["invalid"] = d.get("invalid", 0) + c["invalid"]
             d["invalid_pefile_only"] = d.get("invalid_pefile_only", 0) + c["invalid_pefile_only"]
             d["evaded"] += c["evaded"]
+            d["header_growth"] = d.get("header_growth", 0) + c["header_growth"]
             d["not_applicable"] = d.get("not_applicable", 0) + c["not_applicable"]
         report["total_valid"] += len(valid)
         report["total_attempted"] -= len(skipped)

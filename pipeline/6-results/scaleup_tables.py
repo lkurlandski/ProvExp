@@ -129,11 +129,12 @@ def attack_outputs(root: Path, escape: str = "none") -> pl.DataFrame:
 def not_applicable(root: Path, escape: str = "none") -> pl.DataFrame:
     """The (defense, attack, name) triples the toolkit did not run because the attack is not applicable to the file.
 
-    The two LIEF-based attacks are not applicable to the start files LIEF cannot rebuild, the two that extend the DOS
-    header to those whose PE header starts inside it (`provexp.attacks.lief_check`), and no attack to the start files one
-    of the two parsers does not read (`unreadable.parquet`, `provexp.attacks.validity`). The checks run once per toolkit job
-    on the start files every defense of that job attacks, so each name in a job's `lief_check.parquet` or
-    `dos_check.parquet` pairs with each defense in its `results.parquet`.
+    The two GAMMA attacks are not applicable to the start files whose headers cannot hold their new section headers even
+    after growing them (`room_check.parquet`, per attack; `provexp.attacks.toolkit.gamma_start`; before session 103, to
+    those LIEF could not rebuild, `lief_check.parquet`), the two that extend the DOS header to those whose PE header
+    starts inside it (`provexp.attacks.lief_check`), and no attack to the start files one of the two parsers does not
+    read (`unreadable.parquet`, `provexp.attacks.validity`). The checks run once per toolkit job on the start files every
+    defense of that job attacks, so each name in a job's check files pairs with each defense in its `results.parquet`.
 
     Args:
         root: The scale-up's output root.
@@ -156,6 +157,9 @@ def not_applicable(root: Path, escape: str = "none") -> pl.DataFrame:
             if (d / check).exists():
                 names = pl.read_parquet(d / check).select("name")
                 parts.append(results.filter(pl.col("attack").is_in(attacks)).join(names, how="cross"))
+        if (d / "room_check.parquet").exists():
+            parts.append(results.join(pl.read_parquet(d / "room_check.parquet").select("name", "attack"), on="attack")
+                         .select("defense", "attack", "name"))
     # The adaptive search and MAB-Malware leave out the start files the parsers do not read (unreadable.parquet beside
     # their results); each such file is not applicable to that attack for every defense of the run.
     runs = [(d / "adaptive.parquet", d, "adaptive") for d in

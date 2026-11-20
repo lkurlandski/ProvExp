@@ -41,9 +41,10 @@ import polars as pl
 
 __all__ = ["CATALOGUE", "respects"]
 
-# NOTE: how each secml-malware attack writes its edit (docs/status.md, 2026-11-02, the review's premises): six are
-# byte-level edits of catalogue operations; GAMMA sections and GAMMA API go through LIEF's writer, which relays out the
-# file (assumption A4).
+# NOTE: how each secml-malware attack writes its edit (docs/status.md, 2026-11-02, the review's premises): all eight are
+# byte-level edits of catalogue operations. Since session 103 GAMMA sections and GAMMA API are written by our writers
+# (`sec`, `imp`), after a header growth (`hgr`, a shift: the results' `header_growth`) where the headers lacked room;
+# before, they went through LIEF's writer, which relays out the file (assumption A4; docs/evidence/gamma-lief-relayout.md).
 CATALOGUE = {
     "padding": "app",
     "dos_extend": "ext",
@@ -51,8 +52,8 @@ CATALOGUE = {
     "gamma_shift": "shf",
     "format_exploit": "dos+ext+shf",
     "header_fields": "hdr",
-    "gamma_sections": "LIEF (sec)",
-    "gamma_api": "LIEF (imp)",
+    "gamma_sections": "sec (+hgr)",
+    "gamma_api": "imp (+hgr)",
 }
 
 ################################################################################
@@ -128,10 +129,10 @@ def main() -> None:
     evasion: dict[str, Any] = {}
     for (defense,), g in tk.filter(pl.col("precondition")).group_by(["defense"], maintain_order=True):
         evasion[str(defense)] = {a: f"{int(x['evaded'].sum())}/{x.height}" for (a,), x in g.group_by(["attack"], maintain_order=True)}
-        is_lief = pl.col("attack").is_in([a for a, c in CATALOGUE.items() if c.startswith("LIEF")])
-        lief, byte = g.filter(is_lief), g.filter(~is_lief)
-        evasion[str(defense)]["LIEF"] = f"{int(lief['evaded'].sum())}/{lief.height}"
-        evasion[str(defense)]["catalogue"] = f"{int(byte['evaded'].sum())}/{byte.height}"
+        # GAMMA's outputs whose headers were grown first lie in M_shift, not M_add (results before session 103 have
+        # no such column: GAMMA then went through LIEF).
+        grown = g.filter(pl.col("header_growth")) if "header_growth" in g.columns else g.clear()
+        evasion[str(defense)]["header_growth"] = f"{int(grown['evaded'].sum())}/{grown.height}"
     out["evasion_passing"] = evasion
 
     # Per detector: still detected after every toolkit attack (all detected files, and passing ones).

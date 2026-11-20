@@ -18,9 +18,13 @@ One protocol for every cell:
     validity          an attacked file that no longer parses as a PE counts as not evaded (invalid): secml-malware's
                       shift attacks insert at the first section's raw offset, which is 0 on some files (e.g. the
                       VMProtect layout), so they overwrite the MZ header; a broken file is outside every threat model
-    applicability     the two GAMMA attacks rebuild the file through LIEF; on files LIEF cannot rebuild (checked once
-                      per start file, provexp.attacks.lief_check) they are not applicable: no run and no row, counted
-                      as `not_applicable` in table.json rather than as failures
+    applicability     the two GAMMA attacks write their edits with our byte-level writers (provexp.attacks.toolkit,
+                      session 103): every query adds one section header per donor section (gamma_sections) or one
+                      import section (gamma_api); a start file whose headers lack the room grows them first, by the
+                      smallest gap that makes it (`hgr`; the row's `header_growth`), and where no growth makes room the
+                      attack is not applicable (user, session 103): no run and no row, counted as `not_applicable` in
+                      table.json rather than as failures (room_check.parquet). The attacks that extend the DOS header
+                      are not applicable to a file whose PE header starts inside it (dos_check.parquet)
 
 With `--escape`, a field write outside the threat model (provexp.featuresets.ember2024.escapes; R7) is applied to
 every malware first, and the attacks start from the escaped file; only files the write takes out of the strict
@@ -39,10 +43,10 @@ leave-one-out (eight PV models; docs/evidence/direction-A-A1-design.md, decision
 
 Outputs, in `{outdir}/`:
     results.parquet   one row per (defense, attack, file): p_clean, p_adv, tau, evaded, bytes_added, over_budget, ok,
-                      valid, truncated, seconds
+                      valid, truncated, header_growth (GAMMA grew the headers first), seconds
     table.json        per defense: tau, detected, per-attack evasion, and per group (seen, held-out) the fraction of
                       detected files evaded by at least one attack of the group, overall and split by truncation
-    lief_check.parquet  the attacked files LIEF cannot rebuild, and why (only when a LIEF-based attack runs)
+    room_check.parquet  the attacked files a GAMMA attack is not applicable to (name, attack, reason; only when one runs)
 
 Usage (smoke on two files, one attack):
     PYTHONHASHSEED=0 python pipeline/5-attacks/toolkit/toolkit.py --outdir /tmp/a1 --num_malware 2 --attacks padding \
@@ -71,12 +75,11 @@ from provexp.attacks.toolkit import build_attack
 from provexp.attacks.toolkit import build_donor_pools
 from provexp.attacks.toolkit import calibrated
 from provexp.attacks.toolkit import file_seed
+from provexp.attacks.toolkit import gamma_room
 from provexp.attacks.toolkit import make_wrapper
 from provexp.attacks.toolkit import run_attack
 from provexp.attacks.lief_check import DOS_ATTACKS
-from provexp.attacks.lief_check import LIEF_ATTACKS
 from provexp.attacks.lief_check import dos_header_extensible
-from provexp.attacks.lief_check import lief_round_trips
 from provexp.attacks.validity import output_invalid
 from provexp.attacks.validity import structure
 from provexp.attacks.validity import unreadable
@@ -141,7 +144,7 @@ def _work(task: Task) -> dict[str, Any]:
     out_path = Path(_W["tmp"]) / f"{defense}.{name[:16]}.{atk}"
     start = time.time()
     p_clean = p_adv = float("nan")
-    added, ok, valid, error, invalid = 0, False, False, "", ""
+    added, ok, valid, error, invalid, growth = 0, False, False, "", "", False
     try:
         problem = build_attack(atk, wrapper, _W["section_pop"], _W["api_calls"], iterations=_W["iterations"])
         # NOTE: by default every run is reseeded with the same seed (Gimenez et al.'s protocol), so GAMMA's random
@@ -149,6 +152,7 @@ def _work(task: Task) -> dict[str, Any]:
         seed = file_seed(_W["seed"], atk, name) if _W["seed_per_file"] else _W["seed"]
         adv_bytes, p_clean, p_adv = run_attack(problem, wrapper, data, out_path, seed=seed)
         added, ok = len(adv_bytes) - len(data), True
+        growth = bool(getattr(problem, "header_growth", False))
         # The paper's validity rule (provexp.attacks.validity): both parsers read the output and lose nothing the
         # start file had. The start file passed the same check before any task was made.
         original, why = structure(data)
@@ -163,7 +167,7 @@ def _work(task: Task) -> dict[str, Any]:
     return {"defense": defense, "attack": atk, "name": name, "tau": tau, "p_clean": p_clean, "p_adv": p_adv,
             "evaded": bool(ok and valid and not over and p_adv <= tau), "bytes_added": added, "over_budget": over,
             "ok": ok, "valid": valid, "invalid_reason": invalid, "truncated": len(data) >= MAX_LENGTH,
-            "precondition": pre, "error": error, "seconds": time.time() - start, **extra}
+            "precondition": pre, "header_growth": growth, "error": error, "seconds": time.time() - start, **extra}
 
 
 def _lost(task: Task) -> dict[str, Any]:
@@ -172,7 +176,7 @@ def _lost(task: Task) -> dict[str, Any]:
     return {"defense": defense, "attack": atk, "name": name, "tau": tau, "p_clean": float("nan"),
             "p_adv": float("nan"), "evaded": False, "bytes_added": 0, "over_budget": False, "ok": False,
             "valid": False, "invalid_reason": "", "truncated": len(data) >= MAX_LENGTH, "precondition": pre,
-            "error": "LostTask: given up by the watchdog", "seconds": float("nan"), **extra}
+            "header_growth": False, "error": "LostTask: given up by the watchdog", "seconds": float("nan"), **extra}
 
 
 ################################################################################
@@ -285,17 +289,25 @@ def main() -> None:
                 extras[d, i] = {"p_orig": float(probs[d][i]), "evaded_by_escape": bool(p_start[i] <= taus[d]),
                                 "in_population": in_pop,
                                 "start_in_population": passes_precondition(plain, starts[i], loose=True)}
-    # LIEF's round trip, once per file the LIEF-based attacks would start from (provexp.attacks.lief_check): where LIEF
-    # cannot rebuild the file, those attacks are not applicable to it (no task, no row; counted in table.json).
-    lief_reason: dict[int, Optional[str]] = {}
-    if any(a in LIEF_ATTACKS for a in args.attacks):
-        attacked = sorted({i for d in defenses for i in detected[d]})
-        lief_reason = dict(zip(attacked, lief_round_trips([starts[i] for i in attacked], args.num_workers)))
-        bad = {i: r for i, r in lief_reason.items() if r is not None}
-        pl.DataFrame({"name": [malware[i][0] for i in bad], "reason": list(bad.values())},
-                     schema={"name": pl.Utf8, "reason": pl.Utf8}).write_parquet(args.outdir / "lief_check.parquet")
-        print(f"LIEF round trip: {len(bad)} of {len(attacked)} attacked files cannot be rebuilt; {LIEF_ATTACKS} are not "
-              f"applicable to them ({args.outdir}/lief_check.parquet).", flush=True)
+    # The donor pools (the room check needs the number of donor sections).
+    with tempfile.TemporaryDirectory(prefix="a1_") as tmp:
+        iterations, how_many = BUDGETS[args.budget]
+        section_pop, api_calls = build_donor_pools(goodware, Path(tmp), how_many=how_many)
+    print(f"Budget {args.budget}: {iterations} iterations, {len(section_pop)} donor sections, {len(api_calls)} API "
+          "groups.", flush=True)
+    # GAMMA's room, once per file it would start from (provexp.attacks.toolkit.gamma_start): where the headers cannot
+    # hold the new section headers even after growing them, the attack is not applicable (no task, no row; table.json).
+    attacked = sorted({i for d in defenses for i in detected[d]})
+    room = dict(zip(attacked, gamma_room([starts[i] for i in attacked], args.attacks, len(section_pop),
+                                         args.num_workers)))
+    no_room = [(i, a, r) for i in attacked for a, r in room[i].items() if r is not None]
+    pl.DataFrame({"name": [malware[i][0] for i, _, _ in no_room], "attack": [a for _, a, _ in no_room],
+                  "reason": [r for _, _, r in no_room]},
+                 schema={"name": pl.Utf8, "attack": pl.Utf8, "reason": pl.Utf8}).write_parquet(
+        args.outdir / "room_check.parquet")
+    for a in sorted({a for i in attacked for a in room[i]}):
+        print(f"GAMMA room: {a} is not applicable to {sum(room[i][a] is not None for i in attacked)} of "
+              f"{len(attacked)} attacked files ({args.outdir}/room_check.parquet).", flush=True)
 
     # The attacks that extend the DOS header are not applicable to a file whose PE header starts inside it.
     no_dos: dict[int, str] = {}
@@ -321,24 +333,20 @@ def main() -> None:
     def applicable(atk: str, i: int) -> bool:
         if i in unread:
             return False
-        if atk in LIEF_ATTACKS and lief_reason.get(i) is not None:
+        if room.get(i, {}).get(atk) is not None:
             return False
         return atk not in DOS_ATTACKS or i not in no_dos
 
     caps = [max(int(args.budget_frac * len(data)), args.budget_min) for _, data in malware]
     tasks = [(d, atk, malware[i][0], starts[i], taus[d], caps[i], pre[i], extras[d, i])
              for d in defenses for atk in args.attacks for i in detected[d] if applicable(atk, i)]
-    with tempfile.TemporaryDirectory(prefix="a1_") as tmp:
-        iterations, how_many = BUDGETS[args.budget]
-        section_pop, api_calls = build_donor_pools(goodware, Path(tmp), how_many=how_many)
-        print(f"Budget {args.budget}: {iterations} iterations, {len(section_pop)} donor sections.", flush=True)
-        t0 = time.time()
-        models = {d: str(m / "model.txt") for d, m in defenses.items()}
-        with get_context("spawn").Pool(args.num_workers, initializer=_init_worker,
-                                       initargs=(args.features, models, routes, section_pop, api_calls, args.seed,
-                                                 iterations, args.seed_per_file)) as pool:
-            rows = map_watchdog(pool, _work, tasks, lost=_lost, stall_timeout=args.stall_timeout)
-        print(f"{len(tasks)} attack runs in {time.time() - t0:.0f}s on {args.num_workers} workers.", flush=True)
+    t0 = time.time()
+    models = {d: str(m / "model.txt") for d, m in defenses.items()}
+    with get_context("spawn").Pool(args.num_workers, initializer=_init_worker,
+                                   initargs=(args.features, models, routes, section_pop, api_calls, args.seed,
+                                             iterations, args.seed_per_file)) as pool:
+        rows = map_watchdog(pool, _work, tasks, lost=_lost, stall_timeout=args.stall_timeout)
+    print(f"{len(tasks)} attack runs in {time.time() - t0:.0f}s on {args.num_workers} workers.", flush=True)
 
     if not rows:
         raise RuntimeError("No defense detects any pilot malware; nothing to attack.")
