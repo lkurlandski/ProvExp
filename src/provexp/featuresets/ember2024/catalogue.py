@@ -71,8 +71,11 @@ __all__ = [
     "new_section_slot",
     "write_section",
     "write_imports",
+    "write_import_libraries",
     "write_gap",
     "write_header_growth",
+    "section_slots",
+    "grow_headers_for",
     "write_rename",
     "write_zero_entry",
     "predict_add_section",
@@ -648,22 +651,36 @@ def import_table(descriptors: Sequence[bytes], library: bytes, functions: Sequen
     An import table at `rva`: the given descriptors, one for `library` with its own lookup table, address table, and
     hint/name entries, and the terminator.
     """
+    return import_table_libraries(descriptors, [(library, functions)], thunk, rva)
+
+
+def import_table_libraries(descriptors: Sequence[bytes], libraries: Sequence[tuple[bytes, Sequence[bytes]]], thunk: str,
+                           rva: int) -> bytes:
+    """
+    An import table at `rva`: the given descriptors, one per library of `libraries` (in order), and the terminator; then
+    each new library's lookup table and address table (in order); then each one's hint/name entries followed by its
+    name. With one library this is `import_table`'s layout, byte for byte.
+    """
     width = struct.calcsize(thunk)
-    lookup = 20 * (len(descriptors) + 2)
-    address = lookup + width * (len(functions) + 1)
-    names = address + width * (len(functions) + 1)
+    head = 20 * (len(descriptors) + len(libraries) + 1)
+    names = head + sum(2 * width * (len(functions) + 1) for _, functions in libraries)
     blob = bytearray()
-    hint_names = []
-    for f in functions:
-        hint_names.append(names + len(blob))
-        blob += b"\x00\x00" + f + b"\x00"
-        if len(blob) % 2:
-            blob += b"\x00"
-    library_rva = rva + names + len(blob)
-    blob += library + b"\x00"
-    table = b"".join(struct.pack(thunk, rva + h) for h in hint_names) + b"\x00" * width
-    new = struct.pack("<IIIII", rva + lookup, 0, 0, library_rva, rva + address)
-    return b"".join(descriptors) + new + b"\x00" * 20 + table + table + bytes(blob)
+    tables = bytearray()
+    new = bytearray()
+    for library, functions in libraries:
+        hint_names = []
+        for f in functions:
+            hint_names.append(names + len(blob))
+            blob += b"\x00\x00" + f + b"\x00"
+            if len(blob) % 2:
+                blob += b"\x00"
+        library_rva = rva + names + len(blob)
+        blob += library + b"\x00"
+        table = b"".join(struct.pack(thunk, rva + h) for h in hint_names) + b"\x00" * width
+        lookup = head + len(tables)
+        new += struct.pack("<IIIII", rva + lookup, 0, 0, library_rva, rva + lookup + len(table))
+        tables += table + table
+    return b"".join(descriptors) + bytes(new) + b"\x00" * 20 + bytes(tables) + bytes(blob)
 
 
 def write_imports(z: bytes, library: bytes, functions: list[bytes], before_overlay: bool) -> Optional[Written]:
@@ -671,18 +688,40 @@ def write_imports(z: bytes, library: bytes, functions: list[bytes], before_overl
     Add imports (`imp`): a new data section holding the existing import descriptors, one for `library` with its own
     lookup table, address table, and names, and the terminator; the IMPORT directory entry points to it.
     """
+    return write_import_libraries(z, [(library, functions)], before_overlay)
+
+
+def write_import_libraries(z: bytes, libraries: Sequence[tuple[bytes, Sequence[bytes]]],
+                           before_overlay: bool) -> Optional[Written]:
+    """
+    Add imports from several libraries at once (`imp`, as `write_imports`): one new data section holding the existing
+    import descriptors, one descriptor per library of `libraries` with its own lookup table, address table, and names,
+    and the terminator; the IMPORT directory entry points to it. A library the file already imports gets a second
+    descriptor (the extractor merges the two: `merge_import_descriptors`).
+
+    Args:
+        z: The file.
+        libraries: (library name, function names) pairs, at least one.
+        before_overlay: As `write_section`.
+
+    Returns:
+        The written operation (`write_section`'s layout), or None if the file does not parse, has no IMPORT entry, or
+        its headers have no room for another section header.
+    """
+    if not libraries:
+        raise ValueError("write_import_libraries needs at least one library.")
     pe = _parse(z)
     if pe is None or len(pe.OPTIONAL_HEADER.DATA_DIRECTORY) <= IMPORT_ENTRY:
         return None
     old = [bytes(entry.struct.__pack__()) for entry in getattr(pe, "DIRECTORY_ENTRY_IMPORT", [])]
     thunk = "<Q" if pe.PE_TYPE == pefile.OPTIONAL_HEADER_MAGIC_PE_PLUS else "<I"
     written = write_section(z, b".pvimp", b"", DATA_CHARACTERISTICS, before_overlay,
-                            content_at_rva=lambda rva: import_table(old, library, functions, thunk, rva))
+                            content_at_rva=lambda rva: import_table_libraries(old, libraries, thunk, rva))
     if written is None:
         return None
     entry = pe.OPTIONAL_HEADER.DATA_DIRECTORY[IMPORT_ENTRY]
     edits = [_field(entry.get_file_offset(), "<I", written.layout["rva"]),
-             _field(entry.get_file_offset() + 4, "<I", 20 * (len(old) + 2))]
+             _field(entry.get_file_offset() + 4, "<I", 20 * (len(old) + len(libraries) + 1))]
     return Written(_apply(written.new, edits), written.edits + edits, written.layout)
 
 
@@ -759,6 +798,56 @@ def write_header_growth(z: bytes, gap: bytes) -> Optional[Written]:
     edits.append(_field(_moved_offset(field_range(oh, "SizeOfHeaders")[0], at, k), "<I", at + k))
     edits += _raise_pointers(pe, at, k)
     return Written(_apply(z, edits), edits, {"at": at, "shift": k})
+
+
+def section_slots(z: bytes, most: int) -> int:
+    """
+    How many new section headers fit after the section table (`new_section_slot`, applied in turn), counted up to
+    `most`; 0 if the file does not parse.
+    """
+    if most < 0:
+        raise ValueError(f"most must be >= 0, got {most}.")
+    pe = _parse(z, fast=True)
+    if pe is None:
+        return 0
+    start = pe.DOS_HEADER.e_lfanew + 4 + 20 + pe.FILE_HEADER.SizeOfOptionalHeader
+    first_data = min((s.PointerToRawData for s in pe.sections if s.SizeOfRawData and s.PointerToRawData), default=len(z))
+    end = min(pe.OPTIONAL_HEADER.SizeOfHeaders, first_data, len(z))
+    n = 0
+    slot = start + 40 * pe.FILE_HEADER.NumberOfSections
+    while n < most and slot + 40 <= end and not any(z[slot:slot + 40]):
+        n += 1
+        slot += 40
+    return n
+
+
+def grow_headers_for(z: bytes, need: int) -> Optional[Written]:
+    """
+    The smallest header growth (`write_header_growth`, a gap of FileAlignment multiples) after which `need` new section
+    headers fit (`section_slots`). None if the headers cannot grow (`write_header_growth` refuses) or no growth makes
+    room: bytes after the section table block the slots, or the first section's RVA leaves too little space.
+
+    Args:
+        z: The file; call only when it lacks room (`section_slots(z, need) < need`).
+        need: The section headers that must fit, at least 1.
+
+    Returns:
+        The written growth, or None.
+    """
+    if need < 1:
+        raise ValueError(f"need must be >= 1, got {need}.")
+    pe = _parse(z, fast=True)
+    if pe is None or not pe.sections:
+        return None
+    fa = pe.OPTIONAL_HEADER.FileAlignment or 0x200
+    # More than the headers themselves need cannot help: past it, the slots are blocked by bytes, not by the size.
+    for k in range(fa, _align_up(40 * need, fa) + fa + 1, fa):
+        grown = write_header_growth(z, b"\x00" * k)
+        if grown is None:
+            return None
+        if section_slots(grown.new, need) >= need:
+            return grown
+    return None
 
 
 def _moved_offset(offset: int, at: int, k: int) -> int:

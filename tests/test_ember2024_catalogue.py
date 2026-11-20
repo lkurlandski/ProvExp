@@ -27,7 +27,12 @@ from provexp.featuresets.ember2024.catalogue import predict_header_growth
 from provexp.featuresets.ember2024.catalogue import predict_insert_gap
 from provexp.featuresets.ember2024.catalogue import predict_rename
 from provexp.featuresets.ember2024.catalogue import predict_zero_entry
+from provexp.featuresets.ember2024.catalogue import grow_headers_for
+from provexp.featuresets.ember2024.catalogue import import_table
+from provexp.featuresets.ember2024.catalogue import import_table_libraries
+from provexp.featuresets.ember2024.catalogue import section_slots
 from provexp.featuresets.ember2024.catalogue import write_header_growth
+from provexp.featuresets.ember2024.catalogue import write_import_libraries
 from provexp.featuresets.ember2024.catalogue import write_section
 from provexp.featuresets.ember2024.catalogue import written_add_imports
 from provexp.featuresets.ember2024.catalogue import written_add_section
@@ -271,3 +276,63 @@ class TestHeaderGrowth:
         extractor = SumsFeatureExtractor()
         fa = _pe(sample).OPTIONAL_HEADER.FileAlignment or 0x200
         _check_exact(extractor, predict_header_growth(extractor, extractor.item_table(sample), sample, fill * fa))
+
+
+################################################################################
+# Imports from several libraries, header room (GAMMA through our writers)
+################################################################################
+
+
+class TestImportLibraries:
+
+    def test_one_library_is_import_table(self) -> None:
+        for thunk in ("<I", "<Q"):
+            old = [b"\x01" * 20, b"\x02" * 20]
+            fs = [b"MessageBoxA", b"GetDC", b"X"]
+            assert import_table_libraries(old, [(b"user32.dll", fs)], thunk, 0x5000) == \
+                import_table(old, b"user32.dll", fs, thunk, 0x5000)
+
+    def test_parses(self, sample: bytes) -> None:
+        """pefile reads every existing descriptor and both new ones, with their functions."""
+        before = pefile.PE(data=sample)
+        libs = [(b"kernel32.dll", [b"GetTickCount", b"Sleep"]), (b"pvtest.dll", [b"F"])]
+        written = write_import_libraries(sample, libs, before_overlay=False)
+        if written is None:
+            pytest.skip("No room for a section header.")
+        after = pefile.PE(data=written.new)
+        old = [(e.dll, [f.name for f in e.imports]) for e in getattr(before, "DIRECTORY_ENTRY_IMPORT", [])]
+        new = [(e.dll, [f.name for f in e.imports]) for e in after.DIRECTORY_ENTRY_IMPORT]
+        assert new == old + [(name, fs) for name, fs in libs]
+
+    def test_needs_a_library(self, sample: bytes) -> None:
+        with pytest.raises(ValueError):
+            write_import_libraries(sample, [], before_overlay=False)
+
+
+class TestRoom:
+
+    def test_slots_match_new_section_slot(self, sample: bytes) -> None:
+        """section_slots counts the headers write_section can add, one after another."""
+        n = section_slots(sample, 8)
+        z = sample
+        for _ in range(n):
+            written = write_section(z, b".pv", b"", 0, before_overlay=False)
+            assert written is not None
+            z = written.new
+        assert (write_section(z, b".pv", b"", 0, before_overlay=False) is None) == (n < 8)
+
+    def test_growth_is_smallest(self, sample: bytes) -> None:
+        need = section_slots(sample, 80) + 1
+        grown = grow_headers_for(sample, need)
+        if grown is None:
+            pytest.skip("The headers cannot grow enough on this file.")
+        assert section_slots(grown.new, need) >= need
+        fa = _pe(sample).OPTIONAL_HEADER.FileAlignment or 0x200
+        k = grown.layout["shift"]
+        if k > fa:
+            smaller = write_header_growth(sample, b"\x00" * (k - fa))
+            assert smaller is None or section_slots(smaller.new, need) < need
+
+    def test_need_positive(self, sample: bytes) -> None:
+        with pytest.raises(ValueError):
+            grow_headers_for(sample, 0)
