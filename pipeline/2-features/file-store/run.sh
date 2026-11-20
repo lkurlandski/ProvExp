@@ -8,7 +8,7 @@
 #SBATCH --ntasks-per-node=1
 #SBATCH --cpus-per-task=8
 #SBATCH --time=0-00:45:00
-#SBATCH --mem=48G
+#SBATCH --mem=64G
 #
 # The file store (session 69): the bytes of the files the attacks read again and again, in one SQLite file beside the
 # lists, $OUT_ROOT/2-features/files/files.sqlite. The SimpleDB decompresses a ~500 MB shard for every file it reads
@@ -23,7 +23,8 @@
 # Input: the lists of 2-features/files. Output: files.sqlite and files.json (counts, size, seconds).
 # Knobs: TRAINING (all, the default; malware; none), NUM_WORKERS (shard readers, ~1 GB of memory each; default 8 here).
 # Cost: one shard read per distinct shard (~1.4 s each, up to ~530 per split). Job 1011150 (12,200 files, training
-# malware only): 11 min on 8 workers, peak 32.5 GiB, 9.3 GB store; all training files: ~13 GB (estimate).
+# malware only): 11 min on 8 workers, peak 32.5 GiB, 9.3 GB store. Job 1243547 (22,000 files, all training files):
+# 13 min, peak 48.5 GiB, 14.5 GB store.
 # Run it again after the lists change (it replaces the store).
 set -euo pipefail
 cd "${SLURM_SUBMIT_DIR:-$(dirname "$0")/../../..}"

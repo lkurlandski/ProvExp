@@ -8,7 +8,7 @@
 #SBATCH --ntasks-per-node=1
 #SBATCH --cpus-per-task=72
 #SBATCH --time=0-01:30:00
-#SBATCH --mem=240G
+#SBATCH --mem=280G
 #
 # The derived direction tables over the re-encoding over sums (Theorem 1): per threat model, the direction each
 # operation can move each feature, from the item tables of the files; `strict` for the population before R7's widening,
@@ -21,7 +21,8 @@
 # Knobs: FILES and CHECK_FILES (the corpus and the check's; CHECK_FILES="" skips it), DB and CHECK_DB (a SimpleDB to
 # read them from instead of the file store, which holds both lists since session 102), LIMIT (only the first N files
 # of each list; smoke tests).
-# Cost (job 1011166, 2026-11-16): 54 min on 72 cores, 38 CPU-h, peak 200.5 GiB (memory: the vocabularies).
+# Cost (job 1011166, 2026-11-16): 54 min on 72 cores, 38 CPU-h, peak 200.5 GiB (memory: the vocabularies); job
+# 1243542 (2026-11-20, with hgr, from the SimpleDB): 55 min, 38 CPU-h, peak 240.5 GiB.
 set -euo pipefail
 cd "${SLURM_SUBMIT_DIR:-$(dirname "$0")/../../..}"
 source pipeline/common.sh
