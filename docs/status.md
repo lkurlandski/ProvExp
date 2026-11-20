@@ -10,8 +10,14 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
 in `docs/archive/status-log-2026-11-14-s63.md`, sessions 64-65 in `docs/archive/status-log-2026-11-14-s64-65.md`, sessions 66-76 in
 `docs/archive/status-log-2026-11-15-to-16-s66-76.md`).
 
-## Current state (2026-11-20, through session 100)
+## Current state (2026-11-20, through session 101)
 
+- **Session 101 (experiments):** the guaranteed detectors' four toolkit evasions reproduced exactly and explained: all
+  outside the threat model through LIEF's rebuild (relocated resources, a destroyed ordinal import, rewritten
+  directories), no soundness failure. The validity rule compares counts and misses losses hidden by additions: ~1-2% of
+  GAMMA outputs, none elsewhere, so the current round's numbers can go into the manuscript. Decided (user): GAMMA's
+  edits are written by our byte-level writers, with a new header-growth variant of `shf`; the validity rule compares
+  sets; reruns follow. Record: `docs/evidence/gamma-lief-relayout.md`. Next: `docs/resume-prompt-experiments.md`.
 - **Session 100 (experiments):** ERDALT's rescaled retrain read: validation 0.978, test 0.981, its criterion not met
   (35,594 violations against 381); kept as is, the eight folds released (job 1239350). The toolkit's four evasions of
   the guaranteed detectors located: all GAMMA (LIEF rebuild), all valid; one file fails the precondition, two files are
@@ -186,12 +192,12 @@ in `docs/archive/status-log-2026-11-14-s63.md`, sessions 64-65 in `docs/archive/
 
 ## Waiting on the user
 
-- **The scale-up's reruns are done, unread with the user; ERDALT's folds run** (session 100; next:
-  `docs/resume-prompt-experiments.md`). Open: (a) the toolkit's GAMMA evasions of monotone-features (3/803) and
-  monotone-sums (1/802): reproduce the two open files and list every feature that fell; the user's view (session 100):
-  LIEF's rebuild can have unexpected consequences, which is why the adaptive search writes its own edits, and GAMMA may
-  need the same; (b) PV's setup against Gimenez et al.'s; (c) reading every result. Then ERDALT's attacks (once the
-  folds finish) and `6-results`.
+- **The scale-up's reruns are done, unread with the user; ERDALT's folds run** (job 1239350). Session 101 settled the
+  GAMMA evasions (`docs/evidence/gamma-lief-relayout.md`) and the user decided: GAMMA written by our writers with a
+  header-growth variant of `shf`, the validity rule by sets, reruns after; the current round's numbers go into the
+  manuscript meanwhile. Next session (`docs/resume-prompt-experiments.md`): implement both in a worktree, stopping at
+  each result. Still open: PV's setup against Gimenez et al.'s; reading every result with the user; ERDALT's attacks
+  (once the folds finish) and `6-results`.
 - **Deferred, approved by the user (session 85): PV's sample-size experiment** for an appendix explaining why PV works
   less well than prior work suggests (design in `docs/scaleup-protocol.md`, item (17)). Run after the reruns.
 - **Extractor quirks the validity rule exposes** ("pefile only" rejections: ~0.2% of outputs in session 85's sample,
@@ -248,6 +254,16 @@ in session 100),
 `docs/resume-prompt-theory.md` (theory), `docs/resume-prompt-writing.md` (the manuscript); `docs/resume-prompt.md` holds
 general work and indexes them.
 
+- **2026-11-20 (session 101, Opus, experiments track): the GAMMA evasions explained; two decisions.** Interactive
+  node (16 cores). The four toolkit evasions of the guaranteed detectors reproduced exactly (the toolkit's functions,
+  seeds and donors); in each, the declared edit alone raises the score and the drop comes from LIEF's relayout (the
+  resource directory moved; WS2_32's ordinal imports destroyed; TLS, relocations, load config rewritten); outside the
+  threat model, not a soundness failure. Found on the way: the validity rule compares counts (a loss hidden by added
+  DLLs passes) and `lief_preserves` ignores data directories. Measured on 480 re-created outputs: missed losses 2/150
+  gamma_api, 1/150 gamma_sections, 0 elsewhere; LIEF moves the resources in ~60% of GAMMA outputs. Header room: 97 of
+  1,000 test malware fit GAMMA's 30 headers in place, 992 after growing the headers. The user decided: GAMMA through
+  our writers with a header-growth variant of `shf`; validity by sets; reruns acceptable (prototyping); the current
+  numbers into the manuscript meanwhile. Record `docs/evidence/gamma-lief-relayout.md`.
 - **2026-11-20 (session 100, Opus, experiments track): ERDALT read, folds released; the monotone evasions located.**
   `erdalt` (1239349_0) finished in 6 h 41 min: validation 0.922 -> 0.978, test 0.981 (expected 0.93-0.95), no epoch
   under 381 violations (kept epoch 64: 35,594, still falling slowly; logits up to +-8,007, temperature 267). The user

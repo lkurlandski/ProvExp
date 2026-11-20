@@ -284,3 +284,10 @@ reading its results (PLAN.md step 5).
    the extractor's quirks to fix at the source (user: a misread file must not propagate). The soundness check still
    counts every edit. Checked on stored outputs (job 1141836): all 785 flagged rejected; 42 of 2,000 random (38 both
    parsers, 4 pefile only). Rerun from the catalogue check and the material on (`logs/submit-20261118-s85.txt`).
+
+   (18) **GAMMA's LIEF rebuild and the validity rule's count gap (session 101).** The guaranteed detectors' four toolkit
+   evasions are outside the threat model through LIEF's relayout (no soundness failure); the count-based validity rule
+   misses losses hidden by additions in ~1-2% of GAMMA outputs. *Decided (user):* GAMMA's chosen edits written by our
+   byte-level writers, with a header-growth variant of `shf` added to the catalogue (a shift); the validity rule
+   compares sets; reruns of the toolkit, the material, the learned defenses and their attacks after; the current
+   round's numbers go into the manuscript meanwhile. Record and plan: `docs/evidence/gamma-lief-relayout.md`.

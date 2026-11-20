@@ -75,9 +75,12 @@ records of the §5 reviews, the table remake and the ERDALT check, is in
    Session 94: the reruns all finished (unread); ERDALT retrained with settings rescaled to their setup. Session 100:
    `erdalt` read (validation 0.978, test 0.981, criterion not met: 35,594 violations against 381), kept as is, the
    eight folds released; the monotone detectors' four toolkit evasions located (all GAMMA, LIEF's rebuild suspected).
-   **Next:** `docs/resume-prompt-experiments.md`, on an interactive node: reproduce the GAMMA evasions and decide
-   whether GAMMA's edits go through our own byte-level writers (as the adaptive search's do); PV's setup; reading
-   every result; ERDALT's attacks and `6-results`; then step 5.
+   Session 101 (item (18)): the four evasions are LIEF relayout outside the threat model (no soundness failure); the
+   validity rule's count gap measured at ~1-2% of GAMMA outputs; decided: GAMMA written by our writers with a
+   header-growth variant of `shf`, the validity rule by sets, reruns after (`docs/evidence/gamma-lief-relayout.md`).
+   **Next:** `docs/resume-prompt-experiments.md`: implement both in a worktree (the growth variant and re-derivation,
+   the GAMMA wrapper, the set-based rule), then the reruns (the user's call on submission); PV's setup; reading every
+   result; ERDALT's attacks and `6-results`; then step 5.
 4. **While the scale-up runs: §2's closing and contribution 4 against §5** (old step 2 (c)). §2 says §5 "uses them to
    attack malware detectors and to build robust ones"; in §5 the attack is an instrument. The mock's contribution 4 is
    stale ("four to six points", "learned constraints"). Writing only.
