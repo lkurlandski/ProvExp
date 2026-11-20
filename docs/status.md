@@ -206,6 +206,13 @@ in `docs/archive/status-log-2026-11-14-s63.md`, sessions 64-65 in `docs/archive/
   (`docs/resume-prompt-experiments.md`): read those, then the GAMMA wrapper and the set-based rule, stopping at each
   result. Still open: PV's setup against Gimenez et al.'s; reading every result with the user; ERDALT's attacks (once
   the folds finish) and `6-results`.
+- **TO DO in the reruns: retrain monotone-features and monotone-sums, then their attacks and the price list**
+  (decided, user, session 103). Session 102's rerun of the direction tables changed M_full (M_add and M_shift are
+  byte-identical): 352 body features (256 `body_byteentropy`, 96 `body_strings` printable distribution) go from
+  "both" (dropped) to "up" (kept, monotone), because the fifth clause removes the 24 training files on which `ren`
+  wrote body bytes through a section table running into the body (population 18,474 -> 18,450). Both detectors and
+  `4-detectors/price-list` read `M_full-pre.*` (`4-detectors/train/run.sh:77`). The current detectors stay sound
+  (they drop more than they need to); the retrain makes every number come from one table.
 - **For the writing track (session 102):** the paper's operations table gains a fourteenth operation (header growth,
   a shift), and §4.4's population gains a fifth layout clause (the section table ends within the headers); GAMMA
   becomes additions plus, on files without header room, a shift.

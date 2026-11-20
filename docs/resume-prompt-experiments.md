@@ -111,7 +111,7 @@ $USER` once): until tasks 5-8 have started, do not merge changes to what they im
    `pipeline/4-detectors/adversarial-training/attack_training.py`), the learned defenses (pv, ERDALT, adversarial-
    training, iterated-2) and their attacks; the adaptive search may use `hgr` (its operation lists are in
    `src/provexp/attacks/adaptive.py:50`, `INSERT`, and `:719`; 283 test malware have no free header slot today);
-   MAB-Malware's validity under the new rule; the guaranteed detectors only if item 1 shows a direction change. Then
+   MAB-Malware's validity under the new rule; the guaranteed detectors (monotone-features, monotone-sums) and the price list: retrain (M_full changed, session 103; `docs/status.md`). Then
    `6-results`.
 5. **Meanwhile, with the user:** read every current result (the table above with the toolkit's `escape` and `loo`
    parts, the adaptive search's escapes and `expert`, MAB `expert` and `zainab` against Zainab et al.'s 83%, the
