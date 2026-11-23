@@ -328,7 +328,12 @@ reading its results (PLAN.md step 5).
    MAB-Malware and the search's limit in the adaptive search. Of the 1,000 test malware, 975 get more room than under
    the old cap, 25 less (24 within 500 KB of the limit, 4 within 100 KB; `diag/s105/near_4mb.py`). Report the median
    bytes added beside the evasion counts. (c) The weak toolkit attacks stay in this round, in an appendix; they are
-   dropped before the final submission, which reruns everything. Applied in the next full rerun, with (18)-(21).
+   dropped before the final submission, which reruns everything. (d) `hgr` in the adaptive search (section and import
+   candidates grow the headers first where no slot is free, as GAMMA does; a growth candidate of its own;
+   `header_growth` per result) and in the iterated detector's search (user). Applied in the full rerun with (18)-(21):
+   smoke-tested end to end (`diag/s105/smoke/`), the old round moved to `superseded-s105/`, the gate skipped under
+   PLAN.md decision 12 (the training table covers every evaluation cell, plus 265), submitted by the user on
+   2026-11-23 (jobs 1260382-1260399, `logs/submit-20261123-141442.txt`).
 
    **Next round** (methodology changes recorded here and applied together in a later full rerun, not one by one;
    user, session 105):

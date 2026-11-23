@@ -72,6 +72,10 @@ records of the §5 reviews, the table remake and the ERDALT check, is in
    it and neither loses a section or import); the learned defenses and every attack rerunning
    (`logs/submit-20261118-s85.txt`); PV's sample-size experiment designed and deferred; ERDALT to be retrained on the
    new material.
+   Session 105: the old round read for red flags (none needing a fix; the byte-level toolkit attacks checked with a
+   MalConv positive control); item (22): the literature budget, a 4 MB output rule replacing the byte cap, `hgr` in
+   the adaptive search; the full chain resubmitted (jobs 1260382-1260399); later methodology changes go on a
+   next-round list and are applied together.
    Session 94: the reruns all finished (unread); ERDALT retrained with settings rescaled to their setup. Session 100:
    `erdalt` read (validation 0.978, test 0.981, criterion not met: 35,594 violations against 381), kept as is, the
    eight folds released; the monotone detectors' four toolkit evasions located (all GAMMA, LIEF's rebuild suspected).

@@ -54,7 +54,9 @@ discussion, ethics, open science.
 - Tsingenopoulos et al. (`papers/tsingenopoulos2024train.pdf`) is the closest work; the reading is at the end of
   `docs/archive/related-work-plan-2026-11-17-s84.md`. Whether to compare experimentally is the user's decision.
 - Giri et al.'s author names in `main.bib` (`giri2026towards`) are as printed ("K. A., Asmitha", "P., Vinod"); check.
-- The byte budget (5% of the file or 512 KB) may be reconsidered later. Do nothing about it now.
+- The byte budget is decided (session 105, protocol item (22)): an output counts only if it is at most 4 MB, for
+  every attack; the toolkit runs at the GAMMA paper's budget. The number-free sentences this needs, and the toolkit's
+  framing (the byte-level attacks to an appendix), are listed in `docs/status.md`, "For the writing track".
 
 ## At the end
 
