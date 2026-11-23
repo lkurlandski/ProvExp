@@ -334,3 +334,11 @@ reading its results (PLAN.md step 5).
    user, session 105):
    - drop the toolkit attacks that stay ineffective at the generous budget (criterion to state; the learned defenses'
      material changes with them).
+   - optional: the adaptive search without signature cloning (`ent`'s clone candidate), so its result is not one
+     trick; 888 of its 932 evasions of the unconstrained detector clone a signature (expected; decisions.md, around
+     line 208).
+   - optional: MAB-Malware against the official EMBER2024 "All PE files" model on our test malware. At Zainab et
+     al.'s setting ours evades 455 of 867 (52%) against their 83.4%; accepted (user, session 105): their detector and
+     malware differ (VirusShare/Dike/MalwareBazaar files all eight of their models detect; Cuckoo executability) and
+     code randomization is not the cause (they too ran seven actions; Song et al. attribute 0.28% of EMBER evasions to
+     code sequences). This run would separate detector from malware.
