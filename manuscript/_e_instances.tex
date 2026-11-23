@@ -19,9 +19,10 @@ which lists the functions the program uses from other libraries. The headers loc
 the \emph{data directory}, which gives the table's position and size. Bytes after the last section form the overlay, which
 the loader does not map. EMBER~\cite{anderson2018ember} is the standard benchmark for this task (we use the most
 recent version, EMBER-v3~\cite{joyce2025ember}). Its extractor parses a file and computes 2,568 features that describe
-these structures by their metadata and statistics, such as the header fields, the entropy of each section, hashes
-of the imported names, the Authenticode signature, and the parser's warnings, together with histograms of the bytes
-and statistics of the printable strings over the whole file.
+these structures by their metadata and statistics: the header fields, the size, entropy, and characteristics of each
+section, hashes of the imported and exported names, the Rich header, the Authenticode signature, and the parser's
+warnings, together with histograms of the bytes and of their local entropy and statistics of the printable strings,
+taken over the whole file.
 
 \subsection{EMBER as a Sum-then-Readout Extractor}
 \label{sec:instances:record}
@@ -39,7 +40,8 @@ Not every feature of EMBER fits the definition as written. Some fit once they ar
 visits the section, which makes the section's contribution depend on the rest of the file, and we divide in the
 readout instead. Others have no items at all.
 EMBER's 88 parser warnings are flags, each set when the parser reports a particular irregularity in the file, and we
-do not model which parts of the file cause it. A feature without items can be dropped, or kept with the
+do not model which parts of the file cause it. A feature without items can be dropped, which leaves a
+sum-then-readout extractor on the remaining features (Definition~\ref{def:fw:extractor}), or kept and given the
 direction $\mathsf{both}$, which is always sound but says nothing about how the feature moves, so a detector built
 on the directions cannot use it either way. We drop the warnings. Earlier versions of EMBER did not compute
 them~\cite{joyce2025ember}, and a detector trained without them loses no detection. Every other feature, 2,480 of the 2,568, has items, and the readouts of the recorded sums give
@@ -71,7 +73,7 @@ verify it, so the copy describes the file as signed by the benign program's publ
 signatures this way, and such copies led 34 anti-virus products to miss known malware~\cite{kim2017certified}. The
 entry write generalizes MAB-Malware's removals: the loader ignores both entries, so an attacker who can remove one can
 as well set it to any value. The second operation we add, \emph{header growth}, inserts a gap at the end of
-the headers to make room for the headers of new sections.
+the headers so that the headers of new sections fit, which adding a section needs on a file whose headers lack room.
 % The extractor's authenticode features (signify) count certificates and read signing times; nothing checks the hash.
 
 The operations form three nested threat models. \emph{Additions} only add content, the setting for which monotone detectors
@@ -124,9 +126,11 @@ belongs to and the sums each item contributes to. From them come the changes of 
 sums it reaches. What the sample does not show, the signature does not cover. Theorem~\ref{thm:fw:directions} holds as long as no file of the population lets an
 overwrite reach a kind of item, or lets an item contribute to a sum, that no file of the sample does.
 
-An overwrite can also land on a position that the parser reads to find other items, such as an entry of the
-section table or of the data directory, and change which items the extractor finds, in a way the item table does not
-record; the entry write always does. The signature then allows any change to the items of that
+The item tables give the changes of an overwrite at the positions it writes, with one exception: an overwrite can
+also land on a position that the parser reads to find other items, such as an entry of the section table or a field
+that gives the location of a table. The entry write always does: it writes
+where the extractor looks for the signature and the debug data. Such a write can change which items the
+extractor finds, in a way the item table does not record. The signature then allows any change to the items of that
 kind. For a single edit, such a write is \emph{declined}: we do not compute its side effects.
 
 Proposition~\ref{prop:fw:side-effects} and Theorem~\ref{thm:fw:directions} are proven; what they rest on is checked.
@@ -147,8 +151,9 @@ parser looked for and did not find, instead of extending the overlay. Lemma~\ref
 are properties of the parse, so closure is checked instead: none of the 56,902 edits of \Cref{sec:eval:setup} that were applied to
 files in the population took a file out of it.
 
-Of the test files we use (\Cref{sec:eval:setup}), 94\% are in the population; 5\% are incomplete, although our
-copy holds them in full, and 0.4\% are complete files with an unusual layout. A detector still scores every file, and
+Almost every file outside the population is incomplete, although our copy holds it in full: its headers locate sections or tables that lie, at least in
+part, past its end. Of the test files we use (\Cref{sec:eval:setup}), 94\% are in the population, 5\% are incomplete,
+and 0.4\% are complete files with an unusual layout. A detector still scores every file, and
 \Cref{sec:eval:detectors} measures how the detectors built from the directions fare on files outside.
 % PROTOCOL: the closure count (56,902) and the shares above are for the population before the entry write (run 117,
 % run 136). The widened population is closed on the pilot (run 142: 0 of 13,326 edits on population files leave it,
