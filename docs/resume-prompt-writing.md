@@ -1,78 +1,139 @@
-# Resume prompt (writing track): bring §5 *Evaluation* up to date
+# Resume prompt (writing track): review the rebuilt §5 *Evaluation* and Appendix E
 
-Written 2026-11-23 (end of session 107; replaces session 106's prompt, archived as
-`docs/archive/resume-prompt-writing-2026-11-23-s106.md`). Read `CLAUDE.md` and this prompt. Then read §5
-(`manuscript/_f_evaluation.tex`, ~4,000 words; the user has not read it end to end) and Appendix E *Attacks and
-Defenses* (`_j3_attacks.tex`). Read §4 (`_e_instances.tex`) for the terms §5 uses, and §3 (`_d_framework.tex`) only
-where §5 cites a definition or result. Check numbers in `manuscript/main.aux` after `make`, and give titles with them.
-Run on Opus. Use no subagents unless the user asks.
+Written 2026-11-23 (end of session 108; replaces session 107's prompt, archived as
+`docs/archive/resume-prompt-writing-2026-11-23-s107.md`). Self-contained: read `CLAUDE.md` (loaded automatically) and
+this prompt. Run on Opus. Use no subagents unless the user asks.
 
-## Where things stand
+## 1. The project in brief
 
-- **§4 *Instantiating the Framework* is done for this round** (sessions 106-107): restructured as the bridge from §3
-  to §5, reviewed twice, cut to 1,792 words (user's range: 1,500 fine, 1,700 acceptable; the user rejected the cut's five
-  ⚑ items, those that change what a reader is told, so do not propose them again). Its subsections: 4.1 *EMBER
-  as a Sum-then-Readout Extractor* (items, sums, the item table, reading the sums directly, the 88 warnings dropped,
-  2,480 features exact, the overlay rule), 4.2 *Threat Model* (fourteen operations, the entry write and header growth,
-  three nested models *additions* / *shifts* / *full*, Table 2), 4.3 *Signature* (declared changes, the part read from
-  a sample, declined edits, what is proven and what is checked), 4.4 *Population* (complete files with a plain layout;
-  the debug data and the signature exempt; closure checked). Appendix D mirrors it (D.1-D.3).
-- **The user said §5 is "quite out of date"** and is to be updated in this session. Session 106 already wrote the
-  decided methodology of sessions 102-105 into §5 (header growth, the 4 MB scope, the GAMMA paper's budget, the
-  byte-level toolkit attacks to Appendix E). What else "out of date" covers was not said: **start by asking the user**
-  what the update includes, with your reading of what is stale as options. Candidates:
-  1. The new round's numbers. The scale-up's full rerun was submitted on tigris on 2026-11-23 (jobs 1260382-1260399);
-     whether it has been read is in `docs/status.md` and `docs/resume-prompt-experiments.md`. Scale-up outputs live
-     only on tigris (memory: scale-up sessions on tigris). Blue `\synthetic{}` values and `% SYNTHETIC` comments mark
-     what the runs replace.
-  2. The refactor the user is considering: §3.4's robust detectors (the monotone detectors, Corollary 1) moved into
-     §5, and §3.3 and §3.4 merged, so that §3 is only about measuring edits. §4 does not depend on §3.4's detectors;
-     keep it that way.
-  3. Terms and cross-references that §4 changed (below).
-- Then, once the content is current: a humanistic review of §5 (`humanistic-paper-review` skill; findings ranked, with
-  exact quotes, numbered; the user's verdicts before changing text), and later a cut.
+ProvExp is the user's dissertation research. Its subject is *sum-then-readout* feature extractors, the kind security
+classifiers use: they find the pieces of the input (items), add up what each contributes (sums), and compute each
+feature by a formula over a few totals (readouts). From the instrumented extractor the paper computes what an
+attacker's edits do to the features: exactly for one edit (Proposition 1), as sound directions for a whole threat
+model (Theorem 1, the *derived table*: for each feature, whether edits can raise it, lower it, both, or neither), and
+from those, monotone detectors no edit in the threat model can evade (Corollary 1). PE malware with EMBER 2024 is the
+instance. The paper is `manuscript/*.tex` (ACM CCS format; `make` and `make check` in `manuscript/`); §3 is the
+framework, §4 instantiates it on EMBER, §5 evaluates. Every number is a pilot value until the scale-up's rerun (jobs
+1260382-1260399, submitted 2026-11-23 on tigris) is read in the experiments track
+(`docs/resume-prompt-experiments.md`); scale-up outputs live only on tigris. Blue `\synthetic{}` values are
+predictions, each with a `% SYNTHETIC` comment naming the run that replaces it.
 
-## Open items carried from §4's review (session 107), all touching §5
+## 2. What session 108 did
 
-- **The stray fragment at the end of §5.4's additions paragraph** (`_f_evaluation.tex`, around line 480): the sentence
-  "A defender chooses the threat model, and with it which edits the detector withstands and what that costs in
-  detection." begins at the end of a `% MEASURED` comment line, so only "model, and with it ..." renders. Restore the
-  sentence (move its start out of the comment) or delete it; ask.
-- **The *shifts* threat model** is defined in §4.2 and Table 2 but used nowhere else in the paper. The user kept it
-  because §5 is out of date; if the updated §5 still does not use it, ask whether to fold the insertions into *full*.
-- **Cross-references from §5 into Appendix D are coarse**: §5.1's checks cite "Appendix D" for what is Table 9 (in D.2
-  *Signature*), and §5.4 cites "Appendix D" for the re-encodings over sums (the last paragraph of D.1). §4.1 now
-  introduces reading the sums; §5.4 can point there too. The label `sec:instances:sums` sits on a `\paragraph` in D.1
-  and is unused. Also: §4.1 says a detector "reads the sums directly", while D.1's re-encodings include splitting the
-  signed section-name buckets; keep the naming consistent if §5 describes the sums detector.
-- **"Complete"**: §4.4 now says incomplete files are ones "our copy holds in full" but whose headers point past their
-  end; §5.1 says "only the files it holds in full". Keep the two senses apart in §5's wording.
-- **Population figures**: §4.4's 94% (population before the entry write) and §5.4's "all but 1.5% of the benign test
-  files" (the widened population) count different populations; the scale-up recounts both (PROTOCOL comment in §4.4).
+The user asked for §5 to be brought up to date and then for a ground-up rethink of it, like §4's in session 106. The
+plan, every decision and what was weighed: **`docs/evaluation-note.md`** (read it first; sections 1, 3 and 6);
+standing record: `docs/decisions.md`, decision 13. In short:
 
-## Also open (raise when the work touches it)
+- **What §5 evaluates.** A defender learns what an attacker's edits do to the features from one of three sources:
+  reading the extractor (a hand analysis), observed attacks, or trial (applying edits and re-extracting). Each yields a
+  detector. §5 compares them with the derived table by what the detectors built on them withstand. A source fails in
+  one of two ways: *unsound* (it misses a direction, so the detector can be evaded) or *over-cautious* (it constrains
+  features no edit moves, so detection is lost for nothing). The derived detector is sound, so its cost against the
+  unconstrained detector is the price of soundness itself. This refines decision 10 (three findings, not a validation
+  section, not a defense paper), which stands.
+- **§3.4 merged into §3.3** (§3 now only measures edits): Proposition 2 (*Sequences of edits*) and Lemma 3 (*Closure*)
+  close §3.3 *Sound Directions*; the definition "monotone with respect to D" and **Corollary 1 (*Robustness*) moved
+  into §5's lead**, the yardstick for every source. Appendix C mirrors: C.3 *Robust Detectors* holds the corollary's
+  proof.
+- **§5 now** (4,647 words by texcount; check numbers in `manuscript/main.aux`):
+  - *Lead*: the three sources; Gimenez et al.'s result and the definition; Corollary 1; why one wrong direction
+    reopens evasion; one sentence per finding.
+  - 5.1 *Setup*: *Files and detectors* (files held in full, below 4 MB; one training set of ~1.76M files; thresholds
+    on the validation split; the evaluation set of 1,000 + 1,000 test files), *Attacks* (the validity rule: at most
+    4 MB, pefile and LIEF both read it; toolkit at the GAMMA paper's budget; the adaptive attack extracts every
+    candidate, up to 5,000; MAB-Malware), *Checking results*.
+  - 5.2 *What Hand Analysis Misses*: unchanged except the expert set's paragraph, which now holds both of its
+    failures (lowerable under *full*; 29.1% against 92.2% detection under *additions*, moved from 5.4).
+  - 5.3 *What Observed Edits Miss*: Table 4, the comparison table (every detector, grouped: unconstrained; read by
+    hand; learned from observed edits; derived from the extractor; replaces the old Tables 4 and 5), then the defenses
+    learned from attacks (the material: 10,000 training malware), what the attacks reveal, PV (rename hole; the DLL
+    flag), ERDALT (rescaled), adversarial training and iterated adversarial training (new, blue), leave-one-out, and
+    *Learning by trial* (new, from pilot run 144: 87.6% against 83.4% detection, evaded on 26/44 through features no
+    tried edit moved, mostly URL-like string counts; the toolkit-widened trial evaded on 13/20 through import
+    buckets).
+  - 5.4 *What Robustness Costs*: the price, where the guarantee holds (escapes), where the cost lies (now cites
+    Table 11), the width of the threat model (the restored closing sentence), beyond the guarantee.
+- **Appendix E mirrors §5**: E.1 *Setup* (toolkit, adaptive attack with header growth, MAB-Malware, Table 9 per
+  attack, regrouped like Table 4), E.2 *What Observed Edits Miss* (PV's rule, ERDALT with each rescaling stated,
+  adversarial and iterated training, the trial table, leave-one-out Table 10), E.3 *What Robustness Costs* (the
+  per-operation price list, new Table 11; measured before the entry write). 976 words.
+- **The rule for added defenses** (the user: more defenses will very likely be benchmarked, body or appendix
+  undecided): a row in Table 4 and Table 9, a paragraph in E.2 on how it was built and ported; body prose only if it
+  shows a failure the existing rows do not.
+- Commits 4a11d53 (manuscript), 2209cae (note); docs in a third commit.
 
-- §3.4's title, *Sequences and Robust Detectors*, was taken "for now" (may change with the refactor).
-- The rebuttal's number-free fixes R4, R5, R15, R21 (`docs/reviews/2026-11-12-body/rebuttal/triage.md`): ask the user
-  whether to take them up.
-- The appendices: the user agreed to Appendix D/E's split "for now" and wants to talk about them more later.
-- Tsingenopoulos et al. (`papers/tsingenopoulos2024train.pdf`) is the closest work; the reading is at the end of
-  `docs/archive/related-work-plan-2026-11-17-s84.md`. Whether to compare experimentally is the user's decision.
-- Giri et al.'s author names in `main.bib` (`giri2026towards`) are as printed ("K. A., Asmitha", "P., Vinod"); check.
-- `PLAN.md`'s "Lemma 1 (*Closure*)" lines are history and stay as written (Closure is Lemma 3 now).
+## 3. This session
+
+1. **Read** §5 (`manuscript/_f_evaluation.tex`) and Appendix E (`_j3_attacks.tex`) in full, rendered as well
+   (`pdftotext` or page images of `manuscript/main.pdf`), and the note's sections 1 and 6. Read §4
+   (`_e_instances.tex`) and §3 only where §5 cites them.
+2. **A humanistic review of §5 and Appendix E** (`anthropic-skills:humanistic-paper-review` skill): findings ranked
+   most to least important, each with exact quotes, numbered, diagnosis only. Session 108 wrote most of 5.3 and 5.4's
+   new prose and the lead in one pass, unreviewed: expect seams. Look in particular at: whether the lead and the
+   subsection leads make clear what is evaluated (the user's main worry this session: "its not clear what we're
+   evaluating"); whether the two failure modes are visible in the prose and in Table 4 (they are named in the note,
+   barely in the text: the lead says "what that source misses"); the lead's length (it now holds a definition and a
+   corollary); 5.3's length and order (eight run-in paragraphs; trial last); the comparison table's readability; the
+   seam where 5.4 no longer restates the corollary.
+3. Present the findings; get the user's verdicts; the user often approves all and asks for the fixes in one pass, by
+   Claude's judgement. Show old/new text for each applied fix.
+4. Later, not before the review is settled: a cut with `cut-to-length` (mock budget 3,200; drafting allowance 50-75%
+   over, so up to ~5,600 is acceptable for now; the user rejected every ⚑ item in §4's cut).
+
+## 4. Open items in §5 (raise when the work touches them)
+
+- **Hand-table detector not in the scale-up**: §5.2 *What the error costs* (pilot: score lowered on 10 of 29 files,
+  none crossing) has no scale-up step (`% SCALE-UP GAP` comment). The user decides: next round or keep the pilot result
+  (memory: every paper number gets a scale-up step). On the next-round list as a candidate.
+- **The *shifts* threat model** (§4.2, Table 2) is used nowhere in §5; deferred by the user until a *shifts* detector is
+  implemented and run (next-round candidate). Do not fold it into *full* and do not change §4 for it.
+- **The sample-read sentence** at the end of 5.1's *Checking results* ("the table derived from 100 of the files is also
+  the same as the one derived from all 2,000") is false at scale (the 20,000 training files add 98 directions); the
+  same in §4.3's last sentence. Rewrite both to the held-out check with the user, once the files behind the new moves
+  are known (PLAN.md, open items). An `% OPEN` comment marks it.
+- **Blue predictions**: iterated adversarial training's row and its sentence in 5.3 (no pilot run; predicted evaded
+  through signature cloning, the operation held out of its rounds); trial's AUC, 0.1% detection and toolkit cells; the
+  monotone rows' toolkit and MAB-Malware cells; "about 1.76 million"; "about 80,000" outputs; "no tree of any monotone
+  detector violates them". ERDALT's row is the pilot's (AUC .883); the rescaled scale-up model reached .981.
+- **Mixed pilot models** in Table 4: unconstrained, PV, ERDALT, the expert set and the monotone rows are 10% subsample
+  models; adversarial training is the full-training-set model (comment beside the table). The scale-up trains every
+  row on one training set; until then 5.3's "leaves its detection unchanged" compares adversarial training with a
+  detector not in the table.
+- **Terms**: §4.4's "complete" (headers point within the file) is not 5.1's "held in full" (below 4 MB); keep them apart.
+  §4.4's 94% and 5.4's "all but 1.5% of the benign test files" count different populations (both recounted at scale).
+- **Unused label** `sec:instances:sums` on a `\paragraph` in Appendix D.1; 5.4 now cites §4.1 (`sec:instances:record`)
+  for the sums.
+- **§2's closing sentence** ("§5 uses them to attack malware detectors and to build robust ones") no longer matches
+  §5: the user leaves it to the end-to-end pass with the introduction. Do not change it now. Do not change one section
+  on the strength of another section's stale content.
+- The title stays *Evaluation* (decision 13: the lead and the subsection titles carry the question).
+
+## 5. Also open (raise only when the work touches it)
+
+- The rebuttal's number-free fixes R4, R5, R15, R21 (`docs/reviews/2026-11-12-body/rebuttal/triage.md`): ask whether
+  to take them up.
+- Tsingenopoulos et al. (`papers/tsingenopoulos2024train.pdf`), the closest work; reading at the end of
+  `docs/archive/related-work-plan-2026-11-17-s84.md`; an experimental comparison is the user's call (a candidate
+  added defense under the rule above).
+- Giri et al.'s author names in `main.bib` (`giri2026towards`) are as printed; check.
+- `PLAN.md`'s "Lemma 1 (*Closure*)" lines are history (Closure is Lemma 3 now).
 - Not in this round: abstract, introduction, discussion, ethics, open science.
 
-## How the user works on prose (from sessions 106-107)
+## 6. How the user works (sessions 106-108)
 
-Diagnosis first, with the user's verdicts; the user often approves all findings and asks for the fixes in one pass,
-by Claude's judgement (ask which way). Cuts with `cut-to-length`: exact old/new text, measured savings, least to most
-disruptive, ⚑ on what changes what a reader is told (in session 107 the user rejected every ⚑ item); then read the rendered PDF for slips (session 107 found three).
-Never change one section on the strength of another section's stale content.
+- Early in a section's construction the user cannot answer lists of design questions: weigh the options and decide,
+  record what was weighed, report the decisions (memory: decide early design questions). Still ask about claims,
+  compute, and anything that reverses an earlier decision of the user's.
+- Prose: diagnosis first with the user's verdicts; fixes in one pass when approved; exact old/new text; read the
+  rendered PDF for slips afterwards. Explain plainly; no internal IDs in the paper.
+- Proposals must show understanding of the section: the user rejected title options that named only part of what §5
+  does.
 
-## At the end
+## 7. At the end
 
-After editing: `make` and `make check` in `manuscript/`; `texcount` per changed file. After moving floats, check that
-every table appears in the PDF (a float placed last in an appendix was silently lost in session 106). Add a short
-session-log entry to `docs/status.md`, log the user's reactions raw in `docs/writing-spec.md`, and commit the
-manuscript and the docs in logical pieces. Archive this prompt under `docs/archive/`, list it in `docs/README.md`, then
-write the next resume prompt into this file, self-contained.
+After editing: `make` and `make check` in `manuscript/`; `texcount -1 -sum` per changed file; after moving floats,
+check that every table appears in the PDF (`pdftotext main.pdf - | grep -o "^Table [0-9]*"`). Add a session entry to
+`docs/status.md` (top of *Current state*), log the user's reactions raw in `docs/writing-spec.md`, update
+`docs/evaluation-note.md` if a decision changes, and commit the manuscript and the docs in logical pieces. Archive this
+prompt under `docs/archive/` (list it in `docs/README.md`), then write the next resume prompt into this file,
+self-contained.

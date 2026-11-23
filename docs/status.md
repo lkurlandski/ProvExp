@@ -11,7 +11,19 @@ in `docs/archive/status-log-2026-11-14-s63.md`, sessions 64-65 in `docs/archive/
 `docs/archive/status-log-2026-11-15-to-16-s66-76.md`, sessions 77-94 in
 `docs/archive/status-log-2026-11-16-to-19-s77-94.md`).
 
-## Current state (2026-11-23, through session 107)
+## Current state (2026-11-23, through session 108)
+
+- **Session 108 (writing):** §5 rebuilt from the ground up (plan: `docs/evaluation-note.md`; decision 13). The user
+  chose the narrative: every source of a defender's knowledge of what edits do (reading the extractor, observed
+  attacks, trial) yields a detector, and Corollary 1 is the yardstick; a source fails by being unsound (evaded) or
+  over-cautious (detection lost). §3.4 merged into §3.3 (Proposition 2 and Lemma 3 stay; the definition "monotone with
+  respect to D" and Corollary 1 moved to §5's lead; Appendix C mirrors: C.3 *Robust Detectors*). 5.1 to the scale-up
+  protocol; 5.2 gains the expert set's detection comparison; 5.3 *What Observed Edits Miss* (the learned defenses,
+  iterated adversarial training, leave-one-out, trial from run 144); one comparison table (Table 4) replaces Tables 4
+  and 5; 5.4 trimmed to the derived detectors; Appendix E mirrors §5 (E.1-E.3; the per-attack table regrouped,
+  ERDALT's rescalings stated, the price list as Table 11). Pilot numbers kept; blue predictions for iterated
+  adversarial training and trial's unrecorded cells. The stray fragment in 5.4 restored. §5 4,647 words, Appendix E
+  976. Unreviewed: no humanistic review yet. Commits 4a11d53, 2209cae. Next: `docs/resume-prompt-writing.md`.
 
 - **Session 107 (writing):** a fresh humanistic review of §4 (eight findings and minor points), applied in one pass
   except what rested on the out-of-date §5 (user): the population's completeness exempts the debug data and the
@@ -123,7 +135,9 @@ in `docs/archive/status-log-2026-11-14-s63.md`, sessions 64-65 in `docs/archive/
   *Operations* and *Signature*; 4.4 reordered). Second, lightweight review in session 40 (three findings, all
   applied: 4.3.2 states what the sample-read signature rests on; closure "checked rather than proven"). §4 is in good
   shape. About 1,500 words against ~1,000; shortening with §5 later.
-- **§5:** three findings (PLAN.md, decision 10; plan in `docs/paper-mock.md`, §5), fully drafted, no blue values.
+- **§5 (session 108):** rebuilt around where each detector's knowledge of edits comes from (decision 13,
+  `docs/evaluation-note.md`, which supersedes the mock's §5 plan); drafted, not yet reviewed. History below.
+- **§5 (before session 108):** three findings (PLAN.md, decision 10; plan in `docs/paper-mock.md`, §5), fully drafted, no blue values.
   Reviewed by Claude with the `humanistic-paper-review` skill in session 41b, one subsection per pass, every finding
   approved by the user and applied (ce4ba21, f8baea5, 1053bf7, e8b0335): each subsection's lead now answers its
   question; "the computation" named; 5.1 introduces the unconstrained detector; 5.2's hand table counts eight errors
@@ -246,6 +260,11 @@ in `docs/archive/status-log-2026-11-14-s63.md`, sessions 64-65 in `docs/archive/
   PLAN.md step 3 (g), items 10-11. No protocol question is open before the cluster.
 
 ## Waiting on the user
+
+- **Two scale-up gaps in §5 (session 108), the user's call:** (a) the hand-table detector (§5.2 *What the error
+  costs*, pilot 10/29) has no scale-up step; add it to the next round, or keep the pilot result. (b) A *shifts*
+  detector (the middle threat model of §4.2): deferred by the user; used in §5.4 only if it is implemented and run.
+  Both are on the next-round list (`docs/scaleup-protocol.md`) as candidates.
 
 - **The full rerun is running (submitted 2026-11-23, session 105; jobs 1260382-1260399).** It carries every change
   of sessions 101-105 (GAMMA through our writers, `hgr` and the fifth clause, the validity rule by sets, the literature

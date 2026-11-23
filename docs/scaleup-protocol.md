@@ -347,3 +347,8 @@ reading its results (PLAN.md step 5).
      malware differ (VirusShare/Dike/MalwareBazaar files all eight of their models detect; Cuckoo executability) and
      code randomization is not the cause (they too ran seven actions; Song et al. attribute 0.28% of EMBER evasions to
      code sequences). This run would separate detector from malware.
+   - candidate (session 108, the user's call): the hand-table detector (§5.2 *What the error costs*; pilot only,
+     10/29 lowered, none crossing) trained and attacked at scale, or keep the pilot result with the user's approval.
+   - candidate (session 108, deferred by the user): a monotone-sums detector for the *shifts* threat model (the table
+     exists in `3-directions/derived`; the adaptive search takes `--threat_model M_shift`), attacked as the others;
+     it would give §5.4's width paragraph a middle point (additions, shifts, full).
