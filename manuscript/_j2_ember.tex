@@ -108,8 +108,8 @@ Renaming a section keeps the section and replaces its name, and each removal dec
 and the removals write positions the parser reads to find other items, but unlike an overwrite they declare the
 changes that follow.
 
-\paragraph{Positions that locate items.} For each kind, the record lists the positions the parser reads to find its
-items: header fields and table entries, and positions that concern a whole kind, such as the number of sections and
+\paragraph{Positions that locate items.} Alongside the item table, the instrumented extractor records, for each kind,
+the positions the parser reads to find its items: header fields and table entries, and positions that concern a whole kind, such as the number of sections and
 the bounds of the range in which the extractor searches for the Rich header. Some are easy to miss. The overlay starts
 where the last section ends, so the extent of every section locates it. Others lie
 past the end of the file, when the headers point to content that an incomplete file does not hold. We
