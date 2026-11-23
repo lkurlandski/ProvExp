@@ -314,3 +314,23 @@ reading its results (PLAN.md step 5).
    lost; names (renamed by `ren` and MAB-Malware's SR), raw ranges, a count and section content were weighed and
    rejected. No verdict changes on the 1,217 kept outputs; on session 101's LIEF-era GAMMA sample 2 of 150 gamma_api
    outputs more are rejected. Record: `docs/evidence/gamma-lief-relayout.md`, section 7.
+   (22) **The toolkit's red flag; the attack budget and the size rule (session 105).** GAMMA API carries almost all of
+   the toolkit's evasions: it switches on ~1,006 of the 1,024 hashed import-function features (2-5 logits) with our
+   writers too (`diag/s105/gamma_api_why.py`), an additions-only attack the guaranteed detectors stop. The byte-level
+   attacks (DOS extension, content shift, padding, format exploit, header fields) were checked rather than explained
+   away: their edits reach the features and the scored file is the edited one (`diag/s105/toolkit_reach.py`, 20 files),
+   and against secml-malware's pretrained MalConv, the model they were built for, the same code and budget evade 16, 14,
+   9, 6 and 5 of 20 (`diag/s105/malconv_control.py`); against our GBDT they barely move the score. *Decided (user):*
+   (a) every toolkit attack runs at the GAMMA paper's budget (`literature`: population 10, 51 iterations, 75 donors),
+   in the evaluation and in the training material; (b) the byte cap max(5% of the file, 512 KiB), ours and unsupported
+   by the literature, is replaced by one rule for every attack and the material: **an output counts only if it is at
+   most 4,000,000 bytes** (the study concerns PE files up to 4 MB; user). It is the filter for the toolkit and
+   MAB-Malware and the search's limit in the adaptive search. Of the 1,000 test malware, 975 get more room than under
+   the old cap, 25 less (24 within 500 KB of the limit, 4 within 100 KB; `diag/s105/near_4mb.py`). Report the median
+   bytes added beside the evasion counts. (c) The weak toolkit attacks stay in this round, in an appendix; they are
+   dropped before the final submission, which reruns everything. Applied in the next full rerun, with (18)-(21).
+
+   **Next round** (methodology changes recorded here and applied together in a later full rerun, not one by one;
+   user, session 105):
+   - drop the toolkit attacks that stay ineffective at the generous budget (criterion to state; the learned defenses'
+     material changes with them).
