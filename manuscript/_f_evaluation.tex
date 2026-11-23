@@ -51,27 +51,28 @@ them}.
 
 \paragraph{Attacks}
 An attack evades a detector when it drives a detected malware sample below the detector's threshold with an output
-of at most 4~MB, the files our study concerns. We first run the eight toolkit attacks of
-\Cref{sec:instances:catalogue}, the published attacks a practitioner can run off the shelf, and the ones Gimenez et
+of at most 4~MB, the files our study concerns. We first run the eight attacks of the secml-malware
+library~\cite{demetrio2021adversarial}, which we call the \emph{toolkit} attacks (\Cref{tab:instances:catalogue}
+lists the operations each uses): the published attacks a practitioner can run off the shelf, and the ones Gimenez et
 al.~\cite{gimenez2025certifiably} learn their defense from. They are black-box: each applies one kind of edit and tunes
 it with a genetic algorithm that sees only the detector's score, with the budget of the GAMMA paper~\cite{demetrio2021functionality},
 about 500 queries per file and 75 benign donor files. Five of them, the byte-level attacks (DOS extension, content
 shift, padding, format exploit, header fields), were built for byte-level models such as MalConv~\cite{raff2018malware}
 and barely move a detector on EMBER's features, although the same code and budget evade a pretrained MalConv on 5 to
-16 of 20 files; we report them in Appendix~\ref{sec:ember}, and GAMMA's import attack carries the toolkit's results
+16 of 20 files; we report them in Appendix~\ref{sec:attacks}, and GAMMA's import attack carries the toolkit's results
 here. A detector these attacks fail to evade may still fall to an attacker who knows the model and combines edits. We therefore
 also implement a white-box adaptive attack, in the spirit of Tramèr et al.~\cite{tramer2020adaptive}, to test
 on real files whether a detector can be evaded where the directions say it can, and not where they say it cannot. It
 reads the detector's trees, combines any operations of the full threat model (\Cref{tab:instances:catalogue}) unless
 stated otherwise, computes each candidate's features by Proposition~\ref{prop:fw:side-effects} instead of extracting
-them, and scores up to 5,000 candidates per file (Appendix~\ref{sec:ember}). Last, we run MAB-Malware~\cite{song2022mab},
+them, and scores up to 5,000 candidates per file (Appendix~\ref{sec:attacks}). Last, we run MAB-Malware~\cite{song2022mab},
 the published attack that evades a detector on EMBER~2024's features most often~\cite{zainab2026breaking}, and the
 only one we know of that renames sections. It is black-box as well: a multi-armed bandit learns, across the files it
 attacks, which of its actions and which benign content lead to evasion, applies up to 60 actions to each file, and
 then strips an evasive file down to the actions it needs. We run the authors' code with the same benign files as the
 source of added content, without its code-randomization action, which needs a disassembler and lies outside our
 threat model (\Cref{sec:instances:catalogue}). A detector counts as evaded on a file when any of these attacks evades
-it; Appendix~\ref{sec:ember} reports each attack separately.
+it; Appendix~\ref{sec:attacks} reports each attack separately.
 % SYNTHETIC (session 49): MAB-Malware results come from run/139_mab_malware.sh (scripts/mab_attack.py,
 % third_party/mab_malware); every blue value in 5.3-5.4 and Tables 4, 5 and 10 that involves it is a prediction.
 % Zainab et al. (papers/zainab2026breaking.pdf), Table I: MAB-Malware 83.40% on their EMBER-24 GBDT (0.1% FPR, or 1%
@@ -304,7 +305,7 @@ attacks happened to leave alone, and so falls to any operation they lack.
 \paragraph{What ERDALT learns}
 ERDALT learns a linear layer that maps the feature change of every observed attack to a nonnegative vector, and feeds
 the layer's output to a monotone network (\Cref{sec:related-work}). Our implementation of their design
-(Appendix~\ref{sec:ember}), trained on the same outputs, falls to one of the attacks it was trained on: GAMMA
+(Appendix~\ref{sec:attacks}), trained on the same outputs, falls to one of the attacks it was trained on: GAMMA
 imports evades it on 24 of the 29 test malware it detects, while the other seven toolkit attacks evade it on none.
 GAMMA imports adds imports taken from benign files, and on the test malware it takes them from benign test files, whose imports
 ERDALT never saw. The layer constrains the feature changes it was shown, not the directions in which edits can move
