@@ -163,3 +163,41 @@ on 1,000 files; tests (catalogue, `test_toolkit_gamma.py`; full suite 2,013 pass
 and the toolkit step on 24 malware): 10-50 s per run as under LIEF, every output valid, every in-population original's
 output in the population. Session 101's four evasions: three not applicable, the fourth no longer evades (0.964).
 The import attack is weaker without LIEF's rebuild on some files (p_adv 0.68 vs 0.04, 0.79 vs 0.09, 0.51 vs 0.20).
+
+## 7. Session 104: the merge; the validity rule by sets
+
+**Merged.** ERDALT's eight folds (job 1239350) all finished by 2026-11-21, so the two commits held on `hgr` (GAMMA
+through our writers, the room check) were fast-forwarded to `main` (ruff and strict mypy clean; the rebase was a
+no-op).
+
+**How a section is identified (decided, user).** The rule by sets needs an identity for sections; names fail because
+the adaptive search's `ren` and MAB-Malware's SR rename them. Options weighed: keep a count (renames pass; a loss
+hidden by an addition is missed, which no current attack causes but the rule would not check); the virtual address as
+a multiset; the raw range adjusted for insertions (the rule does not see the insertions, and `ext` changes sizes);
+names with the renaming operations exempt (the rule would need the operation list, which MAB-Malware's outputs do not
+carry); a match by name or address (accepts sections moved in memory). Section content was considered and rejected:
+slack writes (`slk`, MAB's SA and CP1), `ext` and the debug removals (`rdb`, MAB's RD) change content in valid
+outputs, and whether an attack changed only what it declares is the catalogue check's and `structure_kept`'s question,
+not the validity rule's. **Chosen: the virtual address**, the one property no attack changes (read from the code of
+every attack: renames change the name, shifts and `hgr` the file offset, `ext` the sizes; added sections take new
+addresses; `hdr` writes no section field; `hgr` grows into the space below the first section's address). A section
+moved in memory counts as lost, which it is unless every reference into it is rewritten, and no attack does that.
+
+**Checked before coding** (`artifacts/scaleup/diag/s104/section_va.py`, results in `diag/s104/section-va/`): on the
+1,217 outputs kept on disk (MAB-Malware's 600 evasive and 600 minimal over the eight detectors, the 17 GAMMA smoke
+outputs of session 103), no output lost a section address under either parser, and none lost a DLL or function; a
+name multiset would have rejected 72 MAB-Malware outputs (renames).
+
+**Implemented** (`provexp.attacks.validity`, commit 6452038): `Structure` holds, per parser, the sorted section
+addresses, the lowercase DLLs and the (lowercase DLL, name or `#ordinal`) functions (frozensets; picklable); a loss is
+a multiset or set difference; the reason keeps its "both" / "pefile only" / "lief only" prefix and names what was lost
+(e.g. `both: lost 1 dlls (kernel32.dll)`). Tests (`tests/test_validity.py`, 11 new, from real byte edits): a DLL
+renamed in place (same count) is caught, a renamed section passes, a section moved in memory is caught, a lost section
+hidden by an added one is caught, `Structure` pickles. Full suite 2,024 passed.
+
+**Verdicts that change** (hypothesis: only GAMMA's LIEF-era outputs, ~1-2%): none of the 1,217 kept outputs
+(`diag/s104/section-va-new/`). On session 101's 480 re-created LIEF-era toolkit outputs (`diag/validity-sets/`), the
+sets reject 2 more of 150 gamma_api outputs (1.3%; both had evaded) for a DLL or function the count hid; one
+gamma_sections output lost a section by name and could not be rechecked by address (those outputs were not kept). All
+of them are replaced by the reruns. MAB-Malware keeps only its evasive and minimal outputs: re-judging them suffices
+for its evasion counts (nothing changes), but its rejection counts by cause need the rerun.

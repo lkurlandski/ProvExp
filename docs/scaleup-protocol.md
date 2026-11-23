@@ -307,3 +307,10 @@ reading its results (PLAN.md step 5).
    (`room_check.parquet`; 192 of 1,000 test malware for the section attack, 114 for the import attack). *Decided
    (user):* monotone-features, monotone-sums and the price list retrain on the rerun M_full table (352 body features
    both -> up after the fifth clause). Record: `docs/evidence/gamma-lief-relayout.md`, section 6.
+   (21) **The validity rule by sets; sections by virtual address (session 104).** *Decided (user):* an output counts
+   only if each parser still finds every section address (a multiset), every DLL (lowercase name) and every imported
+   function ((lowercase DLL, name or `#ordinal`)) the original had. Sections are identified by their virtual address,
+   which no attack changes, so renames, shifts, growth and slack writes pass and a section moved in memory counts as
+   lost; names (renamed by `ren` and MAB-Malware's SR), raw ranges, a count and section content were weighed and
+   rejected. No verdict changes on the 1,217 kept outputs; on session 101's LIEF-era GAMMA sample 2 of 150 gamma_api
+   outputs more are rejected. Record: `docs/evidence/gamma-lief-relayout.md`, section 7.

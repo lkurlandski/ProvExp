@@ -10,8 +10,14 @@ its reasons are in `PLAN.md`. When the session log below grows past about ten en
 in `docs/archive/status-log-2026-11-14-s63.md`, sessions 64-65 in `docs/archive/status-log-2026-11-14-s64-65.md`, sessions 66-76 in
 `docs/archive/status-log-2026-11-15-to-16-s66-76.md`).
 
-## Current state (2026-11-20, through session 103)
+## Current state (2026-11-23, through session 104)
 
+- **Session 104 (experiments):** ERDALT's eight folds finished (2026-11-21); `hgr` merged (GAMMA through our writers
+  is on `main`). The validity rule compares sets (commit 6452038): DLLs by lowercase name, functions by (DLL, name or
+  ordinal), sections by virtual address (user; options weighed, content rejected). Checked: no kept output (1,217)
+  loses a section address or changes verdict; on session 101's LIEF-era sample, 2 of 150 gamma_api outputs more are
+  rejected. Record: `docs/evidence/gamma-lief-relayout.md`, section 7. Next: `docs/resume-prompt-experiments.md`
+  (read the current results with the user, plan the reruns).
 - **Session 103 (experiments):** session 102's reruns read. The catalogue check passes (`pass`, `closed`, `exact`;
   the `ext`/`shf` violations gone). M_add and M_shift unchanged; M_full changed (352 body features both -> up, as the
   fifth clause drops 24 training files): the guaranteed detectors and the price list are retrained in the reruns
@@ -207,16 +213,11 @@ in `docs/archive/status-log-2026-11-14-s63.md`, sessions 64-65 in `docs/archive/
 
 ## Waiting on the user
 
-- **The scale-up's current results are unread with the user; ERDALT's folds run** (job 1239350, tasks 5-8 pending at
-  the end of session 103). Decided so far: GAMMA through our writers (done in session 103, option A), the validity
-  rule by sets (next), reruns after; the current round's numbers go into the manuscript meanwhile. Next session
-  (`docs/resume-prompt-experiments.md`): merge `hgr` once tasks 5-8 have started, the set-based rule, then the reruns
-  (the user's call on what and when). Still open: PV's setup against Gimenez et al.'s; reading every result with the
-  user; ERDALT's attacks (once the folds finish) and `6-results`.
-- **Held on branch `hgr` (worktree `../ProvExp-hgr`): GAMMA through our writers** (session 103; two commits, "Toolkit:
-  GAMMA's sections and imports written by our writers ..." and "Pipeline: GAMMA's room check ..."). They change
-  `provexp.attacks.toolkit`, which ERDALT's folds import when they start: rebase onto `main` and fast-forward once
-  tasks 5-8 of job 1239350 are running. Record: `docs/evidence/gamma-lief-relayout.md`, section 6.
+- **The scale-up's current results are unread with the user; the reruns are to plan.** Done: GAMMA through our
+  writers (session 103, merged in session 104), the validity rule by sets (session 104), ERDALT's eight folds (job
+  1239350, finished 2026-11-21). The current round's numbers go into the manuscript meanwhile. Next session
+  (`docs/resume-prompt-experiments.md`): read every result with the user, then plan the reruns (the user's call on
+  what and when). Still open: PV's setup against Gimenez et al.'s; ERDALT's attacks and `6-results`.
 - **TO DO in the reruns: retrain monotone-features and monotone-sums, then their attacks and the price list**
   (decided, user, session 103). Session 102's rerun of the direction tables changed M_full (M_add and M_shift are
   byte-identical): 352 body features (256 `body_byteentropy`, 96 `body_strings` printable distribution) go from
@@ -285,6 +286,14 @@ in session 100),
 `docs/resume-prompt-theory.md` (theory), `docs/resume-prompt-writing.md` (the manuscript); `docs/resume-prompt.md` holds
 general work and indexes them.
 
+- **2026-11-23 (session 104, Opus, experiments track): `hgr` merged; the validity rule by sets.** Interactive node
+  (16 cores). ERDALT's folds 5-8 had finished (2026-11-21), so `hgr` was fast-forwarded to `main`. The section identity
+  for the set rule weighed with the user (count, virtual address, raw range, names with exemptions, name-or-address;
+  content considered and rejected, as valid attacks change it); the virtual address chosen, as no attack changes it
+  (read from every attack's code; on the 1,217 kept outputs no address lost, while names would have rejected 72 MAB
+  renames). Implemented with 11 tests from real byte edits; full suite 2,024 passed. No kept output changes verdict;
+  2 of 150 LIEF-era gamma_api outputs in session 101's sample are newly rejected. Items 3-5 of the prompt (reading,
+  reruns, right-sizing) moved to the next session (user).
 - **2026-11-20 (session 103, Opus, experiments track): the reruns read; GAMMA through our writers.** Interactive node
   (16 cores). Session 102's reruns: catalogue check passes; M_full changed (352 body features both -> up; the fifth
   clause drops 24 training files on which `ren` wrote body bytes), so the guaranteed detectors and the price list are

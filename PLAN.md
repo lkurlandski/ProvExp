@@ -85,10 +85,11 @@ records of the §5 reviews, the table remake and the ERDALT check, is in
    the guaranteed detectors and the price list retrain in the reruns); GAMMA written by our writers, not applicable
    where no header growth makes room (option A, user); the toolkit part held on branch `hgr` until ERDALT's folds 5-8
    start.
-   **Next:** `docs/resume-prompt-experiments.md`: merge `hgr`; the set-based validity rule; then the reruns (the user's
-   call: toolkit, material, learned defenses and their attacks, the guaranteed detectors and price list, MAB's
-   validity, the adaptive search with `hgr`); PV's setup; reading every result; ERDALT's attacks and `6-results`; then
-   step 5.
+   Session 104 (item (21)): ERDALT's folds finished and `hgr` merged; the validity rule compares sets, sections by
+   virtual address (user); no verdict changes on the kept outputs.
+   **Next:** `docs/resume-prompt-experiments.md`: read the current results with the user and plan the reruns (the
+   user's call: toolkit, material, learned defenses and their attacks, the guaranteed detectors and price list, MAB's
+   validity, the adaptive search with `hgr`, ERDALT's attacks); PV's setup; then `6-results` and step 5.
 4. **While the scale-up runs: §2's closing and contribution 4 against §5** (old step 2 (c)). §2 says §5 "uses them to
    attack malware detectors and to build robust ones"; in §5 the attack is an instrument. The mock's contribution 4 is
    stale ("four to six points", "learned constraints"). Writing only.
