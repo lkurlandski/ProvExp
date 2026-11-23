@@ -47,8 +47,8 @@ IT=$OUT/iterated
 mkdir -p "$IT/logs"
 LIMIT_ARG=()
 if [[ -n "${LIMIT:-}" ]]; then LIMIT_ARG=(--limit "$LIMIT"); fi
-# The twelve operations of M_full without the entry write `ent` (signature cloning), held out of the loop.
-OPERATIONS="app sec imp ext shf slk dos hdr chk ren rdb rsg"
+# The thirteen operations of M_full without the entry write `ent` (signature cloning), held out of the loop.
+OPERATIONS="app sec imp ext shf hgr slk dos hdr chk ren rdb rsg"
 
 previous=adversarial-training
 augment=("$OUT/material/sums")
