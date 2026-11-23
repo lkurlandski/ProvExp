@@ -11,8 +11,19 @@ in `docs/archive/status-log-2026-11-14-s63.md`, sessions 64-65 in `docs/archive/
 `docs/archive/status-log-2026-11-15-to-16-s66-76.md`, sessions 77-94 in
 `docs/archive/status-log-2026-11-16-to-19-s77-94.md`).
 
-## Current state (2026-11-23, through session 104)
+## Current state (2026-11-23, through session 105)
 
+- **Session 105 (experiments):** the old round (session 85's chain) read with the user for red flags. GAMMA API's
+  dominance explained (it switches on ~1,006 of 1,024 hashed import-function features); the byte-level attacks'
+  weakness checked with a positive control (against MalConv the same code evades 5-16 of 20; against our GBDT they
+  barely move the score); the adaptive search's evasions are signature cloning (expected); MAB's 52% vs Zainab et al.'s
+  83% accepted (different detector and malware); validity rejections and ERDALT's folds fine. Decided (user, protocol
+  item (22)): the literature budget for the toolkit and the material; outputs count only up to 4,000,000 bytes (replaces
+  the 5%/512 KiB cap, for every attack and the material); `hgr` in the adaptive and iterated searches; the weak toolkit
+  attacks to an appendix this round; later changes go on a next-round list, applied together. Smoke-tested end to
+  end, old round moved to `artifacts/scaleup/superseded-s105/`, **the full chain submitted by the user** (jobs
+  1260382-1260399, `logs/submit-20261123-141442.txt`; the first four started cleanly). Next:
+  `docs/resume-prompt-experiments.md` (check the chain, then read the new round).
 - **Session 104 (experiments):** ERDALT's eight folds finished (2026-11-21); `hgr` merged (GAMMA through our writers
   is on `main`). The validity rule compares sets (commit 6452038): DLLs by lowercase name, functions by (DLL, name or
   ordinal), sections by virtual address (user; options weighed, content rejected). Checked: no kept output (1,217)
@@ -214,13 +225,13 @@ in `docs/archive/status-log-2026-11-14-s63.md`, sessions 64-65 in `docs/archive/
 
 ## Waiting on the user
 
-- **The scale-up's current results are unread with the user; the reruns are to plan.** Done: GAMMA through our
-  writers (session 103, merged in session 104), the validity rule by sets (session 104), ERDALT's eight folds (job
-  1239350, finished 2026-11-21). The current round's numbers go into the manuscript meanwhile. Next session
-  (`docs/resume-prompt-experiments.md`): read every result with the user, then plan the reruns (the user's call on
-  what and when). Still open: PV's setup against Gimenez et al.'s; ERDALT's attacks and `6-results`.
-- **TO DO in the reruns: retrain monotone-features and monotone-sums, then their attacks and the price list**
-  (decided, user, session 103). Session 102's rerun of the direction tables changed M_full (M_add and M_shift are
+- **The full rerun is running (submitted 2026-11-23, session 105; jobs 1260382-1260399).** It carries every change
+  of sessions 101-105 (GAMMA through our writers, `hgr` and the fifth clause, the validity rule by sets, the literature
+  budget, the 4 MB output rule) and ERDALT's attacks; the old round's numbers stay in the manuscript until it is read.
+  Next (`docs/resume-prompt-experiments.md`): check it, then read every result with the user. Still open: PV's setup
+  against Gimenez et al.'s (the sample-size experiment, after the rerun).
+- **In the rerun (decided, user, session 103): monotone-features and monotone-sums retrained, then their attacks and
+  the price list**. Session 102's rerun of the direction tables changed M_full (M_add and M_shift are
   byte-identical): 352 body features (256 `body_byteentropy`, 96 `body_strings` printable distribution) go from
   "both" (dropped) to "up" (kept, monotone), because the fifth clause removes the 24 training files on which `ren`
   wrote body bytes through a section table running into the body (population 18,474 -> 18,450). Both detectors and
@@ -231,6 +242,11 @@ in `docs/archive/status-log-2026-11-14-s63.md`, sessions 64-65 in `docs/archive/
   becomes additions plus, on files without header room, a shift. Session 103: GAMMA is not applicable where no growth
   makes room (192 of 1,000 test malware for the section attack, 114 for the import attack; a sentence with the
   applicability rule), and the import attack is weaker without LIEF's rebuild (worth a sentence once the rerun is read).
+  Session 105 (number-free, can be written now): the attack budget is the GAMMA paper's for every toolkit attack; the
+  byte budget becomes "an output counts only if it is at most 4 MB, the files the study concerns"; the byte-level
+  toolkit attacks were built for byte-level models and barely move a feature-based GBDT (checked with a MalConv
+  positive control), so they move to an appendix and GAMMA API carries the toolkit; the adaptive search includes
+  header growth; Zainab et al.'s 83% is not reproduced because their detector and malware differ (not a claim to make).
 - **Deferred, approved by the user (session 85): PV's sample-size experiment** for an appendix explaining why PV works
   less well than prior work suggests (design in `docs/scaleup-protocol.md`, item (17)). Run after the reruns.
 - **Extractor quirks the validity rule exposes** ("pefile only" rejections: ~0.2% of outputs in session 85's sample,
