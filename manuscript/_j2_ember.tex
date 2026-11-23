@@ -190,15 +190,27 @@ detector's trees weigh toward benign. Every file it keeps is written with our ow
 again.
 % scripts/a1_adaptive.py, --search beam (run 127): beam_search; target_buckets reads the booster.
 
+\paragraph{The toolkit attacks.} Each runs secml-malware's genetic algorithm at the budget of the GAMMA
+paper~\cite{demetrio2021functionality}: a population of 10 over 51 iterations, with 75 benign donor files. The five
+byte-level attacks were built for models that read the raw bytes, and against our detectors they rarely evade
+(\Cref{tab:ember:per-attack}). Against secml-malware's pretrained MalConv~\cite{raff2018malware}, the model they were
+built for, the same code and budget evade between 5 and 16 of 20 malware files, so neither the code nor the budget is
+the reason. The released GAMMA attacks write their sections and imports through the LIEF library~\cite{lief}, which
+rebuilds the file's layout and moves content that no operation moves. We keep GAMMA's search and write the edits it
+chooses with our own code, growing the headers first where they lack room for the new section headers; where no growth
+makes room, the attack does not apply to the file.
+% docs/scaleup-protocol.md item (22): diag/s105/malconv_control.py (16, 14, 9, 6, 5 of 20) and toolkit_reach.py.
+
 \paragraph{MAB-Malware.} We run the authors' code unchanged except for how it hands files to the detector. Upstream,
 the attack, its minimizer and the detector run as three threads that pass files through folders on disk; we call the
 same steps in the same order from one thread and score each file when it is handed over, and we checked on test files
 that this produces the same actions, outputs and bandit state as the original hand-over. One run attacks all the
 malware a detector detects, so the bandit learns from one detector at a time. \Cref{tab:ember:per-attack} gives the
 evasions of every attack separately. Zainab et al.~\cite{zainab2026breaking} report that MAB-Malware evades their
-EMBER~2024 detector on 83\% of the malware, at a 0.1\% false-positive rate and with no limit on the bytes it adds. At
-our 1\% rate and byte budget, it evades the unconstrained detector trained on the full training set on none of the 49
-malware it detects, and on 16 if outputs over the budget count; the one trained on the 10\% subsample, on 10 of 47.
+EMBER~2024 detector on 83\% of the malware, at a 0.1\% false-positive rate. Their detector and malware differ from
+ours, so the two rates describe different setups: at our 1\% rate, it evades the unconstrained detector trained on the
+full training set on none of the 49 malware it detects, and the one trained on the 10\% subsample on 10 of 47.
+% Old round's values (5%/512 KB cap); the new round (4 MB rule, session 105) replaces them.
 % Zainab et al., Table I (MAB-Malware on EMBER-24, 83.40%) and Table IX (EMBER-24 at 0.1% FPR); no byte limit stated.
 % Run 139: unconstrained (gbdt/seed-0) 0/49, 16 evasive outputs over max(5% of the file, 512 KB), all by appending
 % benign sections. At our detector's 0.1% FPR threshold (0.958), the lowest score reached is below it on 22 of the 40

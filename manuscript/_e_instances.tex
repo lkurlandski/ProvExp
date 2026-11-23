@@ -16,7 +16,8 @@ The instance we consider is static malware detection on Windows, where a classif
 file is malicious without running it. Windows executables use the Portable Executable (PE) format. A PE file starts
 with headers, which describe the rest of the file and hold what the operating system needs to load the program.
 Sections follow, which hold the code, the data, and the resources, together with tables such as the import table,
-which lists the functions the program uses from other libraries. Bytes after the last section form the overlay, which
+which lists the functions the program uses from other libraries. The headers locate each table through an entry of
+the \emph{data directory}, which gives the table's position and size. Bytes after the last section form the overlay, which
 the loader does not map. EMBER~\cite{anderson2018ember} is the standard benchmark for this task (we use the most
 recent version, EMBER-v3~\cite{joyce2025ember}). Its extractor parses a file and computes 2,568 features that describe
 these structures by their metadata and statistics: the header fields, the size, entropy, and characteristics of each
@@ -50,8 +51,9 @@ direction $\mathsf{both}$, which is always sound. A monotone detector reads no f
 (\Cref{sec:fw:robust}), so for a detector the two choices coincide. We drop the warnings. Earlier versions of EMBER did
 not compute them~\cite{joyce2025ember},
 and a detector trained without them loses no detection (0.1 points more at a 1\% false-positive rate). % run 126 (pilot)
-We also change one rule of EMBER's parser: it starts the overlay where the last section or data directory ends, and we
-start it where the last section ends, as LIEF~\cite{lief} does, so that writing a directory entry the loader ignores
+
+We also change one rule of EMBER's parser: it starts the overlay where the last section or table ends, and we start it
+where the last section ends, as LIEF~\cite{lief} does, so that writing a data directory entry the loader ignores
 cannot move the overlay. \Cref{sec:ember} lists every change we make to EMBER, with the reason for each.
 % R7, docs/evidence/r7-overlay-rule.md §5 (user, 2026-11-13): LIEF's rule installed in pefile by features.py (f0d2bb1).
 
@@ -72,19 +74,23 @@ are implemented in the secml-malware library~\cite{demetrio2021adversarial}. We 
 list the operations each one uses in \Cref{tab:instances:catalogue}, and run them against every detector in
 \Cref{sec:evaluation}.
 
-Our threat model is the union of these edits, with one generalization, thirteen operations in all
+Our threat model is the union of these edits and two more, fourteen operations in all
 (\Cref{tab:instances:catalogue}), with all content (bytes, section names and properties, imported names) chosen by the
-attacker within a byte budget. The loader maps the data of neither the debug directory nor the certificate table, so it
-ignores their entries in the header, and an attacker who can remove an entry can as well set it to any value. This
-write lets the attacker point the certificate entry at a signature copied from a benign program and appended to the
+attacker. Its only limit on size is the scope of our study, files of at most 4~MB (\Cref{sec:eval:setup}): an edited
+file must remain one. The first operation we add, the \emph{entry write}, sets the debug or the certificate entry
+in the header to any value. It generalizes MAB-Malware's removals: the loader maps the data of neither the debug
+directory nor the certificate table, so it ignores their entries, and an attacker who can remove an entry can as well
+set it to any value. The entry write lets the attacker point the certificate entry at a signature copied from a benign program and appended to the
 file. EMBER's extractor parses a signature but does not verify it, so the copy describes the file as signed by the
 benign program's publisher. Malware in the wild copies signatures this way, and such copies led 34 anti-virus
-products to miss known malware~\cite{kim2017certified}.
+products to miss known malware~\cite{kim2017certified}. The second, \emph{header growth}, inserts a gap at the end of
+the headers so that the headers of new sections fit, which adding a section needs on a file whose headers lack room.
 % The extractor's authenticode features (signify) count certificates and read signing times; nothing checks the hash.
+
 The operations form three nested threat models. \emph{Additions} only add content, the setting monotone detectors are
-designed for; \emph{shifts} adds the two insertions that move existing content; and \emph{full} adds every overwrite
-and removal. The attacker we model works on the binary alone: it edits the file's structure, and does not recompile the
-program, pack it, or rewrite its code. Packing replaces the file with a different program that restores the original at
+designed for; \emph{shifts} adds the three insertions that move existing content; and \emph{full} adds every overwrite
+and removal. In all three, the attacker works on the binary alone: it edits the file's structure, and does not
+recompile the program, pack it, or rewrite its code. Packing replaces the file with a different program that restores the original at
 run time~\cite{demetrio2021adversarial}, so no item of the original survives it. Code-level transformations replace or
 move instructions while keeping their meaning~\cite{song2022mab,lucas2021malware,lucas2023adversarial,ling2024wolf}.
 Lucas et al.~\cite{lucas2021malware} apply them to binaries without breaking the program, by disassembling and
@@ -93,7 +99,7 @@ structural edits do not need; we leave them to future work (\Cref{sec:discussion
 
 \begin{table}[t]
   \caption{The operations of the threat model. Each threat model adds operations to the one above it; the toolkit
-  attacks use six of the thirteen. Changes: declared, the operation states its changes to the items; item tables, the
+  attacks use seven of the fourteen. Changes: declared, the operation states its changes to the items; item tables, the
   changes of an overwrite are collected from the item tables of the population's files. All content, names, and
   properties are the attacker's choice.}
   \label{tab:instances:catalogue}
@@ -109,6 +115,7 @@ structural edits do not need; we leave them to future work (\Cref{sec:discussion
     insert a gap before the PE header & declared & shifts & \raggedright DOS extension, format exploit \tabularnewline
     insert a gap before the first section & declared & shifts &
       \raggedright content shift, GAMMA shift, format exploit \tabularnewline
+    grow the headers & declared & shifts & \raggedright GAMMA sections, GAMMA imports \tabularnewline
     overwrite section slack & item tables & full & \\
     overwrite the DOS header and stub & item tables & full & \\
     overwrite loader-ignored header fields & item tables & full & header fields \\
@@ -116,7 +123,7 @@ structural edits do not need; we leave them to future work (\Cref{sec:discussion
     rename a section & declared & full & \\
     remove the debug directory entry & declared & full & \\
     remove the certificate table entry & declared & full & \\
-    overwrite the debug or certificate entry & item tables & full & \\
+    entry write: debug or certificate entry & item tables & full & \\
     \bottomrule
   \end{tabular}
 \end{table}
@@ -128,22 +135,23 @@ Theorem~\ref{thm:fw:directions} needs a signature that covers the threat model (
 for each kind of item, the changes the operations can make to items of that kind. Ours has two sources. Most
 operations declare their changes, and we check each declaration by applying edits and extracting the files again. The
 rest is read from the item tables of a sample of files, which record the items each position belongs to and the sums
-each item contributes to. From them come the changes of the four overwrites and, for each kind of item, the sums its
-items can feed. This part rests on the sample rather than on a proof: Theorem~\ref{thm:fw:directions} holds if every
-kind of item that an overwrite's positions belong to, and every sum that an item of a given kind feeds, on any file
-of the population, already occurs in the sample. \Cref{sec:eval:setup} checks this on the directions the signature
+each item contributes to. From them come the changes of the five overwrites and, for each kind of item, the sums its
+items can feed. This part rests on the sample rather than on a proof: what the sample does not show, the signature
+does not cover. Theorem~\ref{thm:fw:directions} holds as long as no file of the population lets an overwrite reach a
+kind of item, or lets an item feed a sum, that no file of the sample does. \Cref{sec:eval:setup} checks this on the directions the signature
 gives: those derived from 100 files are the same as those derived from 2,000, and no edit moved a feature in a
 direction they rule out.
 
 The declared changes follow from what each operation does to the file. Adding a section adds the section and the bytes
 of its content, and replaces the header fields it must update, such as the number of sections and the size of the image.
-Appending adds bytes and adds or extends the overlay. Renaming a section keeps the section and replaces its name, and
+Appending adds bytes and adds or extends the overlay. Inserting a gap adds its bytes, re-tiles the entropy windows
+after it, which lie at fixed offsets, and raises the header fields that point past it, such as the offsets of the
+sections' data. Renaming a section keeps the section and replaces its name, and
 each removal declares the items it removes.
 
-The five overwrites, of slack, of the DOS header and stub, of header fields the loader ignores, of the checksum, and of
-the two directory entries, are defined by the positions they write instead, and their changes come from the item tables, which record the items
-each position belongs to. An overwrite can also land on a position that the parser reads to find other items, such as
-an entry of the section table or a field that gives the location of a table. The entry write always does: it writes
+The item tables give the changes of an overwrite at the positions it writes, with one exception: an overwrite can
+also land on a position that the parser reads to find other items, such as an entry of the section table or a field
+that gives the location of a table. The entry write always does: it writes
 where the extractor looks for the signature and the debug data. Such a write can change which items the
 extractor finds, in a way the item table does not record. The signature then allows any change to the items of that
 kind, and for a single edit we decline to compute the side effects; Appendix~\ref{sec:ember} counts how often this
@@ -157,9 +165,10 @@ The signature covers the threat model only over a population, and Proposition~\r
 population closed under the threat model. Ours is the complete PE files with a plain layout. A file is complete when everything
 the parser locates lies within it, except the debug data and the signature, which may lie past its end: the entry write
 can point either there, and the population must stay closed under it. Its layout is plain when the sections lie within the image that the loader
-maps and the headers hold only headers. On other files an edit can change items that no operation declares. Appending to an
+maps, the headers hold only headers, and the section table ends within them. On other files an edit can change items that no operation declares. Appending to an
 incomplete file, for instance, supplies content the parser looked for and did not find, instead of extending the
-overlay. Closure is checked rather than proven: none of the 56,902 edits of \Cref{sec:eval:setup} that were applied to
+overlay. Completeness and layout are properties of the parse, not bounds on features, so Lemma~\ref{lem:fw:closure} does not
+apply, and closure is checked instead: none of the 56,902 edits of \Cref{sec:eval:setup} that were applied to
 files in the population took a file out of it.
 
 Almost every file outside the population is incomplete: its headers locate sections or tables that lie, at least in

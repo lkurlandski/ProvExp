@@ -50,12 +50,16 @@ them}.
 % finished (PLAN.md, step 5).
 
 \paragraph{Attacks}
-An attack evades a detector when it drives a detected malware sample below the detector's threshold, adding at most
-5\% of the file or 512~KB, whichever is larger. We first run the eight toolkit attacks of
+An attack evades a detector when it drives a detected malware sample below the detector's threshold with an output
+of at most 4~MB, the files our study concerns. We first run the eight toolkit attacks of
 \Cref{sec:instances:catalogue}, the published attacks a practitioner can run off the shelf, and the ones Gimenez et
 al.~\cite{gimenez2025certifiably} learn their defense from. They are black-box: each applies one kind of edit and tunes
-it with a genetic algorithm that sees only the detector's score, with 100 queries per file, the low budget of the attack
-script that Gimenez et al. released. A detector these attacks fail to evade may still fall to an attacker who knows the model and combines edits. We therefore
+it with a genetic algorithm that sees only the detector's score, with the budget of the GAMMA paper~\cite{demetrio2021functionality},
+about 500 queries per file and 75 benign donor files. Five of them, the byte-level attacks (DOS extension, content
+shift, padding, format exploit, header fields), were built for byte-level models such as MalConv~\cite{raff2018malware}
+and barely move a detector on EMBER's features, although the same code and budget evade a pretrained MalConv on 5 to
+16 of 20 files; we report them in Appendix~\ref{sec:ember}, and GAMMA's import attack carries the toolkit's results
+here. A detector these attacks fail to evade may still fall to an attacker who knows the model and combines edits. We therefore
 also implement a white-box adaptive attack, in the spirit of Tramèr et al.~\cite{tramer2020adaptive}, to test
 on real files whether a detector can be evaded where the directions say it can, and not where they say it cannot. It
 reads the detector's trees, combines any operations of the full threat model (\Cref{tab:instances:catalogue}) unless
@@ -87,7 +91,7 @@ it; Appendix~\ref{sec:ember} reports each attack separately.
 \paragraph{Checking results}
 We count an evasion only after writing the edited file with our own code and running EMBER's extractor on it; the
 features we compute guide the adaptive attack but never decide a result. To test the computed side effects and
-directions themselves, we applied each of the twelve operations several times to each of 2,000 test files, 73,063
+directions themselves, we applied each of the fourteen operations several times to each of 2,000 test files, 73,063
 edits in all, with parameters chosen to provoke mistakes, such as colliding names and empty imports. The computation
 declines only edits that write bytes the parser reads to find other structures, and the adaptive attack skips them; it
 predicts every other edit (Appendix~\ref{sec:ember}). On every predicted edit to a file in the population
@@ -114,7 +118,7 @@ The hand table we wrote makes eight errors (\Cref{tab:eval:directions}): in each
 feature in a direction the hand rule excluded. Four of them hold in the population the detectors are built for, and
 four lie outside it, where a hand table silently stops being sound and the derived one declines. To write it, we read
 the extractor's code and each operation's declared effects, and recorded for each of EMBER's feature groups and each of
-the twelve operations which way the group's features could move. We knew the extractor well and had its source open,
+the fourteen operations which way the group's features could move. We knew the extractor well and had its source open,
 the realistic setting for such an analysis. Elsewhere the two tables agree, except on the size of the certificate
 table, which the hand table leaves free and the derived one allows only to decrease.
 
@@ -489,19 +493,13 @@ direction only.
 % seed-0 87.0, s10-ref 84.4, mfull-feat-pre-v2 70.9, mfull-sums-pre-v2 74.7, madd-sums-pre-v2 79.8, expert-mono 14.8.
 
 \paragraph{Beyond the guarantee}
-Real attack tools do not always edit a file the way an operation declares. Six of the eight toolkit attacks write
-byte-level edits of operations in the threat model, but GAMMA sections and GAMMA imports go through a library that
-rebuilds the file's layout, which no operation does. Of the 288 toolkit outputs on files in the population, 252 move
-every feature within the derived table; the 36 others all come from the two rebuilding attacks, and most of them change
-the size of the resource directory, which the table holds fixed. Corollary~\ref{cor:fw:robustness} says nothing about
-these files, yet the two rebuilding attacks evade neither monotone detector on any file in the population that it
-detects, 28 files for the detector on the features and 30 on the sums. Of the 35 malware in the population that the
-unconstrained detector detects, GAMMA imports evades it on 21 and GAMMA sections on 6. With the budget of the GAMMA
-paper~\cite{demetrio2021functionality}, about 500 queries instead of 100 and a larger pool of donor content, GAMMA
-imports evades the unconstrained detector on 27 of the 47 malware it detects and still evades neither monotone
-detector on a file in the population. MAB-Malware also writes some edits its own way: when it removes the debug or
-certificate entry, it zeroes the data the entry pointed to as well, which no operation does. It never lowers either
-monotone detector's score, on any file.
+Real attack tools do not always edit a file the way an operation declares. When MAB-Malware removes the debug or
+certificate entry, it zeroes the data the entry pointed to as well, which no operation does.
+Corollary~\ref{cor:fw:robustness} says nothing about such outputs, yet MAB-Malware never lowers either monotone
+detector's score, on any file.
+% Session 106 (user): GAMMA's LIEF rebuild is not mentioned in the body (GAMMA now writes through our writers, its
+% outputs lie in the threat model; Appendix D's toolkit paragraph says so). The GAMMA split comments below are the old
+% round's (LIEF-era) record.
 % MEASURED (run 139): RD and RC pulled 236-244 times on each monotone detector; p_lowest = p_clean on every file,
 % in the population or not (see The price). Upstream arm.py: ArmRD zeroes the CodeView data (debug type 2) and the entry, ArmRC zeroes the
 % certificate bytes and the entry.
