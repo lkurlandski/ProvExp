@@ -11,7 +11,19 @@ in `docs/archive/status-log-2026-11-14-s63.md`, sessions 64-65 in `docs/archive/
 `docs/archive/status-log-2026-11-15-to-16-s66-76.md`, sessions 77-94 in
 `docs/archive/status-log-2026-11-16-to-19-s77-94.md`).
 
-## Current state (2026-11-23, through session 105)
+## Current state (2026-11-23, through session 106)
+
+- **Session 106 (writing):** §4 reviewed (humanistic review, eight findings, all approved and applied), the decided
+  methodology of sessions 102-105 written into §4, §5 and Appendix D (header growth as a fourteenth operation, the
+  fifth layout clause, the 4 MB scope instead of a byte budget, the GAMMA paper's budget, the byte-level toolkit
+  attacks framed and sent to the appendix, GAMMA's LIEF rebuild out of the body and into the appendix, Zainab et al.
+  as a comparison of different setups). Then §4 restructured with the user around what §5 needs: the PE paragraph in
+  the lead; 4.1 *EMBER as a Sum-then-Readout Extractor* (now introduces reading the sums), 4.2 *Threat Model*, 4.3
+  *Signature*, 4.4 *Population*; the toolkit introduced in §5.1. Appendix D mirrors §4's subsections (D.1-D.3, the
+  declared changes and the five layout clauses moved there); the attacks and defenses split into a new Appendix E
+  *Attacks and Defenses* (`_j3_attacks.tex`). §4: 1,840 words by texcount (about 1,710 of prose; user: 1,500 fine,
+  1,700 acceptable, 2,000 too long). Next: `docs/resume-prompt-writing.md` (a fresh humanistic review of §4, then the
+  cut).
 
 - **Session 105 (experiments):** the old round (session 85's chain) read with the user for red flags. GAMMA API's
   dominance explained (it switches on ~1,006 of 1,024 hashed import-function features); the byte-level attacks'
@@ -237,7 +249,10 @@ in `docs/archive/status-log-2026-11-14-s63.md`, sessions 64-65 in `docs/archive/
   wrote body bytes through a section table running into the body (population 18,474 -> 18,450). Both detectors and
   `4-detectors/price-list` read `M_full-pre.*` (`4-detectors/train/run.sh:77`). The current detectors stay sound
   (they drop more than they need to); the retrain makes every number come from one table.
-- **For the writing track (session 102):** the paper's operations table gains a fourteenth operation (header growth,
+- **For the experiments track (session 106, user):** the hand table is to be extended to all fourteen operations
+  (the entry write and header growth are missing); §5.2 already says "each of the fourteen operations". Check whether
+  its errors (Table 3) change.
+- ~~**For the writing track (session 102):**~~ (written in session 106; kept for the record) the paper's operations table gains a fourteenth operation (header growth,
   a shift), and §4.4's population gains a fifth layout clause (the section table ends within the headers); GAMMA
   becomes additions plus, on files without header room, a shift. Session 103: GAMMA is not applicable where no growth
   makes room (192 of 1,000 test malware for the section attack, 114 for the import attack; a sentence with the
@@ -276,8 +291,7 @@ in `docs/archive/status-log-2026-11-14-s63.md`, sessions 64-65 in `docs/archive/
   - `monotone_violations` called in `4-detectors/train` before the scale-up trains, so that §5.1's blue sentence
     (proof note 5, `% SYNTHETIC, TO VERIFY EXPERIMENTALLY`) can be confirmed or reworded;
   - optional: `reach.py`'s rule for a normalized bin is the old, looser one (sound; same table under free content).
-- **`make check` reports one overfull vertical box** (1 pt, the last pages of Appendix D) since c2fee51: the text
-  above reflowed. Left for the next edit of Appendix D.
+- ~~**`make check` reports one overfull vertical box**~~ (gone after session 106's appendix edits).
 
 ## Scheduled (in order; PLAN.md, next steps)
 
@@ -303,6 +317,18 @@ in session 100),
 `docs/resume-prompt-theory.md` (theory), `docs/resume-prompt-writing.md` (the manuscript); `docs/resume-prompt.md` holds
 general work and indexes them.
 
+- **2026-11-23 (session 106, Opus, writing track): §4 reviewed, updated, restructured; Appendix D/E.** The
+  humanistic review's eight findings approved and applied (the entry write named; the three threat models in their own
+  paragraph; five overwrites; the insertions' declared changes; the sample condition rewritten; item tables not
+  re-glossed; why Lemma 3 does not give closure; the overlay rule in its own paragraph; data directory in the PE
+  paragraph). Part 2 of the prompt in one pass (user); the user decided: the hand table goes to fourteen operations
+  (experiments track), GAMMA's rebuild is not mentioned in the body (appendix only). Then the user asked to rethink §4
+  as the bridge from §3 to §5: what §5 needs (the features, the edits by §5's names, what is proven and what is
+  checked, where the guarantee holds); the structure agreed and applied (see Current state). The user is considering
+  moving §3.4's robust detectors into §5 (merging 3.3 and 3.4); checked: §4 no longer refers to §3.4's detectors, and
+  the plan does not change. The LOO table was silently lost as the last float of the appendix (only an undefined
+  reference showed it); placed before the per-attack table. Also noticed: a stray fragment at the end of §5.4's *The
+  width of the threat model* ("model, and with it which edits ..."), not fixed.
 - **2026-11-23 (session 104, Opus, experiments track): `hgr` merged; the validity rule by sets.** Interactive node
   (16 cores). ERDALT's folds 5-8 had finished (2026-11-21), so `hgr` was fast-forwarded to `main`. The section identity
   for the set rule weighed with the user (count, virtual address, raw range, names with exemptions, name-or-address;
