@@ -11,7 +11,17 @@ in `docs/archive/status-log-2026-11-14-s63.md`, sessions 64-65 in `docs/archive/
 `docs/archive/status-log-2026-11-15-to-16-s66-76.md`, sessions 77-94 in
 `docs/archive/status-log-2026-11-16-to-19-s77-94.md`).
 
-## Current state (2026-11-23, through session 106)
+## Current state (2026-11-23, through session 107)
+
+- **Session 107 (writing):** a fresh humanistic review of §4 (eight findings and minor points), applied in one pass
+  except what rested on the out-of-date §5 (user): the population's completeness exempts the debug data and the
+  signature (as in Appendix D.3); "incomplete" separated from the 4 MB truncation; what is proven and what is checked
+  stated in 4.3; the item table named in 4.1; declined edits in their own sentence; the overlay rule tied to the entry
+  write; Lemma 3 restated; the attacker's knowledge; Appendix D.2's position record introduced. The *shifts* model is
+  kept (unused by the current §5; revisit when §5 is updated). Then `cut-to-length`: 19 items; the user approved the 14
+  unflagged ones (the five ⚑ items restored), §4 from 1,956 to 1,792 words (lead 275, 4.1 427, 4.2 486 with Table 2's
+  caption, 4.3 339, 4.4 264; user's range 1,500-1,700). Next:
+  `docs/resume-prompt-writing.md` (bring §5 up to date).
 
 - **Session 106 (writing):** §4 reviewed (humanistic review, eight findings, all approved and applied), the decided
   methodology of sessions 102-105 written into §4, §5 and Appendix D (header growth as a fourteenth operation, the
@@ -317,6 +327,10 @@ in session 100),
 `docs/resume-prompt-theory.md` (theory), `docs/resume-prompt-writing.md` (the manuscript); `docs/resume-prompt.md` holds
 general work and indexes them.
 
+- **2026-11-23 (session 107, Opus, writing track): §4 reviewed again and cut.** Review findings approved, all fixes
+  in one pass by Claude's judgement, nothing changed on account of §5, which is out of date (user). Cut to 1,792 words
+  (14 of 19 items; the five ⚑ items rejected and restored; three slips fixed after reading the PDF: `\Cref` rendering Appendix D as "Section D", a
+  colon misreading, "checked ... checks"). Commits 019c1c2, 63eec48, and the restore.
 - **2026-11-23 (session 106, Opus, writing track): §4 reviewed, updated, restructured; Appendix D/E.** The
   humanistic review's eight findings approved and applied (the entry write named; the three threat models in their own
   paragraph; five overwrites; the insertions' declared changes; the sample condition rewritten; item tables not

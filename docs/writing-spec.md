@@ -497,3 +497,12 @@ al., search over transformations ... The toolkits ... work this way ... We compu
 itself ..."): "This is one of the worst things I have ever seen you write. I do not approve it." Reverted.
   The user, next turn: "The original paragraph wasn't that long to begin with, it read smoothly, and it emphasized the
   correct ideas at an appropriate level." (The cut version read as abrupt and jarring, in cruder words.) Kept as is.
+
+**2026-11-23 (session 107), §4 review and cut.** Fresh humanistic review of §4 (eight findings plus minor points and
+Appendix D's pairing). The user: "Okay, keep in mind that section 5 is quite out of date and we'll update it in the
+next session. We shouldn't make changes to section 4 based on things from 5 that are out of date. Otherwise, I approve
+for you to make all suggested changes, in one pass, based on your best judgement." (So the *shifts* model, unused by
+the current §5, was kept.) The cut, 19 items from 1,956 to 1,695 words, ordered least to most disruptive with ⚑ on
+five: "I approve them all." Then, while Claude was writing the docs: "Actually, I approve all except the ⚑ items.
+Sorry." The five ⚑ items (the lead's feature list, header growth's "when", the Definition 5 tie for dropped
+features, the population shares' restated definition, the parser-read positions paragraph) restored; 1,792 words.
