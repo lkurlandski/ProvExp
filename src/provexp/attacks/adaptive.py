@@ -48,7 +48,7 @@ __all__ = ["Donors", "Engine", "HDR_FIELDS", "Operation", "RealEngine", "THREAT"
 
 
 # The threat models' operation sets (pipeline/3-directions/derived/directions.py): additions, gap insertions, in-place overwrites.
-ADD, INSERT, OVERWRITE = ("app", "sec", "imp"), ("ext", "shf"), ("slk", "dos", "hdr", "chk", "ren", "rdb", "rsg", "ent")
+ADD, INSERT, OVERWRITE = ("app", "sec", "imp"), ("ext", "shf", "hgr"), ("slk", "dos", "hdr", "chk", "ren", "rdb", "rsg", "ent")
 
 
 THREAT = {"M_add": ADD, "M_shift": ADD + INSERT, "M_full": ADD + INSERT + OVERWRITE}
@@ -672,6 +672,38 @@ def _gap_candidate(engine: Engine, op: str, at_pe_header: bool, kind: int, donor
     return (op, 1 << 16, thunk)
 
 
+def _hgr_candidate(engine: Engine) -> Candidate:
+    """Grow the headers by the smallest gap that frees one more section-header slot (`hgr`; catalogue.grow_headers_for)."""
+
+    def thunk(z: bytes) -> tuple[np.ndarray, bytes, int]:
+        grown = catalogue.grow_headers_for(z, catalogue.section_slots(z, 64) + 1)
+        if grown is None:
+            raise RuntimeError("the headers cannot grow")
+        return engine.score(grown.new), grown.new, max(0, len(grown.new) - len(z))
+
+    return ("hgr", 1 << 16, thunk)
+
+
+def _with_room(engine: Engine, candidate: Candidate) -> Candidate:
+    """
+    A `sec` or `imp` candidate that, on a file whose headers have no free slot for its section header, grows them first
+    by the smallest gap that makes room (`hgr`, as GAMMA's writers do; the output then lies in M_shift). Its name stays
+    the candidate's; the result's `header_growth` records whether the end file's headers grew.
+    """
+    name, maxbytes, inner = candidate
+
+    def thunk(z: bytes) -> tuple[np.ndarray, bytes, int]:
+        if catalogue.section_slots(z, 1) >= 1:
+            return inner(z)
+        grown = catalogue.grow_headers_for(z, 1)
+        if grown is None:
+            raise RuntimeError("no header growth makes room for a section header")
+        _, new, _ = inner(grown.new)
+        return engine.score(new), new, max(0, len(new) - len(z))
+
+    return (name, maxbytes + (1 << 16), thunk)
+
+
 def _append_candidates(donors: Donors, rng: np.random.Generator, engine: Engine) -> list[Candidate]:
     size = int(rng.choice([4096, 65536]))
     blobs = [b"\x00" + rng.integers(0, 256, size=size, dtype=np.uint8).tobytes(),
@@ -694,18 +726,19 @@ def full_menu(engine: Engine, donors: Donors, rng: np.random.Generator, targets:
     on top of it, not in place of it, so adding them cannot weaken the search by starving it of section candidates.
     """
     out: list[Candidate] = []
+    room: Callable[[Candidate], Candidate] = (lambda c: _with_room(engine, c)) if "hgr" in ops else (lambda c: c)
     if "app" in ops:
         out += _append_candidates(donors, rng, engine)
     if "sec" in ops and donors.sections:
         for i in (int(x) for x in rng.permutation(len(targets))[:sec_targeted]):
             content = donors.sections[int(rng.integers(len(donors.sections)))][1][: int(rng.choice([4096, 65536]))]
-            out.append(_sec_candidate(engine, names[targets[i]], content))
+            out.append(room(_sec_candidate(engine, names[targets[i]], content)))
         name = "." + "".join(chr(int(c)) for c in rng.integers(0x61, 0x7b, size=3))
-        out.append(_sec_candidate(engine, name, donors.sections[int(rng.integers(len(donors.sections)))][1][:4096]))
+        out.append(room(_sec_candidate(engine, name, donors.sections[int(rng.integers(len(donors.sections)))][1][:4096])))
     if "imp" in ops and donors.imports:
         for _ in range(2):
             library, functions = donors.imports[int(rng.integers(len(donors.imports)))]
-            out.append(_imp_candidate(engine, library, functions))
+            out.append(room(_imp_candidate(engine, library, functions)))
     if "ren" in ops:
         for i in (int(x) for x in rng.permutation(len(targets))[:3]):
             out.append(_ren_candidate(engine, names[targets[i]]))
@@ -721,6 +754,8 @@ def full_menu(engine: Engine, donors: Donors, rng: np.random.Generator, targets:
         if op in ops:
             donor = donors.sections[int(rng.integers(len(donors.sections)))][1] if donors.sections else b""
             out.append(_gap_candidate(engine, op, at, int(rng.integers(0, 3)), donor))
+    if "hgr" in ops:
+        out.append(_hgr_candidate(engine))
     for op, index in (("rdb", DEBUG_ENTRY), ("rsg", SECURITY_ENTRY)):
         if op in ops:
             out.append(_rm_candidate(engine, op, index))
@@ -1052,7 +1087,7 @@ def _attack_file(task: tuple[str, str, float, list[tuple[int, int]], str, bytes,
     if best_file != data:
         original, why = structure(data)
         invalid = (output_invalid(original, best_file) or "") if original is not None else f"start file: {why}"
-    r.update(valid=not invalid, invalid_reason=invalid)
+    r.update(valid=not invalid, invalid_reason=invalid, header_growth=_headers_grew(data, best_file))
     if cfg.get("save_rows"):
         # The best file's re-extracted feature row, in the store's layout (`--score real`), for adversarial training.
         r["phi"] = engine.score(best_file).astype(np.float32).tolist()
@@ -1060,6 +1095,18 @@ def _attack_file(task: tuple[str, str, float, list[tuple[int, int]], str, bytes,
              start_in_population=start_in_pop, evaded_by_escape=bool(p_clean <= tau), truncated=len(data) >= MAX_LENGTH,
              overrun_section=overrun, seconds=time.time() - t0)
     return r
+
+
+def _headers_grew(start: bytes, end: bytes) -> bool:
+    """Whether the end file's SizeOfHeaders exceeds the start file's (a header growth, `hgr`, took place)."""
+    if end == start:
+        return False
+    try:
+        a = pefile.PE(data=start, fast_load=True).OPTIONAL_HEADER.SizeOfHeaders
+        b = pefile.PE(data=end, fast_load=True).OPTIONAL_HEADER.SizeOfHeaders
+    except Exception:
+        return False
+    return bool(b > a)
 
 
 class _Padded(lightgbm.Booster):

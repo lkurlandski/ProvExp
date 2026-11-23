@@ -20,12 +20,20 @@ warnings.filterwarnings("ignore", category=SyntaxWarning)
 ROOT = Path(__file__).parent.parent
 from provexp.attacks.adaptive import DATA_PROPS  # noqa: E402
 from provexp.attacks.adaptive import Donors  # noqa: E402
+from provexp.attacks.adaptive import THREAT  # noqa: E402
+from provexp.attacks.adaptive import RealEngine  # noqa: E402
+from provexp.attacks.adaptive import _headers_grew  # noqa: E402
+from provexp.attacks.adaptive import _hgr_candidate  # noqa: E402
+from provexp.attacks.adaptive import _sec_candidate  # noqa: E402
 from provexp.attacks.adaptive import _tie_order  # noqa: E402
+from provexp.attacks.adaptive import _with_room  # noqa: E402
+from provexp.attacks.adaptive import full_menu  # noqa: E402
 from provexp.attacks.adaptive import bucket_names  # noqa: E402
 from provexp.attacks.adaptive import engine_predictors  # noqa: E402
 from provexp.attacks.adaptive import menu  # noqa: E402
 from provexp.attacks.adaptive import prepare_files  # noqa: E402
 from provexp.featuresets.ember2024 import catalogue  # noqa: E402
+from provexp.featuresets.ember2024.directions import THREAT_MODELS  # noqa: E402
 from provexp.featuresets.ember2024.edits import add_section as write_section  # noqa: E402
 from provexp.featuresets.ember2024.escapes import WRITES as ESCAPES  # noqa: E402
 from provexp.featuresets.ember2024.hand import predict_add_section  # noqa: E402
@@ -176,6 +184,58 @@ class TestSearchSteps:
         written = op[2](sample)
         assert not _overlay(written)
         assert len(written) > len(sample)
+
+
+################################################################################
+# Header growth (`hgr`)
+################################################################################
+
+
+class TestHeaderGrowth:
+
+    @pytest.mark.parametrize("model", ["M_add", "M_shift", "M_full"])
+    def test_threat_models_match_directions(self, model: str) -> None:
+        assert set(THREAT[model]) == set(THREAT_MODELS[model])
+
+    @pytest.mark.parametrize("with_hgr", [True, False])
+    def test_menu_offers_hgr_only_in_its_threat_model(self, with_hgr: bool) -> None:
+        needs_files()
+        engine = RealEngine(EXTRACTOR, EXTRACTOR)
+        donors = Donors([(f.name, f.read_bytes()) for f in FILES])
+        names = bucket_names()
+        ops = THREAT["M_full"] if with_hgr else tuple(o for o in THREAT["M_full"] if o != "hgr")
+        menu_ = full_menu(engine, donors, np.random.default_rng(0), list(names)[:8], names, ops)
+        assert any(c[0] == "hgr" for c in menu_) == with_hgr
+
+    def test_section_grows_headers_only_without_room(self, sample: bytes) -> None:
+        needs_files()
+        engine = RealEngine(EXTRACTOR, EXTRACTOR)
+        plain = _sec_candidate(engine, ".abc", b"\x01" * 512)
+        grown = _with_room(engine, plain)
+        if catalogue.section_slots(sample, 1) >= 1:
+            try:
+                expected = plain[2](sample)[1]
+            except RuntimeError:
+                pytest.skip("The section does not apply to this file.")
+            assert grown[2](sample)[1] == expected
+            return
+        growth = catalogue.grow_headers_for(sample, 1)
+        if growth is None:
+            with pytest.raises(RuntimeError):
+                grown[2](sample)
+            return
+        written = grown[2](sample)[1]
+        assert _headers_grew(sample, written)
+        assert len(pefile.PE(data=written).sections) == len(pefile.PE(data=sample).sections) + 1
+
+    def test_hgr_frees_a_slot(self, sample: bytes) -> None:
+        needs_files()
+        have = catalogue.section_slots(sample, 64)
+        if catalogue.grow_headers_for(sample, have + 1) is None:
+            pytest.skip("The headers of this file cannot grow.")
+        written = _hgr_candidate(RealEngine(EXTRACTOR, EXTRACTOR))[2](sample)[1]
+        assert catalogue.section_slots(written, have + 1) >= have + 1
+        assert _headers_grew(sample, written)
 
 
 ################################################################################
