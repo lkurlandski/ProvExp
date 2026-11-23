@@ -9,8 +9,7 @@
 \Cref{sec:framework} proves its results for any sum-then-readout extractor, and leaves to an instance everything
 that depends on the format of the input. An instance supplies the extractor in sum-then-readout form, a decision about
 the features that do not fit this form, a threat model, a signature that covers it, and the population over which
-the signature holds. This section supplies each of them for the EMBER feature set. Any new instance, in malware detection or in another
-domain, needs to supply the same.
+the signature holds. We supply each for the EMBER feature set; an instance in another domain supplies the same.
 
 The instance we consider is static malware detection on Windows, where a classifier decides whether an executable
 file is malicious without running it. Windows executables use the Portable Executable (PE) format. A PE file starts
@@ -20,42 +19,35 @@ which lists the functions the program uses from other libraries. The headers loc
 the \emph{data directory}, which gives the table's position and size. Bytes after the last section form the overlay, which
 the loader does not map. EMBER~\cite{anderson2018ember} is the standard benchmark for this task (we use the most
 recent version, EMBER-v3~\cite{joyce2025ember}). Its extractor parses a file and computes 2,568 features that describe
-these structures by their metadata and statistics: the header fields, the size, entropy, and characteristics of each
-section, hashes of the imported and exported names, the Rich header, the Authenticode signature, and the parser's
-warnings, together with histograms of the bytes and of their local entropy and statistics of the printable strings,
-taken over the whole file.
+these structures by their metadata and statistics, such as the header fields, the entropy of each section, hashes
+of the imported names, the Authenticode signature, and the parser's warnings, together with histograms of the bytes
+and statistics of the printable strings over the whole file.
 
 \subsection{EMBER as a Sum-then-Readout Extractor}
 \label{sec:instances:record}
 
 EMBER's metadata and statistics both fit the form of \Cref{sec:fw:model}. A statistic adds up something over parts of
 the file: the byte histogram counts the bytes of each value, and the import features count the functions imported
-from each library. A piece of metadata, such as a header field, is the value of a single part. These parts are EMBER's
-items. Some, such as single bytes and printable strings, are found by scanning the bytes in order, and others, such as
-sections and imports, by parsing the structures described above. Most sums are counts or totals, and where EMBER
-hashes names into a fixed number of buckets, every bucket is a sum of its own. Every form of readout in \Cref{tab:fw:readouts} occurs, from the identity for header
-fields and counts to the normalized bins of the histograms. We instrument the extractor without changing what it
+from each library. A piece of metadata, such as a header field, is the value of a single part. These parts, from single
+bytes and printable strings to sections and imports, are EMBER's items. Most sums are counts or totals, and where EMBER
+hashes names into a fixed number of buckets, every bucket is a sum of its own. Every form of readout in \Cref{tab:fw:readouts} occurs. We instrument the extractor without changing what it
 computes, so that it records each file's item table (\Cref{sec:fw:model}) and its sums as well as its features. A detector can read the sums directly, which keeps
 directions a readout loses: a normalized bin of the byte histogram falls whenever another bin rises, while its count
-can only rise when bytes are added. Appendix~\ref{sec:ember} lists the
-items, the readouts, and the sums read this way.
+can only rise when bytes are added.
 
-EMBER fits the definition closely but not everywhere, and an instance must decide what to do with the features that
-do not fit. Some fit once they are written over sums: EMBER divides each section's size by the file's size as it
+Not every feature of EMBER fits the definition as written. Some fit once they are written over sums: EMBER divides each section's size by the file's size as it
 visits the section, which makes the section's contribution depend on the rest of the file, and we divide in the
 readout instead. Others have no items at all.
 EMBER's 88 parser warnings are flags, each set when the parser reports a particular irregularity in the file, and we
-do not model which parts of the file cause it. A feature without items can be dropped, which leaves a
-sum-then-readout extractor on the remaining features (Definition~\ref{def:fw:extractor}), or kept and given the
+do not model which parts of the file cause it. A feature without items can be dropped, or kept with the
 direction $\mathsf{both}$, which is always sound but says nothing about how the feature moves, so a detector built
 on the directions cannot use it either way. We drop the warnings. Earlier versions of EMBER did not compute
-them~\cite{joyce2025ember}, and a detector trained without them loses no detection (0.1 points more at a 1\%
-false-positive rate). Every other feature, 2,480 of the 2,568, has items, and the readouts of the recorded sums give
+them~\cite{joyce2025ember}, and a detector trained without them loses no detection. Every other feature, 2,480 of the 2,568, has items, and the readouts of the recorded sums give
 each of them exactly as the extractor does. % run 126 (pilot)
 
 We also change one rule of EMBER's parser: it starts the overlay where the last section or table ends, and we start it
 where the last section ends, as LIEF~\cite{lief} does, so that the entry write of \Cref{sec:instances:catalogue},
-which sets a data directory entry the loader ignores, cannot move the overlay. \Cref{sec:ember} lists every change we make to EMBER, with the reason for each.
+which sets a data directory entry the loader ignores, cannot move the overlay. Appendix~\ref{sec:ember} lists every change we make to EMBER, with its reason, and the items, readouts, and sums.
 % R7, docs/evidence/r7-overlay-rule.md §5 (user, 2026-11-13): LIEF's rule installed in pefile by features.py (f0d2bb1).
 
 \subsection{Threat Model}
@@ -63,40 +55,36 @@ which sets a data directory entry the loader ignores, cannot move the overlay. \
 
 
 Attacks that turn a malware sample into an evasive file, rather than an evasive feature vector, edit the file only in
-ways that keep the program working. Demetrio et al.~\cite{demetrio2021adversarial} survey these practical,
-functionality-preserving manipulations of PE files. The common ones append bytes at the end of the file, overwrite the
-slack space that pads each section to its alignment, add a section or imports, and overwrite header fields. Demetrio
-et al.\ add three that exploit ambiguities of the format: overwriting the DOS header and stub, which the loader skips,
+ways that keep the program working. Demetrio et al.~\cite{demetrio2021adversarial} survey these
+functionality-preserving manipulations of PE files: appending bytes, overwriting the slack space that pads each section
+to its alignment, adding a section or imports, and overwriting header fields. They add three that exploit ambiguities of the format: overwriting the DOS header and stub, which the loader skips,
 and inserting a gap in front of the PE header or of the first section. MAB-Malware~\cite{song2022mab} also renames
 sections, removes the debug directory entry or the certificate table entry, and overwrites the checksum.
 
 Our threat model is the union of these edits and two more, fourteen operations in all
-(\Cref{tab:instances:catalogue}), with all content (bytes, section names and properties, imported names) chosen by the
-attacker. The threat model limits what the attacker can do, not what it knows: the directions hold for every edit,
+(\Cref{tab:instances:catalogue}), with all content chosen by the attacker. The threat model limits what the attacker can do, not what it knows: the directions hold for every edit,
 whatever the attacker knows of the detector. Its only limit on size is the scope of our study, files of at most 4~MB
 (\Cref{sec:eval:setup}): an edited file must remain one. The first operation we add, the \emph{entry write}, sets the
 debug or the certificate entry in the header to any value, which lets the attacker point the certificate entry at a
 signature copied from a benign program and appended to the file. EMBER's extractor parses a signature but does not
 verify it, so the copy describes the file as signed by the benign program's publisher. Malware in the wild copies
 signatures this way, and such copies led 34 anti-virus products to miss known malware~\cite{kim2017certified}. The
-entry write generalizes MAB-Malware's removals: the loader maps the data of neither the debug directory nor the
-certificate table, so it ignores their entries, and an attacker who can remove an entry can as well set it to any
-value. The second operation we add, \emph{header growth}, inserts a gap at the end of
-the headers so that the headers of new sections fit, which adding a section needs on a file whose headers lack room.
+entry write generalizes MAB-Malware's removals: the loader ignores both entries, so an attacker who can remove one can
+as well set it to any value. The second operation we add, \emph{header growth}, inserts a gap at the end of
+the headers to make room for the headers of new sections.
 % The extractor's authenticode features (signify) count certificates and read signing times; nothing checks the hash.
 
 The operations form three nested threat models. \emph{Additions} only add content, the setting for which monotone detectors
 were proposed~\cite{incer2018adversarially}; the \emph{shifts} model adds the three insertions that move existing
-content; and the \emph{full} model adds every overwrite and removal. In all three, the attacker works on the binary alone: it edits the file's structure, and does not
-recompile the program, pack it, or rewrite its code. Packing replaces the file with a different program that restores the original at
-run time~\cite{demetrio2021adversarial}, so no item of the original survives it. Code-level transformations replace or
-move instructions while keeping their meaning~\cite{song2022mab,lucas2021malware,lucas2023adversarial,ling2024wolf};
-they need a disassembler and an analysis of the code, which structural edits do not, and we leave them to future work
-(\Cref{sec:discussion}).
+content; and the \emph{full} model adds every overwrite and removal. In all three, the attacker edits the file's structure. Packing replaces the file with a different program that
+restores the original at run time~\cite{demetrio2021adversarial}, so no item of the original survives it, and
+code-level transformations, which replace or move instructions while keeping their
+meaning~\cite{song2022mab,lucas2021malware,lucas2023adversarial,ling2024wolf}, need a disassembler and an analysis of
+the code; we leave them to future work (\Cref{sec:discussion}).
 
 \begin{table}[t]
-  \caption{The operations of the threat model. Each threat model adds operations to the one above it; the toolkit
-  attacks (\Cref{sec:eval:setup}) use seven of the fourteen. Changes: declared, the operation states its changes to the items; item tables, the
+  \caption{The operations of the threat model. Each threat model adds operations to the one above it; toolkit
+  attacks: \Cref{sec:eval:setup}. Changes: declared, the operation states its changes to the items; item tables, the
   changes of an overwrite are collected from the item tables of a sample of files.}
   \label{tab:instances:catalogue}
   \footnotesize
@@ -132,22 +120,18 @@ for each kind of item, the changes the operations can make to items of that kind
 operations declare their changes, which follow from what the operation does to the file: adding a section, for
 instance, adds the section and the bytes of its content, and replaces the header fields it must update, such as the
 number of sections. The rest is read from the item tables of a sample of files, which record the items each position
-belongs to and the sums each item contributes to. From them come the changes of the five overwrites and, for each kind
-of item, the sums its items contribute to. This part holds as far as the sample reaches: what the sample does not show, the
-signature does not cover. Theorem~\ref{thm:fw:directions} holds as long as no file of the population lets an
+belongs to and the sums each item contributes to. From them come the changes of the five overwrites and, for each kind of item, the
+sums it reaches. What the sample does not show, the signature does not cover. Theorem~\ref{thm:fw:directions} holds as long as no file of the population lets an
 overwrite reach a kind of item, or lets an item contribute to a sum, that no file of the sample does.
 
-The item tables give the changes of an overwrite at the positions it writes, with one exception: an overwrite can
-also land on a position that the parser reads to find other items, such as an entry of the section table or a field
-that gives the location of a table. The entry write always does: it writes
-where the extractor looks for the signature and the debug data. Such a write can change which items the
-extractor finds, in a way the item table does not record. The signature then allows any change to the items of that
+An overwrite can also land on a position that the parser reads to find other items, such as an entry of the
+section table or of the data directory, and change which items the extractor finds, in a way the item table does not
+record; the entry write always does. The signature then allows any change to the items of that
 kind. For a single edit, such a write is \emph{declined}: we do not compute its side effects.
 
 Proposition~\ref{prop:fw:side-effects} and Theorem~\ref{thm:fw:directions} are proven; what they rest on is checked.
-The declared changes are written by us from what each operation does, and the part of the signature read from the
-sample is as complete as the sample. \Cref{sec:eval:setup} checks both, and the computed side effects, against
-re-extraction; Appendix~\ref{sec:ember} gives each operation's declared changes and describes how we record the
+\Cref{sec:eval:setup} tests the declared changes, which we write from what each operation does, the part of the
+signature read from the sample, and the computed side effects against re-extraction; Appendix~\ref{sec:ember} gives each operation's declared changes and describes how we record the
 positions the parser reads.
 
 \subsection{Population}
@@ -159,13 +143,12 @@ is the complete PE files with a plain layout. A file is complete when everything
 apart from the debug data and the signature, which the entry write may point anywhere. Its layout is plain when the sections lie within the image that the loader maps, the headers hold only headers,
 and the section table ends within them (Appendix~\ref{sec:ember} states the clauses in full). On other files an edit
 can change items that no operation declares. Appending to an incomplete file, for instance, supplies content the
-parser looked for and did not find, instead of extending the overlay. Completeness and layout are properties of the parse, not bounds on features, so Lemma~\ref{lem:fw:closure}, which
-proves closure for populations bounded by features, does not apply, and closure is checked instead: none of the 56,902 edits of \Cref{sec:eval:setup} that were applied to
+parser looked for and did not find, instead of extending the overlay. Lemma~\ref{lem:fw:closure} proves closure only for populations bounded by features, and completeness and layout
+are properties of the parse, so closure is checked instead: none of the 56,902 edits of \Cref{sec:eval:setup} that were applied to
 files in the population took a file out of it.
 
-Almost every file outside the population is incomplete, although our copy holds it in full: its headers locate sections or tables that lie, at least in
-part, past its end. Of the test files we use (\Cref{sec:eval:setup}), 94\% are in the population, 5\% are incomplete,
-and 0.4\% are complete files with an unusual layout. A detector still scores every file, and
+Of the test files we use (\Cref{sec:eval:setup}), 94\% are in the population; 5\% are incomplete, although our
+copy holds them in full, and 0.4\% are complete files with an unusual layout. A detector still scores every file, and
 \Cref{sec:eval:detectors} measures how the detectors built from the directions fare on files outside.
 % PROTOCOL: the closure count (56,902) and the shares above are for the population before the entry write (run 117,
 % run 136). The widened population is closed on the pilot (run 142: 0 of 13,326 edits on population files leave it,
