@@ -1,7 +1,7 @@
 % Appendix: proofs for the framework section (_d_framework.tex). Source: docs/archive/framework/formalization.md, Sections 5.3, 6.2-6.4,
 % and 7 (frozen). The EMBER checks and caveats belong to the instances and evaluation sections, not here.
 
-This appendix proves the results of \Cref{sec:framework}. Throughout, an edit takes $z$ to $z'$ with item delta
+This appendix proves the results of \Cref{sec:framework} and Corollary~\ref{cor:fw:robustness} of \Cref{sec:evaluation}. Throughout, an edit takes $z$ to $z'$ with item delta
 $(I^-, I^+)$.
 
 \subsection{Edits and Their Side Effects}
@@ -122,9 +122,6 @@ By Lemma~\ref{lem:fw:sum-direction}, every sum $k$ changes with a sign in $d_k$ 
 an input of $Z$, and Lemma~\ref{lem:fw:readout} then gives the change of every feature $j$ a sign in
 $(D_\Delta)_j$, so $D_\Delta$ is sound.
 
-\subsection{Sequences and Robust Detectors}
-\label{sec:fw:proofs:sequences}
-
 \paragraph{Proof of Proposition~\ref{prop:fw:sequences}.}
 Let $\mathbf{x}' = \varphi(T(z))$ for a finite sequence $T = T_m \circ \dots \circ T_1$ of transformations in
 $\mathcal{M}$. The inputs $z_0 = z$ and $z_i = T_i(z_{i-1})$ all lie in $Z$, by closure and induction on $i$, so each
@@ -137,6 +134,9 @@ Let $z \in Z$ and $T \in \mathcal{M}$. Theorem~\ref{thm:fw:directions} gives the
 $\varphi_j(T(z)) - \varphi_j(z)$ a sign in $(D_\Delta)_j$ for every feature $j$. For $j \in J$ this direction does not
 contain $+$, so $\varphi_j(T(z)) \le \varphi_j(z) \le t_j$, and $T(z) \in Z$. With $\ge$ and $-$ in place of $\le$
 and $+$, the same argument gives the lemma for lower bounds.
+
+\subsection{Robust Detectors}
+\label{sec:fw:proofs:robust}
 
 \paragraph{Proof of Corollary~\ref{cor:fw:robustness}.}
 By Proposition~\ref{prop:fw:sequences}, for every $z \in Z$ and $\mathbf{x}' \in \mathcal{R}(z)$, the change

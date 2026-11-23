@@ -9,8 +9,7 @@ The feature mappings we study find pieces of their input, add up what each piece
 totals, and compute each feature by a formula over a few totals. \Cref{sec:fw:model} defines this class of
 \emph{sum-then-readout extractors}. \Cref{sec:fw:side-effects} computes the exact change of every feature under one
 edit, side effects included, before the edit is applied. \Cref{sec:fw:directions} bounds the direction in which each
-feature can move under all the edits a threat model allows, and \Cref{sec:fw:robust} extends the bound to sequences
-of edits and derives detectors that no such sequence can evade. Appendices~\ref{sec:symbols}--\ref{sec:fw:proofs}
+feature can move under all the edits a threat model allows, and under any sequence of them. Appendices~\ref{sec:symbols}--\ref{sec:fw:proofs}
 hold the notation, a short introduction to the algebra, and the proofs.
 
 \subsection{Sum-then-Readout Extractors}
@@ -407,13 +406,11 @@ bounds into a bound on the feature. This is abstract interpretation~\cite{cousot
 follows from the signs of its factors without the numbers, a feature's direction follows from the directions of its
 sums, soundly but possibly loosely.
 
-\subsection{Sequences and Robust Detectors}
-\label{sec:fw:robust}
-
-A sound table bounds how the features of an input can move under one edit of a threat model. A defender needs more:
-a detector whose score no sequence of these edits can lower. Two things give it. The table must apply at every step of
-the sequence, and the score must not fall in any direction the table allows. The first holds if the population is
-\emph{closed} under $\mathcal{M}$: no transformation in $\mathcal{M}$ takes an input of $Z$ outside $Z$.
+% Session 108 (user): Section 3.4 (Sequences and Robust Detectors) merged into this subsection; the robust detectors
+% (monotone with respect to D, Corollary 1) moved to the lead of Section 5.
+A sound table bounds how the features of an input can move under one edit of a threat model, but an attacker applies a
+sequence of edits. The table applies at every step of the sequence if the population is \emph{closed} under
+$\mathcal{M}$: no transformation in $\mathcal{M}$ takes an input of $Z$ outside $Z$.
 
 \proposition[Sequences of edits]
 \label{prop:fw:sequences}
@@ -444,23 +441,3 @@ $+$, then $Z$ is closed under $\mathcal{M}$.
 edited input stays in $Z$; lower bounds on features that cannot fall work the same way. The inputs that hold no item
 of some unwanted form are such a population: the number of such items is a sum, read by the identity and bounded by 0, that cannot rise if no
 item change in $\Delta$ adds such an item or turns another item into one.
-
-A sound table on a closed population gives detectors that the threat model cannot evade. Let $h: \mathcal{X} \to \mathbb{R}$ be a
-detector's malware score. Gimenez et al.\ prove that a detector whose score never falls as the features rise cannot be
-evaded when the attacker's edits can only raise the features~\cite{gimenez2025certifiably}. A direction table says
-which features the edits can only raise, which they can only lower, and which they cannot change, so it says how the
-score must behave. We call $h$ \emph{monotone with respect to} $D$ if $h(\mathbf{x}') \ge h(\mathbf{x})$ whenever the
-change $x'_j - x_j$ of every feature $j$ has a sign in $D_j$. Such a score is, for instance, a gradient-boosted tree
-trained with monotone constraints: increasing in the up features, decreasing in the down features, unconstrained in
-the fixed features, and reading no feature marked both.
-
-\corollary[Robustness]
-\label{cor:fw:robustness}
-{
-Let $D$ be sound for $\mathcal{M}$ over a population $Z$ closed under $\mathcal{M}$, and let $h$ be monotone with
-respect to $D$. Then $h(\mathbf{x}') \ge h(\varphi(z))$ for every $z \in Z$ and every $\mathbf{x}' \in \mathcal{R}(z)$.
-}
-
-\noindent The guarantee needs no attack to be run: it covers every sequence of edits in the threat model, of any
-length and with any content, and not only those an attack happens to try. What the guarantee costs in detection is
-measured in \Cref{sec:eval:detectors}.
