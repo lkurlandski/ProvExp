@@ -98,6 +98,7 @@ or when changing an experiment. Run scripts are in `run/` (one per step, numbere
 | `docs/archive/status-log-2026-11-13-s59-60.md` | the status log of sessions 59-60 (R2's 4-byte Rich fix, the trial competitor built and run 144 scripted) |
 | `docs/archive/status-log-2026-11-14-s61-62.md` | the status log of sessions 61-62 (run 143 read, R7 done at pilot scale, the decisions before the scale-up, run 144 prepared) |
 | `docs/archive/status-log-2026-11-15-to-16-s66-76.md` | the status log of sessions 66-76 (the scale-up's protocol and steps, the cost-of-robustness detour, the head node, the theory sessions) |
+| `docs/archive/status-log-2026-11-16-to-19-s77-94.md` | the status log of sessions 77-94 (the scale-up running: the GAMMA OOM, the thread overload, the file store, ERDALT's collapse and diagnosis, the §6 cuts, the writing sessions through §3.2) |
 | `docs/archive/PLAN-done-steps-2026-11-17.md` | PLAN.md's next steps 1-2c in full (4 MB population, the simulated review, R7's widening, the extractor question), done; and "Where the paper stands" as of session 62 |
 | `docs/archive/status-log-2026-11-14-s64-65.md` | the status log of sessions 64-65 (the refactoring into `pipeline/`, the extractor audit pass) |
 | `docs/archive/status-log-2026-11-14-s63.md` | the status log of session 63 (the review revisit closed and the scale-up's shape agreed; run 144 read and R18 decided) |

@@ -113,9 +113,7 @@ are done; its attacks (as in `logs/submit-20261117-181439-no-erdalt.txt`) are no
   fix failures at their source. The user decides protocol questions; Claude recommends, explaining plainly: when a
   decision is the user's, lay out the options, how each affects later work, and a recommendation.
 - Changes to the thrember-derived `features.py` are pure additions; `tests/reference/` is never edited.
-- Commit to `main` in logical pieces (ruff, strict mypy on `src tests pipeline`); do not push. The worktree
-  `../ProvExp-hgr` (branch `hgr`) is merged and no longer needed; remove it (`git worktree remove ../ProvExp-hgr`) if
-  the user agrees.
+- Commit to `main` in logical pieces (ruff, strict mypy on `src tests pipeline`); do not push.
 - At the end: `docs/status.md`, PLAN.md, `docs/scaleup-protocol.md` (a new item for any decision), and this prompt
   rewritten self-contained (archive this one under `docs/archive/` and list it in `docs/README.md`).
 
@@ -137,7 +135,6 @@ are done; its attacks (as in `logs/submit-20261117-181439-no-erdalt.txt`) are no
   on it); whether Windows loads GAMMA's consecutive empty sections at one RVA (LIEF wrote the same).
 - `pipeline/setup/identity_check.sh` compares with the pilot-final baseline, which sessions 102-104's intended changes
   (`hgr`, the fifth clause, the set rule) already break; re-baseline it after the reruns if it is to stay useful.
-- `docs/status.md`'s session log has grown far past ten entries; move the oldest (sessions 77-99) to `docs/archive/`.
 - Open with the user: move `docs/erdalt-diagnosis-plan.md` under `docs/evidence/`.
 - ERDALT's logits reach +-8,007 on validation (temperature 266.9); worth a sentence if calibrated probabilities are
   ever reported.
