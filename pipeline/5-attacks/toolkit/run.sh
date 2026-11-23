@@ -8,8 +8,8 @@
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
 #SBATCH --cpus-per-task=36
-#SBATCH --time=08:00:00
-#SBATCH --mem=64G
+#SBATCH --time=12:00:00
+#SBATCH --mem=72G
 #
 # Gimenez et al.'s eight toolkit attacks (secml-malware; BUDGET, default the GAMMA paper's `literature`, protocol (22);
 # outputs up to 4 MB; a seed per (attack, file)) against the detectors,
@@ -32,6 +32,8 @@
 # detected malware x 8 attacks per detector, a few hours per job on 36 cores. Scale-up (job 1046138, session 85): the
 # slowest task 4 h 44 min (the debug-entry escape), at most 44 GiB, ~90% of the cores on the main and escape rows;
 # the leave-one-out folds attack 5-23 files and use ~5% of 36 cores (submit them apart with fewer cores if rerun).
+# Session 105: the literature budget makes GAMMA ~3x slower (the other attacks stop early, unchanged), so 12 h; peak
+# memory ~47 GiB in session 85, 72 GB with the larger donor pools.
 set -euo pipefail
 cd "${SLURM_SUBMIT_DIR:-$(dirname "$0")/../../..}"
 source pipeline/common.sh

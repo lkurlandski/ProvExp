@@ -8,7 +8,7 @@
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
 #SBATCH --cpus-per-task=16
-#SBATCH --time=03:00:00
+#SBATCH --time=04:00:00
 #SBATCH --mem=64G
 #
 # The adaptive attack: a beam search over the threat model's operations (M_full, `ent` included) against each detector,

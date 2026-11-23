@@ -8,8 +8,8 @@
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
 #SBATCH --cpus-per-task=36
-#SBATCH --time=0-03:15:00
-#SBATCH --mem=128G
+#SBATCH --time=0-08:00:00
+#SBATCH --mem=80G
 #
 # The learned defenses' material, once (protocol item 5, session 67). FOR ACADEMIC SECURITY RESEARCH ONLY: published
 # secml-malware attacks against our own undefended detector, on our own training samples, to build the defenses the
@@ -31,8 +31,8 @@
 # Knobs: BUDGET (literature or low), SHARDS (default 10; keep it equal to the --array size), FILES, DONORS, ROWS (stores, default the sums and
 # expert stores), NUM_MALWARE (smoke tests: only the list's first N), REPAIR (a file of lost tasks, `attack name` per
 # line: mend complete shards instead, re-running the lost tasks LIEF can rebuild; session 76:
-# REPAIR=$OUT_ROOT/4-detectors/material/lost.txt). Measured (session 76, 36 cores): ~2 h per shard; peak memory
-# reached the 100 GB request (sacct, session 85), so 128 GB.
+# REPAIR=$OUT_ROOT/4-detectors/material/lost.txt). Measured (session 85, 36 cores, low budget, our writers): 1.2-2.3 h
+# per shard, peak ~47 GB; the literature budget makes GAMMA ~3x slower (session 105 smoke), so 8 h and 80 GB.
 set -euo pipefail
 cd "${SLURM_SUBMIT_DIR:-$(dirname "$0")/../../..}"
 source pipeline/common.sh
