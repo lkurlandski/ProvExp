@@ -18,11 +18,30 @@ from provexp.featuresets.ember2024.features import PEFeatureExtractor
 from provexp.featuresets.ember2024.features import fix_quirks
 from provexp.featuresets.ember2024.sums import SumsFeatureExtractor
 
-__all__ = ["MAX_LENGTH", "THRESHOLD_SPLITS", "calibrate_threshold", "detection_at", "model_threshold", "group_evasion", "make_extractor", "parse_defenses",
+__all__ = ["MAX_LENGTH", "THRESHOLD_SPLITS", "byte_room", "calibrate_threshold", "detection_at", "model_threshold", "group_evasion", "make_extractor", "parse_defenses",
            "precondition_holds"]
 
 
 MAX_LENGTH = 4_000_000
+
+
+def byte_room(size: int, max_size: int = MAX_LENGTH) -> int:
+    """
+    The bytes an attack may add to a file of `size` bytes: every attack's output may be at most `max_size` bytes.
+
+    The study concerns PE files up to 4 MB (the data's limit; scale-up protocol item (22), user, session 105), which
+    replaced the old cap max(5% of the file, 512 KiB).
+
+    Args:
+        size: The original file's size in bytes.
+        max_size: The largest output that counts.
+
+    Returns:
+        max_size - size, or 0 when the file is already that large.
+    """
+    if max_size < 1:
+        raise ValueError(f"max_size must be positive, got {max_size}.")
+    return max(0, max_size - size)
 
 
 def make_extractor(features: Path) -> PEFeatureExtractor:

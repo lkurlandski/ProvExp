@@ -1,6 +1,7 @@
 """
 Tests for the scale-up's protocol helpers: thresholds set on a chosen split (provexp.detectors), complete files only
-(provexp.data.tabular.load_features), and the choice between the pilot's and the scale-up's attacked files
+(provexp.data.tabular.load_features), the size rule every attack's output is judged by (provexp.detectors.byte_room),
+and the choice between the pilot's and the scale-up's attacked files
 (provexp.data.files.load_attacked).
 """
 
@@ -18,6 +19,8 @@ from provexp.data.files import load_donors
 from provexp.data.tabular import FEATURES_FILE
 from provexp.data.tabular import META_FILE
 from provexp.data.tabular import load_features
+from provexp.detectors import MAX_LENGTH
+from provexp.detectors import byte_room
 from provexp.detectors import calibrate_threshold
 from provexp.detectors import detection_at
 from provexp.detectors import model_threshold
@@ -33,6 +36,25 @@ def _predictions(path: Path, good: list[float], bad: list[float]) -> None:
     probs = good + bad
     labels = [0] * len(good) + [1] * len(bad)
     pl.DataFrame({"name": [f"f{i}" for i in range(len(probs))], "label": labels, "prob": probs}).write_parquet(path)
+
+
+################################################################################
+# The size rule
+################################################################################
+
+class TestByteRoom:
+
+    @pytest.mark.parametrize("size,room", [(0, MAX_LENGTH), (1_000, MAX_LENGTH - 1_000), (MAX_LENGTH, 0),
+                                           (MAX_LENGTH + 5, 0)])
+    def test_room_up_to_the_limit(self, size: int, room: int) -> None:
+        assert byte_room(size) == room
+
+    def test_custom_limit(self) -> None:
+        assert byte_room(10, max_size=100) == 90
+
+    def test_rejects_nonpositive_limit(self) -> None:
+        with pytest.raises(ValueError):
+            byte_room(10, max_size=0)
 
 
 ################################################################################

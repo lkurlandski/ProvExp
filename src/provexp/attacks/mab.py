@@ -25,6 +25,7 @@ import pefile
 from provexp.attacks.validity import output_invalid
 from provexp.attacks.validity import structure
 from provexp.data.paths import ROOT
+from provexp.detectors import byte_room
 from provexp.detectors import make_extractor
 from provexp.detectors import precondition_holds
 from provexp.models.erdalt import load_detector
@@ -366,7 +367,7 @@ def _run_defense(task: dict[str, Any]) -> list[dict[str, Any]]:
                 pre_adv = precondition_holds(adv)
             except Exception as e:  # noqa: BLE001
                 ok, error = False, f"{type(e).__name__}: {str(e)[:200]}"
-        cap = max(int(task["budget_frac"] * len(data)), task["budget_min"])
+        cap = byte_room(len(data), task["max_size"])
         q = channel.queries.get(s.path, {"rewriter": 0, "minimizer": 0})
         rows.append({
             "defense": defense, "attack": ATTACK, "name": name, "tau": tau, "p_clean": score(data), "p_adv": p_adv,

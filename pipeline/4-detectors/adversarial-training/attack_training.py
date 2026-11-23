@@ -12,7 +12,9 @@ The attacks run on the training malware of a file list (`--files`, its label-1 r
 2-features/files/tr.parquet), every one of them, detected or not (standard adversarial augmentation adds every
 perturbed malware), with the goodware of a donor list (`--donors`, training goodware; the scale-up's donor set 0) as
 the donors of the section and import attacks. The target is `--model`, scored with the extractor of `--features`. Each
-(attack, file) is seeded on its own (`--seed_per_file`). Each valid adversarial file keeps label 1.
+(attack, file) is seeded on its own (`--seed_per_file`). Each valid adversarial file of at most `--max_size` bytes
+(4,000,000: the study's PE files up to 4 MB, the rule every attack is judged by; protocol (22)) keeps label 1; larger
+outputs are counted (`over_size`) and train no defense.
 
 The work splits into shards (`--shard k --num_shards N`: every N-th malware from the k-th), one per SLURM array task;
 a shard whose report.json exists is skipped. `--merge` then assembles the shards.
@@ -71,6 +73,7 @@ from provexp.attacks.toolkit import run_attack
 from provexp.data.files import FileReader
 from provexp.data.files import load_donors
 from provexp.data.tabular import load_manifest
+from provexp.detectors import MAX_LENGTH
 from provexp.detectors import make_extractor
 from provexp.parallel import map_watchdog
 
@@ -109,13 +112,13 @@ _W: dict[str, Any] = {}
 
 
 def _init_worker(features: Path, model: Path, rows: dict[str, Path], section_pop: list[Any],
-                 api_calls: list[Any], seed: int, iterations: int, binaries: Path | None) -> None:
+                 api_calls: list[Any], seed: int, iterations: int, binaries: Path | None, max_size: int) -> None:
     """Build the per-worker extractors, detector wrapper, reader and attack donor pools once."""
     lief.logging.disable()
     extractor = make_extractor(features)
     extractors = {store: make_extractor(path) for store, path in rows.items()}
     _W.update(wrapper=make_wrapper(model, extractor), extractors=extractors, section_pop=section_pop,
-              api_calls=api_calls, seed=seed, iterations=iterations, binaries=binaries,
+              api_calls=api_calls, seed=seed, iterations=iterations, binaries=binaries, max_size=max_size,
               reader=FileReader(), tmp=tempfile.mkdtemp(prefix="attack_training_w_"))
 
 
@@ -125,7 +128,7 @@ def _work(task: tuple[str, str]) -> dict[str, Any]:
     out_path = Path(_W["tmp"]) / f"{name[:16]}.{atk}"
     row: dict[str, Any] = {"name": name, "attack": atk, "ok": False, "valid": False, "invalid_reason": "",
                            "evaded": False, "p_clean": float("nan"), "p_adv": float("nan"), "bytes_added": 0, "phi": None,
-                           "header_growth": False}
+                           "header_growth": False, "over_size": False}
     try:
         data = _W["reader"].get(name)
         problem = build_attack(atk, _W["wrapper"], _W["section_pop"], _W["api_calls"], iterations=_W["iterations"])
@@ -135,12 +138,14 @@ def _work(task: tuple[str, str]) -> dict[str, Any]:
         original, why = structure(data)
         invalid = (output_invalid(original, adv_bytes) or "") if original is not None else f"original: {why}"
         row.update(valid=not invalid, invalid_reason=invalid)
+        over = len(adv_bytes) > _W["max_size"]
         phi = {store: x.feature_vector(adv_bytes).astype(np.float32) for store, x in _W["extractors"].items()}
-        if _W["binaries"] is not None:
+        if _W["binaries"] is not None and not invalid and not over:
             target = _W["binaries"] / atk / f"{name}.zst"
             target.parent.mkdir(parents=True, exist_ok=True)
             target.write_bytes(zstd.compress(adv_bytes))
-        row.update(ok=True, evaded=bool(not invalid and p_adv < 0.5), p_clean=p_clean, p_adv=p_adv,
+        row.update(ok=True, evaded=bool(not invalid and not over and p_adv < 0.5), p_clean=p_clean, p_adv=p_adv,
+                   over_size=over,
                    bytes_added=len(adv_bytes) - len(data), phi=phi,
                    header_growth=bool(getattr(problem, "header_growth", False)))
     except Exception as e:  # a file secml-malware cannot attack (e.g. an unparseable shift target) is skipped
@@ -155,7 +160,7 @@ def _lost(task: tuple[str, str]) -> dict[str, Any]:
     atk, name = task
     return {"name": name, "attack": atk, "ok": False, "evaded": False, "p_clean": float("nan"),
             "p_adv": float("nan"), "bytes_added": 0, "phi": None, "lost": True, "valid": False, "invalid_reason": "",
-            "header_growth": False}
+            "header_growth": False, "over_size": False}
 
 
 ################################################################################
@@ -191,15 +196,15 @@ def merge(outdir: Path, num_shards: int) -> dict[str, Any]:
     reports = [json.loads((s / "report.json").read_text()) for s in shards]
     stores = reports[0]["stores"]
     attacks = reports[0]["attacks"]
-    report: dict[str, Any] = {k: reports[0][k] for k in ("attacks", "budget", "seed", "seed_per_file", "model",
+    report: dict[str, Any] = {k: reports[0].get(k) for k in ("attacks", "budget", "max_size", "seed", "seed_per_file", "model",
                                                           "features", "files", "donors", "stores")}
     report.update(num_shards=num_shards, num_malware=sum(r["num_malware"] for r in reports),
                   num_goodware=reports[0]["num_goodware"],
                   total_attempted=sum(r["total_attempted"] for r in reports),
                   total_valid=sum(r["total_valid"] for r in reports),
                   per_attack={a: {k: sum(r["per_attack"][a].get(k, 0) for r in reports)
-                                  for k in ("attempted", "valid", "invalid", "invalid_pefile_only", "evaded",
-                                            "header_growth", "not_applicable")} for a in attacks})
+                                  for k in ("attempted", "valid", "invalid", "invalid_pefile_only", "over_size",
+                                            "evaded", "header_growth", "not_applicable")} for a in attacks})
     for store in stores:
         X = np.concatenate([np.load(s / store / "X.npy") for s in shards])
         files = pl.concat([pl.read_parquet(s / store / "files.parquet") for s in shards])
@@ -225,6 +230,8 @@ def main() -> None:
     parser.add_argument("--attacks", nargs="+", default=list(ATTACKS), choices=list(ATTACKS))
     parser.add_argument("--budget", default="low", choices=list(BUDGETS),
                         help="Attack budget: Gimenez's low one, or the GAMMA paper's (provexp.attacks.toolkit.BUDGETS).")
+    parser.add_argument("--max_size", type=int, default=MAX_LENGTH,
+                        help="The largest output kept as material (provexp.detectors.byte_room; protocol (22)).")
     parser.add_argument("--num_malware", type=int, default=None, help="Only the list's first N malware (smoke tests).")
     parser.add_argument("--shard", type=int, default=0)
     parser.add_argument("--num_shards", type=int, default=1)
@@ -315,11 +322,12 @@ def main() -> None:
         with get_context("spawn").Pool(args.num_workers, initializer=_init_worker,
                                        initargs=(args.features, args.model / "model.txt" if args.model.is_dir()
                                                  else args.model, rows, section_pop, api_calls,
-                                                 args.seed, iterations, binaries)) as pool:
+                                                 args.seed, iterations, binaries, args.max_size)) as pool:
             results = map_watchdog(pool, _work, tasks, lost=_lost, stall_timeout=args.stall_timeout)
         print(f"{len(tasks)} attack runs in {time.time() - t0:.0f}s on {args.num_workers} workers.", flush=True)
 
-    valid = [r for r in results if r["ok"] and r["valid"]]  # only outputs that pass the validity rule are kept
+    # Only outputs that pass the validity rule and the size rule are kept.
+    valid = [r for r in results if r["ok"] and r["valid"] and not r.get("over_size", False)]
     # The outputs the rule rejects, with the reason: "pefile only" ones are the extractor's quirks to fix at the source.
     pl.DataFrame([{"name": r["name"], "attack": r["attack"], "reason": r["invalid_reason"]} for r in results
                   if r["ok"] and not r["valid"]], schema={"name": pl.Utf8, "attack": pl.Utf8, "reason": pl.Utf8}
@@ -329,10 +337,12 @@ def main() -> None:
                          schema={"name": pl.Utf8, "attack": pl.Utf8, "label": pl.Int64, "p_clean": pl.Float64,
                                  "p_adv": pl.Float64, "bytes_added": pl.Int64})
     counts = {atk: {"attempted": sum(r["attack"] == atk for r in results),
-                    "valid": sum(r["attack"] == atk and r["ok"] and r["valid"] for r in results),
+                    "valid": sum(r["attack"] == atk and r["ok"] and r["valid"] for r in results),  # over_size among them
                     "invalid": sum(r["attack"] == atk and r["ok"] and not r["valid"] for r in results),
                     "invalid_pefile_only": sum(r["attack"] == atk and r["invalid_reason"].startswith("pefile only")
                                                for r in results),
+                    "over_size": sum(r["attack"] == atk and r["ok"] and r["valid"] and r.get("over_size", False)
+                                     for r in results),
                     "evaded": sum(r["attack"] == atk and r["evaded"] for r in results),
                     "header_growth": sum(r["attack"] == atk and r.get("header_growth", False) for r in results),
                     "not_applicable": sum(a == atk for a, _ in skipped)}
@@ -341,7 +351,8 @@ def main() -> None:
         per_attack = counts
         report: dict[str, Any] = {
             "shard": args.shard, "num_shards": args.num_shards, "num_malware": len(names),
-            "num_goodware": len(goodware), "attacks": list(args.attacks), "budget": args.budget, "seed": args.seed,
+            "num_goodware": len(goodware), "attacks": list(args.attacks), "budget": args.budget,
+            "max_size": args.max_size, "seed": args.seed,
             "seed_per_file": True, "model": args.model.resolve().as_posix(),
             "features": args.features.resolve().as_posix(), "files": args.files.resolve().as_posix(),
             "donors": args.donors.resolve().as_posix(), "stores": sorted(rows),
@@ -357,6 +368,7 @@ def main() -> None:
             d["valid"] += c["valid"]
             d["invalid"] = d.get("invalid", 0) + c["invalid"]
             d["invalid_pefile_only"] = d.get("invalid_pefile_only", 0) + c["invalid_pefile_only"]
+            d["over_size"] = d.get("over_size", 0) + c["over_size"]
             d["evaded"] += c["evaded"]
             d["header_growth"] = d.get("header_growth", 0) + c["header_growth"]
             d["not_applicable"] = d.get("not_applicable", 0) + c["not_applicable"]

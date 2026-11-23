@@ -23,6 +23,7 @@ from provexp.attacks.validity import output_invalid
 from provexp.attacks.validity import structure
 from provexp.data.files import load_donors
 from provexp.data.files import load_pilot
+from provexp.detectors import byte_room
 from provexp.featuresets.ember2024 import catalogue
 from provexp.featuresets.ember2024.edits import add_section as write_section
 from provexp.featuresets.ember2024.edits import entry_write
@@ -1037,7 +1038,7 @@ def _attack_file(task: tuple[str, str, float, list[tuple[int, int]], str, bytes,
         overrun = has_overrun_section(pefile.PE(data=data))
     except Exception:
         overrun = False
-    cap = max(int(cfg["budget_frac"] * len(data)), cfg["budget_min"])
+    cap = byte_room(len(data), cfg["max_size"])
     t0 = time.time()
     if cfg["search"] == "beam":
         r = beam_search(booster, engine, data, tau, make_menu, cfg["queries"], cfg["seed"], cap, beam=cfg["beam"],

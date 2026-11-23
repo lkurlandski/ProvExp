@@ -62,6 +62,7 @@ from provexp.data.files import load_attacked
 from provexp.data.paths import EMBER2024_DATA
 from provexp.data.paths import ROOT
 from provexp.data.tabular import load_manifest
+from provexp.detectors import MAX_LENGTH
 from provexp.detectors import model_threshold
 from provexp.featuresets.ember2024 import catalogue
 from provexp.featuresets.ember2024.escapes import WRITES as ESCAPES
@@ -164,8 +165,8 @@ def main() -> None:
     parser.add_argument("--queries", type=int, default=100)
     parser.add_argument("--candidates", type=int, default=12, help="Kept for compatibility; the full menu self-sizes.")
     parser.add_argument("--target_buckets", type=int, default=8, help="Section-hash buckets the targeted names aim at.")
-    parser.add_argument("--budget_frac", type=float, default=0.05)
-    parser.add_argument("--budget_min", type=int, default=512 * 1024)
+    parser.add_argument("--max_size", type=int, default=MAX_LENGTH,
+                        help="The largest output the search may make (provexp.detectors.byte_room; protocol (22)).")
     parser.add_argument("--num_malware", type=int, default=None)
     parser.add_argument("--shard", type=int, default=0, help="Attack only every --num_shards-th malware from this one "
                         "(one SLURM array task each; the shards' outputs are concatenated in 6-results).")
@@ -241,8 +242,8 @@ def main() -> None:
     not_applicable = {d: 0 for d in defenses}
 
     config = {"ops": ops, "pilot_files": args.pilot_files, "db": args.db, "search": args.search,
-              "queries": args.queries, "seed": args.seed, "budget_frac": args.budget_frac,
-              "budget_min": args.budget_min, "beam": args.beam, "draws": args.draws, "patience": args.patience,
+              "queries": args.queries, "seed": args.seed, "max_size": args.max_size,
+              "beam": args.beam, "draws": args.draws, "patience": args.patience,
               "checkpoints": tuple(args.checkpoints), "score": args.score, "save_rows": args.save_rows,
               "protocol": args.protocol, "donors": args.donors}
     tasks: list[tuple[str, str, float, list[tuple[int, int]], str, bytes, float, bool, bool]] = []
@@ -297,7 +298,7 @@ def main() -> None:
     results.write_parquet(args.outdir / "adaptive.parquet")
     report: dict[str, Any] = {"threat_model": args.threat_model, "operations": list(ops), "fpr": args.fpr,
                               "queries": args.queries, "target_buckets": args.target_buckets,
-                              "budget_frac": args.budget_frac, "budget_min": args.budget_min, "seed": args.seed,
+                              "max_size": args.max_size, "seed": args.seed,
                               "search": args.search, "beam": args.beam, "draws": args.draws,
                               "patience": args.patience, "checkpoints": args.checkpoints,
                               "score": args.score, "escape": args.escape,

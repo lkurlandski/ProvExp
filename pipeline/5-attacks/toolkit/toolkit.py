@@ -11,9 +11,10 @@ One protocol for every cell:
                       predictions (ts_predictions.parquet; vl_predictions.parquet under --protocol scaleup): detected means p > tau, and at most 1% of goodware is
     malware           the detected pilot malware, attacked only where the defense detects it at tau
     budget            `--budget low` is Gimenez's (population 10, 10 iterations, 30 donors); `--budget literature` is
-                      the GAMMA paper's (51 iterations, ~510 queries, 75 donors; a_pv_attacks.BUDGETS). An attacked
-                      file whose added bytes exceed max(--budget_frac x size, --budget_min) counts as not evaded
-                      (over_budget); table.json also reports each group without that cap ("uncapped")
+                      the GAMMA paper's (51 iterations, ~510 queries, 75 donors; provexp.attacks.toolkit.BUDGETS). An
+                      output larger than --max_size (4,000,000 bytes: the study's PE files up to 4 MB; protocol (22))
+                      counts as not evaded (over_budget); table.json also reports each group without that limit
+                      ("uncapped")
     ground truth      the attacked file is written, read back, re-extracted, and re-scored; evaded means p_adv <= tau
     validity          an attacked file that no longer parses as a PE counts as not evaded (invalid): secml-malware's
                       shift attacks insert at the first section's raw offset, which is 0 on some files (e.g. the
@@ -88,6 +89,7 @@ from provexp.data.files import load_attacked
 from provexp.data.paths import EMBER2024_DATA
 from provexp.data.paths import ROOT
 from provexp.detectors import MAX_LENGTH
+from provexp.detectors import byte_room
 from provexp.detectors import model_threshold
 from provexp.detectors import group_evasion
 from provexp.detectors import make_extractor
@@ -203,8 +205,8 @@ def main() -> None:
     parser.add_argument("--fpr", type=float, default=0.01)
     parser.add_argument("--budget", default="low", choices=list(BUDGETS),
                         help="Attack budget: Gimenez's low one, or the GAMMA paper's (see a_pv_attacks.BUDGETS).")
-    parser.add_argument("--budget_frac", type=float, default=0.05)
-    parser.add_argument("--budget_min", type=int, default=512 * 1024)
+    parser.add_argument("--max_size", type=int, default=MAX_LENGTH,
+                        help="The largest output that counts (provexp.detectors.byte_room; protocol (22)).")
     parser.add_argument("--num_malware", type=int, default=None, help="Cap on malware files (for smoke tests).")
     parser.add_argument("--num_workers", type=int, default=8, help="Processes over tasks.")
     parser.add_argument("--seed", type=int, default=0)
@@ -337,7 +339,7 @@ def main() -> None:
             return False
         return atk not in DOS_ATTACKS or i not in no_dos
 
-    caps = [max(int(args.budget_frac * len(data)), args.budget_min) for _, data in malware]
+    caps = [byte_room(len(data), args.max_size) for _, data in malware]
     tasks = [(d, atk, malware[i][0], starts[i], taus[d], caps[i], pre[i], extras[d, i])
              for d in defenses for atk in args.attacks for i in detected[d] if applicable(atk, i)]
     t0 = time.time()
@@ -354,8 +356,8 @@ def main() -> None:
     results.write_parquet(args.outdir / "results.parquet")
     held_out = [a for a in args.attacks if a not in args.seen]
     seen = [a for a in args.attacks if a in args.seen]
-    table: dict[str, Any] = {"protocol": {"fpr": args.fpr, "budget": args.budget, "budget_frac": args.budget_frac,
-                                          "budget_min": args.budget_min, "seed": args.seed,
+    table: dict[str, Any] = {"protocol": {"fpr": args.fpr, "budget": args.budget, "max_size": args.max_size,
+                                          "seed": args.seed,
                                           "seed_per_file": args.seed_per_file, "escape": args.escape,
                                           "features": args.features.resolve().as_posix(), "seen": seen,
                                           "routes": routes_spec,

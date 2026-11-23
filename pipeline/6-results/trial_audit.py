@@ -33,6 +33,7 @@ import provexp.attacks.adaptive as A
 from provexp.data.files import load_pilot
 from provexp.data.paths import EMBER2024_DATA
 from provexp.data.paths import ROOT
+from provexp.detectors import MAX_LENGTH
 
 __all__ = ["Recorder", "explain", "marking"]
 
@@ -112,7 +113,7 @@ def main() -> None:
     # run 144's configuration (a1_adaptive.py's defaults where it passes none)
     config = {"ops": A.THREAT["M_full"], "pilot_files": ROOT / "artifacts/experiments/e1/seed-0/zeros/files.parquet",
               "db": EMBER2024_DATA / "ts", "search": "beam", "queries": args.queries, "seed": 0,
-              "budget_frac": 0.05, "budget_min": 512 * 1024, "beam": 3, "draws": 2, "patience": 3,
+              "max_size": MAX_LENGTH, "beam": 3, "draws": 2, "patience": 3,
               "checkpoints": (200, 1000, 2000), "score": "real"}
     malware, goodware = load_pilot(config["pilot_files"], config["db"])
     data_of = dict(malware)

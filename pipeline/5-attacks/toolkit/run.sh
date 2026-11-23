@@ -11,7 +11,8 @@
 #SBATCH --time=08:00:00
 #SBATCH --mem=64G
 #
-# Gimenez et al.'s eight toolkit attacks (secml-malware; low budget, a seed per (attack, file)) against the detectors,
+# Gimenez et al.'s eight toolkit attacks (secml-malware; BUDGET, default the GAMMA paper's `literature`, protocol (22);
+# outputs up to 4 MB; a seed per (attack, file)) against the detectors,
 # under the scale-up's protocol (session 67): the evaluation set's malware (2-features/files/ts.parquet), each detector
 # on those it detects at 1% FPR (threshold on the validation split), donors from donor set 1 (tr-donors-1). FOR
 # ACADEMIC SECURITY RESEARCH ONLY: published attacks against our own detectors, to evaluate defenses.
@@ -26,7 +27,7 @@
 # skipped. 0.1% FPR is read from the same runs in 6-results (the attacks minimize the score; a file evaded at 1% FPR is
 # evaded at 0.1%).
 # Output: $OUT_ROOT/5-attacks/toolkit/<job>/ (results.parquet, table.json); logs in $OUT_ROOT/5-attacks/toolkit/logs/.
-# Knobs: DETECTORS, ESCAPES, ESCAPE_DETECTORS, PARTS (default "main escape loo donors"), LOO (the leave-one-out
+# Knobs: BUDGET (literature or low), DETECTORS, ESCAPES, ESCAPE_DETECTORS, PARTS (default "main escape loo donors"), LOO (the leave-one-out
 # families, default "pv erdalt"), MODELS (registry set, default scaleup), FILES, NUM_MALWARE (smoke tests). Cost (pilot, run 133: ~1,500 runs in ~40 min at 16 workers): ~900
 # detected malware x 8 attacks per detector, a few hours per job on 36 cores. Scale-up (job 1046138, session 85): the
 # slowest task 4 h 44 min (the debug-entry escape), at most 44 GiB, ~90% of the cores on the main and escape rows;
@@ -39,6 +40,7 @@ DETECTORS="${DETECTORS:-unconstrained monotone-features monotone-sums additions-
 ESCAPES="${ESCAPES:-cert_entry debug_entry image_size}"
 ESCAPE_DETECTORS="${ESCAPE_DETECTORS:-unconstrained monotone-features monotone-sums}"
 PARTS="${PARTS:-main escape loo donors}"
+BUDGET="${BUDGET:-literature}"
 LOO="${LOO:-pv erdalt}"
 MODELS="${MODELS:-scaleup}"
 ATTACKS="gamma_sections gamma_api gamma_shift content_shift dos_extend header_fields padding format_exploit"
@@ -81,7 +83,7 @@ attack() {  # job, donor list, attacks, seen, detectors, then extra arguments
     --attacks $attacks \
     --seen $seen \
     --fpr 0.01 \
-    --budget low \
+    --budget "$BUDGET" \
     --seed 0 \
     --seed_per_file \
     "${EXTRA[@]}" \

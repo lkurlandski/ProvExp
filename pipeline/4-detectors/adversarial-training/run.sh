@@ -13,7 +13,8 @@
 #
 # The learned defenses' material, once (protocol item 5, session 67). FOR ACADEMIC SECURITY RESEARCH ONLY: published
 # secml-malware attacks against our own undefended detector, on our own training samples, to build the defenses the
-# sound detectors are compared with. The eight toolkit attacks (low budget, a seed per (attack, file)) on the 10,000
+# sound detectors are compared with. The eight toolkit attacks (BUDGET, default the GAMMA paper's `literature`, protocol (22); a seed per (attack,
+# file); outputs up to 4 MB) on the 10,000
 # training malware of 2-features/files/tr.parquet, detected or not, donors from donor set 0 (tr-donors-0), against the
 # scale-up's undefended detector (4-detectors/unconstrained, so 4-detectors/train runs first). Every valid output is
 # saved as a feature row for each store the defenses read (ROWS) and as a compressed binary (re-featurize them when an
@@ -27,7 +28,7 @@
 # Cost (pilot, run 133: 3,183 runs in 41 min at 16 workers, plus one 45-min stall): ~80k attack runs, ~700-900 CPU-h,
 # ~2.5 h per shard of 1,000 files on 36 cores; the binaries ~30-60 GB.
 # The two GAMMA attacks are not run on files LIEF cannot rebuild (provexp.attacks.lief_check; shards/<k>/lief_check.parquet).
-# Knobs: SHARDS (default 10; keep it equal to the --array size), FILES, DONORS, ROWS (stores, default the sums and
+# Knobs: BUDGET (literature or low), SHARDS (default 10; keep it equal to the --array size), FILES, DONORS, ROWS (stores, default the sums and
 # expert stores), NUM_MALWARE (smoke tests: only the list's first N), REPAIR (a file of lost tasks, `attack name` per
 # line: mend complete shards instead, re-running the lost tasks LIEF can rebuild; session 76:
 # REPAIR=$OUT_ROOT/4-detectors/material/lost.txt). Measured (session 76, 36 cores): ~2 h per shard; peak memory
@@ -37,6 +38,7 @@ cd "${SLURM_SUBMIT_DIR:-$(dirname "$0")/../../..}"
 source pipeline/common.sh
 
 SHARDS="${SHARDS:-10}"
+BUDGET="${BUDGET:-literature}"
 LISTS=$OUT_ROOT/2-features/files
 FILES="${FILES:-$LISTS/tr.parquet}"
 DONORS="${DONORS:-$LISTS/tr-donors-0.parquet}"
@@ -65,6 +67,7 @@ for k in $(tasks "$SHARDS"); do
     --shard "$k" \
     --num_shards "$SHARDS" \
     --seed 0 \
+    --budget "$BUDGET" \
     "${EXTRA[@]}" \
     --num_workers "$NUM_WORKERS" \
     &> "$LOG"
