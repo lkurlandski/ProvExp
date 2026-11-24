@@ -13,7 +13,16 @@ in `docs/archive/status-log-2026-11-14-s63.md`, sessions 64-65 in `docs/archive/
 
 ## Current state (2026-11-24, through session 111)
 
-- **Session 111 (writing, in progress):** the user's read of §4 and §5, subsection by subsection. Done: §4's lead (the redundant closing sentence of its first paragraph cut; the PE background rewritten to name only what later text uses: headers, sections, header entries locating the imports, debug data and signature, the overlay; bare "table" for PE structures replaced by "structure" in 4.1, 4.3, 4.4; the user then asked to keep standard PE names (section table, data directory, debug directory entry, certificate table entry): the "debug entry"/"certificate entry"/"header entry" renamings were reverted). 4.1 done: renamed "Extractor" (with D.1), colon-as-transition rewrites, pefile introduced and cited (user: "the main idea is to diversify the rhetoric and language structure"). Next: 4.2.
+- **Session 111 (writing):** the user's read of §4 and §5 began; §4's lead and 4.1 done, **next: 4.2 *Threat Model***.
+  Lead: the closing sentence of the first paragraph cut (repeated the second); the PE background now names only what
+  later text uses (headers, sections, the headers' *data directory* locating the imports, debug data and Authenticode
+  signature, the overlay); "tables such as the import table" gone. A bare "table" for a PE structure became "other
+  structure"/"structure" in 4.1, 4.3, 4.4; standard PE names stay (section table, data directory, debug directory entry,
+  certificate table entry), after Claude briefly renamed them and the user objected. 4.1: renamed *Extractor* (Appendix
+  D.1 too), matching *Threat Model*, *Signature*, *Population*; colons used as transitions rewritten; the warnings
+  sentence restructured; "EMBER's extractor parses files with pefile" introduces the overlay rule (pefile cited, new
+  `main.bib` entry). §4: 1,778 words. Claude overcorrected three times (renamed standard terms; swapped colons for
+  "for instance"; then removed a correct "for instance"); memory `feedback-proportionally` saved.
 - **Session 110 (experiments, tigris head node):** the rerun checked: everything up to ERDALT finished cleanly (audits,
   trial, train, material: 73,502 kept of 76,049, 2,001 over 4 MB, all GAMMA; GBDT defenses, iterated, price list, MAB
   `ours` and `expert`); ERDALT's nine GPU models (1260392) wait for tigris GPUs (estimated start 2026-11-25 ~15:00), and

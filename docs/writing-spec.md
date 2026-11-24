@@ -11,6 +11,23 @@ The "implied" notes are earlier readings, not instructions; several of them were
 
 ## Reaction log
 
+- **2026-11-24, the user's read of §4's lead and 4.1 (session 111).** Lead: the last sentence of the first paragraph
+  "feels unnecessary, since the second paragraph discusses EMBER"; the import table and data directory sentences
+  "slightly awkward. Let's rethink exactly what we need to discuss here and why"; "be a little weary about our use of
+  the word 'table' because I think we use this to describe part of our framework." Claude then renamed standard PE
+  terms; the user: "Please don't take my comments about the word 'table' so strongly. My point is that 'table' by
+  itself can be ambiguous ... If we're referring to the section table, we should just call it the 'section table' ---
+  using nonstandard names will make things more confusing, not less." 4.1: asked for "a more elegant name" (accepted
+  *Extractor*); "At times, the writing can be a little choppy. Using colons as a replacement for natural language
+  transitions ('for example', 'such as', etc.) is overused"; "The first sentence of the third paragraph is an excellent
+  example of when a colon SHOULD be used!" (a colon introducing the rule that is changed: "We also change one rule of
+  EMBER's parser: it starts the overlay where ..."); clarify that EMBER uses pefile, where the parsing rules come from.
+  On approving: "the main idea is to diversify the rhetoric and language structure. That makes it interesting and fun
+  to read." After Claude put in two "for instance": "you've taken my instruction far too extremely. Now there is an
+  overabundance of 'for instance' transitions, sometimes inserted in awkward locations where they really don't need
+  to be." After Claude removed both: "Why did you feel compelled to remove the first one?" (kept: "The byte histogram,
+  for instance, counts ..."; removed: "EMBER, for instance, divides ...", where the example is the section sizes, not
+  EMBER). Closing: "You overcorrected like crazy this session."
 - **2026-11-19, §3 cut by trimming explanation (session 99).** First plan (22 items, −593 words) called "an
   excellent first-pass analysis"; asked for each cut to be assessed for (i) mathematical correctness and strength,
   (ii) the reader's comprehension and appreciation (doctorate-level security, privacy, ML researchers), (iii) flow, in
