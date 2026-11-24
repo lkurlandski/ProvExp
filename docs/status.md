@@ -11,9 +11,35 @@ in `docs/archive/status-log-2026-11-14-s63.md`, sessions 64-65 in `docs/archive/
 `docs/archive/status-log-2026-11-15-to-16-s66-76.md`, sessions 77-94 in
 `docs/archive/status-log-2026-11-16-to-19-s77-94.md`).
 
-## Current state (2026-11-24, through session 111)
+## Current state (2026-11-24, through session 112)
 
-- **Session 111 (writing, in progress):** the user's read of §4 and §5, subsection by subsection. Done: §4's lead (the redundant closing sentence of its first paragraph cut; the PE background rewritten to name only what later text uses: headers, sections, header entries locating the imports, debug data and signature, the overlay; bare "table" for PE structures replaced by "structure" in 4.1, 4.3, 4.4; the user then asked to keep standard PE names (section table, data directory, debug directory entry, certificate table entry): the "debug entry"/"certificate entry"/"header entry" renamings were reverted). 4.1 done: renamed "Extractor" (with D.1), colon-as-transition rewrites, pefile introduced and cited (user: "the main idea is to diversify the rhetoric and language structure"). Next: 4.2.
+- **Session 112 (experiments, tigris head node; in parallel with the writing session 112):** the A100 trial read
+  (22176526): ERDALT fits (22.8 GB of 40), but ~15 min per epoch (2.6x a GH200; hypothesis 1.5-2x failed), ~17.2 h per
+  model; recorded in `pipeline/systems/sporc.sh` (request 23 h there). Both clusters are going down for maintenance
+  (user), and sporc's GPU nodes were all draining, so the race was dropped (user): sporc 22176620 cancelled; ERDALT on
+  tigris only (1260392_0 `erdalt`, 1264791_[1-8] the folds; at 13:00 the first two at epoch ~26 of 68, the other
+  seven pending on priority). The toolkit, adaptive and MAB `zainab` jobs (1260395-1260397) un-held, with a real
+  dependency `afterok:1260392_0:1264791` (cancelled on an ERDALT failure: `--kill-on-invalid-dep=yes`); `6-results`
+  still after them. The claims directory moved to `diag/s112/erdalt-claims-s111` (no release lists left; a requeued
+  task can no longer skip its own model). Merge with the writing session's 8d4ff87 resolved. Next (after the
+  maintenance): `docs/resume-prompt-experiments.md`.
+- **Session 112 (writing):** the user's read of 4.2 *Threat Model*. Four rewrites (survey of prior work, then
+  disorganized, then distant and passive, then scattered); the fourth, tied to §3's guarantees ("the threat model
+  decides what they are worth"), accepted as an improvement and committed (d004f35). A humanistic review followed
+  (eight findings, none applied). The user diagnosed the cause: the subsection's role in the paper is undecided (e.g.,
+  whether the attacker's budget belongs in 4.2 or §5). **Next session: task planning and manuscript organization** (a
+  content map of what research goes where, the delicate subsection pairs reviewed together, starting likely with 4.2
+  and 5.1); `docs/resume-prompt-writing.md`.
+- **Session 111 (writing):** the user's read of §4 and §5 began; §4's lead and 4.1 done, **next: 4.2 *Threat Model***.
+  Lead: the closing sentence of the first paragraph cut (repeated the second); the PE background now names only what
+  later text uses (headers, sections, the headers' *data directory* locating the imports, debug data and Authenticode
+  signature, the overlay); "tables such as the import table" gone. A bare "table" for a PE structure became "other
+  structure"/"structure" in 4.1, 4.3, 4.4; standard PE names stay (section table, data directory, debug directory entry,
+  certificate table entry), after Claude briefly renamed them and the user objected. 4.1: renamed *Extractor* (Appendix
+  D.1 too), matching *Threat Model*, *Signature*, *Population*; colons used as transitions rewritten; the warnings
+  sentence restructured; "EMBER's extractor parses files with pefile" introduces the overlay rule (pefile cited, new
+  `main.bib` entry). §4: 1,778 words. Claude overcorrected three times (renamed standard terms; swapped colons for
+  "for instance"; then removed a correct "for instance"); memory `feedback-proportionally` saved.
 - **Session 111 (experiments, an interactive job on sporc; in parallel with the writing session 111):** one
   environment per architecture (6b51345): `env-aarch64/`, `env-x86_64/`, `env/` a dispatcher with per-command shims;
   `pipeline/systems/arch.sh` re-points `~/.bashrc`'s per-architecture paths in jobs submitted across clusters; both
@@ -305,8 +331,8 @@ in `docs/archive/status-log-2026-11-14-s63.md`, sessions 64-65 in `docs/archive/
   Both are on the next-round list (`docs/scaleup-protocol.md`) as candidates.
 
 - **The full rerun is running (submitted 2026-11-23, session 105; jobs 1260382-1260399; session 110: all but ERDALT
-  and the attacks that need it finished; session 111: ERDALT raced on tigris and sporc, the attacks that need it held
-  until its last model releases them, see Current state).** It carries every change
+  and the attacks that need it finished; session 112: ERDALT on tigris only, the race with sporc dropped; the attacks
+  that need it wait on it by a SLURM dependency, see Current state).** It carries every change
   of sessions 101-105 (GAMMA through our writers, `hgr` and the fifth clause, the validity rule by sets, the literature
   budget, the 4 MB output rule) and ERDALT's attacks; the old round's numbers stay in the manuscript until it is read.
   Next (`docs/resume-prompt-experiments.md`): check it, then read every result with the user. Still open: PV's setup
