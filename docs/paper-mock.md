@@ -86,6 +86,10 @@ the population); the bookkeeping goes to an appendix (user: "Most of this is eng
 
 ## §5 Evaluation, three findings (3,200 words; restructured with the user 2026-11-10, session 30)
 
+*Superseded in structure by `docs/evaluation-note.md` (session 108, decision 13): Corollary 1 in §5's lead; 5.3 *What
+Observed Edits Miss* with trial; one comparison table grouped by the source of each detector's knowledge. The plan
+below is the history of the three findings, which stand.*
+
 **Framing (PLAN.md, decision 10).** §5 is not organized by §3's results (that made it a validation section: the
 implementation is correct, the proofs hold) and not as a defense paper. It tests the claim §2 makes about where
 practitioners get their knowledge of what edits do: by trial (exact, but only for the edits tried), by an analyst's

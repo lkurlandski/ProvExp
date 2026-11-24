@@ -1,0 +1,190 @@
+% Appendix E: the attacks and defenses of Section 5 (split from Appendix D, session 106). Session 108: mirrors §5's
+% subsections (memory: appendix mirrors body); no subsection for 5.2, which needs none. Rule for added defenses
+% (docs/evaluation-note.md, decision 5): a row in the comparison table (tab:eval:detectors) and the per-attack table, a paragraph in E.2 on how it was
+% built and ported.
+
+This appendix gives the details of the attacks and defenses that \Cref{sec:evaluation} runs, in the order of its
+subsections.
+
+\subsection{Setup}
+\label{sec:attacks:setup}
+
+\paragraph{The toolkit attacks.} Each runs secml-malware's genetic algorithm at the budget of the GAMMA
+paper~\cite{demetrio2021functionality}: a population of 10 over 51 iterations, with 75 benign donor files. The five
+byte-level attacks were built for models that read the raw bytes, and against our detectors they rarely evade
+(\Cref{tab:ember:per-attack}). Against secml-malware's pretrained MalConv~\cite{raff2018malware}, the model they were
+built for, the same code and budget evade between 5 and 16 of 20 malware files, so neither the code nor the budget is
+why they rarely evade ours. The released GAMMA attacks write their sections and imports through the LIEF library~\cite{lief}, which
+rebuilds the file's layout and moves content that no operation moves. We keep GAMMA's search and write the edits it
+chooses with our own code, growing the headers first where they lack room for the new section headers; where no growth
+makes room, the attack does not apply to the file.
+% docs/scaleup-protocol.md item (22): diag/s105/malconv_control.py (16, 14, 9, 6, 5 of 20) and toolkit_reach.py.
+
+\paragraph{The adaptive attack.} The adaptive attack of \Cref{sec:eval:setup} is a beam search. At each step it applies
+random candidate edits to the three lowest-scoring files found so far, writes each candidate with our own code and
+extracts its features, and keeps the three lowest-scoring files; after three steps without improvement it restarts
+from the original file. When it adds or renames a section, it picks a name whose hash lands in a bucket the detector's
+trees weigh toward benign. When it adds a section or imports and the headers lack room for them, it grows the headers
+first, as the GAMMA attacks do.
+% pipeline/5-attacks/adaptive (adaptive.py, --score real at the scale-up; decision 12 (iii)); target_buckets reads the
+% booster; hgr added in session 105 (item (22)).
+
+\paragraph{MAB-Malware.} We run the authors' code unchanged except for how it hands files to the detector. Upstream,
+the attack, its minimizer and the detector run as three threads that pass files through folders on disk; we call the
+same steps in the same order from one thread and score each file when it is handed over, and we checked on test files
+that this produces the same actions, outputs and bandit state as the original hand-over. One run attacks all the
+malware a detector detects, so the bandit learns from one detector at a time. Zainab et al.~\cite{zainab2026breaking}
+report that MAB-Malware evades their EMBER~2024 detector on 83\% of the malware, at a 0.1\% false-positive rate. Their
+detector and malware differ from ours, so the two rates describe different setups: at our 1\% rate, it evades the
+unconstrained detector of \Cref{tab:eval:detectors} on 10 of the 47 malware it detects, and the same detector trained
+on the full training set on none of 49.
+% Old round's values (5%/512 KB cap); the new round (4 MB rule, session 105) replaces them, and adds MAB-Malware at
+% Zainab et al.'s setting (0.1% FPR, no byte limit) against the unconstrained detector (item (8)).
+% Zainab et al., Table I (MAB-Malware on EMBER-24, 83.40%) and Table IX (EMBER-24 at 0.1% FPR); no byte limit stated.
+% scripts/mab_attack.py (MABChannel, run_sync); tests/test_mab_attack.py; third_party/mab_malware (upstream 91a518a).
+
+\paragraph{Each attack separately.} \Cref{tab:ember:per-attack} gives, for every detector of
+\Cref{tab:eval:detectors}, the malware each attack evades.
+
+\begin{table*}[t]
+  \caption{Malware evaded by each attack, per detector, grouped as in \Cref{tab:eval:detectors}. Toolkit attacks as in
+  \Cref{tab:instances:catalogue}.}
+  \label{tab:ember:per-attack}
+  \small
+  \begin{tabular*}{\textwidth}{@{}l@{\extracolsep{\fill}}rrrrrrrrrrr@{}}
+    \toprule
+    Detector & detected & padding & \multicolumn{2}{c}{GAMMA} & GAMMA & content & DOS & header & format & adaptive
+      & MAB- \\
+    & & & sections & imports & shift & shift & ext. & fields & exploit & & Malware \\
+    \midrule
+    Unconstrained        & 47 & 1 & 6 & 24 & 7 & 0 & 0 & 9 & 0 & 47 & 10 \\
+    \midrule
+    \multicolumn{12}{@{}l}{\emph{Read by hand}} \\
+    Expert set (additions) & 8  & 0 & 0 & 0  & 0 & 0 & 0 & 0 & 0 & 2  & 4 \\
+    \midrule
+    \multicolumn{12}{@{}l}{\emph{Learned from observed edits}} \\
+    PV                   & 9  & 0 & 0 & 0  & 0 & 0 & 0 & 0 & 0 & 4  & 7 \\
+    ERDALT               & 29 & 0 & 0 & 24 & 0 & 0 & 0 & 0 & 0 & 22 & 6 \\
+    Adversarial training & 50 & 0 & 1 & 10 & 4 & 2 & 0 & 2 & 0 & 23 & 4 \\
+    Iterated adv.\ training & \synthetic{50} & \synthetic{0} & \synthetic{1} & \synthetic{5} & \synthetic{2}
+      & \synthetic{1} & \synthetic{0} & \synthetic{1} & \synthetic{0} & \synthetic{48} & \synthetic{4} \\
+    Trial                & 44 & \synthetic{0} & \synthetic{0} & \synthetic{0} & \synthetic{0} & \synthetic{0}
+      & \synthetic{0} & \synthetic{0} & \synthetic{0} & 26 & 17 \\
+    \midrule
+    \multicolumn{12}{@{}l}{\emph{Derived from the extractor}} \\
+    Monotone, features   & 39 & \synthetic{0} & \synthetic{0} & \synthetic{0}  & \synthetic{0} & \synthetic{0} & \synthetic{0} & \synthetic{0} & \synthetic{0} & 0  & \synthetic{0} \\
+    Monotone, sums       & 40 & \synthetic{0} & \synthetic{0} & \synthetic{0}  & \synthetic{0} & \synthetic{0} & \synthetic{0} & \synthetic{0} & \synthetic{0} & 0  & \synthetic{0} \\
+    Monotone, sums (additions) & 43 & 0 & 0 & 0  & 0 & 0 & 0 & 12 & 0 & --- & 1 \\
+    \bottomrule
+  \end{tabular*}
+\end{table*}
+% Session 108: regrouped as the comparison table (tab:eval:detectors); unconstrained is s10-ref (run 143 adaptive with
+% the entry write; toolkit a1/toolkit-v2; MAB run 139). PV, ERDALT, adversarial training: a_varied/toolkit-*/table.json,
+% a_varied/adaptive-*-best, run 139. Expert set: a1/expert/toolkit, run 120, run 139. Iterated: SYNTHETIC (no pilot run;
+% predicted near adversarial training's toolkit cells, the adaptive attack through `ent`). Trial: run 144 (beam at
+% 2,000 candidates, MAB-Malware); its toolkit cells SYNTHETIC (no toolkit run on it; predicted 0: its table keeps the
+% import buckets nondecreasing, which GAMMA imports raises). Monotone rows: run 143 adaptive measured; toolkit and
+% MAB-Malware cells predicted 0 on the -loose detectors. Additions: toolkit a1/toolkit-v2 (12 header fields); no
+% adaptive run (---); MAB run 139. SCALE-UP: one protocol and one detected count per row (R11); 6-results.
+
+\subsection{What Observed Edits Miss}
+\label{sec:attacks:observed}
+
+\paragraph{PV.} PV selects among EMBER's features, not the sums. A feature counts as lowered when some output lowers
+it by more than $10^{-6}$, which only guards against rounding; the lowered features are left out of the detector.
+% a_pv_hole.py rule (kept = min observed delta >= -tol, monotone +1); at the scale-up pv_hole.py --exclude in
+% 4-detectors/learned, selected among EMBER's features (the re-encoded sums dropped).
+
+\paragraph{ERDALT.} We follow Gimenez et al.'s released code with one change: the output layer's weights are kept
+nonnegative, like those of the layers below it, so that the network is monotone as their Proposition~3 requires; the
+released code leaves the output layer unconstrained. Their code sizes several settings to their data, 24,000 training
+files and 1,033 adversarial feature changes, against our 1.76 million and \synthetic{about 80,000}. We rescale each so
+that it has the same effect: the penalty on the layer is weighted by 1,033 over the number of changes a model sees,
+so that it weighs as much per step as in their training; the schedule covers their number of training steps, 68 of our
+epochs, with the learning rate's patience shortened in proportion; the features are scaled by their quantiles; and
+their selection criterion, fewer than 5 violated entries over all changes, becomes the same rate per change, fewer than
+381. Their batch size of 16 becomes 256. No epoch meets the rescaled criterion, so we keep the one with the fewest
+violations.
+% docs/erdalt-diagnosis-plan.md (sessions 82-100); src/provexp/models/erdalt.py (project_monotone); docs/upstream-
+% issues.md, item 8. Session 100: validation AUC 0.978, test 0.981, 35,594 violations against 381 (their literal w2:
+% 769 violations at 0.914), kept as is (user). SYNTHETIC: the material's count (78,715 vectors in the old round).
+
+\paragraph{Adversarial training.} The adversarially trained detector is the unconstrained detector retrained with the
+outputs of the toolkit attacks added to its malware. Iterated adversarial training starts from it. Each round runs
+the adaptive attack, with every operation except the entry write, on 1,000 training malware not used before, adds the
+evasive outputs to the malware, and retrains; we run two rounds.
+% 4-detectors/adversarial-training (material), learned (advtrain), iterated (two rounds; scaleup-protocol.md (7),
+% (11): starting point chosen by Claude, the adversarially trained detector).
+
+\paragraph{Trial.} The trial table learns from the edits of the checks of \Cref{sec:eval:setup} on the 2,000 files of
+the evaluation set and from a second pass over the same files: every section renamed, the section slack, the DOS
+header and stub, and the loader-ignored header fields all overwritten at once, with zeros, random bytes, and printable
+text, and imports added from 100 benign training files. A feature that some edit lowered is dropped, one that some
+edit raised and none lowered is monotone increasing, and one that no edit moved is left free.
+% 3-directions/trial (trial_probe.py, trial_table.py; donor set 0). Trial-toolkit (pilot only, run 144): the trial
+% table widened with the toolkit attacks' outputs.
+
+\paragraph{Leave-one-out.} \Cref{tab:ember:loo} gives the folds of \Cref{sec:eval:observed}. Each fold builds PV and
+ERDALT from the outputs of seven toolkit attacks and runs the eighth on the test malware the fold's detector detects,
+as in \Cref{sec:eval:setup}.
+
+\begin{table}[t]
+  \caption{Leave-one-out over the toolkit attacks: test malware each fold's detector detects, and how many of them the
+  held-out attack evades.}
+  \label{tab:ember:loo}
+  \small
+  \begin{tabular}{@{}lrrrr@{}}
+    \toprule
+    Held-out attack & \multicolumn{2}{c}{PV} & \multicolumn{2}{c}{ERDALT} \\
+    & detected & evaded & detected & evaded \\
+    \midrule
+    GAMMA sections & 19 & 0 & 27 & 1 \\
+    GAMMA imports & 9 & 0 & 29 & 25 \\
+    GAMMA shift & 9 & 0 & 30 & 0 \\
+    content shift & 9 & 0 & 30 & 1 \\
+    DOS extension & 9 & 0 & 28 & 0 \\
+    header fields & 9 & 0 & 29 & 2 \\
+    padding & 9 & 0 & 28 & 1 \\
+    format exploit & 8 & 0 & 29 & 0 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+% Run 135: artifacts/experiments/a_loo_varied/{pv,erdalt}/<attack>/table.json. Attack names as in Table 2.
+
+\subsection{What Robustness Costs}
+\label{sec:attacks:cost}
+
+\Cref{tab:ember:price} gives the detection of the monotone detector on the sums with each operation left out of the
+threat model in turn, the numbers \Cref{sec:eval:detectors} draws on.
+
+\begin{table}[t]
+  \caption{The monotone detector on the sums, measured on the threat model without the entry write, with one operation
+  at a time left out of it. TPR at each false-positive rate.}
+  \label{tab:ember:price}
+  \small
+  \begin{tabular*}{\linewidth}{@{}l@{\extracolsep{\fill}}rr@{}}
+    \toprule
+    Detector & 1\% & 0.1\% \\
+    \midrule
+    Unconstrained & 93.5 & 84.4 \\
+    Two-sided features dropped, no constraints & 93.3 & 79.2 \\
+    Threat model without the entry write & 89.6 & 74.7 \\
+    \midrule
+    \multicolumn{3}{@{}l}{\emph{Leaving out}} \\
+    add imports & 91.7 & 78.8 \\
+    the three header overwrites & 91.0 & 79.2 \\
+    \quad overwrite header fields & 90.8 & 77.0 \\
+    \quad overwrite the checksum & 90.3 & 76.1 \\
+    \quad overwrite the DOS header and stub & 89.4 & 75.7 \\
+    remove the debug entry & 90.0 & 75.2 \\
+    remove the certificate entry & 90.0 & 75.0 \\
+    rename a section & 89.7 & 76.0 \\
+    gap before the PE header & 89.6 & 77.1 \\
+    append bytes at the end & 89.3 & 71.7 \\
+    \bottomrule
+  \end{tabular*}
+\end{table}
+% MEASURED (2026-11-04): run/126_price_list.sh, artifacts/experiments/a_price_list/table.json (before the entry write;
+% ext = gap before the PE header). Not measured: add a section, gap before the first section, grow the headers,
+% section slack (the price list's operations then). PROTOCOL: the scale-up's 4-detectors/price-list re-runs it on the
+% widened table, every operation, including the entry write; this table becomes the full threat model's.

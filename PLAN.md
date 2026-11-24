@@ -27,8 +27,9 @@ them (below).
   and a close read of Lemma 1 (*Closure*) and the readout rule (added in session 74, approved after a brief look).
 - **§4:** drafted in the template structure, reviewed twice by Claude; ~1,500 words against ~1,000, shortened with §5
   after the scale-up.
-- **§5:** three findings (decision 10), drafted and reviewed per subsection; the user has not read it end to end. The
-  review's R7 (decision 11: no router), R1 (decision 12: MAB-Malware) and R18 (the trial row) are written in.
+- **§5:** rebuilt in session 108 (decision 13, `docs/evaluation-note.md`): Corollary 1 in the lead as the yardstick,
+  sources of knowledge compared by the detectors built on them, one comparison table; drafted, not yet reviewed; the
+  user has not read it end to end. §3.4 merged into §3.3.
 - **§6:** drafted, cut to ~1,280 words in session 84 (mock 1,000; length accepted). **§1, §7, abstract, ethics, open science:** empty, last by decision. Body ~13,000 words against
   the mock's 11,000.
 - **The simulated review of 2026-11-12** (`docs/reviews/2026-11-12-body/meta-review.md`): two weak accepts, two weak
@@ -94,7 +95,8 @@ records of the §5 reviews, the table remake and the ERDALT check, is in
    **Next:** `docs/resume-prompt-experiments.md`: read the current results with the user and plan the reruns (the
    user's call: toolkit, material, learned defenses and their attacks, the guaranteed detectors and price list, MAB's
    validity, the adaptive search with `hgr`, ERDALT's attacks); PV's setup; then `6-results` and step 5.
-4. **While the scale-up runs: §2's closing and contribution 4 against §5** (old step 2 (c)). §2 says §5 "uses them to
+4. **While the scale-up runs: §2's closing and contribution 4 against §5** (old step 2 (c); the user, session 108:
+   §2's closing sentence waits for the end-to-end pass with the introduction, not a local fix). §2 says §5 "uses them to
    attack malware detectors and to build robust ones"; in §5 the attack is an instrument. The mock's contribution 4 is
    stale ("four to six points", "learned constraints"). Writing only.
    Also here (session 63), since they need no numbers: the rebuttal's number-free text fixes R4 (claims scoped "on

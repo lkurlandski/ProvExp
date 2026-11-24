@@ -247,6 +247,20 @@ one of them; do not read it every session.
     that breaks the undefended or the adversarially trained detector. Appendix D's MAB-Malware paragraph compares the
     rate with Zainab et al.'s operating point and byte limit.
 
+13. **§5 rebuilt around where each detector's knowledge of edits comes from (session 108, 2026-11-23).** The user
+    chose the narrative (Claude's option A) and asked Claude to decide the rest ("make the best decision"); record and
+    reasons: `docs/evaluation-note.md`, section 6. Every source of a defender's knowledge of what edits do (reading the
+    extractor, observed attacks, trial) yields a detector; Corollary 1, moved from §3.4 to §5's lead, is the
+    yardstick; a source fails as *unsound* (evaded) or *over-cautious* (detection lost), and the derived detector's
+    cost is the price of soundness itself. §3.3 and §3.4 merged (§3 only measures edits). Trial joins 5.3, now *What
+    Observed Edits Miss* (the user's session-63 placement); the expert set's detection comparison moves to 5.2; one
+    comparison table, rows grouped by source, replaces Tables 4 and 5; Appendix E mirrors §5; the title stays
+    *Evaluation*. **§5 must take more benchmarked defenses** (user: very likely later, body or appendix undecided): a
+    new defense is a row in the comparison and per-attack tables and a paragraph in Appendix E.2; body prose only if
+    it shows a failure the existing rows do not. Refines decision 10 (three findings, not a defense paper, stands).
+    *Shifts* detector deferred (user: only if implemented and running). §2's stale closing sentence is left to the
+    end-to-end pass with the introduction (user).
+
 ## Settled decisions (carried over)
 
 - The domain is adversarial examples in practical security tasks; the framework is as agnostic as Pierazzi et al.'s

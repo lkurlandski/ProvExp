@@ -497,3 +497,34 @@ al., search over transformations ... The toolkits ... work this way ... We compu
 itself ..."): "This is one of the worst things I have ever seen you write. I do not approve it." Reverted.
   The user, next turn: "The original paragraph wasn't that long to begin with, it read smoothly, and it emphasized the
   correct ideas at an appropriate level." (The cut version read as abrupt and jarring, in cruder words.) Kept as is.
+
+**2026-11-23 (session 107), §4 review and cut.** Fresh humanistic review of §4 (eight findings plus minor points and
+Appendix D's pairing). The user: "Okay, keep in mind that section 5 is quite out of date and we'll update it in the
+next session. We shouldn't make changes to section 4 based on things from 5 that are out of date. Otherwise, I approve
+for you to make all suggested changes, in one pass, based on your best judgement." (So the *shifts* model, unused by
+the current §5, was kept.) The cut, 19 items from 1,956 to 1,695 words, ordered least to most disruptive with ⚑ on
+five: "I approve them all." Then, while Claude was writing the docs: "Actually, I approve all except the ⚑ items.
+Sorry." The five ⚑ items (the lead's feature list, header growth's "when", the Definition 5 tie for dropped
+features, the population shares' restated definition, the parser-read positions paragraph) restored; 1,792 words.
+
+**2026-11-23 (session 108), §5 rebuilt.** Asked what "out of date" covers (four options), the user chose all four
+(setup to the scale-up, new competitors, the refactor moving the detectors into §5, terms from §4); on the stray
+fragment: "I don't care." Asked where Corollary 1 goes in §5: "I think we need to reassess the first part of the
+section's narrative. Where to put the proposition depends on how we do this." Shown two narratives (A: the corollary
+as the yardstick every source of knowledge is judged by; B: minimal change): "We'll take your recommended approach."
+After the new lead: "I'm a little concerned about the transition into this part of the reseach entirely. The section
+is called "Evaluation" but I'm almost worried that its not clear what we're evaluating. Do you think the reader is
+well-prepared to understand the flow of the research paper hollistically?" Claude proposed fixing §2's closing
+sentence now and offered titles (*What Each Source of Knowledge Misses*, *Where Knowledge of Edits Comes From*): "§2's
+closing sentence is precicely the type of thing modification we'd handle when doing an end-to-end pass for
+consistency and narrative. I'm interested in changes we'd want to make locally to this section itself. I agree that
+maybe changing the title could be helpful but the options you listed seem to indicate that you don't even understand
+the section itself." Asked for a ground-up planning phase like §4's. Shown seven design questions: "Its almost
+impossible for me to answer any of these questions. We're still very early on in the construction of this section and
+I'm largely unfamilliar with what its going to eventually contain. I encourage you to think carefully about each of
+the points, weigh the options and their strengths and weaknesses, and make the best decision accordingly." And: "there
+is a strong likelihood that we will eventually need to benchmark additional adversarial defenses ... We should
+consider how well the section can be extended to incorporate additional defenses when designing and writing it." On
+the *shifts* detector: "If we already have this implemented, tested, and we're currently running experiments with it,
+then yes ... If not, then we'll push the decision ... down the road; although, I agree, its seems useful." Then:
+"Okay, please draft the rest as well."
