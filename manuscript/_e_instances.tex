@@ -9,14 +9,14 @@
 \Cref{sec:framework} proves its results for any sum-then-readout extractor, and leaves to an instance everything
 that depends on the format of the input. An instance supplies the extractor in sum-then-readout form, a decision about
 the features that do not fit this form, a threat model, a signature that covers it, and the population over which
-the signature holds. We supply each for the EMBER feature set; an instance in another domain supplies the same.
+the signature holds.
 
 The instance we consider is static malware detection on Windows, where a classifier decides whether an executable
 file is malicious without running it. Windows executables use the Portable Executable (PE) format. A PE file starts
 with headers, which describe the rest of the file and hold what the operating system needs to load the program.
-Sections follow, which hold the code, the data, and the resources, together with tables such as the import table,
-which lists the functions the program uses from other libraries. The headers locate each table through an entry of
-the \emph{data directory}, which gives the table's position and size. Bytes after the last section form the overlay, which
+Sections follow, which hold the code, the data, and the resources. Entries of the headers' \emph{data directory} give the
+position and size of further structures, among them the imports, which list the functions the program uses from other libraries, the
+debug data, and the Authenticode signature. Bytes after the last section form the overlay, which
 the loader does not map. EMBER~\cite{anderson2018ember} is the standard benchmark for this task (we use the most
 recent version, EMBER-v3~\cite{joyce2025ember}). Its extractor parses a file and computes 2,568 features that describe
 these structures by their metadata and statistics: the header fields, the size, entropy, and characteristics of each
@@ -24,30 +24,22 @@ section, hashes of the imported and exported names, the Rich header, the Authent
 warnings, together with histograms of the bytes and of their local entropy and statistics of the printable strings,
 taken over the whole file.
 
-\subsection{EMBER as a Sum-then-Readout Extractor}
+\subsection{Extractor}
 \label{sec:instances:record}
 
-EMBER's metadata and statistics both fit the form of \Cref{sec:fw:model}. A statistic adds up something over parts of
-the file: the byte histogram counts the bytes of each value, and the import features count the functions imported
-from each library. A piece of metadata, such as a header field, is the value of a single part. These parts, from single
+EMBER's metadata and statistics both fit the form of \Cref{sec:fw:model}. A statistic adds up something over parts of the file. The byte histogram, for instance, counts the bytes of each value, and the import features count the functions imported from each library. A piece of metadata, such as a header field, is the value of a single part. These parts, from single
 bytes and printable strings to sections and imports, are EMBER's items. Most sums are counts or totals, and where EMBER
 hashes names into a fixed number of buckets, every bucket is a sum of its own. Every form of readout in \Cref{tab:fw:readouts} occurs. We instrument the extractor without changing what it
-computes, so that it records each file's item table (\Cref{sec:fw:model}) and its sums as well as its features. A detector can read the sums directly, which keeps
-directions a readout loses: a normalized bin of the byte histogram falls whenever another bin rises, while its count
-can only rise when bytes are added.
+computes, so that it records each file's item table (\Cref{sec:fw:model}) and its sums as well as its features. A detector can read the sums directly, which keeps directions a readout loses. Adding bytes can only raise the count of each byte value, while its normalized bin falls whenever another bin rises.
 
-Not every feature of EMBER fits the definition as written. Some fit once they are written over sums: EMBER divides each section's size by the file's size as it
-visits the section, which makes the section's contribution depend on the rest of the file, and we divide in the
-readout instead. Others have no items at all.
-EMBER's 88 parser warnings are flags, each set when the parser reports a particular irregularity in the file, and we
-do not model which parts of the file cause it. A feature without items can be dropped, which leaves a
+Not every feature of EMBER fits the definition as written. Some fit once they are written over sums. EMBER, for instance, divides each section's size by the file's size as it visits the section, which makes the section's contribution depend on the rest of the file, so we divide in the readout instead. Others, EMBER's 88 parser warnings, have no items at all. Each is a flag set when the parser reports a particular irregularity in the file, and we do not model which parts of the file cause it. A feature without items can be dropped, which leaves a
 sum-then-readout extractor on the remaining features (Definition~\ref{def:fw:extractor}), or kept and given the
 direction $\mathsf{both}$, which is always sound but says nothing about how the feature moves, so a detector built
 on the directions cannot use it either way. We drop the warnings. Earlier versions of EMBER did not compute
 them~\cite{joyce2025ember}, and a detector trained without them loses no detection. Every other feature, 2,480 of the 2,568, has items, and the readouts of the recorded sums give
 each of them exactly as the extractor does. % run 126 (pilot)
 
-We also change one rule of EMBER's parser: it starts the overlay where the last section or table ends, and we start it
+EMBER's extractor parses files with pefile~\cite{pefile}. We also change one of pefile's rules: it starts the overlay where the last section or other structure ends, and we start it
 where the last section ends, as LIEF~\cite{lief} does, so that the entry write of \Cref{sec:instances:catalogue},
 which sets a data directory entry the loader ignores, cannot move the overlay. Appendix~\ref{sec:ember} lists every change we make to EMBER, with its reason, and the items, readouts, and sums.
 % R7, docs/evidence/r7-overlay-rule.md §5 (user, 2026-11-13): LIEF's rule installed in pefile by features.py (f0d2bb1).
@@ -128,7 +120,7 @@ overwrite reach a kind of item, or lets an item contribute to a sum, that no fil
 
 The item tables give the changes of an overwrite at the positions it writes, with one exception: an overwrite can
 also land on a position that the parser reads to find other items, such as an entry of the section table or a field
-that gives the location of a table. The entry write always does: it writes
+that gives the location of a structure. The entry write always does: it writes
 where the extractor looks for the signature and the debug data. Such a write can change which items the
 extractor finds, in a way the item table does not record. The signature then allows any change to the items of that
 kind. For a single edit, such a write is \emph{declined}: we do not compute its side effects.
@@ -151,7 +143,7 @@ parser looked for and did not find, instead of extending the overlay. Lemma~\ref
 are properties of the parse, so closure is checked instead: none of the 56,902 edits of \Cref{sec:eval:setup} that were applied to
 files in the population took a file out of it.
 
-Almost every file outside the population is incomplete, although our copy holds it in full: its headers locate sections or tables that lie, at least in
+Almost every file outside the population is incomplete, although our copy holds it in full: its headers locate sections or other structures that lie, at least in
 part, past its end. Of the test files we use (\Cref{sec:eval:setup}), 94\% are in the population, 5\% are incomplete,
 and 0.4\% are complete files with an unusual layout. A detector still scores every file, and
 \Cref{sec:eval:detectors} measures how the detectors built from the directions fare on files outside.
