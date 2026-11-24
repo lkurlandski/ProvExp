@@ -11,8 +11,17 @@ in `docs/archive/status-log-2026-11-14-s63.md`, sessions 64-65 in `docs/archive/
 `docs/archive/status-log-2026-11-15-to-16-s66-76.md`, sessions 77-94 in
 `docs/archive/status-log-2026-11-16-to-19-s77-94.md`).
 
-## Current state (2026-11-24, through session 109)
+## Current state (2026-11-24, through session 110)
 
+- **Session 110 (experiments, tigris head node):** the rerun checked: everything up to ERDALT finished cleanly (audits,
+  trial, train, material: 73,502 kept of 76,049, 2,001 over 4 MB, all GAMMA; GBDT defenses, iterated, price list, MAB
+  `ours` and `expert`); ERDALT's nine GPU models (1260392) wait for tigris GPUs (estimated start 2026-11-25 ~15:00), and
+  toolkit, adaptive, MAB `zainab` and `6-results` wait on them. GAMMA's section attack is not applicable to ~25% of
+  files at 75 donors (2,457 of 10,000 training malware); accepted for this round (user). Headers right-sized
+  (557f0b5). The register `docs/experiments-to-reconsider.md` started (022dceb). Decided (user): run ERDALT on sporc
+  (x86_64; estimated start the same day) as well, after one environment per architecture is set up and tested on both
+  clusters, the sporc array in reverse order, the first cluster to start a model wins (mechanism to design). Next:
+  `docs/resume-prompt-experiments.md`, on the sporcsubmit head node.
 - **Session 109 (writing):** humanistic review of the rebuilt §5 and Appendix E (ten findings; the user: "Please fix
   all issues"), applied in one pass: the lead now names the two failure modes (unsound: evaded; over-cautious:
   detection lost, measured against the derived detector on the same features), the derived table's second role
@@ -282,7 +291,8 @@ in `docs/archive/status-log-2026-11-14-s63.md`, sessions 64-65 in `docs/archive/
   detector (the middle threat model of §4.2): deferred by the user; used in §5.4 only if it is implemented and run.
   Both are on the next-round list (`docs/scaleup-protocol.md`) as candidates.
 
-- **The full rerun is running (submitted 2026-11-23, session 105; jobs 1260382-1260399).** It carries every change
+- **The full rerun is running (submitted 2026-11-23, session 105; jobs 1260382-1260399; session 110: all but ERDALT
+  and the attacks that need it finished; ERDALT to be raced on sporc, see Current state).** It carries every change
   of sessions 101-105 (GAMMA through our writers, `hgr` and the fifth clause, the validity rule by sets, the literature
   budget, the 4 MB output rule) and ERDALT's attacks; the old round's numbers stay in the manuscript until it is read.
   Next (`docs/resume-prompt-experiments.md`): check it, then read every result with the user. Still open: PV's setup

@@ -56,3 +56,4 @@ manuscript/*.fls
 manuscript/*.fdb_latexmk
 third_party/secml/src/secml/VERSION_REV
 /logs/
+env-*/

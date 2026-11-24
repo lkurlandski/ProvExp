@@ -1,6 +1,6 @@
 # Experiments: what we might reconsider or change, and why
 
-Started 2026-11-24 (session 106, experiments track) at the user's request, by combing the documentation for aspects of
+Started 2026-11-24 (session 110, experiments track) at the user's request, by combing the documentation for aspects of
 the experiments already flagged as worth revisiting. Each entry says what the aspect is, why it may need to change, the
 options on record, its status, and where the record lives. It is a register of candidates, not of decisions: when the
 user schedules one for a rerun, it also goes on the **next-round list** at the end of `docs/scaleup-protocol.md`
@@ -14,7 +14,7 @@ kept here because the decision has a known cost someone may want to revisit).
 ## 1. The attacks
 
 **1.1 The GAMMA section attack skips a quarter of the files at the literature budget.** *Open; accepted for this round
-(user, session 106).* GAMMA's section attack writes one new section header per donor section on every query (it
+(user, session 110).* GAMMA's section attack writes one new section header per donor section on every query (it
 injects all donors, even those whose weight is zero; `docs/upstream-issues.md`, item 7). At the GAMMA paper's budget
 (75 donors, protocol item (22)), many files' headers cannot hold 75 more, even after growing them, so the attack is not
 applicable to them: 2,457 of 10,000 training malware in the session-105 material, against 126 at 30 donors (where 192

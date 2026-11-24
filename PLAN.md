@@ -92,7 +92,10 @@ records of the §5 reviews, the table remake and the ERDALT check, is in
    start.
    Session 104 (item (21)): ERDALT's folds finished and `hgr` merged; the validity rule compares sets, sections by
    virtual address (user); no verdict changes on the kept outputs.
-   **Next:** `docs/resume-prompt-experiments.md`: read the current results with the user and plan the reruns (the
+   Session 105 (item (22)): the literature budget, the 4 MB output rule, `hgr` in the adaptive search; the full rerun
+   submitted (1260382-1260399). Session 110: all of it but ERDALT and the attacks that need it finished; ERDALT to be
+   raced on sporc (one environment per architecture first); the register `docs/experiments-to-reconsider.md`.
+   **Next (superseded below):** `docs/resume-prompt-experiments.md`: read the current results with the user and plan the reruns (the
    user's call: toolkit, material, learned defenses and their attacks, the guaranteed detectors and price list, MAB's
    validity, the adaptive search with `hgr`, ERDALT's attacks); PV's setup; then `6-results` and step 5.
 4. **While the scale-up runs: §2's closing and contribution 4 against §5** (old step 2 (c); the user, session 108:
