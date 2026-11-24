@@ -154,3 +154,7 @@ restructure. Each decision below is weighed against that.
 comparison table), then 5.2 (expert set moved in), then 5.4, then Appendix E, then the lead revised against the
 whole. Old numbers stay until the rerun is read; new results without a pilot number are written as prose with
 `% SYNTHETIC`, and blue values only where a prediction is defensible (trial: the pilot's run 144).
+
+**Session 109 (review):** 5.3's order is now: the material, what the attacks reveal, *PV's hole*, *What PV pays in
+detection*, *ERDALT*, *Holding one attack out*, *Adversarial training* (with iterated), *Trial*. Heads name the defense,
+so an added defense gets a head of its own. The lead names both failure modes and the derived table's predicting role.

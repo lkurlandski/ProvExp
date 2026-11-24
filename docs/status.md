@@ -11,7 +11,23 @@ in `docs/archive/status-log-2026-11-14-s63.md`, sessions 64-65 in `docs/archive/
 `docs/archive/status-log-2026-11-15-to-16-s66-76.md`, sessions 77-94 in
 `docs/archive/status-log-2026-11-16-to-19-s77-94.md`).
 
-## Current state (2026-11-23, through session 108)
+## Current state (2026-11-24, through session 109)
+
+- **Session 109 (writing):** humanistic review of the rebuilt §5 and Appendix E (ten findings; the user: "Please fix
+  all issues"), applied in one pass: the lead now names the two failure modes (unsound: evaded; over-cautious:
+  detection lost, measured against the derived detector on the same features), the derived table's second role
+  (predicting where each other detector is open), the sources in section order and why trial shares 5.3, and the
+  claim qualified by threat model; "cautious" no longer used for Severi et al. (whose error is unsound for a
+  defender); Table 4's caption states the takeaway and the comparison rows; adversarial training's comparison says
+  which detectors it compares (full training set, no entry write); 5.3's heads by defense (*PV's hole*, *What PV pays
+  in detection*, *ERDALT*, *Trial*), leave-one-out moved after ERDALT; 5.4 states the price once and frames it as the
+  price of the guarantee; *Where the cost lies* split into *The entry write's share* and *Where the rest lies*
+  (Table 11 said to be without the entry write); "two-sided" defined; code signing named as Authenticode; Appendix E
+  seams (PV's tolerance 1e-6 and feature set, Table 11's caption, MAB-Malware's detectors). `% OPEN`: 5.4's "24 of the
+  28" does not match Table 4's 39/40 detected. Then `cut-to-length` as a cleanup (the user: ~4,000 if a number is
+  needed, "it doesn't really matter that much"): 18 unflagged items applied, the two ⚑ items (leave-one-out shortened,
+  trial's closing turn) not; §5 4,639 to 4,406 words (lead 521, 5.1 746, 5.2 931, 5.3 1,318, 5.4 890); Appendix E 892.
+  Commits 328abc0, d64d184. Next: `docs/resume-prompt-writing.md`.
 
 - **Session 108 (writing):** §5 rebuilt from the ground up (plan: `docs/evaluation-note.md`; decision 13). The user
   chose the narrative: every source of a defender's knowledge of what edits do (reading the extractor, observed
@@ -23,7 +39,7 @@ in `docs/archive/status-log-2026-11-14-s63.md`, sessions 64-65 in `docs/archive/
   and 5; 5.4 trimmed to the derived detectors; Appendix E mirrors §5 (E.1-E.3; the per-attack table regrouped,
   ERDALT's rescalings stated, the price list as Table 11). Pilot numbers kept; blue predictions for iterated
   adversarial training and trial's unrecorded cells. The stray fragment in 5.4 restored. §5 4,647 words, Appendix E
-  976. Unreviewed: no humanistic review yet. Commits 4a11d53, 2209cae. Next: `docs/resume-prompt-writing.md`.
+  976. Reviewed and cut in session 109. Commits 4a11d53, 2209cae.
 
 - **Session 107 (writing):** a fresh humanistic review of §4 (eight findings and minor points), applied in one pass
   except what rested on the out-of-date §5 (user): the population's completeness exempts the debug data and the

@@ -528,3 +528,13 @@ consider how well the section can be extended to incorporate additional defenses
 the *shifts* detector: "If we already have this implemented, tested, and we're currently running experiments with it,
 then yes ... If not, then we'll push the decision ... down the road; although, I agree, its seems useful." Then:
 "Okay, please draft the rest as well."
+
+**2026-11-24 (session 109), §5 and Appendix E reviewed and cut.** Humanistic review (ten findings: the lead names only
+one failure mode; "cautious" means opposite things for Gimenez et al. and Severi et al.; the lead's definition and
+corollary between the question and the findings; the derived table's predicting role unstated; three sources but two
+subsections; Table 4's caption without a takeaway; adversarial training's numbers against the table; 5.3's heads and
+order; 5.4's price stated twice; Appendix E seams). The user: "Please fix all issues." Applied in one pass. Asked
+whether to cut now and to what target: "Okay, let's run it as a general purpose cleanup to tighten the writing. We can
+probably shoot for ~4000 words if we need to establish a number but it doesn't really matter that much. Proceed."
+Shown 18 unflagged items and two ⚑ (leave-one-out shortened; trial's closing turn): "Okay, implement the non-⚑ cuts."
+(4,639 to 4,406 words.)
