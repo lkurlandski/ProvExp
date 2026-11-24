@@ -14,7 +14,7 @@ paper~\cite{demetrio2021functionality}: a population of 10 over 51 iterations, w
 byte-level attacks were built for models that read the raw bytes, and against our detectors they rarely evade
 (\Cref{tab:ember:per-attack}). Against secml-malware's pretrained MalConv~\cite{raff2018malware}, the model they were
 built for, the same code and budget evade between 5 and 16 of 20 malware files, so neither the code nor the budget is
-the reason. The released GAMMA attacks write their sections and imports through the LIEF library~\cite{lief}, which
+why they rarely evade ours. The released GAMMA attacks write their sections and imports through the LIEF library~\cite{lief}, which
 rebuilds the file's layout and moves content that no operation moves. We keep GAMMA's search and write the edits it
 chooses with our own code, growing the headers first where they lack room for the new section headers; where no growth
 makes room, the attack does not apply to the file.
@@ -36,8 +36,8 @@ that this produces the same actions, outputs and bandit state as the original ha
 malware a detector detects, so the bandit learns from one detector at a time. Zainab et al.~\cite{zainab2026breaking}
 report that MAB-Malware evades their EMBER~2024 detector on 83\% of the malware, at a 0.1\% false-positive rate. Their
 detector and malware differ from ours, so the two rates describe different setups: at our 1\% rate, it evades the
-unconstrained detector trained on the full training set on none of the 49 malware it detects, and the one trained on
-the 10\% subsample on 10 of 47.
+unconstrained detector of \Cref{tab:eval:detectors} on 10 of the 47 malware it detects, and the same detector trained
+on the full training set on none of 49.
 % Old round's values (5%/512 KB cap); the new round (4 MB rule, session 105) replaces them, and adds MAB-Malware at
 % Zainab et al.'s setting (0.1% FPR, no byte limit) against the unconstrained detector (item (8)).
 % Zainab et al., Table I (MAB-Malware on EMBER-24, 83.40%) and Table IX (EMBER-24 at 0.1% FPR); no byte limit stated.
@@ -90,8 +90,8 @@ the 10\% subsample on 10 of 47.
 \subsection{What Observed Edits Miss}
 \label{sec:attacks:observed}
 
-\paragraph{PV.} PV keeps the features that no output of the toolkit attacks lowered, and trains a gradient-boosted
-tree detector that is monotone increasing in each of them, as Gimenez et al.\ describe~\cite{gimenez2025certifiably}.
+\paragraph{PV.} PV selects among EMBER's features, not the sums. A feature counts as lowered when some output lowers
+it by more than $10^{-6}$, which only guards against rounding; the lowered features are left out of the detector.
 % a_pv_hole.py rule (kept = min observed delta >= -tol, monotone +1); at the scale-up pv_hole.py --exclude in
 % 4-detectors/learned, selected among EMBER's features (the re-encoded sums dropped).
 
@@ -158,8 +158,8 @@ as in \Cref{sec:eval:setup}.
 threat model in turn, the numbers \Cref{sec:eval:detectors} draws on.
 
 \begin{table}[t]
-  \caption{The monotone detector on the sums, with one operation at a time left out of the threat model without the
-  entry write. TPR at each false-positive rate.}
+  \caption{The monotone detector on the sums, measured on the threat model without the entry write, with one operation
+  at a time left out of it. TPR at each false-positive rate.}
   \label{tab:ember:price}
   \small
   \begin{tabular*}{\linewidth}{@{}l@{\extracolsep{\fill}}rr@{}}
