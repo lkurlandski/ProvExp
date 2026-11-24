@@ -336,7 +336,7 @@ reading its results (PLAN.md step 5).
    2026-11-23 (jobs 1260382-1260399, `logs/submit-20261123-141442.txt`).
 
    **Next round** (methodology changes recorded here and applied together in a later full rerun, not one by one;
-   user, session 105):
+   user, session 105; the wider register of candidates, with reasons and sources: `docs/experiments-to-reconsider.md`):
    - drop the toolkit attacks that stay ineffective at the generous budget (criterion to state; the learned defenses'
      material changes with them).
    - optional: the adaptive search without signature cloning (`ent`'s clone candidate), so its result is not one
