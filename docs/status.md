@@ -11,8 +11,15 @@ in `docs/archive/status-log-2026-11-14-s63.md`, sessions 64-65 in `docs/archive/
 `docs/archive/status-log-2026-11-15-to-16-s66-76.md`, sessions 77-94 in
 `docs/archive/status-log-2026-11-16-to-19-s77-94.md`).
 
-## Current state (2026-11-24, through session 111)
+## Current state (2026-11-24, through session 112)
 
+- **Session 112 (writing):** the user's read of 4.2 *Threat Model*. Four rewrites (survey of prior work, then
+  disorganized, then distant and passive, then scattered); the fourth, tied to §3's guarantees ("the threat model
+  decides what they are worth"), accepted as an improvement and committed (d004f35). A humanistic review followed
+  (eight findings, none applied). The user diagnosed the cause: the subsection's role in the paper is undecided (e.g.,
+  whether the attacker's budget belongs in 4.2 or §5). **Next session: task planning and manuscript organization** (a
+  content map of what research goes where, the delicate subsection pairs reviewed together, starting likely with 4.2
+  and 5.1); `docs/resume-prompt-writing.md`.
 - **Session 111 (writing):** the user's read of §4 and §5 began; §4's lead and 4.1 done, **next: 4.2 *Threat Model***.
   Lead: the closing sentence of the first paragraph cut (repeated the second); the PE background now names only what
   later text uses (headers, sections, the headers' *data directory* locating the imports, debug data and Authenticode

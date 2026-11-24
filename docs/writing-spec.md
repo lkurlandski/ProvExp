@@ -11,6 +11,31 @@ The "implied" notes are earlier readings, not instructions; several of them were
 
 ## Reaction log
 
+- **2026-11-24, the user's read of 4.2 *Threat Model* (session 112).** On the original: "The first paragraph has
+  several awkward language structures. The start of the very first sentence, for example, is very strangely written.
+  The second sentence has the same weird colon pattern we discussed earlier. The third sentence's colon is fine,
+  though." "More significantly, the first paragraph has an unclear role and purpose. It feels more like a part of a
+  literature review rather than an overview of our threat model." "The first paragraph discusses twelve edits, the
+  first sentence of the second paragraph states that there are fourteen edits in total, and the rest of the second
+  paragraph discusses the remaining two. What the fuck kind of organization is this?" "Occasionally using a colon (or a
+  semicolon or a em-dash) to diversify the writing structure is fine. A healthy mixture of sentence structures and
+  rhetoric makes the writing more pleasurable to read. Treating colons like some sort of silver bullet is quite
+  frankly, autistic." "The third paragraph seems ok." "The main thing that needs to be fixed here before we can do
+  anything else is the structure and organization." After a reordered draft: "a slight improvement from an
+  organizational perspective, but it has a weirdly distant and passive tone ... start from square one: what does this
+  subsection need to communicate, what information does it need to contain, and in what order should that information
+  be presented? Once you have this confirmed, write the subsection like a human would." Approved the plan ("Let's go
+  for it."); on the draft: "This is extremely disappointing. The writing is still extremely scattered, jumping from idea
+  to idea without much regard for communicating a higher purpose." On the next (opening tied to §3's guarantees):
+  "Okay, this is an improvement. The first paragraph connects the subsection to the framework directly, which is was a
+  huge failure point of your previous attempts. The next most obvious issue with the subsection are the second and
+  third paragraphs, which feel like an unhinged rant about what previous works have done ... cut it down to that. The
+  fourth paragraph feels like it deserves more emphasis than it receives and is, again, held back by the fact that it
+  surveys what other works have done rather than discuss what we are doing." After a humanistic review of the result:
+  "I think we're struggling with this subsection because we cannot decide what its role is in the broader scope of the
+  paper. For example, do details like the attacker's budget belong here or in section 5?" Then: start a new session on
+  task planning and manuscript organization, with delicate pairs of subsections (e.g., 4.2 and one of §5) addressed
+  together.
 - **2026-11-24, the user's read of §4's lead and 4.1 (session 111).** Lead: the last sentence of the first paragraph
   "feels unnecessary, since the second paragraph discusses EMBER"; the import table and data directory sentences
   "slightly awkward. Let's rethink exactly what we need to discuss here and why"; "be a little weary about our use of
