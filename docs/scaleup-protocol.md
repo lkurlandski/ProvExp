@@ -346,6 +346,13 @@ reading its results (PLAN.md step 5).
    pending tasks, their queue position was verified to carry over (the age term was 0.06% of the priority; a real
    dummy job of the same shape ranked directly behind them). Prerequisite: one environment per architecture
    (`env-aarch64/`, `env-x86_64/`, `env/` a dispatcher; SETUP.md §2), featurization bit-identical on both.
+   *Ended (session 112, user):* both clusters are going down for maintenance and sporc's GPU nodes were all draining,
+   so the race was dropped before any sporc task started; the sporc array (22176620) was cancelled and all nine models
+   train on tigris (1260392_0, 1264791_[1-8]). The held attacks (1260395-1260397) were given an ordinary dependency,
+   `afterok:1260392_0:1264791`, and released; the claims directory, with its release and cancel lists, moved to
+   `diag/s112/erdalt-claims-s111` (with claims, a requeued task would have skipped its own model). The A100 trial
+   (22176526) measured ~15 min per epoch, ~17.2 h per model (`pipeline/systems/sporc.sh`). The knobs stay in
+   `learned/run.sh`; `pipeline/submit.sh` keeps ERDALT on tigris.
 
    **Next round** (methodology changes recorded here and applied together in a later full rerun, not one by one;
    user, session 105; the wider register of candidates, with reasons and sources: `docs/experiments-to-reconsider.md`):
