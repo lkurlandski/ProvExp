@@ -40,7 +40,18 @@
 # 2-features/sums, 3-directions/loose.
 # Output: $OUT_ROOT/4-detectors/<name>/ (the registry's names); PV's selections in 4-detectors/pv-selection/.
 # Knobs: PART (gbdt, erdalt, or all; default all), DEFENSES (default "adversarial-training pv erdalt loo"), SHARDS (the material's, default 10), EPOCHS (ERDALT,
-# default 68), LIMIT (files per split; smoke tests). Cost (scale-up, sessions 78 and 94): ERDALT ~10 min loading and
+# default 68), LIMIT (files per split; smoke tests).
+# Two clusters training the same ERDALT models (session 111; tigris forward, sporc reverse, the first to start a model
+# trains it), knobs for the erdalt part:
+#   ORDER=reverse   array task i trains the (N-1-i)-th model instead of the i-th
+#   CLAIMS=<dir>    on the shared file system: a task trains a model only if it takes its claim (mkdir <dir>/<name>,
+#                   atomic; the owner's cluster, job and time inside), and skips a model claimed elsewhere. A claim
+#                   stays after a failure: remove it to train that model again.
+#                   When a task ends and every ERDALT model is complete (vl_predictions.parquet, written last), it
+#                   releases the held jobs listed in <dir>/release and cancels the still-pending tasks of the arrays in
+#                   <dir>/cancel (one "<cluster> <job id>" per line; scontrol/scancel -M), which would only skip.
+#   ERDALT_SCRIPT   the trainer (default pipeline/4-detectors/train/train_erdalt.py; a stand-in for smoke tests)
+# A model that fails makes the job exit 1 (after the rest has run), so a failure shows in sacct. Cost (scale-up, sessions 78 and 94): ERDALT ~10 min loading and
 # ~5.7 min per epoch on a GH200, ~6.7 h per model at 68 epochs, nine of them in parallel; the ten GBDTs ~25 min in all.
 set -euo pipefail
 cd "${SLURM_SUBMIT_DIR:-$(dirname "$0")/../../..}"
@@ -64,6 +75,10 @@ others() { local h=$1 a out=""; for a in $ATTACKS; do [[ $a != "$h" ]] && out="$
 wants() { [[ " $DEFENSES " == *" $1 "* ]]; }
 
 TASK="${SLURM_ARRAY_TASK_ID:-}"  # empty: every model in this job
+ORDER="${ORDER:-forward}"
+case $ORDER in forward | reverse) ;; *) echo "Unknown ORDER $ORDER (forward reverse)." >&2; exit 1 ;; esac
+CLAIMS="${CLAIMS:-}"
+ERDALT_SCRIPT="${ERDALT_SCRIPT:-pipeline/4-detectors/train/train_erdalt.py}"
 
 mkdir -p "$MAT"
 exec 9> "$MAT/.merge.lock"
@@ -86,23 +101,38 @@ if [[ $PART == gbdt ]]; then DEFENSES=""; fi
 if [[ $PART == erdalt ]]; then GBDT_DEFENSES=""; fi
 if wants erdalt; then ERDALT_JOBS+=("erdalt:$ATTACKS"); fi
 if wants loo; then for h in $ATTACKS; do ERDALT_JOBS+=("erdalt-loo-$h:$(others "$h")"); done; fi
+ALL_ERDALT=("${ERDALT_JOBS[@]}")
 if [[ -n $TASK ]]; then  # an array task: its one model, if any
-  if [[ $TASK -lt ${#ERDALT_JOBS[@]} ]]; then ERDALT_JOBS=("${ERDALT_JOBS[$TASK]}"); else ERDALT_JOBS=(); fi
+  if [[ $ORDER == reverse ]]; then TASK=$((${#ERDALT_JOBS[@]} - 1 - TASK)); fi
+  if [[ $TASK -ge 0 && $TASK -lt ${#ERDALT_JOBS[@]} ]]; then ERDALT_JOBS=("${ERDALT_JOBS[$TASK]}"); else ERDALT_JOBS=(); fi
 fi
 if [[ -n "${CUDA_VISIBLE_DEVICES+set}" ]]; then
   IFS=", " read -r -a GPU_IDS <<< "$CUDA_VISIBLE_DEVICES"
 else
   mapfile -t GPU_IDS < <(nvidia-smi --query-gpu=index --format=csv,noheader 2> /dev/null || true)
 fi
-erdalt_lane() {  # lane index; trains every lane-th job on its GPU
-  local lane=$1 i job name attacks log
+claim() {  # model name; succeeds if this job now owns the model (always, without CLAIMS)
+  [[ -z $CLAIMS ]] && return 0
+  mkdir -p "$CLAIMS"
+  if mkdir "$CLAIMS/$1" 2> /dev/null; then
+    echo "${SLURM_CLUSTER_NAME:-$(hostname)} ${SLURM_ARRAY_JOB_ID:-${SLURM_JOB_ID:-none}}_${SLURM_ARRAY_TASK_ID:-} ($ORDER) $(hostname) $(date -Is)" \
+      > "$CLAIMS/$1/owner"
+    return 0
+  fi
+  sleep 2  # the owner writes its file right after the mkdir
+  echo "  $1 claimed by $(cat "$CLAIMS/$1/owner" 2> /dev/null || echo "an unknown job"); skipping."
+  return 1
+}
+erdalt_lane() {  # lane index; trains every lane-th job on its GPU; fails if one of them failed
+  local lane=$1 i job name attacks log failed=0
   for ((i = lane; i < ${#ERDALT_JOBS[@]}; i += ${#GPU_IDS[@]})); do
     job=${ERDALT_JOBS[$i]}; name=${job%%:*}; attacks=${job#*:}
     log=$OUT/logs/train-$name.log
     if [[ -f $OUT/$name/ts_predictions.parquet ]]; then echo "  $name exists; skipping."; continue; fi
+    claim "$name" || continue
     echo "  $name on GPU ${GPU_IDS[$lane]}. Log: $log"
     # shellcheck disable=SC2086
-    CUDA_VISIBLE_DEVICES=${GPU_IDS[$lane]} python pipeline/4-detectors/train/train_erdalt.py \
+    CUDA_VISIBLE_DEVICES=${GPU_IDS[$lane]} python "$ERDALT_SCRIPT" \
       --features "$SUMS" \
       --neutralize "$DIR/reencoded.neutralize.txt" \
       --adv_dir "$MAT/sums" \
@@ -119,8 +149,9 @@ erdalt_lane() {  # lane index; trains every lane-th job on its GPU
       --batch_size 256 \
       --seed 0 \
       "${LIMIT_ARG[@]}" \
-      &> "$log" || echo "  $name FAILED; see $log"
+      &> "$log" || { echo "  $name FAILED; see $log"; failed=1; }
   done
+  return $failed
 }
 LANES=()
 if [[ ${#ERDALT_JOBS[@]} -gt 0 ]]; then
@@ -185,8 +216,36 @@ if wants loo; then
   for h in $ATTACKS; do pv "pv-loo-$h" "-loo-$h" $(others "$h"); done
 fi
 
+ERDALT_FAILED=0
 if [[ ${#LANES[@]} -gt 0 ]]; then
   echo "Waiting for the ERDALT lanes."
-  wait "${LANES[@]}"
+  for pid in "${LANES[@]}"; do wait "$pid" || ERDALT_FAILED=1; done
+fi
+if [[ -n $CLAIMS && $ERDALT_FAILED == 0 ]]; then  # the last model done: release the dependents, drop the leftovers
+  missing=0
+  for job in "${ALL_ERDALT[@]}"; do [[ -f $OUT/${job%%:*}/vl_predictions.parquet ]] || missing=$((missing + 1)); done
+  if [[ $missing -gt 0 ]]; then
+    echo "ERDALT: $missing of ${#ALL_ERDALT[@]} models not complete yet; nothing to release."
+  else
+    echo "ERDALT: all ${#ALL_ERDALT[@]} models complete."
+    if [[ -f $CLAIMS/release ]]; then
+      while read -r cluster id || [[ -n ${cluster:-} ]]; do
+        [[ -z ${id:-} ]] && continue
+        echo "  Releasing $id on $cluster."
+        scontrol -M "$cluster" release "$id" || echo "  (release of $id on $cluster failed; released already?)"
+      done < "$CLAIMS/release"
+    fi
+    if [[ -f $CLAIMS/cancel ]]; then
+      while read -r cluster id || [[ -n ${cluster:-} ]]; do
+        [[ -z ${id:-} ]] && continue
+        echo "  Cancelling the pending tasks of $id on $cluster."
+        scancel -M "$cluster" --state=PENDING "$id" || echo "  (scancel of $id on $cluster failed)"
+      done < "$CLAIMS/cancel"
+    fi
+  fi
+fi
+if [[ $ERDALT_FAILED != 0 ]]; then
+  echo "ERDALT: a model FAILED (above); exiting 1." >&2
+  exit 1
 fi
 echo "Done. Models: $OUT/<name>/; PV's selections and holes: $SEL/"
