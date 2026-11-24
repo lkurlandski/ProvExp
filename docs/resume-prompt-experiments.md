@@ -51,6 +51,10 @@ an A100's 40 GB.
 
 ## 3. What this session does (stop and report at each step)
 
+**Step 0 (done by the user before this session).** Claude Code runs on both clusters: `~/.local/bin/claude` is a plain
+launcher (`~/.local/lib/claude-launcher.sh`) that runs the newest version installed for the machine's architecture under
+`~/.local/sw/<arch>/share/claude/versions` (session 110). If `claude` fails on either head node, fix that first.
+
 **Step 1. Check the chain once** (from sporc: `squeue -M tigris -u $USER`; `sacct -M tigris -u $USER -S 2026-11-23 -X
 --format=JobID%16,JobName%20,State,Elapsed,Timelimit,AllocCPUS,TotalCPU,ReqMem`). If ERDALT's tasks have started on
 tigris, tell the user: the sporc plan shrinks to the tasks still pending (or is dropped). Do not watch the queue.
