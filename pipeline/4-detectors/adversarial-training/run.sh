@@ -8,8 +8,8 @@
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
 #SBATCH --cpus-per-task=36
-#SBATCH --time=0-08:00:00
-#SBATCH --mem=80G
+#SBATCH --time=0-04:00:00
+#SBATCH --mem=96G
 #
 # The learned defenses' material, once (protocol item 5, session 67). FOR ACADEMIC SECURITY RESEARCH ONLY: published
 # secml-malware attacks against our own undefended detector, on our own training samples, to build the defenses the

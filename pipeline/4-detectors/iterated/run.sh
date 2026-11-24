@@ -7,8 +7,8 @@
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
 #SBATCH --cpus-per-task=48
-#SBATCH --time=0-07:00:00
-#SBATCH --mem=360G
+#SBATCH --time=0-06:00:00
+#SBATCH --mem=192G
 #
 # Iterated adversarial training (protocol item 7, session 67; R18, docs/evidence/r18-trial-competitor.md step 3): the
 # adversarially trained detector (4-detectors/adversarial-training, the toolkit's material appended) retrained on

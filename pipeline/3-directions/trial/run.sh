@@ -8,7 +8,7 @@
 #SBATCH --ntasks-per-node=1
 #SBATCH --cpus-per-task=72
 #SBATCH --time=0-00:45:00
-#SBATCH --mem=200G
+#SBATCH --mem=64G
 #
 # The trial competitor's direction table (R18; protocol item 6, session 67): the table a practitioner gets by trying
 # the operations on files and looking, instead of deriving it. It learns from the evaluation set itself, which favours
