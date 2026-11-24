@@ -8,9 +8,9 @@
 % Lead rewritten in session 108 (user chose the narrative): every source of knowledge about edits yields constraints a
 % detector can be built on, and Corollary 1, moved here from Section 3.4, is the yardstick the findings compare them by.
 \Cref{sec:background} described three ways in which practitioners learn what an attacker's edits do to the features:
-by reading the extractor, from the attacks that have been observed, and by trial. Each tells a defender which features
-an edit can raise, which it can lower, and which it leaves alone, and a defender can build a detector on that
-knowledge. This section builds a detector from each source and compares it with one built from the derived table of
+by reading the extractor, from the attacks that have been observed, and by trial. Each tells a defender which way an edit
+can move each feature, and a defender can build a detector on that knowledge. This section builds a detector from each
+source and compares it with one built from the derived table of
 \Cref{sec:fw:directions}, on the EMBER instance of \Cref{sec:instances}. A source can be wrong in two ways, and each
 has a cost we measure. If it misses a direction in which some edit moves a feature, the detector trusts that feature
 and can be evaded, which the attacks test. If it constrains features that no edit moves, the detector gives up
@@ -19,8 +19,8 @@ detector on the same features. The derived table also says, before any attack ru
 white-box adaptive attack tests these predictions on real files.
 
 Gimenez et al.\ prove that a detector whose score never falls as the features rise cannot be evaded when the attacker's
-edits can only raise the features~\cite{gimenez2025certifiably}. A direction table says which features the edits can
-only raise, which they can only lower, and which they cannot change, so it says how the score must behave. Let
+edits can only raise the features~\cite{gimenez2025certifiably}. A direction table extends this to features that edits can
+only lower or cannot change. Let
 $h: \mathcal{X} \to \mathbb{R}$ be a detector's malware score. We call $h$ \emph{monotone with respect to} $D$ if
 $h(\mathbf{x}') \ge h(\mathbf{x})$ whenever the change $x'_j - x_j$ of every feature $j$ has a sign in $D_j$. A
 gradient-boosted tree is such a score when it is trained with monotone constraints: increasing in the up features,
@@ -63,8 +63,8 @@ benign files of the validation split; its detection is measured on the test spli
 that we train as its authors do (Appendix~\ref{sec:attacks}), the detectors are gradient-boosted
 trees~\cite{ke2017lightgbm}: an unconstrained detector on all features, the baseline, and detectors with monotone
 constraints, those of Corollary~\ref{cor:fw:robustness} and those of the defenses that constrain their features.
-The corollary holds only for a score that satisfies the constraints, so we check them on the trained trees, and
-\synthetic{no tree of any monotone detector violates them}. Edits and attacks run on an evaluation set of 1,000
+We check the constraints on the trained trees, and \synthetic{no tree of any monotone detector violates
+them}. Edits and attacks run on an evaluation set of 1,000
 malware and 1,000 benign test files, drawn across malware families; each detector is attacked on the evaluation
 malware it detects at the 1\% rate.
 % MEASURED (session 46): files below 4,000,000 bytes in our SimpleDB copy, full splits: training 85.3% (benign 85.7%,
@@ -79,8 +79,8 @@ malware it detects at the 1\% rate.
 \paragraph{Attacks}
 An attack evades a detector when it drives a detected malware sample below the detector's threshold, which we count
 only after writing the edited file with our own code and running EMBER's extractor on it. Its output counts
-only if it is at most 4~MB, the files our study concerns, and still a working file by two parsers' reading: pefile and
-LIEF~\cite{lief} both read it, and neither finds a section, library, or imported function of the original missing. We
+only if it is at most 4~MB and still a working file: pefile and LIEF~\cite{lief} both read it, and neither finds a
+section, library, or imported function of the original missing. We
 run three kinds of attack, all of them with benign training files as the source of added content, so that no test file
 is in the attacker's hands. The first are the eight attacks of the secml-malware
 library~\cite{demetrio2021adversarial}, which we call the \emph{toolkit} attacks (\Cref{tab:instances:catalogue} lists
@@ -89,11 +89,9 @@ al.~\cite{gimenez2025certifiably} learn their defense from. They are black-box: 
 it with a genetic algorithm that sees only the detector's score, with the budget of the GAMMA
 paper~\cite{demetrio2021functionality}, about 500 queries per file and 75 benign donor files. Five of them, the
 byte-level attacks (DOS extension, content shift, padding, format exploit, header fields), were built for byte-level
-models such as MalConv~\cite{raff2018malware} and barely move a detector on EMBER's features; we report them in
-Appendix~\ref{sec:attacks}, and the three GAMMA attacks carry the toolkit's results here. A detector these attacks fail
+models such as MalConv~\cite{raff2018malware} and barely move a detector on EMBER's features. A detector these attacks fail
 to evade may still fall to an attacker who knows the model and combines edits. We therefore also implement a white-box
-adaptive attack, in the spirit of Tramèr et al.~\cite{tramer2020adaptive}, to test on real files whether a detector
-can be evaded where the directions say it can, and not where they say it cannot. It reads the detector's trees,
+adaptive attack, in the spirit of Tramèr et al.~\cite{tramer2020adaptive}. It reads the detector's trees,
 combines any operations of the full threat model (\Cref{tab:instances:catalogue}) unless stated otherwise, extracts the
 features of each candidate it writes, and tries up to 5,000 candidates per file (Appendix~\ref{sec:attacks}). Last, we
 run MAB-Malware~\cite{song2022mab}, the published attack that evades a detector on EMBER~2024's features most
@@ -149,8 +147,8 @@ an edit can move as out of an attacker's reach.
 The hand table we wrote makes eight errors (\Cref{tab:eval:directions}): in each, a real edit, extracted again, moves a
 feature in a direction the hand rule excluded. Four of them hold in the population the detectors are built for, and
 four lie outside it, where a hand table silently stops being sound and the derived one declines. To write it, we read
-the extractor's code and each operation's declared effects, and recorded for each of EMBER's feature groups and each of
-the fourteen operations which way the group's features could move. We knew the extractor well and had its source open,
+the extractor's code and each operation's declared effects, and recorded which way each of the fourteen
+operations could move each of EMBER's feature groups. We knew the extractor well and had its source open,
 the realistic setting for such an analysis. Elsewhere the two tables agree, except on the size of the certificate
 table, which the hand table leaves free and the derived one allows only to decrease.
 
@@ -194,10 +192,8 @@ every position the parser reads to find items, so an edit that writes such a pos
 features either way, without anyone knowing why the parser reads there.
 
 \paragraph{What the error costs}
-A detector built on the hand table trusts that adding a section leaves the overlay alone, yet a section added after the
-overlay takes the overlay as its content. We trained such a detector, identical to the derived one except that it allows
-the overlay size only to increase, where the derived one leaves it free; it also leaves the size of the certificate
-table free, where the derived one allows only decreases. The adaptive attack lowers the hand detector's score on 10 of the 29 files in the population it detects, every time by
+A detector built on the hand table trusts that adding a section leaves the overlay alone. We trained such a detector, identical to the derived one except that it allows
+the overlay size only to increase, where the derived one leaves it free. The adaptive attack lowers the hand detector's score on 10 of the 29 files in the population it detects, every time by
 adding one section after the overlay, by up to 1.57 logits. The derived detector cannot be moved on any of them. No drop
 crosses the threshold, since these malware score far above it. Yet with one direction wrong the hand detector has no
 guarantee, and a sample scoring closer to the threshold would fall to the same edit.
@@ -216,8 +212,7 @@ model, and there it errs the other way: it sets aside features that additions ca
 all features, and see detection and robustness as a trade-off in the choice of features. Under additions, it detects
 29.1\% of the malware at a 1\% false-positive rate, against 92.2\% for the detector built from the derived table for
 the same threat model (14.8\% against 79.8\% at 0.1\%; \Cref{tab:eval:detectors}). The trade-off lies in choosing by
-hand: the derived table keeps every feature that additions move in one direction only, and gives up only those that
-they move both ways.
+hand: the derived table gives up only the features that additions move both ways.
 
 \paragraph{Severi et al.'s hashed features}
 A hand analysis can also judge a feature out of an attacker's reach when an edit can move it. Severi et al.~\cite{severi2021explanation} needed features an
@@ -262,8 +257,8 @@ move, and \Cref{sec:eval:observed} shows a defense that does.
 Instead of reading the extractor, a defender can learn what edits do by watching them: in the outputs of the attacks
 at hand, or in edits of its own, applied to files whose features are then extracted again. Either way, the defender
 learns only from the edits that were made. We build the defenses that learn from attacks first, and then a detector
-from trial, the most a defender can learn by watching. \Cref{tab:eval:detectors} gives every detector of this
-section and of \Cref{sec:eval:hand,sec:eval:detectors}, grouped by where its knowledge of the attacker's edits comes from.
+from trial, the most a defender can learn by watching. \Cref{tab:eval:detectors} gives every detector of
+this section.
 
 \begin{table}[t]
   \caption{The detectors, grouped by where their knowledge of the attacker's edits comes from. A source that misses a
@@ -321,9 +316,8 @@ section and of \Cref{sec:eval:hand,sec:eval:detectors}, grouped by where its kno
 Gimenez et al.~\cite{gimenez2025certifiably} build their empirically robust detector, ERDALT, from the outputs of
 attacks and compare it with a simpler defense built the same way, PV; adversarial training also learns from such
 outputs. We build all three from the same observations: the outputs of the eight toolkit attacks, run against the
-unconstrained detector on 10,000 training malware with benign training files as the source of added content,
-\synthetic{about 80,000} adversarial examples in all. Each defense is then attacked as in \Cref{sec:eval:setup}, on the
-evaluation malware it detects, and each falls to edits that the outputs never showed.
+unconstrained detector on 10,000 training malware, \synthetic{about 80,000} adversarial examples in all. Each
+defense falls to edits that the outputs never showed.
 % PROTOCOL (scaleup-protocol.md (5), (22)): the material, 4-detectors/adversarial-training, at the GAMMA paper's
 % budget, 10,000 training malware (all, detected or not), donor set 0. SYNTHETIC: the old round kept 79,121 valid
 % outputs (session 78); the rerun's count replaces it. Pilot (run 133): 3,183 outputs on 400 training malware; the
@@ -333,8 +327,8 @@ evaluation malware it detects, and each falls to edits that the outputs never sh
 On the 314 training files in the population, the outputs lower 928 of the 1,070 features that the derived table says
 an edit of the full threat model can lower. To a defender who has only the outputs, the other 142 look the same as the
 features no edit can lower; the table marks them, before any attack runs, as features an edit may lower. For 20 of them,
-our own edits of \Cref{sec:eval:setup} show that an edit does lower them, among them the features of the name of the
-section that holds the entry point, which change when that section is renamed. MAB-Malware renames sections, but none of
+our own edits of \Cref{sec:eval:setup} show that an edit does lower them, among them the buckets of the entry section's
+name, which a rename changes. MAB-Malware renames sections, but none of
 the toolkit attacks does (\Cref{tab:instances:catalogue}).
 % a_varied/coverage/report.json: train_population all 928/1,070 (toolkit-operation features 913/980, warnings 13/88);
 % witnessed_not_lowered_by_toolkit: 17 toolkit-operation features + 3 warnings = 20 (entry-section-name buckets,
@@ -344,8 +338,8 @@ the toolkit attacks does (\Cref{tab:instances:catalogue}).
 PV selects features from perturbation vectors: it keeps the features that no observed attack lowered and trains a
 detector that is monotone increasing in each of them. Gimenez et al.\ report that none of the toolkit attacks, from
 which PV learns, evades it. Built from our outputs, PV holds against the toolkit attacks here too, but the adaptive
-attack evades it on 4 of the 9 test malware it detects, each time with a single edit, a rename of the section that
-holds the entry point, found among the first 50 candidates it scores. MAB-Malware, which renames sections, finds the
+attack evades it on 4 of the 9 test malware it detects, each time with a single rename of the entry section, found
+among the first 50 candidates it scores. MAB-Malware, which renames sections, finds the
 same hole: it evades PV on 7 of the 9, each time with a rename and no other action. The derived table points to this
 hole before any attack runs. Of the features PV trusts, 124 can be lowered by an edit of the threat model, and they
 carry 38.8\% of the split gain of its trees; the largest of them, at 12.8\%, is a bucket of the entry section's name.
@@ -369,9 +363,9 @@ feature the attacks happened to leave alone, and so falls to any operation they 
 
 \paragraph{ERDALT}
 ERDALT learns a linear layer that maps the feature change of every observed attack to a nonnegative vector, and feeds
-the layer's output to a monotone network (\Cref{sec:related-work}). We train it with their released code, with the
-settings their code sizes to their data rescaled to ours (Appendix~\ref{sec:attacks}), on the same outputs, and it
-falls to one of the attacks it was trained on: GAMMA imports evades it on 24 of the 29 test malware it detects, while
+the layer's output to a monotone network (\Cref{sec:related-work}). Trained with their released code on the same
+outputs, its settings rescaled to our data (Appendix~\ref{sec:attacks}), it falls to one of the attacks it was
+trained on: GAMMA imports evades it on 24 of the 29 test malware it detects, while
 the other seven toolkit attacks evade it on none. GAMMA imports adds imports taken from benign files, and on the test
 malware it takes them from benign files whose imports ERDALT never saw. The layer constrains the feature changes it
 was shown, not the directions in which edits can move the features, and the derived table shows how far apart the two
@@ -398,8 +392,7 @@ Retraining the unconstrained detector with the same outputs added to its malware
 (both detectors here are trained on the full training set and attacked without the entry write). The toolkit attacks
 evade the retrained detector on 12 of the 50 malware it detects, against 25 of 49 before retraining, yet the adaptive
 attack, which combines operations and uses those no toolkit attack has, evades it about as often as before (23 of 50,
-against 25 of 49). The retrained detector has learned
-the outputs it was given, and those outputs say nothing about the edits the attacks did not make. A defender can widen
+against 25 of 49). A defender can widen
 what it learns from by attacking its own detector with the adaptive attack and retraining on what evades it. We ran
 two such rounds, each on 1,000 further training malware, with every operation available to the adaptive attack except
 the entry write, which stands for the next operation an attacker finds. \synthetic{The rounds close the edits they
@@ -418,7 +411,7 @@ threat model, applied to the 2,000 files of the evaluation set itself, with the 
 imports added from benign training files. From the extracted features, a feature some edit lowered is dropped, one that
 some edit raised and none lowered is constrained to be nondecreasing, and one that no edit moved is left free. This
 trial detector detects more than the derived one, 87.6\% of the malware at a 1\% false-positive rate against 83.4\%,
-because it leaves free the features no edit it tried had moved. That is where it fails. The adaptive attack evades it
+and the features it leaves free are where it fails. The adaptive attack evades it
 on 26 of the 44 malware it detects and MAB-Malware on 17, and in every evasion the feature that carries the largest
 drop in its score is one that no tried edit moved. Most often it is the count of strings that look like web addresses:
 a copied signature contains them, and so does the benign content MAB-Malware appends, while trial's zeros, random
@@ -449,8 +442,7 @@ Since the table is sound, what this detector gives up against the unconstrained 
 \paragraph{The price}
 Against the full threat model, the guarantee costs the monotone detector on the sums 7.8 points of detection at a 1\%
 false-positive rate, 85.7\% of the malware against 93.5\% for the unconstrained detector, and 16.3 points at a stricter
-0.1\% rate, 68.1\% against 84.4\% (\Cref{tab:eval:detectors}). The detector on the features detects 83.4\% and
-65.1\%. Most of this cost comes from code signing. Once the certificate entry is writable, an attacker can give a
+0.1\% rate, 68.1\% against 84.4\% (\Cref{tab:eval:detectors}). Most of this cost comes from code signing. Once the certificate entry is writable, an attacker can give a
 malware file the Authenticode signature of a benign program, so the detector cannot let a signature lower its score, and signatures are among the strongest benign evidence the features
 hold. In return, no edit in the threat model lowers either detector's score. Our attacks evade the unconstrained
 detector on all 47 malware it detects, 21 of them with a copied signature as the only edit, and evade neither monotone
