@@ -1,8 +1,10 @@
-# RIT Research Computing, partition sporc (x86_64). Run everything here first (SETUP.md).
-# NOTE: the run.sh headers target tigris (--partition=tigris, --constraint=gg|gh). On sporc, override them at
-# submission (sbatch --partition=sporc ...) and drop the constraint; set up when sporc is used (session 74).
-# TO CONFIRM on the head node (best guesses from SSViT's scripts/create.py): cores per node (SSViT assumes 36), where
-# large outputs should live (artifacts/ is a symlink; its target), maximum walltime, Python 3.14 through uv.
+# RIT Research Computing, cluster sporc (x86_64), confirmed on the head node sporcsubmit 2026-11-24 (session 111):
+#   CPU partitions sporc-cpu, tier3 (and debug, 1 day, for tests), nodes of 36 to 56 cores, ~340-380 GB; the run.sh
+#   headers target tigris, so override them at submission: --partition=sporc-cpu --constraint=intel for a CPU step;
+#   --partition=tier3 --constraint=intel --gres=gpu:1 for a GPU step (A100 40 GB on skl-a-*, H100 80 GB on spr-a-02).
+#   Maximum walltime 20 days; uv's Python 3.14 works (env-x86_64/); featurization is bit-identical to the reference.
+# Large outputs: artifacts -> /shared/rc/admalware/provexp, shared with tigris. CORES is the default NUM_WORKERS
+# outside a job, i.e. on the head node: 2, as on tigris (run nothing heavy there).
 export EMBER2024_DATA="${EMBER2024_DATA:-/shared/rc/admalware/datasets/EMBER-2024/data}"
-CORES=36
+CORES=2
 spack load gcc/lhqcen5

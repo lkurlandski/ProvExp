@@ -14,10 +14,20 @@ run them with `bash` (the `#SBATCH` lines are then comments).
 
 ## 2. The environment
 
-    bash pipeline/setup/build_env.sh          # or: sbatch pipeline/setup/build_env.sh
+    bash pipeline/setup/build_env.sh          # or: sbatch pipeline/setup/build_env.sh (once per architecture)
+    bash pipeline/setup/make_dispatcher.sh    # once per checkout, and after a package adds a command
 
-This builds `env/` (uv, Python 3.14) at the exact versions of `requirements-lock.txt`, installs the package editable,
-and the vendored toolkits in `third_party/` without their dependencies:
+One environment per architecture, picked automatically (session 111; the clusters share the home directory and the
+checkout, and a virtual environment is tied to its machine and its absolute path): `build_env.sh` builds
+`env-$(uname -m)/` (`env-aarch64/` on tigris, `env-x86_64/` on sporc; `ENV_DIR=...` overrides) with uv and Python
+3.14 at the exact versions of `requirements-lock.txt`, installs the package editable, and the vendored toolkits in
+`third_party/` without their dependencies. `env/` holds no packages: `make_dispatcher.sh` writes `env/bin/activate`,
+which sources `env-$(uname -m)/bin/activate`, and one shim per command (`env/bin/python`, `pytest`, `ruff`, `mypy`,
+...) that runs the same command from `env-$(uname -m)/bin`. So `source env/bin/activate` and `env/bin/<tool>` work
+unchanged on every machine. `~/.bashrc` points uv's interpreters and cache at the architecture
+(`UV_PYTHON_INSTALL_DIR`, `UV_CACHE_DIR` under `~/.local/sw/<arch>` and `~/.cache/<arch>`), and
+`pipeline/systems/arch.sh` re-points them in a job submitted from the other cluster (sbatch passes the submitting
+shell's environment along). `common.sh` takes `ENV_DIR=...` to test another environment without switching `env/`.
 
 - `secml/` and `secml_malware/` (the toolkit attacks), patched for Python 3.14, NumPy 2 and LIEF 1.0;
 - `mab_malware/` (MAB-Malware) is not installed: `provexp.attacks.mab` imports it from its directory. Its upstream
@@ -35,8 +45,16 @@ otherwise (`SYSTEM=...` overrides). For a new machine, copy `local.sh` and edit 
 
 The `run.sh` headers target tigris (confirmed in session 74, `pipeline/systems/tigris.sh`): CPU steps on the `gg`
 nodes (`--constraint=gg`; half a node, 72 cores, or a quarter per array task, where a pool keeps them busy; fewer for
-single-threaded runs), the one GPU step (`learned`'s ERDALT array) on the `gh` nodes (one GH200 and 4 cores per task). On the head node itself run nothing heavier than two cores: submit everything. sporc's
-values are still guesses ("TO CONFIRM" in `sporc.sh`); it shares the file system and is set up when it is used.
+single-threaded runs), the one GPU step (`learned`'s ERDALT array) on the `gh` nodes (one GH200 and 4 cores per task). On the head node itself run nothing heavier than two cores: submit everything.
+
+sporc (x86_64, head node `sporcsubmit`; confirmed in session 111, `pipeline/systems/sporc.sh`) shares the file system
+with tigris, and `-M sporc` / `-M tigris` reach either cluster's queue from both head nodes. Override the headers at
+submission: a CPU step with `--partition=sporc-cpu` (or `tier3`; `debug` for short tests) and `--constraint=intel`;
+a GPU step with `--partition=tier3 --gres=gpu:1` (A100 40 GB nodes `skl-a-*`, 36 cores; one H100 80 GB node
+`spr-a-02`). Nodes have 36 to 56 cores and ~340-380 GB; the walltime limit is 20 days (`debug`: 1 day). The H100
+node and the head node's A100 (tagged `cuda10`) run driver 610 (CUDA 13.3), which our CUDA 12.9 torch uses; the
+`cuda10`/`cuda11` features look like stale labels. Featurization is bit-identical to the reference on both
+architectures, and the tests pass on both (session 111).
 
 ## 4. Outputs and artifacts
 

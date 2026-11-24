@@ -12,6 +12,7 @@
 #                on its own command line)
 #   tasks N      the shards this job handles: $SLURM_ARRAY_TASK_ID in a job array, else all of 0..N-1
 
+source pipeline/systems/arch.sh  # a job submitted from the other cluster: re-point the per-architecture paths
 if [[ -z "${SYSTEM:-}" ]]; then
   if ! command -v squeue &> /dev/null; then
     SYSTEM=local
@@ -23,7 +24,16 @@ if [[ -z "${SYSTEM:-}" ]]; then
 fi
 source "pipeline/systems/$SYSTEM.sh"
 
-source env/bin/activate
+# NOTE: env/ is the dispatcher to env-$(uname -m)/ (pipeline/setup/make_dispatcher.sh). Until it is switched in, env/
+# is still the aarch64 environment; where its Python cannot run (sporc, x86_64), take env-$(uname -m)/ directly.
+# Remove the fallback once env/ is the dispatcher on both clusters (session 111).
+if [[ -n "${ENV_DIR:-}" ]]; then  # a knob: test another environment (or a staged dispatcher) without switching env/
+  source "$ENV_DIR/bin/activate"
+elif [[ -f env/DISPATCHER ]] || env/bin/python -c "" 2> /dev/null; then
+  source env/bin/activate
+else
+  source "env-$(uname -m)/bin/activate"
+fi
 export PYTHONHASHSEED=0
 # NOTE: set unconditionally: SLURM on tigris starts every job with OMP_NUM_THREADS = its cores, so each of a job's N
 # workers built N-thread OpenMP and OpenBLAS pools, plus polars' pools sized to the node (~380 threads per worker at

@@ -59,8 +59,11 @@ conference cycles are not a planning constraint (user).
 
 ## Environment
 
-- venv in `env/` (uv, Python 3.14): `VIRTUAL_ENV=$PWD/env uv pip install -r requirements.txt -r requirements-dev.txt`
-  then `uv pip install -e .`. Never use the miniconda installation.
+- One venv per architecture (uv, Python 3.14; session 111): `env-aarch64/` (tigris), `env-x86_64/` (sporc), built by
+  `pipeline/setup/build_env.sh` from `requirements-lock.txt`. `env/` is a dispatcher (`pipeline/setup/make_dispatcher.sh`):
+  `source env/bin/activate` and `env/bin/<tool>` (python, pytest, ruff, mypy) run the machine's environment. To add a
+  package: `VIRTUAL_ENV=$PWD/env-$(uname -m) uv pip install ...` on each architecture, then re-run the dispatcher
+  script. Never use the miniconda installation.
 - `tmp/` holds the user's scratch files (gitignored). Do not mention, list, or ask about them.
 - Gitignored, never commit: `tests/data/` (real malware), `checkpoints/` (MalConv), `index/` (split files from SSViT),
   `artifacts` (symlink to `/scratch/lk3591/provexp`: feature store, models, reports, logs).
