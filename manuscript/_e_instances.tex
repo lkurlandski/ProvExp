@@ -48,33 +48,35 @@ which sets a data directory entry the loader ignores, cannot move the overlay. A
 \label{sec:instances:catalogue}
 
 
-Attacks that turn a malware sample into an evasive file, rather than an evasive feature vector, edit the file only in
-ways that keep the program working. Demetrio et al.~\cite{demetrio2021adversarial} survey these
-functionality-preserving manipulations of PE files: appending bytes, overwriting the slack space that pads each section
-to its alignment, adding a section or imports, and overwriting header fields. They add three that exploit ambiguities of the format: overwriting the DOS header and stub, which the loader skips,
-and inserting a gap in front of the PE header or of the first section. MAB-Malware~\cite{song2022mab} also renames
-sections, removes the debug directory entry or the certificate table entry, and overwrites the checksum.
+The guarantees of \Cref{sec:framework} cover exactly the edits a threat model allows, so the threat model decides what
+they are worth. We want ours to contain what attackers actually do to PE malware to get it past a static detector.
+Such an attacker has to deliver a file that still runs, not merely a feature vector the detector gets wrong. We assume
+nothing about what they know; they may have the detector, its training data, and our derived table. We limit only how
+they may change the file.
 
-Our threat model is the union of these edits and two more, fourteen operations in all
-(\Cref{tab:instances:catalogue}), with all content chosen by the attacker. The threat model limits what the attacker can do, not what it knows: the directions hold for every edit,
-whatever the attacker knows of the detector. Its only limit on size is the scope of our study, files of at most 4~MB
-(\Cref{sec:eval:setup}): an edited file must remain one. The first operation we add, the \emph{entry write}, sets the
-debug or the certificate entry in the header to any value, which lets the attacker point the certificate entry at a
-signature copied from a benign program and appended to the file. EMBER's extractor parses a signature but does not
-verify it, so the copy describes the file as signed by the benign program's publisher. Malware in the wild copies
-signatures this way, and such copies led 34 anti-virus products to miss known malware~\cite{kim2017certified}. The
-entry write generalizes MAB-Malware's removals: the loader ignores both entries, so an attacker who can remove one can
-as well set it to any value. The second operation we add, \emph{header growth}, inserts a gap at the end of
-the headers so that the headers of new sections fit, which adding a section needs on a file whose headers lack room.
+Our threat model consists of the fourteen operations in \Cref{tab:instances:catalogue}, each an edit to the file's
+structure that keeps the program running, with any content the attacker chooses. Twelve are the edits that published
+attacks on PE malware detectors make~\cite{demetrio2021adversarial,song2022mab}. We add two that follow from them.
+\emph{Header growth} makes room in the headers for the section header that adding a section needs. The \emph{entry
+write} sets the debug or certificate entry to any value instead of only removing it, which lets malware carry a code
+signature copied from a benign program; EMBER's extractor reads such a signature without checking it, and copies like
+these have led 34 anti-virus products to miss known malware~\cite{kim2017certified}. An edited file must stay within
+the scope of our study, files of at most 4~MB (\Cref{sec:eval:setup}).
 % The extractor's authenticode features (signify) count certificates and read signing times; nothing checks the hash.
 
-The operations form three nested threat models. \emph{Additions} only add content, the setting for which monotone detectors
-were proposed~\cite{incer2018adversarially}; the \emph{shifts} model adds the three insertions that move existing
-content; and the \emph{full} model adds every overwrite and removal. In all three, the attacker edits the file's structure. Packing replaces the file with a different program that
-restores the original at run time~\cite{demetrio2021adversarial}, so no item of the original survives it, and
-code-level transformations, which replace or move instructions while keeping their
-meaning~\cite{song2022mab,lucas2021malware,lucas2023adversarial,ling2024wolf}, need a disassembler and an analysis of
-the code; we leave them to future work (\Cref{sec:discussion}).
+How much of this threat model to defend against is the defender's choice, and it comes at a price: the more edits a
+threat model allows, the more features they move, and the more detection a detector that no edit can evade must give
+up. We therefore split the operations into three nested threat models and derive a table for each. Under
+\emph{additions}, the attacker only adds content, by appending bytes, adding a section, or adding imports, the setting
+of earlier monotone detectors~\cite{incer2018adversarially}. \emph{Shifts} also lets them insert gaps that move existing
+content, and the \emph{full} threat model lets them overwrite and remove as well. Because the threat models are nested,
+so are their tables, and \Cref{sec:eval:detectors} measures what each operation adds to the price.
+
+All fourteen operations edit the file's structure and leave the program's instructions unchanged, which marks the edge of our threat model.
+Packing replaces the file with a different program that restores the original at run time~\cite{demetrio2021adversarial},
+so none of the original file's items survive it. Code-level transformations, which rewrite or move instructions while
+keeping their meaning~\cite{song2022mab,lucas2021malware,lucas2023adversarial,ling2024wolf}, need a disassembler and an
+analysis of the code, and we leave them to future work (\Cref{sec:discussion}).
 
 \begin{table}[t]
   \caption{The operations of the threat model. Each threat model adds operations to the one above it; toolkit
