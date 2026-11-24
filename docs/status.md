@@ -20,8 +20,9 @@ in `docs/archive/status-log-2026-11-14-s63.md`, sessions 64-65 in `docs/archive/
   tigris only (1260392_0 `erdalt`, 1264791_[1-8] the folds; at 13:00 the first two at epoch ~26 of 68, the other
   seven pending on priority). The toolkit, adaptive and MAB `zainab` jobs (1260395-1260397) un-held, with a real
   dependency `afterok:1260392_0:1264791` (cancelled on an ERDALT failure: `--kill-on-invalid-dep=yes`); `6-results`
-  still after them. The claims directory moved to `diag/s112/erdalt-claims-s111` (no release lists left; a requeued
-  task can no longer skip its own model). Merge with the writing session's 8d4ff87 resolved. Next (after the
+  still after them. The claims directory moved to `diag/s112/erdalt-claims-s111` (no release lists left; the two
+  running tasks, if requeued, retrain their model); the seven pending tasks set to `Requeue=0`, since they still
+  create claims and a requeued one would skip its own model and exit 0. Merge with the writing session's 8d4ff87 resolved. Next (after the
   maintenance): `docs/resume-prompt-experiments.md`.
 - **Session 112 (writing):** the user's read of 4.2 *Threat Model*. Four rewrites (survey of prior work, then
   disorganized, then distant and passive, then scattered); the fourth, tied to §3's guarantees ("the threat model
