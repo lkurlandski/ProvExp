@@ -14,6 +14,17 @@ in `docs/archive/status-log-2026-11-14-s63.md`, sessions 64-65 in `docs/archive/
 ## Current state (2026-11-24, through session 111)
 
 - **Session 111 (writing, in progress):** the user's read of §4 and §5, subsection by subsection. Done: §4's lead (the redundant closing sentence of its first paragraph cut; the PE background rewritten to name only what later text uses: headers, sections, header entries locating the imports, debug data and signature, the overlay; bare "table" for PE structures replaced by "structure" in 4.1, 4.3, 4.4; the user then asked to keep standard PE names (section table, data directory, debug directory entry, certificate table entry): the "debug entry"/"certificate entry"/"header entry" renamings were reverted). 4.1 done: renamed "Extractor" (with D.1), colon-as-transition rewrites, pefile introduced and cited (user: "the main idea is to diversify the rhetoric and language structure"). Next: 4.2.
+- **Session 111 (experiments, an interactive job on sporc; in parallel with the writing session 111):** one
+  environment per architecture (6b51345): `env-aarch64/`, `env-x86_64/`, `env/` a dispatcher with per-command shims;
+  `pipeline/systems/arch.sh` re-points `~/.bashrc`'s per-architecture paths in jobs submitted across clusters; both
+  pass `check.sh` (featurization bit-identical on x86 too; 2,058 tests); `env/` switched with no tigris job running,
+  the old one kept as `env-aarch64-old/`. sporc's settings confirmed (`sporc.sh`, SETUP.md §3). The H100 works with
+  our CUDA 12.9 torch (driver 610); the A100 timing trial (22176526) is queued. ERDALT raced on both clusters (protocol
+  item (23); f46e8bd: `ORDER`, `CLAIMS`, release of held dependents, a failed model fails the job; smoke-tested
+  across clusters): tigris 1260392_0 trains `erdalt` (started 10:22), the other eight resubmitted (tigris 1264791
+  forward, same queue place, verified first; sporc 22176620 reverse, estimated 2026-11-26), toolkit/adaptive/MAB
+  `zainab` held until the last model releases them. sporc's `debug` partition: never for production (user). Next:
+  `docs/resume-prompt-experiments.md`.
 - **Session 110 (experiments, tigris head node):** the rerun checked: everything up to ERDALT finished cleanly (audits,
   trial, train, material: 73,502 kept of 76,049, 2,001 over 4 MB, all GAMMA; GBDT defenses, iterated, price list, MAB
   `ours` and `expert`); ERDALT's nine GPU models (1260392) wait for tigris GPUs (estimated start 2026-11-25 ~15:00), and
@@ -294,7 +305,8 @@ in `docs/archive/status-log-2026-11-14-s63.md`, sessions 64-65 in `docs/archive/
   Both are on the next-round list (`docs/scaleup-protocol.md`) as candidates.
 
 - **The full rerun is running (submitted 2026-11-23, session 105; jobs 1260382-1260399; session 110: all but ERDALT
-  and the attacks that need it finished; ERDALT to be raced on sporc, see Current state).** It carries every change
+  and the attacks that need it finished; session 111: ERDALT raced on tigris and sporc, the attacks that need it held
+  until its last model releases them, see Current state).** It carries every change
   of sessions 101-105 (GAMMA through our writers, `hgr` and the fifth clause, the validity rule by sets, the literature
   budget, the 4 MB output rule) and ERDALT's attacks; the old round's numbers stay in the manuscript until it is read.
   Next (`docs/resume-prompt-experiments.md`): check it, then read every result with the user. Still open: PV's setup

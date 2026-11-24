@@ -95,8 +95,10 @@ records of the §5 reviews, the table remake and the ERDALT check, is in
    Session 105 (item (22)): the literature budget, the 4 MB output rule, `hgr` in the adaptive search; the full rerun
    submitted (1260382-1260399). Session 110: all of it but ERDALT and the attacks that need it finished; ERDALT to be
    raced on sporc (one environment per architecture first); the register `docs/experiments-to-reconsider.md`.
-   **Next:** `docs/resume-prompt-experiments.md` (on sporcsubmit): one environment per architecture, ERDALT raced on
-   sporc, then the new round read with the user; PV's sample-size experiment; then step 5.
+   Session 111 (item (23)): one environment per architecture, tested on both clusters; ERDALT raced on tigris and
+   sporc (claims on the shared file system; the last model releases the held attacks).
+   **Next:** `docs/resume-prompt-experiments.md`: see ERDALT through (the A100 trial sets sporc's time limit), clean up
+   the environment switch, then the new round read with the user; PV's sample-size experiment; then step 5.
 4. **While the scale-up runs: §2's closing and contribution 4 against §5** (old step 2 (c); the user, session 108:
    §2's closing sentence waits for the end-to-end pass with the introduction, not a local fix). §2 says §5 "uses them to
    attack malware detectors and to build robust ones"; in §5 the attack is an instrument. The mock's contribution 4 is

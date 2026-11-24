@@ -335,6 +335,18 @@ reading its results (PLAN.md step 5).
    PLAN.md decision 12 (the training table covers every evaluation cell, plus 265), submitted by the user on
    2026-11-23 (jobs 1260382-1260399, `logs/submit-20261123-141442.txt`).
 
+   (23) **ERDALT on two clusters (session 111).** tigris handed out its GH200s slowly (one ERDALT task started on
+   2026-11-24; a job behind the rest was estimated for the next afternoon). *Decided (user):* race the nine models on
+   tigris and sporc (x86_64, A100 40 GB or H100 80 GB), tigris in forward order and sporc in reverse, the first
+   cluster to start a model trains it. A model's result does not depend on where it trained (same code, seed and
+   data; the GPU each model trained on is recorded in its claim, `4-detectors/erdalt-claims/<model>/owner`, and is
+   stated in the paper's appendix). Mechanism (`learned/run.sh`: `ORDER`, `CLAIMS`): an atomic claim per model on the
+   shared file system; the attacks that need ERDALT are held, and the task that completes the ninth model releases
+   them and cancels the leftover tasks; a failed model releases nothing. Before cancelling and resubmitting tigris's
+   pending tasks, their queue position was verified to carry over (the age term was 0.06% of the priority; a real
+   dummy job of the same shape ranked directly behind them). Prerequisite: one environment per architecture
+   (`env-aarch64/`, `env-x86_64/`, `env/` a dispatcher; SETUP.md §2), featurization bit-identical on both.
+
    **Next round** (methodology changes recorded here and applied together in a later full rerun, not one by one;
    user, session 105; the wider register of candidates, with reasons and sources: `docs/experiments-to-reconsider.md`):
    - drop the toolkit attacks that stay ineffective at the generous budget (criterion to state; the learned defenses'
