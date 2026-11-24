@@ -1,4 +1,4 @@
-# Resume prompt (writing track): the user's read of §4 and §5
+# Resume prompt (writing track): the user's read of §4 and §5, subsection by subsection
 
 Written 2026-11-24 (end of session 109; replaces session 108's prompt, archived as
 `docs/archive/resume-prompt-writing-2026-11-24-s108.md`). Self-contained: read `CLAUDE.md` (loaded automatically) and
@@ -37,21 +37,29 @@ predictions, each with a `% SYNTHETIC` comment naming the run that replaces it.
   "Trial answers for the edits and contents it tries; the derived table answers for the threat model."). Do not
   propose them again unless the user raises them.
 
-## 3. This session
+## 3. This session: the user reads §4, then §5, one subsection at a time
 
-At the end of session 109 the user weighed two next steps: (a) the user reads §4 and §5 and gives feedback, or (b) a
-lightweight humanizer pass (`anthropic-skills:humanizer`) with the user's oversight first. Claude recommended (a):
-the review counted few of the patterns a humanizer targets (no em-dashes, no intensifiers, few triads), the user's
-register is distinctive and rule-driven rewriting has harmed it before (`.claude/skills/paper-prose/`, rewritten
-2026-11-09), and the user's read is the signal the text now needs. **Check `docs/status.md` for what the user chose**
-and follow it. For (a):
+Decided at the end of session 109 (the user): "I'll begin reading starting with section 4. I'll provide feedback on a
+subsection-by-subsection basis. You'll make adjustments and we'll move to the next subsection." No humanizer pass
+(Claude recommended against it: the reviews found few of its patterns, and rule-driven rewriting has harmed the user's
+register before).
 
-1. The user reads §4 and §5 (rendered PDF, `manuscript/main.pdf`) and sends comments, often in batches.
+Order: §4's lead, 4.1 *EMBER as a Sum-then-Readout Extractor*, 4.2 *Threat Model*, 4.3 *Signature*, 4.4 *Population*
+(with Appendix D's matching part where the user asks), then §5's lead, 5.1-5.4 (and Appendix E's mirror). Per
+subsection:
+
+1. Wait for the user's feedback on the subsection; read it in the `.tex` and the rendered PDF
+   (`manuscript/main.pdf`) before answering.
 2. Answer questions first; keep the user's numbering of comments; diagnose before fixing (memory: review-comments
-   workflow). Show exact old/new text for every fix; apply approved fixes in one pass when the user says so; then
-   `make`, `make check`, and read the rendered text for slips.
-3. Do not change one section on the strength of another section's stale content (§2's closing sentence, the
-   introduction, and the discussion wait for the end-to-end pass).
+   workflow). For each fix show the exact old/new text.
+3. Apply what the user approves (in one pass when they say so); `make`, `make check`, read the rendered text for
+   slips; commit the subsection's changes on their own (e.g., "Manuscript: §4.2, the user's read"); then move to the
+   next subsection.
+4. Note in `docs/status.md` which subsections are done, so a session that ends mid-way resumes at the right place.
+
+Do not change one section on the strength of another section's stale content (§2's closing sentence, the
+introduction, and the discussion wait for the end-to-end pass). A fix in §4 that a §5 passage depends on: say so and
+check the §5 passage when its turn comes.
 
 ## 4. Open items in §5 (raise when the work touches them)
 

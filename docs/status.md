@@ -27,7 +27,8 @@ in `docs/archive/status-log-2026-11-14-s63.md`, sessions 64-65 in `docs/archive/
   28" does not match Table 4's 39/40 detected. Then `cut-to-length` as a cleanup (the user: ~4,000 if a number is
   needed, "it doesn't really matter that much"): 18 unflagged items applied, the two ⚑ items (leave-one-out shortened,
   trial's closing turn) not; §5 4,639 to 4,406 words (lead 521, 5.1 746, 5.2 931, 5.3 1,318, 5.4 890); Appendix E 892.
-  Commits 328abc0, d64d184. Next: `docs/resume-prompt-writing.md`.
+  Commits 328abc0, d64d184. Next (the user): the user reads §4 then §5, one subsection at a time, Claude adjusting
+  after each; no humanizer pass. Subsections done: none yet. `docs/resume-prompt-writing.md`.
 
 - **Session 108 (writing):** §5 rebuilt from the ground up (plan: `docs/evaluation-note.md`; decision 13). The user
   chose the narrative: every source of a defender's knowledge of what edits do (reading the extractor, observed
