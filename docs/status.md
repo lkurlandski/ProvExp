@@ -11,8 +11,9 @@ in `docs/archive/status-log-2026-11-14-s63.md`, sessions 64-65 in `docs/archive/
 `docs/archive/status-log-2026-11-15-to-16-s66-76.md`, sessions 77-94 in
 `docs/archive/status-log-2026-11-16-to-19-s77-94.md`).
 
-## Current state (2026-11-24, through session 110)
+## Current state (2026-11-24, through session 111)
 
+- **Session 111 (writing, in progress):** the user's read of §4 and §5, subsection by subsection. Done: §4's lead (the redundant closing sentence of its first paragraph cut; the PE background rewritten to name only what later text uses: headers, sections, header entries locating the imports, debug data and signature, the overlay; "import table" and "data directory" gone, "table" kept for the framework; knock-ons in 4.1-4.4 and Table 3: "debug entry", "certificate entry", "other structure"). Next: 4.1. Left for their turn: "section table" in 4.3, 4.4 and 5.2.
 - **Session 110 (experiments, tigris head node):** the rerun checked: everything up to ERDALT finished cleanly (audits,
   trial, train, material: 73,502 kept of 76,049, 2,001 over 4 MB, all GAMMA; GBDT defenses, iterated, price list, MAB
   `ours` and `expert`); ERDALT's nine GPU models (1260392) wait for tigris GPUs (estimated start 2026-11-25 ~15:00), and
